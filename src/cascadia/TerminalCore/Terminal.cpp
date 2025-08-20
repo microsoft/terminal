@@ -167,20 +167,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         break;
     }
 
-    const til::color newBackgroundColor{ appearance.DefaultBackground() };
-    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
-    const til::color newForegroundColor{ appearance.DefaultForeground() };
-    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
-    const til::color newCursorColor{ appearance.CursorColor() };
-    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
-    const til::color newSelectionColor{ appearance.SelectionBackground() };
-    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
-
-    for (auto i = 0; i < 16; i++)
-    {
-        renderSettings.SetColorTableEntry(i, til::color{ appearance.GetColorTableEntry(i) });
-    }
-
     auto cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
     {
@@ -214,6 +200,32 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     _defaultCursorShape = cursorShape;
+
+    UpdateColorScheme(appearance);
+}
+
+void Terminal::UpdateColorScheme(const ICoreScheme& scheme)
+{
+    auto& renderSettings = GetRenderSettings();
+
+    const til::color newBackgroundColor{ scheme.DefaultBackground() };
+    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
+    const til::color newForegroundColor{ scheme.DefaultForeground() };
+    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
+    const til::color newCursorColor{ scheme.CursorColor() };
+    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
+    const til::color newSelectionColor{ scheme.SelectionBackground() };
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
+
+    winrt::com_array<Color> colors;
+    scheme.GetColorTable(colors);
+
+    assert(colors.size() == 16);
+
+    for (auto i = 0; i < 16; i++)
+    {
+        renderSettings.SetColorTableEntry(i, til::color{ til::at(colors, i) });
+    }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color

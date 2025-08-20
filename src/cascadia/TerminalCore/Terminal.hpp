@@ -91,6 +91,7 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void UpdateColorScheme(const winrt::Microsoft::Terminal::Core::ICoreScheme& scheme);
     void SetHighContrastMode(bool hc) noexcept;
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);

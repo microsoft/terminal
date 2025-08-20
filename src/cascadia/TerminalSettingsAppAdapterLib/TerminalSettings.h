@@ -75,11 +75,8 @@ namespace winrt::Microsoft::Terminal::Settings
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
 
-        // GetColorTableEntry needs to be implemented manually, to get a
-        // particular value from the array.
-        Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept;
-        void ColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
-        std::array<Microsoft::Terminal::Core::Color, 16> ColorTable();
+        void GetColorTable(winrt::com_array<Microsoft::Terminal::Core::Color>& table) noexcept;
+        void SetColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
 
         SIMPLE_INHERITABLE_SETTING(til::color, DefaultForeground, DEFAULT_FOREGROUND);
         SIMPLE_INHERITABLE_SETTING(til::color, DefaultBackground, DEFAULT_BACKGROUND);

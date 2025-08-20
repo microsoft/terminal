@@ -415,21 +415,16 @@ namespace winrt::Microsoft::Terminal::Settings
             std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
                 return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
             });
-            ColorTable(colorTable);
+            SetColorTable(colorTable);
         }
     }
 
-    winrt::Microsoft::Terminal::Core::Color TerminalSettings::GetColorTableEntry(int32_t index) noexcept
-    {
-        return ColorTable().at(index);
-    }
-
-    void TerminalSettings::ColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> colors)
+    void TerminalSettings::SetColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> colors)
     {
         _ColorTable = colors;
     }
 
-    std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> TerminalSettings::ColorTable()
+    void TerminalSettings::GetColorTable(winrt::com_array<Microsoft::Terminal::Core::Color>& table) noexcept
     {
         auto span = _getColorTableImpl();
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
@@ -443,8 +438,10 @@ namespace winrt::Microsoft::Terminal::Settings
             std::transform(campbellSpan.begin(), campbellSpan.end(), colorTable.begin(), [](auto&& color) {
                 return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
             });
+            span = colorTable;
         }
-        return colorTable;
+
+        table = winrt::com_array(span.begin(), span.end());
     }
 
     std::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
