@@ -125,8 +125,6 @@ namespace winrt::Microsoft::Terminal::Settings
 
         // ------------------------ End of Core Settings -----------------------
 
-        SIMPLE_INHERITABLE_SETTING(hstring, ProfileName);
-
         SIMPLE_INHERITABLE_SETTING(guid, SessionId);
         SIMPLE_INHERITABLE_SETTING(bool, EnableUnfocusedAcrylic, false);
         SIMPLE_INHERITABLE_SETTING(bool, UseAcrylic, false);
