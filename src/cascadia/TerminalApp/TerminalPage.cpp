@@ -20,6 +20,7 @@
 #include "SettingsPaneContent.h"
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
+#include "TerminalSettingsCache.h"
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/utils.hpp"
 
@@ -243,7 +244,7 @@ namespace winrt::TerminalApp::implementation
         if (_settings == nullptr)
         {
             // Create this only on the first time we load the settings.
-            _terminalSettingsCache = TerminalApp::TerminalSettingsCache{ settings, *_bindings };
+            _terminalSettingsCache = std::make_shared<TerminalSettingsCache>(settings, *_bindings);
         }
         _settings = settings;
 
@@ -3935,7 +3936,7 @@ namespace winrt::TerminalApp::implementation
         // updating terminal panes, so that we don't have to build a _new_
         // TerminalSettings for every profile we update - we can just look them
         // up the previous ones we built.
-        _terminalSettingsCache.Reset(_settings, *_bindings);
+        _terminalSettingsCache->Reset(_settings, *_bindings);
 
         for (const auto& tab : _tabs)
         {

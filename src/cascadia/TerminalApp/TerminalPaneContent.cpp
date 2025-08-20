@@ -6,6 +6,7 @@
 
 #include <mmsystem.h>
 
+#include "TerminalSettingsCache.h"
 #include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
@@ -20,7 +21,7 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                                             const TerminalApp::TerminalSettingsCache& cache,
+                                             const std::shared_ptr<TerminalSettingsCache>& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
         _control{ control },
         _cache{ cache },
@@ -346,7 +347,7 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ settings.FindProfile(_profile.Guid()) };
         _profile = profile ? profile : settings.ProfileDefaults();
 
-        if (const auto& settings{ _cache.TryLookup(_profile) })
+        if (const auto& settings{ _cache->TryLookup(_profile) })
         {
             _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
         }

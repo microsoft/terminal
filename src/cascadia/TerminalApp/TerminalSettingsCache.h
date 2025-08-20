@@ -13,14 +13,13 @@ Abstract:
 --*/
 #pragma once
 
-#include "TerminalSettingsCache.g.h"
-#include <inc/cppwinrt_utils.h>
+#include "winrt/Microsoft.Terminal.Settings.Model.h"
+#include "winrt/TerminalApp.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    class TerminalSettingsCache : public TerminalSettingsCacheT<TerminalSettingsCache>
+    struct TerminalSettingsCache
     {
-    public:
         TerminalSettingsCache(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings);
         Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult TryLookup(const Microsoft::Terminal::Settings::Model::Profile& profile);
         void Reset(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings);
@@ -30,9 +29,4 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::AppKeyBindings _bindings{ nullptr };
         std::unordered_map<winrt::guid, std::pair<Microsoft::Terminal::Settings::Model::Profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult>> profileGuidSettingsMap;
     };
-}
-
-namespace winrt::TerminalApp::factory_implementation
-{
-    BASIC_FACTORY(TerminalSettingsCache);
 }

@@ -8,6 +8,8 @@
 
 namespace winrt::TerminalApp::implementation
 {
+    struct TerminalSettingsCache;
+
     struct BellEventArgs : public BellEventArgsT<BellEventArgs>
     {
     public:
@@ -20,7 +22,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>, BasicPaneEvents
     {
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                            const TerminalApp::TerminalSettingsCache& cache,
+                            const std::shared_ptr<TerminalSettingsCache>& cache,
                             const winrt::Microsoft::Terminal::Control::TermControl& control);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
@@ -59,7 +61,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
-        TerminalApp::TerminalSettingsCache _cache{ nullptr };
+        std::shared_ptr<TerminalSettingsCache> _cache{};
         bool _isDefTermSession{ false };
 
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
