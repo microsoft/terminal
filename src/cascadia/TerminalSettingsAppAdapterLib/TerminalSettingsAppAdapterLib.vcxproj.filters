@@ -6,17 +6,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="LibraryResources.cpp" />
-    <ClCompile Include="ScopedResourceLoader.cpp" />
-    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="TerminalSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="inc\LibraryResources.h" />
-    <ClInclude Include="inc\SafeDispatcherTimer.h" />
-    <ClInclude Include="inc\ScopedResourceLoader.h" />
-    <ClInclude Include="inc\ThrottledFunc.h" />
-    <ClInclude Include="inc\Utils.h" />
-    <ClInclude Include="inc\WtExeUtils.h" />
+    <ClInclude Include="TerminalSettings.h" />
   </ItemGroup>
 </Project>

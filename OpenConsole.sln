@@ -316,8 +316,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAzBridge", "src\cas
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfTerminalTestNetCore", "src\cascadia\WpfTerminalTestNetCore\WpfTerminalTestNetCore.csproj", "{1588FD7C-241E-4E7D-9113-43735F3E6BAD}"
 	ProjectSection(ProjectDependencies) = postProject
-		{CA5CAD1A-F542-4635-A069-7CAEFB930070} = {CA5CAD1A-F542-4635-A069-7CAEFB930070}
 		{A22EC5F6-7851-4B88-AC52-47249D437A52} = {A22EC5F6-7851-4B88-AC52-47249D437A52}
+		{CA5CAD1A-F542-4635-A069-7CAEFB930070} = {CA5CAD1A-F542-4635-A069-7CAEFB930070}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wt", "src\cascadia\wt\wt.vcxproj", "{506FD703-BAA7-4F6E-9361-64F550EC8FCA}"
@@ -393,6 +393,11 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleBench", "src\tools\ConsoleBench\ConsoleBench.vcxproj", "{BE92101C-04F8-48DA-99F0-E1F4F1D2DC48}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalSettingsAppAdapterLib", "src\cascadia\TerminalSettingsAppAdapterLib\TerminalSettingsAppAdapterLib.vcxproj", "{3C46E2B0-AE6C-4132-9122-6772FB411959}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-082C-4476-9F33-94B339494076} = {CA5CAD1A-082C-4476-9F33-94B339494076}
+		{CA5CAD1A-ABCD-429C-B551-8562EC954746} = {CA5CAD1A-ABCD-429C-B551-8562EC954746}
+		{CA5CAD1A-F542-4635-A069-7CAEFB930070} = {CA5CAD1A-F542-4635-A069-7CAEFB930070}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -20,36 +20,23 @@
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
   </PropertyGroup>
+
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="TerminalSettings.h" />
   </ItemGroup>
-  <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TerminalSettings.cpp" />
   </ItemGroup>
-  <!-- ========================= idl Files ======================== -->
-  <ItemGroup>
-  </ItemGroup>
-  <!-- ========================= Project References ======================== -->
+
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
-      <!-- Private:true and ReferenceOutputAssembly:false, in combination with
-      the manual reference to TerminalControl.winmd below make sure that this
-      project will compile correct, and that we won't roll up the TermControl
-      xbf's into the packaging project twice. -->
-      <Private>true</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-
     <Reference Include="Microsoft.Terminal.TerminalConnection">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -75,14 +62,7 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
   </ItemGroup>
-  <!-- ====================== Compiler & Linker Flags ===================== -->
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>
-  <!-- ========================= Globals ======================== -->
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
 </Project>
