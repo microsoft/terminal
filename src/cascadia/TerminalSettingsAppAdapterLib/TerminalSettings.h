@@ -135,3 +135,5 @@ namespace winrt::Microsoft::Terminal::Settings
     };
 
 }
+
+#undef SIMPLE_OVERRIDABLE_SETTING
