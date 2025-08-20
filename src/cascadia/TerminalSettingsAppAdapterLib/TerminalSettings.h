@@ -55,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings
     struct TerminalSettingsCreateResult;
 
     struct TerminalSettings :
-        winrt::implements<TerminalSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Control::IControlAppearance>,
+        winrt::implements<TerminalSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Core::ICoreScheme, winrt::Microsoft::Terminal::Control::IControlAppearance>,
         winrt::Microsoft::Terminal::Settings::Model::implementation::IInheritable<TerminalSettings>
     {
         TerminalSettings() = default;
