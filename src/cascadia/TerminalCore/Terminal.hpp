@@ -370,7 +370,7 @@ private:
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
     bool _suppressApplicationTitle = false;
-    bool _trimBlockSelection = false;
+    bool _trimBlockSelection = true;
     bool _autoMarkPrompts = false;
     bool _rainbowSuggestions = false;
 
