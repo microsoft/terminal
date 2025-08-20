@@ -315,7 +315,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else
             {
-                return profileName;
+                return originalName;
             }
         }
 
