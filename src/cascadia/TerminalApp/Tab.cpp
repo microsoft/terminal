@@ -2127,9 +2127,9 @@ namespace winrt::TerminalApp::implementation
     // - The value to populate in the title run of the tool tip
     winrt::hstring Tab::_CreateToolTipTitle()
     {
-        if (const auto& control{ GetActiveTerminalControl() })
+        if (const auto profile{ GetFocusedProfile() })
         {
-            const auto profileName{ control.Settings().ProfileName() };
+            const auto profileName{ profile.Name() };
             if (profileName != Title())
             {
                 return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), profileName, Title()) };

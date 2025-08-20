@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t ContentId() const;
 
-        hstring GetProfileName() const;
+        hstring GetStartingTitle() const;
 
         bool CopySelectionToClipboard(bool dismissSelection, bool singleLine, bool withControlSequences, const CopyFormat formats);
         void PasteTextFromClipboard();
