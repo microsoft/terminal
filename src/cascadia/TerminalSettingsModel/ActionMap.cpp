@@ -187,16 +187,97 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     Model::IActionArgs ActionArgFactory::GetEmptyArgsForAction(Model::ShortcutAction shortcutAction)
     {
+        // TODO: GH 19056 - we cannot cleanly macro this because of some special cases (SplitPaneArgs, NewTabArgs, NewWindowArgs)
+        // where we initialize a NewTerminalArgs object to pass in to them because the settings UI cannot currently handle
+        // a ContentArgs object that is not a NewTerminalArgs
         switch (shortcutAction)
         {
-#define ON_ALL_ACTIONS_WITH_ARGS(name) \
-    case Model::ShortcutAction::name:  \
-        return winrt::make<name##Args>();
-
-            ALL_SHORTCUT_ACTIONS_WITH_ARGS
-
-#undef ON_ALL_ACTIONS_WITH_ARGS
-
+        case Model::ShortcutAction::AdjustFontSize:
+            return winrt::make<AdjustFontSizeArgs>();
+        case Model::ShortcutAction::CloseOtherTabs:
+            return winrt::make<CloseOtherTabsArgs>();
+        case Model::ShortcutAction::CloseTabsAfter:
+            return winrt::make<CloseTabsAfterArgs>();
+        case Model::ShortcutAction::CloseTab:
+            return winrt::make<CloseTabArgs>();
+        case Model::ShortcutAction::CopyText:
+            return winrt::make<CopyTextArgs>();
+        case Model::ShortcutAction::ExecuteCommandline:
+            return winrt::make<ExecuteCommandlineArgs>();
+        case Model::ShortcutAction::FindMatch:
+            return winrt::make<FindMatchArgs>();
+        case Model::ShortcutAction::SearchForText:
+            return winrt::make<SearchForTextArgs>();
+        case Model::ShortcutAction::GlobalSummon:
+            return winrt::make<GlobalSummonArgs>();
+        case Model::ShortcutAction::MoveFocus:
+            return winrt::make<MoveFocusArgs>();
+        case Model::ShortcutAction::MovePane:
+            return winrt::make<MovePaneArgs>();
+        case Model::ShortcutAction::SwapPane:
+            return winrt::make<SwapPaneArgs>();
+        case Model::ShortcutAction::MoveTab:
+            return winrt::make<MoveTabArgs>();
+        case Model::ShortcutAction::NewTab:
+            return winrt::make<NewTabArgs>(Model::NewTerminalArgs{});
+        case Model::ShortcutAction::NewWindow:
+            return winrt::make<NewWindowArgs>(Model::NewTerminalArgs{});
+        case Model::ShortcutAction::NextTab:
+            return winrt::make<NextTabArgs>();
+        case Model::ShortcutAction::OpenSettings:
+            return winrt::make<OpenSettingsArgs>();
+        case Model::ShortcutAction::SetFocusMode:
+            return winrt::make<SetFocusModeArgs>();
+        case Model::ShortcutAction::SetFullScreen:
+            return winrt::make<SetFullScreenArgs>();
+        case Model::ShortcutAction::SetMaximized:
+            return winrt::make<SetMaximizedArgs>();
+        case Model::ShortcutAction::PrevTab:
+            return winrt::make<PrevTabArgs>();
+        case Model::ShortcutAction::RenameTab:
+            return winrt::make<RenameTabArgs>();
+        case Model::ShortcutAction::RenameWindow:
+            return winrt::make<RenameWindowArgs>();
+        case Model::ShortcutAction::ResizePane:
+            return winrt::make<ResizePaneArgs>();
+        case Model::ShortcutAction::ScrollDown:
+            return winrt::make<ScrollDownArgs>();
+        case Model::ShortcutAction::ScrollUp:
+            return winrt::make<ScrollUpArgs>();
+        case Model::ShortcutAction::ScrollToMark:
+            return winrt::make<ScrollToMarkArgs>();
+        case Model::ShortcutAction::AddMark:
+            return winrt::make<AddMarkArgs>();
+        case Model::ShortcutAction::SendInput:
+            return winrt::make<SendInputArgs>();
+        case Model::ShortcutAction::SetColorScheme:
+            return winrt::make<SetColorSchemeArgs>();
+        case Model::ShortcutAction::SetTabColor:
+            return winrt::make<SetTabColorArgs>();
+        case Model::ShortcutAction::SplitPane:
+            return winrt::make<SplitPaneArgs>(SplitDirection::Automatic, Model::NewTerminalArgs{});
+        case Model::ShortcutAction::SwitchToTab:
+            return winrt::make<SwitchToTabArgs>();
+        case Model::ShortcutAction::ToggleCommandPalette:
+            return winrt::make<ToggleCommandPaletteArgs>();
+        case Model::ShortcutAction::FocusPane:
+            return winrt::make<FocusPaneArgs>();
+        case Model::ShortcutAction::ExportBuffer:
+            return winrt::make<ExportBufferArgs>();
+        case Model::ShortcutAction::ClearBuffer:
+            return winrt::make<ClearBufferArgs>();
+        case Model::ShortcutAction::MultipleActions:
+            return winrt::make<MultipleActionsArgs>();
+        case Model::ShortcutAction::AdjustOpacity:
+            return winrt::make<AdjustOpacityArgs>();
+        case Model::ShortcutAction::Suggestions:
+            return winrt::make<SuggestionsArgs>();
+        case Model::ShortcutAction::SelectCommand:
+            return winrt::make<SelectCommandArgs>();
+        case Model::ShortcutAction::SelectOutput:
+            return winrt::make<SelectOutputArgs>();
+        case Model::ShortcutAction::ColorSelection:
+            return winrt::make<ColorSelectionArgs>();
         default:
             return nullptr;
         }
