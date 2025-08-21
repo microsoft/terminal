@@ -105,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_name = _name;
         command->_Origin = _Origin;
         command->_ID = _ID;
+        command->_pfnIDChanged = _pfnIDChanged;
         command->_ActionAndArgs = *get_self<implementation::ActionAndArgs>(_ActionAndArgs)->Copy();
         command->_icon = _icon;
         command->_IterateOn = _IterateOn;
@@ -216,7 +217,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         const auto oldID = _ID;
         _ID = ID;
-        IDChanged.raise(*this, oldID);
+        if (_pfnIDChanged)
+        {
+            _pfnIDChanged(*this, std::wstring_view{ oldID });
+        }
     }
 
     void Command::GenerateID()
@@ -235,6 +239,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     bool Command::IDWasGenerated()
     {
         return _IDWasGenerated;
+    }
+
+    void Command::SetIDChangedCallback(std::function<void(const Model::Command, const std::wstring_view)> pfn) noexcept
+    {
+        _pfnIDChanged.swap(pfn);
     }
 
     void Command::Name(const hstring& value)

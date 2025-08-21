@@ -661,7 +661,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const auto copiedCmd = winrt::get_self<Command>(cmd)->Copy();
             actionMap->_ActionMap.emplace(actionID, *copiedCmd);
-            copiedCmd->IDChanged({ actionMap.get(), &ActionMap::_CommandIDChangedHandler });
         }
 
         // Name --> Command
@@ -781,7 +780,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         }
                     }
                 }
-                cmd.IDChanged({ this, &ActionMap::_CommandIDChangedHandler });
+                cmdImpl->SetIDChangedCallback([this](const Model::Command senderCmd, const std::wstring_view oldID) {
+                    _CommandIDChangedHandler(senderCmd, winrt::hstring{ oldID });
+                });
                 _ActionMap.insert_or_assign(cmdID, cmd);
             }
         }
