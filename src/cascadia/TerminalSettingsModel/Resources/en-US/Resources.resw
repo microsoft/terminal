@@ -415,7 +415,7 @@
     <value>Clear all marks</value>
   </data>
   <data name="SendInputCommandKey" xml:space="preserve">
-    <value>Send Input: "{0}"</value>
+    <value>Send input: "{0}"</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>
   </data>
   <data name="SetColorSchemeCommandKey" xml:space="preserve">
