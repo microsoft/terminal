@@ -9,8 +9,6 @@
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
 
-#include "AllShortcutActions.h"
-
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
 #include <WtExeUtils.h>
