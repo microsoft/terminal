@@ -939,7 +939,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const IControlAppearance newAppearance{ focused ? _settings : _unfocusedAppearance };
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(newAppearance);
-        if (focused && _focusedColorSchemeOverride)
+        if ((focused || !_hasUnfocusedAppearance) && _focusedColorSchemeOverride)
         {
             _terminal->UpdateColorScheme(_focusedColorSchemeOverride);
         }
@@ -1038,7 +1038,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto lock = _terminal->LockForWriting();
         _focusedColorSchemeOverride = scheme;
 
-        _terminal->UpdateColorScheme(scheme ? scheme : _unfocusedAppearance.as<Core::ICoreScheme>());
+        _terminal->UpdateColorScheme(scheme ? scheme : _settings.as<Core::ICoreScheme>());
         _renderer->TriggerRedrawAll(true);
     }
 
