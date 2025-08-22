@@ -8,6 +8,7 @@
 #include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -668,33 +669,12 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
-#if 0
+                auto temporarySettings{ winrt::make_self<Settings::TerminalSettings>() };
+                temporarySettings->ApplyColorScheme(scheme);
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    // Start by getting the current settings of the control
-                    auto controlSettings = control.Settings().as<TerminalSettings>();
-                    auto parentSettings = controlSettings;
-                    // Those are the _runtime_ settings however. What we
-                    // need to do is:
-                    //
-                    //   1. Blow away any colors set in the runtime settings.
-                    //   2. Apply the color scheme to the parent settings.
-                    //
-                    // 1 is important to make sure that the effects of
-                    // something like `colortool` are cleared when setting
-                    // the scheme.
-                    if (controlSettings.GetParent() != nullptr)
-                    {
-                        parentSettings = controlSettings.GetParent();
-                    }
-
-                    // ApplyColorScheme(nullptr) will clear the old color scheme.
-                    controlSettings.ApplyColorScheme(nullptr);
-                    parentSettings.ApplyColorScheme(scheme);
-
-                    control.UpdateSettings();
+                    control.SetOverrideColorScheme(temporarySettings.try_as<winrt::Microsoft::Terminal::Core::ICoreScheme>());
                 });
                 args.Handled(res);
-#endif
             }
         }
     }
