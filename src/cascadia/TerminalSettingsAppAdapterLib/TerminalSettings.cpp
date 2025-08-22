@@ -89,7 +89,8 @@ namespace winrt::Microsoft::Terminal::Settings
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
         {
             const auto globals = appSettings.GlobalSettings();
-            child = settings->CreateChild();
+            child = winrt::make_self<TerminalSettings>();
+            child->_parent = settings->get_strong();
             child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
         }
 
@@ -450,9 +451,9 @@ namespace winrt::Microsoft::Terminal::Settings
         {
             return std::span{ *_ColorTable };
         }
-        for (auto&& parent : _parents)
+        if (_parent)
         {
-            auto parentSpan = parent->_getColorTableImpl();
+            auto parentSpan = _parent->_getColorTableImpl();
             if (parentSpan.size() > 0)
             {
                 return parentSpan;

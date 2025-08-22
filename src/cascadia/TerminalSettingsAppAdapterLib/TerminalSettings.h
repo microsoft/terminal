@@ -14,7 +14,6 @@ Author(s):
 --*/
 #pragma once
 
-#include <../TerminalSettingsModel/IInheritable.h>
 #include <../inc/ControlProperties.h>
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
@@ -31,12 +30,9 @@ public:                                               \
         {                                             \
             return *_##name;                          \
         }                                             \
-        for (const auto& parent : _parents)           \
+        if (_parent && _parent->_##name.has_value())  \
         {                                             \
-            if (parent->_##name.has_value())          \
-            {                                         \
-                return *parent->_##name;              \
-            }                                         \
+            return *_parent->_##name;                 \
         }                                             \
         return type{ __VA_ARGS__ };                   \
     }
@@ -50,8 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings
     struct TerminalSettingsCreateResult;
 
     struct TerminalSettings :
-        winrt::implements<TerminalSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Core::ICoreScheme, winrt::Microsoft::Terminal::Control::IControlAppearance>,
-        winrt::Microsoft::Terminal::Settings::Model::implementation::IInheritable<TerminalSettings>
+        winrt::implements<TerminalSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Core::ICoreScheme, winrt::Microsoft::Terminal::Control::IControlAppearance>
     {
         TerminalSettings() = default;
 
@@ -109,6 +104,8 @@ namespace winrt::Microsoft::Terminal::Settings
         void _ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
                                       const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes,
                                       const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
+
+        winrt::com_ptr<TerminalSettings> _parent;
     };
 
     struct TerminalSettingsCreateResult
