@@ -85,7 +85,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ID(const hstring& ID) noexcept;
         void GenerateID();
         bool IDWasGenerated();
-        void SetIDChangedCallback(std::function<void(const Model::Command, const std::wstring_view)> pfn) noexcept;
 
         IMediaResource Icon() const noexcept;
         void Icon(const IMediaResource& val);
@@ -109,7 +108,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<CommandNameOrResource> _name;
         std::wstring _ID;
         bool _IDWasGenerated{ false };
-        std::function<void(const Model::Command, const std::wstring_view)> _pfnIDChanged;
         std::optional<IMediaResource> _icon;
         bool _nestedCommand{ false };
 

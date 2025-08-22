@@ -780,9 +780,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         }
                     }
                 }
-                cmdImpl->SetIDChangedCallback([this](const Model::Command senderCmd, const std::wstring_view oldID) {
-                    _CommandIDChangedHandler(senderCmd, winrt::hstring{ oldID });
-                });
                 _ActionMap.insert_or_assign(cmdID, cmd);
             }
         }
@@ -813,45 +810,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
         _KeyMap.insert_or_assign(keys, id);
         _changeLog.emplace(KeysKey);
-    }
-
-    void ActionMap::_CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID)
-    {
-        const auto newID = senderCmd.ID();
-        if (newID != oldID)
-        {
-            if (const auto foundCmd{ _GetActionByID(newID) })
-            {
-                if (foundCmd.ActionAndArgs() != senderCmd.ActionAndArgs())
-                {
-                    // we found a command that has the same ID as this one, but that command has different ActionAndArgs
-                    // this means that foundCommand's action and/or args have been changed since its ID was generated,
-                    // generate a new one for it
-                    // Note: this is recursive! Found command's ID being changed lands us back in here to resolve any cascading collisions
-                    foundCmd.GenerateID();
-                }
-            }
-            // update _ActionMap with the ID change
-            _ActionMap.erase(oldID);
-            _ActionMap.emplace(newID, senderCmd);
-
-            // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
-            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
-            for (const auto& [keys, cmdID] : _KeyMap)
-            {
-                if (cmdID == oldID)
-                {
-                    keysToRemap.insert(keys);
-                }
-            }
-            for (const auto& keys : keysToRemap)
-            {
-                _KeyMap.erase(keys);
-                _KeyMap.emplace(keys, newID);
-            }
-            PropagateCommandIDChanged.raise(senderCmd, oldID);
-        }
-        _RefreshKeyBindingCaches();
     }
 
     // Method Description:
@@ -1246,6 +1204,53 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->ActionAndArgs(newAction);
         cmd->GenerateID();
         AddAction(*cmd, keys);
+    }
+
+    void ActionMap::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
+    {
+        const auto oldID = cmd.ID();
+        if (newID.empty())
+        {
+            // if the new ID is empty, that means we need to generate a new one
+            newID = winrt::get_self<implementation::ActionAndArgs>(cmd.ActionAndArgs())->GenerateID();
+        }
+        if (newID != oldID)
+        {
+            if (const auto foundCmd{ _GetActionByID(newID) })
+            {
+                const auto foundCmdActionAndArgs = foundCmd.ActionAndArgs();
+                if (foundCmdActionAndArgs != cmd.ActionAndArgs())
+                {
+                    // we found a command that has the same ID as this one, but that command has different ActionAndArgs
+                    // this means that foundCommand's action and/or args have been changed since its ID was generated,
+                    // generate a new one for it
+                    // Note: this is recursive! We're calling UpdateCommandID again wich lands us back in here to resolve any cascading collisions
+                    auto foundCmdNewID = winrt::get_self<implementation::ActionAndArgs>(foundCmdActionAndArgs)->GenerateID();
+                    UpdateCommandID(foundCmd, foundCmdNewID);
+                }
+            }
+            cmd.ID(newID);
+            // update _ActionMap with the ID change
+            _ActionMap.erase(oldID);
+            _ActionMap.emplace(newID, cmd);
+
+            // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
+            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
+            for (const auto& [keys, cmdID] : _KeyMap)
+            {
+                if (cmdID == oldID)
+                {
+                    keysToRemap.insert(keys);
+                }
+            }
+            for (const auto& keys : keysToRemap)
+            {
+                _KeyMap.erase(keys);
+                _KeyMap.emplace(keys, newID);
+            }
+            PropagateCommandIDChanged.raise(cmd, oldID);
+        }
+        _RefreshKeyBindingCaches();
     }
 
     // Look for a .wt.json file in the given directory. If it exists,
