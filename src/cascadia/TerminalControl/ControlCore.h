@@ -99,6 +99,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlAppearance UnfocusedAppearance() const;
         bool HasUnfocusedAppearance() const;
 
+        void PushPreviewColorScheme(const Core::ICoreScheme&);
+        void PopPreviewColorScheme();
+        void SetOverrideColorScheme(const Core::ICoreScheme&);
+
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
         uint64_t SwapChainHandle() const;
         void AttachToNewControl();
@@ -407,6 +411,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         IControlSettings _settings{ nullptr };
         bool _hasUnfocusedAppearance{ false };
         IControlAppearance _unfocusedAppearance{ nullptr };
+        Core::ICoreScheme _focusedColorSchemeOverride{ nullptr };
         til::point _contextMenuBufferPosition{ 0, 0 };
         Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
         ::Search _searcher;
@@ -417,6 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
+        std::unique_ptr<std::array<COLORREF, TextColor::TABLE_SIZE + 2>> _stashedColorScheme;
 
         // ----------------------------------------------------------------------------------------
         // These are ordered last to ensure they're destroyed first.

@@ -939,6 +939,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const IControlAppearance newAppearance{ focused ? _settings : _unfocusedAppearance };
         // Update the terminal core with its new Core settings
         _terminal->UpdateAppearance(newAppearance);
+        if (focused && _focusedColorSchemeOverride)
+        {
+            _terminal->UpdateColorScheme(_focusedColorSchemeOverride);
+        }
 
         // Update AtlasEngine settings under the lock
         if (_renderEngine)
@@ -992,6 +996,50 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::IControlAppearance ControlCore::UnfocusedAppearance() const
     {
         return _unfocusedAppearance;
+    }
+
+    void ControlCore::PushPreviewColorScheme(const Core::ICoreScheme& scheme)
+    {
+        const auto lock = _terminal->LockForReading();
+        auto& renderSettings = _terminal->GetRenderSettings();
+        if (!_stashedColorScheme)
+        {
+            _stashedColorScheme = std::make_unique_for_overwrite<decltype(_stashedColorScheme)::element_type>();
+            decltype(auto) scheme{ *_stashedColorScheme.get() };
+            const auto& table{ renderSettings.GetColorTable() };
+            std::copy_n(std::begin(table), TextColor::TABLE_SIZE, std::begin(scheme));
+            til::at(scheme, TextColor::TABLE_SIZE) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+            til::at(scheme, TextColor::TABLE_SIZE + 1) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+        }
+        _terminal->UpdateColorScheme(scheme);
+        _renderer->TriggerRedrawAll(true);
+    }
+
+    void ControlCore::PopPreviewColorScheme()
+    {
+        if (_stashedColorScheme)
+        {
+            const auto lock = _terminal->LockForWriting();
+            auto& renderSettings = _terminal->GetRenderSettings();
+            decltype(auto) scheme{ *_stashedColorScheme.get() };
+            for (size_t i = 0; i < TextColor::TABLE_SIZE; ++i)
+            {
+                renderSettings.SetColorTableEntry(i, til::at(scheme, i));
+            }
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, static_cast<size_t>(til::at(scheme, TextColor::TABLE_SIZE)));
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, static_cast<size_t>(til::at(scheme, TextColor::TABLE_SIZE + 1)));
+            _renderer->TriggerRedrawAll(true);
+        }
+        _stashedColorScheme.reset();
+    }
+
+    void ControlCore::SetOverrideColorScheme(const Core::ICoreScheme& scheme)
+    {
+        const auto lock = _terminal->LockForWriting();
+        _focusedColorSchemeOverride = scheme;
+
+        _terminal->UpdateColorScheme(scheme ? scheme : _unfocusedAppearance.as<Core::ICoreScheme>());
+        _renderer->TriggerRedrawAll(true);
     }
 
     void ControlCore::_updateAntiAliasingMode()

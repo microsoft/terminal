@@ -194,6 +194,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::CursorDisplayState CursorVisibility() const noexcept;
         void CursorVisibility(Control::CursorDisplayState cursorVisibility);
 
+        void PushPreviewColorScheme(const Core::ICoreScheme& scheme) { _core.PushPreviewColorScheme(scheme); }
+        void PopPreviewColorScheme() { _core.PopPreviewColorScheme(); }
+        void SetOverrideColorScheme(const Core::ICoreScheme& scheme) { _core.SetOverrideColorScheme(scheme); }
+
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         til::property_changed_event PropertyChanged;
