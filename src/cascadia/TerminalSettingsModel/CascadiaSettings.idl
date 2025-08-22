@@ -5,7 +5,6 @@ import "GlobalAppSettings.idl";
 import "Profile.idl";
 import "TerminalWarnings.idl";
 import "DefaultTerminal.idl";
-import "ActionArgs.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {

@@ -47,5 +47,6 @@ namespace Microsoft.Terminal.Settings.Model
         void AddKeyBinding(Microsoft.Terminal.Control.KeyChord keys, String cmdID);
         void RegisterKeyBinding(Microsoft.Terminal.Control.KeyChord keys, ActionAndArgs action);
         void AddSendInputAction(String name, String input, Microsoft.Terminal.Control.KeyChord keys);
+        void UpdateCommandID(Command cmd, String newID);
     }
 }

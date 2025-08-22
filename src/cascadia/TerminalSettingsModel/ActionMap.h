@@ -95,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
         void DeleteUserCommand(const winrt::hstring& cmdID);
         void AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys);
+        void UpdateCommandID(const Model::Command& cmd, winrt::hstring newID);
 
         Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
@@ -123,8 +124,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateKeyChord(const Model::Command& cmd, const Control::KeyChord& keys);
 
         static std::unordered_map<hstring, Model::Command> _loadLocalSnippets(const std::filesystem::path& currentWorkingDirectory);
-
-        void _CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };

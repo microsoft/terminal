@@ -214,9 +214,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void Command::ID(const hstring& ID) noexcept
     {
-        const auto oldID = _ID;
         _ID = ID;
-        IDChanged.raise(*this, oldID);
     }
 
     void Command::GenerateID()

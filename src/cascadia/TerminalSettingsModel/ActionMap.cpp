@@ -187,16 +187,97 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     Model::IActionArgs ActionArgFactory::GetEmptyArgsForAction(Model::ShortcutAction shortcutAction)
     {
+        // TODO: GH 19056 - we cannot cleanly macro this because of some special cases (SplitPaneArgs, NewTabArgs, NewWindowArgs)
+        // where we initialize a NewTerminalArgs object to pass in to them because the settings UI cannot currently handle
+        // a ContentArgs object that is not a NewTerminalArgs
         switch (shortcutAction)
         {
-#define ON_ALL_ACTIONS_WITH_ARGS(name) \
-    case Model::ShortcutAction::name:  \
-        return winrt::make<name##Args>();
-
-            ALL_SHORTCUT_ACTIONS_WITH_ARGS
-
-#undef ON_ALL_ACTIONS_WITH_ARGS
-
+        case Model::ShortcutAction::AdjustFontSize:
+            return winrt::make<AdjustFontSizeArgs>();
+        case Model::ShortcutAction::CloseOtherTabs:
+            return winrt::make<CloseOtherTabsArgs>();
+        case Model::ShortcutAction::CloseTabsAfter:
+            return winrt::make<CloseTabsAfterArgs>();
+        case Model::ShortcutAction::CloseTab:
+            return winrt::make<CloseTabArgs>();
+        case Model::ShortcutAction::CopyText:
+            return winrt::make<CopyTextArgs>();
+        case Model::ShortcutAction::ExecuteCommandline:
+            return winrt::make<ExecuteCommandlineArgs>();
+        case Model::ShortcutAction::FindMatch:
+            return winrt::make<FindMatchArgs>();
+        case Model::ShortcutAction::SearchForText:
+            return winrt::make<SearchForTextArgs>();
+        case Model::ShortcutAction::GlobalSummon:
+            return winrt::make<GlobalSummonArgs>();
+        case Model::ShortcutAction::MoveFocus:
+            return winrt::make<MoveFocusArgs>();
+        case Model::ShortcutAction::MovePane:
+            return winrt::make<MovePaneArgs>();
+        case Model::ShortcutAction::SwapPane:
+            return winrt::make<SwapPaneArgs>();
+        case Model::ShortcutAction::MoveTab:
+            return winrt::make<MoveTabArgs>();
+        case Model::ShortcutAction::NewTab:
+            return winrt::make<NewTabArgs>(Model::NewTerminalArgs{});
+        case Model::ShortcutAction::NewWindow:
+            return winrt::make<NewWindowArgs>(Model::NewTerminalArgs{});
+        case Model::ShortcutAction::NextTab:
+            return winrt::make<NextTabArgs>();
+        case Model::ShortcutAction::OpenSettings:
+            return winrt::make<OpenSettingsArgs>();
+        case Model::ShortcutAction::SetFocusMode:
+            return winrt::make<SetFocusModeArgs>();
+        case Model::ShortcutAction::SetFullScreen:
+            return winrt::make<SetFullScreenArgs>();
+        case Model::ShortcutAction::SetMaximized:
+            return winrt::make<SetMaximizedArgs>();
+        case Model::ShortcutAction::PrevTab:
+            return winrt::make<PrevTabArgs>();
+        case Model::ShortcutAction::RenameTab:
+            return winrt::make<RenameTabArgs>();
+        case Model::ShortcutAction::RenameWindow:
+            return winrt::make<RenameWindowArgs>();
+        case Model::ShortcutAction::ResizePane:
+            return winrt::make<ResizePaneArgs>();
+        case Model::ShortcutAction::ScrollDown:
+            return winrt::make<ScrollDownArgs>();
+        case Model::ShortcutAction::ScrollUp:
+            return winrt::make<ScrollUpArgs>();
+        case Model::ShortcutAction::ScrollToMark:
+            return winrt::make<ScrollToMarkArgs>();
+        case Model::ShortcutAction::AddMark:
+            return winrt::make<AddMarkArgs>();
+        case Model::ShortcutAction::SendInput:
+            return winrt::make<SendInputArgs>();
+        case Model::ShortcutAction::SetColorScheme:
+            return winrt::make<SetColorSchemeArgs>();
+        case Model::ShortcutAction::SetTabColor:
+            return winrt::make<SetTabColorArgs>();
+        case Model::ShortcutAction::SplitPane:
+            return winrt::make<SplitPaneArgs>(SplitDirection::Automatic, Model::NewTerminalArgs{});
+        case Model::ShortcutAction::SwitchToTab:
+            return winrt::make<SwitchToTabArgs>();
+        case Model::ShortcutAction::ToggleCommandPalette:
+            return winrt::make<ToggleCommandPaletteArgs>();
+        case Model::ShortcutAction::FocusPane:
+            return winrt::make<FocusPaneArgs>();
+        case Model::ShortcutAction::ExportBuffer:
+            return winrt::make<ExportBufferArgs>();
+        case Model::ShortcutAction::ClearBuffer:
+            return winrt::make<ClearBufferArgs>();
+        case Model::ShortcutAction::MultipleActions:
+            return winrt::make<MultipleActionsArgs>();
+        case Model::ShortcutAction::AdjustOpacity:
+            return winrt::make<AdjustOpacityArgs>();
+        case Model::ShortcutAction::Suggestions:
+            return winrt::make<SuggestionsArgs>();
+        case Model::ShortcutAction::SelectCommand:
+            return winrt::make<SelectCommandArgs>();
+        case Model::ShortcutAction::SelectOutput:
+            return winrt::make<SelectOutputArgs>();
+        case Model::ShortcutAction::ColorSelection:
+            return winrt::make<ColorSelectionArgs>();
         default:
             return nullptr;
         }
@@ -580,7 +661,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             const auto copiedCmd = winrt::get_self<Command>(cmd)->Copy();
             actionMap->_ActionMap.emplace(actionID, *copiedCmd);
-            copiedCmd->IDChanged({ actionMap.get(), &ActionMap::_CommandIDChangedHandler });
         }
 
         // Name --> Command
@@ -700,7 +780,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         }
                     }
                 }
-                cmd.IDChanged({ this, &ActionMap::_CommandIDChangedHandler });
                 _ActionMap.insert_or_assign(cmdID, cmd);
             }
         }
@@ -731,45 +810,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto id = action == ShortcutAction::Invalid ? hstring{} : cmd.ID();
         _KeyMap.insert_or_assign(keys, id);
         _changeLog.emplace(KeysKey);
-    }
-
-    void ActionMap::_CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID)
-    {
-        const auto newID = senderCmd.ID();
-        if (newID != oldID)
-        {
-            if (const auto foundCmd{ _GetActionByID(newID) })
-            {
-                if (foundCmd.ActionAndArgs() != senderCmd.ActionAndArgs())
-                {
-                    // we found a command that has the same ID as this one, but that command has different ActionAndArgs
-                    // this means that foundCommand's action and/or args have been changed since its ID was generated,
-                    // generate a new one for it
-                    // Note: this is recursive! Found command's ID being changed lands us back in here to resolve any cascading collisions
-                    foundCmd.GenerateID();
-                }
-            }
-            // update _ActionMap with the ID change
-            _ActionMap.erase(oldID);
-            _ActionMap.emplace(newID, senderCmd);
-
-            // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
-            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
-            for (const auto& [keys, cmdID] : _KeyMap)
-            {
-                if (cmdID == oldID)
-                {
-                    keysToRemap.insert(keys);
-                }
-            }
-            for (const auto& keys : keysToRemap)
-            {
-                _KeyMap.erase(keys);
-                _KeyMap.emplace(keys, newID);
-            }
-            PropagateCommandIDChanged.raise(senderCmd, oldID);
-        }
-        _RefreshKeyBindingCaches();
     }
 
     // Method Description:
@@ -1164,6 +1204,53 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         cmd->ActionAndArgs(newAction);
         cmd->GenerateID();
         AddAction(*cmd, keys);
+    }
+
+    void ActionMap::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
+    {
+        const auto oldID = cmd.ID();
+        if (newID.empty())
+        {
+            // if the new ID is empty, that means we need to generate a new one
+            newID = winrt::get_self<implementation::ActionAndArgs>(cmd.ActionAndArgs())->GenerateID();
+        }
+        if (newID != oldID)
+        {
+            if (const auto foundCmd{ _GetActionByID(newID) })
+            {
+                const auto foundCmdActionAndArgs = foundCmd.ActionAndArgs();
+                if (foundCmdActionAndArgs != cmd.ActionAndArgs())
+                {
+                    // we found a command that has the same ID as this one, but that command has different ActionAndArgs
+                    // this means that foundCommand's action and/or args have been changed since its ID was generated,
+                    // generate a new one for it
+                    // Note: this is recursive! We're calling UpdateCommandID again wich lands us back in here to resolve any cascading collisions
+                    auto foundCmdNewID = winrt::get_self<implementation::ActionAndArgs>(foundCmdActionAndArgs)->GenerateID();
+                    UpdateCommandID(foundCmd, foundCmdNewID);
+                }
+            }
+            cmd.ID(newID);
+            // update _ActionMap with the ID change
+            _ActionMap.erase(oldID);
+            _ActionMap.emplace(newID, cmd);
+
+            // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
+            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
+            for (const auto& [keys, cmdID] : _KeyMap)
+            {
+                if (cmdID == oldID)
+                {
+                    keysToRemap.insert(keys);
+                }
+            }
+            for (const auto& keys : keysToRemap)
+            {
+                _KeyMap.erase(keys);
+                _KeyMap.emplace(keys, newID);
+            }
+            PropagateCommandIDChanged.raise(cmd, oldID);
+        }
+        _RefreshKeyBindingCaches();
     }
 
     // Look for a .wt.json file in the given directory. If it exists,

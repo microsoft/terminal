@@ -102,9 +102,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(OriginTag, Origin);
         WINRT_PROPERTY(winrt::hstring, Description, L"");
 
-    public:
-        til::typed_event<Model::Command, winrt::hstring> IDChanged;
-
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
