@@ -152,6 +152,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void AttemptAddOrModifyKeyChord(KeyChordViewModel senderVM, String commandID, Microsoft.Terminal.Control.KeyChord newKeys, Microsoft.Terminal.Control.KeyChord oldKeys);
         void AttemptDeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
         void AttemptAddCopiedCommand(Microsoft.Terminal.Settings.Model.Command newCommand);
+        void AttemptRegenerateCommandID(Microsoft.Terminal.Settings.Model.Command command);
 
         IObservableVector<CommandViewModel> CommandList { get; };
         void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);

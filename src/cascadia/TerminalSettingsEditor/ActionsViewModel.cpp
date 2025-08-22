@@ -266,7 +266,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _command.ActionAndArgs(newActionAndArgs);
                     if (_IsNewCommand)
                     {
-                        _command.GenerateID();
+                        actionsPageVM.AttemptRegenerateCommandID(_command);
                     }
                     else if (!IsUserAction())
                     {
@@ -447,7 +447,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // for new commands, make sure we generate a new ID every time any arg value changes
                 if (weak->_IsNewCommand)
                 {
-                    weak->_command.GenerateID();
+                    if (const auto actionsPageVM{ weak->_actionsPageVM.get() })
+                    {
+                        actionsPageVM.AttemptRegenerateCommandID(weak->_command);
+                    }
                 }
                 else if (!weak->IsUserAction())
                 {
@@ -1257,6 +1260,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // newCommand is a copy of the in-box action that was edited, but with OriginTag::User
         // add it to the action map
         _Settings.ActionMap().AddAction(newCommand, nullptr);
+    }
+
+    void ActionsViewModel::AttemptRegenerateCommandID(const Model::Command& command)
+    {
+        _Settings.ActionMap().UpdateCommandID(command, {});
     }
 
     void ActionsViewModel::_CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& /*args*/)
