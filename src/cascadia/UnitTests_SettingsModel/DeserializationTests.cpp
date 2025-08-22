@@ -1788,16 +1788,18 @@ namespace SettingsModelUnitTests
             "profiles":
             {
                 "defaults": {
-                    "name": "PROFILE DEFAULTS"
+                    "tabTitle": "PROFILE DEFAULTS TAB TITLE"
                 },
                 "list": [
                     {
                         "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
-                        "name": "CMD"
+                        "name": "CMD",
+                        "tabTitle": "CMD Tab Title"
                     },
                     {
                         "guid": "{61c54bbd-2222-5271-96e7-009a87ff44bf}",
-                        "name": "PowerShell"
+                        "name": "PowerShell",
+                        "tabTitle": "PowerShell Tab Title"
                     },
                     {
                         "guid": "{61c54bbd-3333-5271-96e7-009a87ff44bf}"
@@ -1816,25 +1818,30 @@ namespace SettingsModelUnitTests
         // test profiles
         VERIFY_ARE_EQUAL(settings->AllProfiles().Size(), copyImpl->AllProfiles().Size());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).Name(), copyImpl->AllProfiles().GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).TabTitle(), copyImpl->AllProfiles().GetAt(0).TabTitle());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).Name(), copyImpl->AllProfiles().GetAt(1).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).TabTitle(), copyImpl->AllProfiles().GetAt(1).TabTitle());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(2).Name(), copyImpl->AllProfiles().GetAt(2).Name());
-        VERIFY_ARE_EQUAL(settings->ProfileDefaults().Name(), copyImpl->ProfileDefaults().Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(2).TabTitle(), copyImpl->AllProfiles().GetAt(2).TabTitle());
+        VERIFY_ARE_EQUAL(settings->ProfileDefaults().TabTitle(), copyImpl->ProfileDefaults().TabTitle());
 
         // Modifying profile.defaults should...
-        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasName(), copyImpl->ProfileDefaults().HasName());
-        copyImpl->ProfileDefaults().Name(L"changed value");
+        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasTabTitle(), copyImpl->ProfileDefaults().HasTabTitle());
+        copyImpl->ProfileDefaults().TabTitle(L"changed value");
 
-        // ...keep the same name for the first two profiles
+        // ...keep the same name and tab title for the first two profiles
         VERIFY_ARE_EQUAL(settings->AllProfiles().Size(), copyImpl->AllProfiles().Size());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).Name(), copyImpl->AllProfiles().GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).TabTitle(), copyImpl->AllProfiles().GetAt(0).TabTitle());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).Name(), copyImpl->AllProfiles().GetAt(1).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).TabTitle(), copyImpl->AllProfiles().GetAt(1).TabTitle());
 
         // ...but change the name for the one that inherited it from profile.defaults
-        VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(2).Name(), copyImpl->AllProfiles().GetAt(2).Name());
+        VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(2).TabTitle(), copyImpl->AllProfiles().GetAt(2).TabTitle());
 
         // profile.defaults should be different between the two graphs
-        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasName(), copyImpl->ProfileDefaults().HasName());
-        VERIFY_ARE_NOT_EQUAL(settings->ProfileDefaults().Name(), copyImpl->ProfileDefaults().Name());
+        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasTabTitle(), copyImpl->ProfileDefaults().HasTabTitle());
+        VERIFY_ARE_NOT_EQUAL(settings->ProfileDefaults().TabTitle(), copyImpl->ProfileDefaults().TabTitle());
 
         Log::Comment(L"Test empty profiles.defaults");
         static constexpr std::string_view emptyPDJson{ R"(
