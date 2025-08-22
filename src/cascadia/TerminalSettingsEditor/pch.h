@@ -20,10 +20,6 @@
 #undef GetCurrentTime
 #endif
 
-#include <TraceLoggingProvider.h>
-TRACELOGGING_DECLARE_PROVIDER(g_hSettingsEditorProvider);
-#include <telemetry/ProjectTelemetry.h>
-
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -60,6 +56,13 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsEditorProvider);
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.UI.h>
+
+// Including TraceLogging essentials for the binary
+#include <TraceLoggingProvider.h>
+#include <winmeta.h>
+TRACELOGGING_DECLARE_PROVIDER(g_hTerminalSettingsEditorProvider);
+#include <telemetry/ProjectTelemetry.h>
+#include <TraceLoggingActivity.h>
 
 #include <shlobj.h>
 #include <shobjidl_core.h>

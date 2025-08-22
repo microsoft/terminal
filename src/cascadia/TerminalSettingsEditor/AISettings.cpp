@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel = e.Parameter().as<Editor::AISettingsViewModel>();
 
         TraceLoggingWrite(
-            g_hSettingsEditorProvider,
+            g_hTerminalSettingsEditorProvider,
             "AISettingsPageOpened",
             TraceLoggingDescription("Event emitted when the user navigates to the AI Settings page"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
@@ -102,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             AzureOpenAIKeyInputBox().Password(winrt::hstring{});
 
             TraceLoggingWrite(
-                g_hSettingsEditorProvider,
+                g_hTerminalSettingsEditorProvider,
                 "AzureOpenAIEndpointAndKeySaved",
                 TraceLoggingDescription("Event emitted when the user stores an Azure OpenAI key and endpoint"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             OpenAIKeyInputBox().Password(winrt::hstring{});
 
             TraceLoggingWrite(
-                g_hSettingsEditorProvider,
+                g_hTerminalSettingsEditorProvider,
                 "OpenAIEndpointAndKeySaved",
                 TraceLoggingDescription("Event emitted when the user stores an OpenAI key and endpoint"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),

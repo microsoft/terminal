@@ -29,11 +29,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AddProfile::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::AddProfilePageNavigationState>();
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue("addProfile", "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void AddProfile::AddNewClick(const IInspectable& /*sender*/,
                                  const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
     {
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "AddNewProfile",
+            TraceLoggingDescription("Event emitted when the user adds a new profile"),
+            TraceLoggingValue("EmptyProfile", "Type", "The type of the creation method (i.e. empty profile, duplicate)"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         _State.RequestAddNew();
     }
 
@@ -42,7 +58,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto selected = Profiles().SelectedItem())
         {
-            _State.RequestDuplicate(selected.try_as<Model::Profile>().Guid());
+            const auto selectedProfile = selected.as<Model::Profile>();
+            TraceLoggingWrite(
+                g_hTerminalSettingsEditorProvider,
+                "AddNewProfile",
+                TraceLoggingDescription("Event emitted when the user adds a new profile"),
+                TraceLoggingValue("Duplicate", "Type", "The type of the creation method (i.e. empty profile, duplicate)"),
+                TraceLoggingValue(!selectedProfile.Source().empty(), "SourceProfileHasSource", "True, if the source profile has a source (i.e. dynamic profile generator namespace, fragment). Otherwise, False, indicating it's based on a custom profile."),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+            _State.RequestDuplicate(selectedProfile.Guid());
         }
     }
 

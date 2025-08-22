@@ -181,7 +181,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"GithubCopilotAuthMessage");
         GithubAuthRequested.raise(nullptr, nullptr);
         TraceLoggingWrite(
-            g_hSettingsEditorProvider,
+            g_hTerminalSettingsEditorProvider,
             "GithubAuthInitiated",
             TraceLoggingDescription("Event emitted when the user clicks the button to initiate the GitHub auth flow"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_CRITICAL_DATA),
