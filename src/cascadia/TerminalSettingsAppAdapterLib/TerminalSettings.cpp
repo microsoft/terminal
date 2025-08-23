@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
+#include "winrt/Windows.UI.ViewManagement.h"
 #include "../../types/inc/colorTable.hpp"
 
 using namespace winrt::Microsoft::Terminal::Control;

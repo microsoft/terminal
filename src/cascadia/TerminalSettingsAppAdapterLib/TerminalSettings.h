@@ -37,6 +37,13 @@ public:                                               \
         return type{ __VA_ARGS__ };                   \
     }
 
+#ifdef UNIT_TESTING
+namespace SettingsModelUnitTests
+{
+    class TerminalSettingsTests;
+}
+#endif
+
 namespace winrt::Microsoft::Terminal::Settings
 {
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
@@ -106,6 +113,10 @@ namespace winrt::Microsoft::Terminal::Settings
                                       const winrt::Microsoft::Terminal::Settings::Model::Theme currentTheme);
 
         winrt::com_ptr<TerminalSettings> _parent;
+
+#ifdef UNIT_TESTING
+        friend class SettingsModelUnitTests::TerminalSettingsTests;
+#endif
     };
 
     struct TerminalSettingsCreateResult
