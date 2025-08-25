@@ -66,7 +66,6 @@ namespace TerminalAppLocalTests
         // can help you identify if something much lower in the stack has
         // failed.
         TEST_METHOD(EnsureTestsActivate);
-        TEST_METHOD(TryCreateSettingsType);
         TEST_METHOD(TryCreateConnectionType);
         TEST_METHOD(TryCreateXamlObjects);
 
@@ -131,23 +130,12 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(true);
     }
 
-    void TabTests::TryCreateSettingsType()
-    {
-        // Verify we can create a WinRT type we authored
-        // Just creating it is enough to know that everything is working.
-        TerminalSettings settings;
-        VERIFY_IS_NOT_NULL(settings);
-    }
-
     void TabTests::TryCreateConnectionType()
     {
         // Verify we can create a WinRT type we authored
         // Just creating it is enough to know that everything is working.
         winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
         VERIFY_IS_NOT_NULL(conn);
-        // We're doing this test separately from the TryCreateSettingsType test,
-        // to ensure both dependent binaries (TerminalSettings and
-        // TerminalConnection) both work individually.
     }
 
     void TabTests::TryCreateXamlObjects()

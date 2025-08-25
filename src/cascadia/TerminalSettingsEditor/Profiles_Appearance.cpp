@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!_previewControl)
         {
-            const auto settings = _Profile.TermSettings();
+            const auto settings = winrt::get_self<implementation::ProfileViewModel>(_Profile)->TermSettings();
             _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
             _previewControl = Control::TermControl(settings, settings, *_previewConnection);
             _previewControl.IsEnabled(false);
@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     .trailing = true,
                 },
                 [this]() {
-                    const auto settings = _Profile.TermSettings();
+                    const auto settings = winrt::get_self<implementation::ProfileViewModel>(_Profile)->TermSettings();
                     _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
                     _previewControl.UpdateControlSettings(settings, settings);
                 });

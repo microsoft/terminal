@@ -50,8 +50,6 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
 
-        Microsoft.Terminal.Core.Scheme ColorScheme { get; set; };
-
         UInt64 OwningHwnd;
 
         void AddMark(ScrollMark mark);

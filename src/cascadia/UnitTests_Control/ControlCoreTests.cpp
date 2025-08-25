@@ -152,14 +152,14 @@ namespace ControlUnitTests
             if (expectedOpacity < 1.0f)
             {
                 VERIFY_IS_TRUE(settings->UseAcrylic());
-                VERIFY_IS_TRUE(core->_settings->UseAcrylic());
+                VERIFY_IS_TRUE(core->_settings.UseAcrylic());
             }
 
             // GH#603: Adjusting opacity shouldn't change whether or not we
             // requested acrylic.
 
             auto expectedUseAcrylic = expectedOpacity < 1.0f;
-            VERIFY_IS_TRUE(core->_settings->UseAcrylic());
+            VERIFY_IS_TRUE(core->_settings.UseAcrylic());
             VERIFY_ARE_EQUAL(expectedUseAcrylic, core->UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
