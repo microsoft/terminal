@@ -344,6 +344,8 @@ namespace winrt::TerminalApp::implementation
         {
             const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
 
+            _tabItemMiddleClickHookEnabled = visibility == Settings::Model::TabCloseButtonVisibility::Never;
+
             switch (visibility)
             {
             case Settings::Model::TabCloseButtonVisibility::Never:
@@ -3807,6 +3809,8 @@ namespace winrt::TerminalApp::implementation
         const auto visibility = (theme && theme.Tab()) ?
                                     theme.Tab().ShowCloseButton() :
                                     Settings::Model::TabCloseButtonVisibility::Always;
+
+        _tabItemMiddleClickHookEnabled = visibility == Settings::Model::TabCloseButtonVisibility::Never;
 
         for (const auto& tab : _tabs)
         {
