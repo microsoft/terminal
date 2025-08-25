@@ -45,7 +45,125 @@ The standard ensures that color codes work consistently across different termina
 
 ### Standard 8 Colors (3-bit color)
 
-- **Windows Terminal Source Code**: https://github.com/microsoft/terminal
+| Color Index | ANSI Code | Color Name | Windows Terminal Name | Plain Language |
+|-------------|-----------|------------|----------------------|----------------|
+| 0 | 30 / 40 | Black | `black` | Black |
+| 1 | 31 / 41 | Red | `red` | Red |
+| 2 | 32 / 42 | Green | `green` | Green |
+| 3 | 33 / 43 | Yellow | `yellow` | Yellow |
+| 4 | 34 / 44 | Blue | `blue` | Blue |
+| 5 | 35 / 45 | Magenta | `purple` | Purple/Magenta |
+| 6 | 36 / 46 | Cyan | `cyan` | Cyan/Light Blue |
+| 7 | 37 / 47 | White | `white` | Light Gray |
+
+**Note**: ANSI codes 30-37 are for foreground (text color), 40-47 are for background.
+
+### Bright Colors (4-bit color extension)
+
+| Color Index | ANSI Code | Color Name | Windows Terminal Name | Plain Language |
+|-------------|-----------|------------|----------------------|----------------|
+| 8 | 90 / 100 | Bright Black | `brightBlack` | Dark Gray |
+| 9 | 91 / 101 | Bright Red | `brightRed` | Bright Red |
+| 10 | 92 / 102 | Bright Green | `brightGreen` | Bright Green |
+| 11 | 93 / 103 | Bright Yellow | `brightYellow` | Bright Yellow |
+| 12 | 94 / 104 | Bright Blue | `brightBlue` | Bright Blue |
+| 13 | 95 / 105 | Bright Magenta | `brightPurple` | Bright Purple |
+| 14 | 96 / 106 | Bright Cyan | `brightCyan` | Bright Cyan |
+| 15 | 97 / 107 | Bright White | `brightWhite` | White |
+
+**Note**: ANSI codes 90-97 are for bright foreground, 100-107 are for bright background.
+
+---
+
+## Confusing Terms Explained
+
+### "Bright Black" vs "Black"
+
+- **Black (Index 0)**: True black `#000000`
+- **Bright Black (Index 8)**: Actually **dark gray** `#808080`
+
+### "Purple" vs "Magenta"
+
+- Windows Terminal uses `purple` in configuration files
+- The ANSI standard calls it "magenta"
+- **They refer to the same color** (Index 5)
+
+### "White" vs "Bright White"
+
+- **White (Index 7)**: Actually **light gray**
+- **Bright White (Index 15)**: True white `#FFFFFF`
+
+---
+
+## Practical Examples
+
+### Basic ANSI Escape Sequences
+
+```bash
+# Red text
+echo -e "\033[31mRed text\033[0m"
+
+# Blue background
+echo -e "\033[44mBlue background\033[0m"
+
+# Bright green text
+echo -e "\033[92mBright green text\033[0m"
+
+# Reset to default
+echo -e "\033[0mBack to normal"
+```
+
+### Windows Terminal JSON Configuration
+
+```json
+{
+    "name": "Custom Color Scheme",
+    "foreground": "#CCCCCC",
+    "background": "#0C0C0C",
+    "black": "#0C0C0C",
+    "red": "#C50F1F",
+    "green": "#13A10E",
+    "yellow": "#C19C00",
+    "blue": "#0037DA",
+    "purple": "#881798",
+    "cyan": "#3A96DD",
+    "white": "#CCCCCC",
+    "brightBlack": "#767676",
+    "brightRed": "#E74856",
+    "brightGreen": "#16C60C",
+    "brightYellow": "#F9F1A5",
+    "brightBlue": "#3B78FF",
+    "brightPurple": "#B4009E",
+    "brightCyan": "#61D6D6",
+    "brightWhite": "#F2F2F2"
+}
+```
+
+---
+
+## Extended Color Support
+
+### 256-Color Mode (8-bit color)
+
+- **Colors 0-15**: Same as the 16-color palette above
+- **Colors 16-231**: 216 colors in a 6×6×6 RGB cube
+- **Colors 232-255**: 24 grayscale colors
+
+**Usage**: `\033[38;5;COLORm` for foreground, `\033[48;5;COLORm` for background
+
+### True Color Mode (24-bit color)
+
+**Usage**: `\033[38;2;R;G;Bm` for foreground, `\033[48;2;R;G;Bm` for background
+
+**Example**:
+```bash
+# Orange text (RGB: 255, 165, 0)
+echo -e "\033[38;2;255;165;0mOrange text\033[0m"
+```
+
+---
+
+## Additional Resources
 
 ### Standards and Specifications:
 
@@ -83,7 +201,7 @@ Windows Terminal implements the **ECMA-48 standard** for color control, providin
 ✅ **Beginner-friendly** configuration through GUI settings  
 ✅ **Advanced customization** through JSON configuration  
 
-### Key Takeaways for Issue #2641:
+### Key Points for Issue #2641:
 
 1. **Terminology clarity**: ANSI colors = ECMA-48 colors
 2. **Simple mapping**: Use the tables above for quick reference
