@@ -459,12 +459,12 @@ void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
     }
 }
 
-void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, const winrt::hstring& newID)
+void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
 {
     const auto oldID = cmd.ID();
     _actionMap->UpdateCommandID(cmd, newID);
     // newID might have been empty when this function was called, if so actionMap would have generated a new ID, use that
-    const auto updatedID = newID.empty() ? cmd.ID() : newID;
+    newID = cmd.ID();
     if (_NewTabMenu)
     {
         // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
@@ -476,7 +476,7 @@ void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, const winrt::
                 {
                     if (actionEntry.ActionId() == oldID)
                     {
-                        actionEntry.ActionId(updatedID);
+                        actionEntry.ActionId(newID);
                     }
                 }
             }
