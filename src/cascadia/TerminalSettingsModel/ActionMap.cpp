@@ -1229,18 +1229,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     UpdateCommandID(foundCmd, foundCmdNewID);
                 }
             }
-            cmd.ID(newID);
+            winrt::get_self<implementation::Command>(cmd)->ID(newID);
             // update _ActionMap with the ID change
             _ActionMap.erase(oldID);
             _ActionMap.emplace(newID, cmd);
 
             // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
-            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
+            std::vector<KeyChord> keysToRemap;
             for (const auto& [keys, cmdID] : _KeyMap)
             {
                 if (cmdID == oldID)
                 {
-                    keysToRemap.insert(keys);
+                    keysToRemap.push_back(keys);
                 }
             }
             for (const auto& keys : keysToRemap)
@@ -1248,7 +1248,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 _KeyMap.erase(keys);
                 _KeyMap.emplace(keys, newID);
             }
-            PropagateCommandIDChanged.raise(cmd, oldID);
         }
         _RefreshKeyBindingCaches();
     }

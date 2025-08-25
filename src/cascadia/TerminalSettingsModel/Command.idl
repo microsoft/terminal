@@ -41,7 +41,7 @@ namespace Microsoft.Terminal.Settings.Model
         String Name;
         Boolean HasName();
         String LanguageNeutralName { get; };
-        String ID;
+        String ID { get; };
         void GenerateID();
 
         String Description { get; };

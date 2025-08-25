@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::ColorScheme DuplicateColorScheme(const Model::ColorScheme& scheme);
 
         Model::ActionMap ActionMap() const noexcept;
+        void UpdateCommandID(const Model::Command& cmd, const winrt::hstring& newID);
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
         void LayerJson(const Json::Value& json, const OriginTag origin);
@@ -103,8 +104,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ColorScheme> _colorSchemes{ winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>() };
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Theme> _themes{ winrt::single_threaded_map<winrt::hstring, Model::Theme>() };
-
-        void _CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID);
 
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);

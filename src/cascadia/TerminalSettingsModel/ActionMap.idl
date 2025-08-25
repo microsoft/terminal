@@ -34,8 +34,6 @@ namespace Microsoft.Terminal.Settings.Model
         IVector<Command> ExpandedCommands { get; };
 
         Windows.Foundation.IAsyncOperation<IVector<Command> > FilterToSnippets(String CurrentCommandline, String CurrentWorkingDirectory);
-
-        event Windows.Foundation.TypedEventHandler<Command, String> PropagateCommandIDChanged;
     };
 
     runtimeclass ActionMap : IActionMapView
@@ -47,6 +45,5 @@ namespace Microsoft.Terminal.Settings.Model
         void AddKeyBinding(Microsoft.Terminal.Control.KeyChord keys, String cmdID);
         void RegisterKeyBinding(Microsoft.Terminal.Control.KeyChord keys, ActionAndArgs action);
         void AddSendInputAction(String name, String input, Microsoft.Terminal.Control.KeyChord keys);
-        void UpdateCommandID(Command cmd, String newID);
     }
 }
