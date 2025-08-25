@@ -40,7 +40,7 @@ public:
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ size_t* const pNumBytes,
                 _Out_ DWORD* const pControlKeyState,
-                _Out_ void* const pOutputData);
+                _Out_ void* const pOutputData) override;
 
 private:
     SCREEN_INFORMATION& _siContext;

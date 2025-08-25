@@ -48,9 +48,9 @@ REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \
                                        $(CLR_REF_PATH)\System.Core.metadata_dll; \
                                        $(CLR_REF_PATH)\System.Data.metadata_dll; \
                                        $(CLR_REF_PATH)\System.Drawing.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\wex.common.managed.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\wex.logger.interop.metadata_dll; \
-                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\te.managed.metadata_dll; \
+                                       $(ONECORE_TAEF_REF_PATH)\net452\wex.common.managed.metadata_dll; \
+                                       $(ONECORE_TAEF_REF_PATH)\net452\wex.logger.interop.metadata_dll; \
+                                       $(ONECORE_TAEF_REF_PATH)\net452\te.managed.metadata_dll; \
                                        $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\appium-dotnet-driver.metadata_dll; \
                                        $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\castle.core.metadata_dll; \
                                        $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\newtonsoft.json.metadata_dll; \

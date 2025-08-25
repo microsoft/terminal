@@ -45,9 +45,9 @@ namespace Microsoft::Console::Interactivity::Win32
         };
 
         // IConsoleControl Members
-        [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId);
-        [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground);
-        [[nodiscard]] NTSTATUS EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
+        [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId) override;
+        [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground) override;
+        [[nodiscard]] NTSTATUS EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags) override;
         [[nodiscard]] NTSTATUS SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept override;
 
         // Public Members
