@@ -43,7 +43,9 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         // No common interface.
         if (const auto box = target.try_as<NumberBox>())
         {
-            target = box.GetTemplateChild(L"InputBox").as<TextBox>();
+            // Accessing template children from outside the class is unspecified; GetTemplateChild is
+            // a protected member. It does work, though.
+            target = box.as<IControlProtected>().GetTemplateChild(L"InputBox").as<TextBox>();
         }
         if (const auto control = target.try_as<TextBlock>())
         {
@@ -98,7 +100,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         if (const auto box = target.try_as<NumberBox>())
         {
-            target = box.GetTemplateChild(L"InputBox").as<TextBox>();
+            target = box.as<IControlProtected>().GetTemplateChild(L"InputBox").as<TextBox>();
         }
         if (const auto control = target.try_as<TextBox>())
         {
@@ -116,7 +118,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         if (const auto box = target.try_as<NumberBox>())
         {
-            target = box.GetTemplateChild(L"InputBox").as<TextBox>();
+            target = box.as<IControlProtected>().GetTemplateChild(L"InputBox").as<TextBox>();
         }
         if (const auto control = target.try_as<TextBlock>())
         {
@@ -142,7 +144,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         if (const auto box = target.try_as<NumberBox>())
         {
-            target = box.GetTemplateChild(L"InputBox").as<TextBox>();
+            target = box.as<IControlProtected>().GetTemplateChild(L"InputBox").as<TextBox>();
         }
         if (const auto control = target.try_as<TextBox>())
         {
@@ -169,7 +171,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         if (const auto box = target.try_as<NumberBox>())
         {
-            target = box.GetTemplateChild(L"InputBox").as<TextBox>();
+            target = box.as<IControlProtected>().GetTemplateChild(L"InputBox").as<TextBox>();
         }
         if (const auto control = target.try_as<TextBlock>())
         {
