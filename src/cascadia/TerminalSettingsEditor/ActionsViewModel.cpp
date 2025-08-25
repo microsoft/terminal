@@ -1264,7 +1264,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ActionsViewModel::AttemptRegenerateCommandID(const Model::Command& command)
     {
-        _Settings.ActionMap().UpdateCommandID(command, {});
+        _Settings.UpdateCommandID(command, {});
     }
 
     void ActionsViewModel::_CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& /*args*/)
