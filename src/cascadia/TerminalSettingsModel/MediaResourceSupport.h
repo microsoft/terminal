@@ -24,7 +24,7 @@ struct
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct EmptyMediaResource : winrt::implements<EmptyMediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
+    struct EmptyMediaResource : winrt::implements<EmptyMediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::no_weak_ref, winrt::no_module_lock>
     {
         // Micro-optimization: having one empty resource that contains no actual paths saves us a few bytes per object
         winrt::hstring Path() { return {}; };
@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
      * path--this is intended to aid its use in places where the risk of using an unresolved media path
      * is fine.
      */
-    struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::non_agile, winrt::no_weak_ref, winrt::no_module_lock>
+    struct MediaResource : winrt::implements<MediaResource, winrt::Microsoft::Terminal::Settings::Model::IMediaResource, winrt::no_weak_ref, winrt::no_module_lock>
     {
         MediaResource() {}
         MediaResource(const winrt::hstring& p) :
