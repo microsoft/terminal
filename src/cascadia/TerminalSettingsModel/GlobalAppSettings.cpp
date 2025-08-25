@@ -62,8 +62,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
 
     globals->_defaultProfile = _defaultProfile;
-    globals->_actionMap = _actionMap->Copy();
-    globals->_actionMap->PropagateCommandIDChanged({ globals.get(), &GlobalAppSettings::_CommandIDChangedHandler });
+    globals->_actionMap = _actionMap->Copy();    
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
 #define GLOBAL_SETTINGS_COPY(type, name, jsonKey, ...) \
@@ -146,7 +145,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 {
     auto result = winrt::make_self<GlobalAppSettings>();
     result->LayerJson(json, origin);
-    result->_actionMap->PropagateCommandIDChanged({ result.get(), &GlobalAppSettings::_CommandIDChangedHandler });
     return result;
 }
 
@@ -461,12 +459,12 @@ void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
     }
 }
 
-void GlobalAppSettings::_CommandIDChangedHandler(const Model::Command& senderCmd, const winrt::hstring& oldID)
+void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, const winrt::hstring& newID)
 {
+    const auto oldID = cmd.ID();
+    _actionMap->UpdateCommandID(cmd, newID);
     if (_NewTabMenu)
     {
-        const auto newID = senderCmd.ID();
-
         // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
         std::function<void(const Model::NewTabMenuEntry&)> recursiveEntryIdUpdate;
         recursiveEntryIdUpdate = [&](const Model::NewTabMenuEntry& entry) {

@@ -105,8 +105,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver);
 
-        til::typed_event<Model::Command, winrt::hstring> PropagateCommandIDChanged;
-
     private:
         Model::Command _GetActionByID(const winrt::hstring& actionID) const;
         std::optional<winrt::hstring> _GetActionIdByKeyChordInternal(const Control::KeyChord& keys) const;

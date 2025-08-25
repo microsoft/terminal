@@ -1229,7 +1229,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     UpdateCommandID(foundCmd, foundCmdNewID);
                 }
             }
-            cmd.ID(newID);
+            winrt::get_self<implementation::Command>(cmd)->ID(newID);
             // update _ActionMap with the ID change
             _ActionMap.erase(oldID);
             _ActionMap.emplace(newID, cmd);
@@ -1248,7 +1248,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 _KeyMap.erase(keys);
                 _KeyMap.emplace(keys, newID);
             }
-            PropagateCommandIDChanged.raise(cmd, oldID);
         }
         _RefreshKeyBindingCaches();
     }
