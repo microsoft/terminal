@@ -1235,12 +1235,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _ActionMap.emplace(newID, cmd);
 
             // update _KeyMap so that all keys that pointed to the old ID now point to the new ID
-            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> keysToRemap{};
+            std::vector<KeyChord> keysToRemap;
             for (const auto& [keys, cmdID] : _KeyMap)
             {
                 if (cmdID == oldID)
                 {
-                    keysToRemap.insert(keys);
+                    keysToRemap.push_back(keys);
                 }
             }
             for (const auto& keys : keysToRemap)
