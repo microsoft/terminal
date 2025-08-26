@@ -366,11 +366,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (til::compare_ordinal_insensitive(var, temp) == 0 ||
                 til::compare_ordinal_insensitive(var, tmp) == 0)
             {
-                try
+                std::wstring shortPath;
+                if (SUCCEEDED((til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data(), shortPath))))
                 {
-                    return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
+                    return shortPath;
                 }
-                CATCH_LOG();
             }
             return std::wstring{ value };
         }
