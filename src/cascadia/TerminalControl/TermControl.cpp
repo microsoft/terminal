@@ -3458,13 +3458,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Switch on the light and animate the intensity to fade out
             VisualBellLight::SetIsTarget(RootGrid(), true);
 
+            auto compositionLight{ BellLight().as<Windows::UI::Xaml::Media::IXamlLightProtected>().CompositionLight() };
             if (_isBackgroundLight)
             {
-                BellLight().CompositionLight().StartAnimation(L"Intensity", _bellDarkAnimation);
+                compositionLight.StartAnimation(L"Intensity", _bellDarkAnimation);
             }
             else
             {
-                BellLight().CompositionLight().StartAnimation(L"Intensity", _bellLightAnimation);
+                compositionLight.StartAnimation(L"Intensity", _bellLightAnimation);
             }
         }
     }
