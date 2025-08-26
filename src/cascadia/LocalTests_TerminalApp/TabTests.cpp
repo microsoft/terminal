@@ -1294,6 +1294,15 @@ namespace TerminalAppLocalTests
         });
     }
 
+    static til::color _getControlBackgroundColor(winrt::TerminalApp::implementation::ContentManager* contentManager,
+                                                 const winrt::Microsoft::Terminal::Control::TermControl& c)
+    {
+        auto interactivity{ contentManager->TryLookupCore(c.ContentId()) };
+        VERIFY_IS_NOT_NULL(interactivity);
+        const auto core{ interactivity.Core() };
+        return til::color{ core.BackgroundColor() };
+    }
+
     void TabTests::TestPreviewCommitScheme()
     {
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
@@ -1301,14 +1310,12 @@ namespace TerminalAppLocalTests
         auto page = _commonSetup();
         VERIFY_IS_NOT_NULL(page);
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
 
         TestOnUIThread([&page]() {
@@ -1318,15 +1325,13 @@ namespace TerminalAppLocalTests
             page->_PreviewAction(actionAndArgs);
         });
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
 
             // And we should have stored a function to revert the change.
             VERIFY_ARE_EQUAL(1u, page->_restorePreviewFuncs.size());
@@ -1340,15 +1345,13 @@ namespace TerminalAppLocalTests
             page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
         });
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
             Log::Comment(L"Color should be changed");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
 
             // After preview there should be no more restore functions to execute.
             VERIFY_ARE_EQUAL(0u, page->_restorePreviewFuncs.size());
@@ -1369,14 +1372,12 @@ namespace TerminalAppLocalTests
         auto page = _commonSetup();
         VERIFY_IS_NOT_NULL(page);
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
 
         TestOnUIThread([&page]() {
@@ -1386,15 +1387,13 @@ namespace TerminalAppLocalTests
             page->_PreviewAction(actionAndArgs);
         });
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
         });
 
         TestOnUIThread([&page]() {
@@ -1402,15 +1401,13 @@ namespace TerminalAppLocalTests
             page->_EndPreview();
         });
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
             Log::Comment(L"Color should be the same as it originally was");
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
         Log::Comment(L"Sleep to let events propagate");
         Sleep(250);
@@ -1425,14 +1422,12 @@ namespace TerminalAppLocalTests
         auto page = _commonSetup();
         VERIFY_IS_NOT_NULL(page);
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
-            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, backgroundColor);
         });
 
         TestOnUIThread([&page]() {
@@ -1441,15 +1436,13 @@ namespace TerminalAppLocalTests
             page->_PreviewColorScheme(args);
         });
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, backgroundColor);
         });
 
         TestOnUIThread([&page]() {
@@ -1458,15 +1451,13 @@ namespace TerminalAppLocalTests
             page->_PreviewColorScheme(args);
         });
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
             Log::Comment(L"Color should be changed to the preview");
-            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, backgroundColor);
         });
 
         TestOnUIThread([&page]() {
@@ -1477,15 +1468,13 @@ namespace TerminalAppLocalTests
             page->_HandleSetColorScheme(nullptr, ActionEventArgs{ args });
         });
 
-        TestOnUIThread([&page]() {
+        TestOnUIThread([&page, this]() {
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
             Log::Comment(L"Color should be changed");
-            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, til::color{ controlSettings.DefaultBackground() });
+            const auto backgroundColor{ _getControlBackgroundColor(_contentManager.get(), activeControl) };
+            VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, backgroundColor);
         });
         Log::Comment(L"Sleep to let events propagate");
         Sleep(250);
