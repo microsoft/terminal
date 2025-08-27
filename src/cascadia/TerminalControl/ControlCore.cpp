@@ -1004,12 +1004,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto& renderSettings = _terminal->GetRenderSettings();
         if (!_stashedColorScheme)
         {
+            // There is a contract between Push- and PopPreviewColorScheme as to the layout of `_stashedColorScheme`.
+            // It is not intended for use outside these two functions.
+            // It contains the first 16 colors (which will be overwritten by the color scheme), followed by the two
+            // indices for the foreground/background alias (set by DECAC, and which we overwrite when applying a color
+            // scheme) stored as COLORREF for convenience.
             _stashedColorScheme = std::make_unique_for_overwrite<decltype(_stashedColorScheme)::element_type>();
             decltype(auto) scheme{ *_stashedColorScheme.get() };
             const auto& table{ renderSettings.GetColorTable() };
-            std::copy_n(std::begin(table), TextColor::TABLE_SIZE, std::begin(scheme));
-            til::at(scheme, TextColor::TABLE_SIZE) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
-            til::at(scheme, TextColor::TABLE_SIZE + 1) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+            std::copy_n(std::begin(table), 16, std::begin(scheme));
+            til::at(scheme, 16) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+            til::at(scheme, 17) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
         }
         _terminal->UpdateColorScheme(scheme);
         _renderer->TriggerRedrawAll(true);
@@ -1022,12 +1027,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto lock = _terminal->LockForWriting();
             auto& renderSettings = _terminal->GetRenderSettings();
             decltype(auto) scheme{ *_stashedColorScheme.get() };
-            for (size_t i = 0; i < TextColor::TABLE_SIZE; ++i)
+            // See above in PushPreviewColorScheme the layout of the stashed scheme.
+            for (size_t i = 0; i < 16; ++i)
             {
                 renderSettings.SetColorTableEntry(i, til::at(scheme, i));
             }
-            renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, static_cast<size_t>(til::at(scheme, TextColor::TABLE_SIZE)));
-            renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, static_cast<size_t>(til::at(scheme, TextColor::TABLE_SIZE + 1)));
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, static_cast<size_t>(til::at(scheme, 16)));
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, static_cast<size_t>(til::at(scheme, 17)));
             _renderer->TriggerRedrawAll(true);
         }
         _stashedColorScheme.reset();
