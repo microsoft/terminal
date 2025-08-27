@@ -105,12 +105,11 @@ namespace winrt::TerminalApp::implementation
             _ApplyToActiveControls([&](const auto& control) {
                 auto temporarySettings{ winrt::make_self<Settings::TerminalSettings>() };
                 temporarySettings->ApplyColorScheme(scheme);
-                control.PopPreviewColorScheme();
-                control.PushPreviewColorScheme(temporarySettings.try_as<winrt::Microsoft::Terminal::Core::ICoreScheme>());
+                control.ApplyPreviewColorScheme(temporarySettings.try_as<winrt::Microsoft::Terminal::Core::ICoreScheme>());
 
                 // Take a copy of the inputs, since they are pointers anyways.
                 _restorePreviewFuncs.emplace_back([=]() {
-                    control.PopPreviewColorScheme();
+                    control.ResetPreviewColorScheme();
                 });
             });
         }

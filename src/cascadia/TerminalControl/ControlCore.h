@@ -99,8 +99,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlAppearance UnfocusedAppearance() const;
         bool HasUnfocusedAppearance() const;
 
-        void PushPreviewColorScheme(const Core::ICoreScheme&);
-        void PopPreviewColorScheme();
+        void ApplyPreviewColorScheme(const Core::ICoreScheme&);
+        void ResetPreviewColorScheme();
         void SetOverrideColorScheme(const Core::ICoreScheme&);
 
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;

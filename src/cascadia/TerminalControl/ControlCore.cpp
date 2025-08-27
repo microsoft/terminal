@@ -998,13 +998,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _unfocusedAppearance;
     }
 
-    void ControlCore::PushPreviewColorScheme(const Core::ICoreScheme& scheme)
+    void ControlCore::ApplyPreviewColorScheme(const Core::ICoreScheme& scheme)
     {
         const auto lock = _terminal->LockForReading();
         auto& renderSettings = _terminal->GetRenderSettings();
         if (!_stashedColorScheme)
         {
-            // There is a contract between Push- and PopPreviewColorScheme as to the layout of `_stashedColorScheme`.
+            // There is a contract between Apply- and ResetPreviewColorScheme as to the layout of `_stashedColorScheme`.
             // It is not intended for use outside these two functions.
             // It contains the every color in the table (some of which will be overwritten by the color scheme),
             // followed by the two indices for the foreground/background alias (set by DECAC, and which we overwrite
@@ -1023,14 +1023,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderer->TriggerRedrawAll(true);
     }
 
-    void ControlCore::PopPreviewColorScheme()
+    void ControlCore::ResetPreviewColorScheme()
     {
         if (_stashedColorScheme)
         {
             const auto lock = _terminal->LockForWriting();
             auto& renderSettings = _terminal->GetRenderSettings();
             decltype(auto) scheme{ *_stashedColorScheme.get() };
-            // See above in PushPreviewColorScheme the layout of the stashed scheme.
+            // See above in ApplyPreviewColorScheme the layout of the stashed scheme.
             for (size_t i = 0; i < TextColor::TABLE_SIZE; ++i)
             {
                 renderSettings.SetColorTableEntry(i, til::at(scheme, i));
