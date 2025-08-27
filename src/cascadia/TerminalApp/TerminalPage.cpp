@@ -223,16 +223,6 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
-            DispatcherQueue::GetForCurrentThread(),
-            til::throttled_func_options{
-                .delay = std::chrono::milliseconds{ 100 },
-                .debounce = true,
-                .trailing = true,
-            },
-            [=]() {
-                _adjustProcessPriority();
-            });
         _hostingHwnd = hwnd;
         return S_OK;
     }
@@ -423,6 +413,17 @@ namespace winrt::TerminalApp::implementation
         // them.
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
+
+        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
+            DispatcherQueue::GetForCurrentThread(),
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [=]() {
+                _adjustProcessPriority();
+            });
     }
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
