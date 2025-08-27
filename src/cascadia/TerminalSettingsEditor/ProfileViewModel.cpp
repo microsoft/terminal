@@ -799,22 +799,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring ProfileViewModel::BellSoundPreview()
     {
-        const auto currentSound = _profile.BellSound();
-        if (!currentSound || currentSound.Size() == 0)
+        if (!_CurrentBellSounds || _CurrentBellSounds.Size() == 0)
         {
             return RS_(L"Profile_BellSoundPreviewDefault");
         }
-        if (currentSound.Size() > 1)
+        if (_CurrentBellSounds.Size() > 1)
         {
             return RS_(L"Profile_BellSoundPreviewMultiple");
         }
 
-        const auto resource = currentSound.GetAt(0);
-        if (resource.Ok())
+        const auto currentBellSound = _CurrentBellSounds.GetAt(0);
+        if (currentBellSound.FileExists())
         {
-            auto resolvedPath{ resource.Resolved() };
-            const std::filesystem::path filePath{ std::wstring_view{ resolvedPath } };
-            return hstring{ filePath.filename().wstring() };
+            return currentBellSound.DisplayPath();
         }
 
         return RS_(L"Profile_BellSoundNotFound");
