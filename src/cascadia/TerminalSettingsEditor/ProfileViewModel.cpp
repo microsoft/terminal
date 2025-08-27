@@ -804,11 +804,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return RS_(L"Profile_BellSoundPreviewDefault");
         }
-        else if (currentSound.Size() == 1)
+        if (currentSound.Size() > 1)
         {
-            return currentSound.GetAt(0).Resolved();
+            return RS_(L"Profile_BellSoundPreviewMultiple");
         }
-        return RS_(L"Profile_BellSoundPreviewMultiple");
+
+        const auto resource = currentSound.GetAt(0);
+        if (resource.Ok())
+        {
+            auto resolvedPath{ resource.Resolved() };
+            const std::filesystem::path filePath{ std::wstring_view{ resolvedPath } };
+            return hstring{ filePath.filename().wstring() };
+        }
+
+        return RS_(L"Profile_BellSoundNotFound");
     }
 
     void ProfileViewModel::RequestAddBellSound(hstring path)
