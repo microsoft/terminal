@@ -720,7 +720,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         _MarkDuplicateBellSoundDirectories();
-        _CheckBellSoundsExistence();
         _NotifyChanges(L"CurrentBellSounds");
     }
 
@@ -732,19 +731,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (!_profile.HasBellSound())
         {
-            std::vector<hstring> newSounds;
+            std::vector<IMediaResource> newSounds;
             if (const auto inheritedSounds = _profile.BellSound())
             {
-                // copy inherited bell sounds to the current layer
-                newSounds.reserve(inheritedSounds.Size());
-                for (const auto sound : inheritedSounds)
-                {
-                    newSounds.push_back(sound);
-                }
+                newSounds.resize(inheritedSounds.Size()); // fill with null
+                inheritedSounds.GetMany(0, newSounds);
             }
             // if we didn't inherit any bell sounds,
             // we should still set the bell sound to an empty list (instead of null)
-            _profile.BellSound(winrt::single_threaded_vector<hstring>(std::move(newSounds)));
+            _profile.BellSound(winrt::single_threaded_vector(std::move(newSounds)));
         }
     }
 
@@ -768,56 +763,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    // Method Description:
-    // - Check if the bell sounds exist on disk. Mark any that don't exist
-    //   so that they show the appropriate UI
-    safe_void_coroutine ProfileViewModel::_CheckBellSoundsExistence()
+    BellSoundViewModel::BellSoundViewModel(const Model::IMediaResource& resource) :
+        _resource{ resource }
     {
-        co_await winrt::resume_background();
-        std::vector<Editor::BellSoundViewModel> markedSounds;
-        for (auto&& sound : _CurrentBellSounds)
+        if (_resource.Ok() && _resource.Path() != _resource.Resolved())
         {
-            if (!std::filesystem::exists(std::wstring_view{ sound.Path() }))
-            {
-                markedSounds.push_back(sound);
-            }
+            // If the resource was resolved to something other than its path, show the path!
+            _ShowDirectory = true;
         }
-
-        co_await winrt::resume_foreground(_dispatcher);
-        for (auto&& sound : markedSounds)
-        {
-            get_self<BellSoundViewModel>(sound)->FileExists(false);
-        }
-    }
-
-    BellSoundViewModel::BellSoundViewModel(hstring path) :
-        _Path{ path }
-    {
-        PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
-            if (args.PropertyName() == L"FileExists")
-            {
-                _NotifyChanges(L"DisplayPath", L"SubText");
-            }
-        });
     }
 
     hstring BellSoundViewModel::DisplayPath() const
     {
-        if (_FileExists)
+        if (_resource.Ok())
         {
-            // filename
-            const std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            // filename; start from the resolved path to show where it actually landed
+            auto resolvedPath{ _resource.Resolved() };
+            const std::filesystem::path filePath{ std::wstring_view{ resolvedPath } };
             return hstring{ filePath.filename().wstring() };
         }
-        return _Path;
+        return _resource.Path();
     }
 
     hstring BellSoundViewModel::SubText() const
     {
-        if (_FileExists)
+        if (_resource.Ok())
         {
             // Directory
-            const std::filesystem::path filePath{ std::wstring_view{ _Path } };
+            auto resolvedPath{ _resource.Resolved() };
+            const std::filesystem::path filePath{ std::wstring_view{ resolvedPath } };
             return hstring{ filePath.parent_path().wstring() };
         }
         return RS_(L"Profile_BellSoundNotFound");
@@ -825,15 +799,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring ProfileViewModel::BellSoundPreview()
     {
-        const auto& currentSound = BellSound();
+        const auto currentSound = _profile.BellSound();
         if (!currentSound || currentSound.Size() == 0)
         {
             return RS_(L"Profile_BellSoundPreviewDefault");
         }
         else if (currentSound.Size() == 1)
         {
-            std::filesystem::path filePath{ std::wstring_view{ currentSound.GetAt(0) } };
-            return hstring{ filePath.filename().wstring() };
+            return currentSound.GetAt(0).Resolved();
         }
         return RS_(L"Profile_BellSoundPreviewMultiple");
     }
@@ -844,9 +817,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // copy it over to the current layer and apply modifications
         _PrepareModelForBellSoundModification();
 
-        // No need to check if the file exists. We came from the FilePicker. That's good enough.
-        _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(path));
-        _profile.BellSound().Append(path);
+        auto bellResource{ MediaResourceHelper::FromString(path) };
+        bellResource.Resolve(path); // No need to check if the file exists. We came from the FilePicker. That's good enough.
+        _CurrentBellSounds.Append(winrt::make<BellSoundViewModel>(bellResource));
+        _profile.BellSound().Append(bellResource);
         _NotifyChanges(L"CurrentBellSounds");
     }
 
