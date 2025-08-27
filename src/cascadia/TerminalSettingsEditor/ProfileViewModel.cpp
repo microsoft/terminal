@@ -734,8 +734,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             std::vector<IMediaResource> newSounds;
             if (const auto inheritedSounds = _profile.BellSound())
             {
-                newSounds.resize(inheritedSounds.Size()); // fill with null
-                inheritedSounds.GetMany(0, newSounds);
+                newSounds = wil::to_vector(inheritedSounds);
             }
             // if we didn't inherit any bell sounds,
             // we should still set the bell sound to an empty list (instead of null)

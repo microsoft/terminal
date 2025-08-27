@@ -121,13 +121,10 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
 
-    // BellSound is an IVector<>, so we need to manually copy it over
     if (_BellSound)
     {
-        std::vector<IMediaResource> sounds;
-        sounds.resize(_BellSound->Size()); // fill with null
-        _BellSound->GetMany(0, sounds);
-        profile->_BellSound = single_threaded_vector(std::move(sounds));
+        // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
+        profile->_BellSound = winrt::single_threaded_vector(wil::to_vector(*_BellSound));
     }
 
     if (_UnfocusedAppearance)
