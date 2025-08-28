@@ -121,16 +121,10 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
 
-    // BellSound is an IVector<hstring>, so we need to manually copy it over
     if (_BellSound)
     {
-        std::vector<hstring> sounds;
-        sounds.reserve(_BellSound->Size());
-        for (const auto& sound : *_BellSound)
-        {
-            sounds.emplace_back(sound);
-        }
-        profile->_BellSound = single_threaded_vector(std::move(sounds));
+        // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
+        profile->_BellSound = winrt::single_threaded_vector(wil::to_vector(*_BellSound));
     }
 
     if (_UnfocusedAppearance)
@@ -559,6 +553,16 @@ void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver
     if (const auto container{ UnfocusedAppearance().try_as<IMediaResourceContainer>() })
     {
         container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto [bellSoundSource, bellSounds]{ _getBellSoundOverrideSourceAndValueImpl() };
+        bellSoundSource && bellSounds && *bellSounds && bellSounds->Size() > 0)
+    {
+        for (const auto& bellSound : *bellSounds)
+        {
+            ResolveMediaResource(bellSoundSource->_Origin, bellSoundSource->SourceBasePath, bellSound, resolver);
+        }
+        // It's important that we keep the invalid bell sounds in the list, because we may want to write it back out to disk
     }
 }
 
