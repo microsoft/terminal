@@ -115,6 +115,7 @@ BKCOLOR
 BKGND
 BKMK
 Bksp
+blds
 Blt
 blu
 BLUESCROLL
@@ -180,6 +181,7 @@ CLIPCHILDREN
 CLIPSIBLINGS
 closetest
 cloudconsole
+CLOUDT
 cloudvault
 CLSCTX
 clsids
