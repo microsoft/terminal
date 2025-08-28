@@ -459,6 +459,46 @@ void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
     }
 }
 
+void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
+{
+    const auto oldID = cmd.ID();
+    _actionMap->UpdateCommandID(cmd, newID);
+    // newID might have been empty when this function was called, if so actionMap would have generated a new ID, use that
+    newID = cmd.ID();
+    if (_NewTabMenu)
+    {
+        // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
+        std::function<void(const Model::NewTabMenuEntry&)> recursiveEntryIdUpdate;
+        recursiveEntryIdUpdate = [&](const Model::NewTabMenuEntry& entry) {
+            if (entry.Type() == NewTabMenuEntryType::Action)
+            {
+                if (const auto actionEntry{ entry.try_as<ActionEntry>() })
+                {
+                    if (actionEntry.ActionId() == oldID)
+                    {
+                        actionEntry.ActionId(newID);
+                    }
+                }
+            }
+            else if (entry.Type() == NewTabMenuEntryType::Folder)
+            {
+                if (const auto folderEntry{ entry.try_as<FolderEntry>() })
+                {
+                    for (const auto& nestedEntry : folderEntry.RawEntries())
+                    {
+                        recursiveEntryIdUpdate(nestedEntry);
+                    }
+                }
+            }
+        };
+
+        for (const auto& entry : *_NewTabMenu)
+        {
+            recursiveEntryIdUpdate(entry);
+        }
+    }
+}
+
 void GlobalAppSettings::_logSettingIfSet(const std::string_view& setting, const bool isSet)
 {
     if (isSet)

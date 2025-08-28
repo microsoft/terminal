@@ -1258,3 +1258,8 @@ void CascadiaSettings::ExpandCommands()
 {
     _globals->ExpandCommands(ActiveProfiles().GetView(), GlobalSettings().ColorSchemes());
 }
+
+void CascadiaSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
+{
+    _globals->UpdateCommandID(cmd, newID);
+}

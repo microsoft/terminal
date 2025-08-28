@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "ActionMap.g.h"
+#include "ActionArgFactory.g.h"
 #include "IInheritable.h"
 #include "Command.h"
 
@@ -47,6 +48,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
+    struct ActionArgFactory
+    {
+        ActionArgFactory() = default;
+
+        static winrt::hstring GetNameForAction(ShortcutAction action);
+        static winrt::hstring GetNameForAction(ShortcutAction action, Windows::ApplicationModel::Resources::Core::ResourceContext context);
+        static Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
+        static Model::IActionArgs GetEmptyArgsForAction(Model::ShortcutAction shortcutAction);
+    };
+
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {
         void _FinalizeInheritance() override;
@@ -56,6 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> GlobalHotkeys();
         Windows::Foundation::Collections::IMapView<Control::KeyChord, Model::Command> KeyBindings();
+        Windows::Foundation::Collections::IVectorView<Model::Command> AllCommands();
         com_ptr<ActionMap> Copy() const;
 
         // queries
@@ -63,6 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Command GetActionByID(const winrt::hstring& cmdID) const;
         bool IsKeyChordExplicitlyUnbound(const Control::KeyChord& keys) const;
         Control::KeyChord GetKeyBindingForAction(const winrt::hstring& cmdID);
+        Windows::Foundation::Collections::IVector<Control::KeyChord> AllKeyBindingsForAction(const winrt::hstring& cmdID);
 
         // population
         void AddAction(const Model::Command& cmd, const Control::KeyChord& keys);
@@ -78,8 +91,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // modification
         bool RebindKeys(const Control::KeyChord& oldKeys, const Control::KeyChord& newKeys);
         void DeleteKeyBinding(const Control::KeyChord& keys);
+        void AddKeyBinding(Control::KeyChord keys, const winrt::hstring& cmdID);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
+        void DeleteUserCommand(const winrt::hstring& cmdID);
         void AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys);
+        void UpdateCommandID(const Model::Command& cmd, winrt::hstring newID);
 
         Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
@@ -138,6 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // This is effectively a combination of _CumulativeKeyMapCache and _CumulativeActionMapCache and its purpose is so that
         // we can give the SUI a view of the key chords and the commands they map to
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _ResolvedKeyToActionMapCache{ nullptr };
+        Windows::Foundation::Collections::IVector<Model::Command> _AllCommandsCache{ nullptr };
 
         til::shared_mutex<std::unordered_map<std::filesystem::path, std::unordered_map<hstring, Model::Command>>> _cwdLocalSnippetsCache{};
 
@@ -147,4 +164,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend class SettingsModelUnitTests::DeserializationTests;
         friend class SettingsModelUnitTests::TerminalSettingsTests;
     };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(ActionArgFactory);
 }
