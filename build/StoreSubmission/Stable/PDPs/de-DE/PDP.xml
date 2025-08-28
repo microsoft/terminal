@@ -56,12 +56,9 @@ Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme an der 
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-– Wir haben umgeschrieben, wie Konsolenanwendungen im Terminal gehostet werden! Melden Sie alle auftretenden Fehler.
-– Terminal unterstützt jetzt Sixels!
-– Sie können jetzt einen angedockten Bereich öffnen, der Ausschnitte von Befehlen enthält, die Sie gespeichert haben, um sie später zu verwenden.
-– Für Benutzer der Eingabeaufforderung der neuesten Version von Windows 11 wird möglicherweise ein QuickInfo-Symbol angezeigt, das installierbare Software von WinGet vorschlägt.
-– Ausgewählter Text wird jetzt viel sichtbarer (und anpassbarer!).
-- Eine Reihe von Zuverlässigkeitsfehlern, Benutzerfreundlichkeitsproblemen und Ärgernissen wurden behoben.
+– Wir haben der Benutzeroberfläche Dutzende von Einstellungen hinzugefügt, die nur einmal in der JSON-Datei vorhanden waren, einschließlich einer neuen Seite zum Anpassen des Layouts Ihres Menüs „Neue Registerkarte“!
+– Wir haben die Fensterverwaltung umgestaltet, um die Zuverlässigkeit zu verbessern. Melden Sie alle Fehler, die beim alias „wt.exe“ auftreten
+– Profile zeigen jetzt ein Symbol an, wenn sie ausgeblendet wurden oder auf Programme verweisen, die deinstalliert wurden.
 
 Weitere Informationen finden Sie auf unserer GitHub-Releaseseite.
   </ReleaseNotes>
