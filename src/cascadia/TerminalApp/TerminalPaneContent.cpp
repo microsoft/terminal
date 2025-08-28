@@ -279,7 +279,7 @@ namespace winrt::TerminalApp::implementation
                     auto sounds{ _profile.BellSound() };
                     if (sounds && sounds.Size() > 0)
                     {
-                        winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
+                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
                         winrt::Windows::Foundation::Uri uri{ soundPath };
                         _playBellSound(uri);
                     }

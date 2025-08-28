@@ -91,6 +91,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ProfileInheritsInvalidIconAndHasNoCommandline);
         TEST_METHOD(ProfileSpecifiesNullIcon);
         TEST_METHOD(ProfileSpecifiesNullIconAndHasNoCommandline);
+        TEST_METHOD(ProfileOverwritesBellSound);
 
         // FRAGMENT BEHAVIORS
         TEST_METHOD(FragmentUpdatesBaseProfile);
@@ -125,7 +126,11 @@ namespace SettingsModelUnitTests
                 "backgroundImage": "imagePathFromBase",
                 "guid": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
                 "icon": "iconFromBase",
-                "name": "Base"
+                "name": "Base",
+                "bellSound": [
+                    "C:\\Windows\\Media\\Alarm01.wav",
+                    "C:\\Windows\\Media\\Alarm02.wav"
+                ]
             },
             {
                 "backgroundImage": "focusedImagePathFromBase",
@@ -167,7 +172,7 @@ namespace SettingsModelUnitTests
     ]
 })" };
 
-        static constexpr int numberOfMediaResourcesInDefaultSettings{ 9 };
+        static constexpr int numberOfMediaResourcesInDefaultSettings{ 11 };
 
         struct Fragment
         {
@@ -1020,6 +1025,37 @@ namespace SettingsModelUnitTests
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
         VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
+    }
+
+    // A profile replaces the bell sounds (2) in the base settings; all bell sounds retained
+    void MediaResourceTests::ProfileOverwritesBellSound()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            auto [t, e] = requireCalled([&](auto&&, auto&&, auto&& resource) {
+                // All resources are invalid.
+                resource.Reject();
+            });
+            g_mediaResolverHook = t;
+            settings = createSettings(R"({
+    "profiles": {
+        "list": [
+            {
+                "guid": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
+                "bellSound": [
+                    "does not matter; resolved rejected"
+                ],
+            },
+        ]
+    }
+})");
+        }
+
+        auto profile{ settings->GetProfileByName(L"Base") };
+        auto bellSounds{ profile.BellSound() };
+        VERIFY_ARE_EQUAL(1u, bellSounds.Size());
+        VERIFY_IS_FALSE(bellSounds.GetAt(0).Ok());
     }
 #pragma endregion
 

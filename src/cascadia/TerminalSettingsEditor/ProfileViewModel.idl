@@ -27,7 +27,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass BellSoundViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        String Path;
+        String Path { get; };
         String DisplayPath { get; };
         String SubText { get; };
         Boolean ShowDirectory { get; };
@@ -149,7 +149,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.IMediaResource>, BellSound);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RightClickContextMenu);
