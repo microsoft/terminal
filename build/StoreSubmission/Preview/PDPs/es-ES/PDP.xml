@@ -56,11 +56,11 @@ Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Pa
   <ReleaseNotes>
     Versión __VERSION_NUMBER__
 
-- Hemos agregado decenas de configuraciones a la interfaz de usuario que solo existían una vez en el archivo JSON, incluida una página nueva para personalizar el diseño del menú Nueva pestaña.
-- Tenemos administración de ventanas rearchitecdas para mejorar la confiabilidad; envíe los errores que encuentre con el alias de wt.exe.
-- Ahora, los perfiles muestran un icono si se han ocultado o hacen referencia a programas que se han desinstalado.
+- Página Extensiones completamente nueva que muestra lo que se ha instalado en tu terminal
+- La paleta de comandos ahora se muestra en tu idioma nativo, así como en inglés
+- Nuevas características de VT, como la representación sincronizada, nuevos esquemas de color, configuración para acciones rápidas del ratón, como el zoom, y más
 
-Consulte nuestra página de versiones de GitHub para obtener más detalles.
+Consulta la página de versiones de GitHub para más información.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

@@ -56,11 +56,11 @@ Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme der Com
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-- Wir haben der Benutzeroberfläche durchschnittliche Einstellungen hinzugefügt, die nur einmal in der JSON-Datei vorhanden waren, einschließlich einer neuen Seite zum Anpassen des Layouts Ihres Menüs "Neue Registerkarte"!
-- Wir haben die Fensterverwaltung zurückgesetzt, um die Zuverlässigkeit zu verbessern; Melden Sie alle Fehler, die mit dem alias "wt.exe" auftreten.
-- Profile zeigen jetzt ein Symbol an, wenn sie ausgeblendet wurden oder auf programme verweisen, die deinstalliert wurden.
+– Eine komplett neue Erweiterungsseite, die anzeigt, was in Ihrem Terminal installiert ist
+– Die Befehlspalette wird jetzt sowohl in Ihrer Muttersprache als auch auf Englisch angezeigt
+– Neue VT-Features wie synchronisiertes Rendering, neue Farbschemas, Konfiguration für schnelle Mausaktionen wie Zoomen und mehr
 
-Weitere Details finden Sie auf unserer GitHub-Releasesseite.
+Weitere Informationen finden Sie auf unserer GitHub-Releaseseite.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
