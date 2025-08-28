@@ -151,6 +151,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"AnswerbackMessagePreview");
             }
+            else if (viewModelProperty == L"TabThemeColorPreview")
+            {
+                _NotifyChanges(L"TabColorPreview");
+            }
+        });
+
+        _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
+            {
+                _NotifyChanges(L"TabThemeColorPreview");
+            }
         });
 
         // Do the same for the starting directory
@@ -437,7 +449,77 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return RS_(L"Profile_AnswerbackMessageNone");
     }
 
-    Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
+    Windows::UI::Color ProfileViewModel::TabColorPreview() const
+    {
+        if (const auto modelVal = _profile.TabColor())
+        {
+            // user defined an override value
+            return Windows::UI::Color{
+                .A = 255,
+                .R = modelVal.Value().R,
+                .G = modelVal.Value().G,
+                .B = modelVal.Value().B
+            };
+        }
+        // set to null --> deduce value from theme
+        return TabThemeColorPreview();
+    }
+
+    Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
+    {
+        if (const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme())
+        {
+            if (const auto tabTheme = currentTheme.Tab())
+            {
+                if (const auto tabBackground = tabTheme.Background())
+                {
+                    const auto tabColor = DefaultAppearance().CurrentColorScheme().BackgroundColor().Color();
+                    tabColor;
+
+                    const auto& tabBrush = tabBackground.Evaluate(Application::Current().Resources(),
+                                                                  Windows::UI::Xaml::Media::SolidColorBrush{ DefaultAppearance().CurrentColorScheme().BackgroundColor().Color() },
+                                                                  false);
+                    if (const auto& tabColorBrush = tabBrush.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+                    {
+                        const auto brushColor = tabColorBrush.Color();
+                        return brushColor;
+                    }
+                }
+            }
+        }
+
+        // XAML default color for tab
+        // TODO CARLOS: I keep getting #FFFFFFFF
+        // - TabViewItemHeaderBackground: gives value above, is incorrect
+        // - LayerOnMicaBaseAltFillColorTransparentBrush: resolved value for TabViewItemHeaderBackground (from XAML GH); same issue
+        //
+        //      I think the problem is that TabViewItemHeaderBackground is set on the TabViewItem, but I don't have access to that
+
+        // NEXT STEPS: allow NullableColorPicker to show color preview OR just text
+        // - add template selector
+        // - 2 templates:
+        //   - color? --> ColorPreviewTemplate (in CommonResources.xaml)
+        //   - else   --> String/TextBlock
+        // - pass in string for when template selector fails?
+
+
+        if (const auto tabHeaderBackground = Application::Current().Resources().Lookup(box_value(L"TabViewItemHeaderBackground")))
+        {
+            if (const auto brush = tabHeaderBackground.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+            {
+                // Fill the alpha so that the color can actually be displayed in the preview
+                auto brushColor = brush.Color();
+                brushColor.A = static_cast<uint8_t>(255);
+                return brushColor;
+            }
+        }
+
+        // This should never happen, but if it does, return Transparent so it's obvious
+        assert(false);
+        return Windows::UI::Colors::Transparent();
+    }
+
+    Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance() const
     {
         return _defaultAppearanceViewModel;
     }
@@ -476,7 +558,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
     }
 
-    Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
+    Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance() const
     {
         return _unfocusedAppearanceViewModel;
     }
