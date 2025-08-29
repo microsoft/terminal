@@ -544,6 +544,8 @@ void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
 
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
+    _assertIsMainThread();
+
     const auto exitCode = args.ExitCode();
 
     if (const auto msg = args.ExitMessage(); !msg.empty())
@@ -681,6 +683,8 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
 
 bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 {
+    _assertIsMainThread();
+
     AppHost* window = nullptr;
 
     if (args.WindowID)
@@ -721,6 +725,8 @@ bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 
 void WindowEmperor::_summonAllWindows() const
 {
+    _assertIsMainThread();
+
     TerminalApp::SummonWindowBehavior args;
     args.ToggleVisibility(false);
 
