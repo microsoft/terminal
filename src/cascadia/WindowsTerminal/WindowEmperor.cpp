@@ -251,8 +251,30 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
     host->Initialize();
 
-    _windowCount += 1;
     _windows.emplace_back(std::move(host));
+
+    if (_windows.size() == 1)
+    {
+        // The first CoreWindow is created implicitly by XAML and parented to the
+        // first XAML island. We parent it to our initial window for 2 reasons:
+        // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
+        //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
+        // * When we DestroyWindow() the island it will destroy the CoreWindow,
+        //   and it's not possible to recreate it. That's also a WinUI bug.
+        //
+        // Note that this must be done after the first window (= first island) is created.
+        if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
+        {
+            if (const auto interop = coreWindow.try_as<ICoreWindowInterop>())
+            {
+                HWND coreHandle = nullptr;
+                if (SUCCEEDED(interop->get_WindowHandle(&coreHandle)) && coreHandle)
+                {
+                    SetParent(coreHandle, _window.get());
+                }
+            }
+        }
+    }
 }
 
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
@@ -393,24 +415,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     if (std::wstring system32; SUCCEEDED_LOG(wil::GetSystemDirectoryW(system32)))
     {
         LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
-    }
-
-    // The first CoreWindow is created implicitly by XAML and parented to the
-    // first XAML island. We parent it to our initial window for 2 reasons:
-    // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
-    //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
-    // * When we DestroyWindow() the island it will destroy the CoreWindow,
-    //   and it's not possible to recreate it. That's also a WinUI bug.
-    if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
-    {
-        if (const auto interop = coreWindow.try_as<ICoreWindowInterop>())
-        {
-            HWND coreHandle = nullptr;
-            if (SUCCEEDED(interop->get_WindowHandle(&coreHandle)) && coreHandle)
-            {
-                SetParent(coreHandle, _window.get());
-            }
-        }
     }
 
     {
@@ -803,14 +807,18 @@ void WindowEmperor::_createMessageWindow(const wchar_t* className)
     StringCchCopy(_notificationIcon.szTip, ARRAYSIZE(_notificationIcon.szTip), appNameLoc.c_str());
 }
 
+bool WindowEmperor::_shouldPostQuitMessage() const noexcept
+{
+    return _windows.empty() &&
+           _messageBoxCount <= 0 &&
+           !_app.Logic().Settings().GlobalSettings().AllowHeadless();
+}
+
 // Posts a WM_QUIT as soon as we have no reason to exist anymore.
 // That basically means no windows and no message boxes.
 void WindowEmperor::_postQuitMessageIfNeeded() const
 {
-    if (
-        _messageBoxCount <= 0 &&
-        _windowCount <= 0 &&
-        !_app.Logic().Settings().GlobalSettings().AllowHeadless())
+    if (_shouldPostQuitMessage())
     {
         PostQuitMessage(0);
     }
@@ -848,16 +856,13 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             // Keep the last window in the array so that we can persist it on exit.
             // We check for AllowHeadless(), as that being true prevents us from ever quitting in the first place.
             // (= If we avoided closing the last window you wouldn't be able to reach a headless state.)
-            const auto shouldKeepWindow =
+            const auto keepWindowForPersistence =
                 _windows.size() == 1 &&
                 globalSettings.ShouldUsePersistedLayout() &&
                 !globalSettings.AllowHeadless();
 
-            if (!shouldKeepWindow)
+            if (!keepWindowForPersistence)
             {
-                // Did the window counter get out of sync? It shouldn't.
-                assert(_windowCount == gsl::narrow_cast<int32_t>(_windows.size()));
-
                 const auto host = reinterpret_cast<AppHost*>(lParam);
                 auto it = _windows.begin();
                 const auto end = _windows.end();
@@ -873,9 +878,10 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 }
             }
 
-            // Counterpart specific to CreateNewWindow().
-            _windowCount -= 1;
-            _postQuitMessageIfNeeded();
+            if (keepWindowForPersistence || _shouldPostQuitMessage())
+            {
+                PostQuitMessage(0);
+            }
             return 0;
         }
         case WM_MESSAGE_BOX_CLOSED:
