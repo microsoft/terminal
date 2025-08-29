@@ -391,7 +391,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<uint32_t> _GetTabIndex(const TerminalApp::Tab& tab) const noexcept;
         TerminalApp::Tab _GetFocusedTab() const noexcept;
         winrt::com_ptr<Tab> _GetFocusedTabImpl() const noexcept;
-        TerminalApp::Tab _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
+        TerminalApp::Tab _GetTabByTabViewItem(const IInspectable& tabViewItem) const noexcept;
 
         void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
         safe_void_coroutine _SetFocusedTab(const winrt::TerminalApp::Tab tab);
@@ -435,13 +435,18 @@ namespace winrt::TerminalApp::implementation
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
-        bool _tabPointerMiddleButtonPressed{ false };
-        bool _tabPointerMiddleButtonExited{ false };
+        // WinUI's TabView has a broken close event handler:
+        // If the close button is disabled, middle-clicking the tab raises no close
+        // event. Because that's dumb, we implement our own middle-click handling.
+        // `_tabItemMiddleClickHookEnabled` is true whenever the close button is hidden,
+        // and that enables all of the rest of this machinery (and this workaround).
+        bool _tabItemMiddleClickHookEnabled = false;
+        bool _tabItemMiddleClickExited = false;
+        PointerEntered_revoker _tabItemMiddleClickPointerEntered;
+        PointerExited_revoker _tabItemMiddleClickPointerExited;
+        PointerCaptureLost_revoker _tabItemMiddleClickPointerCaptureLost;
         void _OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
-        void _OnTabPointerReleased(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
-        safe_void_coroutine _OnTabPointerReleasedCloseTab(winrt::Microsoft::UI::Xaml::Controls::TabViewItem sender);
-        void _OnTabPointerEntered(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
-        void _OnTabPointerExited(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        safe_void_coroutine _OnTabPointerReleasedCloseTab(IInspectable sender);
 
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
