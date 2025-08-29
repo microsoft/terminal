@@ -60,8 +60,42 @@ namespace winrt
 
 namespace clipboard
 {
-    wil::unique_close_clipboard_call open(HWND hwnd)
+    static SRWLOCK lock = SRWLOCK_INIT;
+
+    struct ClipboardHandle
     {
+        explicit ClipboardHandle(bool open) :
+            _open{ open }
+        {
+        }
+
+        ~ClipboardHandle()
+        {
+            if (_open)
+            {
+                ReleaseSRWLockExclusive(&lock);
+                CloseClipboard();
+            }
+        }
+
+        explicit operator bool() const noexcept
+        {
+            return _open;
+        }
+
+    private:
+        bool _open = false;
+    };
+
+    ClipboardHandle open(HWND hwnd)
+    {
+        // Turns out, OpenClipboard/CloseClipboard are not thread-safe whatsoever,
+        // and on CloseClipboard, the GetClipboardData handle may get freed.
+        // The problem is that WinUI also uses OpenClipboard (through WinRT which uses OLE),
+        // and so even with this mutex we can still crash randomly if you copy something via WinUI.
+        // Makes you wonder how many Windows apps are subtly broken, huh.
+        AcquireSRWLockExclusive(&lock);
+
         bool success = false;
 
         // OpenClipboard may fail to acquire the internal lock --> retry.
@@ -80,7 +114,12 @@ namespace clipboard
             Sleep(sleep);
         }
 
-        return wil::unique_close_clipboard_call{ success };
+        if (!success)
+        {
+            ReleaseSRWLockExclusive(&lock);
+        }
+
+        return ClipboardHandle{ success };
     }
 
     void write(wil::zwstring_view text, std::string_view html, std::string_view rtf)
