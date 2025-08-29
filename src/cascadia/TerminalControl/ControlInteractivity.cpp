@@ -84,9 +84,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->Detach();
     }
 
-    void ControlInteractivity::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    void ControlInteractivity::AttachToNewControl()
     {
-        _core->AttachToNewControl(keyBindings);
+        _core->AttachToNewControl();
     }
 
     // Method Description:

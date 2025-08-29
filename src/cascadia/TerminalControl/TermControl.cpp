@@ -281,6 +281,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         InitializeComponent();
 
         _core = _interactivity.Core();
+        _keyBindings = _core.Settings().KeyBindings(); // TODO (DH)
 
         // If high contrast mode was changed, update the appearance appropriately.
         _core.SetHighContrastMode(_GetAccessibilitySettings().HighContrast());
@@ -505,7 +506,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
     {
         _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
-        _interactivity.AttachToNewControl(keyBindings);
+        _keyBindings = keyBindings;
+        _interactivity.AttachToNewControl();
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -822,6 +824,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance)
     {
+        _keyBindings = settings.KeyBindings();
+
         _core.UpdateSettings(settings, unfocusedAppearance);
 
         _UpdateSettingsFromUIThread();
@@ -1848,13 +1852,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        auto bindings = _core.Settings().KeyBindings();
-        if (!bindings)
+        if (!_keyBindings)
         {
             return false;
         }
 
-        auto success = bindings.TryKeyChord({
+        auto success = _keyBindings.TryKeyChord({
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),
@@ -3789,16 +3792,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions)
     {
         get_self<ControlCore>(_core)->UpdateQuickFixes(suggestions);
-    }
-
-    Core::Scheme TermControl::ColorScheme() const noexcept
-    {
-        return _core.ColorScheme();
-    }
-
-    void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
-    {
-        _core.ColorScheme(scheme);
     }
 
     void TermControl::AdjustOpacity(const float opacity, const bool relative)

@@ -45,6 +45,7 @@
     <ClCompile Include="TerminalSettingsTests.cpp" />
     <ClCompile Include="ThemeTests.cpp" />
     <ClCompile Include="MediaResourceTests.cpp" />
+    <ClCompile Include="../TerminalSettingsAppAdapterLib/TerminalSettings.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

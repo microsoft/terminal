@@ -104,6 +104,11 @@ namespace Microsoft.Terminal.Control
         Boolean HasUnfocusedAppearance();
         void SetHighContrastMode(Boolean enabled);
 
+        void ApplyPreviewColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
+        void ResetPreviewColorScheme();
+
+        void SetOverrideColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
+
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
