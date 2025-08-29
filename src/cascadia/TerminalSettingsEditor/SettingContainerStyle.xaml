@@ -461,7 +461,8 @@
                                                   HorizontalAlignment="Right"
                                                   VerticalAlignment="Center"
                                                   Content="{TemplateBinding CurrentValue}"
-                                                  ContentTemplate="{TemplateBinding CurrentValueTemplate}" />
+                                                  ContentTemplate="{TemplateBinding CurrentValueTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding CurrentValueTemplateSelector}" />
                             </Grid>
                         </muxc:Expander.Header>
                     </muxc:Expander>

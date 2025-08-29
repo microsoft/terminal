@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(hstring, FontIconGlyph);
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, CurrentValue);
         DEPENDENCY_PROPERTY(Windows::UI::Xaml::DataTemplate, CurrentValueTemplate);
+        DEPENDENCY_PROPERTY(Windows::UI::Xaml::Controls::DataTemplateSelector, CurrentValueTemplateSelector);
         DEPENDENCY_PROPERTY(hstring, CurrentValueAccessibleName);
         DEPENDENCY_PROPERTY(bool, HasSettingValue);
         DEPENDENCY_PROPERTY(bool, StartExpanded);

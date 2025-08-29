@@ -209,19 +209,33 @@
             </local:SettingContainer>
 
             <!--  Tab Color  -->
+            <!--  CurrentValueAccessibleName="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"  -->
             <local:SettingContainer x:Name="TabColor"
                                     x:Uid="Profile_TabColor"
                                     ClearSettingValue="{x:Bind Profile.ClearTabColor}"
                                     CurrentValue="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
-                                    CurrentValueAccessibleName="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
-                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
-                <local:NullableColorPicker x:Uid="Profile_TabColor_NullableColorPicker"
-                                           ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"
-                                           CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
-                                           NullColorPreview="{x:Bind Profile.TabThemeColorPreview, Mode=OneWay}" />
+                <local:SettingContainer.CurrentValueTemplateSelector>
+                    <local:NullableColorTemplateSelector ColorTemplate="{StaticResource ColorPreviewTemplate}">
+                        <local:NullableColorTemplateSelector.NullColorTemplate>
+                            <DataTemplate>
+                                <!--  TODO CARLOS: ResourceString should let me get the label! It's not working though. Usiung a temporary string in the meantime  -->
+                                <TextBlock Margin="0"
+                                           Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                                           Text="Use theme color" />
+                                <!--  Text="{mtu:ResourceString Tree=TerminalSettingsEditor, Name=Profile_TabColor_NullableColorPicker.NullColorButtonLabel}" />  -->
+                            </DataTemplate>
+                        </local:NullableColorTemplateSelector.NullColorTemplate>
+                    </local:NullableColorTemplateSelector>
+                </local:SettingContainer.CurrentValueTemplateSelector>
+                <local:SettingContainer.Content>
+                    <local:NullableColorPicker x:Uid="Profile_TabColor_NullableColorPicker"
+                                               ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"
+                                               CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
+                                               NullColorPreview="{x:Bind Profile.TabThemeColorPreview, Mode=OneWay}" />
+                </local:SettingContainer.Content>
             </local:SettingContainer>
 
             <!--  Elevate  -->

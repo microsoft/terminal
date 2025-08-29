@@ -34,6 +34,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile = args.Profile();
         _windowRoot = args.WindowRoot();
 
+        _Profile.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"TabColorPreview")
+            {
+                // TODO CARLOS: When the CurrentValue changes to null (aka "use theme color" resolves to default XAML colors),
+                //   the CurrentValueTemplateSelector should switch from using the ColorTemplate to the NullColorTemplate.
+                //   Breakpoints in SelectTemplateCore() are not hit in this scenario (they are hit when set to not-null).
+                //   Reloading the app with CurrentValue being null works fine. The issue is purely when swapping from a color to null.
+                TabColor().UpdateLayout();
+            }
+        });
+
         // Check the use parent directory box if the starting directory is empty
         if (_Profile.StartingDirectory().empty())
         {

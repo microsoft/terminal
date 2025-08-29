@@ -4,6 +4,7 @@
 #pragma once
 
 #include "NullableColorPicker.g.h"
+#include "NullableColorTemplateSelector.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -15,6 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush CalculateBorderBrush(const Windows::UI::Color& color);
         static bool IsNull(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> color);
+        static Windows::UI::Xaml::Visibility IsNullToVisibility(Windows::Foundation::IReference<Windows::UI::Color> color);
 
         void ColorChip_Loaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         void ColorChip_Unloaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
@@ -31,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, CurrentColor);
         DEPENDENCY_PROPERTY(bool, ShowNullColorButton);
         DEPENDENCY_PROPERTY(hstring, NullColorButtonLabel);
-        DEPENDENCY_PROPERTY(Windows::UI::Color, NullColorPreview);
+        DEPENDENCY_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, NullColorPreview);
 
     private:
         static void _InitializeProperties();
@@ -41,9 +43,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::vector<Windows::UI::Xaml::Controls::Primitives::ToggleButton> _colorChips;
     };
+
+    struct NullableColorTemplateSelector : NullableColorTemplateSelectorT<NullableColorTemplateSelector>
+    {
+        NullableColorTemplateSelector() = default;
+
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
+
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, ColorTemplate);
+        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, NullColorTemplate);
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(NullableColorPicker);
+    BASIC_FACTORY(NullableColorTemplateSelector);
 }

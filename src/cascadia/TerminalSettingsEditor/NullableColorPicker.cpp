@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "NullableColorPicker.h"
 #include "NullableColorPicker.g.cpp"
+#include "NullableColorTemplateSelector.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -88,9 +89,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _NullColorPreviewProperty =
                 DependencyProperty::Register(
                     L"NullColorPreview",
-                    xaml_typename<Windows::UI::Color>(),
+                    xaml_typename<IReference<Windows::UI::Color>>(),
                     xaml_typename<Editor::NullableColorPicker>(),
-                    PropertyMetadata{ box_value(Windows::UI::Colors::Transparent()) });
+                    PropertyMetadata{ nullptr });
         }
     }
 
@@ -154,6 +155,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return color == nullptr;
     }
 
+    Visibility NullableColorPicker::IsNullToVisibility(Windows::Foundation::IReference<Windows::UI::Color> color)
+    {
+        return color == nullptr ? Visibility::Collapsed : Visibility::Visible;
+    }
+
     void NullableColorPicker::NullColorButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         CurrentColor(nullptr);
@@ -178,10 +184,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             };
             ColorPickerControl().Color(winuiColor);
         }
-        else
+        else if (const auto nullColor = NullColorPreview())
         {
             // No current color (null), use the deduced value for null
-            ColorPickerControl().Color(NullColorPreview());
+            ColorPickerControl().Color(nullColor.Value());
+        }
+        else
+        {
+            // NullColorPreview is undefined, use a fallback value
+            ColorPickerControl().Color(Colors::Transparent());
         }
     }
 
@@ -222,5 +233,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         }
+    }
+
+    Windows::UI::Xaml::DataTemplate NullableColorTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
+    {
+        return SelectTemplateCore(item);
+    }
+
+    Windows::UI::Xaml::DataTemplate NullableColorTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
+    {
+        if (const auto nullableColor = item.try_as<IReference<Windows::UI::Color>>())
+        {
+            return ColorTemplate();
+        }
+        return NullColorTemplate();
     }
 }
