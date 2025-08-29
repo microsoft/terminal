@@ -54,14 +54,11 @@ Este é um projeto de código aberto e a participação da comunidade é bem-vin
     
   </DevStudio>
   <ReleaseNotes>
-    Versão __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-– Reescrevemos a forma como os aplicativos de console são hospedados no Terminal! Relate os bugs encontrados.
-– O terminal agora oferece suporte ao Sixels!
-– Agora você pode abrir um painel acoplado contendo snippets de comandos que você salvou para usar mais tarde
-– Os usuários do Prompt de Comando na versão mais recente do Windows 11 podem ver um ícone de "dica rápida", que sugere softwares instaláveis a partir do WinGet
-– O texto selecionado agora ficará muito mais visível (e personalizável!)
-– Vários bugs de confiabilidade, problemas de conveniência e incômodos foram resolvidos.
+– Adicionamos várias configurações à interface do usuário que antes só existiam no arquivo JSON, incluindo uma nova página para personalizar o layout do seu menu Nova Guia!
+– Reestruturamos o gerenciamento de janelas para melhorar a confiabilidade; registre os bugs que você encontrar com o alias wt.exe
+– Os perfis agora exibem um ícone se estiverem ocultos ou se referirem a programas que foram desinstalados.
 
 Confira nossa página de lançamentos no GitHub para obter mais detalhes.
   </ReleaseNotes>
