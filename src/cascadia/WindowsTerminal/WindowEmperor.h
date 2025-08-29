@@ -84,7 +84,7 @@ private:
     int32_t _windowCount = 0;
     int32_t _messageBoxCount = 0;
 
-#ifdef 0 //NDEBUG
+#if 0 // #ifdef NDEBUG
     static constexpr void _assertIsMainThread() noexcept
     {
     }
