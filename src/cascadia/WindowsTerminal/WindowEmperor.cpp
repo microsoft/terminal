@@ -544,6 +544,8 @@ void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
 
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
+    _assertIsMainThread();
+
     const auto exitCode = args.ExitCode();
 
     if (const auto msg = args.ExitMessage(); !msg.empty())
@@ -681,6 +683,8 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
 
 bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 {
+    _assertIsMainThread();
+
     AppHost* window = nullptr;
 
     if (args.WindowID)
@@ -721,6 +725,8 @@ bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 
 void WindowEmperor::_summonAllWindows() const
 {
+    _assertIsMainThread();
+
     TerminalApp::SummonWindowBehavior args;
     args.ToggleVisibility(false);
 
@@ -858,6 +864,9 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 // Did the window counter get out of sync? It shouldn't.
                 assert(_windowCount == gsl::narrow_cast<int32_t>(_windows.size()));
 
+                // !!! NOTE !!!
+                // At least theoretically the lParam pointer may be invalid.
+                // We should only access it if we find it in our _windows array.
                 const auto host = reinterpret_cast<AppHost*>(lParam);
                 auto it = _windows.begin();
                 const auto end = _windows.end();
@@ -866,7 +875,15 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 {
                     if (host == it->get())
                     {
-                        host->Close();
+                        // NOTE: The AppHost destructor is highly non-trivial.
+                        //
+                        // It _may_ call into XAML, which _may_ pump the message loop, which would then recursively
+                        // re-enter this function, which _may_ then handle another WM_CLOSE_TERMINAL_WINDOW,
+                        // which would change the _windows array, and invalidate our iterator and crash.
+                        //
+                        // We can prevent this by deferring destruction until after the erase() call.
+                        const auto strong = *it;
+                        strong->Close();
                         _windows.erase(it);
                         break;
                     }
