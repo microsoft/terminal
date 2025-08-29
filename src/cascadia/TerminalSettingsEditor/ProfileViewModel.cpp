@@ -152,6 +152,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"AnswerbackMessagePreview");
             }
+            else if (viewModelProperty == L"TabColor")
+            {
+                _NotifyChanges(L"TabColorPreview");
+            }
             else if (viewModelProperty == L"TabThemeColorPreview")
             {
                 _NotifyChanges(L"TabColorPreview");
@@ -450,7 +454,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return RS_(L"Profile_AnswerbackMessageNone");
     }
 
-    Windows::UI::Color ProfileViewModel::TabColorPreview() const
+    Windows::Foundation::IReference<Windows::UI::Color> ProfileViewModel::TabColorPreview() const
     {
         if (const auto modelVal = _profile.TabColor())
         {
@@ -466,7 +470,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return TabThemeColorPreview();
     }
 
-    Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
+    Windows::Foundation::IReference<Windows::UI::Color> ProfileViewModel::TabThemeColorPreview() const
     {
         if (const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme())
         {
@@ -490,34 +494,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // XAML default color for tab
-        // TODO CARLOS: I keep getting #FFFFFFFF
-        // - TabViewItemHeaderBackground: gives value above, is incorrect
-        // - LayerOnMicaBaseAltFillColorTransparentBrush: resolved value for TabViewItemHeaderBackground (from XAML GH); same issue
-        //
-        //      I think the problem is that TabViewItemHeaderBackground is set on the TabViewItem, but I don't have access to that
-
-        // NEXT STEPS: allow NullableColorPicker to show color preview OR just text
-        // - add template selector
-        // - 2 templates:
-        //   - color? --> ColorPreviewTemplate (in CommonResources.xaml)
-        //   - else   --> String/TextBlock
-        // - pass in string for when template selector fails?
-
-
-        if (const auto tabHeaderBackground = Application::Current().Resources().Lookup(box_value(L"TabViewItemHeaderBackground")))
-        {
-            if (const auto brush = tabHeaderBackground.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
-            {
-                // Fill the alpha so that the color can actually be displayed in the preview
-                auto brushColor = brush.Color();
-                brushColor.A = static_cast<uint8_t>(255);
-                return brushColor;
-            }
-        }
-
-        // This should never happen, but if it does, return Transparent so it's obvious
-        assert(false);
-        return Windows::UI::Colors::Transparent();
+        return nullptr;
     }
 
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance() const

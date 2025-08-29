@@ -127,8 +127,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool Orphaned() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
-        Windows::UI::Color TabColorPreview() const;
-        Windows::UI::Color TabThemeColorPreview() const;
+        Windows::Foundation::IReference<Windows::UI::Color> TabColorPreview() const;
+        Windows::Foundation::IReference<Windows::UI::Color> TabThemeColorPreview() const;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
