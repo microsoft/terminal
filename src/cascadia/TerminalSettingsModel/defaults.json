@@ -85,7 +85,7 @@
             "background": "#141414",
             "foreground": "#BAB7B6",
             "cursorColor": "#37E57B",
-            "selectionBackground": "#FFFFFF",
+            "selectionBackground": "#8DB8E5",
             "black": "#000000",
             "red": "#CF494C",
             "green": "#60B442",
@@ -101,7 +101,7 @@
             "brightBlue": "#688DFD",
             "brightPurple": "#ED6FE9",
             "brightCyan": "#32E0FB",
-            "brightWhite": "#D3D8D9"
+            "brightWhite": "#DEE3E4"
         },
         {
             "name": "Ottosson",
