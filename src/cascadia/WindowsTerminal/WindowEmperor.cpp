@@ -253,6 +253,29 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
+
+    if (_windowCount == 1)
+    {
+        // The first CoreWindow is created implicitly by XAML and parented to the
+        // first XAML island. We parent it to our initial window for 2 reasons:
+        // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
+        //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
+        // * When we DestroyWindow() the island it will destroy the CoreWindow,
+        //   and it's not possible to recreate it. That's also a WinUI bug.
+        //
+        // Note that this must be done after the first window (= first island) is created.
+        if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
+        {
+            if (const auto interop = coreWindow.try_as<ICoreWindowInterop>())
+            {
+                HWND coreHandle = nullptr;
+                if (SUCCEEDED(interop->get_WindowHandle(&coreHandle)) && coreHandle)
+                {
+                    SetParent(coreHandle, _window.get());
+                }
+            }
+        }
+    }
 }
 
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
@@ -391,24 +414,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     if (std::wstring system32; SUCCEEDED_LOG(wil::GetSystemDirectoryW(system32)))
     {
         LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
-    }
-
-    // The first CoreWindow is created implicitly by XAML and parented to the
-    // first XAML island. We parent it to our initial window for 2 reasons:
-    // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
-    //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
-    // * When we DestroyWindow() the island it will destroy the CoreWindow,
-    //   and it's not possible to recreate it. That's also a WinUI bug.
-    if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
-    {
-        if (const auto interop = coreWindow.try_as<ICoreWindowInterop>())
-        {
-            HWND coreHandle = nullptr;
-            if (SUCCEEDED(interop->get_WindowHandle(&coreHandle)) && coreHandle)
-            {
-                SetParent(coreHandle, _window.get());
-            }
-        }
     }
 
     {
