@@ -9,6 +9,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     inline constexpr CoordType CoordTypeMin = INT32_MIN;
     inline constexpr CoordType CoordTypeMax = INT32_MAX;
 
+    using HugeCoordType = int64_t;
+    inline constexpr HugeCoordType HugeCoordTypeMin = INT64_MIN;
+    inline constexpr HugeCoordType HugeCoordTypeMax = INT64_MAX;
+
     namespace details
     {
         template<typename T, typename U = T>
