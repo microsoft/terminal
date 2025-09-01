@@ -1576,6 +1576,7 @@ namespace winrt::TerminalApp::implementation
         return connection;
     }
 
+    // use _replaceConnectionForRestart instead of using this function directly. _replaceConnectionForRestart will close the old connection.
     TerminalConnection::ITerminalConnection TerminalPage::_duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent)
     {
         if (paneContent == nullptr)
@@ -1617,6 +1618,15 @@ namespace winrt::TerminalApp::implementation
         }
 
         return _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), true);
+    }
+
+    void TerminalPage::_replaceConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent) {
+        if (const auto& connection{ _duplicateConnectionForRestart(paneContent) }) {
+            auto previousConnection = paneContent.GetTermControl().Connection();
+            paneContent.GetTermControl().Connection(connection);
+            connection.Start();
+            previousConnection.Close();
+        }
     }
 
     // Method Description:
@@ -3687,11 +3697,7 @@ namespace winrt::TerminalApp::implementation
         // the TermControl.RestartTerminalRequested event doesn't actually pass
         // any args upwards itself. If we ever change this, make sure you check
         // for nulls
-        if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
-        {
-            paneContent.GetTermControl().Connection(connection);
-            connection.Start();
-        }
+        _replaceConnectionForRestart(paneContent);
     }
 
     // Method Description:

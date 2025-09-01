@@ -314,6 +314,7 @@ namespace winrt::TerminalApp::implementation
         std::wstring _evaluatePathForCwd(std::wstring_view path);
 
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings, const bool inheritCursor);
+        void _replaceConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
