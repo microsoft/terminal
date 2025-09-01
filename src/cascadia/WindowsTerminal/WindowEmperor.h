@@ -88,7 +88,7 @@ private:
 #else
     void _assertIsMainThread() const noexcept
     {
-        assert(_mainThreadId == GetCurrentThreadId());
+        WI_ASSERT_MSG(_mainThreadId == GetCurrentThreadId(), "This part of WindowEmperor must be accessed from the UI thread");
     }
     DWORD _mainThreadId = GetCurrentThreadId();
 #endif
