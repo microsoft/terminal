@@ -1092,7 +1092,7 @@ void Terminal::UserScrollViewport(const til::point viewTop)
 
     // if viewTop > realTop, we want the offset to be 0.
     const auto origin = _inAltBuffer() ? til::point{} : _mutableViewport.Origin();
-    _scrollOffset.x = std::max(0, origin.x - std::max(0, viewTop.x));
+    _scrollOffset.x = viewTop.x; // TODO: All of this is wrong and broken
     _scrollOffset.y = std::max(0, origin.y - std::max(0, viewTop.y));
 
     // We can use the void variant of TriggerScroll here because
