@@ -23,6 +23,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
     }
 
+    struct size;
+
     struct point
     {
         CoordType x = 0;
@@ -164,6 +166,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             return gsl::narrow<T>(y);
         }
+
+        // Defined in size.h
+        constexpr size to_size() const noexcept;
 
 #ifdef _WINDEF_
         explicit constexpr point(const POINT other) noexcept :

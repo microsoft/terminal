@@ -64,7 +64,7 @@ namespace Microsoft.Terminal.Control
                            Microsoft.Terminal.Core.Point pixelPosition,
                            MouseButtonState state);
 
-        void UpdateScrollbar(Single newValue);
+        void UpdateScrollbar(Windows.Foundation.Point newValue);
 
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;

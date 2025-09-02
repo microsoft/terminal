@@ -80,6 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, SelectionBackground, DEFAULT_FOREGROUND);
+        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, MinimumBufferWidth, 0);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialRows, 30);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialCols, 80);

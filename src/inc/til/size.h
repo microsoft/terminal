@@ -117,6 +117,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return gsl::narrow<T>(static_cast<int64_t>(width) * static_cast<int64_t>(height));
         }
 
+        constexpr point to_point() const noexcept
+        {
+            return { width, height };
+        }
+
 #ifdef _WINDEF_
         explicit constexpr size(const SIZE other) noexcept :
             width{ other.cx }, height{ other.cy }
@@ -170,6 +175,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+        explicit constexpr size(const winrt::Microsoft::Terminal::Core::Point other) :
+            width{ other.X }, height{ other.Y }
+        {
+        }
+
+        winrt::Microsoft::Terminal::Core::Point to_core_point() const noexcept
+        {
+            return { width, height };
+        }
+#endif
+
         std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"[W:%d, H:%d]", width, height);
@@ -178,6 +195,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         CoordType width = 0;
         CoordType height = 0;
     };
+
+    constexpr size point::to_size() const noexcept
+    {
+        return size{ x, y };
+    }
 
     constexpr size wrap_coord_size(const COORD sz) noexcept
     {

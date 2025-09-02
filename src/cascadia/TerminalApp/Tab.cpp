@@ -516,7 +516,7 @@ namespace winrt::TerminalApp::implementation
         ASSERT_UI_THREAD();
 
         auto control = GetActiveTerminalControl();
-        const auto currentOffset = control.ScrollOffset();
+        const auto currentOffset = control.ScrollOffset().Y;
         control.ScrollViewport(::base::ClampAdd(currentOffset, delta));
     }
 

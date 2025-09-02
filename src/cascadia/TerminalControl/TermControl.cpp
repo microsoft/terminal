@@ -549,7 +549,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _isInternalScrollBarUpdate = true;
 
-        auto scrollBar = ScrollBar();
+        auto scrollBar = VerticalScrollBar();
         if (update.newValue)
         {
             scrollBar.Value(*update.newValue);
@@ -612,7 +612,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto pipHeight = lround(1 * scaleFactor);
 
             const auto maxOffsetY = drawableRange - pipHeight;
-            const auto offsetScale = maxOffsetY / gsl::narrow_cast<float>(update.newMaximum + update.newViewportSize);
+            const auto offsetScale = maxOffsetY / static_cast<float>(update.newMaximum + update.newViewportSize);
             // A helper to turn a TextBuffer row offset into a bitmap offset.
             const auto dataAt = [&](til::CoordType row) [[msvc::forceinline]] {
                 const auto y = std::clamp<long>(lrintf(row * offsetScale), 0, maxOffsetY);
@@ -798,7 +798,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Clear search highlights scroll marks (by triggering an update after closing the search box)
         if (_showMarksInScrollbar)
         {
-            const auto scrollBar = ScrollBar();
+            const auto scrollBar = VerticalScrollBar();
             ScrollBarUpdate update{
                 .newValue = scrollBar.Value(),
                 .newMaximum = scrollBar.Maximum(),
@@ -940,19 +940,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         SwapChainPanel().Margin(newMargin);
 
         // Apply settings for scrollbar
+        auto indicatorMode = Controls::Primitives::ScrollingIndicatorMode::MouseIndicator;
+        auto visibility = Visibility::Visible;
         if (settings.ScrollState() == ScrollbarState::Hidden)
         {
             // In the scenario where the user has turned off the OS setting to automatically hide scrollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
             // achieve the intended effect.
-            ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::None);
-            ScrollBar().Visibility(Visibility::Collapsed);
+            indicatorMode = Controls::Primitives::ScrollingIndicatorMode::None;
+            visibility = Visibility::Collapsed;
         }
-        else // (default or Visible)
+        for (auto&& scrollbar : { HorizontalScrollBar(), VerticalScrollBar() })
         {
-            // Default behavior
-            ScrollBar().IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
-            ScrollBar().Visibility(Visibility::Visible);
+            scrollbar.IndicatorMode(indicatorMode);
+            scrollbar.Visibility(visibility);
         }
 
         _interactivity.UpdateSettings();
@@ -1396,13 +1397,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _core.EnablePainting();
 
-        auto bufferHeight = _core.BufferHeight();
+        {
+            const auto bufferSize = _core.ViewSize();
 
-        ScrollBar().Maximum(0);
-        ScrollBar().Minimum(0);
-        ScrollBar().Value(0);
-        ScrollBar().ViewportSize(bufferHeight);
-        ScrollBar().LargeChange(bufferHeight); // scroll one "screenful" at a time when the scroll bar is clicked
+            const auto hori = HorizontalScrollBar();
+            hori.Maximum(400);
+            hori.Minimum(0);
+            hori.Value(0);
+            hori.ViewportSize(bufferSize.X);
+            hori.LargeChange(bufferSize.X);
+
+            const auto vert = VerticalScrollBar();
+            vert.Maximum(0);
+            vert.Minimum(0);
+            vert.Value(0);
+            vert.ViewportSize(bufferSize.Y);
+            vert.LargeChange(bufferSize.Y); // scroll one "screenful" at a time when the scroll bar is clicked
+        }
 
         // Set up blinking cursor
         int blinkTime = GetCaretBlinkTime();
@@ -2243,8 +2254,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.AdjustFontSize(fontSizeDelta);
     }
 
-    void TermControl::_ScrollbarChangeHandler(const Windows::Foundation::IInspectable& /*sender*/,
-                                              const Controls::Primitives::RangeBaseValueChangedEventArgs& args)
+    void TermControl::_HorizontalScrollBarChangeHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                                        const Controls::Primitives::RangeBaseValueChangedEventArgs& args)
     {
         if (_isInternalScrollBarUpdate || _IsClosing())
         {
@@ -2255,7 +2266,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const auto newValue = args.NewValue();
-        _interactivity.UpdateScrollbar(static_cast<float>(newValue));
+        const auto scrollOffset = _core.ScrollOffset();
+        _interactivity.UpdateScrollbar({ static_cast<float>(newValue), static_cast<float>(scrollOffset.Y) });
+    }
+
+    void TermControl::_VerticalScrollBarChangeHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                                      const Controls::Primitives::RangeBaseValueChangedEventArgs& args)
+    {
+        if (_isInternalScrollBarUpdate || _IsClosing())
+        {
+            // The update comes from ourselves, more specifically from the
+            // terminal. So we don't have to update the terminal because it
+            // already knows.
+            return;
+        }
+
+        const auto newValue = args.NewValue();
+        const auto scrollOffset = _core.ScrollOffset();
+        _interactivity.UpdateScrollbar({ static_cast<float>(scrollOffset.X), static_cast<float>(newValue) });
 
         // User input takes priority over terminal events so cancel
         // any pending scroll bar update if the user scrolls.
@@ -2366,9 +2394,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (_lastAutoScrollUpdateTime)
             {
-                static constexpr auto microSecPerSec = 1000000.0;
-                const auto deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - *_lastAutoScrollUpdateTime).count() / microSecPerSec;
-                ScrollBar().Value(ScrollBar().Value() + _autoScrollVelocity * deltaTime);
+                const auto deltaTime = std::chrono::duration<double>(timeNow - *_lastAutoScrollUpdateTime).count();
+                VerticalScrollBar().Value(VerticalScrollBar().Value() + _autoScrollVelocity * deltaTime);
 
                 if (_autoScrollingPointerPoint)
                 {
@@ -2764,10 +2791,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - viewTop: the viewTop to scroll to
     void TermControl::ScrollViewport(int viewTop)
     {
-        ScrollBar().Value(viewTop);
+        VerticalScrollBar().Value(viewTop);
     }
 
-    int TermControl::ScrollOffset() const
+    Core::Point TermControl::ScrollOffset() const
     {
         return _core.ScrollOffset();
     }
@@ -2776,14 +2803,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the height of the terminal in lines of text
     // Return Value:
     // - The height of the terminal in lines of text
-    int TermControl::ViewHeight() const
+    Core::Point TermControl::ViewSize() const
     {
-        return _core.ViewHeight();
+        return _core.ViewSize();
     }
 
-    int TermControl::BufferHeight() const
+    Core::Point TermControl::BufferSize() const
     {
-        return _core.BufferHeight();
+        return _core.BufferSize();
     }
 
     // Function Description:
@@ -2964,10 +2991,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fontSize = _core.FontSizeInDips();
             auto width = fontSize.Width;
             auto height = fontSize.Height;
+
             // Reserve additional space if scrollbar is intended to be visible
             if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
             {
-                width += static_cast<float>(ScrollBar().ActualWidth());
+                width += static_cast<float>(VerticalScrollBar().ActualWidth());
+                height += static_cast<float>(HorizontalScrollBar().ActualHeight());
             }
 
             // Account for the size of any padding
@@ -2999,13 +3028,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontDimension = widthOrHeight ? fontSize.Width : fontSize.Height;
 
         const auto padding = GetPadding();
-        auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
-                                                           padding.Left + padding.Right :
-                                                           padding.Top + padding.Bottom);
+        auto nonTerminalArea = static_cast<float>(widthOrHeight ?
+                                                      padding.Left + padding.Right :
+                                                      padding.Top + padding.Bottom);
 
-        if (widthOrHeight && _core.Settings().ScrollState() != ScrollbarState::Hidden)
+        if (_core.Settings().ScrollState() != ScrollbarState::Hidden)
         {
-            nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
+            const auto scrollbar = widthOrHeight ? VerticalScrollBar() : HorizontalScrollBar();
+            nonTerminalArea += static_cast<float>(scrollbar.ActualWidth());
         }
 
         const auto gridSize = dimension - nonTerminalArea;
@@ -3643,7 +3673,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto selectionAnchor{ movingEnd ? markerData.EndPos : markerData.StartPos };
                 const auto& marker{ movingEnd ? SelectionEndMarker() : SelectionStartMarker() };
                 const auto& otherMarker{ movingEnd ? SelectionStartMarker() : SelectionEndMarker() };
-                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewHeight())
+                if (selectionAnchor.Y < 0 || selectionAnchor.Y >= _core.ViewSize().Y)
                 {
                     // if the endpoint is outside of the viewport,
                     // just hide the markers
@@ -3869,7 +3899,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_showMarksInScrollbar)
             {
-                const auto scrollBar = ScrollBar();
+                const auto scrollBar = VerticalScrollBar();
                 ScrollBarUpdate update{
                     .newValue = scrollBar.Value(),
                     .newMaximum = scrollBar.Maximum(),

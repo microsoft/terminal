@@ -708,7 +708,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
-    void ControlCore::UserScrollViewport(const int viewTop)
+    void ControlCore::UserScrollViewport(const til::point viewTop)
     {
         {
             // This is a scroll event that wasn't initiated by the terminal
@@ -1483,10 +1483,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetTaskbarProgress();
     }
 
-    int ControlCore::ScrollOffset()
+    Core::Point ControlCore::ScrollOffset() const
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetScrollOffset();
+        return _terminal->GetScrollOffset().to_core_point();
     }
 
     // Function Description:
@@ -1494,10 +1494,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   height of the viewport.
     // Return Value:
     // - The height of the terminal in lines of text
-    int ControlCore::ViewHeight() const
+    Core::Point ControlCore::ViewSize() const
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetViewport().Height();
+        return _terminal->GetViewport().Dimensions().to_core_point();
     }
 
     // Function Description:
@@ -1505,10 +1505,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   history AND the viewport.
     // Return Value:
     // - The height of the terminal in lines of text
-    int ControlCore::BufferHeight() const
+    Core::Point ControlCore::BufferSize() const
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetBufferHeight();
+        return _terminal->GetBufferSize().to_core_point();
     }
 
     void ControlCore::_terminalWarningBell()
@@ -2596,7 +2596,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ScrollToMark(const Control::ScrollToMarkDirection& direction)
     {
         const auto lock = _terminal->LockForWriting();
-        const auto currentOffset = ScrollOffset();
+        const auto currentOffset = ScrollOffset().Y;
         const auto& marks{ _terminal->GetMarkExtents() };
 
         std::optional<::MarkExtents> tgt;
@@ -2605,7 +2605,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
         case ScrollToMarkDirection::Last:
         {
-            int highest = currentOffset;
+            auto highest = currentOffset;
             for (const auto& mark : marks)
             {
                 const auto newY = mark.start.y;
@@ -2619,7 +2619,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         case ScrollToMarkDirection::First:
         {
-            int lowest = currentOffset;
+            auto lowest = currentOffset;
             for (const auto& mark : marks)
             {
                 const auto newY = mark.start.y;
@@ -2633,7 +2633,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         case ScrollToMarkDirection::Next:
         {
-            int minDistance = INT_MAX;
+            auto minDistance = til::CoordTypeMax;
             for (const auto& mark : marks)
             {
                 const auto delta = mark.start.y - currentOffset;
@@ -2648,7 +2648,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         case ScrollToMarkDirection::Previous:
         default:
         {
-            int minDistance = INT_MAX;
+            auto minDistance = til::CoordTypeMax;
             for (const auto& mark : marks)
             {
                 const auto delta = currentOffset - mark.start.y;
@@ -2662,29 +2662,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         }
 
-        const auto viewHeight = ViewHeight();
-        const auto bufferSize = BufferHeight();
+        const auto scrollOffsetX = ScrollOffset().X;
+        const auto viewHeight = ViewSize().Y;
+        const auto bufferSize = BufferSize().Y;
 
         // UserScrollViewport, to update the Terminal about where the viewport should be
         // then raise a _terminalScrollPositionChanged to inform the control to update the scrollbar.
-        if (tgt.has_value())
+        til::CoordType y = 0;
+        if (tgt)
         {
-            UserScrollViewport(tgt->start.y);
-            _terminalScrollPositionChanged(tgt->start.y, viewHeight, bufferSize);
+            y = tgt->start.y;
         }
-        else
+        else if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
         {
-            if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
-            {
-                UserScrollViewport(BufferHeight());
-                _terminalScrollPositionChanged(BufferHeight(), viewHeight, bufferSize);
-            }
-            else if (direction == ScrollToMarkDirection::First || direction == ScrollToMarkDirection::Previous)
-            {
-                UserScrollViewport(0);
-                _terminalScrollPositionChanged(0, viewHeight, bufferSize);
-            }
+            y = bufferSize;
         }
+
+        UserScrollViewport({ scrollOffsetX, y });
+        _terminalScrollPositionChanged(y, viewHeight, bufferSize);
     }
 
     void ControlCore::_terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength)

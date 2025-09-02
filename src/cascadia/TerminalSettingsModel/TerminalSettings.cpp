@@ -292,6 +292,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void TerminalSettings::_ApplyProfileSettings(const Profile& profile)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
+        _MinimumBufferWidth = profile.MinimumBufferWidth();
         _HistorySize = profile.HistorySize();
         _SnapOnInput = profile.SnapOnInput();
         _AltGrAliasing = profile.AltGrAliasing();

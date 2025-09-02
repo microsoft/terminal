@@ -94,17 +94,17 @@
             12dips. This is harder for folks to hit with the mouse, and isn't
             consistent with the rest of the scrollbars on the platform (as much
             as they can be).
-            
+
             To work around this, we have to entirely copy the template for the
             ScrollBar into our XAML file. We're then also re-defining
             ScrollBarSize here to 16, so that the new template will pick up on
             the new value.
-            
+
             This is kinda a pain, and we have to be careful to be sure to ingest
             an updated version of the template any time we update MUX. The
             latest ControlsV2 version of the template can be found at:
             https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/ScrollBar_themeresources.xaml#L218
-            
+
             Additionally we have:
             * removed the corner radius, because that should be flush
             with the top of the window above the TermControl.
@@ -113,7 +113,7 @@
             the Win11-style WinUI ScrollView. If you also have the "Always show scrollbars" setting enabled in
             the settings app (do it if you haven't already), it avoids any and all animations during startup which
             makes the app start feel noticeably better and also shaves off another ~167ms of our "busy time".
-            
+
             We're also planning on making this adjustable in the future
             (GH#9218), where we might need this anyways.
         -->
@@ -1338,7 +1338,19 @@
                                         SearchChanged="_SearchChanged" />
             </Grid>
 
-            <ScrollBar x:Name="ScrollBar"
+            <ScrollBar x:Name="HorizontalScrollBar"
+                       VerticalAlignment="Bottom"
+                       IndicatorMode="MouseIndicator"
+                       IsTabStop="False"
+                       LargeChange="4"
+                       Maximum="1"
+                       Orientation="Horizontal"
+                       SmallChange="1"
+                       Style="{StaticResource ForkedScrollbarTemplate}"
+                       ValueChanged="_HorizontalScrollBarChangeHandler"
+                       ViewportSize="10" />
+
+            <ScrollBar x:Name="VerticalScrollBar"
                        Grid.Column="1"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Stretch"
@@ -1347,11 +1359,9 @@
                        LargeChange="4"
                        Maximum="1"
                        Orientation="Vertical"
-                       PointerPressed="_CapturePointer"
-                       PointerReleased="_ReleasePointerCapture"
                        SmallChange="1"
                        Style="{StaticResource ForkedScrollbarTemplate}"
-                       ValueChanged="_ScrollbarChangeHandler"
+                       ValueChanged="_VerticalScrollBarChangeHandler"
                        ViewportSize="10" />
 
             <Image x:Name="ScrollBarCanvas"

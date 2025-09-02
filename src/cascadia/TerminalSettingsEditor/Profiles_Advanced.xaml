@@ -66,6 +66,19 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Minimum Buffer Width  -->
+            <local:SettingContainer x:Uid="Profile_MinimumBufferWidth"
+                                    ClearSettingValue="{x:Bind Profile.ClearMinimumBufferWidth}"
+                                    HasSettingValue="{x:Bind Profile.HasMinimumBufferWidth, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.MinimumBufferWidthOverrideSource, Mode=OneWay}">
+                <muxc:NumberBox x:Uid="Profile_MinimumBufferWidthBox"
+                                LargeChange="100"
+                                Minimum="0"
+                                SmallChange="10"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Profile.MinimumBufferWidth, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  History Size  -->
             <local:SettingContainer x:Uid="Profile_HistorySize"
                                     ClearSettingValue="{x:Bind Profile.ClearHistorySize}"

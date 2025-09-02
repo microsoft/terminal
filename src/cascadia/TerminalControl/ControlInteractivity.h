@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const Core::Point pixelPosition,
                         const Control::MouseButtonState state);
 
-        void UpdateScrollbar(const float newValue);
+        void UpdateScrollbar(winrt::Windows::Foundation::Point newValue);
 
 #pragma endregion
 
@@ -111,7 +111,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::com_ptr<ControlCore> _core{ nullptr };
         UINT _rowsToScroll = 3;
-        float _internalScrollbarPosition = 0;
+        winrt::Windows::Foundation::Point _internalScrollbarPosition{};
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.

@@ -170,9 +170,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
-        int ScrollOffset();
-        int ViewHeight() const;
-        int BufferHeight() const;
+        Core::Point ScrollOffset() const;
+        Core::Point ViewSize() const;
+        Core::Point BufferSize() const;
 
         bool HasSelection() const;
         bool HasMultiLineSelection() const;
@@ -208,7 +208,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,
                             const short wheelDelta,
                             const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
-        void UserScrollViewport(const int viewTop);
+        void UserScrollViewport(const til::point viewTop);
 
         void ClearBuffer(Control::ClearBufferType clearType);
 

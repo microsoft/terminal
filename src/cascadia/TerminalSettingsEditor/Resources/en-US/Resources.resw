@@ -1105,6 +1105,17 @@
     <value>If enabled, the profile will open in an Admin terminal window automatically. If the current window is already running as admin, it will open in this window.</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
+  <data name="Profile_MinimumBufferWidth.Header" xml:space="preserve">
+    <value>Minimum Buffer Width</value>
+    <comment>"Buffer Width" refers to the width of a terminal buffer (as opposed to the viewport width)</comment>
+  </data>
+  <data name="Profile_MinimumBufferWidthBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Minimum Buffer Width</value>
+    <comment>"Buffer Width" refers to the width of a terminal buffer (as opposed to the viewport width)</comment>
+  </data>
+  <data name="Profile_MinimumBufferWidth.HelpText" xml:space="preserve">
+    <value>The width of the backing text buffer. If it's wider than the viewport, a horizontal scrollbar is shown.</value>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>History size</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>

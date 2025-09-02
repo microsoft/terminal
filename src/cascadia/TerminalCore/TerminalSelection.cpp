@@ -1019,13 +1019,13 @@ void Terminal::_ScrollToPoint(const til::point pos)
         if (const auto amtAboveView = visibleViewport.Top() - pos.y; amtAboveView > 0)
         {
             // anchor is above visible viewport, scroll by that amount
-            _scrollOffset += amtAboveView;
+            _scrollOffset.y += amtAboveView;
         }
         else
         {
             // anchor is below visible viewport, scroll by that amount
             const auto amtBelowView = pos.y - visibleViewport.BottomInclusive();
-            _scrollOffset -= amtBelowView;
+            _scrollOffset.y -= amtBelowView;
         }
         _NotifyScrollEvent();
         _activeBuffer().TriggerScroll();

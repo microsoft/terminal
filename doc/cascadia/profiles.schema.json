@@ -3012,6 +3012,12 @@
           "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.",
           "type": "boolean"
         },
+        "minimumBufferWidth": {
+          "default": 0,
+          "description": "The width of the backing text buffer. If it's wider than the viewport, a horizontal scrollbar is shown.",
+          "minimum": 0,
+          "type": "integer"
+        },
         "historySize": {
           "default": 9001,
           "description": "The number of lines above the ones displayed in the window you can scroll back to.",

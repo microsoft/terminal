@@ -301,7 +301,7 @@ HRESULT HwndTerminal::Initialize()
 
     _renderEngine = std::move(engine);
 
-    _terminal->Create({ 80, 25 }, 9001, *_renderer);
+    _terminal->Create({ 80, 25 }, 0, 9001, *_renderer);
     _terminal->SetWriteInputCallback([=](std::wstring_view input) noexcept { _WriteTextToConnection(input); });
     _terminal->SetCopyToClipboardCallback([=](wil::zwstring_view text) noexcept { _CopyTextToSystemClipboard(text, {}, {}); });
     _renderer->EnablePainting();
@@ -592,7 +592,8 @@ try
     if (const auto publicTerminal = static_cast<const HwndTerminal*>(terminal); publicTerminal && publicTerminal->_terminal)
     {
         const auto lock = publicTerminal->_terminal->LockForWriting();
-        publicTerminal->_terminal->UserScrollViewport(viewTop);
+        const auto current = publicTerminal->_terminal->GetScrollOffset();
+        publicTerminal->_terminal->UserScrollViewport({ current.x, viewTop });
     }
 }
 CATCH_LOG()
@@ -962,7 +963,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            GSL_SUPPRESS(bounds .3)
+            GSL_SUPPRESS(bounds.3)
             renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
 
@@ -1185,7 +1186,7 @@ void HwndTerminal::ChangeViewport(const til::inclusive_rect& NewWindow)
         return;
     }
     const auto lock = _terminal->LockForWriting();
-    _terminal->UserScrollViewport(NewWindow.top);
+    _terminal->UserScrollViewport({ NewWindow.left, NewWindow.top });
 }
 
 HRESULT HwndTerminal::GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept

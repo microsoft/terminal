@@ -179,7 +179,7 @@ til::CoordType Terminal::_ScrollToPoints(const til::point coordStart, const til:
     if (coordStart.y < _VisibleStartIndex())
     {
         // recalculate the scrollOffset
-        _scrollOffset = ViewStartIndex() - coordStart.y;
+        _scrollOffset.y = ViewStartIndex() - coordStart.y;
         notifyScrollChange = true;
     }
     else if (coordEnd.y > _VisibleEndIndex())
@@ -188,7 +188,7 @@ til::CoordType Terminal::_ScrollToPoints(const til::point coordStart, const til:
         // beneath the current visible viewport, it may be within the
         // current mutableViewport and the scrollOffset will be smaller
         // than 0
-        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.y);
+        _scrollOffset.y = std::max(0, ViewStartIndex() - coordStart.y);
         notifyScrollChange = true;
     }
 

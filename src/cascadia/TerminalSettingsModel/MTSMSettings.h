@@ -79,6 +79,7 @@ Author(s):
 // * IControlSettings.idl or ICoreSettings.idl
 // * ControlProperties.h
 #define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
+    X(int32_t, MinimumBufferWidth, "minimumBufferWidth", 0)                                                                                                    \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
     X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
     X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \

@@ -403,8 +403,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlInteractivity::TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
                                           const bool focused)
     {
-        if (focused &&
-            _touchAnchor)
+        if (focused && _touchAnchor)
         {
             const auto anchor = _touchAnchor.value();
 
@@ -413,23 +412,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fontSizeInDips{ _core->FontSizeInDips() };
 
             // Get the difference between the point we've dragged to and the start of the touch.
-            const auto dy = static_cast<float>(newTouchPoint.Y - anchor.Y);
+            const auto dx = newTouchPoint.X - anchor.X;
+            const auto dy = newTouchPoint.Y - anchor.Y;
 
-            // Start viewport scroll after we've moved more than a half row of text
-            if (std::abs(dy) > (fontSizeInDips.Height / 2.0f))
+            // Start viewport scroll after we've moved more than a half row/col of text
+            if (std::abs(dx) > (fontSizeInDips.Width * 0.5f) || std::abs(dy) > (fontSizeInDips.Height * 0.5f))
             {
+                const auto currentOffset = _core->ScrollOffset();
+
                 // Multiply by -1, because moving the touch point down will
                 // create a positive delta, but we want the viewport to move up,
                 // so we'll need a negative scroll amount (and the inverse for
                 // panning down)
-                const auto numRows = dy / -fontSizeInDips.Height;
-
-                const auto currentOffset = _core->ScrollOffset();
-                const auto newValue = numRows + currentOffset;
+                const auto x = (dx / -fontSizeInDips.Width) + currentOffset.X;
+                const auto y = (dy / -fontSizeInDips.Height) + currentOffset.Y;
 
                 // Update the Core's viewport position, and raise a
                 // ScrollPositionChanged event to update the scrollbar
-                UpdateScrollbar(newValue);
+                UpdateScrollbar({ x, y });
 
                 // Use this point as our new scroll anchor.
                 _touchAnchor = newTouchPoint;
@@ -574,11 +574,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // underneath us. We wouldn't know - we don't want the overhead of
         // another ScrollPositionChanged handler. If the scrollbar should be
         // somewhere other than where it is currently, then start from that row.
-        const auto currentInternalRow = std::lround(_internalScrollbarPosition);
+        const auto currentInternalRow = std::lround(_internalScrollbarPosition.Y);
         const auto currentCoreRow = _core->ScrollOffset();
-        const auto currentOffset = currentInternalRow == currentCoreRow ?
-                                       _internalScrollbarPosition :
-                                       currentCoreRow;
+        const auto currentOffset = currentInternalRow == currentCoreRow.Y ? _internalScrollbarPosition.Y : currentCoreRow.Y;
 
         // negative = down, positive = up
         // However, for us, the signs are flipped.
@@ -589,12 +587,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // WHEEL_PAGESCROLL is a Win32 constant that represents the "scroll one page
         // at a time" setting. If we ignore it, we will scroll a truly absurd number
         // of rows.
-        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewHeight() : _rowsToScroll };
+        const auto rowsToScroll{ _rowsToScroll == WHEEL_PAGESCROLL ? _core->ViewSize().Y : _rowsToScroll };
         const auto newValue = rowsToScroll * rowDelta + currentOffset;
 
         // Update the Core's viewport position, and raise a
         // ScrollPositionChanged event to update the scrollbar
-        UpdateScrollbar(newValue);
+        UpdateScrollbar({ static_cast<float>(currentCoreRow.X), newValue });
 
         if (isLeftButtonPressed)
         {
@@ -620,26 +618,38 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - newValue: The new top of the viewport
     // Return Value:
     // - <none>
-    void ControlInteractivity::UpdateScrollbar(const float newValue)
+    void ControlInteractivity::UpdateScrollbar(winrt::Windows::Foundation::Point newValue)
     {
+        const auto bufferSize = _core->BufferSize();
+        const auto scrollOffsetBefore = til::point{ _core->ScrollOffset() };
+
         // Set this as the new value of our internal scrollbar representation.
         // We're doing this so we can accumulate fractional amounts of a row to
         // scroll each time the mouse scrolls.
-        _internalScrollbarPosition = std::clamp(newValue, 0.0f, static_cast<float>(_core->BufferHeight()));
+        _internalScrollbarPosition.X = std::clamp(newValue.X, 0.0f, static_cast<float>(bufferSize.X));
+        _internalScrollbarPosition.Y = std::clamp(newValue.Y, 0.0f, static_cast<float>(bufferSize.Y));
 
         // If the new scrollbar position, rounded to an int, is at a different
         // row, then actually update the scroll position in the core, and raise
         // a ScrollPositionChanged to inform the control.
-        const auto viewTop = std::lround(_internalScrollbarPosition);
-        if (viewTop != _core->ScrollOffset())
-        {
-            _core->UserScrollViewport(viewTop);
+        const til::point scrollOffset{
+            std::lround(_internalScrollbarPosition.X),
+            std::lround(_internalScrollbarPosition.Y),
+        };
 
-            // _core->ScrollOffset() is now set to newValue
-            ScrollPositionChanged.raise(*this,
-                                        winrt::make<ScrollPositionChangedArgs>(_core->ScrollOffset(),
-                                                                               _core->ViewHeight(),
-                                                                               _core->BufferHeight()));
+        if (scrollOffset != scrollOffsetBefore)
+        {
+            _core->UserScrollViewport(scrollOffset);
+
+            if (scrollOffset.y != scrollOffsetBefore.y)
+            {
+                ScrollPositionChanged.raise(
+                    *this,
+                    winrt::make<ScrollPositionChangedArgs>(
+                        scrollOffset.y,
+                        _core->ViewSize().Y,
+                        bufferSize.Y));
+            }
         }
     }
 
@@ -706,16 +716,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return pixelPosition / fontSize;
     }
 
-    bool ControlInteractivity::_sendMouseEventHelper(const til::point terminalPosition,
+    bool ControlInteractivity::_sendMouseEventHelper(til::point terminalPosition,
                                                      const unsigned int pointerUpdateKind,
                                                      const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                      const SHORT wheelDelta,
                                                      Control::MouseButtonState buttonState)
     {
-        const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
         // If the click happened outside the active region, core should get a chance to filter it out or clamp it.
-        const auto adjustedY = terminalPosition.y - adjustment;
-        return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
+        terminalPosition -= til::point{ _core->BufferSize() };
+        terminalPosition += til::point{ _core->ScrollOffset() };
+        terminalPosition += til::point{ _core->ViewSize() };
+        return _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
     }
 
     // Method Description:

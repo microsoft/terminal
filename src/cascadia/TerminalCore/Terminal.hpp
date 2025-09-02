@@ -5,15 +5,14 @@
 
 #include <conattrs.hpp>
 
-#include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
+#include "../../cascadia/terminalcore/ControlKeyStates.hpp"
+#include "../../inc/DefaultSettings.h"
 #include "../../renderer/inc/IRenderData.hpp"
 #include "../../terminal/adapter/ITerminalApi.hpp"
-#include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
+#include "../../terminal/parser/StateMachine.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../types/inc/GlyphWidth.hpp"
-#include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
 #include <til/generational.h>
 #include <til/ticket_lock.h>
@@ -54,7 +53,6 @@ namespace TerminalCoreUnitTests
 
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Console::VirtualTerminal::ITerminalApi,
-    public Microsoft::Terminal::Core::ITerminalInput,
     public Microsoft::Console::Render::IRenderData
 {
     using RenderSettings = Microsoft::Console::Render::RenderSettings;
@@ -83,9 +81,11 @@ public:
     Terminal();
     Terminal(TestDummyMarker);
 
-    void Create(til::size viewportSize,
-                til::CoordType scrollbackLines,
-                Microsoft::Console::Render::Renderer& renderer);
+    void Create(
+        til::size viewportSize,
+        til::CoordType minimumBufferWidth,
+        til::CoordType scrollbackLines,
+        Microsoft::Console::Render::Renderer& renderer);
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
                             Microsoft::Console::Render::Renderer& renderer);
@@ -110,10 +110,10 @@ public:
     [[nodiscard]] std::unique_lock<til::recursive_ticket_lock> LockForWriting() noexcept;
     til::recursive_ticket_lock_suspension SuspendLock() noexcept;
 
-    til::CoordType GetBufferHeight() const noexcept;
+    til::size GetBufferSize() const noexcept;
 
-    int ViewStartIndex() const noexcept;
-    int ViewEndIndex() const noexcept;
+    til::CoordType ViewStartIndex() const noexcept;
+    til::CoordType ViewEndIndex() const noexcept;
 
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
@@ -170,16 +170,16 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
-    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
-    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
-    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType FocusChanged(const bool focused) override;
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown);
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendMouseEvent(const til::point viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states);
+    [[nodiscard]] ::Microsoft::Console::VirtualTerminal::TerminalInput::OutputType FocusChanged(const bool focused);
 
-    [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept override;
-    void UserScrollViewport(const int viewTop) override;
-    int GetScrollOffset() noexcept override;
+    [[nodiscard]] HRESULT UserResize(const til::size viewportSize) noexcept;
+    void UserScrollViewport(const til::point viewTop);
+    til::point GetScrollOffset() noexcept;
 
-    void TrySnapOnInput() override;
+    void TrySnapOnInput();
     bool IsTrackingMouseInput() const noexcept;
     bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const noexcept;
 
@@ -414,6 +414,7 @@ private:
     std::unique_ptr<TextBuffer> _mainBuffer;
     std::unique_ptr<TextBuffer> _altBuffer;
     Microsoft::Console::Types::Viewport _mutableViewport;
+    til::CoordType _minimumBufferWidth = 0;
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
     bool _clipboardOperationsAllowed = true;
@@ -423,7 +424,7 @@ private:
 
     // _scrollOffset is the number of lines above the viewport that are currently visible
     // If _scrollOffset is 0, then the visible region of the buffer is the viewport.
-    til::CoordType _scrollOffset = 0;
+    til::point _scrollOffset;
     // TODO this might not be the value we want to store.
     // We might want to store the height in the scrollback that's currently visible.
     // Think on this some more.
@@ -461,13 +462,13 @@ private:
     Console::VirtualTerminal::TerminalInput& _getTerminalInput() noexcept;
     const Console::VirtualTerminal::TerminalInput& _getTerminalInput() const noexcept;
 
-    int _VisibleStartIndex() const noexcept;
-    int _VisibleEndIndex() const noexcept;
+    til::CoordType _VisibleStartIndex() const noexcept;
+    til::CoordType _VisibleEndIndex() const noexcept;
 
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
 
-    void _PreserveUserScrollOffset(const int viewportDelta) noexcept;
+    void _PreserveUserScrollOffset(const til::CoordType viewportDelta) noexcept;
     til::CoordType _ScrollToPoints(const til::point coordStart, const til::point coordEnd);
 
     void _NotifyScrollEvent();

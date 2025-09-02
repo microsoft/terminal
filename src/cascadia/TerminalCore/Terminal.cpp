@@ -40,12 +40,23 @@ Terminal::Terminal(TestDummyMarker) :
 #endif
 }
 
-void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Renderer& renderer)
+void Terminal::Create(
+    til::size viewportSize,
+    til::CoordType minimumBufferWidth,
+    til::CoordType scrollbackLines,
+    Renderer& renderer)
 {
+    viewportSize.width = Utils::ClampToShortMax(viewportSize.width, 1);
+    viewportSize.height = Utils::ClampToShortMax(viewportSize.height, 1);
+
+    _minimumBufferWidth = Utils::ClampToShortMax(minimumBufferWidth, 0);
+    _scrollbackLines = Utils::ClampToShortMax(scrollbackLines, 1);
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
-    _scrollbackLines = scrollbackLines;
-    const til::size bufferSize{ viewportSize.width,
-                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
+
+    const til::size bufferSize{
+        std::max(viewportSize.width, _minimumBufferWidth),
+        Utils::ClampToShortMax(viewportSize.height + _scrollbackLines, 1),
+    };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
@@ -63,11 +74,11 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 void Terminal::CreateFromSettings(ICoreSettings settings,
                                   Renderer& renderer)
 {
-    const til::size viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
-                                  Utils::ClampToShortMax(settings.InitialRows(), 1) };
-
-    // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
+    const til::size viewportSize{
+        settings.InitialCols(),
+        settings.InitialRows(),
+    };
+    Create(viewportSize, settings.MinimumBufferWidth(), settings.HistorySize(), renderer);
 
     UpdateSettings(settings);
 }
@@ -285,12 +296,14 @@ try
         return S_OK;
     }
 
-    const auto newBufferHeight = std::clamp(viewportSize.height + _scrollbackLines, 1, SHRT_MAX);
-    const til::size bufferSize{ viewportSize.width, newBufferHeight };
+    const til::size bufferSize{
+        std::max(viewportSize.width, _minimumBufferWidth),
+        Utils::ClampToShortMax(viewportSize.height + _scrollbackLines, 1),
+    };
 
     // If the original buffer had _no_ scroll offset, then we should be at the
     // bottom in the new buffer as well. Track that case now.
-    const auto originalOffsetWasZero = _scrollOffset == 0;
+    const auto originalOffsetWasZero = _scrollOffset.y == 0;
 
     // GH#3848 - We'll initialize the new buffer with the default attributes,
     // but after the resize, we'll want to make sure that the new buffer's
@@ -434,7 +447,7 @@ try
 
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
-    _scrollOffset = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
+    _scrollOffset.y = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
 
     _mainBuffer->TriggerRedrawAll();
     _NotifyScrollEvent();
@@ -457,9 +470,9 @@ void Terminal::Write(std::wstring_view stringView)
 // - <none>
 void Terminal::TrySnapOnInput()
 {
-    if (_snapOnInput && _scrollOffset != 0)
+    if (_snapOnInput && _scrollOffset.y != 0)
     {
-        _scrollOffset = 0;
+        _scrollOffset.y = 0;
         _NotifyScrollEvent();
     }
 }
@@ -993,18 +1006,18 @@ Viewport Terminal::_GetMutableViewport() const noexcept
                             _mutableViewport;
 }
 
-til::CoordType Terminal::GetBufferHeight() const noexcept
+til::size Terminal::GetBufferSize() const noexcept
 {
-    return _GetMutableViewport().BottomExclusive();
+    return _GetMutableViewport().BottomRightExclusive().to_size();
 }
 
 // ViewStartIndex is also the length of the scrollback
-int Terminal::ViewStartIndex() const noexcept
+til::CoordType Terminal::ViewStartIndex() const noexcept
 {
     return _inAltBuffer() ? 0 : _mutableViewport.Top();
 }
 
-int Terminal::ViewEndIndex() const noexcept
+til::CoordType Terminal::ViewEndIndex() const noexcept
 {
     return _inAltBuffer() ? _altBufferSize.height - 1 : _mutableViewport.BottomInclusive();
 }
@@ -1034,14 +1047,14 @@ const TerminalInput& Terminal::_getTerminalInput() const noexcept
 }
 
 // _VisibleStartIndex is the first visible line of the buffer
-int Terminal::_VisibleStartIndex() const noexcept
+til::CoordType Terminal::_VisibleStartIndex() const noexcept
 {
-    return _inAltBuffer() ? 0 : std::max(0, _mutableViewport.Top() - _scrollOffset);
+    return _inAltBuffer() ? 0 : std::max(0, _mutableViewport.Top() - _scrollOffset.y);
 }
 
-int Terminal::_VisibleEndIndex() const noexcept
+til::CoordType Terminal::_VisibleEndIndex() const noexcept
 {
-    return _inAltBuffer() ? _altBufferSize.height - 1 : std::max(0, _mutableViewport.BottomInclusive() - _scrollOffset);
+    return _inAltBuffer() ? _altBufferSize.height - 1 : std::max(0, _mutableViewport.BottomInclusive() - _scrollOffset.y);
 }
 
 Viewport Terminal::_GetVisibleViewport() const noexcept
@@ -1049,27 +1062,25 @@ Viewport Terminal::_GetVisibleViewport() const noexcept
     // GH#3493: if we're in the alt buffer, then it's possible that the mutable
     // viewport's size hasn't been updated yet. In that case, use the
     // temporarily stashed _altBufferSize instead.
-    const til::point origin{ 0, _VisibleStartIndex() };
-    const auto size{ _inAltBuffer() ? _altBufferSize :
-                                      _mutableViewport.Dimensions() };
-    return Viewport::FromDimensions(origin,
-                                    size);
+    const til::point origin{ _scrollOffset.x, _VisibleStartIndex() };
+    const auto size{ _inAltBuffer() ? _altBufferSize : _mutableViewport.Dimensions() };
+    return Viewport::FromDimensions(origin, size);
 }
 
-void Terminal::_PreserveUserScrollOffset(const int viewportDelta) noexcept
+void Terminal::_PreserveUserScrollOffset(const til::CoordType viewportDelta) noexcept
 {
     // When the mutable viewport is moved down, and there's an active selection,
     // or the visible viewport isn't already at the bottom, then we want to keep
     // the visible viewport where it is. To do this, we adjust the scroll offset
     // by the same amount that we've just moved down.
-    if (viewportDelta > 0 && (IsSelectionActive() || _scrollOffset != 0))
+    if (viewportDelta > 0 && (IsSelectionActive() || _scrollOffset.y != 0))
     {
         const auto maxScrollOffset = _activeBuffer().GetSize().Height() - _mutableViewport.Height();
-        _scrollOffset = std::min(_scrollOffset + viewportDelta, maxScrollOffset);
+        _scrollOffset.y = std::min(_scrollOffset.y + viewportDelta, maxScrollOffset);
     }
 }
 
-void Terminal::UserScrollViewport(const int viewTop)
+void Terminal::UserScrollViewport(const til::point viewTop)
 {
     // Clear the regex pattern tree so the renderer does not try to render them while scrolling
     _clearPatternTree();
@@ -1079,12 +1090,10 @@ void Terminal::UserScrollViewport(const int viewTop)
         return;
     }
 
-    const auto clampedNewTop = std::max(0, viewTop);
-    const auto realTop = ViewStartIndex();
-    const auto newDelta = realTop - clampedNewTop;
     // if viewTop > realTop, we want the offset to be 0.
-
-    _scrollOffset = std::max(0, newDelta);
+    const auto origin = _inAltBuffer() ? til::point{} : _mutableViewport.Origin();
+    _scrollOffset.x = std::max(0, origin.x - std::max(0, viewTop.x));
+    _scrollOffset.y = std::max(0, origin.y - std::max(0, viewTop.y));
 
     // We can use the void variant of TriggerScroll here because
     // we adjusted the viewport so it can detect the difference
@@ -1092,9 +1101,16 @@ void Terminal::UserScrollViewport(const int viewTop)
     _activeBuffer().TriggerScroll();
 }
 
-int Terminal::GetScrollOffset() noexcept
+til::point Terminal::GetScrollOffset() noexcept
 {
-    return _VisibleStartIndex();
+    if (_inAltBuffer())
+    {
+        return til::point{};
+    }
+
+    const auto x = std::max(0, _mutableViewport.Left() - _scrollOffset.x);
+    const auto y = std::max(0, _mutableViewport.Top() - _scrollOffset.y);
+    return { x, y };
 }
 
 void Terminal::_NotifyScrollEvent()
@@ -1107,7 +1123,7 @@ void Terminal::_NotifyScrollEvent()
         const auto visible = _GetVisibleViewport();
         const auto top = visible.Top();
         const auto height = visible.Height();
-        const auto bottom = this->GetBufferHeight();
+        const auto bottom = GetBufferSize().height;
         _pfnScrollPositionChanged(top, height, bottom);
     }
 }
@@ -1634,7 +1650,7 @@ til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
     const auto absoluteCursorPosition{ GetCursorPosition() };
     const auto mutableViewport{ _GetMutableViewport() };
     const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
-    return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };
+    return { relativeCursorPos.x + _scrollOffset.x, relativeCursorPos.y + _scrollOffset.y };
 }
 
 void Terminal::PreviewText(std::wstring_view input)
