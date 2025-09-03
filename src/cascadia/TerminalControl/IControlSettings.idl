@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "IKeyBindings.idl";
 import "IControlAppearance.idl";
 import "EventArgs.idl";
 
@@ -52,8 +51,6 @@ namespace Microsoft.Terminal.Control
         Boolean EnableColorGlyphs { get; };
         String CellWidth { get; };
         String CellHeight { get; };
-
-        Microsoft.Terminal.Control.IKeyBindings KeyBindings { get; };
 
         Boolean CopyOnSelect { get; };
         Microsoft.Terminal.Control.CopyFormat CopyFormatting { get; };

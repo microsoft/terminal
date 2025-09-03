@@ -52,8 +52,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
-
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);

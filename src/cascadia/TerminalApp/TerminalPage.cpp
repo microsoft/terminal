@@ -23,6 +23,7 @@
 #include "TerminalSettingsCache.h"
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 #include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -273,7 +274,7 @@ namespace winrt::TerminalApp::implementation
         if (_settings == nullptr)
         {
             // Create this only on the first time we load the settings.
-            _terminalSettingsCache = std::make_shared<TerminalSettingsCache>(settings, *_bindings);
+            _terminalSettingsCache = std::make_shared<TerminalSettingsCache>(settings);
         }
         _settings = settings;
 
@@ -1652,7 +1653,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings,
+                                                                                        IControlSettings settings,
                                                                                         const bool inheritCursor)
     {
         static const auto textMeasurement = [&]() -> std::wstring_view {
@@ -1702,9 +1703,8 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            const auto environment = settings.EnvironmentVariables() != nullptr ?
-                                         settings.EnvironmentVariables().GetView() :
-                                         nullptr;
+            auto settingsInternal{ winrt::get_self<Settings::TerminalSettings>(settings) };
+            const auto environment = settingsInternal->EnvironmentVariables();
 
             // Update the path to be relative to whatever our CWD is.
             //
@@ -1726,7 +1726,7 @@ namespace winrt::TerminalApp::implementation
             valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                             newWorkingDirectory,
                                                                             settings.StartingTitle(),
-                                                                            settings.ReloadEnvironmentVariables(),
+                                                                            settingsInternal->ReloadEnvironmentVariables(),
                                                                             _WindowProperties.VirtualEnvVars(),
                                                                             environment,
                                                                             settings.InitialRows(),
@@ -1780,20 +1780,20 @@ namespace winrt::TerminalApp::implementation
         const auto& connection = control.Connection();
         auto profile{ paneContent.GetProfile() };
 
-        TerminalSettingsCreateResult controlSettings{ nullptr };
+        Settings::TerminalSettingsCreateResult controlSettings{ nullptr };
 
         if (profile)
         {
             // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
             profile = GetClosestProfileForDuplicationOfProfile(profile);
-            controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+            controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
 
             // Replace the Starting directory with the CWD, if given
             const auto workingDirectory = control.WorkingDirectory();
             const auto validWorkingDirectory = !workingDirectory.empty();
             if (validWorkingDirectory)
             {
-                controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
             }
 
             // To facilitate restarting defterm connections: grab the original
@@ -1801,11 +1801,11 @@ namespace winrt::TerminalApp::implementation
             // settings.
             if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
             {
-                controlSettings.DefaultSettings().Commandline(conpty.Commandline());
+                controlSettings.DefaultSettings()->Commandline(conpty.Commandline());
             }
         }
 
-        return _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), true);
+        return _CreateConnectionFromSettings(profile, *controlSettings.DefaultSettings(), true);
     }
 
     // Method Description:
@@ -3619,13 +3619,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    TermControl TerminalPage::_CreateNewControlAndContent(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_CreateNewControlAndContent(const Settings::TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Do any initialization that needs to apply to _every_ TermControl we
         // create here.
-        // TermControl will copy the settings out of the settings passed to it.
-
-        const auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
+        const auto content = _manager.CreateCore(*settings.DefaultSettings(), settings.UnfocusedSettings().try_as<IControlAppearance>(), connection);
         const TermControl control{ content };
         return _SetupControl(control);
     }
@@ -3639,7 +3637,7 @@ namespace winrt::TerminalApp::implementation
             // don't, then when we move the content to another thread, and it
             // tries to handle a key, it'll callback on the original page's
             // stack, inevitably resulting in a wrong_thread
-            return _SetupControl(TermControl::NewControlByAttachingContent(content, *_bindings));
+            return _SetupControl(TermControl::NewControlByAttachingContent(content));
         }
         return nullptr;
     }
@@ -3658,6 +3656,8 @@ namespace winrt::TerminalApp::implementation
         {
             term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
         }
+
+        term.KeyBindings(*_bindings);
 
         _RegisterTerminalEvents(term);
         return term;
@@ -3695,7 +3695,7 @@ namespace winrt::TerminalApp::implementation
             return std::make_shared<Pane>(paneContent);
         }
 
-        TerminalSettingsCreateResult controlSettings{ nullptr };
+        Settings::TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
 
         if (const auto& tabImpl{ _GetTabImpl(sourceTab) })
@@ -3705,19 +3705,19 @@ namespace winrt::TerminalApp::implementation
             {
                 // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
-                controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+                controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
                 {
-                    controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                    controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
                 }
             }
         }
         if (!profile)
         {
             profile = _settings.GetProfileForArgs(newTerminalArgs);
-            controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+            controlSettings = Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs);
         }
 
         // Try to handle auto-elevation
@@ -3726,13 +3726,13 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        const auto sessionId = controlSettings.DefaultSettings().SessionId();
+        const auto sessionId = controlSettings.DefaultSettings()->SessionId();
         const auto hasSessionId = sessionId != winrt::guid{};
 
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), hasSessionId);
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, *controlSettings.DefaultSettings(), hasSessionId);
         if (existingConnection)
         {
-            connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
+            connection.Resize(controlSettings.DefaultSettings()->InitialRows(), controlSettings.DefaultSettings()->InitialCols());
         }
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
@@ -3976,7 +3976,7 @@ namespace winrt::TerminalApp::implementation
         // updating terminal panes, so that we don't have to build a _new_
         // TerminalSettings for every profile we update - we can just look them
         // up the previous ones we built.
-        _terminalSettingsCache->Reset(_settings, *_bindings);
+        _terminalSettingsCache->Reset(_settings);
 
         for (const auto& tab : _tabs)
         {
@@ -4922,7 +4922,7 @@ namespace winrt::TerminalApp::implementation
     // - true iff we tossed this request to an elevated window. Callers can use
     //   this result to early-return if needed.
     bool TerminalPage::_maybeElevate(const NewTerminalArgs& newTerminalArgs,
-                                     const TerminalSettingsCreateResult& controlSettings,
+                                     const Settings::TerminalSettingsCreateResult& controlSettings,
                                      const Profile& profile)
     {
         // When duplicating a tab there aren't any newTerminalArgs.
@@ -4935,7 +4935,7 @@ namespace winrt::TerminalApp::implementation
 
         // If we don't even want to elevate we can return early.
         // If we're already elevated we can also return, because it doesn't get any more elevated than that.
-        if (!defaultSettings.Elevate() || IsRunningElevated())
+        if (!defaultSettings->Elevate() || IsRunningElevated())
         {
             return false;
         }
@@ -4945,7 +4945,7 @@ namespace winrt::TerminalApp::implementation
         // will be that profile's GUID. If there wasn't, then we'll use
         // whatever the default profile's GUID is.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
+        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings->StartingDirectory()));
         _OpenElevatedWT(newTerminalArgs);
         return true;
     }
