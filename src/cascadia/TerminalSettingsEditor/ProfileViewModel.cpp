@@ -290,8 +290,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // This may look pricey, but it only resolves resources that have not been visited
         // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
-        auto settings = Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
-        return *settings;
+        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 
     // Method Description:
