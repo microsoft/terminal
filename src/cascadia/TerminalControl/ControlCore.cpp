@@ -265,9 +265,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         shared->updateScrollBar.reset();
     }
 
-    void ControlCore::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    void ControlCore::AttachToNewControl()
     {
-        _settings->KeyBindings(keyBindings);
         _setupDispatcherAndCallbacks();
         const auto actualNewSize = _actualFont.GetSize();
         // Bubble this up, so our new control knows how big we want the font.

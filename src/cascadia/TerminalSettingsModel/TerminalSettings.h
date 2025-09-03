@@ -59,12 +59,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Model::TerminalSettings CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
 
         static Model::TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
-                                                                     const Model::Profile& profile,
-                                                                     const Control::IKeyBindings& keybindings);
+                                                                     const Model::Profile& profile);
 
         static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                             const Model::NewTerminalArgs& newTerminalArgs,
-                                                                             const Control::IKeyBindings& keybindings);
+                                                                             const Model::NewTerminalArgs& newTerminalArgs);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
@@ -144,8 +142,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
-
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Commandline);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
