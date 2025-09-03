@@ -77,14 +77,12 @@ namespace winrt::Microsoft::Terminal::Settings
     // Arguments:
     // - appSettings: the set of settings being used to construct the new terminal
     // - profileGuid: the unique identifier (guid) of the profile
-    // - keybindings: the keybinding handler
     // Return Value:
     // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
     //   one for when the terminal is focused and the other for when the terminal is unfocused
-    TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const IKeyBindings& keybindings)
+    TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
     {
         const auto settings = _CreateWithProfileCommon(appSettings, profile);
-        settings->_KeyBindings = keybindings;
 
         winrt::com_ptr<TerminalSettings> child{ nullptr };
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
@@ -112,16 +110,14 @@ namespace winrt::Microsoft::Terminal::Settings
     //   * Additionally, we'll use other values (such as Commandline,
     //     StartingDirectory) in this object to override the settings directly from
     //     the profile.
-    // - keybindings: the keybinding handler
     // Return Value:
     // - A TerminalSettingsCreateResult object, which contains a pair of TerminalSettings
     //   objects. One for when the terminal is focused and one for when the terminal is unfocused.
     TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                             const Model::NewTerminalArgs& newTerminalArgs,
-                                                                             const IKeyBindings& keybindings)
+                                                                             const Model::NewTerminalArgs& newTerminalArgs)
     {
         const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair{ CreateWithProfile(appSettings, profile, keybindings) };
+        auto settingsPair{ CreateWithProfile(appSettings, profile) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)

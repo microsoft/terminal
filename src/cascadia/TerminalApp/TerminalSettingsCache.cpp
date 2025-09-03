@@ -18,9 +18,9 @@ namespace winrt::TerminalApp::implementation
         result.UnfocusedSettings().try_as(_unfocusedSettings);
     }
 
-    TerminalSettingsCache::TerminalSettingsCache(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)
+    TerminalSettingsCache::TerminalSettingsCache(const MTSM::CascadiaSettings& settings)
     {
-        Reset(settings, bindings);
+        Reset(settings);
     }
 
     std::optional<TerminalSettingsPair> TerminalSettingsCache::TryLookup(const MTSM::Profile& profile)
@@ -35,7 +35,7 @@ namespace winrt::TerminalApp::implementation
             auto& pair{ found->second };
             if (!pair.second)
             {
-                pair.second = winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, pair.first, _bindings);
+                pair.second = winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, pair.first);
             }
             return std::optional{ TerminalSettingsPair{ *pair.second } };
         }
@@ -43,10 +43,9 @@ namespace winrt::TerminalApp::implementation
         return std::nullopt;
     }
 
-    void TerminalSettingsCache::Reset(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)
+    void TerminalSettingsCache::Reset(const MTSM::CascadiaSettings& settings)
     {
         _settings = settings;
-        _bindings = bindings;
 
         // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
         // when we stabilize its guid this will become fully safe.
