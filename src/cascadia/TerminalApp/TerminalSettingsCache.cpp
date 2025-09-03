@@ -35,7 +35,7 @@ namespace winrt::TerminalApp::implementation
             auto& pair{ found->second };
             if (!pair.second)
             {
-                pair.second = std::move(winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, pair.first, _bindings));
+                pair.second = winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, pair.first, _bindings);
             }
             return std::optional{ TerminalSettingsPair{ *pair.second } };
         }

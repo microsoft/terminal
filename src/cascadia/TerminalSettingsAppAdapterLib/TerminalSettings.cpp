@@ -330,18 +330,18 @@ namespace winrt::Microsoft::Terminal::Settings
             _TabColor = static_cast<winrt::Microsoft::Terminal::Core::Color>(colorRef);
         }
 
-        const auto profileEnvVars = profile.EnvironmentVariables();
-        if (profileEnvVars == nullptr)
+        if (const auto profileEnvVars{ profile.EnvironmentVariables() })
         {
-            _EnvironmentVariables = std::nullopt;
+            std::unordered_map<winrt::hstring, winrt::hstring> environmentVariables;
+            for (const auto& [key, value] : profileEnvVars)
+            {
+                environmentVariables.emplace(key, value);
+            }
+            _EnvironmentVariables = winrt::single_threaded_map(std::move(environmentVariables)).GetView();
         }
         else
         {
-            _EnvironmentVariables = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
-            for (const auto& [key, value] : profileEnvVars)
-            {
-                _EnvironmentVariables.value().Insert(key, value);
-            }
+            _EnvironmentVariables = std::nullopt;
         }
 
         _Elevate = profile.Elevate();
@@ -421,7 +421,7 @@ namespace winrt::Microsoft::Terminal::Settings
         }
     }
 
-    void TerminalSettings::SetColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> colors)
+    void TerminalSettings::SetColorTable(const std::array<winrt::Microsoft::Terminal::Core::Color, 16>& colors)
     {
         _ColorTable = colors;
     }

@@ -422,7 +422,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
-        std::unique_ptr<std::array<COLORREF, TextColor::TABLE_SIZE + 2>> _stashedColorScheme;
+
+        struct StashedColorScheme
+        {
+            std::array<COLORREF, TextColor::TABLE_SIZE> scheme;
+            size_t foregroundAlias;
+            size_t backgroundAlias;
+        };
+        std::unique_ptr<StashedColorScheme> _stashedColorScheme;
 
         // ----------------------------------------------------------------------------------------
         // These are ordered last to ensure they're destroyed first.

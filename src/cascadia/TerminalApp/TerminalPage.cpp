@@ -1475,9 +1475,7 @@ namespace winrt::TerminalApp::implementation
         else
         {
             auto settingsInternal{ winrt::get_self<Settings::TerminalSettings>(settings) };
-            const auto environment = settingsInternal->EnvironmentVariables() != nullptr ?
-                                         settingsInternal->EnvironmentVariables().GetView() :
-                                         nullptr;
+            const auto environment = settingsInternal->EnvironmentVariables().GetView();
 
             // Update the path to be relative to whatever our CWD is.
             //
@@ -3487,7 +3485,7 @@ namespace winrt::TerminalApp::implementation
         const auto sessionId = controlSettings.DefaultSettings()->SessionId();
         const auto hasSessionId = sessionId != winrt::guid{};
 
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, *controlSettings.DefaultSettings(), false);
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, *controlSettings.DefaultSettings(), hasSessionId);
         if (existingConnection)
         {
             connection.Resize(controlSettings.DefaultSettings()->InitialRows(), controlSettings.DefaultSettings()->InitialCols());

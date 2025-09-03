@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings
 {
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
-    using IEnvironmentVariableMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>;
+    using IEnvironmentVariableMapView = winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::hstring>;
 
     struct TerminalSettingsCreateResult;
 
@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
         void GetColorTable(winrt::com_array<Microsoft::Terminal::Core::Color>& table) noexcept;
-        void SetColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
+        void SetColorTable(const std::array<Microsoft::Terminal::Core::Color, 16>& colors);
 
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
@@ -92,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings
 
         // Settings which do not pertain to the control (why are they here?)
         SIMPLE_OVERRIDABLE_SETTING(bool, Elevate, false);
-        SIMPLE_OVERRIDABLE_SETTING(IEnvironmentVariableMap, EnvironmentVariables);
+        SIMPLE_OVERRIDABLE_SETTING(IEnvironmentVariableMapView, EnvironmentVariables, nullptr);
         SIMPLE_OVERRIDABLE_SETTING(bool, ReloadEnvironmentVariables, true);
 
     public:

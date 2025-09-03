@@ -32,7 +32,7 @@ namespace TerminalCoreUnitTests
         {
         }
 
-        void SetColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> colors)
+        void SetColorTable(const std::array<winrt::Microsoft::Terminal::Core::Color, 16>& colors)
         {
             _ColorTable = colors;
         }

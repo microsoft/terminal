@@ -1004,20 +1004,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto& renderSettings = _terminal->GetRenderSettings();
         if (!_stashedColorScheme)
         {
-            // There is a contract between Apply- and ResetPreviewColorScheme as to the layout of `_stashedColorScheme`.
-            // It is not intended for use outside these two functions.
-            // It contains the every color in the table (some of which will be overwritten by the color scheme),
-            // followed by the two indices for the foreground/background alias (set by DECAC, and which we overwrite
-            // when applying a color scheme) stored as COLORREF for convenience.
-            // We store the entire table because TerminalCore stores the default foreground, background, frame colors,
-            // cursor color and selection color at the _end_ of the palette. This is an easy way to collect them all and
-            // restore them all as well.
-            _stashedColorScheme = std::make_unique_for_overwrite<decltype(_stashedColorScheme)::element_type>();
-            decltype(auto) scheme{ *_stashedColorScheme.get() };
-            const auto& table{ renderSettings.GetColorTable() };
-            std::copy_n(std::begin(table), TextColor::TABLE_SIZE, std::begin(scheme));
-            til::at(scheme, TextColor::TABLE_SIZE) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
-            til::at(scheme, TextColor::TABLE_SIZE + 1) = gsl::narrow_cast<COLORREF>(renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+            _stashedColorScheme = std::make_unique_for_overwrite<StashedColorScheme>();
+            *_stashedColorScheme = {
+                .scheme = renderSettings.GetColorTable(),
+                .foregroundAlias = renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground),
+                .backgroundAlias = renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground),
+            };
         }
         _terminal->UpdateColorScheme(scheme);
         _renderer->TriggerRedrawAll(true);
@@ -1029,14 +1021,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto lock = _terminal->LockForWriting();
             auto& renderSettings = _terminal->GetRenderSettings();
-            decltype(auto) scheme{ *_stashedColorScheme.get() };
-            // See above in ApplyPreviewColorScheme the layout of the stashed scheme.
+            decltype(auto) stashedScheme{ *_stashedColorScheme.get() };
             for (size_t i = 0; i < TextColor::TABLE_SIZE; ++i)
             {
-                renderSettings.SetColorTableEntry(i, til::at(scheme, i));
+                renderSettings.SetColorTableEntry(i, til::at(stashedScheme.scheme, i));
             }
-            renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, static_cast<size_t>(til::at(scheme, TextColor::TABLE_SIZE)));
-            renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, static_cast<size_t>(til::at(scheme, TextColor::TABLE_SIZE + 1)));
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, stashedScheme.foregroundAlias);
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, stashedScheme.backgroundAlias);
             _renderer->TriggerRedrawAll(true);
         }
         _stashedColorScheme.reset();
