@@ -1515,7 +1515,7 @@ namespace winrt::TerminalApp::implementation
         else
         {
             auto settingsInternal{ winrt::get_self<Settings::TerminalSettings>(settings) };
-            const auto environment = settingsInternal->EnvironmentVariables().GetView();
+            const auto environment = settingsInternal->EnvironmentVariables();
 
             // Update the path to be relative to whatever our CWD is.
             //
