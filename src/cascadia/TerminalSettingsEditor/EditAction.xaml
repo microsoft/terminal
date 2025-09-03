@@ -666,8 +666,8 @@
                        Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}" />
             <ItemsControl Grid.Row="2"
                           Grid.Column="1"
-                          IsTabStop="False"
                           AutomationProperties.Name="{x:Bind ViewModel.AdditionalArgumentsControlAutomationPropName}"
+                          IsTabStop="False"
                           ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
                           ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}" />
             <TextBlock x:Uid="Actions_Keybindings"
