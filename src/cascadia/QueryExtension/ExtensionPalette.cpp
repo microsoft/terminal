@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // Only let this succeed once.
             _loadedRevoker.revoke();
 
-            _setFocusAndPlaceholderTextHelper();
+            _setFocusAndPlaceholderTextHelper(nullptr, nullptr);
 
             const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 // Force immediate binding update so we can select an item
                 Bindings->Update();
 
-                _setFocusAndPlaceholderTextHelper();
+                _setFocusAndPlaceholderTextHelper(nullptr, nullptr);
 
                 const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
                 TraceLoggingWrite(
@@ -214,7 +214,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 pos += 1; // Move past the replaced character
             }
             _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
-            _close();
 
             const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
@@ -244,21 +243,31 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    void ExtensionPalette::_setFocusAndPlaceholderTextHelper()
+    void ExtensionPalette::_setFocusAndPlaceholderTextHelper(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& args)
     {
-        // We are visible, set the placeholder text so the user knows what the shell context is
-        _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
+        // There are 2 ways this function is called - internally when the palette is loaded/set to visible,
+        // or from a GotFocus event
+        // If called internally, args is set to nullptr and we always want to send the focus to the query box
+        // If called from a GotFocus event, there is the possibility that the original source of the event is
+        // not the extension palette itself but one of the controls within the palette (for example, one of the
+        // buttons). This is because GotFocus is a bubbled event that eventually reaches the parent object (the
+        // palette). We only want to handle this if the original source is the palette iself.
+        if (!args || (args && args.OriginalSource().try_as<ExtensionPalette>()))
+        {
+            // We are visible, set the placeholder text so the user knows what the shell context is
+            _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
 
-        // Now that we have the context, make sure the lmProvider knows it too
-        if (_lmProvider)
-        {
-            const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
-            _lmProvider.SetContext(std::move(context));
-            _queryBox().Focus(FocusState::Programmatic);
-        }
-        else
-        {
-            SetUpProviderButton().Focus(FocusState::Programmatic);
+            // Now that we have the context, make sure the lmProvider knows it too
+            if (_lmProvider)
+            {
+                const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
+                _lmProvider.SetContext(std::move(context));
+                _queryBox().Focus(FocusState::Programmatic);
+            }
+            else
+            {
+                SetUpProviderButton().Focus(FocusState::Programmatic);
+            }
         }
     }
 
@@ -300,26 +309,16 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
     }
 
-    // Method Description:
-    // - This event is triggered when someone clicks anywhere in the bounds of
-    //   the window that's _not_ the query palette UI. When that happens,
-    //   we'll want to dismiss the palette.
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_rootPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
-                                               const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
+    void ExtensionPalette::_closeChat(const Windows::Foundation::IInspectable& /*sender*/,
+                                      const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        if (Visibility() != Visibility::Collapsed)
-        {
-            _close();
-        }
+        _close();
     }
 
     void ExtensionPalette::_backdropPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
                                                    const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
+        _setFocusAndPlaceholderTextHelper(nullptr, nullptr);
         e.Handled(true);
     }
 

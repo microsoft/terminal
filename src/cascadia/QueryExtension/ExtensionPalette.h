@@ -46,11 +46,11 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::hstring _getCurrentLocalTimeHelper();
         void _splitResponseAndAddToChatHelper(const winrt::Microsoft::Terminal::Query::Extension::IResponse response);
-        void _setFocusAndPlaceholderTextHelper();
+        void _setFocusAndPlaceholderTextHelper(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _exportMessagesToFile(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void _rootPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _closeChat(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _backdropPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _lostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _previewKeyDownHandler(const Windows::Foundation::IInspectable& sender,
