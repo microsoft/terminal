@@ -60,12 +60,10 @@ namespace winrt::Microsoft::Terminal::Settings
         static winrt::com_ptr<TerminalSettings> CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile);
 
         static TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
-                                                              const Model::Profile& profile,
-                                                              const Control::IKeyBindings& keybindings);
+                                                              const Model::Profile& profile);
 
         static TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                      const Model::NewTerminalArgs& newTerminalArgs,
-                                                                      const Control::IKeyBindings& keybindings);
+                                                                      const Model::NewTerminalArgs& newTerminalArgs);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
