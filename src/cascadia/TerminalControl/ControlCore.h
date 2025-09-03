@@ -19,7 +19,6 @@
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
 
-#include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
@@ -100,8 +99,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlAppearance UnfocusedAppearance() const;
         bool HasUnfocusedAppearance() const;
 
-        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
-        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
+        void ApplyPreviewColorScheme(const Core::ICoreScheme&);
+        void ResetPreviewColorScheme();
+        void SetOverrideColorScheme(const Core::ICoreScheme&);
 
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
         uint64_t SwapChainHandle() const;
@@ -268,9 +268,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void PreviewInput(std::wstring_view input);
 
-        RUNTIME_SETTING(float, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
-        RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
+        RUNTIME_SETTING(bool, UseAcrylic, _settings.UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -408,7 +408,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-        winrt::com_ptr<ControlSettings> _settings{ nullptr };
+        IControlSettings _settings{ nullptr };
+        bool _hasUnfocusedAppearance{ false };
+        IControlAppearance _unfocusedAppearance{ nullptr };
+        Core::ICoreScheme _focusedColorSchemeOverride{ nullptr };
         til::point _contextMenuBufferPosition{ 0, 0 };
         Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
         ::Search _searcher;
@@ -419,6 +422,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
+
+        struct StashedColorScheme
+        {
+            std::array<COLORREF, TextColor::TABLE_SIZE> scheme;
+            size_t foregroundAlias;
+            size_t backgroundAlias;
+        };
+        std::unique_ptr<StashedColorScheme> _stashedColorScheme;
 
         // ----------------------------------------------------------------------------------------
         // These are ordered last to ensure they're destroyed first.

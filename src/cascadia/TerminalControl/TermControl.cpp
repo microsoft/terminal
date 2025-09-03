@@ -3787,16 +3787,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         get_self<ControlCore>(_core)->UpdateQuickFixes(suggestions);
     }
 
-    Core::Scheme TermControl::ColorScheme() const noexcept
-    {
-        return _core.ColorScheme();
-    }
-
-    void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
-    {
-        _core.ColorScheme(scheme);
-    }
-
     void TermControl::AdjustOpacity(const float opacity, const bool relative)
     {
         _core.AdjustOpacity(opacity, relative);

@@ -19,10 +19,12 @@
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
+#include "../../types/inc/utils.hpp"
 
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
+using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
@@ -89,7 +91,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }();
 
-        _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
+        _settings = settings;
+        _hasUnfocusedAppearance = static_cast<bool>(unfocusedAppearance);
+        _unfocusedAppearance = _hasUnfocusedAppearance ? unfocusedAppearance : settings;
         _terminal = std::make_shared<::Microsoft::Terminal::Core::Terminal>();
         const auto lock = _terminal->LockForWriting();
 
@@ -102,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
 
         // GH#8969: pre-seed working directory to prevent potential races
-        _terminal->SetWorkingDirectory(_settings->StartingDirectory());
+        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
 
         _terminal->SetCopyToClipboardCallback([this](wil::zwstring_view wstr) {
             WriteToClipboard.raise(*this, winrt::make<WriteToClipboardEventArgs>(winrt::hstring{ std::wstring_view{ wstr } }, std::string{}, std::string{}));
@@ -398,10 +402,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // Override the default width and height to match the size of the swapChainPanel
-            _settings->InitialCols(width);
-            _settings->InitialRows(height);
+            const til::size viewportSize{ Utils::ClampToShortMax(width, 1),
+                                          Utils::ClampToShortMax(height, 1) };
 
-            _terminal->CreateFromSettings(*_settings, *_renderer);
+            // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
+            _terminal->Create(viewportSize, Utils::ClampToShortMax(_settings.HistorySize(), 0), *_renderer);
+            _terminal->UpdateSettings(_settings);
 
             // Tell the render engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid
@@ -410,12 +416,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderEngineSwapChainChanged(handle);
             });
 
-            _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
-            _renderEngine->SetPixelShaderImagePath(_settings->PixelShaderImagePath());
-            _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
-            _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
-            _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
+            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+            _renderEngine->SetPixelShaderImagePath(_settings.PixelShaderImagePath());
+            _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
+            _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
+            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
             _updateAntiAliasingMode();
 
@@ -572,7 +578,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _updateSelectionUI();
                 return true;
             }
-            else if (vkey == VK_TAB && !mods.IsAltPressed() && !mods.IsCtrlPressed() && _settings->DetectURLs())
+            else if (vkey == VK_TAB && !mods.IsAltPressed() && !mods.IsCtrlPressed() && _settings.DetectURLs())
             {
                 // [Shift +] Tab --> next/previous hyperlink
                 const auto direction = mods.IsShiftPressed() ? ::Terminal::SearchDirection::Backward : ::Terminal::SearchDirection::Forward;
@@ -599,7 +605,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else if (vkey == VK_RETURN && !mods.IsCtrlPressed() && !mods.IsAltPressed())
             {
                 // [Shift +] Enter --> copy text
-                CopySelectionToClipboard(mods.IsShiftPressed(), false, _settings->CopyFormatting());
+                CopySelectionToClipboard(mods.IsShiftPressed(), false, _settings.CopyFormatting());
                 _terminal->ClearSelection();
                 _updateSelectionUI();
                 return true;
@@ -757,7 +763,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _runtimeFocusedOpacity = focused ? newOpacity : _runtimeFocusedOpacity;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = newOpacity < 1.0f && _settings->UseAcrylic();
+        _runtimeUseAcrylic = newOpacity < 1.0f && _settings.UseAcrylic();
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
@@ -774,7 +780,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ToggleShaderEffects()
     {
-        const auto path = _settings->PixelShaderPath();
+        const auto path = _settings.PixelShaderPath();
         const auto lock = _terminal->LockForWriting();
         // Originally, this action could be used to enable the retro effects
         // even when they're set to `false` in the settings. If the user didn't
@@ -879,24 +885,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::UpdateSettings(const IControlSettings& settings, const IControlAppearance& newAppearance)
     {
-        _settings = winrt::make_self<implementation::ControlSettings>(settings, newAppearance);
+        _settings = settings;
+        _hasUnfocusedAppearance = static_cast<bool>(newAppearance);
+        _unfocusedAppearance = _hasUnfocusedAppearance ? newAppearance : settings;
 
         const auto lock = _terminal->LockForWriting();
 
-        _builtinGlyphs = _settings->EnableBuiltinGlyphs();
-        _colorGlyphs = _settings->EnableColorGlyphs();
-        _cellWidth = CSSLengthPercentage::FromString(_settings->CellWidth().c_str());
-        _cellHeight = CSSLengthPercentage::FromString(_settings->CellHeight().c_str());
+        _builtinGlyphs = _settings.EnableBuiltinGlyphs();
+        _colorGlyphs = _settings.EnableColorGlyphs();
+        _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
+        _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
         _runtimeOpacity = std::nullopt;
         _runtimeFocusedOpacity = std::nullopt;
 
         // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
+        _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
 
-        const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
+        const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize());
 
         // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(*_settings);
+        _terminal->UpdateSettings(_settings);
 
         if (!_initializedTerminal.load(std::memory_order_relaxed))
         {
@@ -905,9 +913,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings->GraphicsAPI()));
-        _renderEngine->SetDisablePartialInvalidation(_settings->DisablePartialInvalidation());
-        _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
+        _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
+        _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
+        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
 
@@ -928,30 +936,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ApplyAppearance(const bool focused)
     {
         const auto lock = _terminal->LockForWriting();
-        const auto& newAppearance{ focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance() };
+        const IControlAppearance newAppearance{ focused ? _settings : _unfocusedAppearance };
         // Update the terminal core with its new Core settings
-        _terminal->UpdateAppearance(*newAppearance);
+        _terminal->UpdateAppearance(newAppearance);
+        if ((focused || !_hasUnfocusedAppearance) && _focusedColorSchemeOverride)
+        {
+            _terminal->UpdateColorScheme(_focusedColorSchemeOverride);
+        }
 
         // Update AtlasEngine settings under the lock
         if (_renderEngine)
         {
             // Update AtlasEngine settings under the lock
-            _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
-            _renderEngine->SetPixelShaderImagePath(newAppearance->PixelShaderImagePath());
+            _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+            _renderEngine->SetPixelShaderImagePath(newAppearance.PixelShaderImagePath());
 
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
             // the terminal should ignore the unfocused opacity from settings.
             // The Focused Opacity from settings should be ignored if overridden at runtime.
-            const auto useFocusedRuntimeOpacity = focused || (!_settings->EnableUnfocusedAcrylic() && UseAcrylic());
-            const auto newOpacity = useFocusedRuntimeOpacity ? FocusedOpacity() : newAppearance->Opacity();
+            const auto useFocusedRuntimeOpacity = focused || (!_settings.EnableUnfocusedAcrylic() && UseAcrylic());
+            const auto newOpacity = useFocusedRuntimeOpacity ? FocusedOpacity() : newAppearance.Opacity();
             _setOpacity(newOpacity, focused);
 
             // No need to update Acrylic if UnfocusedAcrylic is disabled
-            if (_settings->EnableUnfocusedAcrylic())
+            if (_settings.EnableUnfocusedAcrylic())
             {
                 // Manually turn off acrylic if they turn off transparency.
-                _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance->UseAcrylic();
+                _runtimeUseAcrylic = Opacity() < 1.0 && newAppearance.UseAcrylic();
             }
 
             // Update the renderer as well. It might need to fall back from
@@ -973,24 +985,68 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Control::IControlSettings ControlCore::Settings()
     {
-        return *_settings;
+        return _settings;
     }
 
     Control::IControlAppearance ControlCore::FocusedAppearance() const
     {
-        return *_settings->FocusedAppearance();
+        return _settings;
     }
 
     Control::IControlAppearance ControlCore::UnfocusedAppearance() const
     {
-        return *_settings->UnfocusedAppearance();
+        return _unfocusedAppearance;
+    }
+
+    void ControlCore::ApplyPreviewColorScheme(const Core::ICoreScheme& scheme)
+    {
+        const auto lock = _terminal->LockForReading();
+        auto& renderSettings = _terminal->GetRenderSettings();
+        if (!_stashedColorScheme)
+        {
+            _stashedColorScheme = std::make_unique_for_overwrite<StashedColorScheme>();
+            *_stashedColorScheme = {
+                .scheme = renderSettings.GetColorTable(),
+                .foregroundAlias = renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground),
+                .backgroundAlias = renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground),
+            };
+        }
+        _terminal->UpdateColorScheme(scheme);
+        _renderer->TriggerRedrawAll(true);
+    }
+
+    void ControlCore::ResetPreviewColorScheme()
+    {
+        if (_stashedColorScheme)
+        {
+            const auto lock = _terminal->LockForWriting();
+            auto& renderSettings = _terminal->GetRenderSettings();
+            decltype(auto) stashedScheme{ *_stashedColorScheme.get() };
+            for (size_t i = 0; i < TextColor::TABLE_SIZE; ++i)
+            {
+                renderSettings.SetColorTableEntry(i, til::at(stashedScheme.scheme, i));
+            }
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, stashedScheme.foregroundAlias);
+            renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, stashedScheme.backgroundAlias);
+            _renderer->TriggerRedrawAll(true);
+        }
+        _stashedColorScheme.reset();
+    }
+
+    void ControlCore::SetOverrideColorScheme(const Core::ICoreScheme& scheme)
+    {
+        const auto lock = _terminal->LockForWriting();
+        _focusedColorSchemeOverride = scheme;
+
+        _terminal->UpdateColorScheme(scheme ? scheme : _settings.as<Core::ICoreScheme>());
+        _renderer->TriggerRedrawAll(true);
     }
 
     void ControlCore::_updateAntiAliasingMode()
     {
         D2D1_TEXT_ANTIALIAS_MODE mode;
         // Update AtlasEngine's AntialiasingMode
-        switch (_settings->AntialiasingMode())
+        switch (_settings.AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
             mode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
@@ -1023,7 +1079,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_renderEngine)
         {
-            static constexpr auto cloneMap = [](const IFontFeatureMap& map) {
+            static constexpr auto cloneMap = [](const auto& map) {
                 std::unordered_map<std::wstring_view, float> clone;
                 if (map)
                 {
@@ -1036,8 +1092,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return clone;
             };
 
-            const auto fontFeatures = _settings->FontFeatures();
-            const auto fontAxes = _settings->FontAxes();
+            const auto fontFeatures = _settings.FontFeatures();
+            const auto fontAxes = _settings.FontAxes();
             const auto featureMap = cloneMap(fontFeatures);
             const auto axesMap = cloneMap(fontAxes);
 
@@ -1061,8 +1117,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // Make sure we have a non-zero font size
         const auto newSize = std::max(fontSize, 1.0f);
-        const auto fontFace = _settings->FontFace();
-        const auto fontWeight = _settings->FontWeight();
+        const auto fontFace = _settings.FontFace();
+        const auto fontWeight = _settings.FontWeight();
         _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
         _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
 
@@ -1084,7 +1140,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
 
-        if (_setFontSizeUnderLock(_settings->FontSize()))
+        if (_setFontSizeUnderLock(_settings.FontSize()))
         {
             _refreshSizeUnderLock();
         }
@@ -1641,7 +1697,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool ControlCore::CopyOnSelect() const
     {
-        return _settings->CopyOnSelect();
+        return _settings.CopyOnSelect();
     }
 
     winrt::hstring ControlCore::SelectedText(bool trimTrailingWhitespace) const
@@ -1998,7 +2054,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (_settings->RepositionCursorWithMouse() && !selectionNeedsToBeCopied) // Don't reposition cursor if this is part of a selection operation
+        else if (_settings.RepositionCursorWithMouse() && !selectionNeedsToBeCopied) // Don't reposition cursor if this is part of a selection operation
         {
             _repositionCursorWithMouse(terminalPosition);
         }
@@ -2332,109 +2388,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _cachedQuickFixes = quickFixes;
     }
 
-    Core::Scheme ControlCore::ColorScheme() const noexcept
-    {
-        Core::Scheme s;
-
-        // This part is definitely a hack.
-        //
-        // This function is usually used by the "Preview Color Scheme"
-        // functionality in TerminalPage. If we've got an unfocused appearance,
-        // then we've applied that appearance before this is even getting called
-        // (because the command palette is open with focus on top of us). If we
-        // return the _current_ colors now, we'll return out the _unfocused_
-        // colors. If we do that, and the user dismisses the command palette,
-        // then the scheme that will get restored is the _unfocused_ one, which
-        // is not what we want.
-        //
-        // So if that's the case, then let's grab the colors from the focused
-        // appearance as the scheme instead. We'll lose any current runtime
-        // changes to the color table, but those were already blown away when we
-        // switched to an unfocused appearance.
-        //
-        // IF WE DON'T HAVE AN UNFOCUSED APPEARANCE: then just ask the Terminal
-        // for its current color table. That way, we can restore those colors
-        // back.
-        if (HasUnfocusedAppearance())
-        {
-            s.Foreground = _settings->FocusedAppearance()->DefaultForeground();
-            s.Background = _settings->FocusedAppearance()->DefaultBackground();
-
-            s.CursorColor = _settings->FocusedAppearance()->CursorColor();
-
-            s.Black = _settings->FocusedAppearance()->GetColorTableEntry(0);
-            s.Red = _settings->FocusedAppearance()->GetColorTableEntry(1);
-            s.Green = _settings->FocusedAppearance()->GetColorTableEntry(2);
-            s.Yellow = _settings->FocusedAppearance()->GetColorTableEntry(3);
-            s.Blue = _settings->FocusedAppearance()->GetColorTableEntry(4);
-            s.Purple = _settings->FocusedAppearance()->GetColorTableEntry(5);
-            s.Cyan = _settings->FocusedAppearance()->GetColorTableEntry(6);
-            s.White = _settings->FocusedAppearance()->GetColorTableEntry(7);
-            s.BrightBlack = _settings->FocusedAppearance()->GetColorTableEntry(8);
-            s.BrightRed = _settings->FocusedAppearance()->GetColorTableEntry(9);
-            s.BrightGreen = _settings->FocusedAppearance()->GetColorTableEntry(10);
-            s.BrightYellow = _settings->FocusedAppearance()->GetColorTableEntry(11);
-            s.BrightBlue = _settings->FocusedAppearance()->GetColorTableEntry(12);
-            s.BrightPurple = _settings->FocusedAppearance()->GetColorTableEntry(13);
-            s.BrightCyan = _settings->FocusedAppearance()->GetColorTableEntry(14);
-            s.BrightWhite = _settings->FocusedAppearance()->GetColorTableEntry(15);
-        }
-        else
-        {
-            const auto lock = _terminal->LockForReading();
-            s = _terminal->GetColorScheme();
-        }
-
-        // This might be a tad bit of a hack. This event only gets called by set
-        // color scheme / preview color scheme, and in that case, we know the
-        // control _is_ focused.
-        s.SelectionBackground = _settings->FocusedAppearance()->SelectionBackground();
-
-        return s;
-    }
-
-    // Method Description:
-    // - Apply the given color scheme to this control. We'll take the colors out
-    //   of it and apply them to our focused appearance, and update the terminal
-    //   buffer with the new color table.
-    // - This is here to support the Set Color Scheme action, and the ability to
-    //   preview schemes in the control.
-    // Arguments:
-    // - scheme: the collection of colors to apply.
-    // Return Value:
-    // - <none>
-    void ControlCore::ColorScheme(const Core::Scheme& scheme)
-    {
-        _settings->FocusedAppearance()->DefaultForeground(scheme.Foreground);
-        _settings->FocusedAppearance()->DefaultBackground(scheme.Background);
-        _settings->FocusedAppearance()->CursorColor(scheme.CursorColor);
-        _settings->FocusedAppearance()->SelectionBackground(scheme.SelectionBackground);
-
-        _settings->FocusedAppearance()->SetColorTableEntry(0, scheme.Black);
-        _settings->FocusedAppearance()->SetColorTableEntry(1, scheme.Red);
-        _settings->FocusedAppearance()->SetColorTableEntry(2, scheme.Green);
-        _settings->FocusedAppearance()->SetColorTableEntry(3, scheme.Yellow);
-        _settings->FocusedAppearance()->SetColorTableEntry(4, scheme.Blue);
-        _settings->FocusedAppearance()->SetColorTableEntry(5, scheme.Purple);
-        _settings->FocusedAppearance()->SetColorTableEntry(6, scheme.Cyan);
-        _settings->FocusedAppearance()->SetColorTableEntry(7, scheme.White);
-        _settings->FocusedAppearance()->SetColorTableEntry(8, scheme.BrightBlack);
-        _settings->FocusedAppearance()->SetColorTableEntry(9, scheme.BrightRed);
-        _settings->FocusedAppearance()->SetColorTableEntry(10, scheme.BrightGreen);
-        _settings->FocusedAppearance()->SetColorTableEntry(11, scheme.BrightYellow);
-        _settings->FocusedAppearance()->SetColorTableEntry(12, scheme.BrightBlue);
-        _settings->FocusedAppearance()->SetColorTableEntry(13, scheme.BrightPurple);
-        _settings->FocusedAppearance()->SetColorTableEntry(14, scheme.BrightCyan);
-        _settings->FocusedAppearance()->SetColorTableEntry(15, scheme.BrightWhite);
-
-        const auto lock = _terminal->LockForWriting();
-        _terminal->ApplyScheme(scheme);
-        _renderer->TriggerRedrawAll(true);
-    }
-
     bool ControlCore::HasUnfocusedAppearance() const
     {
-        return _settings->HasUnfocusedAppearance();
+        return _hasUnfocusedAppearance;
     }
 
     void ControlCore::AdjustOpacity(const float opacityAdjust, const bool relative)
@@ -2522,7 +2478,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then the renderer should not render "default background" text with a
         // fully opaque background. Doing that would cover up our nice
         // transparency, or our acrylic, or our image.
-        return Opacity() < 1.0f || !_settings->BackgroundImage().empty() || _settings->UseBackgroundImageForWindow();
+        return Opacity() < 1.0f || !_settings.BackgroundImage().empty() || _settings.UseBackgroundImageForWindow();
     }
 
     uint64_t ControlCore::OwningHwnd()

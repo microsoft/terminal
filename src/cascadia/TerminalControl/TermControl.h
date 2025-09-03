@@ -11,7 +11,6 @@
 #include "../../tsf/Handle.h"
 
 #include "ControlInteractivity.h"
-#include "ControlSettings.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -178,9 +177,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::CommandHistoryContext CommandHistory() const;
         void UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions);
 
-        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
-        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
-
         void AdjustOpacity(const float opacity, const bool relative);
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
@@ -199,6 +195,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Control::CursorDisplayState CursorVisibility() const noexcept;
         void CursorVisibility(Control::CursorDisplayState cursorVisibility);
+
+        void ApplyPreviewColorScheme(const Core::ICoreScheme& scheme) { _core.ApplyPreviewColorScheme(scheme); }
+        void ResetPreviewColorScheme() { _core.ResetPreviewColorScheme(); }
+        void SetOverrideColorScheme(const Core::ICoreScheme& scheme) { _core.SetOverrideColorScheme(scheme); }
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
