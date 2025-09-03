@@ -312,7 +312,7 @@ protected:                                                                  \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define HANDLE_URI_ARGS(X) \
-    X(winrt::hstring, Uri, "uri", false, ArgTypeHint::None)
+    X(winrt::hstring, Uri, "uri", false, ArgTypeHint::None, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 
