@@ -253,6 +253,29 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
+
+    if (_windowCount == 1)
+    {
+        // The first CoreWindow is created implicitly by XAML and parented to the
+        // first XAML island. We parent it to our initial window for 2 reasons:
+        // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
+        //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
+        // * When we DestroyWindow() the island it will destroy the CoreWindow,
+        //   and it's not possible to recreate it. That's also a WinUI bug.
+        //
+        // Note that this must be done after the first window (= first island) is created.
+        if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
+        {
+            if (const auto interop = coreWindow.try_as<ICoreWindowInterop>())
+            {
+                HWND coreHandle = nullptr;
+                if (SUCCEEDED(interop->get_WindowHandle(&coreHandle)) && coreHandle)
+                {
+                    SetParent(coreHandle, _window.get());
+                }
+            }
+        }
+    }
 }
 
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
@@ -395,24 +418,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectoryW(system32.c_str()));
     }
 
-    // The first CoreWindow is created implicitly by XAML and parented to the
-    // first XAML island. We parent it to our initial window for 2 reasons:
-    // * On Windows 10 the CoreWindow will show up as a visible window on the taskbar
-    //   due to a WinUI bug, and this will hide it, because our initial window is hidden.
-    // * When we DestroyWindow() the island it will destroy the CoreWindow,
-    //   and it's not possible to recreate it. That's also a WinUI bug.
-    if (const auto coreWindow = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread())
-    {
-        if (const auto interop = coreWindow.try_as<ICoreWindowInterop>())
-        {
-            HWND coreHandle = nullptr;
-            if (SUCCEEDED(interop->get_WindowHandle(&coreHandle)) && coreHandle)
-            {
-                SetParent(coreHandle, _window.get());
-            }
-        }
-    }
-
     {
         TerminalConnection::ConptyConnection::NewConnection([this](TerminalConnection::ConptyConnection conn) {
             TerminalApp::CommandlineArgs args;
@@ -544,6 +549,8 @@ void WindowEmperor::_dispatchSpecialKey(const MSG& msg) const
 
 void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs args)
 {
+    _assertIsMainThread();
+
     const auto exitCode = args.ExitCode();
 
     if (const auto msg = args.ExitMessage(); !msg.empty())
@@ -681,6 +688,8 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
 
 bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 {
+    _assertIsMainThread();
+
     AppHost* window = nullptr;
 
     if (args.WindowID)
@@ -721,6 +730,8 @@ bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 
 void WindowEmperor::_summonAllWindows() const
 {
+    _assertIsMainThread();
+
     TerminalApp::SummonWindowBehavior args;
     args.ToggleVisibility(false);
 
@@ -858,6 +869,9 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 // Did the window counter get out of sync? It shouldn't.
                 assert(_windowCount == gsl::narrow_cast<int32_t>(_windows.size()));
 
+                // !!! NOTE !!!
+                // At least theoretically the lParam pointer may be invalid.
+                // We should only access it if we find it in our _windows array.
                 const auto host = reinterpret_cast<AppHost*>(lParam);
                 auto it = _windows.begin();
                 const auto end = _windows.end();
@@ -866,7 +880,15 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 {
                     if (host == it->get())
                     {
-                        host->Close();
+                        // NOTE: The AppHost destructor is highly non-trivial.
+                        //
+                        // It _may_ call into XAML, which _may_ pump the message loop, which would then recursively
+                        // re-enter this function, which _may_ then handle another WM_CLOSE_TERMINAL_WINDOW,
+                        // which would change the _windows array, and invalidate our iterator and crash.
+                        //
+                        // We can prevent this by deferring destruction until after the erase() call.
+                        const auto strong = *it;
+                        strong->Close();
                         _windows.erase(it);
                         break;
                     }

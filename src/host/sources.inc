@@ -89,10 +89,12 @@ SOURCES = \
 # Sources, Headers, and Libraries
 # -------------------------------------
 
+!if "$(USE_CLANG)" != "1"
 PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 PRECOMPILED_PCH         = precomp.pch
 PRECOMPILED_OBJ         = precomp.obj
+!endif
 
 INCLUDES = \
     $(INCLUDES); \

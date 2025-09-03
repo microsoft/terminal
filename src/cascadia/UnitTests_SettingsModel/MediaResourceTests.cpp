@@ -91,6 +91,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ProfileInheritsInvalidIconAndHasNoCommandline);
         TEST_METHOD(ProfileSpecifiesNullIcon);
         TEST_METHOD(ProfileSpecifiesNullIconAndHasNoCommandline);
+        TEST_METHOD(ProfileOverwritesBellSound);
 
         // FRAGMENT BEHAVIORS
         TEST_METHOD(FragmentUpdatesBaseProfile);
@@ -103,8 +104,9 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RealResolverSpecialKeywords);
         TEST_METHOD(RealResolverUrlCases);
 
-        static constexpr std::wstring_view defaultsCommandline{ LR"(C:\Windows\System32\PING.EXE)" }; // Normalized by Profile (this is the casing that Windows stores on disk)
+        static constexpr std::wstring_view pingCommandline{ LR"(C:\Windows\System32\PING.EXE)" }; // Normalized by Profile (this is the casing that Windows stores on disk)
         static constexpr std::wstring_view overrideCommandline{ LR"(C:\Windows\System32\cscript.exe)" };
+        static constexpr std::wstring_view cmdCommandline{ LR"(C:\Windows\System32\cmd.exe)" }; // The default commandline for a profile
         static constexpr std::wstring_view fragmentBasePath1{ LR"(C:\Windows\Media)" };
 
     private:
@@ -124,7 +126,11 @@ namespace SettingsModelUnitTests
                 "backgroundImage": "imagePathFromBase",
                 "guid": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
                 "icon": "iconFromBase",
-                "name": "Base"
+                "name": "Base",
+                "bellSound": [
+                    "C:\\Windows\\Media\\Alarm01.wav",
+                    "C:\\Windows\\Media\\Alarm02.wav"
+                ]
             },
             {
                 "backgroundImage": "focusedImagePathFromBase",
@@ -166,7 +172,7 @@ namespace SettingsModelUnitTests
     ]
 })" };
 
-        static constexpr int numberOfMediaResourcesInDefaultSettings{ 9 };
+        static constexpr int numberOfMediaResourcesInDefaultSettings{ 11 };
 
         struct Fragment
         {
@@ -809,7 +815,6 @@ namespace SettingsModelUnitTests
     "profiles": {
         "defaults": {
             "icon": "DoesNotMatter",
-            "commandline": "C:\\Windows\\System32\\ping.exe",
         }
     }
 })");
@@ -818,7 +823,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"Base") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
-        VERIFY_ARE_EQUAL(defaultsCommandline, icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the profile itself, which has its own commandline.
@@ -856,7 +861,7 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(overrideCommandline, icon.Resolved());
     }
 
-    // The invalid resource came from the profile itself, which inherits a commandline from the parent (defaults, ping.exe)
+    // The invalid resource came from the profile itself, where the commandline is the default value (profile.commandline default value is CMD.exe)
     void MediaResourceTests::ProfileSpecifiesInvalidIconAndNoCommandline()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
@@ -871,8 +876,7 @@ namespace SettingsModelUnitTests
     "profiles": {
         "defaults": {
             "icon": "DoesNotMatter",
-            "commandline": "C:\\Windows\\System32\\ping.exe",
-        },
+        },  
         "list": [
             {
                 "guid": "{af9dec6c-1337-4278-897d-69ca04920b27}",
@@ -887,10 +891,10 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileSpecifiesInvalidIconAndNoCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok());
-        VERIFY_ARE_EQUAL(defaultsCommandline, icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
-    // The invalid resource came from the Defaults profile, which has the Defaults command line (PROFILE COMMANDLINE IGNORED)
+    // The invalid resource came from the Defaults profile, where the commandline falls back to the default value of CMD.exe (PROFILE COMMANDLINE IGNORED)
     void MediaResourceTests::ProfileInheritsInvalidIconAndHasCommandline()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
@@ -904,8 +908,7 @@ namespace SettingsModelUnitTests
             settings = createSettings(R"({
     "profiles": {
         "defaults": {
-            "icon": "DoesNotMatter",
-            "commandline": "C:\\Windows\\System32\\ping.exe",
+            "icon": "DoesNotMatter"
         },
         "list": [
             {
@@ -921,10 +924,10 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileInheritsInvalidIconAndHasCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok());
-        VERIFY_ARE_EQUAL(defaultsCommandline, icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
-    // The invalid resource came from the Defaults profile, which has the Defaults command line (PROFILE COMMANDLINE MISSING)
+    // The invalid resource came from the Defaults profile, which has the default command line of CMD.exe (PROFILE COMMANDLINE MISSING)
     void MediaResourceTests::ProfileInheritsInvalidIconAndHasNoCommandline()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
@@ -938,8 +941,7 @@ namespace SettingsModelUnitTests
             settings = createSettings(R"({
     "profiles": {
         "defaults": {
-            "icon": "DoesNotMatter",
-            "commandline": "C:\\Windows\\System32\\ping.exe",
+            "icon": "DoesNotMatter"
         },
         "list": [
             {
@@ -954,7 +956,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileInheritsInvalidIconAndHasNoCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok());
-        VERIFY_ARE_EQUAL(defaultsCommandline, icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the profile itself, which has its own commandline.
@@ -992,7 +994,7 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(overrideCommandline, icon.Resolved());
     }
 
-    // The invalid resource came from the profile itself, which inherits a commandline from the parent (defaults, ping.exe)
+    // The invalid resource came from the profile itself, where the commandline falls back to the default value of CMD.exe
     void MediaResourceTests::ProfileSpecifiesNullIconAndHasNoCommandline()
     {
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
@@ -1006,8 +1008,7 @@ namespace SettingsModelUnitTests
             settings = createSettings(R"({
     "profiles": {
         "defaults": {
-            "icon": "DoesNotMatter",
-            "commandline": "C:\\Windows\\System32\\ping.exe",
+            "icon": "DoesNotMatter"
         },
         "list": [
             {
@@ -1023,7 +1024,38 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileSpecifiesNullIconAndHasNoCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
-        VERIFY_ARE_EQUAL(defaultsCommandline, icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
+    }
+
+    // A profile replaces the bell sounds (2) in the base settings; all bell sounds retained
+    void MediaResourceTests::ProfileOverwritesBellSound()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        winrt::com_ptr<implementation::CascadiaSettings> settings;
+        {
+            auto [t, e] = requireCalled([&](auto&&, auto&&, auto&& resource) {
+                // All resources are invalid.
+                resource.Reject();
+            });
+            g_mediaResolverHook = t;
+            settings = createSettings(R"({
+    "profiles": {
+        "list": [
+            {
+                "guid": "{862d46aa-cc9c-4e6c-b872-9cadaafcdbbe}",
+                "bellSound": [
+                    "does not matter; resolved rejected"
+                ],
+            },
+        ]
+    }
+})");
+        }
+
+        auto profile{ settings->GetProfileByName(L"Base") };
+        auto bellSounds{ profile.BellSound() };
+        VERIFY_ARE_EQUAL(1u, bellSounds.Size());
+        VERIFY_IS_FALSE(bellSounds.GetAt(0).Ok());
     }
 #pragma endregion
 

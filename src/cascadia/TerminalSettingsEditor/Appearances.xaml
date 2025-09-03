@@ -68,6 +68,7 @@
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <!--  Grouping: Text  -->
             <TextBlock x:Uid="Profile_TextHeader"
+                       Margin="0,0,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <!--  Color Scheme  -->
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->

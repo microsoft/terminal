@@ -160,6 +160,13 @@
         <Setter Property="Margin" Value="0,32,0,4" />
     </Style>
 
+    <Style x:Key="TextBlockSubtitleStyle"
+           BasedOn="{StaticResource SubtitleTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+        <Setter Property="Margin" Value="0,32,0,4" />
+    </Style>
+
     <!--  Used for disclaimers  -->
     <Style x:Key="DisclaimerStyle"
            TargetType="TextBlock">

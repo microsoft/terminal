@@ -839,7 +839,11 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
+        // Also remove name, source, and commandline; those are not valid for the profiles defaults object.
         settings.baseLayerProfile->ClearGuid();
+        settings.baseLayerProfile->ClearName();
+        settings.baseLayerProfile->ClearSource();
+        settings.baseLayerProfile->ClearCommandline();
         settings.baseLayerProfile->Origin(OriginTag::ProfilesDefaults);
     }
 
