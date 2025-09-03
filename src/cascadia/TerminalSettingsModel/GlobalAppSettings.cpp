@@ -62,7 +62,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
 
     globals->_defaultProfile = _defaultProfile;
-    globals->_actionMap = _actionMap->Copy();    
+    globals->_actionMap = _actionMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
 #define GLOBAL_SETTINGS_COPY(type, name, jsonKey, ...) \
