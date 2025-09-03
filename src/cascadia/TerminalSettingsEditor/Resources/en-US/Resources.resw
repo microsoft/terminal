@@ -286,6 +286,14 @@
     <value>After the current tab</value>
     <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
   </data>
+  <data name="Globals_LLMProviderAzureOpenAI.Content" xml:space="preserve">
+    <value>Azure OpenAI</value>
+    <comment>An option to choose from for the "Active LLM Provider" setting.</comment>
+  </data>
+  <data name="Globals_LLMProviderOpenAI.Content" xml:space="preserve">
+    <value>OpenAI</value>
+    <comment>An option to choose from for the "Active LLM Provider" setting.</comment>
+  </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
     <value>Automatically copy selection to clipboard</value>
     <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
@@ -648,9 +656,165 @@
     <value>These symbols will be used when you double-click text in the terminal or activate "Mark mode".</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
+  <data name="AISettings_ServiceProvidersHeader.Text" xml:space="preserve">
+    <value>Service Providers</value>
+    <comment>Header for a group of settings related to the AI service providers.</comment>
+  </data>
+  <data name="AISettings_Disclaimer" xml:space="preserve">
+    <value>An AI key and endpoint are required for accessing AI services within Windows Terminal. Credentials are securely stored by {0} and not in the JSON file.</value>
+    <comment>Header for the AI settings page, where the user stores their AI key and endpoint for AI services within Windows Terminal. {0} will be replaced by AISettings_DisclaimerLink.</comment>
+  </data>
+  <data name="AISettings_DisclaimerLinkText" xml:space="preserve">
+    <value>Windows Credential Manager</value>
+    <comment>The text of the hyperlink that directs the user to the Windows Credential Manager.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIKeyAndEndpoint.Header" xml:space="preserve">
+    <value>Azure OpenAI</value>
+    <comment>Header for 2 text boxes that allows the user to configure their Azure OpenAI service provider.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIKeyAndEndpointStored.Text" xml:space="preserve">
+    <value>Azure OpenAI key and endpoint are stored.</value>
+    <comment>Description for the Azure OpenAI settings when a key and endpoint are already stored.</comment>
+  </data>
+  <data name="AISettings_ClearAzureOpenAIKeyAndEndpoint.Text" xml:space="preserve">
+    <value>Clear stored key and endpoint</value>
+    <comment>Text on the button that allows the user to clear the stored key and endpoint.</comment>
+  </data>
+  <data name="AISettings_SetActiveProvider.Text" xml:space="preserve">
+    <value>Set as active provider</value>
+    <comment>Text on the checkbox that allows the user to set the selected provider as their active one.</comment>
+  </data>
+  <data name="AISettings_EndpointTextBox.Text" xml:space="preserve">
+    <value>Endpoint</value>
+    <comment>Title for the textbox where the user should input their Azure OpenAI endpoint.</comment>
+  </data>
+  <data name="AISettings_KeyTextBox.Text" xml:space="preserve">
+    <value>Secret key</value>
+    <comment>Title for the textbox where the user should input their Azure OpenAI secret key.</comment>
+  </data>
+  <data name="AISettings_StoreSecrets.Text" xml:space="preserve">
+    <value>Store</value>
+    <comment>Text on the button that allows the user to store their key and/or endpoint.</comment>
+  </data>
+  <data name="AISettings_InitiateGithubAuthFlow.Text" xml:space="preserve">
+    <value>Authenticate via GitHub</value>
+    <comment>Text on the button that allows the user to authenticate to GitHub.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIDescription.Text" xml:space="preserve">
+    <value>To use Azure OpenAI as a service provider, you need an Azure OpenAI service resource.</value>
+    <comment>Header of the description that informs the user about Azure OpenAI and the prerequisites for setting it up in Terminal.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIPrerequisites.Text" xml:space="preserve">
+    <value>Prerequisites:</value>
+    <comment>Header for the list of prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIPrerequisite1" xml:space="preserve">
+    <value>An Azure subscription. {0}.</value>
+    <comment>First of the prerequisites the user needs to use Azure OpenAI within Terminal. {0} will be replaced by AISettings_AzureOpenAIPrerequisite1Hyperlink.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIPrerequisite1LinkText" xml:space="preserve">
+    <value>Create one for free</value>
+    <comment>Text of the hyperlink that will direct the user to where they can create an Azure OpenAI subscription.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIPrerequisite2.Text" xml:space="preserve">
+    <value>Access granted to Azure OpenAI in the desired Azure subscription.</value>
+    <comment>Second of the prerequisites the user needs to use Azure OpenAI within Terminal.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIPrerequisite3" xml:space="preserve">
+    <value>Access permissions to {0}.</value>
+    <comment>Third of the prerequisites the user needs to use Azure OpenAI within Terminal. {0} will be replaced by AISettings_AzureOpenAIPrerequisite3Hyperlink.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIPrerequisite3LinkText" xml:space="preserve">
+    <value>create Azure OpenAI resources and to deploy models</value>
+    <comment>Text of the hyperlink that will direct the user to where they can create Azure OpenAI resources.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIProductTerms" xml:space="preserve">
+    <value>Your use of Azure OpenAI is subject to applicable {0}</value>
+    <comment>Disclaimer about the usage of Azure OpenAI. {0} will be replaced by AISettings_AzureOpenAIProductTermsHyperlink.</comment>
+  </data>
+  <data name="AISettings_AzureOpenAIProductTermsLinkText" xml:space="preserve">
+    <value>Product Terms</value>
+    <comment>The text of the hyperlink that directs the user to the Product Terms.</comment>
+  </data>
+  <data name="AISettings_OpenAIKey.Header" xml:space="preserve">
+    <value>OpenAI</value>
+    <comment>Header for the text box that allows the user to store their OpenAI secret key.</comment>
+  </data>
+  <data name="AISettings_OpenAIKeyStored.Text" xml:space="preserve">
+    <value>OpenAI key is stored.</value>
+    <comment>Description for the OpenAI setting when a key is already stored.</comment>
+  </data>
+  <data name="AISettings_ClearOpenAIKey.Text" xml:space="preserve">
+    <value>Clear stored key</value>
+    <comment>Text on the button that allows the user to clear the stored key.</comment>
+  </data>
+  <data name="AISettings_OpenAIDescription" xml:space="preserve">
+    <value>OpenAI is provided by a third-party and not Microsoft.  When you send a message in Terminal Chat, your chat history and the name of your active shell are sent to the third-party AI service for use by OpenAI. {0}. Your use of OpenAI is governed by the relevant third-party terms, conditions, and privacy statement. </value>
+    <comment>Header of the description that informs the user about their usage of OpenAI in Terminal. {0} will be replaced by AISettings_OpenAILearnMoreLinkText.</comment>
+  </data>
+  <data name="AISettings_OpenAILearnMoreLinkText" xml:space="preserve">
+    <value>Learn more</value>
+    <comment>The text of the hyperlink that directs the user to learn more about Terminal Chat.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotPrerequisite.Text" xml:space="preserve">
+    <value>GitHub Copilot integration with Terminal Chat requires an active GitHub Copilot subscription.</value>
+    <comment>The prerequisite the user needs to use GitHub Copilot within Terminal.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotSignUpAndLearnMore" xml:space="preserve">
+    <value>Sign up for {0} today or request GitHub Copilot access from your enterprise admin. You can read more about GitHub Copilot offerings at {1}.</value>
+    <comment>{Locked="{0}"}{Locked="{1}"} Information regarding how the user can learn more about GitHub Copilot and sign up for it. {0} will be replaced by AISettings_GithubCopilotSignUpLinkText and {1} will be replaced by AISettings_GithubCopilotLearnMoreLinkText.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotSignUpLinkText" xml:space="preserve">
+    <value>GitHub Copilot Free</value>
+    <comment>The text of the hyperlink that directs the user to sign up for GitHub Copilot.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotLearnMoreLinkText" xml:space="preserve">
+    <value>github.com/features/copilot</value>
+    <comment>The text of the hyperlink that directs the user to learn more about GitHub Copilot. {Locked="github.com/features/copilot"}</comment>
+  </data>
+  <data name="AISettings_GithubCopilot.Header" xml:space="preserve">
+    <value>GitHub Copilot</value>
+    <comment>Header for the text box that allows the user to configure access to GitHub Copilot.</comment>
+  </data>
+  <data name="AISettings_GithubCopilotConfigured.Text" xml:space="preserve">
+    <value>GitHub Copilot is configured.</value>
+    <comment>Description for the GitHub Copilot setting when we have access already.</comment>
+  </data>
+  <data name="AISettings_ClearGithubCopilotTokens.Text" xml:space="preserve">
+    <value>Clear stored auth tokens</value>
+    <comment>Text on the button that allows the user to clear the stored tokens.</comment>
+  </data>
+  <data name="AISettings_WaitingForGithubAuth" xml:space="preserve">
+    <value>Awaiting authentication completion from browser...</value>
+    <comment>Text displayed after the user clicks the button to initiate the GitHub authentication flow in their browser.</comment>
+  </data>
+  <data name="AISettings_Active" xml:space="preserve">
+    <value>Active</value>
+    <comment>Text displayed when the service provider is active.</comment>
+  </data>
+  <data name="AISettings_LoggedIn" xml:space="preserve">
+    <value>Logged in</value>
+    <comment>Text displayed when the user is logged in to the service provider.</comment>
+  </data>
+  <data name="AISettings_ActiveLoggedIn" xml:space="preserve">
+    <value>Active, Logged in</value>
+    <comment>Text displayed when the user is logged in to the service provider and that service provider is active.</comment>
+  </data>
+  <data name="AISettings_ProviderNotAllowed" xml:space="preserve">
+    <value>Disabled by your administrator</value>
+    <comment>Text displayed when the service provider has been disabled by the administrator.</comment>
+  </data>
+  <data name="AISettings_PortableModeDisclaimer.Text" xml:space="preserve">
+    <value>Unable to authenticate to GitHub in unpackaged mode. Please launch Terminal as a packaged application to authenticate.</value>
+    <comment>Text displayed to the user when Terminal is un unpackaged mode.</comment>
+  </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
     <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
+  </data>
+  <data name="Nav_AISettings.Content" xml:space="preserve">
+    <value>Terminal Chat (Experimental)</value>
+    <comment>Header for the "Terminal Chat Settings" menu item. This navigates to a page that lets you see and modify settings related to AI services.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>

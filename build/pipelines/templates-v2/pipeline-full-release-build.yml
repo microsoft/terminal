@@ -39,7 +39,7 @@ parameters:
     default: true
   - name: terminalInternalPackageVersion
     type: string
-    default: '0.0.8'
+    default: '0.0.9'
 
   - name: publishSymbolsToPublic
     type: boolean

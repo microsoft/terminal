@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="ExtensionPaletteTemplateSelectors.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="$(ProjectName).def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="ExtensionPalette.xaml" />
+  </ItemGroup>
+</Project>

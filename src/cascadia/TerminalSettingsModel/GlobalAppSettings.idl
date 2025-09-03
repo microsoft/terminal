@@ -7,6 +7,7 @@ import "Theme.idl";
 import "ColorScheme.idl";
 import "ActionMap.idl";
 import "NewTabMenuEntry.idl";
+import "AIConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -119,5 +120,7 @@ namespace Microsoft.Terminal.Settings.Model
         Theme CurrentTheme { get; };
 
         Boolean ShouldUsePersistedLayout();
+
+        AIConfig AIInfo { get; };
     }
 }

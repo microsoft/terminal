@@ -13,7 +13,6 @@
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/til/string.h"
-#include <til/io.h>
 
 #include <LibraryResources.h>
 
@@ -315,66 +314,17 @@ namespace winrt::TerminalApp::implementation
     // - Exports the content of the Terminal Buffer inside the tab
     // Arguments:
     // - tab: tab to export
-    safe_void_coroutine TerminalPage::_ExportTab(const Tab& tab, winrt::hstring filepath)
+    void TerminalPage::_ExportTab(const Tab& tab, winrt::hstring filepath)
     {
-        // This will be used to set up the file picker "filter", to select .txt
-        // files by default.
-        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
-            { L"Text Files (*.txt)", L"*.txt" },
-            { L"All Files (*.*)", L"*.*" }
-        };
-        // An arbitrary GUID to associate with all instances of this
-        // dialog, so they all re-open in the same path as they were
-        // open before:
-        static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
-
-        try
+        if (const auto control{ tab.GetActiveTerminalControl() })
         {
-            if (const auto control{ tab.GetActiveTerminalControl() })
-            {
-                auto path = filepath;
+            // An arbitrary GUID to associate with all instances of the save file dialog
+            // for exporting terminal buffers, so they all re-open in the same path as they were
+            // open before:
+            static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
 
-                if (path.empty())
-                {
-                    // GH#11356 - we can't use the UWP apis for writing the file,
-                    // because they don't work elevated (shocker) So just use the
-                    // shell32 file picker manually.
-                    std::wstring filename{ tab.Title() };
-                    filename = til::clean_filename(filename);
-                    path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
-                        THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
-                        try
-                        {
-                            // Default to the Downloads folder
-                            auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
-                            dialog->SetDefaultFolder(folderShellItem.get());
-                        }
-                        CATCH_LOG(); // non-fatal
-                        THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
-                        THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
-                        THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
-
-                        // Default to using the tab title as the file name
-                        THROW_IF_FAILED(dialog->SetFileName((filename + L".txt").c_str()));
-                    });
-                }
-                else
-                {
-                    // The file picker isn't going to give us paths with
-                    // environment variables, but the user might have set one in
-                    // the settings. Expand those here.
-
-                    path = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
-                }
-
-                if (!path.empty())
-                {
-                    const auto buffer = control.ReadEntireBuffer();
-                    til::io::write_utf8_string_to_file_atomic(std::filesystem::path{ std::wstring_view{ path } }, til::u16u8(buffer));
-                }
-            }
+            _SaveStringToFileOrPromptUser(control.ReadEntireBuffer(), filepath, tab.Title(), clientGuidExportFile);
         }
-        CATCH_LOG();
     }
 
     // Method Description:

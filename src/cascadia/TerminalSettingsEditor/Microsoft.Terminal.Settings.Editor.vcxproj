@@ -54,6 +54,9 @@
     <ClInclude Include="GlobalAppearance.h">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AISettings.h">
+      <DependentUpon>AISettings.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorSchemes.h">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -118,6 +121,10 @@
       <DependentUpon>GlobalAppearanceViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="AISettingsViewModel.h">
+      <DependentUpon>AISettingsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="LaunchViewModel.h">
       <DependentUpon>LaunchViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -175,6 +182,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="GlobalAppearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="AISettings.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ColorSchemes.xaml">
@@ -244,6 +254,9 @@
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AISettings.cpp">
+      <DependentUpon>AISettings.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -310,6 +323,10 @@
       <DependentUpon>GlobalAppearanceViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="AISettingsViewModel.cpp">
+      <DependentUpon>AISettingsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="LaunchViewModel.cpp">
       <DependentUpon>LaunchViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -372,6 +389,10 @@
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="AISettings.idl">
+      <DependentUpon>AISettings.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -419,6 +440,7 @@
     <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
+    <Midl Include="AISettingsViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
     <Midl Include="Extensions.idl">

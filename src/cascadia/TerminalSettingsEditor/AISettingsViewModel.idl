@@ -1,0 +1,38 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass AISettingsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        AISettingsViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        Boolean AreAzureOpenAIKeyAndEndpointSet { get; };
+        String AzureOpenAIEndpoint;
+        String AzureOpenAIKey;
+        Boolean AzureOpenAIActive;
+        Boolean AzureOpenAIAllowed { get; };
+        String AzureOpenAIStatus { get; };
+
+        Boolean IsOpenAIKeySet { get; };
+        String OpenAIKey;
+        Boolean OpenAIActive;
+        Boolean OpenAIAllowed { get; };
+        String OpenAIStatus { get; };
+
+        Boolean AreGithubCopilotTokensSet { get; };
+        String GithubCopilotAuthMessage { get; };
+        void GithubCopilotAuthValues(String authValues);
+        Boolean GithubCopilotActive;
+        Boolean GithubCopilotAllowed { get; };
+        String GithubCopilotStatus { get; };
+        Boolean IsTerminalPackaged { get; };
+
+        void InitiateGithubAuth_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
+    }
+}

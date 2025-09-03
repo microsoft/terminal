@@ -100,6 +100,9 @@
     <ClInclude Include="FontConfig.h">
       <DependentUpon>FontConfig.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AIConfig.h">
+      <DependentUpon>AIConfig.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumMappings.h">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
@@ -174,6 +177,9 @@
     <ClCompile Include="FontConfig.cpp">
       <DependentUpon>FontConfig.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AIConfig.cpp">
+      <DependentUpon>AIConfig.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
@@ -230,6 +236,7 @@
     <Midl Include="IAppearanceConfig.idl" />
     <Midl Include="ISettingsModelObject.idl" />
     <Midl Include="FontConfig.idl" />
+    <Midl Include="AIConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

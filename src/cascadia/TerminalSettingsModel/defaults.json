@@ -485,6 +485,7 @@
         { "command": "renameTab", "id": "Terminal.RenameTab" },
         { "command": "openTabRenamer", "id": "Terminal.OpenTabRenamer" },
         { "command": "commandPalette", "id": "Terminal.ToggleCommandPalette" },
+        { "command": "terminalChat", "id": "Terminal.OpenTerminalChat" },
         { "command": "identifyWindow", "id": "Terminal.IdentifyWindow" },
         { "command": "openWindowRenamer", "id": "Terminal.OpenWindowRenamer" },
         { "command": "quakeMode", "id": "Terminal.QuakeMode" },

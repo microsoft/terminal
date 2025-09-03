@@ -92,6 +92,7 @@ private:
     CLI::App* _swapPaneCommand;
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
+    CLI::App* _handleUriCommand;
     CLI::App* _saveCommand;
 
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
@@ -150,6 +151,7 @@ private:
     void _buildMovePaneParser();
     void _buildSwapPaneParser();
     void _buildFocusPaneParser();
+    void _buildHandleUriParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();
     int _handleExit(const CLI::App& command, const CLI::Error& e);

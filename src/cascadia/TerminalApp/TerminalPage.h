@@ -165,7 +165,7 @@ namespace winrt::TerminalApp::implementation
         bool CanDragDrop() const noexcept;
         bool IsRunningElevated() const noexcept;
 
-        void OpenSettingsUI();
+        void OpenSettingsUI(const winrt::hstring& startingPage = {});
         void WindowActivated(const bool activated);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
@@ -226,6 +226,8 @@ namespace winrt::TerminalApp::implementation
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
         winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
 
+        winrt::Microsoft::Terminal::Query::Extension::ExtensionPalette _extensionPalette{ nullptr };
+        winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _extensionPaletteLoadedRevoker;
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
@@ -329,6 +331,7 @@ namespace winrt::TerminalApp::implementation
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _AIChatButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _KeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
@@ -346,7 +349,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateFocusedTab();
         void _DuplicateTab(const Tab& tab);
 
-        safe_void_coroutine _ExportTab(const Tab& tab, winrt::hstring filepath);
+        void _ExportTab(const Tab& tab, winrt::hstring filepath);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::Tab tab);
         void _CloseTabAtIndex(uint32_t index);
@@ -459,6 +462,10 @@ namespace winrt::TerminalApp::implementation
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
         void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::Tab& tab);
 
+        void _OnInputSuggestionRequested(const IInspectable& sender, const winrt::hstring& suggestion);
+        void _OnExportChatHistoryRequested(const IInspectable& sender, const winrt::hstring& text);
+        safe_void_coroutine _SaveStringToFileOrPromptUser(const winrt::hstring& text, const winrt::hstring& filepath, const std::wstring_view filename, const winrt::guid dialogGuid);
+
         void _Find(const Tab& tab);
 
         winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& settings,
@@ -466,7 +473,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
         winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
 
-        TerminalApp::IPaneContent _makeSettingsContent();
+        TerminalApp::IPaneContent _makeSettingsContent(const winrt::hstring& startingPage = {});
         std::shared_ptr<Pane> _MakeTerminalPane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
                                                 const winrt::TerminalApp::Tab& sourceTab = nullptr,
                                                 winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
@@ -561,8 +568,22 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);
         winrt::com_ptr<Tab> _senderOrFocusedTab(const IInspectable& sender);
 
+        void _loadQueryExtension();
+
         void _activePaneChanged(winrt::TerminalApp::Tab tab, Windows::Foundation::IInspectable args);
         safe_void_coroutine _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
+
+        // Terminal Chat related members and functions
+        winrt::Microsoft::Terminal::Query::Extension::ILMProvider _lmProvider{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::LLMProvider _currentProvider{ winrt::Microsoft::Terminal::Settings::Model::LLMProvider::None };
+        void _createAndSetAuthenticationForLMProvider(winrt::Microsoft::Terminal::Settings::Model::LLMProvider providerType, const winrt::hstring& authValuesString = winrt::hstring{});
+        void _InitiateGithubAuth();
+        winrt::fire_and_forget _OnGithubCopilotLLMProviderAuthChanged(const IInspectable& sender, const winrt::Microsoft::Terminal::Query::Extension::IAuthenticationResult& authResult);
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::AzureOpenAISettingChanged_revoker _azureOpenAISettingChangedRevoker;
+        void _setAzureOpenAIAuth();
+        winrt::Microsoft::Terminal::Settings::Model::AIConfig::OpenAISettingChanged_revoker _openAISettingChangedRevoker;
+        void _setOpenAIAuth();
+        winrt::hstring _generateRandomString();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

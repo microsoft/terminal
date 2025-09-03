@@ -5,6 +5,8 @@ import "Extensions.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    delegate void GithubAuthCompletedHandler(String result);
+
     // Due to a XAML Compiler bug, it is hard for us to propagate an HWND into a XAML-using runtimeclass.
     // To work around that, we'll only propagate the HWND (when we need to) into the settings' toplevel page
     // and use IHostedInWindow to hide the implementation detail where we use IInitializeWithWindow (shobjidl_core)
@@ -36,6 +38,7 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page, IHostedInWindow
     {
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        String StartingPage;
 
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
@@ -49,5 +52,9 @@ namespace Microsoft.Terminal.Settings.Editor
         ExtensionsViewModel ExtensionsVM { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> GithubAuthRequested;
+        static void RefreshGithubAuthStatus(String message);
+        static event GithubAuthCompletedHandler GithubAuthCompleted;
     }
 }

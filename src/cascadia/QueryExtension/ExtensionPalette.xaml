@@ -1,0 +1,398 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<UserControl x:Class="Microsoft.Terminal.Query.Extension.ExtensionPalette"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="using:Microsoft.Terminal.Query.Extension"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:mtu="using:Microsoft.Terminal.UI"
+             xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             VerticalAlignment="Stretch"
+             AllowFocusOnInteraction="True"
+             AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             IsTabStop="True"
+             LostFocus="_lostFocusHandler"
+             PointerPressed="_rootPointerPressed"
+             PreviewKeyDown="_previewKeyDownHandler"
+             TabNavigation="Cycle"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="BackdropBackground">#202020</Color>
+                    <SolidColorBrush x:Key="MessageBorderBrush">Transparent</SolidColorBrush>
+                    <Thickness x:Key="MessageBorderThickness">0</Thickness>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="BackdropBackground">#F9F9F9</Color>
+                    <SolidColorBrush x:Key="MessageBorderBrush">Transparent</SolidColorBrush>
+                    <Thickness x:Key="MessageBorderThickness">0</Thickness>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="HighContrast">
+                    <StaticResource x:Key="BackdropBackground"
+                                    ResourceKey="SystemFillColorNeutralBackgroundBrush" />
+                    <StaticResource x:Key="MessageBorderBrush"
+                                    ResourceKey="ButtonBorderThemeBrush" />
+                    <Thickness x:Key="MessageBorderThickness">1</Thickness>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <mux:StackLayout x:Name="VerticalStackLayout"
+                             Orientation="Vertical"
+                             Spacing="16" />
+            <DataTemplate x:Key="RichQueryMessageTemplate"
+                          x:DataType="local:ChatMessage">
+                <Grid Height="Auto"
+                      Margin="4"
+                      HorizontalAlignment="Right">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="1"
+                                MaxWidth="400"
+                                Padding="16,8,16,8"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource MessageBorderBrush}"
+                                BorderThickness="{ThemeResource MessageBorderThickness}"
+                                CornerRadius="8">
+                        <ContentPresenter Content="{x:Bind RichBlock}" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+            <DataTemplate x:Key="RichResponseMessageTemplate"
+                          x:DataType="local:ChatMessage">
+                <Grid Height="Auto"
+                      Margin="4"
+                      HorizontalAlignment="Left">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="1"
+                                MaxWidth="400"
+                                Padding="16,8,16,8"
+                                Background="{ThemeResource ControlAltFillColorQuarternaryBrush}"
+                                BorderBrush="{ThemeResource MessageBorderBrush}"
+                                BorderThickness="{ThemeResource MessageBorderThickness}"
+                                CornerRadius="8">
+                        <ContentPresenter Content="{x:Bind RichBlock}" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+            <local:ExtensionPaletteMessageTemplateSelector x:Key="ChatMessageTemplateSelector"
+                                                           RichQueryMessageTemplate="{StaticResource RichQueryMessageTemplate}"
+                                                           RichResponseMessageTemplate="{StaticResource RichResponseMessageTemplate}" />
+            <Style TargetType="ListViewHeaderItem">
+                <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
+                <Setter Property="FontSize" Value="{ThemeResource ListViewHeaderItemThemeFontSize}" />
+                <Setter Property="Background" Value="{ThemeResource ListViewHeaderItemBackground}" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+                <Setter Property="Padding" Value="16,8,16,0" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Top" />
+                <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListViewHeaderItem">
+                            <StackPanel VerticalAlignment="Bottom"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="{TemplateBinding CornerRadius}">
+                                <ContentPresenter x:Name="ContentPresenter"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  ContentTransitions="{TemplateBinding ContentTransitions}" />
+                            </StackPanel>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <DataTemplate x:Key="QueryGroupedMessageTemplate"
+                          x:DataType="local:GroupedChatMessages">
+                <StackPanel Margin="0,0,0,-6"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Orientation="Horizontal"
+                            Spacing="4">
+                    <TextBlock FontFamily="Segoe UI"
+                               FontSize="12">
+                        <Run Text="{x:Bind Attribution}" />
+                    </TextBlock>
+                    <TextBlock FontFamily="Segoe UI"
+                               FontSize="12"
+                               Opacity="0.786">
+                        <Run Text="{x:Bind Key}" />
+                    </TextBlock>
+                </StackPanel>
+            </DataTemplate>
+            <DataTemplate x:Key="ResponseGroupedMessageTemplate"
+                          x:DataType="local:GroupedChatMessages">
+                <StackPanel Margin="0,0,0,-6"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Orientation="Horizontal"
+                            Spacing="4">
+                    <mux:ImageIcon Source="{x:Bind BadgeBitmapImage}" />
+                    <TextBlock FontFamily="Segoe UI"
+                               FontSize="12">
+                        <Run Text="{x:Bind Attribution}" />
+                    </TextBlock>
+                    <TextBlock FontFamily="Segoe UI"
+                               FontSize="12"
+                               Opacity="0.786">
+                        <Run Text="{x:Bind Key}" />
+                    </TextBlock>
+                </StackPanel>
+            </DataTemplate>
+            <local:ExtensionPaletteGroupedMessagesHeaderTemplateSelector x:Key="GroupedChatMessageTemplateSelector"
+                                                                         QueryGroupedMessageTemplate="{StaticResource QueryGroupedMessageTemplate}"
+                                                                         ResponseGroupedMessageTemplate="{StaticResource ResponseGroupedMessageTemplate}" />
+            <CollectionViewSource x:Key="MessagesCollectionViewSource"
+                                  x:Name="MessagesCollectionViewSource"
+                                  IsSourceGrouped="True" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="6*" />
+            <ColumnDefinition Width="2*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="_backdrop"
+              Grid.Row="0"
+              Grid.Column="1"
+              Margin="8"
+              Padding="0,8,0,0"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              Background="{ThemeResource BackdropBackground}"
+              BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
+              BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
+              CornerRadius="{ThemeResource OverlayCornerRadius}"
+              PointerPressed="_backdropPointerPressed"
+              Shadow="{StaticResource SharedShadow}"
+              Translation="0,0,32">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Row="0"
+                    Margin="0,0,0,16"
+                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Row="0"
+                            Grid.Column="0"
+                            Height="26"
+                            Margin="8,0,0,0"
+                            Padding="6,4,6,4"
+                            VerticalAlignment="Top"
+                            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                        <StackPanel Orientation="Horizontal">
+                            <ContentPresenter Width="16"
+                                              Height="16"
+                                              VerticalAlignment="Center"
+                                              Content="{x:Bind ResolvedIcon, Mode=OneWay}" />
+                            <TextBlock Margin="6,0,6,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="12"
+                                       Text="{x:Bind ProfileName, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                    <ListView x:Name="_suggestionsListView"
+                              Grid.Row="0"
+                              Grid.Column="0"
+                              Grid.ColumnSpan="3"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Bottom"
+                              HorizontalContentAlignment="Stretch"
+                              IsItemClickEnabled="True"
+                              ItemTemplateSelector="{StaticResource ChatMessageTemplateSelector}"
+                              ItemsSource="{Binding Source={StaticResource MessagesCollectionViewSource}}"
+                              SelectionMode="None">
+                        <ListView.Resources>
+                            <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver"
+                                             Color="Transparent" />
+                            <SolidColorBrush x:Key="ListViewItemBackgroundPressed"
+                                             Color="Transparent" />
+                        </ListView.Resources>
+                        <ListView.Header>
+                            <Grid RowSpacing="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="6*" />
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <mux:ImageIcon Name="HeaderIcon"
+                                               Grid.Row="0"
+                                               Grid.Column="1"
+                                               Grid.ColumnSpan="3"
+                                               Width="64"
+                                               Height="64"
+                                               Margin="0,0,0,20" />
+                                <TextBlock x:Name="QueryIntro"
+                                           Grid.Row="1"
+                                           Grid.Column="1"
+                                           Grid.ColumnSpan="3"
+                                           Margin="0,0,0,20"
+                                           HorizontalAlignment="Center"
+                                           FontSize="20" />
+                                <Border Grid.Row="2"
+                                        Grid.Column="2"
+                                        BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        BorderThickness="0,0,0,1">
+                                    <TextBlock Margin="16,0,16,12"
+                                               HorizontalAlignment="Center"
+                                               FontSize="14"
+                                               Foreground="{ThemeResource ApplicationSecondaryForegroundThemeBrush}"
+                                               HorizontalTextAlignment="Center"
+                                               TextWrapping="WrapWholeWords">
+                                        <Run x:Name="TitleSubheader" />
+                                    </TextBlock>
+                                </Border>
+                                <StackPanel Grid.Row="3"
+                                            Grid.Column="2"
+                                            Margin="0,12,0,12"
+                                            HorizontalAlignment="Center"
+                                            Orientation="Horizontal">
+                                    <TextBlock Margin="0,0,8,0"
+                                               FontSize="12">
+                                        <Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2251839"
+                                                   TextDecorations="None">
+                                            <Run x:Uid="LearnMoreLink" />
+                                        </Hyperlink>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                        </ListView.Header>
+                        <ListView.GroupStyle>
+                            <GroupStyle HeaderTemplateSelector="{StaticResource GroupedChatMessageTemplateSelector}" />
+                        </ListView.GroupStyle>
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsStackPanel VerticalAlignment="Bottom"
+                                                 ItemsUpdatingScrollMode="KeepLastItemInView" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="2"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Top"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                        <Button x:Uid="ClearMessagesButton"
+                                Click="_clearAndInitializeMessages">
+                            <Button.Content>
+                                <FontIcon FontSize="16"
+                                          Glyph="&#xE81C;" />
+                            </Button.Content>
+                        </Button>
+                        <Button x:Uid="ExportMessagesButton"
+                                Click="_exportMessagesToFile">
+                            <Button.Content>
+                                <FontIcon FontSize="16"
+                                          Glyph="&#xEDE1;" />
+                            </Button.Content>
+                        </Button>
+                    </StackPanel>
+                    <mux:ProgressRing Grid.Row="1"
+                                      Grid.Column="0"
+                                      Width="15"
+                                      Height="15"
+                                      MinWidth="0"
+                                      MinHeight="0"
+                                      Margin="16,0,0,16"
+                                      HorizontalAlignment="Left"
+                                      IsActive="{x:Bind IsProgressRingActive, Mode=OneWay}"
+                                      IsIndeterminate="True"
+                                      Visibility="{x:Bind IsProgressRingActive, Mode=OneWay}" />
+                </Grid>
+            </Border>
+
+            <TextBox x:Name="_queryBox"
+                     Grid.Row="1"
+                     Height="100"
+                     Margin="16,0,16,4"
+                     Padding="18,8,8,8"
+                     AcceptsReturn="True"
+                     IsSpellCheckEnabled="False"
+                     PlaceholderText="{x:Bind QueryBoxPlaceholderText}"
+                     Text=""
+                     TextWrapping="Wrap"
+                     Visibility="{x:Bind ProviderExists, Mode=OneWay}" />
+            <Grid Grid.Row="1"
+                  HorizontalAlignment="Center"
+                  RowSpacing="8"
+                  Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ProviderExists), Mode=OneWay}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock x:Uid="SetUpProviderDisclaimer"
+                           Grid.Row="0"
+                           HorizontalAlignment="Center" />
+                <Button x:Name="SetUpProviderButton"
+                        Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        Click="_setUpAIProviderInSettings">
+                    <TextBlock x:Uid="SetUpProviderButton" />
+                </Button>
+            </Grid>
+            <TextBlock Grid.Row="2"
+                       Margin="20,0,0,16"
+                       FontSize="10">
+                <Run x:Name="AIContentDisclaimerPart1" /><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2204904"
+                           TextDecorations="None">
+                    <Run x:Name="AIContentDisclaimerLinkText" />
+                </Hyperlink><Run x:Name="AIContentDisclaimerPart2" />
+            </TextBlock>
+        </Grid>
+    </Grid>
+</UserControl>

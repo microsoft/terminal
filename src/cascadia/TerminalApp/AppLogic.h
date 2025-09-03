@@ -50,6 +50,8 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
 
+        WINRT_PROPERTY(winrt::hstring, RandomStateString);
+
     private:
         bool _isElevated{ false };
         bool _canDragDrop{ false };

@@ -100,6 +100,7 @@ NIN
 NOASYNC
 NOBREAKS
 NOCHANGEDIR
+NOCRLF
 NOPROGRESS
 NOREDIRECTIONBITMAP
 NOREPEAT
@@ -187,6 +188,7 @@ Viewbox
 virtualalloc
 wcsnlen
 WDJ
+wincrypt
 winhttp
 wininet
 winmain

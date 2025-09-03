@@ -570,11 +570,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - Actions of the parents are overridden by the children
     void ActionMap::_PopulateCumulativeActionMap(std::unordered_map<hstring, Model::Command>& actionMap)
     {
+        // special case: don't add any ToggleAIChat actions if the feature has been disabled
+        // note: we only refuse to add these actions to the cumulative action map, that way we don't remove them from the user's settings file
+        // this means that these actions won't show up in the command palette, but any keybindings/modifications/etc to them will persist
+        const auto terminalChatDisabled = !WI_IsAnyFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::All);
         for (const auto& [cmdID, cmd] : _ActionMap)
         {
             if (!actionMap.contains(cmdID))
             {
-                actionMap.emplace(cmdID, cmd);
+                if (!terminalChatDisabled || cmd.ActionAndArgs().Action() != ShortcutAction::ToggleAIChat)
+                {
+                    actionMap.emplace(cmdID, cmd);
+                }
             }
         }
 

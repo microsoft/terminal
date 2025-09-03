@@ -87,6 +87,15 @@
     </feature>
 
     <feature>
+        <name>Feature_TerminalChatJailbreakFilter</name>
+        <description>If enabled, we check if the provided Azure OpenAI LLM uses a jailbreak filter.</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Canary</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
         <name>Feature_ScrollbarMarks</name>
         <description>Enables the experimental scrollbar marks feature.</description>
         <stage>AlwaysEnabled</stage>
@@ -192,6 +201,17 @@
             <brandingToken>Dev</brandingToken>
             <brandingToken>Canary</brandingToken>
             <brandingToken>Preview</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_GithubCopilot</name>
+        <description>Enables GitHub Copilot as a possible LM provider for Terminal Chat.</description>
+        <id>18035</id>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>Dev</brandingToken>
+            <brandingToken>Canary</brandingToken>
         </alwaysEnabledBrandingTokens>
     </feature>
 

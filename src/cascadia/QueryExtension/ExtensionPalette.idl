@@ -1,0 +1,47 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ILMProvider.idl";
+
+namespace Microsoft.Terminal.Query.Extension
+{
+    [default_interface] runtimeclass ChatMessage
+    {
+        ChatMessage(String content, Boolean isQuery);
+        String MessageContent { get; };
+        Boolean IsQuery { get; };
+        Windows.UI.Xaml.Controls.RichTextBlock RichBlock { get; };
+        event Windows.Foundation.TypedEventHandler<ChatMessage, String> RunCommandClicked;
+    }
+
+    runtimeclass GroupedChatMessages : Windows.Foundation.Collections.IVector<IInspectable>
+    {
+        GroupedChatMessages(String key, Boolean isQuery, Windows.Foundation.Collections.IVector<IInspectable> messages, String Attribution, String badgeImagePath);
+        String Key;
+        String Attribution;
+        Windows.UI.Xaml.Media.Imaging.BitmapImage BadgeBitmapImage;
+        Boolean IsQuery { get; };
+    }
+
+    [default_interface] runtimeclass ExtensionPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        ExtensionPalette();
+        void SetProvider(ILMProvider lmProvider);
+        Boolean ProviderExists { get; };
+
+        String ControlName { get; };
+        String QueryBoxPlaceholderText { get; };
+        Boolean IsProgressRingActive { get; };
+
+        String ActiveCommandline;
+        String ProfileName;
+
+        void IconPath(String iconPath);
+        Windows.UI.Xaml.Controls.IconElement ResolvedIcon { get; };
+
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> ActiveControlInfoRequested;
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> InputSuggestionRequested;
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, String> ExportChatHistoryRequested;
+        event Windows.Foundation.TypedEventHandler<ExtensionPalette, IInspectable> SetUpProviderInSettingsRequested;
+    }
+}

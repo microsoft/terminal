@@ -8,6 +8,7 @@
       <string id="WindowsTerminal">Windows Terminal</string>
       <string id="SUPPORTED_WindowsTerminal_1_21">At least Windows Terminal 1.21</string>
       <string id="SUPPORTED_DefaultTerminalApplication">At least Windows 11 22H2 or Windows 10 22H2 (Build 19045.3031, KB5026435) with Windows Terminal 1.17</string>
+      <string id="SUPPORTED_WindowsTerminalCanary_1_23">At least Windows Terminal Canary 1.23</string>
       <string id="DisabledProfileSources">Disabled Profile Sources</string>
       <string id="DisabledProfileSourcesText">Profiles will not be generated from any sources listed here. Source names can be arbitrary strings. Potential candidates can be found as the "source" property on profile definitions in Windows Terminal's settings.json file.
 
@@ -27,6 +28,17 @@ If you select Windows Terminal Preview and it is not installed the system will f
       <string id="TermAppConsoleHost">Windows Console Host (legacy)</string>
       <string id="TermAppWindowsTerminal">Windows Terminal</string>
       <string id="TermAppWindowsTerminalPreview">Windows Terminal Preview (if available)</string>
+      <string id="EnabledLMProviders">Enabled Language Model/AI Providers</string>
+      <string id="EnabledLMProvidersText">The listed Language Models/AI Providers will be available for use in Terminal Chat.
+
+Enabling the policy but leaving the list empty disallows all providers and therefore disables the Terminal Chat feature completely.
+
+Common providers are:
+- AzureOpenAI
+- OpenAI
+- GitHubCopilot
+
+For instance, setting this policy to GitHubCopilot will allow the use of GitHubCopilot in Terminal Chat.</string>
     </stringTable>
     <presentationTable>
       <presentation id="DisabledProfileSources">
@@ -34,6 +46,9 @@ If you select Windows Terminal Preview and it is not installed the system will f
       </presentation>
       <presentation id="TermAppSelection">
         <dropdownList refId="TermAppSelect" noSort="true" defaultItem="0">Select from the following options:</dropdownList>
+      </presentation>
+      <presentation id="EnabledLMProviders">
+        <multiTextBox refId="EnabledLMProviders">List of enabled Language Model/AI Providers (one per line)</multiTextBox>
       </presentation>
     </presentationTable>
   </resources>

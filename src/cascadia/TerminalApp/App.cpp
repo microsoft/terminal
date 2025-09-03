@@ -67,4 +67,12 @@ namespace winrt::TerminalApp::implementation
             AddOtherProvider(winrt::Microsoft::Terminal::Settings::Editor::XamlMetaDataProvider{});
         }
     }
+
+    void App::PrepareForAIChat()
+    {
+        if (!std::exchange(_preparedForAIChat, true))
+        {
+            AddOtherProvider(winrt::Microsoft::Terminal::Query::Extension::XamlMetaDataProvider{});
+        }
+    }
 }

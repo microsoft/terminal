@@ -22,6 +22,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
+namespace WDJ = ::winrt::Windows::Data::Json;
 
 namespace winrt
 {
@@ -657,6 +658,28 @@ namespace winrt::TerminalApp::implementation
             const auto v = p.Visibility() == Visibility::Visible ? Visibility::Collapsed : Visibility::Visible;
             p.EnableCommandPaletteMode(realArgs.LaunchMode());
             p.Visibility(v);
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleToggleAIChat(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        args.Handled(false);
+        // only handle this if the feature is allowed
+        if (WI_IsAnyFlagSet(AIConfig::AllowedLMProviders(), EnabledLMProviders::All))
+        {
+            if (ExtensionPresenter().Visibility() == Visibility::Collapsed)
+            {
+                _loadQueryExtension();
+                ExtensionPresenter().Visibility(Visibility::Visible);
+                _extensionPalette.Visibility(Visibility::Visible);
+            }
+            else
+            {
+                _extensionPalette.Visibility(Visibility::Collapsed);
+                ExtensionPresenter().Visibility(Visibility::Collapsed);
+            }
             args.Handled(true);
         }
     }
@@ -1612,6 +1635,33 @@ namespace winrt::TerminalApp::implementation
     {
         _ShowAboutDialog();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleHandleUri(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& uriArgs{ args.ActionArgs().try_as<HandleUriArgs>() })
+        {
+            const auto uriString{ uriArgs.Uri() };
+            if (!uriString.empty())
+            {
+                Windows::Foundation::Uri uri{ uriString };
+                // we only accept "github-auth" host names for now
+                if (uri.Host() == L"github-auth")
+                {
+                    // we should have a randomStateString stored, if we don't then don't handle this
+                    if (const auto randomStateString = Application::Current().as<TerminalApp::App>().Logic().RandomStateString(); !randomStateString.empty())
+                    {
+                        Windows::Data::Json::JsonObject authValuesJson;
+                        authValuesJson.SetNamedValue(L"url", WDJ::JsonValue::CreateStringValue(uriString));
+                        authValuesJson.SetNamedValue(L"state", WDJ::JsonValue::CreateStringValue(randomStateString));
+
+                        _createAndSetAuthenticationForLMProvider(LLMProvider::GithubCopilot, authValuesJson.ToString());
+                        args.Handled(true);
+                    }
+                }
+            }
+        }
     }
 
     void TerminalPage::_HandleQuickFix(const IInspectable& /*sender*/,

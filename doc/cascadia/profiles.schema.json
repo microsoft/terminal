@@ -469,6 +469,7 @@
         "switchSelectionEndpoint",
         "switchToTab",
         "tabSearch",
+        "terminalChat",
         "toggleAlwaysOnTop",
         "toggleBlockSelection",
         "toggleFocusMode",
