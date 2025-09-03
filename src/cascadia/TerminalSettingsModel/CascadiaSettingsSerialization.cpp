@@ -213,8 +213,11 @@ void SettingsLoader::GenerateProfiles()
     auto generateProfiles = [&](const IDynamicProfileGenerator& generator) {
         if (!_ignoredNamespaces.contains(generator.GetNamespace()))
         {
+            const auto oldProfileCount = inboxSettings.profiles.size();
             _executeGenerator(generator, inboxSettings.profiles);
+            return oldProfileCount != inboxSettings.profiles.size();
         }
+        return false;
     };
 
     // Generate profiles for each generator and add them to the inbox settings.
@@ -224,7 +227,7 @@ void SettingsLoader::GenerateProfiles()
     generateProfiles(AzureCloudShellGenerator{});
     generateProfiles(VisualStudioGenerator{});
 #if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateProfiles(SshHostGenerator{});
+    sshProfilesGenerated = generateProfiles(SshHostGenerator{});
 #endif
 }
 
@@ -536,6 +539,33 @@ bool SettingsLoader::DisableDeletedProfiles()
     return newGeneratedProfiles;
 }
 
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::AddDynamicProfileFolders()
+{
+    // Keep track of generated folders to avoid regenerating them
+    const auto state = get_self<ApplicationState>(ApplicationState::SharedInstance());
+
+    // If the SSH generator is enabled, try to create an "SSH" folder with all the generated profiles
+    if (sshProfilesGenerated && !state->SSHFolderGenerated())
+    {
+        SshHostGenerator sshGenerator;
+        auto matchProfilesEntry = make_self<implementation::MatchProfilesEntry>();
+        matchProfilesEntry->Source(hstring{ sshGenerator.GetNamespace() });
+
+        auto folderEntry = make_self<implementation::FolderEntry>();
+        folderEntry->Name(L"SSH");
+        folderEntry->Icon(MediaResource::FromString(hstring{ sshGenerator.GetIcon() }));
+        folderEntry->Inlining(FolderEntryInlining::Auto);
+        folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
+
+        userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
+        state->SSHFolderGenerated(true);
+        return true;
+    }
+    return false;
+}
+
 bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
 {
     bool modified{ false };
@@ -809,7 +839,11 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
+        // Also remove name, source, and commandline; those are not valid for the profiles defaults object.
         settings.baseLayerProfile->ClearGuid();
+        settings.baseLayerProfile->ClearName();
+        settings.baseLayerProfile->ClearSource();
+        settings.baseLayerProfile->ClearCommandline();
         settings.baseLayerProfile->Origin(OriginTag::ProfilesDefaults);
     }
 
@@ -1229,6 +1263,7 @@ try
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
     // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
+    mustWriteToDisk |= loader.AddDynamicProfileFolders();
     mustWriteToDisk |= loader.FixupUserSettings();
 
     // If this throws, the app will catch it and use the default settings.
@@ -1293,9 +1328,9 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "ThemesInUse",
             TraceLoggingDescription("Data about the themes in use"),
-            TraceLoggingBool(themeChoice, "Identifier for the theme chosen. 0 is system, 1 is light, 2 is dark, and 3 indicates any custom theme."),
-            TraceLoggingBool(changedTheme, "True if the user actually changed the theme from the default theme"),
-            TraceLoggingInt32(numThemes, "Number of themes in the user's settings"),
+            TraceLoggingInt32(themeChoice, "ThemeClass", "Identifier for the theme chosen. 0 is system (legacySystem = 6), 1 is light (legacyLight = 5), 2 is dark (legacyDark = 4), and 3 indicates any custom theme."),
+            TraceLoggingBool(changedTheme, "ChangedTheme", "True if the user actually changed the theme from the default theme"),
+            TraceLoggingInt32(numThemes, "NumberOfThemes", "Number of themes in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
@@ -1317,7 +1352,7 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "SendInputUsage",
             TraceLoggingDescription("Event emitted upon settings load, containing the number of sendInput actions a user has"),
-            TraceLoggingInt32(collectSendInput(), "Number of sendInput actions in the user's settings"),
+            TraceLoggingInt32(collectSendInput(), "NumberOfSendInputActions", "Number of sendInput actions in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
@@ -1334,8 +1369,8 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "MarksProfilesUsage",
             TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in to scrollbar marks"),
-            TraceLoggingInt32(totalAutoMark, "Number of profiles for which AutoMarkPrompts is enabled"),
-            TraceLoggingInt32(totalShowMarks, "Number of profiles for which ShowMarks is enabled"),
+            TraceLoggingInt32(totalAutoMark, "NumberOfAutoMarkPromptsProfiles", "Number of profiles for which AutoMarkPrompts is enabled"),
+            TraceLoggingInt32(totalShowMarks, "NumberOfShowMarksProfiles", "Number of profiles for which ShowMarks is enabled"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }

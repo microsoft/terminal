@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <ThrottledFunc.h>
+
 #include "TerminalPage.g.h"
 #include "Tab.h"
 #include "AppKeyBindings.h"
@@ -27,8 +29,15 @@ namespace Microsoft::Terminal::Core
     class ControlKeyStates;
 }
 
+namespace winrt::Microsoft::Terminal::Settings
+{
+    struct TerminalSettingsCreateResult;
+}
+
 namespace winrt::TerminalApp::implementation
 {
+    struct TerminalSettingsCache;
+
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
     inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 
@@ -273,7 +282,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
-        TerminalApp::TerminalSettingsCache _terminalSettingsCache{ nullptr };
+        std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
 
         struct StashedDragData
         {
@@ -309,7 +318,7 @@ namespace winrt::TerminalApp::implementation
 
         std::wstring _evaluatePathForCwd(std::wstring_view path);
 
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings, const bool inheritCursor);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Control::IControlSettings settings, const bool inheritCursor);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
@@ -359,8 +368,11 @@ namespace winrt::TerminalApp::implementation
         bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
         bool _MoveTab(winrt::com_ptr<Tab> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
+        std::shared_ptr<ThrottledFunc<>> _adjustProcessPriorityThrottled;
+        void _adjustProcessPriority() const;
+
         template<typename F>
-        bool _ApplyToActiveControls(F f)
+        bool _ApplyToActiveControls(F f) const
         {
             if (const auto tab{ _GetFocusedTabImpl() })
             {
@@ -379,7 +391,7 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
-        winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
+        winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl() const;
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         std::optional<uint32_t> _GetTabIndex(const TerminalApp::Tab& tab) const noexcept;
         TerminalApp::Tab _GetFocusedTab() const noexcept;
@@ -449,7 +461,7 @@ namespace winrt::TerminalApp::implementation
 
         void _Find(const Tab& tab);
 
-        winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
+        winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& settings,
                                                                                      const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
         winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
         winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
@@ -504,7 +516,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
 
         bool _maybeElevate(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
-                           const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,
+                           const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& controlSettings,
                            const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
         void _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 

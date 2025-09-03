@@ -20,6 +20,7 @@
 #include "TabRowControl.h"
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 #include <shlobj.h>
 
@@ -74,7 +75,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return S_FALSE;
             }
-            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs) };
 
             // Try to handle auto-elevation
             if (_maybeElevate(newTerminalArgs, settings, profile))
@@ -1009,6 +1010,8 @@ namespace winrt::TerminalApp::implementation
                 auto profile = tabImpl->GetFocusedProfile();
                 _UpdateBackground(profile);
             }
+
+            _adjustProcessPriorityThrottled->Run();
         }
         CATCH_LOG();
     }

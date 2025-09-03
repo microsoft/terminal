@@ -56,12 +56,9 @@ Il s’agit d’un projet open source et nous encourageons la participation à l
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-– Nous avons réécrit la manière dont les applications de console sont hébergées dans Terminal ! Veuillez signaler tout bogue que vous rencontrez.
-– Terminal prend désormais en charge Sixels !
-– Vous pouvez maintenant ouvrir un panneau ancré contenant des extraits de commandes que vous avez enregistrées pour les utiliser ultérieurement
-– Les utilisateurs de l’invite de commande sur la dernière version de Windows 11 peuvent voir une icône « astuce rapide » qui suggère un logiciel installable à partir de WinGet
-– Le texte sélectionné sera désormais beaucoup plus visible (et personnalisable !)
-– Un certain nombre de bogues de fiabilité, de problèmes de commodité et de désagréments ont été corrigés.
+- Nous avons ajouté des dizaines de paramètres à l’interface utilisateur qui n’existaient auparavant que dans le fichier JSON, y compris une nouvelle page pour personnaliser la disposition de votre menu Nouvel onglet.
+- Nous avons fait une refonte de la gestion des fenêtres pour améliorer la fiabilité. Veuillez signaler les bogues que vous rencontrez avec l’alias wt.exe.
+- Les profils affichent désormais une icône s’ils ont été masqués ou s’ils font référence à des programmes qui ont été désinstallés.
 
 Veuillez consulter notre page des versions GitHub pour découvrir d’autres détails.
   </ReleaseNotes>

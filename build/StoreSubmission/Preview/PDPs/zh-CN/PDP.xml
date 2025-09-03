@@ -54,13 +54,13 @@
     
   </DevStudio>
   <ReleaseNotes>
-    版本 __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-- 我们向用户界面添加了许多设置，这些设置仅存在于 JSON 文件中，包括用于自定义“新建标签页”菜单布局的新页面！
-- 我们已重新检测窗口管理以提高可靠性;请将遇到的任何 bug 归档为 wt.exe 别名
-- 如果配置文件已隐藏或引用已卸载的程序，则它们现在将显示一个图标。
+- 一个全新的“扩展”页，显示已安装到终端的内容
+- 命令面板现在以你的母语和英语显示
+- 新的 VT 功能，例如同步渲染、新配色方案、快速鼠标操作(如缩放)的配置等
 
-有关其他详细信息，请参阅 GitHub 发布页面。
+有关其他详细信息，请参阅我们的 GitHub 发布页面。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

@@ -30,13 +30,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:
-        BellSoundViewModel(hstring path);
+        BellSoundViewModel(const Model::IMediaResource& resource);
 
+        hstring Path() const { return _resource.Path(); }
+        bool FileExists() const { return _resource.Ok(); }
         hstring DisplayPath() const;
         hstring SubText() const;
-        VIEW_MODEL_OBSERVABLE_PROPERTY(bool, FileExists, true);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, Path);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, ShowDirectory);
+
+    private:
+        Model::IMediaResource _resource;
     };
 
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
@@ -49,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IVector<IInspectable> BuiltInIcons() noexcept { return _BuiltInIcons; };
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
-        Model::TerminalSettings TermSettings() const;
+        Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
@@ -190,7 +193,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();
         void _MarkDuplicateBellSoundDirectories();
-        safe_void_coroutine _CheckBellSoundsExistence();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
         static Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _BuiltInIcons;

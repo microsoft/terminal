@@ -366,12 +366,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (til::compare_ordinal_insensitive(var, temp) == 0 ||
                 til::compare_ordinal_insensitive(var, tmp) == 0)
             {
-                return til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data());
+                std::wstring shortPath;
+                if (SUCCEEDED((til::details::wil_env::GetShortPathNameW<std::wstring, 256>(value.data(), shortPath))))
+                {
+                    return shortPath;
+                }
             }
-            else
-            {
-                return std::wstring{ value };
-            }
+            return std::wstring{ value };
         }
 
         static bool is_path_var(std::wstring_view input) noexcept

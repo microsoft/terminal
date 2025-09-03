@@ -26,6 +26,7 @@
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
     <TerminalWinGetInterop>true</TerminalWinGetInterop>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -173,9 +174,7 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
-    <ClInclude Include="TerminalSettingsCache.h">
-      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="TerminalSettingsCache.h" />
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
@@ -288,9 +287,7 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
-    <ClCompile Include="TerminalSettingsCache.cpp">
-      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
-    </ClCompile>
+    <ClCompile Include="TerminalSettingsCache.cpp" />
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
@@ -365,7 +362,6 @@
       <DependentUpon>TaskPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="TerminalSettingsCache.idl" />
     <Midl Include="MarkdownPaneContent.idl">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -417,6 +413,9 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsAppAdapterLib\TerminalSettingsAppAdapterLib.vcxproj">
+      <Project>{3c46e2b0-ae6c-4132-9122-6772fb411959}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj">
       <Project>{7615F03F-E56D-4DB4-B23D-BD4FB80DB36F}</Project>
