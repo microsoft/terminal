@@ -1419,7 +1419,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
             VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
@@ -1442,7 +1442,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
             VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());
@@ -1465,7 +1465,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
             VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
@@ -1490,7 +1490,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
@@ -1514,7 +1514,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
@@ -1538,7 +1538,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
@@ -1563,7 +1563,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());
@@ -1586,7 +1586,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());
@@ -1610,7 +1610,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());

@@ -487,25 +487,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Function Description:
     // - Static helper for building a new TermControl from an already existing
     //   content. We'll attach the existing swapchain to this new control's
-    //   SwapChainPanel. The IKeyBindings might belong to a non-agile object on
-    //   a new thread, so we'll hook up the core to these new bindings.
+    //   SwapChainPanel.
     // Arguments:
     // - content: The preexisting ControlInteractivity to connect to.
-    // - keybindings: The new IKeyBindings instance to use for this control.
     // Return Value:
     // - The newly constructed TermControl.
-    Control::TermControl TermControl::NewControlByAttachingContent(Control::ControlInteractivity content,
-                                                                   const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    Control::TermControl TermControl::NewControlByAttachingContent(Control::ControlInteractivity content)
     {
         const auto term{ winrt::make_self<TermControl>(content) };
-        term->_initializeForAttach(keyBindings);
+        term->_initializeForAttach();
         return *term;
     }
 
-    void TermControl::_initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    void TermControl::_initializeForAttach()
     {
         _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
-        _interactivity.AttachToNewControl(keyBindings);
+        _interactivity.AttachToNewControl();
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -1848,13 +1845,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        auto bindings = _core.Settings().KeyBindings();
-        if (!bindings)
+        if (!_keyBindings)
         {
             return false;
         }
 
-        auto success = bindings.TryKeyChord({
+        auto success = _keyBindings.TryKeyChord({
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),

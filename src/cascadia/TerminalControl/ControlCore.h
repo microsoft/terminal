@@ -105,7 +105,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
         uint64_t SwapChainHandle() const;
-        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void AttachToNewControl();
 
         void SizeChanged(const float width, const float height);
         void ScaleChanged(const float scale);
