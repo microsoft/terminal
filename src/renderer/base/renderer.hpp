@@ -22,6 +22,13 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
+    enum class InhibitionSource
+    {
+        Client, // E.g. VT sequences
+        Server, // E.g. because the window is out of focus
+        User, // The user turned it off
+    };
+
     class Renderer
     {
     public:
@@ -45,6 +52,7 @@ namespace Microsoft::Console::Render
         IRenderData* GetRenderData() const noexcept;
 
         TimerHandle RegisterTimer(const char* description, TimerCallback routine);
+        bool IsTimerRunning(TimerHandle handle) const;
         void StartTimerWithInterval(TimerHandle handle, TimerDuration interval);
         void StopTimer(TimerHandle handle);
 
@@ -121,7 +129,6 @@ namespace Microsoft::Console::Render
         // Timer handling
         DWORD _calculateTimerMaxWait() noexcept;
         void _tickTimers() noexcept;
-        TimerRoutine& _getTimer(TimerHandle handle) noexcept;
         static TimerRepr _timerInstant() noexcept;
         static TimerRepr _timerSaturatingAdd(TimerRepr a, TimerRepr b) noexcept;
         static TimerRepr _timerSaturatingSub(TimerRepr a, TimerRepr b) noexcept;
@@ -181,6 +188,9 @@ namespace Microsoft::Console::Render
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
+        til::enumset<InhibitionSource, uint8_t> _cursorVisibilityInhibitors;
+        til::enumset<InhibitionSource, uint8_t> _cursorBlinkingInhibitors;
+        bool _cursorBlinkerOn = false;
         bool _isSynchronizingOutput = false;
         bool _forceUpdateViewport = false;
 

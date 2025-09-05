@@ -31,6 +31,7 @@ Renderer::Renderer(RenderSettings& renderSettings, IRenderData* pData) :
     _cursorBlinker = RegisterTimer("blinker", [](Renderer& renderer, TimerHandle) {
         renderer._blinkMotherfucker();
     });
+    StartTimerWithInterval(_cursorBlinker, std::chrono::milliseconds(530));
 }
 
 Renderer::~Renderer()
@@ -191,11 +192,17 @@ Renderer::TimerHandle Renderer::RegisterTimer(const char* description, TimerCall
     return TimerHandle{ id };
 }
 
+bool Renderer::IsTimerRunning(TimerHandle handle) const
+{
+    const auto& timer = _timers.at(handle.id);
+    return timer.interval != TimerReprMax;
+}
+
 void Renderer::StartTimerWithInterval(TimerHandle handle, TimerDuration interval)
 {
     WI_ASSERT(interval >= minTimerDuration && interval <= maxTimerDuration);
 
-    auto& timer = _getTimer(handle);
+    auto& timer = _timers.at(handle.id);
     timer.interval = interval.count();
     timer.next = _timerInstant() + interval.count();
 
@@ -205,7 +212,7 @@ void Renderer::StartTimerWithInterval(TimerHandle handle, TimerDuration interval
 
 void Renderer::StopTimer(TimerHandle handle)
 {
-    auto& timer = _getTimer(handle);
+    auto& timer = _timers.at(handle.id);
     timer.interval = TimerReprMax;
     timer.next = TimerReprMax;
 }
@@ -254,12 +261,6 @@ void Renderer::_tickTimers() noexcept
 
         id++;
     }
-}
-
-Renderer::TimerRoutine& Renderer::_getTimer(TimerHandle handle) noexcept
-{
-    WI_ASSERT(handle.id < _timers.size());
-    return _timers[handle.id];
 }
 
 ULONGLONG Renderer::_timerInstant() noexcept
@@ -513,6 +514,28 @@ void Renderer::_synchronizeWithOutput() noexcept
     // Set it to false now to skip calling `_synchronizeWithOutput()` on the next frame.
     _isSynchronizingOutput = false;
     _renderSettings.SetRenderMode(RenderSettings::Mode::SynchronizedOutput, false);
+}
+
+void Renderer::InhibitCursorVisibility(InhibitionSource source, bool enable) noexcept
+{
+    const auto before = _cursorVisibilityInhibitors.any();
+    _cursorVisibilityInhibitors.set(source, enable);
+    const auto after = _cursorVisibilityInhibitors.any();
+    if (before != after)
+    {
+        NotifyPaintFrame();
+    }
+}
+
+void Renderer::InhibitCursorBlinking(InhibitionSource source, bool enable) noexcept
+{
+    const auto before = _cursorBlinkingInhibitors.any();
+    _cursorBlinkingInhibitors.set(source, enable);
+    const auto after = _cursorBlinkingInhibitors.any();
+    if (before != after)
+    {
+        NotifyPaintFrame();
+    }
 }
 
 // Routine Description:
@@ -1390,8 +1413,8 @@ void Renderer::_updateCursorInfo()
     _currentCursorOptions.cursorType = _pData->GetCursorStyle();
     _currentCursorOptions.fUseColor = useColor;
     _currentCursorOptions.cursorColor = cursorColor;
-    _currentCursorOptions.isVisible = _pData->IsCursorVisible();
-    _currentCursorOptions.isOn = _currentCursorOptions.isVisible;
+    _currentCursorOptions.isVisible = _pData->IsCursorVisible() && !_cursorVisibilityInhibitors.any();
+    _currentCursorOptions.isOn = _currentCursorOptions.isVisible && (_cursorBlinkerOn || _cursorBlinkingInhibitors.any());
     _currentCursorOptions.inViewport = xInRange && yInRange;
 }
 
@@ -1424,9 +1447,7 @@ void Renderer::_invalidateCurrentCursor() const
 
 void Renderer::_blinkMotherfucker()
 {
-    //auto& buffer = _pData->GetTextBuffer();
-    //auto& cursor = buffer.GetCursor();
-    //cursor.SetIsOn(!cursor.IsOn());
+    _cursorBlinkerOn = !_cursorBlinkerOn;
 }
 
 // If we had previously drawn a composition at the previous cursor position

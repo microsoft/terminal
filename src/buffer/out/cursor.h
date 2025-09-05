@@ -21,13 +21,6 @@ Revision History:
 
 class TextBuffer;
 
-enum class InhibitionSource
-{
-    Client, // E.g. VT sequences
-    Server, // E.g. because the window is out of focus
-    User, // The user turned it off
-};
-
 class Cursor final
 {
 public:
