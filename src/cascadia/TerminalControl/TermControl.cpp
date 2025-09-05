@@ -2160,9 +2160,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         RestorePointerCursor.raise(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
+        auto delta = point.Properties().MouseWheelDelta();
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
-                                                point.Properties().IsHorizontalMouseWheel(),
-                                                point.Properties().MouseWheelDelta(),
+                                                point.Properties().IsHorizontalMouseWheel() ?
+                                                    Core::Point{ delta, 0 } : Core::Point{ 0, delta },
                                                 _toTerminalOrigin(point.Position()),
                                                 TermControl::GetPressedMouseButtons(point));
         if (result)
@@ -2182,8 +2183,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - delta: the mouse wheel delta that triggered this event.
     // - state: the state for each of the mouse buttons individually (pressed/unpressed)
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
-                                   const bool horizontal,
-                                   const int32_t delta,
+                                   const Core::Point delta,
                                    const bool leftButtonDown,
                                    const bool midButtonDown,
                                    const bool rightButtonDown)
@@ -2195,7 +2195,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
         WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
 
-        return _interactivity.MouseWheel(modifiers, horizontal, delta, _toTerminalOrigin(location), state);
+        return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
     }
 
     // Method Description:
