@@ -148,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
+        bool OnMouseWheel(const Windows::Foundation::Point location, const winrt::Microsoft::Terminal::Core::Point delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
         ~TermControl();
 
