@@ -194,7 +194,7 @@ public:
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
-    [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
+    [[nodiscard]] NTSTATUS SetCursorPosition(til::point Position);
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();

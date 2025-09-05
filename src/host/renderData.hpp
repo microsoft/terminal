@@ -32,7 +32,6 @@ public:
 
     til::point GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
-    bool IsCursorOn() const noexcept override;
     ULONG GetCursorHeight() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;

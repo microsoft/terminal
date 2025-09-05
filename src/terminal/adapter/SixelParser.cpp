@@ -283,6 +283,7 @@ bool SixelParser::_initTextBufferBoundaries()
 
     // If the cursor is visible, we need to hide it while the sixel data is
     // being processed. It will be made visible again when we're done.
+    // TODO: Why tho?
     _textCursorWasVisible = page.Cursor().IsVisible();
     if (_textCursorWasVisible && validOrigin)
     {

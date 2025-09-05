@@ -16,7 +16,6 @@ Revision History:
 
 #pragma once
 
-#include "CursorBlinker.hpp"
 #include "IIoProvider.hpp"
 #include "readDataCooked.hpp"
 #include "settings.hpp"
@@ -143,7 +142,6 @@ public:
     friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
     friend class SCREEN_INFORMATION;
     friend class CommonState;
-    Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
     MidiAudio& GetMidiAudio();
 
@@ -165,7 +163,6 @@ private:
     std::optional<std::wstring> _pendingClipboardText;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
-    Microsoft::Console::CursorBlinker _blinker;
     MidiAudio _midiAudio;
 };
 

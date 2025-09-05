@@ -125,21 +125,6 @@ bool RenderData::IsCursorVisible() const noexcept
 }
 
 // Method Description:
-// - Returns whether the cursor is currently visually visible or not. If the
-//      cursor is visible, and blinking, this will alternate between true and
-//      false as the cursor blinks.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the cursor is currently visually visible, depending upon blink state
-bool RenderData::IsCursorOn() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible() && cursor.IsOn();
-}
-
-// Method Description:
 // - The height of the cursor, out of 100, where 100 indicates the cursor should
 //      be the full height of the cell.
 // Arguments:

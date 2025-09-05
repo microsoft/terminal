@@ -55,7 +55,6 @@ namespace Microsoft::Console::Render
         // This block used to be the original IRenderData.
         virtual til::point GetCursorPosition() const noexcept = 0;
         virtual bool IsCursorVisible() const noexcept = 0;
-        virtual bool IsCursorOn() const noexcept = 0;
         virtual ULONG GetCursorHeight() const noexcept = 0;
         virtual CursorType GetCursorStyle() const noexcept = 0;
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
