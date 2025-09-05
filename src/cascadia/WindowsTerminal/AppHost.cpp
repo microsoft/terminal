@@ -745,7 +745,7 @@ void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
 // - delta: the wheel delta that triggered this event.
 // Return Value:
 // - <none>
-void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const int32_t delta, const bool horizontal)
+void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const winrt::Microsoft::Terminal::Core::Point delta)
 {
     if (_windowLogic)
     {
@@ -772,7 +772,7 @@ void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord,
                     const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
                     const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
 
-                    if (control.OnMouseWheel(offsetPoint, horizontal, delta, lButtonDown, mButtonDown, rButtonDown))
+                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.
