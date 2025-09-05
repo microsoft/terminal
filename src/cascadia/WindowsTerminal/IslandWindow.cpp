@@ -102,7 +102,15 @@ void IslandWindow::Close()
         // WinUI will strongly hold onto the first DesktopWindowXamlSource that is created.
         // If we don't manually set the Content() to null first, closing that first window
         // will leak all of its contents permanently.
-        _source.Content(nullptr);
+        //
+        // However, sometimes resetting the content during showdown throws an exception.
+        // We want to continue shutting down, even if this failed (and just leak the
+        // content if that's what it is going to do.)
+        try
+        {
+            _source.Content(nullptr);
+        }
+        CATCH_LOG();
 
         _source.Close();
         _source = nullptr;
