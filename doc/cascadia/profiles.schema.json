@@ -3013,7 +3013,7 @@
           "type": "boolean"
         },
         "historySize": {
-          "default": 9001,
+          "default": 16384,
           "description": "The number of lines above the ones displayed in the window you can scroll back to.",
           "minimum": -1,
           "type": "integer"

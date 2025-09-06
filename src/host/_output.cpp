@@ -396,20 +396,16 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         // See FillConsoleOutputCharacterWImpl and its identical code.
         if (enablePowershellShim)
         {
-            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            if (const auto writer = gci.GetVtWriterForBuffer(&OutContext))
-            {
-                const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
-                const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
-                const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
-                const auto wroteSpaces = attribute == (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+            const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
+            const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
+            const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
+            const auto wroteSpaces = attribute == (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 
-                if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
-                {
-                    // PowerShell has previously called FillConsoleOutputCharacterW() which triggered a call to WriteClearScreen().
-                    cellsModified = lengthToWrite;
-                    return S_OK;
-                }
+            if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+            {
+                // PowerShell has previously called FillConsoleOutputCharacterW() which triggered a call to WriteClearScreen().
+                cellsModified = lengthToWrite;
+                return S_OK;
             }
         }
 
@@ -454,20 +450,25 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         if (enablePowershellShim)
         {
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            if (auto writer = gci.GetVtWriterForBuffer(&OutContext))
-            {
-                const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
-                const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
-                const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
-                const auto wroteSpaces = character == UNICODE_SPACE;
+            auto writer = gci.GetVtWriterForBuffer(&OutContext);
+            const auto currentBufferDimensions{ OutContext.GetBufferSize().Dimensions() };
+            const auto wroteWholeBuffer = lengthToWrite == (currentBufferDimensions.area<size_t>());
+            const auto startedAtOrigin = startingCoordinate == til::point{ 0, 0 };
+            const auto wroteSpaces = character == UNICODE_SPACE;
 
-                if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+            if (wroteWholeBuffer && startedAtOrigin && wroteSpaces)
+            {
+                // WriteClearScreen uses VT sequences and is more efficient at clearing the buffer than FillConsoleImpl.
+                // For this reason, we use it no matter whether we have a VT writer (= ConPTY) or not.
+                WriteClearScreen(OutContext);
+
+                if (writer)
                 {
-                    WriteClearScreen(OutContext);
                     writer.Submit();
-                    cellsModified = lengthToWrite;
-                    return S_OK;
                 }
+
+                cellsModified = lengthToWrite;
+                return S_OK;
             }
         }
 
