@@ -1718,6 +1718,20 @@ void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
     }
 }
 
+SCREEN_INFORMATION::SnapOnScopeExit SCREEN_INFORMATION::SnapOnOutput() noexcept
+{
+
+    const auto call =
+        // We don't need to snap-on-output the alt buffer since it doesn't scroll anyway.
+        // More importantly though, in the current architecture the alt buffer gets deallocated
+        // the second we receive a \033[?1049l, which makes our this pointer hazardous to use.
+        _psiMainBuffer == nullptr &&
+        // We only want to snap if the user didn't intentionally scroll away.
+        // The snapping logic could be improved, but it's alright for now.
+        _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
+    return SnapOnScopeExit{ call ? this : nullptr };
+}
+
 void SCREEN_INFORMATION::_makeCursorVisible()
 {
     if (_textBuffer->GetCursor().IsVisible())
