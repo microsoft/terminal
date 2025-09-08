@@ -180,7 +180,8 @@
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"
               Background="{ThemeResource BackdropBackground}"
-              BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
+              BorderBrush="{ThemeResource SystemControlHighlightAccentRevealBorderBrush}"
+              BorderThickness="2,0,0,0"
               PointerPressed="_backdropPointerPressed"
               Shadow="{StaticResource SharedShadow}"
               Translation="0,0,32">
