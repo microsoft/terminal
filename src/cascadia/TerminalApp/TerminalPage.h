@@ -435,7 +435,7 @@ namespace winrt::TerminalApp::implementation
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
-        // WinUI's TabView has a broken close event handler:
+        // BODGY: WinUI's TabView has a broken close event handler:
         // If the close button is disabled, middle-clicking the tab raises no close
         // event. Because that's dumb, we implement our own middle-click handling.
         // `_tabItemMiddleClickHookEnabled` is true whenever the close button is hidden,
