@@ -180,7 +180,7 @@
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"
               Background="{ThemeResource BackdropBackground}"
-              BorderBrush="{ThemeResource SystemControlHighlightAccentRevealBorderBrush}"
+              BorderBrush="{ThemeResource TabViewBackground}"
               BorderThickness="2,0,0,0"
               PointerPressed="_backdropPointerPressed"
               Shadow="{StaticResource SharedShadow}"
