@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
             else
             {
-                _close();
+                _closeChat(nullptr, nullptr);
             }
         });
     }
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_closeChat(const Windows::Foundation::IInspectable& /*sender*/,
                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        _close();
+        Visibility(Visibility::Collapsed);
     }
 
     void ExtensionPalette::_backdropPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
@@ -319,53 +319,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _lmProvider.SetContext(std::move(context));
     }
 
-    // Method Description:
-    // - The purpose of this event handler is to hide the palette if it loses focus.
-    // We say we lost focus if our root element and all its descendants lost focus.
-    // This handler is invoked when our root element or some descendant loses focus.
-    // At this point we need to learn if the newly focused element belongs to this palette.
-    // To achieve this:
-    // - We start with the newly focused element and traverse its visual ancestors up to the Xaml root.
-    // - If one of the ancestors is this ExtensionPalette, then by our definition the focus is not lost
-    // - If we reach the Xaml root without meeting this ExtensionPalette,
-    // then the focus is not contained in it anymore and it should be dismissed
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
-                                             const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
-    {
-        const auto flyout = _queryBox().ContextFlyout();
-        if (flyout && flyout.IsOpen())
-        {
-            return;
-        }
-
-        auto root = this->XamlRoot();
-        if (!root)
-        {
-            return;
-        }
-
-        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(root).try_as<DependencyObject>();
-        while (focusedElementOrAncestor)
-        {
-            if (focusedElementOrAncestor == *this)
-            {
-                // This palette is the focused element or an ancestor of the focused element. No need to dismiss.
-                return;
-            }
-
-            // Go up to the next ancestor
-            focusedElementOrAncestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElementOrAncestor);
-        }
-
-        // We got to the root (the element with no parent) and didn't meet this palette on the path.
-        // It means that it lost the focus and needs to be dismissed.
-        _close();
-    }
-
     void ExtensionPalette::_previewKeyDownHandler(const IInspectable& /*sender*/,
                                                   const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e)
     {
@@ -379,7 +332,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // Dismiss the palette if the text is empty
             if (_queryBox().Text().empty())
             {
-                _close();
+                _closeChat(nullptr, nullptr);
             }
 
             e.Handled(true);
@@ -414,20 +367,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         _SetUpProviderInSettingsRequestedHandlers(nullptr, nullptr);
-        _close();
-    }
-
-    // Method Description:
-    // - Dismiss the query palette. This will:
-    //   * clear all the current text in the input box
-    //   * set our visibility to Collapsed
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_close()
-    {
-        Visibility(Visibility::Collapsed);
+        _closeChat(nullptr, nullptr);
     }
 
     ChatMessage::ChatMessage(winrt::hstring content, bool isQuery) :

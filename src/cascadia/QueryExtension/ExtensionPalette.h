@@ -53,12 +53,9 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         void _closeChat(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _backdropPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         void _queryBoxGotFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void _lostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _previewKeyDownHandler(const Windows::Foundation::IInspectable& sender,
                                     const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void _setUpAIProviderInSettings(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-
-        void _close();
     };
 
     struct ChatMessage : ChatMessageT<ChatMessage>
