@@ -6,7 +6,6 @@
 #include "renderData.hpp"
 
 #include "dbcs.h"
-#include "handle.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -96,93 +95,13 @@ void RenderData::UnlockConsole() noexcept
     gci.UnlockConsole();
 }
 
-// Method Description:
-// - Gets the cursor's position in the buffer, relative to the buffer origin.
-// Arguments:
-// - <none>
-// Return Value:
-// - the cursor's position in the buffer relative to the buffer origin.
-til::point RenderData::GetCursorPosition() const noexcept
+Microsoft::Console::Render::TimerDuration RenderData::GetBlinkInterval() const noexcept
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetPosition();
-}
-
-// Method Description:
-// - Returns whether the cursor is currently visible or not. If the cursor is
-//      visible and blinking, this is true, even if the cursor has currently
-//      blinked to the "off" state.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the cursor is set to the visible state, regardless of blink state
-bool RenderData::IsCursorVisible() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible();
-}
-
-// Method Description:
-// - Returns whether the cursor is currently visually visible or not. If the
-//      cursor is visible, and blinking, this will alternate between true and
-//      false as the cursor blinks.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the cursor is currently visually visible, depending upon blink state
-bool RenderData::IsCursorOn() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible() && cursor.IsOn();
-}
-
-// Method Description:
-// - The height of the cursor, out of 100, where 100 indicates the cursor should
-//      be the full height of the cell.
-// Arguments:
-// - <none>
-// Return Value:
-// - height of the cursor, out of 100
-ULONG RenderData::GetCursorHeight() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    // Determine cursor height
-    auto ulHeight = cursor.GetSize();
-
-    // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
-    // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
-    // then we need to shrink it by half.
-    if (cursor.IsDouble())
-    {
-        if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
-        {
-            ulHeight >>= 1;
-        }
-        else
-        {
-            ulHeight <<= 1;
-        }
-    }
-
-    return ulHeight;
-}
-
-// Method Description:
-// - The CursorType of the cursor. The CursorType is used to determine what
-//      shape the cursor should be.
-// Arguments:
-// - <none>
-// Return Value:
-// - the CursorType of the cursor.
-CursorType RenderData::GetCursorStyle() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetType();
+    const auto enabled = ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled();
+    const auto interval = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
+    // >10s --> no blinking. The limit is arbitrary, because technically the valid range
+    // on Windows is 200-1200ms. GetCaretBlinkTime() returns INFINITE for no blinking, 0 for errors.
+    return enabled && interval <= 10000 ? std ::chrono::milliseconds(interval) : Microsoft::Console::Render::TimerDuration::max();
 }
 
 // Method Description:
@@ -195,19 +114,6 @@ CursorType RenderData::GetCursorStyle() const noexcept
 ULONG RenderData::GetCursorPixelWidth() const noexcept
 {
     return ServiceLocator::LocateGlobals().cursorPixelWidth;
-}
-
-// Method Description:
-// - Returns true if the cursor should be drawn twice as wide as usual because
-//      the cursor is currently over a cell with a double-wide character in it.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
 }
 
 // Routine Description:

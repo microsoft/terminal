@@ -807,6 +807,7 @@ IMPEXP
 inbox
 inclusivity
 INCONTEXT
+INDEXID
 INFOEX
 inheritcursor
 INITCOMMONCONTROLSEX
@@ -908,6 +909,7 @@ LNM
 LOADONCALL
 LOBYTE
 localappdata
+LOCATIONCHANGE
 locsrc
 Loewen
 LOGBRUSH
@@ -1761,6 +1763,7 @@ UINTs
 uld
 uldash
 uldb
+ULONGLONG
 ulwave
 Unadvise
 unattend
@@ -1972,8 +1975,8 @@ WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT
 WRITECONSOLEOUTPUTSTRING
 wrkstr
-WRL
 wrl
+WRL
 wrp
 WRunoff
 WSLENV

@@ -11,6 +11,9 @@
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
+// Calls ConsoleControl() with ConsoleSetCaretInfo, which goes through the kernel sets cciConsole
+// on the HWND and then raises EVENT_OBJECT_LOCATIONCHANGE with OBJID_CARET, INDEXID_CONTAINER.
+// The cciConsole information is then used by GetGUIThreadInfo() to populate hwndCaret and rcCaret.
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ const til::rect& rectangle)
 {
     const auto pWindow = ServiceLocator::LocateConsoleWindow();
