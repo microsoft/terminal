@@ -364,6 +364,7 @@
                      Margin="16,0,16,4"
                      Padding="18,8,8,8"
                      AcceptsReturn="True"
+                     GotFocus="_queryBoxGotFocusHandler"
                      IsSpellCheckEnabled="False"
                      PlaceholderText="{x:Bind QueryBoxPlaceholderText}"
                      Text=""

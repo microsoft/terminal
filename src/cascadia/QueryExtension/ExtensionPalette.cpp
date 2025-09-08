@@ -243,31 +243,20 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    void ExtensionPalette::_setFocusAndPlaceholderTextHelper(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& args)
+    void ExtensionPalette::_setFocusAndPlaceholderTextHelper(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        // There are 2 ways this function is called - internally when the palette is loaded/set to visible,
-        // or from a GotFocus event
-        // If called internally, args is set to nullptr and we always want to send the focus to the query box
-        // If called from a GotFocus event, there is the possibility that the original source of the event is
-        // not the extension palette itself but one of the controls within the palette (for example, one of the
-        // buttons). This is because GotFocus is a bubbled event that eventually reaches the parent object (the
-        // palette). We only want to handle this if the original source is the palette iself.
-        if (!args || (args && args.OriginalSource().try_as<ExtensionPalette>()))
-        {
-            // We are visible, set the placeholder text so the user knows what the shell context is
-            _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
+        _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
 
-            // Now that we have the context, make sure the lmProvider knows it too
-            if (_lmProvider)
-            {
-                const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
-                _lmProvider.SetContext(std::move(context));
-                _queryBox().Focus(FocusState::Programmatic);
-            }
-            else
-            {
-                SetUpProviderButton().Focus(FocusState::Programmatic);
-            }
+        // Now that we have the context, make sure the lmProvider knows it too
+        if (_lmProvider)
+        {
+            const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
+            _lmProvider.SetContext(std::move(context));
+            _queryBox().Focus(FocusState::Programmatic);
+        }
+        else
+        {
+            SetUpProviderButton().Focus(FocusState::Programmatic);
         }
     }
 
@@ -320,6 +309,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     {
         _setFocusAndPlaceholderTextHelper(nullptr, nullptr);
         e.Handled(true);
+    }
+
+    void ExtensionPalette::_queryBoxGotFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                                    const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
+        const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
+        _lmProvider.SetContext(std::move(context));
     }
 
     // Method Description:
