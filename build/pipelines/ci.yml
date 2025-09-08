@@ -140,6 +140,7 @@ stages:
           jobName: Bundle
           buildConfigurations: [Release]
           buildPlatforms: ${{ parameters.buildPlatforms }}
+          branding: Dev
 
       - template: ./templates-v2/job-package-conpty.yml
         parameters:
