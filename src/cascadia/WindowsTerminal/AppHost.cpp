@@ -1140,7 +1140,7 @@ void AppHost::_WindowMoved()
 void AppHost::_CloseRequested(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                               const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    PostMessageW(_windowManager->GetMainWindow(), WindowEmperor::WM_CLOSE_TERMINAL_WINDOW, 0, reinterpret_cast<LPARAM>(this));
+    _windowManager->CloseWindow(this);
 }
 
 void AppHost::_PropertyChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,

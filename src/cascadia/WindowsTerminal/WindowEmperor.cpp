@@ -278,6 +278,16 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     }
 }
 
+void WindowEmperor::CloseWindow(AppHost* host) const
+{
+    using namespace winrt::Windows::System;
+
+    const auto dispatcherQueue = DispatcherQueue::GetForCurrentThread();
+    dispatcherQueue.TryEnqueue(DispatcherQueuePriority::Low, [hwnd = _window.get(), host]() {
+        PostMessageW(hwnd, WM_CLOSE_TERMINAL_WINDOW, 0, reinterpret_cast<LPARAM>(host));
+    });
+}
+
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 {
     int64_t max = INT64_MIN;
