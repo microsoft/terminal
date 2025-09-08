@@ -122,6 +122,9 @@ stages:
 
   - stage: Package
     displayName: Package
+    variables:
+      XES_APPXMANIFESTVERSION: 0.1.0.0
+      XES_PACKAGEVERSIONNUMBER: 0.0.0.1
     pool:
       ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
         name: SHINE-INT-L
@@ -132,18 +135,18 @@ stages:
         - Build_${{ platform }}
       - Build_AnyCPU
     jobs:
-      - template: ./job-merge-msix-into-bundle.yml
+      - template: ./templates-v2/job-merge-msix-into-bundle.yml
         parameters:
           jobName: Bundle
           buildConfigurations: [Release]
           buildPlatforms: ${{ parameters.buildPlatforms }}
 
-      - template: ./job-package-conpty.yml
+      - template: ./templates-v2/job-package-conpty.yml
         parameters:
           buildConfigurations: [Release]
           buildPlatforms: ${{ parameters.buildPlatforms }}
 
-      - template: ./job-build-package-wpf.yml
+      - template: ./templates-v2/job-build-package-wpf.yml
         parameters:
           buildConfigurations: [Release]
           buildPlatforms: ${{ parameters.buildPlatforms }}
