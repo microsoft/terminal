@@ -264,13 +264,13 @@ function Invoke-OpenConsoleTests()
 
 
 #.SYNOPSIS
-# Builds OpenConsole.sln using msbuild. Any arguments get passed on to msbuild.
+# Builds OpenConsole.slnx using msbuild. Any arguments get passed on to msbuild.
 function Invoke-OpenConsoleBuild()
 {
     $root = Find-OpenConsoleRoot
-    & "$root\dep\nuget\nuget.exe" restore "$root\OpenConsole.sln"
+    & "$root\dep\nuget\nuget.exe" restore "$root\OpenConsole.slnx"
     & "$root\dep\nuget\nuget.exe" restore "$root\dep\nuget\packages.config"
-    msbuild.exe "$root\OpenConsole.sln" @args
+    msbuild.exe "$root\OpenConsole.slnx" @args
 }
 
 #.SYNOPSIS

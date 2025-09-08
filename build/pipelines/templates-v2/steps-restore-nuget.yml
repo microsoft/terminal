@@ -25,7 +25,7 @@ steps:
     command: restore
     feedsToUse: config
     configPath: NuGet.config
-    restoreSolution: OpenConsole.sln
+    restoreSolution: OpenConsole.slnx
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
 
 - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
