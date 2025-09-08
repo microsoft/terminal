@@ -46,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         winrt::hstring _getCurrentLocalTimeHelper();
         void _splitResponseAndAddToChatHelper(const winrt::Microsoft::Terminal::Query::Extension::IResponse response);
-        void _setFocusAndPlaceholderTextHelper(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void _setFocusAndPlaceholderTextHelper();
 
         void _clearAndInitializeMessages(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _exportMessagesToFile(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);

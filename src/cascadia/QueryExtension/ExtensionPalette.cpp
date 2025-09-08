@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // Only let this succeed once.
             _loadedRevoker.revoke();
 
-            _setFocusAndPlaceholderTextHelper(nullptr, nullptr);
+            _setFocusAndPlaceholderTextHelper();
 
             const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 // Force immediate binding update so we can select an item
                 Bindings->Update();
 
-                _setFocusAndPlaceholderTextHelper(nullptr, nullptr);
+                _setFocusAndPlaceholderTextHelper();
 
                 const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
                 TraceLoggingWrite(
@@ -243,7 +243,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    void ExtensionPalette::_setFocusAndPlaceholderTextHelper(const Windows::Foundation::IInspectable& /*sender*/, const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    void ExtensionPalette::_setFocusAndPlaceholderTextHelper()
     {
         _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
 
@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_backdropPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
                                                    const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
-        _setFocusAndPlaceholderTextHelper(nullptr, nullptr);
+        _setFocusAndPlaceholderTextHelper();
         e.Handled(true);
     }
 
