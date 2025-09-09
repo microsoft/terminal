@@ -1,0 +1,1070 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="AuditMode" />
+    <BuildType Name="Debug" />
+    <BuildType Name="Fuzzing" />
+    <BuildType Name="Release" />
+    <Platform Name="Any CPU" />
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Conhost/">
+    <Project Path="src/host/exe/Host.EXE.vcxproj">
+      <BuildDependency Project="src/buffer/out/lib/bufferout.vcxproj" />
+      <BuildDependency Project="src/host/proxy/Host.Proxy.vcxproj" />
+      <BuildDependency Project="src/propsheet/propsheet.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+      <Deploy Solution="Debug|x64" />
+    </Project>
+    <Project Path="src/host/ft_fuzzer/Host.FuzzWrapper.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="*|ARM64" Project="false" />
+      <Build Solution="*|x86" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Debug|x64" Project="false" />
+      <Build Solution="Release|x64" Project="false" />
+    </Project>
+    <Project Path="src/host/ft_host/Host.FeatureTests.vcxproj">
+      <BuildDependency Project="src/host/exe/Host.EXE.vcxproj" />
+      <BuildDependency Project="src/tools/nihilist/Nihilist.vcxproj" />
+      <BuildDependency Project="src/types/lib/types.vcxproj" />
+      <BuildDependency Project="src/winconpty/lib/winconptylib.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="*|x86" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+    </Project>
+    <Project Path="src/host/ft_uia/Host.Tests.UIA.csproj">
+      <BuildDependency Project="src/host/exe/Host.EXE.vcxproj" />
+      <BuildDependency Project="src/tools/closetest/CloseTest.vcxproj" />
+      <BuildDependency Project="src/tools/vtapp/VTApp.csproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Debug" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <BuildType Solution="Fuzzing|Any CPU" Project="Debug" />
+      <BuildType Solution="Fuzzing|ARM64" Project="Release" />
+      <BuildType Solution="Fuzzing|x64" Project="Debug" />
+      <BuildType Solution="Fuzzing|x86" Project="Release" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="Win32" />
+      <Platform Solution="AuditMode|Any CPU" Project="ARM64" />
+      <Platform Solution="AuditMode|ARM64" Project="Win32" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Debug|ARM64" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="x64" />
+      <Platform Solution="Fuzzing|ARM64" Project="ARM64" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Platform Solution="Release|ARM64" Project="ARM64" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="*|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/host/lib/hostlib.vcxproj">
+      <BuildDependency Project="src/buffer/out/lib/bufferout.vcxproj" />
+      <BuildDependency Project="src/host/proxy/Host.Proxy.vcxproj" />
+      <BuildDependency Project="src/types/lib/types.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/host/proxy/Host.Proxy.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/host/ut_host/Host.UnitTests.vcxproj">
+      <BuildDependency Project="src/buffer/out/lib/bufferout.vcxproj" />
+      <BuildDependency Project="src/host/ut_lib/host.unittest.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/host/ut_lib/host.unittest.vcxproj">
+      <BuildDependency Project="src/host/proxy/Host.Proxy.vcxproj" />
+      <BuildDependency Project="src/types/lib/types.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/interactivity/base/lib/InteractivityBase.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/interactivity/onecore/lib/onecore.LIB.vcxproj">
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/interactivity/win32/lib/win32.LIB.vcxproj">
+      <BuildDependency Project="src/renderer/base/lib/base.vcxproj" />
+      <BuildDependency Project="src/renderer/gdi/lib/gdi.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/interactivity/win32/ut_interactivity_win32/Interactivity.Win32.UnitTests.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/internal/internal.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/propsheet/propsheet.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/propslib/propslib.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/server/lib/server.vcxproj">
+      <BuildDependency Project="src/host/proxy/Host.Proxy.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/winconpty/dll/winconptydll.vcxproj">
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/winconpty/ft_pty/winconpty.FeatureTests.vcxproj">
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/winconpty/lib/winconptylib.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="src/til/ut_til/til.unit.tests.vcxproj">
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tsf/tsf.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/types/lib/types.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/types/ut_types/Types.Unit.Tests.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Shared/Audio/">
+    <Project Path="src/audio/midi/lib/midi.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Shared/Buffer/">
+    <Project Path="src/buffer/out/lib/bufferout.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/buffer/out/ut_textbuffer/TextBuffer.Unit.Tests.vcxproj">
+      <BuildDependency Project="src/buffer/out/lib/bufferout.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Shared/Rendering/">
+    <Project Path="src/renderer/atlas/atlas.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+    </Project>
+    <Project Path="src/renderer/base/lib/base.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/renderer/gdi/lib/gdi.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/renderer/uia/lib/uia.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/renderer/wddmcon/lib/wddmcon.vcxproj">
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Shared/Virtual Terminal/">
+    <Project Path="src/terminal/adapter/lib/adapter.vcxproj">
+      <BuildDependency Project="src/types/lib/types.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/terminal/adapter/ut_adapter/Adapter.UnitTests.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/terminal/input/lib/terminalinput.vcxproj">
+      <BuildDependency Project="src/types/lib/types.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/terminal/parser/ft_fuzzer/VTCommandFuzzer.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/terminal/parser/ft_fuzzwrapper/FuzzWrapper.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/terminal/parser/lib/parser.vcxproj">
+      <BuildDependency Project="src/types/lib/types.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/terminal/parser/ut_parser/Parser.UnitTests.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Terminal/">
+    <Project Path="src/cascadia/CascadiaPackage/CascadiaPackage.wapproj" Type="c7167f0d-bc9f-4e6e-afe1-012c56b48db5">
+      <BuildDependency Project="src/cascadia/ShellExtension/WindowsTerminalShellExt.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <BuildType Solution="Fuzzing|*" Project="Debug" />
+      <Platform Solution="*|Any CPU" Project="x86" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+      <Deploy Solution="Debug|ARM64" />
+      <Deploy Solution="Debug|x64" />
+      <Deploy Solution="Debug|x86" />
+      <Deploy Solution="Release|ARM64" />
+      <Deploy Solution="Release|x64" />
+      <Deploy Solution="Release|x86" />
+    </Project>
+    <Project Path="src/cascadia/TerminalApp/dll/TerminalApp.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalApp/TerminalAppLib.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsEditor/Microsoft.Terminal.Settings.Editor.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalApp/TerminalAppLib.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsEditor/Microsoft.Terminal.Settings.Editor.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalConnection/TerminalConnection.vcxproj">
+      <BuildDependency Project="src/host/proxy/Host.Proxy.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Terminal/Control/">
+    <Project Path="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalControl/TerminalControlLib.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalControl/TerminalControlLib.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalCore/lib/TerminalCore-lib.vcxproj" />
+      <BuildDependency Project="src/renderer/atlas/atlas.vcxproj" />
+      <BuildDependency Project="src/renderer/base/lib/base.vcxproj" />
+      <BuildDependency Project="src/renderer/uia/lib/uia.vcxproj" />
+      <BuildDependency Project="src/terminal/input/lib/terminalinput.vcxproj" />
+      <BuildDependency Project="src/tsf/tsf.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalCore/lib/TerminalCore-lib.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Terminal/Settings/">
+    <Project Path="src/cascadia/TerminalSettingsAppAdapterLib/TerminalSettingsAppAdapterLib.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalCore/lib/TerminalCore-lib.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalSettingsEditor/Microsoft.Terminal.Settings.Editor.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <BuildType Solution="AuditMode|*" Project="Release" />
+      <Platform Solution="AuditMode|ARM64" Project="x64" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="Win32" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Debug|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|*" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+      <Deploy Solution="AuditMode|*" />
+      <Deploy Solution="Debug|x64" />
+      <Deploy Solution="Debug|x86" />
+      <Deploy Solution="Release|x64" />
+      <Deploy Solution="Release|x86" />
+    </Project>
+    <Project Path="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Terminal/Tests/">
+    <Project Path="src/cascadia/LocalTests_TerminalApp/TerminalApp.LocalTests.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalApp/dll/TerminalApp.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalApp/TerminalAppLib.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/LocalTests_TerminalApp/TestHostApp/TestHostApp.vcxproj">
+      <BuildDependency Project="src/cascadia/LocalTests_TerminalApp/TerminalApp.LocalTests.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="Win32" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+      <Deploy Solution="Debug|ARM64" />
+      <Deploy Solution="Debug|x64" />
+      <Deploy Solution="Debug|x86" />
+      <Deploy Solution="Release|ARM64" />
+      <Deploy Solution="Release|x64" />
+      <Deploy Solution="Release|x86" />
+    </Project>
+    <Project Path="src/cascadia/UnitTests_Control/Control.UnitTests.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalControl/TerminalControlLib.vcxproj" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/UnitTests_SettingsModel/SettingsModel.UnitTests.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/dll/Microsoft.Terminal.Settings.Model.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/UnitTests_TerminalCore/UnitTests.vcxproj">
+      <BuildDependency Project="src/host/ut_lib/host.unittest.vcxproj" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/ut_app/TerminalApp.UnitTests.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalApp/TerminalAppLib.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/WindowsTerminal_UIATests/WindowsTerminal.UIA.Tests.csproj">
+      <BuildType Solution="AuditMode|*" Project="Debug" />
+      <BuildType Solution="Fuzzing|*" Project="Debug" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Terminal/Utils/">
+    <Project Path="src/cascadia/ElevateShim/elevate-shim.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/TerminalAzBridge/TerminalAzBridge.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/UIHelpers/UIHelpers.vcxproj">
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/UIMarkdown/UIMarkdown.vcxproj">
+      <Build Solution="Debug|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|*" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/WinRTUtils/WinRTUtils.vcxproj">
+      <BuildType Solution="AuditMode|Any CPU" Project="Release" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="Win32" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/wt/wt.vcxproj">
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Terminal/Window/">
+    <Project Path="src/cascadia/ShellExtension/WindowsTerminalShellExt.vcxproj">
+      <BuildType Solution="AuditMode|*" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/WindowsTerminal/WindowsTerminal.vcxproj">
+      <BuildDependency Project="src/cascadia/TerminalApp/dll/TerminalApp.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalCore/lib/TerminalCore-lib.vcxproj" />
+      <BuildDependency Project="src/cascadia/TerminalSettingsEditor/Microsoft.Terminal.Settings.Editor.vcxproj" />
+      <BuildDependency Project="src/host/exe/Host.EXE.vcxproj" />
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="Win32" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/Terminal/wpf/">
+    <Project Path="src/cascadia/WpfTerminalControl/WpfTerminalControl.csproj">
+      <BuildType Solution="AuditMode|Any CPU" Project="Release" />
+      <BuildType Solution="AuditMode|ARM64" Project="Debug" />
+      <BuildType Solution="AuditMode|x64" Project="Debug" />
+      <BuildType Solution="AuditMode|x86" Project="Debug" />
+      <BuildType Solution="Fuzzing|Any CPU" Project="Debug" />
+      <BuildType Solution="Fuzzing|x64" Project="Debug" />
+      <Build Solution="AuditMode|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|*" Project="false" />
+    </Project>
+    <Project Path="src/cascadia/WpfTerminalTestNetCore/WpfTerminalTestNetCore.csproj">
+      <BuildDependency Project="src/cascadia/TerminalControl/dll/TerminalControl.vcxproj" />
+      <BuildDependency Project="src/winconpty/dll/winconptydll.vcxproj" />
+      <BuildType Solution="AuditMode|*" Project="Debug" />
+      <BuildType Solution="Fuzzing|Any CPU" Project="Debug" />
+      <BuildType Solution="Fuzzing|x64" Project="Debug" />
+      <Platform Solution="Debug|ARM64" Project="ARM64" />
+      <Platform Solution="Debug|x64" Project="x64" />
+      <Platform Solution="Debug|x86" Project="x86" />
+      <Platform Solution="Fuzzing|x64" Project="x64" />
+      <Platform Solution="Fuzzing|x86" Project="x86" />
+      <Platform Solution="Release|ARM64" Project="ARM64" />
+      <Platform Solution="Release|x64" Project="x64" />
+      <Platform Solution="Release|x86" Project="x86" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/_Build Common/" />
+  <Folder Name="/_Build Common/Common Props/">
+    <File Path="common.openconsole.props" />
+    <File Path="dep/nuget/packages.config" />
+    <File Path="src/common.build.post.props" />
+    <File Path="src/common.build.pre.props" />
+    <File Path="src/common.build.tests.props" />
+    <File Path="src/common.nugetversions.props" />
+    <File Path="src/common.nugetversions.targets" />
+    <File Path="src/cppwinrt.build.post.props" />
+    <File Path="src/cppwinrt.build.pre.props" />
+    <File Path="src/wap-common.build.post.props" />
+    <File Path="src/wap-common.build.pre.props" />
+  </Folder>
+  <Folder Name="/_Build Common/Scripts/">
+    <File Path="build/scripts/Create-AppxBundle.ps1" />
+    <File Path="build/scripts/Index-Pdbs.ps1" />
+    <File Path="build/scripts/Invoke-FormattingCheck.ps1" />
+    <File Path="build/scripts/Run-Tests.ps1" />
+    <File Path="build/scripts/Test-WindowsTerminalPackage.ps1" />
+  </Folder>
+  <Folder Name="/_Build Common/YAML/">
+    <File Path="build/pipelines/ci.yml" />
+    <File Path="build/pipelines/release.yml" />
+    <File Path="build/pipelines/templates/build-console-audit-job.yml" />
+    <File Path="build/pipelines/templates/build-console-ci.yml" />
+    <File Path="build/pipelines/templates/build-console-int.yml" />
+    <File Path="build/pipelines/templates/build-console-steps.yml" />
+    <File Path="build/pipelines/templates/check-formatting.yml" />
+    <File Path="build/pipelines/templates/release-sign-and-bundle.yml" />
+  </Folder>
+  <Folder Name="/_Dependencies/" />
+  <Folder Name="/_Dependencies/Console/">
+    <File Path="dep/Console/winconp.h" />
+  </Folder>
+  <Folder Name="/_Dependencies/gsl/">
+    <File Path="dep/gsl/include/gsl/gsl" />
+    <File Path="dep/gsl/include/gsl/gsl_algorithm" />
+    <File Path="dep/gsl/include/gsl/gsl_assert" />
+    <File Path="dep/gsl/include/gsl/gsl_byte" />
+    <File Path="dep/gsl/include/gsl/gsl_util" />
+    <File Path="dep/gsl/include/gsl/multi_span" />
+    <File Path="dep/gsl/include/gsl/pointers" />
+    <File Path="dep/gsl/include/gsl/span" />
+    <File Path="dep/gsl/include/gsl/string_span" />
+  </Folder>
+  <Folder Name="/_Dependencies/wil/">
+    <File Path="dep/wil/include/wil/common.h" />
+    <File Path="dep/wil/include/wil/filesystem.h" />
+    <File Path="dep/wil/include/wil/functional.h" />
+    <File Path="dep/wil/include/wil/registry.h" />
+    <File Path="dep/wil/include/wil/resource.h" />
+    <File Path="dep/wil/include/wil/result.h" />
+    <File Path="dep/wil/include/wil/resultmacros.h" />
+    <File Path="dep/wil/include/wil/stl.h" />
+    <File Path="dep/wil/include/wil/win32helpers.h" />
+    <File Path="dep/wil/include/wil/wistd_functional.h" />
+    <File Path="dep/wil/include/wil/wistd_memory.h" />
+    <File Path="dep/wil/include/wil/wistd_type_traits.h" />
+  </Folder>
+  <Folder Name="/_Tools/">
+    <Project Path="src/tools/benchcat/benchcat.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Project="false" />
+    </Project>
+    <Project Path="src/tools/buffersize/buffersize.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tools/closetest/CloseTest.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tools/ConsoleBench/ConsoleBench.vcxproj">
+      <BuildType Solution="AuditMode|*" Project="Debug" />
+      <BuildType Solution="Fuzzing|*" Project="Debug" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="*|x86" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+    </Project>
+    <Project Path="src/tools/ConsoleMonitor/ConsoleMonitor.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Project="false" />
+    </Project>
+    <Project Path="src/tools/echokey/ConEchoKey.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tools/fontlist/FontList.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tools/nihilist/Nihilist.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tools/RenderingTests/RenderingTests.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Project="false" />
+    </Project>
+    <Project Path="src/tools/scratch/Scratch.vcxproj">
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tools/TerminalStress/TerminalStress.csproj">
+      <BuildType Solution="AuditMode|*" Project="Debug" />
+      <BuildType Solution="Fuzzing|*" Project="Debug" />
+      <Build Solution="*|ARM64" Project="false" />
+      <Build Solution="*|x86" Project="false" />
+      <Build Solution="AuditMode|Any CPU" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="Fuzzing|Any CPU" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+    </Project>
+    <Project Path="src/tools/U8U16Test/U8U16Test.vcxproj">
+      <BuildType Solution="AuditMode|*" Project="Release" />
+      <Platform Solution="AuditMode|ARM64" Project="x64" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Debug|ARM64" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="Win32" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Platform Solution="Release|ARM64" Project="Win32" />
+      <Build Solution="Debug|Any CPU" Project="false" />
+      <Build Solution="Debug|ARM64" Project="false" />
+      <Build Solution="Fuzzing|*" Project="false" />
+      <Build Solution="Release|Any CPU" Project="false" />
+      <Build Solution="Release|ARM64" Project="false" />
+    </Project>
+    <Project Path="src/tools/vtapp/VTApp.csproj">
+      <BuildType Solution="AuditMode|Any CPU" Project="Debug" />
+      <BuildType Solution="AuditMode|ARM64" Project="Debug" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <BuildType Solution="Fuzzing|*" Project="Debug" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="Win32" />
+      <Platform Solution="AuditMode|Any CPU" Project="ARM64" />
+      <Platform Solution="AuditMode|ARM64" Project="Win32" />
+      <Platform Solution="Debug|Any CPU" Project="Win32" />
+      <Platform Solution="Debug|ARM64" Project="Win32" />
+      <Platform Solution="Fuzzing|Any CPU" Project="Win32" />
+      <Platform Solution="Fuzzing|ARM64" Project="ARM64" />
+      <Platform Solution="Release|Any CPU" Project="Win32" />
+      <Platform Solution="Release|ARM64" Project="ARM64" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="*|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+    <Project Path="src/tools/vtpipeterm/VtPipeTerm.vcxproj">
+      <BuildDependency Project="src/host/exe/Host.EXE.vcxproj" />
+      <BuildType Solution="AuditMode|ARM64" Project="Release" />
+      <BuildType Solution="AuditMode|x64" Project="Release" />
+      <BuildType Solution="AuditMode|x86" Project="Release" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Build Solution="*|Any CPU" Project="false" />
+      <Build Solution="AuditMode|ARM64" Project="false" />
+      <Build Solution="AuditMode|x64" Project="false" />
+      <Build Solution="AuditMode|x86" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
+    </Project>
+  </Folder>
+</Solution>
