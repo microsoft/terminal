@@ -1585,6 +1585,7 @@ SLGP
 SLIST
 slmult
 sln
+slnx
 slpit
 SManifest
 SMARTQUOTE

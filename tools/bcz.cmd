@@ -73,11 +73,11 @@ if "%_SKIP_NUGET_RESTORE%" == "1" (
     echo Skipped nuget restore
 ) else (
     echo Performing nuget restore...
-    nuget.exe restore %OPENCON%\OpenConsole.sln
+    nuget.exe restore %OPENCON%\OpenConsole.slnx
 )
 
 @rem /p:GenerateAppxPackageOnBuild=false will prevent us from building the whole .msix package when building the wapproj project.
-set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:GenerateAppxPackageOnBuild=false /p:Platform=%ARCH% %_APPX_ARGS%
+set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.slnx /t:"%_MSBUILD_TARGET%" /m /p:Configuration=%_LAST_BUILD_CONF% /p:GenerateAppxPackageOnBuild=false /p:Platform=%ARCH% %_APPX_ARGS%
 
 echo %_BUILD_CMDLINE%
 echo Starting build...
@@ -135,7 +135,7 @@ setlocal enabledelayedexpansion
 rem TODO:GH#2172 Find a way to only rebuild the metaproj if the sln changed
 rem First generate the metaproj file
 set MSBuildEmitSolution=1
-"%msbuild%" %OPENCON%\OpenConsole.sln /t:ValidateSolutionConfiguration /m > NUL
+"%msbuild%" %OPENCON%\OpenConsole.slnx /t:ValidateSolutionConfiguration /m > NUL
 set MSBuildEmitSolution=
 
 rem Use bx.ps1 to figure out which target we're looking at
