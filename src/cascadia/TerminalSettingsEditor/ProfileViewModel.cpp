@@ -10,6 +10,7 @@
 #include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "SegoeFluentIconList.h"
 #include "../../types/inc/utils.hpp"
 
@@ -284,12 +285,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _parsedPadding.Bottom;
     }
-    Model::TerminalSettings ProfileViewModel::TermSettings() const
+    Control::IControlSettings ProfileViewModel::TermSettings() const
     {
         // This may look pricey, but it only resolves resources that have not been visited
         // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
-        return Model::TerminalSettings::CreateForPreview(_appSettings, _profile);
+        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
     }
 
     // Method Description:

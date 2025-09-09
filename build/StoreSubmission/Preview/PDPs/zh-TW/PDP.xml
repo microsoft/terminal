@@ -54,13 +54,13 @@
     
   </DevStudio>
   <ReleaseNotes>
-    版本 __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-- 我們已新增數十個只存在於 JSON 檔案中的設定到 UI，包括自定義 [新索引標籤] 功能表版面配置的新頁面！
-- 我們已重新設定視窗管理，以改善可靠性;請提出您在 wt.exe 別名遇到的任何錯誤
-- 設定文件現在會在隱藏或參照已卸載的程式時顯示圖示。
+- 全新的延伸模組頁面會顯示已安裝在您終端機中的內容
+- 命令選擇區現在以您的母語和英文顯示
+- 新的 VT 功能，例如同步轉譯、新的色彩配置、快速滑鼠動作 (例如縮放) 設定等等
 
-如需詳細數據，請參閱我們的 GitHub 版本頁面。
+如需更多詳細資料，請參閱我們的 GitHub 發行版本頁面。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

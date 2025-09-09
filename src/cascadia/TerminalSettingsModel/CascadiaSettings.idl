@@ -64,6 +64,7 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultTerminal CurrentDefaultTerminal;
 
         void ExpandCommands();
+        void UpdateCommandID(Command cmd, String newID);
 
         void ResolveMediaResources();
     }
