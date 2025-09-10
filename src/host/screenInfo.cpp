@@ -1720,7 +1720,6 @@ void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
 
 SCREEN_INFORMATION::SnapOnScopeExit SCREEN_INFORMATION::SnapOnOutput() noexcept
 {
-
     const auto call =
         // We don't need to snap-on-output the alt buffer since it doesn't scroll anyway.
         // More importantly though, in the current architecture the alt buffer gets deallocated

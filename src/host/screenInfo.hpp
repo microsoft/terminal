@@ -58,12 +58,12 @@ public:
         {
             if (self)
             {
-                self->_makeCursorVisible();
+                try
+                {
+                    self->_makeCursorVisible();
+                }
+                CATCH_LOG();
             }
-        }
-        void release()
-        {
-            self = nullptr;
         }
 
         SCREEN_INFORMATION* self;
