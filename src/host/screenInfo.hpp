@@ -50,6 +50,25 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
+    // This little helper works like wil::scope_exit but is slimmer
+    // (= easier to optimize) and has a concrete type (= can declare).
+    struct SnapOnScopeExit
+    {
+        ~SnapOnScopeExit()
+        {
+            if (self)
+            {
+                try
+                {
+                    self->_makeCursorVisible();
+                }
+                CATCH_LOG();
+            }
+        }
+
+        SCREEN_INFORMATION* self;
+    };
+
     [[nodiscard]] static NTSTATUS CreateInstance(_In_ til::size coordWindowSize,
                                                  const FontInfo fontInfo,
                                                  _In_ til::size coordScreenBufferSize,
@@ -73,16 +92,7 @@ public:
     void MakeCurrentCursorVisible();
     void MakeCursorVisible(til::point position);
     void SnapOnInput(WORD vkey);
-    auto SnapOnOutput() noexcept
-    {
-        const auto inBounds = _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
-        return wil::scope_exit([this, inBounds]() {
-            if (inBounds)
-            {
-                _makeCursorVisible();
-            }
-        });
-    }
+    SnapOnScopeExit SnapOnOutput() noexcept;
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
