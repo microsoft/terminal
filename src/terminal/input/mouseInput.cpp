@@ -226,7 +226,7 @@ static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
         xvalue = delta > 0 ? 0x40 : 0x41;
         break;
     case WM_MOUSEHWHEEL:
-        xvalue = delta > 0 ? 0x42 : 0x43;
+        xvalue = delta > 0 ? 0x43 : 0x42;
         break;
     default:
         xvalue = 0;
@@ -513,11 +513,11 @@ TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsign
     case WM_MOUSEHWHEEL:
     if (delta > 0)
     {
-        return MakeOutput(_keyMap.at(VK_LEFT));
+        return MakeOutput(_keyMap.at(VK_RIGHT));
     }
     else
     {
-        return MakeOutput(_keyMap.at(VK_RIGHT));
+        return MakeOutput(_keyMap.at(VK_LEFT));
     }
     }
     // Shouldn't happen.

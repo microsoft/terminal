@@ -132,7 +132,7 @@ public:
             break;
         case WM_MOUSEHWHEEL:
             Log::Comment(NoThrowString().Format(L"MOUSEHWHEEL"));
-            wch = L'b' + (sScrollDelta > 0 ? 0 : 1);
+            wch = L'b' + (sScrollDelta > 0 ? 1 : 0);
             break;
         case WM_MOUSEMOVE:
         default:
@@ -174,7 +174,7 @@ public:
             result = (sScrollDelta > 0 ? 64 : 65);
             break;
         case WM_MOUSEHWHEEL:
-            result = (sScrollDelta > 0 ? 66 : 67);
+            result = (sScrollDelta > 0 ? 67 : 66);
             break;
         default:
             result = 0;
@@ -587,6 +587,12 @@ public:
         Log::Comment(L"Test mouse wheel scrolling down");
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[B"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
+        Log::Comment(L"Test mouse wheel scrolling right");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[C"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+
+        Log::Comment(L"Test mouse wheel scrolling left");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[D"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+
         Log::Comment(L"Enable cursor keys mode");
         mouseInput.SetInputMode(TerminalInput::Mode::CursorKey, true);
 
@@ -595,6 +601,12 @@ public:
 
         Log::Comment(L"Test mouse wheel scrolling down");
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOB"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+
+        Log::Comment(L"Test mouse wheel scrolling right");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOC"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+
+        Log::Comment(L"Test mouse wheel scrolling left");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOD"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Confirm no effect when scroll mode is disabled");
         mouseInput.UseAlternateScreenBuffer();
