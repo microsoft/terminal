@@ -61,6 +61,10 @@ public:
                 self->_makeCursorVisible();
             }
         }
+        void release()
+        {
+            self = nullptr;
+        }
 
         SCREEN_INFORMATION* self;
     };
