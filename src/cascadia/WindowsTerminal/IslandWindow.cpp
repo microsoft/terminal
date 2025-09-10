@@ -627,8 +627,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             winrt::Microsoft::Terminal::Core::Point wheelDelta{ 0, static_cast<int32_t>(HIWORD(wparam)) };
             if (message == WM_MOUSEHWHEEL)
             {
-                wheelDelta.X = wheelDelta.Y;
-                wheelDelta.Y = 0;
+                std::swap(wheelDelta.X, wheelDelta.Y);
             }
 
             // Raise an event, so any listeners can handle the mouse wheel event manually.
