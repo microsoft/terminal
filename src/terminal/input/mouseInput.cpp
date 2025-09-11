@@ -166,7 +166,7 @@ static constexpr wchar_t _windowsButtonToXEncoding(const unsigned int button,
         xvalue = delta > 0 ? 0x40 : 0x41;
         break;
     case WM_MOUSEHWHEEL:
-        xvalue = delta > 0 ? 0x42 : 0x43;
+        xvalue = delta > 0 ? 0x43 : 0x42;
         break;
     default:
         xvalue = 0;
