@@ -2,7 +2,7 @@
 
 [![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)
 
-# Welcome to the Windows Terminal, Console and Command-Line repo
+# Welcome to the Windows Terminal, Console and Command Line repo
 
 <details>
   <summary><strong>Table of Contents</strong></summary>
@@ -65,8 +65,7 @@ Related repositories include:
 ### Microsoft Store [Recommended]
 
 Install the [Windows Terminal from the Microsoft Store][store-install-link].
-This allows you to always be on the latest version when we release new builds
-with automatic upgrades.
+This ensures you are always on the latest version, with automatic upgrades when new builds are released.
 
 This is our preferred method.
 
@@ -74,8 +73,7 @@ This is our preferred method.
 
 #### Via GitHub
 
-For users who are unable to install Windows Terminal from the Microsoft Store,
-released builds can be manually downloaded from this repository's [Releases
+If you cannot install Windows Terminal from the Microsoft Store, you can manually download released builds [Releases
 page](https://github.com/microsoft/terminal/releases).
 
 Download the `Microsoft.WindowsTerminal_<versionNumber>.msixbundle` file from
@@ -195,8 +193,7 @@ for command-line users. It includes many of the features most frequently
 requested by the Windows command-line community including support for tabs, rich
 text, globalization, configurability, theming & styling, and more.
 
-The Terminal will also need to meet our goals and measures to ensure it remains
-fast and efficient, and doesn't consume vast amounts of memory or power.
+The Terminal must also meet our goals  to ensure it remains fast, efficient, and does not consume excessive memory or power.
 
 ### The Windows Console Host
 
@@ -320,7 +317,7 @@ help avoid any wasted or duplicate effort.
 
 ## Communicating with the Team
 
-The easiest way to communicate with the team is via GitHub issues.
+The easiest way to communicate with the team is  by creating or commenting on GitHub issues.
 
 Please file new issues, feature requests and suggestions, but **DO search for
 similar open/closed preexisting issues before creating a new issue.**
