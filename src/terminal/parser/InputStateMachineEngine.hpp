@@ -111,6 +111,8 @@ namespace Microsoft::Console::VirtualTerminal
         Released = 3,
         ScrollForward = 4,
         ScrollBack = 5,
+        ScrollLeft = 6,
+        ScrollRight = 7,
     };
 
     constexpr unsigned short CsiMouseModifierCode_Drag = 32;
