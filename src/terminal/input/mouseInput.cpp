@@ -499,9 +499,8 @@ bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const s
 // - delta: The scroll wheel delta of the input event
 TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsigned int button, const short delta) const
 {
-    switch (button)
+    if (button == WM_MOUSEWHEEL)
     {
-    case WM_MOUSEWHEEL:
         if (delta > 0)
         {
             return MakeOutput(_keyMap.at(VK_UP));
@@ -510,7 +509,9 @@ TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsign
         {
             return MakeOutput(_keyMap.at(VK_DOWN));
         }
-    case WM_MOUSEHWHEEL:
+    }
+    else if (button == WM_MOUSEHWHEEL)
+    {
         if (delta > 0)
         {
             return MakeOutput(_keyMap.at(VK_RIGHT));
@@ -520,6 +521,8 @@ TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsign
             return MakeOutput(_keyMap.at(VK_LEFT));
         }
     }
-    // Shouldn't happen.
-    return {};
+    else
+    {
+        return {};
+    }
 }
