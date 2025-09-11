@@ -506,9 +506,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
             return _sendMouseEventHelper(terminalPosition,
-                                         delta.X != 0 ? WM_MOUSEHWHEEL : WM_MOUSEWHEEL,
+                                         delta.Y != 0 ? WM_MOUSEWHEEL : WM_MOUSEHWHEEL,
                                          modifiers,
-                                         ::base::saturated_cast<short>(delta.X != 0 ? delta.X : delta.Y),
+                                         ::base::saturated_cast<short>(delta.Y != 0 ? delta.Y : delta.X),
                                          buttonState);
         }
 
@@ -667,13 +667,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return false;
         }
-        if (delta.X != 0)
+        if (delta.Y != 0)
         {
-            return _core->ShouldSendAlternateScroll(WM_MOUSEHWHEEL, delta.X);
+            return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta.Y);
         }
         else
         {
-            return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta.Y);
+            return _core->ShouldSendAlternateScroll(WM_MOUSEHWHEEL, delta.X);
         }
     }
 
