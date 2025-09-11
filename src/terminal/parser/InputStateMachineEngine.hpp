@@ -35,8 +35,6 @@ namespace Microsoft::Console::VirtualTerminal
     // The assumed values for SGR Mouse Scroll Wheel deltas
     constexpr DWORD SCROLL_DELTA_BACKWARD = 0xFF800000;
     constexpr DWORD SCROLL_DELTA_FORWARD = 0x00800000;
-    constexpr DWORD SCROLL_DELTA_LEFT = 0xFF800000;
-    constexpr DWORD SCROLL_DELTA_RIGHT = 0x00800000;
 
     constexpr size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 

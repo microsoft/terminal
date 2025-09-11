@@ -901,7 +901,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
     {
         // set high word to proper scroll direction
         // scroll intensity is assumed to be constant value
-        buttonState |= SCROLL_DELTA_LEFT;
+        buttonState |= SCROLL_DELTA_BACKWARD;
         eventFlags |= MOUSE_HWHEELED;
         break;
     }
@@ -909,7 +909,7 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
     {
         // set high word to proper scroll direction
         // scroll intensity is assumed to be constant value
-        buttonState |= SCROLL_DELTA_RIGHT;
+        buttonState |= SCROLL_DELTA_FORWARD;
         eventFlags |= MOUSE_HWHEELED;
         break;
     }

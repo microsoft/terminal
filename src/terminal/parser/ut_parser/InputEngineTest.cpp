@@ -1196,8 +1196,8 @@ void InputEngineTest::SGRMouseTest_Scroll()
         //  TEST INPUT                                                                             EXPECTED OUTPUT
         {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED  } },
         {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED  } },
-        {   { CsiMouseButtonCodes::ScrollLeft,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_LEFT,     0, { 0, 0 }, MOUSE_HWHEELED } },
-        {   { CsiMouseButtonCodes::ScrollRight,   0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_RIGHT,    0, { 0, 0 }, MOUSE_HWHEELED } },
+        {   { CsiMouseButtonCodes::ScrollLeft,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_HWHEELED } },
+        {   { CsiMouseButtonCodes::ScrollRight,   0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_HWHEELED } },
     };
     // clang-format on
     VerifySGRMouseData(testData);
