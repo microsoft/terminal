@@ -198,7 +198,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
         _logSettingSet(LegacyForceVTInputKey);
     }
 
-    // GLOBAL_SETTINGS_LAYER_JSON above should've already loaded this value properly.
+    // GLOBAL_SETTINGS_LAYER_JSON above should have already loaded this value properly.
     // We just need to detect if the legacy value was used and mark it for fixup, if so.
     if (const auto firstWindowPreferenceValue = json[FirstWindowPreferenceKey.data()])
     {
