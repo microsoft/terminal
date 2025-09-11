@@ -517,15 +517,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (ctrlPressed && shiftPressed && _core->Settings().ScrollToChangeOpacity())
         {
-            _mouseTransparencyHandler(delta.X != 0 ? delta.X : delta.Y);
+            _mouseTransparencyHandler(delta.Y);
         }
         else if (ctrlPressed && !shiftPressed && _core->Settings().ScrollToZoom())
         {
-            _mouseZoomHandler(delta.X != 0 ? delta.X : delta.Y);
+            _mouseZoomHandler(delta.Y);
         }
         else
         {
-            _mouseScrollHandler(delta.X != 0 ? delta.X : delta.Y, pixelPosition, WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown));
+            _mouseScrollHandler(delta.Y, pixelPosition, WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown));
         }
         return false;
     }
