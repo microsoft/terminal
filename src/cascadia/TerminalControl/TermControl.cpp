@@ -2163,7 +2163,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto delta = point.Properties().MouseWheelDelta();
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                 point.Properties().IsHorizontalMouseWheel() ?
-                                                    Core::Point{ delta, 0 } : Core::Point{ 0, delta },
+                                                    Core::Point{ delta, 0 } :
+                                                    Core::Point{ 0, delta },
                                                 _toTerminalOrigin(point.Position()),
                                                 TermControl::GetPressedMouseButtons(point));
         if (result)

@@ -382,7 +382,7 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
 
     if (ShouldSendAlternateScroll(button, delta))
     {
-        return _makeAlternateScrollOutput(button ,delta);
+        return _makeAlternateScrollOutput(button, delta);
     }
 
     return {};
@@ -502,23 +502,23 @@ TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsign
     switch (button)
     {
     case WM_MOUSEWHEEL:
-    if (delta > 0)
-    {
-        return MakeOutput(_keyMap.at(VK_UP));
-    }
-    else
-    {
-        return MakeOutput(_keyMap.at(VK_DOWN));
-    }
+        if (delta > 0)
+        {
+            return MakeOutput(_keyMap.at(VK_UP));
+        }
+        else
+        {
+            return MakeOutput(_keyMap.at(VK_DOWN));
+        }
     case WM_MOUSEHWHEEL:
-    if (delta > 0)
-    {
-        return MakeOutput(_keyMap.at(VK_RIGHT));
-    }
-    else
-    {
-        return MakeOutput(_keyMap.at(VK_LEFT));
-    }
+        if (delta > 0)
+        {
+            return MakeOutput(_keyMap.at(VK_RIGHT));
+        }
+        else
+        {
+            return MakeOutput(_keyMap.at(VK_LEFT));
+        }
     }
     // Shouldn't happen.
     return {};
