@@ -1182,31 +1182,6 @@ void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, 
     _pfnPlayMidiNote.swap(pfn);
 }
 
-void Terminal::BlinkCursor() noexcept
-{
-    if (_selectionMode != SelectionInteractionMode::Mark)
-    {
-        auto& cursor = _activeBuffer().GetCursor();
-        if (cursor.IsBlinkingAllowed() && cursor.IsVisible())
-        {
-            cursor.SetIsOn(!cursor.IsOn());
-        }
-    }
-}
-
-// Method Description:
-// - Sets the cursor to be currently on. On/Off is tracked independently of
-//   cursor visibility (hidden/visible). On/off is controlled by the cursor
-//   blinker. Visibility is usually controlled by the client application. If the
-//   cursor is hidden, then the cursor will remain hidden. If the cursor is
-//   Visible, then it will immediately become visible.
-// Arguments:
-// - isVisible: whether the cursor should be visible
-void Terminal::SetCursorOn(const bool isOn) noexcept
-{
-    _activeBuffer().GetCursor().SetIsOn(isOn);
-}
-
 // Method Description:
 // - Update our internal knowledge about where regex patterns are on the screen
 // - This is called by TerminalControl (through a throttled function) when the visible
@@ -1580,7 +1555,7 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 // - Returns the position of the cursor relative to the visible viewport
 til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 {
-    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto absoluteCursorPosition{ _activeBuffer().GetCursor().GetPosition() };
     const auto mutableViewport{ _GetMutableViewport() };
     const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
     return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };

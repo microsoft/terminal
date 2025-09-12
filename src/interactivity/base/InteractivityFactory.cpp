@@ -8,7 +8,6 @@
 #include "../inc/ServiceLocator.hpp"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\onecore\AccessibilityNotifier.hpp"
 #include "..\onecore\ConsoleControl.hpp"
 #include "..\onecore\ConsoleInputThread.hpp"
 #include "..\onecore\ConsoleWindow.hpp"
@@ -216,10 +215,8 @@ using namespace Microsoft::Console::Interactivity;
             case ApiLevel::Win32:
                 newNotifier = std::make_unique<Microsoft::Console::Interactivity::Win32::AccessibilityNotifier>();
                 break;
-
 #ifdef BUILD_ONECORE_INTERACTIVITY
             case ApiLevel::OneCore:
-                newNotifier = std::make_unique<Microsoft::Console::Interactivity::OneCore::AccessibilityNotifier>();
                 break;
 #endif
             default:

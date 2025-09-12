@@ -63,7 +63,7 @@ RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
     til::size fontSize;
     {
         const auto lock = _terminal->_terminal->LockForReading();
-        cursorPos = _terminal->_terminal->GetCursorPosition(); // measured in terminal cells
+        cursorPos = _terminal->_terminal->GetTextBuffer().GetCursor().GetPosition(); // measured in terminal cells
         fontSize = _terminal->_actualFont.GetSize(); // measured in pixels, not DIP
     }
     POINT ptSuggestion = {
@@ -985,33 +985,6 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     const til::size windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
     publicTerminal->Refresh(windowSize, &dimensions);
 }
-
-void _stdcall TerminalBlinkCursor(void* terminal)
-try
-{
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    if (!publicTerminal || !publicTerminal->_terminal)
-    {
-        return;
-    }
-
-    const auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->BlinkCursor();
-}
-CATCH_LOG()
-
-void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
-try
-{
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    if (!publicTerminal || !publicTerminal->_terminal)
-    {
-        return;
-    }
-    const auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->SetCursorOn(visible);
-}
-CATCH_LOG()
 
 void __stdcall TerminalSetFocus(void* terminal)
 {

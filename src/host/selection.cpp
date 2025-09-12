@@ -321,9 +321,6 @@ void Selection::_ExtendSelection(Selection::SelectionData* d, _In_ til::point co
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto& ScreenInfo = gci.GetActiveOutputBuffer();
-
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
     HideSelection();
@@ -336,9 +333,6 @@ void Selection::_CancelMouseSelection()
     {
         pWindow->UpdateWindowText();
     }
-
-    // Mark the cursor position as changed so we'll fire off a win event.
-    ScreenInfo.GetTextBuffer().GetCursor().SetHasMoved(true);
 }
 
 // Routine Description:
@@ -511,7 +505,7 @@ void Selection::InitializeMarkSelection()
     screenInfo.SetCursorInformation(100, TRUE);
 
     const auto coordPosition = cursor.GetPosition();
-    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition, true));
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,

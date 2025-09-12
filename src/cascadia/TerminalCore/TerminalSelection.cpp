@@ -362,7 +362,6 @@ void Terminal::ToggleMarkMode()
     {
         // Enter Mark Mode
         // NOTE: directly set cursor state. We already should have locked before calling this function.
-        _activeBuffer().GetCursor().SetIsOn(false);
         if (!IsSelectionActive())
         {
             // No selection --> start one at the cursor

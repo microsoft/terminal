@@ -6,7 +6,6 @@ EXPORTS
   ; Flat C ABI
   CreateTerminal
   DestroyTerminal
-  TerminalBlinkCursor
   TerminalCalculateResize
   TerminalClearSelection
   TerminalDpiChanged
@@ -18,7 +17,6 @@ EXPORTS
   TerminalSendCharEvent
   TerminalSendKeyEvent
   TerminalSendOutput
-  TerminalSetCursorVisible
   TerminalSetFocus
   TerminalSetTheme
   TerminalTriggerResize

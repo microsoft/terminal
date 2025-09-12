@@ -1380,12 +1380,6 @@ try
     // Also save the distance to the virtual bottom so it can be restored after the resize
     const auto cursorDistanceFromBottom = _virtualBottom - _textBuffer->GetCursor().GetPosition().y;
 
-    // skip any drawing updates that might occur until we swap _textBuffer with the new buffer or we exit early.
-    newTextBuffer->GetCursor().StartDeferDrawing();
-    _textBuffer->GetCursor().StartDeferDrawing();
-    // we're capturing _textBuffer by reference here because when we exit, we want to EndDefer on the current active buffer.
-    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
-
     TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
 
     // Since the reflow doesn't preserve the virtual bottom, we try and
@@ -1426,8 +1420,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const til::size coordNewScreenSize)
 try
 {
-    _textBuffer->GetCursor().StartDeferDrawing();
-    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     _textBuffer->ResizeTraditional(coordNewScreenSize);
     return STATUS_SUCCESS;
 }
@@ -1617,9 +1609,8 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 // - TurnOn - true if cursor should be left on, false if should be left off
 // Return Value:
 // - Status
-[[nodiscard]] NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const til::point Position, const bool TurnOn)
+[[nodiscard]] NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const til::point Position)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& cursor = _textBuffer->GetCursor();
 
     //
@@ -1651,21 +1642,6 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     if (Position.y > _virtualBottom)
     {
         _virtualBottom = Position.y;
-    }
-
-    // if we have the focus, adjust the cursor state
-    if (gci.Flags & CONSOLE_HAS_FOCUS)
-    {
-        if (TurnOn)
-        {
-            cursor.SetDelay(false);
-            cursor.SetIsOn(true);
-        }
-        else
-        {
-            cursor.SetDelay(true);
-        }
-        cursor.SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;
@@ -1819,7 +1795,7 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
         auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
         altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         altCursor.SetIsVisible(myCursor.IsVisible());
-        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        altCursor.SetIsBlinking(myCursor.IsBlinking());
         // The new position should match the viewport-relative position of the main buffer.
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.y -= GetVirtualViewport().Top();
@@ -1968,7 +1944,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+        mainCursor.SetIsBlinking(altCursor.IsBlinking());
 
         // Copy the alt buffer's output mode back to the main buffer.
         psiMain->OutputMode = psiAlt->OutputMode;
@@ -2407,19 +2383,6 @@ Viewport SCREEN_INFORMATION::GetVtPageArea() const noexcept
     const auto bufferWidth = _textBuffer->GetSize().Width();
     const auto top = std::max(0, _virtualBottom - viewportHeight + 1);
     return Viewport::FromExclusive({ 0, top, bufferWidth, top + viewportHeight });
-}
-
-// Method Description:
-// - Returns true if the character at the cursor's current position is wide.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the character at the cursor's current position is wide
-bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
-{
-    const auto& buffer = GetTextBuffer();
-    const auto position = buffer.GetCursor().GetPosition();
-    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 // Method Description:
