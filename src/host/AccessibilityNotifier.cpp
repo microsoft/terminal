@@ -10,7 +10,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
 
 template<typename U, typename T>
-constexpr U satcast(T v) noexcept
+constexpr U castSaturated(T v) noexcept
 {
     static_assert(sizeof(U) <= sizeof(T), "use this for narrowing");
     constexpr T min = std::numeric_limits<U>::min();
@@ -102,7 +102,7 @@ void AccessibilityNotifier::SetUIAProvider(IRawElementProviderSimple* provider) 
     //
     // NOTE: We don't set a second timer just for UIA, because some applications like NVDA
     // listen to both MSAA and UIA events. If they don't arrive approximately together,
-    // they'll be announced as seperate events, which breaks announcements.
+    // they'll be announced as separate events, which breaks announcements.
     if (const auto delay = provider ? &_uiaDelay : &_msaaDelay; *delay == 0)
     {
         _delay = nullptr;
@@ -351,11 +351,11 @@ void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
 
     if (state.eventConsoleCaretPrimed)
     {
-        const auto x = satcast<SHORT>(state.eventConsoleCaretPositionX);
-        const auto y = satcast<SHORT>(state.eventConsoleCaretPositionY);
+        const auto x = castSaturated<SHORT>(state.eventConsoleCaretPositionX);
+        const auto y = castSaturated<SHORT>(state.eventConsoleCaretPositionY);
         // Technically, CONSOLE_CARET_SELECTION and CONSOLE_CARET_VISIBLE are bitflags,
         // however Microsoft's _own_ example code for these assumes that they're an
-        // enumation and also assumes that a value of 0 (= invisible cursor) is invalid.
+        // enumeration and also assumes that a value of 0 (= invisible cursor) is invalid.
         // So, we just pretend as if the cursor is always visible.
         const auto flags = state.eventConsoleCaretSelecting ? CONSOLE_CARET_SELECTION : CONSOLE_CARET_VISIBLE;
 
@@ -405,10 +405,10 @@ void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
 
     if (state.eventConsoleUpdateRegionPrimed)
     {
-        const auto begX = satcast<SHORT>(state.eventConsoleUpdateRegionBeginX);
-        const auto begY = satcast<SHORT>(state.eventConsoleUpdateRegionBeginY);
-        const auto endX = satcast<SHORT>(state.eventConsoleUpdateRegionEndX);
-        const auto endY = satcast<SHORT>(state.eventConsoleUpdateRegionEndY);
+        const auto begX = castSaturated<SHORT>(state.eventConsoleUpdateRegionBeginX);
+        const auto begY = castSaturated<SHORT>(state.eventConsoleUpdateRegionBeginY);
+        const auto endX = castSaturated<SHORT>(state.eventConsoleUpdateRegionEndX);
+        const auto endY = castSaturated<SHORT>(state.eventConsoleUpdateRegionEndY);
         const auto beg = MAKELONG(begX, begY);
         const auto end = MAKELONG(endX, endY);
 
@@ -416,7 +416,7 @@ void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
         // but in the 30 years since, the way fast software is written has changed:
         // We now have plenty CPU power but the speed of light is still the same.
         // It's much more important to batch events to avoid NotifyWinEvent's latency problems.
-        // EVENT_CONSOLE_UPDATE_SIMPLE is not trivially batchable and so it got removed.
+        // EVENT_CONSOLE_UPDATE_SIMPLE is not trivially batch-able and so it got removed.
         //
         // That said, NVDA is currently a very popular screen reader for Windows.
         // IF you set its "Windows Console support" to "Legacy" AND disable
@@ -473,8 +473,8 @@ void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
 
     if (state.eventConsoleUpdateScrollPrimed)
     {
-        const auto dx = satcast<LONG>(state.eventConsoleUpdateScrollDeltaX);
-        const auto dy = satcast<LONG>(state.eventConsoleUpdateScrollDeltaY);
+        const auto dx = castSaturated<LONG>(state.eventConsoleUpdateScrollDeltaX);
+        const auto dy = castSaturated<LONG>(state.eventConsoleUpdateScrollDeltaY);
 
         cc->NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, _hwnd, dx, dy);
 
