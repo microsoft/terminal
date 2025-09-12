@@ -154,7 +154,6 @@ public:
     void UseMainScreenBuffer() override;
 
     bool IsVtInputEnabled() const noexcept override;
-    void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
     void NotifyShellIntegrationMark() override;
 

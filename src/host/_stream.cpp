@@ -31,6 +31,39 @@ constexpr bool controlCharPredicate(wchar_t wch)
     return wch < L' ' || wch == 0x007F;
 }
 
+static auto raiseAccessibilityEventsOnExit(SCREEN_INFORMATION& screenInfo)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const auto& bufferBefore = gci.GetActiveOutputBuffer();
+    const auto cursorBefore = bufferBefore.GetTextBuffer().GetCursor().GetPosition();
+
+    auto raise = wil::scope_exit([&bufferBefore, cursorBefore] {
+        // !!! NOTE !!! `bufferBefore` may now be a stale pointer, because VT
+        // sequences can switch between the main and alternative screen buffer.
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto& bufferAfter = gci.GetActiveOutputBuffer();
+        const auto cursorAfter = bufferAfter.GetTextBuffer().GetCursor().GetPosition();
+
+        if (&bufferBefore == &bufferAfter)
+        {
+            an.RegionChanged(cursorBefore, cursorAfter);
+        }
+        if (cursorBefore != cursorAfter)
+        {
+            an.CursorChanged(cursorAfter, false);
+        }
+    });
+
+    // Don't raise any events for inactive buffers.
+    if (&bufferBefore != &screenInfo)
+    {
+        raise.release();
+    }
+
+    return raise;
+}
+
 // Routine Description:
 // - This routine updates the cursor position.  Its input is the non-special
 //   cased new location of the cursor.  For example, if the cursor were being
@@ -76,12 +109,13 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
         auto& buffer = screenInfo.GetTextBuffer();
         buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
 
+        // TODO: This is very bad for performance.
+        // Track the total scroll offset as a int64 in buffer --> No need to track it here anymore.
         if (buffer.IsActiveBuffer())
         {
-            if (const auto notifier = ServiceLocator::LocateAccessibilityNotifier())
-            {
-                notifier->NotifyConsoleUpdateScrollEvent(0, -1);
-            }
+            auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+            an.ScrollBuffer(-1);
+
             if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
             {
                 static constexpr til::point delta{ 0, -1 };
@@ -104,7 +138,6 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
 static bool _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const std::wstring_view& text, til::CoordType* psScrollY)
 {
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
-    const auto hasAccessibilityEventing = screenInfo.HasAccessibilityEventing();
     auto& textBuffer = screenInfo.GetTextBuffer();
     bool wrapped = false;
 
@@ -127,11 +160,6 @@ static bool _writeCharsLegacyUnprocessed(SCREEN_INFORMATION& screenInfo, const s
             textBuffer.SetWrapForced(cursorPosition.y, true);
         }
 
-        if (hasAccessibilityEventing && state.columnEnd > state.columnBegin)
-        {
-            screenInfo.NotifyAccessibilityEventing(state.columnBegin, cursorPosition.y, state.columnEnd - 1, cursorPosition.y);
-        }
-
         AdjustCursorPosition(screenInfo, cursorPosition, psScrollY);
     }
 
@@ -148,6 +176,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     auto& textBuffer = screenInfo.GetTextBuffer();
     const auto width = textBuffer.GetSize().Width();
     auto& cursor = textBuffer.GetCursor();
+    const auto cursorPosBefore = cursor.GetPosition();
     const auto wrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
     const auto beg = text.begin();
     const auto end = text.end();
@@ -156,6 +185,7 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
 
+    const auto a11y = raiseAccessibilityEventsOnExit(screenInfo);
     const auto snap = screenInfo.SnapOnOutput();
 
     // If we enter this if condition, then someone wrote text in VT mode and now switched to non-VT mode.
@@ -343,6 +373,7 @@ void WriteCharsVT(SCREEN_INFORMATION& screenInfo, const std::wstring_view& str)
     // may change, so get the VtIo reference now, just in case.
     auto writer = gci.GetVtWriterForBuffer(&screenInfo);
 
+    const auto a11y = raiseAccessibilityEventsOnExit(screenInfo);
     const auto snap = screenInfo.SnapOnOutput();
 
     stateMachine.ProcessString(str);

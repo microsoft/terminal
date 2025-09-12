@@ -47,6 +47,7 @@
     <ClCompile Include="..\writeData.cpp" />
     <ClCompile Include="..\_output.cpp" />
     <ClCompile Include="..\_stream.cpp" />
+    <ClCompile Include="..\AccessibilityNotifier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\IIoProvider.hpp" />
@@ -95,6 +96,7 @@
     <ClInclude Include="..\writeData.hpp" />
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
+    <ClInclude Include="..\AccessibilityNotifier.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\audio\midi\lib\midi.vcxproj">

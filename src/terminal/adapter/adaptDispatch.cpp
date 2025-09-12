@@ -160,12 +160,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         }
         const auto textPositionAfter = state.text.data();
 
-        if (state.columnBeginDirty != state.columnEndDirty)
-        {
-            const til::rect changedRect{ state.columnBeginDirty, cursorPosition.y, state.columnEndDirty, cursorPosition.y + 1 };
-            _api.NotifyAccessibilityChange(changedRect);
-        }
-
         // If we're past the end of the line, we need to clamp the cursor
         // back into range, and if wrapping is enabled, set the delayed wrap
         // flag. The wrapping only occurs once another character is output.
@@ -413,8 +407,7 @@ void AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 // - Helper method which applies a bunch of flags that are typically set whenever
 //   the cursor is moved. The IsOn flag is set to true, and the Delay flag to false,
 //   to force a blinking cursor to be visible, so the user can immediately see the
-//   new position. The HasMoved flag is set to let the accessibility notifier know
-//   that there was movement that needs to be reported.
+//   new position.
 // Arguments:
 // - cursor - The cursor instance to be updated
 // Return Value:
@@ -423,7 +416,6 @@ void AdaptDispatch::_ApplyCursorMovementFlags(Cursor& cursor) noexcept
 {
     cursor.SetDelay(false);
     cursor.SetIsOn(true);
-    cursor.SetHasMoved(true);
 }
 
 // Routine Description:
@@ -726,7 +718,6 @@ void AdaptDispatch::DeleteCharacter(const VTInt count)
 void AdaptDispatch::_FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const
 {
     page.Buffer().FillRect(fillRect, fillChar, fillAttrs);
-    _api.NotifyAccessibilityChange(fillRect);
 }
 
 // Routine Description:
@@ -870,7 +861,6 @@ void AdaptDispatch::_SelectiveEraseRect(const Page& page, const til::rect& erase
                 }
             }
         }
-        _api.NotifyAccessibilityChange(eraseRect);
     }
 }
 
@@ -980,7 +970,6 @@ void AdaptDispatch::_ChangeRectAttributes(const Page& page, const til::rect& cha
             }
         }
         page.Buffer().TriggerRedraw(Viewport::FromExclusive(changeRect));
-        _api.NotifyAccessibilityChange(changeRect);
     }
 }
 
@@ -1212,7 +1201,6 @@ void AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
         } while (dstView.WalkInBounds(dstPos, walkDirection));
         // Copy any image content in the affected area.
         ImageSlice::CopyBlock(src.Buffer(), srcView.ToExclusive(), dst.Buffer(), dstView.ToExclusive());
-        _api.NotifyAccessibilityChange(dstRect);
     }
 }
 
@@ -3142,7 +3130,6 @@ void AdaptDispatch::_EraseScrollback()
     _api.SetViewportPosition({ page.XPanOffset(), 0 });
     // Move the cursor to the same relative location.
     cursor.SetYPosition(row - page.Top());
-    cursor.SetHasMoved(true);
 }
 
 //Routine Description:
@@ -3194,7 +3181,6 @@ void AdaptDispatch::_EraseAll()
     }
     // Restore the relative cursor position
     cursor.SetYPosition(row + newPageTop);
-    cursor.SetHasMoved(true);
 
     // Erase all the rows in the current page.
     const auto eraseAttributes = _GetEraseAttributes(page);

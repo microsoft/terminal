@@ -7,7 +7,8 @@
 #include "output.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/CodepointWidthDetector.hpp"
-#include "../types/inc/convert.hpp"
+#include "../terminal/adapter/adaptDispatch.hpp"
+#include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
@@ -19,7 +20,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics* pMetrics,
-    _In_ IAccessibilityNotifier* pNotifier,
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
     OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
@@ -31,7 +31,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     FillOutDbcsLeadChar{ 0 },
     ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
-    _pAccessibilityNotifier{ pNotifier },
     _api{ *this },
     _stateMachine{ nullptr },
     _viewport(Viewport::Empty()),
@@ -89,11 +88,10 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         auto pMetrics = ServiceLocator::LocateWindowMetrics();
         THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
-        const auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         // It is possible for pNotifier to be null and that's OK.
         // For instance, the PTY doesn't need to send events. Just pass it along
         // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
-        const auto pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
+        const auto pScreen = new SCREEN_INFORMATION(pMetrics, popupAttributes, fontInfo);
 
         // Set up viewport
         pScreen->_viewport = Viewport::FromDimensions({ 0, 0 },
@@ -572,70 +570,6 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
     }
 }
 
-// Routine Description:
-// - Informs clients whether we have accessibility eventing so they can
-//   save themselves the work of performing math or lookups before calling
-//   `NotifyAccessibilityEventing`.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if we have an accessibility listener. False otherwise.
-bool SCREEN_INFORMATION::HasAccessibilityEventing() const noexcept
-{
-    return _pAccessibilityNotifier;
-}
-
-// NOTE: This method was historically used to notify accessibility apps AND
-// to aggregate drawing metadata to determine whether or not to use PolyTextOut.
-// After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
-// This now only notifies accessibility apps of a change.
-void SCREEN_INFORMATION::NotifyAccessibilityEventing(const til::CoordType sStartX,
-                                                     const til::CoordType sStartY,
-                                                     const til::CoordType sEndX,
-                                                     const til::CoordType sEndY)
-{
-    if (!_pAccessibilityNotifier)
-    {
-        return;
-    }
-
-    // Fire off a winevent to let accessibility apps know what changed.
-    if (IsActiveScreenBuffer())
-    {
-        const auto coordScreenBufferSize = GetBufferSize().Dimensions();
-        FAIL_FAST_IF(!(sEndX < coordScreenBufferSize.width));
-
-        if (sStartX == sEndX && sStartY == sEndY)
-        {
-            try
-            {
-                const auto cellData = GetCellDataAt({ sStartX, sStartY });
-                const auto charAndAttr = MAKELONG(Utf16ToUcs2(cellData->Chars()),
-                                                  cellData->TextAttr().GetLegacyAttributes());
-                _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
-                                                                        charAndAttr);
-            }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-                return;
-            }
-        }
-        else
-        {
-            _pAccessibilityNotifier->NotifyConsoleUpdateRegionEvent(MAKELONG(sStartX, sStartY),
-                                                                    MAKELONG(sEndX, sEndY));
-        }
-        auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
-        if (pConsoleWindow)
-        {
-            LOG_IF_FAILED(pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId));
-            // TODO MSFT 7960168 do we really need this event to not signal?
-            //pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
-        }
-    }
-}
-
 #pragma endregion
 
 #pragma region UI_Refresh
@@ -663,10 +597,7 @@ SCREEN_INFORMATION::ScrollBarState SCREEN_INFORMATION::FetchScrollBarState()
     WI_ClearFlag(gci.Flags, CONSOLE_UPDATING_SCROLL_BARS);
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    if (_pAccessibilityNotifier)
-    {
-        _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
-    }
+    ServiceLocator::LocateGlobals().accessibilityNotifier.Layout();
 
     const auto buffer = GetBufferSize();
     const auto isAltBuffer = _IsAltBuffer();
@@ -1481,15 +1412,12 @@ NT_CATCH_RETURN()
 
     if (SUCCEEDED_NTSTATUS(status))
     {
-        if (HasAccessibilityEventing())
-        {
-            NotifyAccessibilityEventing(0, 0, coordNewScreenSize.width - 1, coordNewScreenSize.height - 1);
-        }
-
         // Fire off an event to let accessibility apps know the layout has changed.
-        if (_pAccessibilityNotifier && IsActiveScreenBuffer())
+        if (IsActiveScreenBuffer())
         {
-            _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+            auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+            an.RegionChanged({}, { coordNewScreenSize.width - 1, coordNewScreenSize.height - 1 });
+            an.Layout();
         }
 
         if (fDoScrollBarUpdate)
@@ -1665,7 +1593,6 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
         {
             cursor.SetDelay(true);
         }
-        cursor.SetHasMoved(true);
     }
 
     return STATUS_SUCCESS;

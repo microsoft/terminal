@@ -355,6 +355,6 @@ void ProcessCtrlEvents()
         // The bad news is that EndTask() returns STATUS_UNSUCCESSFUL no matter whether
         // the process was already dead, or if the request actually failed for some reason.
         // Hopefully there aren't any regressions, but we can't know without trying.
-        LOG_IF_NTSTATUS_FAILED(ctrl->EndTask(r.dwProcessID, EventType, CtrlFlags));
+        ctrl->EndTask(r.dwProcessID, EventType, CtrlFlags);
     }
 }

@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
-
 #include "../types/inc/viewport.hpp"
 
 using namespace Microsoft::Console::Types;

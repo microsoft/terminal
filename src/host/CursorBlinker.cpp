@@ -81,48 +81,10 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo) const noexcept
     auto& buffer = ScreenInfo.GetTextBuffer();
     auto& cursor = buffer.GetCursor();
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
 
     if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
-    }
-
-    // Update the cursor pos in USER so accessibility will work.
-    // Don't do all this work or send events if we don't have a notifier target.
-    if (pAccessibilityNotifier && cursor.HasMoved())
-    {
-        // Convert the buffer position to the equivalent screen coordinates
-        // required by the notifier, taking line rendition into account.
-        const auto position = buffer.BufferToScreenPosition(cursor.GetPosition());
-        const auto viewport = ScreenInfo.GetViewport();
-        const auto fontSize = ScreenInfo.GetScreenFontSize();
-        cursor.SetHasMoved(false);
-
-        til::rect rc;
-        rc.left = (position.x - viewport.Left()) * fontSize.width;
-        rc.top = (position.y - viewport.Top()) * fontSize.height;
-        rc.right = rc.left + fontSize.width;
-        rc.bottom = rc.top + fontSize.height;
-
-        pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
-
-        // Send accessibility information
-        {
-            auto flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
-
-            // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
-            if (WI_IsFlagSet(gci.Flags, CONSOLE_SELECTING))
-            {
-                flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection;
-            }
-            else if (cursor.IsVisible())
-            {
-                flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
-            }
-
-            pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(position.x, position.y));
-        }
     }
 
     // If the DelayCursor flag has been set, wait one more tick before toggle.

@@ -777,6 +777,16 @@ std::wstring_view Settings::GetAnswerbackMessage() const noexcept
     return _answerbackMessage;
 }
 
+DWORD Settings::GetMSAADelay() const noexcept
+{
+    return _msaaDelay;
+}
+
+DWORD Settings::GetUIADelay() const noexcept
+{
+    return _uiaDelay;
+}
+
 // Determines whether our primary renderer should be DirectX or GDI.
 // This is based on user preference and velocity hold back state.
 bool Settings::GetUseDx() const noexcept

@@ -86,10 +86,8 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         {
         case HostSignals::NotifyApp:
         {
-            auto msg = _ReceiveTypedPacket<HostSignalNotifyAppData>();
-
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId));
-
+            const auto msg = _ReceiveTypedPacket<HostSignalNotifyAppData>();
+            ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId);
             break;
         }
         case HostSignals::SetForeground:
@@ -104,10 +102,8 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         }
         case HostSignals::EndTask:
         {
-            auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
-
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(msg.processId, msg.eventType, msg.ctrlFlags));
-
+            const auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
+            ServiceLocator::LocateConsoleControl()->EndTask(msg.processId, msg.eventType, msg.ctrlFlags);
             break;
         }
         default:

@@ -34,7 +34,6 @@
     <ClCompile Include="..\VtApiRedirection.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\inc\IAccessibilityNotifier.hpp" />
     <ClInclude Include="..\..\inc\IConsoleControl.hpp" />
     <ClInclude Include="..\..\inc\IConsoleInputThread.hpp" />
     <ClInclude Include="..\..\inc\IConsoleWindow.hpp" />

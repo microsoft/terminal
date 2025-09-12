@@ -12,6 +12,10 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 #pragma region IConsoleControl Members
 
+void ConsoleControl::NotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG idChild) noexcept
+{
+}
+
 [[nodiscard]] NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD /*dwProcessId*/) noexcept
 {
     return STATUS_SUCCESS;
