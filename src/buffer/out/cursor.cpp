@@ -13,7 +13,6 @@
 // - ulSize - The height of the cursor within this buffer
 Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _parentBuffer{ parentBuffer },
-    _fHasMoved(false),
     _fIsVisible(true),
     _fIsOn(true),
     _fIsDouble(false),
@@ -33,11 +32,6 @@ Cursor::~Cursor() = default;
 til::point Cursor::GetPosition() const noexcept
 {
     return _cPosition;
-}
-
-bool Cursor::HasMoved() const noexcept
-{
-    return _fHasMoved;
 }
 
 bool Cursor::IsVisible() const noexcept
@@ -73,11 +67,6 @@ bool Cursor::GetDelay() const noexcept
 ULONG Cursor::GetSize() const noexcept
 {
     return _ulSize;
-}
-
-void Cursor::SetHasMoved(const bool fHasMoved) noexcept
-{
-    _fHasMoved = fHasMoved;
 }
 
 void Cursor::SetIsVisible(const bool fIsVisible) noexcept
@@ -249,7 +238,6 @@ void Cursor::CopyProperties(const Cursor& OtherCursor) noexcept
     // We shouldn't copy the position as it will be already rearranged by the resize operation.
     //_cPosition                    = pOtherCursor->_cPosition;
 
-    _fHasMoved = OtherCursor._fHasMoved;
     _fIsVisible = OtherCursor._fIsVisible;
     _fIsOn = OtherCursor._fIsOn;
     _fIsDouble = OtherCursor._fIsDouble;

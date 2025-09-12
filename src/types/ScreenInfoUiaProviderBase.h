@@ -47,7 +47,6 @@ namespace Microsoft::Console::Types
         ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = delete;
         ~ScreenInfoUiaProviderBase() = default;
 
-        [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
         virtual void ChangeViewport(const til::inclusive_rect& NewWindow) = 0;
 
         // IRawElementProviderSimple methods
@@ -109,19 +108,6 @@ namespace Microsoft::Console::Types
         std::wstring _wordDelimiters{};
 
     private:
-        // this is used to prevent the object from
-        // signaling an event while it is already in the
-        // process of signalling another event.
-        // This fixes a problem with JAWS where it would
-        // call a public method that calls
-        // UiaRaiseAutomationEvent to signal something
-        // happened, which JAWS then detects the signal
-        // and calls the same method in response,
-        // eventually overflowing the stack.
-        // We aren't using this as a cheap locking
-        // mechanism for multi-threaded code.
-        std::unordered_map<EVENTID, bool> _signalFiringMapping{};
-
         til::size _getScreenBufferCoords() const noexcept;
         const TextBuffer& _getTextBuffer() const noexcept;
         Viewport _getViewport() const noexcept;
