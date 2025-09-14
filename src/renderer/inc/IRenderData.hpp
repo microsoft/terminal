@@ -1,16 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- IRenderData.hpp
-
-Abstract:
-- This serves as the interface defining all information needed to render to the screen.
-
-Author(s):
-- Michael Niksa (MiNiksa) 17-Nov-2015
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
@@ -23,6 +12,8 @@ class TextBuffer;
 
 namespace Microsoft::Console::Render
 {
+    class Renderer;
+
     struct CompositionRange
     {
         size_t len; // The number of chars in Composition::text that this .attr applies to
@@ -35,6 +26,21 @@ namespace Microsoft::Console::Render
         til::small_vector<CompositionRange, 2> attributes;
         size_t cursorPos = 0;
     };
+
+    // Technically this entire block of definitions is specific to the Renderer class,
+    // but defining it here allows us to use the TimerDuration definition for IRenderData.
+    struct TimerHandle
+    {
+        explicit operator bool() const noexcept
+        {
+            return id != SIZE_T_MAX;
+        }
+
+        size_t id = SIZE_T_MAX;
+    };
+    using TimerRepr = ULONGLONG;
+    using TimerDuration = std::chrono::duration<TimerRepr, std::ratio<1, 10000000>>;
+    using TimerCallback = std::function<void(Renderer&, TimerHandle)>;
 
     class IRenderData
     {
@@ -53,13 +59,8 @@ namespace Microsoft::Console::Render
         virtual void UnlockConsole() noexcept = 0;
 
         // This block used to be the original IRenderData.
-        virtual til::point GetCursorPosition() const noexcept = 0;
-        virtual bool IsCursorVisible() const noexcept = 0;
-        virtual bool IsCursorOn() const noexcept = 0;
-        virtual ULONG GetCursorHeight() const noexcept = 0;
-        virtual CursorType GetCursorStyle() const noexcept = 0;
+        virtual TimerDuration GetBlinkInterval() const noexcept = 0; // Return ::zero() or ::max() for no blink.
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual bool IsCursorDoubleWidth() const = 0;
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
         virtual const std::wstring_view GetConsoleTitle() const noexcept = 0;
         virtual const std::wstring GetHyperlinkUri(uint16_t id) const = 0;

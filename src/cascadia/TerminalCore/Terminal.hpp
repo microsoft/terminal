@@ -198,13 +198,8 @@ public:
     void UnlockConsole() noexcept override;
 
     // These methods are defined in TerminalRenderData.cpp
-    til::point GetCursorPosition() const noexcept override;
-    bool IsCursorVisible() const noexcept override;
-    bool IsCursorOn() const noexcept override;
-    ULONG GetCursorHeight() const noexcept override;
+    Microsoft::Console::Render::TimerDuration GetBlinkInterval() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    CursorType GetCursorStyle() const noexcept override;
-    bool IsCursorDoubleWidth() const override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
@@ -239,9 +234,6 @@ public:
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
     void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
     void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
-
-    void BlinkCursor() noexcept;
-    void SetCursorOn(const bool isOn) noexcept;
 
     void UpdatePatternsUnderLock();
 

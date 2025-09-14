@@ -57,8 +57,6 @@ __declspec(dllexport) void _stdcall TerminalSetTheme(void* terminal, TerminalThe
 __declspec(dllexport) void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
 __declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
 __declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD flags, WORD scanCode);
-__declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
-__declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 __declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
 __declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
 };
@@ -138,8 +136,6 @@ private:
     friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
     friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags);
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, til::CoordType fontSize, int newDpi);
-    friend void _stdcall TerminalBlinkCursor(void* terminal);
-    friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
     friend void _stdcall TerminalSetFocus(void* terminal);
     friend void _stdcall TerminalKillFocus(void* terminal);
 

@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
-#include <DefaultSettings.h>
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
@@ -39,44 +38,18 @@ void Terminal::SetFontInfo(const FontInfo& fontInfo)
     _fontInfo = fontInfo;
 }
 
-til::point Terminal::GetCursorPosition() const noexcept
+TimerDuration Terminal::GetBlinkInterval() const noexcept
 {
-    const auto& cursor = _activeBuffer().GetCursor();
-    return cursor.GetPosition();
-}
-
-bool Terminal::IsCursorVisible() const noexcept
-{
-    const auto& cursor = _activeBuffer().GetCursor();
-    return cursor.IsVisible();
-}
-
-bool Terminal::IsCursorOn() const noexcept
-{
-    const auto& cursor = _activeBuffer().GetCursor();
-    return cursor.IsOn();
+    const auto enabled = GetSystemMetrics(SM_CARETBLINKINGENABLED);
+    const auto interval = GetCaretBlinkTime();
+    // >10s --> no blinking. The limit is arbitrary, because technically the valid range
+    // on Windows is 200-1200ms. GetCaretBlinkTime() returns INFINITE for no blinking, 0 for errors.
+    return enabled && interval <= 10000 ? std ::chrono::milliseconds(interval) : TimerDuration::max();
 }
 
 ULONG Terminal::GetCursorPixelWidth() const noexcept
 {
     return 1;
-}
-
-ULONG Terminal::GetCursorHeight() const noexcept
-{
-    return _activeBuffer().GetCursor().GetSize();
-}
-
-CursorType Terminal::GetCursorStyle() const noexcept
-{
-    return _activeBuffer().GetCursor().GetType();
-}
-
-bool Terminal::IsCursorDoubleWidth() const
-{
-    const auto& buffer = _activeBuffer();
-    const auto position = buffer.GetCursor().GetPosition();
-    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 const bool Terminal::IsGridLineDrawingAllowed() noexcept
