@@ -12,21 +12,20 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 #pragma region IConsoleControl Members
 
-void ConsoleControl::NotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG idChild) noexcept
+void ConsoleControl::NotifyWinEvent(DWORD /*event*/, HWND /*hwnd*/, LONG /*idObject*/, LONG /*idChild*/) noexcept
+{
+
+}
+
+void ConsoleControl::NotifyConsoleApplication(_In_ DWORD /*dwProcessId*/) noexcept
 {
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD /*dwProcessId*/) noexcept
+void ConsoleControl::SetForeground(_In_ HANDLE /*hProcess*/, _In_ BOOL /*fForeground*/) noexcept
 {
-    return STATUS_SUCCESS;
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE /*hProcess*/, _In_ BOOL /*fForeground*/) noexcept
-{
-    return STATUS_SUCCESS;
-}
-
-[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+void ConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags) noexcept
 {
     USER_API_MSG m{};
     const auto a = &m.u.EndTask;
@@ -36,15 +35,11 @@ void ConsoleControl::NotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG 
     a->ConsoleEventCode = dwEventType;
     a->ConsoleFlags = ulCtrlFlags;
 
-    return CsrClientCallServer(reinterpret_cast<PCSR_API_MSG>(&m),
-                               nullptr,
-                               CSR_MAKE_API_NUMBER(USERSRV_SERVERDLL_INDEX, UserpEndTask),
-                               sizeof(*a));
+    LOG_IF_FAILED(CsrClientCallServer(reinterpret_cast<PCSR_API_MSG>(&m), nullptr, CSR_MAKE_API_NUMBER(USERSRV_SERVERDLL_INDEX, UserpEndTask), sizeof(*a)));
 }
 
-[[nodiscard]] NTSTATUS ConsoleControl::SetWindowOwner(HWND, DWORD, DWORD) noexcept
+void ConsoleControl::SetWindowOwner(HWND, DWORD, DWORD) noexcept
 {
-    return STATUS_SUCCESS;
 }
 
 #pragma endregion

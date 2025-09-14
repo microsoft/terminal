@@ -8,7 +8,6 @@
 #include "../inc/ServiceLocator.hpp"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\onecore\AccessibilityNotifier.hpp"
 #include "..\onecore\ConsoleControl.hpp"
 #include "..\onecore\ConsoleInputThread.hpp"
 #include "..\onecore\ConsoleWindow.hpp"
