@@ -136,10 +136,9 @@
                         <Border Grid.Column="0"
                                 Width="20"
                                 Height="20"
-                                Background="{x:Bind mtu:Converters.ColorToBrush(NullColorPreview.Value), Mode=OneWay}"
+                                Background="{x:Bind mtu:Converters.ColorToBrush(NullColorPreview), Mode=OneWay}"
                                 BorderThickness="1"
-                                CornerRadius="{StaticResource ControlCornerRadius}"
-                                Visibility="{x:Bind IsNullToVisibility(NullColorPreview), Mode=OneWay}" />
+                                CornerRadius="{StaticResource ControlCornerRadius}" />
 
                         <TextBlock Grid.Column="1"
                                    Text="{x:Bind NullColorButtonLabel}" />

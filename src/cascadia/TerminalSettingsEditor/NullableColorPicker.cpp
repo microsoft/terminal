@@ -88,9 +88,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _NullColorPreviewProperty =
                 DependencyProperty::Register(
                     L"NullColorPreview",
-                    xaml_typename<IReference<Windows::UI::Color>>(),
+                    xaml_typename<Windows::UI::Color>(),
                     xaml_typename<Editor::NullableColorPicker>(),
-                    PropertyMetadata{ nullptr });
+                    PropertyMetadata{ box_value(Windows::UI::Colors::Transparent()) });
         }
     }
 
@@ -154,11 +154,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return color == nullptr;
     }
 
-    Visibility NullableColorPicker::IsNullToVisibility(Windows::Foundation::IReference<Windows::UI::Color> color)
-    {
-        return color == nullptr ? Visibility::Collapsed : Visibility::Visible;
-    }
-
     void NullableColorPicker::NullColorButton_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         CurrentColor(nullptr);
@@ -183,15 +178,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             };
             ColorPickerControl().Color(winuiColor);
         }
-        else if (const auto nullColor = NullColorPreview())
-        {
-            // No current color (null), use the deduced value for null
-            ColorPickerControl().Color(nullColor.Value());
-        }
         else
         {
-            // NullColorPreview is undefined, use a fallback value
-            ColorPickerControl().Color(Colors::Transparent());
+            // No current color (null), use the deduced value for null
+            ColorPickerControl().Color(NullColorPreview());
         }
     }
 

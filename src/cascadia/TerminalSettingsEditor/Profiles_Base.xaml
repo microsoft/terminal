@@ -209,11 +209,11 @@
             </local:SettingContainer>
 
             <!--  Tab Color  -->
-            <!--  CurrentValueAccessibleName="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"  -->
             <local:SettingContainer x:Name="TabColor"
                                     x:Uid="Profile_TabColor"
                                     ClearSettingValue="{x:Bind Profile.ClearTabColor}"
                                     CurrentValue="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
+                                    CurrentValueAccessibleName="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
                                     CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"

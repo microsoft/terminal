@@ -15,7 +15,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush CalculateBorderBrush(const Windows::UI::Color& color);
         static bool IsNull(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> color);
-        static Windows::UI::Xaml::Visibility IsNullToVisibility(Windows::Foundation::IReference<Windows::UI::Color> color);
 
         void ColorChip_Loaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         void ColorChip_Unloaded(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
@@ -32,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, CurrentColor);
         DEPENDENCY_PROPERTY(bool, ShowNullColorButton);
         DEPENDENCY_PROPERTY(hstring, NullColorButtonLabel);
-        DEPENDENCY_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, NullColorPreview);
+        DEPENDENCY_PROPERTY(Windows::UI::Color, NullColorPreview);
 
     private:
         static void _InitializeProperties();

@@ -21,11 +21,10 @@ namespace Microsoft.Terminal.Settings.Editor
         String NullColorButtonLabel;
         static Windows.UI.Xaml.DependencyProperty NullColorButtonLabelProperty { get; };
 
-        Windows.Foundation.IReference<Windows.UI.Color> NullColorPreview;
+        Windows.UI.Color NullColorPreview;
         static Windows.UI.Xaml.DependencyProperty NullColorPreviewProperty { get; };
 
         static Windows.UI.Xaml.Media.SolidColorBrush CalculateBorderBrush(Windows.UI.Color color);
         static Boolean IsNull(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> color);
-        static Windows.UI.Xaml.Visibility IsNullToVisibility(Windows.Foundation.IReference<Windows.UI.Color> color);
     }
 }
