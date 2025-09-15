@@ -28,12 +28,4 @@ namespace Microsoft.Terminal.Settings.Editor
         static Boolean IsNull(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> color);
         static Windows.UI.Xaml.Visibility IsNullToVisibility(Windows.Foundation.IReference<Windows.UI.Color> color);
     }
-
-    [default_interface] runtimeclass NullableColorTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
-    {
-        NullableColorTemplateSelector();
-
-        Windows.UI.Xaml.DataTemplate ColorTemplate;
-        Windows.UI.Xaml.DataTemplate NullColorTemplate;
-    }
 }

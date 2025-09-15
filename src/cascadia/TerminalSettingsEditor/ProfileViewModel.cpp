@@ -454,7 +454,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return RS_(L"Profile_AnswerbackMessageNone");
     }
 
-    Windows::Foundation::IReference<Windows::UI::Color> ProfileViewModel::TabColorPreview() const
+    Windows::UI::Color ProfileViewModel::TabColorPreview() const
     {
         if (const auto modelVal = _profile.TabColor())
         {
@@ -470,31 +470,45 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return TabThemeColorPreview();
     }
 
-    Windows::Foundation::IReference<Windows::UI::Color> ProfileViewModel::TabThemeColorPreview() const
+    Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
     {
-        if (const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme())
+        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme();
+        if (const auto tabTheme = currentTheme.Tab())
         {
-            if (const auto tabTheme = currentTheme.Tab())
+            // theme.tab.background: theme color must be evaluated
+            if (const auto tabBackground = tabTheme.Background())
             {
-                if (const auto tabBackground = tabTheme.Background())
+                const auto& tabBrush = tabBackground.Evaluate(Application::Current().Resources(),
+                                                              Windows::UI::Xaml::Media::SolidColorBrush{ DefaultAppearance().CurrentColorScheme().BackgroundColor().Color() },
+                                                              false);
+                if (const auto& tabColorBrush = tabBrush.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
                 {
-                    const auto tabColor = DefaultAppearance().CurrentColorScheme().BackgroundColor().Color();
-                    tabColor;
-
-                    const auto& tabBrush = tabBackground.Evaluate(Application::Current().Resources(),
-                                                                  Windows::UI::Xaml::Media::SolidColorBrush{ DefaultAppearance().CurrentColorScheme().BackgroundColor().Color() },
-                                                                  false);
-                    if (const auto& tabColorBrush = tabBrush.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
-                    {
-                        const auto brushColor = tabColorBrush.Color();
-                        return brushColor;
-                    }
+                    const auto brushColor = tabColorBrush.Color();
+                    return brushColor;
                 }
             }
         }
+        else if (const auto windowTheme = currentTheme.Window())
+        {
+            // theme.window.applicationTheme: evaluate light/dark to XAML default tab color
+            // Can also be "Default", in which case we fall through below
+            const auto appTheme = windowTheme.RequestedTheme();
+            if (appTheme == ElementTheme::Dark)
+            {
+                return Windows::UI::ColorHelper::FromArgb(0xFF, 0x28, 0x28, 0x28);
+            }
+            else if (appTheme == ElementTheme::Light)
+            {
+                return Windows::UI::ColorHelper::FromArgb(0xFF, 0xF9, 0xF9, 0xF9);
+            }
+        }
 
-        // XAML default color for tab
-        return nullptr;
+        // XAML default tab color
+        if (Model::Theme::IsSystemInDarkTheme())
+        {
+            return Windows::UI::ColorHelper::FromArgb(0xFF, 0x28, 0x28, 0x28);
+        }
+        return Windows::UI::ColorHelper::FromArgb(0xFF, 0xF9, 0xF9, 0xF9);
     }
 
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance() const

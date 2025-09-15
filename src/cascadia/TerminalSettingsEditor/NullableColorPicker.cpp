@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "NullableColorPicker.h"
 #include "NullableColorPicker.g.cpp"
-#include "NullableColorTemplateSelector.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -233,19 +232,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
             }
         }
-    }
-
-    Windows::UI::Xaml::DataTemplate NullableColorTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
-    {
-        return SelectTemplateCore(item);
-    }
-
-    Windows::UI::Xaml::DataTemplate NullableColorTemplateSelector::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
-    {
-        if (const auto nullableColor = item.try_as<IReference<Windows::UI::Color>>())
-        {
-            return ColorTemplate();
-        }
-        return NullColorTemplate();
     }
 }

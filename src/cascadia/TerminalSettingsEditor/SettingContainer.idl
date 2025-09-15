@@ -24,9 +24,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.DataTemplate CurrentValueTemplate;
         static Windows.UI.Xaml.DependencyProperty CurrentValueTemplateProperty { get; };
 
-        Windows.UI.Xaml.Controls.DataTemplateSelector CurrentValueTemplateSelector;
-        static Windows.UI.Xaml.DependencyProperty CurrentValueTemplateSelectorProperty { get; };
-
         String CurrentValueAccessibleName;
         static Windows.UI.Xaml.DependencyProperty CurrentValueAccessibleNameProperty { get; };
 

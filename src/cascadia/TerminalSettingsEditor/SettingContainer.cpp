@@ -15,7 +15,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_FontIconGlyphProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueTemplateProperty{ nullptr };
-    DependencyProperty SettingContainer::_CurrentValueTemplateSelectorProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueAccessibleNameProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
@@ -73,15 +72,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 DependencyProperty::Register(
                     L"CurrentValueTemplate",
                     xaml_typename<Windows::UI::Xaml::DataTemplate>(),
-                    xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ nullptr });
-        }
-        if (!_CurrentValueTemplateSelectorProperty)
-        {
-            _CurrentValueTemplateSelectorProperty =
-                DependencyProperty::Register(
-                    L"CurrentValueTemplateSelector",
-                    xaml_typename<Windows::UI::Xaml::Controls::DataTemplateSelector>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ nullptr });
         }

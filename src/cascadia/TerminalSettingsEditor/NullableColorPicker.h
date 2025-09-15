@@ -4,7 +4,6 @@
 #pragma once
 
 #include "NullableColorPicker.g.h"
-#include "NullableColorTemplateSelector.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -43,21 +42,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::vector<Windows::UI::Xaml::Controls::Primitives::ToggleButton> _colorChips;
     };
-
-    struct NullableColorTemplateSelector : NullableColorTemplateSelectorT<NullableColorTemplateSelector>
-    {
-        NullableColorTemplateSelector() = default;
-
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
-
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, ColorTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, NullColorTemplate);
-    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(NullableColorPicker);
-    BASIC_FACTORY(NullableColorTemplateSelector);
 }
