@@ -25,6 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SnapToGridOnResize);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, FocusFollowMouse);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ScrollToZoom);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ScrollToChangeOpacity);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WordDelimiters);

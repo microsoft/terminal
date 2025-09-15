@@ -115,6 +115,7 @@ public:
         return memcmp(this, &other, sizeof(TextAttribute)) != 0;
     }
 
+    bool IsBold(const bool intenseIsBold) const noexcept;
     bool IsLegacy() const noexcept;
     bool IsIntense() const noexcept;
     bool IsFaint() const noexcept;

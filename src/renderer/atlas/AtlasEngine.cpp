@@ -268,7 +268,7 @@ try
     }
 
     // PaintCursor() is only called when the cursor is visible, but we need to invalidate the cursor area
-    // even if it isn't. Otherwise a transition from a visible to an invisible cursor wouldn't be rendered.
+    // even if it isn't. Otherwise, a transition from a visible to an invisible cursor wouldn't be rendered.
     if (const auto r = _api.invalidatedCursorArea; r.non_empty())
     {
         _p.dirtyRectInPx.left = std::min(_p.dirtyRectInPx.left, r.left * _p.s->font->cellSize.x);
@@ -322,7 +322,7 @@ CATCH_RETURN()
             auto misc = _api.s.write()->misc.write();
             misc->selectionColor = newSelectionColor;
             // Select a black or white foreground based on the perceptual lightness of the background.
-            misc->selectionForeground = ColorFix::GetLuminosity(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
+            misc->selectionForeground = ColorFix::GetLightness(newSelectionColor) < 0.5f ? 0xffffffff : 0xff000000;
 
             // We copied the selection colors into _p during StartPaint, which happened just before PrepareRenderInfo
             // This keeps their generations in sync.
@@ -500,8 +500,13 @@ try
     {
         for (const auto& cluster : clusters)
         {
-            for (const auto& ch : cluster.GetText())
+            for (auto ch : cluster.GetText())
             {
+                // Render Unicode directional isolate characters (U+2066..U+2069) as zero-width spaces.
+                if (ch >= L'\u2066' && ch <= L'\u2069')
+                {
+                    ch = L'\u200B';
+                }
                 _api.bufferLine.emplace_back(ch);
                 _api.bufferLineColumn.emplace_back(columnEnd);
             }
@@ -651,7 +656,7 @@ try
     if (!isSettingDefaultBrushes)
     {
         auto attributes = FontRelevantAttributes::None;
-        WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsIntense() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold));
+        WI_SetFlagIf(attributes, FontRelevantAttributes::Bold, textAttributes.IsBold(renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold)));
         WI_SetFlagIf(attributes, FontRelevantAttributes::Italic, textAttributes.IsItalic());
 
         if (_api.attributes != attributes)

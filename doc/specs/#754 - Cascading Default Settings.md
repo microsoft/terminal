@@ -360,7 +360,7 @@ GUID GetNamespaceGuid(IDynamicProfileGenerator& generator);
 GUID GetGuidForName(IDynamicProfileGenerator& generator, std::wstring& name);
 ```
 
-The generator does not _need_ to use `GetGuidForName` to generate guids for it's
+The generator does not _need_ to use `GetGuidForName` to generate guids for its
 profiles. If the generator can determine another way to generate stable GUIDs
 for its profiles, it's free to use whatever method it wants. `GetGuidForName` is
 provided as a convenience.

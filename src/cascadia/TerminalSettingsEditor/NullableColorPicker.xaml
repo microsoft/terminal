@@ -123,11 +123,11 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Spacing="5">
+            <StackPanel Spacing="4">
                 <ToggleButton AutomationProperties.Name="{x:Bind NullColorButtonLabel}"
                               Click="NullColorButton_Clicked"
                               IsChecked="{x:Bind IsNull(CurrentColor), Mode=OneWay}">
-                    <Grid ColumnSpacing="5">
+                    <Grid ColumnSpacing="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
@@ -138,7 +138,7 @@
                                 Height="20"
                                 Background="{x:Bind mtu:Converters.ColorToBrush(NullColorPreview), Mode=OneWay}"
                                 BorderThickness="1"
-                                CornerRadius="{ThemeResource ControlCornerRadius}" />
+                                CornerRadius="{StaticResource ControlCornerRadius}" />
 
                         <TextBlock Grid.Column="1"
                                    Text="{x:Bind NullColorButtonLabel}" />

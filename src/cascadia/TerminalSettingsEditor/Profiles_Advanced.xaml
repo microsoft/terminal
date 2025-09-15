@@ -32,8 +32,6 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
-                   Grid.Row="0"
-                   Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
@@ -96,6 +94,7 @@
             <!--  Bell Style  -->
             <local:SettingContainer x:Uid="Profile_BellStyle"
                                     ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
+                                    CurrentValue="{x:Bind Profile.BellStylePreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
@@ -122,7 +121,7 @@
                     <ItemsControl ItemsSource="{x:Bind Profile.CurrentBellSounds, Mode=OneWay}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Spacing="5" />
+                                <StackPanel Spacing="4" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
@@ -155,7 +154,7 @@
                                     </StackPanel>
                                     <Button x:Uid="Profile_BellSoundAudioPreview"
                                             Grid.Column="1"
-                                            Margin="5,0,0,0"
+                                            Margin="4,0,0,0"
                                             VerticalAlignment="Stretch"
                                             Click="BellSoundAudioPreview_Click"
                                             IsEnabled="{x:Bind FileExists, Mode=OneWay}"
@@ -166,7 +165,7 @@
                                     </Button>
                                     <Button x:Uid="Profile_BellSoundDelete"
                                             Grid.Column="2"
-                                            Margin="5,0,0,0"
+                                            Margin="4,0,0,0"
                                             VerticalAlignment="Stretch"
                                             Click="BellSoundDelete_Click"
                                             Style="{StaticResource DeleteButtonStyle}"
@@ -184,7 +183,7 @@
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE948;" />
                             <TextBlock x:Uid="Profile_AddBellSound"
-                                       Margin="10,0,0,0" />
+                                       Margin="8,0,0,0" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

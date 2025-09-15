@@ -50,27 +50,29 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid>
+    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
-                   Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
+                    Margin="0,12,0,0"
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Control Preview  -->
-            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+            <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="0,0,0,32"
+                    CornerRadius="{StaticResource ControlCornerRadius}">
                 <Border x:Name="ControlPreview"
                         Width="400"
                         Height="180"
-                        Margin="0,12,0,12"
                         HorizontalAlignment="Left"
-                        BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                        BorderThickness="1" />
+                        BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource ControlCornerRadius}" />
             </Border>
 
             <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
@@ -131,9 +133,9 @@
                     <Border Margin="0,12,0,12"
                             Padding="2,0,2,0"
                             HorizontalAlignment="Left"
-                            BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultSolidBrush}"
                             BorderThickness="1"
-                            CornerRadius="8">
+                            CornerRadius="{StaticResource OverlayCornerRadius}">
                         <Grid>
 
                             <Grid.RowDefinitions>
@@ -204,25 +206,27 @@
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                     <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
-                               Style="{StaticResource TitleTextBlockStyle}" />
+                               Style="{StaticResource TextBlockSubtitleStyle}" />
                     <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
-                            Margin="10,0,0,0"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Bottom"
                             Click="CreateUnfocusedAppearance_Click"
                             Style="{StaticResource BaseButtonStyle}"
                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
-                                <FontIcon Margin="0,3,0,0"
+                                <FontIcon Margin="0,4,0,0"
                                           FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE710;" />
                                 <TextBlock x:Uid="Profile_AddAppearanceButton"
-                                           Margin="10,0,0,0"
+                                           Margin="8,0,0,0"
                                            FontSize="{StaticResource StandardIconSize}" />
                             </StackPanel>
                         </Button.Content>
                     </Button>
                     <Button x:Uid="Profile_DeleteUnfocusedAppearanceButton"
-                            Margin="10,0,0,0"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Bottom"
                             Click="DeleteUnfocusedAppearance_Click"
                             Style="{StaticResource DeleteButtonStyle}"
                             Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">
@@ -231,7 +235,7 @@
                                 <FontIcon FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE74D;" />
                                 <TextBlock x:Uid="Profile_DeleteAppearanceButton"
-                                           Margin="10,0,0,0"
+                                           Margin="8,0,0,0"
                                            FontSize="{StaticResource StandardIconSize}" />
                             </StackPanel>
                         </Button.Content>

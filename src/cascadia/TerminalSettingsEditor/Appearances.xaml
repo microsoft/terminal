@@ -68,6 +68,7 @@
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <!--  Grouping: Text  -->
             <TextBlock x:Uid="Profile_TextHeader"
+                       Margin="0,0,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <!--  Color Scheme  -->
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
@@ -533,21 +534,21 @@
             <local:SettingContainer x:Name="BackgroundImageContainer"
                                     x:Uid="Profile_BackgroundImage"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImagePath}"
-                                    CurrentValue="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay}"
+                                    CurrentValue="{x:Bind Appearance.CurrentBackgroundImagePath, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImagePath, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
                     <TextBox x:Uid="Profile_BackgroundImageBox"
-                             IsEnabled="{x:Bind mtu:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                             IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Appearance.UseDesktopBGImage), Mode=OneWay}"
                              IsSpellCheckEnabled="False"
                              Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind mtu:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
+                             Text="{x:Bind mtu:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath.Path), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                     <StackPanel Orientation="Horizontal">
                         <Button x:Uid="Profile_BackgroundImageBrowse"
                                 Margin="0,10,10,0"
                                 Click="BackgroundImage_Click"
-                                IsEnabled="{x:Bind mtu:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                                IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Appearance.UseDesktopBGImage), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                         <CheckBox x:Name="UseDesktopImageCheckBox"
                                   x:Uid="Profile_UseDesktopImage"

@@ -3,23 +3,27 @@
 
 #include "pch.h"
 #include "TerminalSettingsCache.h"
-#include "TerminalSettingsCache.g.cpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 namespace winrt
 {
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
     namespace MTSM = Microsoft::Terminal::Settings::Model;
 }
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalSettingsCache::TerminalSettingsCache(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)
+    TerminalSettingsPair::TerminalSettingsPair(const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& result)
     {
-        Reset(settings, bindings);
+        result.DefaultSettings().try_as(_defaultSettings);
+        result.UnfocusedSettings().try_as(_unfocusedSettings);
     }
 
-    MTSM::TerminalSettingsCreateResult TerminalSettingsCache::TryLookup(const MTSM::Profile& profile)
+    TerminalSettingsCache::TerminalSettingsCache(const MTSM::CascadiaSettings& settings)
+    {
+        Reset(settings);
+    }
+
+    std::optional<TerminalSettingsPair> TerminalSettingsCache::TryLookup(const MTSM::Profile& profile)
     {
         const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
         // GH#2455: If there are any panes with controls that had been
@@ -31,18 +35,17 @@ namespace winrt::TerminalApp::implementation
             auto& pair{ found->second };
             if (!pair.second)
             {
-                pair.second = MTSM::TerminalSettings::CreateWithProfile(_settings, pair.first, _bindings);
+                pair.second = winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithProfile(_settings, pair.first);
             }
-            return pair.second;
+            return std::optional{ TerminalSettingsPair{ *pair.second } };
         }
 
-        return nullptr;
+        return std::nullopt;
     }
 
-    void TerminalSettingsCache::Reset(const MTSM::CascadiaSettings& settings, const TerminalApp::AppKeyBindings& bindings)
+    void TerminalSettingsCache::Reset(const MTSM::CascadiaSettings& settings)
     {
         _settings = settings;
-        _bindings = bindings;
 
         // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
         // when we stabilize its guid this will become fully safe.
@@ -52,12 +55,12 @@ namespace winrt::TerminalApp::implementation
         profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
 
         // Include the Defaults profile for consideration
-        profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, nullptr });
+        profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, std::nullopt });
         for (const auto& newProfile : allProfiles)
         {
             // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
             // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
-            profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
+            profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, std::nullopt });
         }
     }
 }

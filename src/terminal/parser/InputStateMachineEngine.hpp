@@ -51,6 +51,10 @@ namespace Microsoft::Console::VirtualTerminal
 
     enum class DeviceAttribute : uint64_t
     {
+        // Special value to indicate that InputStateMachineEngine::_deviceAttributes has been set.
+        // 0 in this case means 1<<0 == 1, which in turn means that _deviceAttributes is non-zero.
+        __some__ = 0,
+
         Columns132 = 1,
         PrinterPort = 2,
         Sixel = 4,
@@ -107,6 +111,8 @@ namespace Microsoft::Console::VirtualTerminal
         Released = 3,
         ScrollForward = 4,
         ScrollBack = 5,
+        ScrollLeft = 6,
+        ScrollRight = 7,
     };
 
     constexpr unsigned short CsiMouseModifierCode_Drag = 32;

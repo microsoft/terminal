@@ -25,14 +25,14 @@ namespace Microsoft.Terminal.Control
 
         UInt64 Id { get; };
 
-        void AttachToNewControl(Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        void AttachToNewControl();
         void Detach();
 
         void Close();
 
         InteractivityAutomationPeer OnCreateAutomationPeer();
 
-        Boolean CopySelectionToClipboard(Boolean singleLine, Boolean withControlSequences, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean singleLine, Boolean withControlSequences, CopyFormat formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(Microsoft.Terminal.Core.Point point);
 
@@ -60,7 +60,7 @@ namespace Microsoft.Terminal.Control
         void TouchReleased();
 
         Boolean MouseWheel(Microsoft.Terminal.Core.ControlKeyStates modifiers,
-                           Int32 delta,
+                           Microsoft.Terminal.Core.Point delta,
                            Microsoft.Terminal.Core.Point pixelPosition,
                            MouseButtonState state);
 

@@ -55,6 +55,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _Profile.FocusDeleteButton(false);
             }
         });
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue("profile", "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
+            TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to. Set to {3ad42e7b-e073-5f3e-ac57-1c259ffa86a8} if the profiles.defaults object is being modified."),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void Profiles_Base::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
@@ -79,6 +90,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "DeleteProfile",
+            TraceLoggingDescription("Event emitted when the user deletes a profile"),
+            TraceLoggingValue(to_hstring(_Profile.Guid()).c_str(), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingValue(false, "Orphaned", "Tracks if the profile is orphaned"),
+            TraceLoggingValue(_Profile.Hidden(), "Hidden", "Tracks if the profile is hidden"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         winrt::get_self<ProfileViewModel>(_Profile)->DeleteProfile();
     }
 
@@ -120,7 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
-            _Profile.Icon(file);
+            _Profile.IconPath(file);
         }
     }
 

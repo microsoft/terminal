@@ -711,13 +711,23 @@ TextAttribute Implementation::_textAttributeFromAtom(TfGuidAtom atom) const
     TF_DISPLAYATTRIBUTE da;
     THROW_IF_FAILED(dai->GetAttributeInfo(&da));
 
-    if (da.crText.type != TF_CT_NONE)
+    // The Tencent QQPinyin IME creates TF_CT_COLORREF attributes with a color of 0x000000 (black).
+    // We respect their wish, which results in the preview text being invisible.
+    // (Note that sending this COLORREF is incorrect, and not a bug in our handling.)
+    //
+    // After some discussion, we realized that an IME which sets only one color but not
+    // the others is likely not properly tested anyway, so we reject those cases.
+    // After all, what behavior do we expect, if the IME sends e.g. foreground=blue,
+    // without knowing whether our terminal theme already uses a blue background?
+    if (da.crText.type != TF_CT_NONE && da.crText.type == da.crBk.type)
     {
         attr.SetForeground(_colorFromDisplayAttribute(da.crText));
-    }
-    if (da.crBk.type != TF_CT_NONE)
-    {
         attr.SetBackground(_colorFromDisplayAttribute(da.crBk));
+        // I'm not sure what the best way to handle this is.
+        if (da.crText.type == da.crLine.type)
+        {
+            attr.SetUnderlineColor(_colorFromDisplayAttribute(da.crLine));
+        }
     }
     if (da.lsStyle >= TF_LS_NONE && da.lsStyle <= TF_LS_SQUIGGLE)
     {
@@ -736,10 +746,6 @@ TextAttribute Implementation::_textAttributeFromAtom(TfGuidAtom atom) const
     if (da.fBoldLine)
     {
         attr.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
-    }
-    if (da.crLine.type != TF_CT_NONE)
-    {
-        attr.SetUnderlineColor(_colorFromDisplayAttribute(da.crLine));
     }
 
     return attr;

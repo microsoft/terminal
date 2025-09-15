@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IKeyBindings.idl";
 import "IMouseWheelListener.idl";
 import "IControlSettings.idl";
 import "ControlInteractivity.idl";
@@ -36,7 +37,7 @@ namespace Microsoft.Terminal.Control
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-        static TermControl NewControlByAttachingContent(ControlInteractivity content, Microsoft.Terminal.Control.IKeyBindings keyBindings);
+        static TermControl NewControlByAttachingContent(ControlInteractivity content);
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings,
                                                              UInt32 dpi,
@@ -46,13 +47,22 @@ namespace Microsoft.Terminal.Control
         void UpdateControlSettings(IControlSettings settings);
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
 
+        void ApplyPreviewColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
+        void ResetPreviewColorScheme();
+
+        void SetOverrideColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
+
         Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
 
         UInt64 ContentId{ get; };
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
+        // MIDL 3 does not support setter-only properties.
+        void KeyBindings(Microsoft.Terminal.Control.IKeyBindings KeyBindings);
+
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, WriteToClipboardEventArgs> WriteToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
@@ -87,7 +97,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseTerminalRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestartTerminalRequested;
 
-        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Boolean withControlSequences, Windows.Foundation.IReference<CopyFormat> formats);
+        Boolean CopySelectionToClipboard(Boolean dismissSelection, Boolean singleLine, Boolean withControlSequences, CopyFormat formats);
         void PasteTextFromClipboard();
         void SelectAll();
         Boolean ToggleBlockSelection();

@@ -52,7 +52,7 @@ static std::wstring Sanitize(std::wstring_view text)
 // Arguments:
 // - text: the string we're validating
 // Return Value:
-// - true, if the text is readable. false, otherwise.
+// - true, if the text is readable; otherwise, false.
 static constexpr bool IsReadable(std::wstring_view text)
 {
     for (const auto c : text)
@@ -305,17 +305,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetNameCore() const
     {
-        // fallback to title if profile name is empty
+        // fall back to title if profile name is empty
         if (auto control{ _termControl.get() })
         {
-            const auto profileName = control->GetProfileName();
-            if (profileName.empty())
+            const auto originalName = control->GetStartingTitle();
+            if (originalName.empty())
             {
                 return control->Title();
             }
             else
             {
-                return profileName;
+                return originalName;
             }
         }
 

@@ -42,6 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::MatchMode, MatchMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::TextMeasurement, TextMeasurement);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
 
     // Profile Settings
     DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExitMode);
@@ -52,6 +53,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::IntenseStyle, IntenseTextStyle);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle);
+
+    // Actions
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::ResizeDirection, ResizeDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::FocusDirection, FocusDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::SplitDirection, SplitDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::SplitType, SplitType);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::SettingsTarget, SettingsTarget);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::MoveTabDirection, MoveTabDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::ScrollToMarkDirection, ScrollToMarkDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode, CommandPaletteLaunchMode);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::SuggestionsSource, SuggestionsSource);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::FindMatchDirection, FindMatchDirection);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::DesktopBehavior, DesktopBehavior);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::MonitorBehavior, MonitorBehavior);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::ClearBufferType, ClearBufferType);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::SelectOutputDirection, SelectOutputDirection);
 
     // FontWeight is special because the JsonUtils::ConversionTrait for it
     // creates a FontWeight object, but we need to use the uint16_t value.

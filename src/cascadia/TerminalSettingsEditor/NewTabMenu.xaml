@@ -89,7 +89,7 @@
                         <IconSourceElement Width="16"
                                            Height="16"
                                            VerticalAlignment="Center"
-                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(ProfileEntry.Profile.EvaluatedIcon), Mode=OneTime}" />
+                                           IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(ProfileEntry.Profile.Icon.Resolved), Mode=OneTime}" />
                         <TextBlock VerticalAlignment="Center"
                                    Text="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}" />
                     </StackPanel>
@@ -227,8 +227,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid Margin="{StaticResource SettingStackMargin}"
-          RowSpacing="10">
+    <Grid RowSpacing="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -271,7 +270,7 @@
         <!--  New Tab Menu Content  -->
         <StackPanel Grid.Row="0"
                     MaxWidth="{StaticResource StandardControlMaxWidth}"
-                    Spacing="10">
+                    Spacing="8">
             <Border Height="300"
                     MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Margin="0,12,0,0"
@@ -297,7 +296,7 @@
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE8DE;" />
                         <TextBlock x:Uid="NewTabMenu_MoveToFolderTextBlock"
-                                   Margin="10,0,0,0" />
+                                   Margin="8,0,0,0" />
                     </StackPanel>
                 </Button>
                 <Button x:Name="DeleteMultipleButton"
@@ -308,7 +307,7 @@
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                   Glyph="&#xE74D;" />
                         <TextBlock x:Uid="NewTabMenu_DeleteMultipleTextBlock"
-                                   Margin="10,0,0,0" />
+                                   Margin="8,0,0,0" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -321,7 +320,7 @@
             <TextBlock x:Uid="NewTabMenu_CurrentFolderTextBlock"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-            <!--  TODO CARLOS: Icon  -->
+            <!--  TODO GH #18281: Icon  -->
             <!--  Once PR #17965 merges, we can add that kind of control to set an icon  -->
 
             <!--  Name  -->
@@ -359,7 +358,7 @@
                                     Style="{StaticResource SettingContainerWithIcon}">
 
                 <StackPanel Orientation="Horizontal"
-                            Spacing="5">
+                            Spacing="4">
                     <!--  Select profile to add  -->
                     <ComboBox x:Name="AddProfileComboBox"
                               MinWidth="{StaticResource StandardBoxMinWidth}"
@@ -380,7 +379,7 @@
                                     <IconSourceElement Grid.Column="0"
                                                        Width="16"
                                                        Height="16"
-                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(EvaluatedIcon), Mode=OneTime}" />
+                                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon.Resolved), Mode=OneTime}" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{x:Bind Name}" />
@@ -448,7 +447,9 @@
             <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
                                     FontIconGlyph="&#xE748;"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
-                <StackPanel Spacing="10">
+                <StackPanel Spacing="8">
+                    <HyperlinkButton x:Uid="NewTabMenu_AddMatchProfiles_Help"
+                                     NavigateUri="https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference" />
                     <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Name"
                              Text="{x:Bind ViewModel.ProfileMatcherName, Mode=TwoWay}" />
                     <TextBox x:Uid="NewTabMenu_AddMatchProfiles_Source"

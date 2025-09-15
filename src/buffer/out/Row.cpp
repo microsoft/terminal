@@ -431,7 +431,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= size());
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
-    const auto finalColumnInRow = limitRight.value_or(size() - 1);
+    const auto finalColumnInRow = gsl::narrow_cast<uint16_t>(limitRight.value_or(size() - 1));
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
@@ -942,12 +942,12 @@ void ROW::_resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDi
     }
 }
 
-til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() noexcept
+RowAttributes& ROW::Attributes() noexcept
 {
     return _attr;
 }
 
-const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexcept
+const RowAttributes& ROW::Attributes() const noexcept
 {
     return _attr;
 }

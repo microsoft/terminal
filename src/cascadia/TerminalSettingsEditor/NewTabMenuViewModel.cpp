@@ -363,7 +363,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             const auto& entryVM = make<ProfileEntryViewModel>(profileEntry);
             CurrentView().Append(entryVM);
-            _PrintAll();
             return entryVM;
         }
         return nullptr;
@@ -374,8 +373,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::SeparatorEntry separatorEntry;
         const auto& entryVM = make<SeparatorEntryViewModel>(separatorEntry);
         CurrentView().Append(entryVM);
-
-        _PrintAll();
         return entryVM;
     }
 
@@ -390,8 +387,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Reset state after adding the entry
         AddFolderName({});
         _folderTreeCache = nullptr;
-
-        _PrintAll();
         return entryVM;
     }
 
@@ -410,7 +405,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ProfileMatcherSource({});
         ProfileMatcherCommandline({});
 
-        _PrintAll();
         return entryVM;
     }
 
@@ -422,7 +416,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _NotifyChanges(L"IsRemainingProfilesEntryMissing");
 
-        _PrintAll();
         return entryVM;
     }
 
@@ -495,134 +488,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         return _folderEntry.Icon();
     }
-
-    void NewTabMenuViewModel::_PrintAll()
-    {
-#ifdef _DEBUG
-        OutputDebugString(L"---Model:---\n");
-        _PrintModel(_Settings.GlobalSettings().NewTabMenu());
-        OutputDebugString(L"\n");
-        OutputDebugString(L"---VM:---\n");
-        _PrintVM(_rootEntries);
-        OutputDebugString(L"\n");
-#endif
-    }
-
-#ifdef _DEBUG
-    void NewTabMenuViewModel::_PrintModel(Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> list, std::wstring prefix)
-    {
-        if (!list)
-        {
-            return;
-        }
-
-        for (auto&& e : list)
-        {
-            _PrintModel(e, prefix);
-        }
-    }
-
-    void NewTabMenuViewModel::_PrintModel(const Model::NewTabMenuEntry& e, std::wstring prefix)
-    {
-        switch (e.Type())
-        {
-        case NewTabMenuEntryType::Profile:
-        {
-            const auto& pe = e.as<Model::ProfileEntry>();
-            OutputDebugString(fmt::format(L"{}Profile: {}\n", prefix, pe.Profile().Name()).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::Action:
-        {
-            const auto& actionEntry = e.as<Model::ActionEntry>();
-            OutputDebugString(fmt::format(L"{}Action: {}\n", prefix, actionEntry.ActionId()).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::Separator:
-        {
-            OutputDebugString(fmt::format(L"{}Separator\n", prefix).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::Folder:
-        {
-            const auto& fe = e.as<Model::FolderEntry>();
-            OutputDebugString(fmt::format(L"{}Folder: {}\n", prefix, fe.Name()).c_str());
-            _PrintModel(fe.RawEntries(), prefix + L"  ");
-            break;
-        }
-        case NewTabMenuEntryType::MatchProfiles:
-        {
-            const auto& matchProfilesEntry = e.as<Model::MatchProfilesEntry>();
-            OutputDebugString(fmt::format(L"{}MatchProfiles: {}\n", prefix, matchProfilesEntry.Name()).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::RemainingProfiles:
-        {
-            OutputDebugString(fmt::format(L"{}RemainingProfiles\n", prefix).c_str());
-            break;
-        }
-        default:
-            break;
-        }
-    }
-
-    void NewTabMenuViewModel::_PrintVM(Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel> list, std::wstring prefix)
-    {
-        if (!list)
-        {
-            return;
-        }
-
-        for (auto&& e : list)
-        {
-            _PrintVM(e, prefix);
-        }
-    }
-
-    void NewTabMenuViewModel::_PrintVM(const Editor::NewTabMenuEntryViewModel& e, std::wstring prefix)
-    {
-        switch (e.Type())
-        {
-        case NewTabMenuEntryType::Profile:
-        {
-            const auto& pe = e.as<Editor::ProfileEntryViewModel>();
-            OutputDebugString(fmt::format(L"{}Profile: {}\n", prefix, pe.ProfileEntry().Profile().Name()).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::Action:
-        {
-            const auto& actionEntry = e.as<Editor::ActionEntryViewModel>();
-            OutputDebugString(fmt::format(L"{}Action: {}\n", prefix, actionEntry.ActionEntry().ActionId()).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::Separator:
-        {
-            OutputDebugString(fmt::format(L"{}Separator\n", prefix).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::Folder:
-        {
-            const auto& fe = e.as<Editor::FolderEntryViewModel>();
-            OutputDebugString(fmt::format(L"{}Folder: {}\n", prefix, fe.Name()).c_str());
-            _PrintVM(fe.Entries(), prefix + L"  ");
-            break;
-        }
-        case NewTabMenuEntryType::MatchProfiles:
-        {
-            const auto& matchProfilesEntry = e.as<Editor::MatchProfilesEntryViewModel>();
-            OutputDebugString(fmt::format(L"{}MatchProfiles: {}\n", prefix, matchProfilesEntry.DisplayText()).c_str());
-            break;
-        }
-        case NewTabMenuEntryType::RemainingProfiles:
-        {
-            OutputDebugString(fmt::format(L"{}RemainingProfiles\n", prefix).c_str());
-            break;
-        }
-        default:
-            break;
-        }
-    }
-#endif
 
     NewTabMenuEntryViewModel::NewTabMenuEntryViewModel(const NewTabMenuEntryType type) noexcept :
         _Type{ type }
@@ -701,7 +566,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto actionID = _ActionEntry.ActionId();
         if (const auto& action = _Settings.ActionMap().GetActionByID(actionID))
         {
-            return action.IconPath();
+            return action.Icon().Resolved();
         }
         return {};
     }

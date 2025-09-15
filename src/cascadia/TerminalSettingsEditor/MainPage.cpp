@@ -9,6 +9,7 @@
 #include "Compatibility.h"
 #include "Rendering.h"
 #include "RenderingViewModel.h"
+#include "Extensions.h"
 #include "Actions.h"
 #include "ProfileViewModel.h"
 #include "GlobalAppearance.h"
@@ -38,12 +39,14 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::Foundation::Collections;
 
+static const std::wstring_view openJsonTag{ L"OpenJson_Nav" };
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
 static const std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
+static const std::wstring_view extensionsTag{ L"Extensions_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
@@ -111,6 +114,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
+        auto extensionsVMImpl = winrt::make_self<ExtensionsViewModel>(_settingsClone, _colorSchemesPageVM);
+        extensionsVMImpl->NavigateToProfileRequested({ this, &MainPage::_NavigateToProfileHandler });
+        extensionsVMImpl->NavigateToColorSchemeRequested({ this, &MainPage::_NavigateToColorSchemeHandler });
+        _extensionsVM = *extensionsVMImpl;
+        _extensionsViewModelChangedRevoker = _extensionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentExtensionPackage")
+            {
+                if (const auto& currentExtensionPackage = _extensionsVM.CurrentExtensionPackage())
+                {
+                    const auto& pkg = currentExtensionPackage.Package();
+                    const auto label = pkg.DisplayName().empty() ? pkg.Source() : pkg.DisplayName();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentExtensionPackage), label, BreadcrumbSubPage::Extensions_Extension);
+                    _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                }
+                else
+                {
+                    // If we don't have a current extension package, we're at the root of the Extensions page
+                    _breadcrumbs.Clear();
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
+                    _breadcrumbs.Append(crumb);
+                }
+                contentFrame().Navigate(xaml_typename<Editor::Extensions>(), _extensionsVM);
+            }
+        });
+
         // Make sure to initialize the profiles _after_ we have initialized the color schemes page VM, because we pass
         // that VM into the appearance VMs within the profiles
         _InitializeProfilesList();
@@ -161,6 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
         _newTabMenuPageVM.UpdateSettings(_settingsClone);
+        _extensionsVM.UpdateSettings(_settingsClone, _colorSchemesPageVM);
 
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
@@ -182,7 +213,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                 {
                                     // found the one that was selected before the refresh
                                     SettingsNav().SelectedItem(item);
-                                    _Navigate(*stringTag, crumb->SubPage());
+                                    _Navigate(*breadcrumbStringTag, crumb->SubPage());
                                     return;
                                 }
                             }
@@ -194,6 +225,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                     // _Navigate() will handle trying to find the right subpage
                                     SettingsNav().SelectedItem(item);
                                     _Navigate(breadcrumbFolderEntry, BreadcrumbSubPage::NewTabMenu_Folder);
+                                    return;
+                                }
+                            }
+                            else if (const auto& breadcrumbExtensionPackage{ crumb->Tag().try_as<Editor::ExtensionPackageViewModel>() })
+                            {
+                                if (stringTag == extensionsTag)
+                                {
+                                    // navigate to the Extensions page,
+                                    // _Navigate() will handle trying to find the right subpage
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(breadcrumbExtensionPackage, BreadcrumbSubPage::Extensions_Extension);
                                     return;
                                 }
                             }
@@ -216,7 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // Couldn't find the selected item, fallback to first menu item
+        // Couldn't find the selected item, fall back to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
         const auto& firstItem{ _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
@@ -324,6 +366,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
+                if (*navString == openJsonTag)
+                {
+                    const auto window = CoreWindow::GetForCurrentThread();
+                    const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+                    const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+                    const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+                    const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+
+                    TraceLoggingWrite(
+                        g_hTerminalSettingsEditorProvider,
+                        "OpenJson",
+                        TraceLoggingDescription("Event emitted when the user clicks the Open JSON button in the settings UI"),
+                        TraceLoggingValue(target == SettingsTarget::DefaultsFile ? "DefaultsFile" : "SettingsFile", "SettingsTarget", "The target settings file"),
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+                    OpenJson.raise(nullptr, target);
+                    return;
+                }
                 _Navigate(*navString, BreadcrumbSubPage::None);
             }
             else if (const auto profile = clickedItemContainer.Tag().try_as<Editor::ProfileViewModel>())
@@ -419,7 +481,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == compatibilityTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<CompatibilityViewModel>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<CompatibilityViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -442,6 +504,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Navigate to the NewTabMenu page
                 contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
                 const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
+                _breadcrumbs.Append(crumb);
+            }
+        }
+        else if (clickedItemTag == extensionsTag)
+        {
+            if (_extensionsVM.CurrentExtensionPackage())
+            {
+                // Setting CurrentExtensionPackage triggers the PropertyChanged event,
+                // which will navigate to the correct page and update the breadcrumbs appropriately
+                _extensionsVM.CurrentExtensionPackage(nullptr);
+            }
+            else
+            {
+                contentFrame().Navigate(xaml_typename<Editor::Extensions>(), _extensionsVM);
+                const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
                 _breadcrumbs.Append(crumb);
             }
         }
@@ -575,31 +652,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::OpenJsonTapped(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& /*args*/)
+    void MainPage::_Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage)
     {
-        const auto window = CoreWindow::GetForCurrentThread();
-        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-        const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+        _PreNavigateHelper();
 
-        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-        OpenJson.raise(nullptr, target);
-    }
+        contentFrame().Navigate(xaml_typename<Editor::Extensions>(), _extensionsVM);
+        const auto crumb = winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
+        _breadcrumbs.Append(crumb);
 
-    void MainPage::OpenJsonKeyDown(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& args)
-    {
-        if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
+        if (subPage == BreadcrumbSubPage::None)
         {
-            const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
-            OpenJson.raise(nullptr, target);
+            _extensionsVM.CurrentExtensionPackage(nullptr);
+        }
+        else
+        {
+            bool found = false;
+            for (const auto& pkgVM : _extensionsVM.ExtensionPackages())
+            {
+                if (pkgVM.Package().Source() == extPkgVM.Package().Source())
+                {
+                    // Take advantage of the PropertyChanged event to navigate
+                    // to the correct extension package and build the breadcrumbs as we go
+                    _extensionsVM.CurrentExtensionPackage(pkgVM);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                // If we couldn't find a reasonable match, just go back to the root
+                _extensionsVM.CurrentExtensionPackage(nullptr);
+            }
         }
     }
 
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.LogSettingChanges(false);
-        _settingsClone.WriteSettingsToDisk();
+        if (!_settingsClone.WriteSettingsToDisk())
+        {
+            ShowLoadWarningsDialog.raise(*this, _settingsClone.Warnings());
+        }
     }
 
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
@@ -620,6 +713,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto ntmEntryViewModel = tag.try_as<NewTabMenuEntryViewModel>())
             {
                 _Navigate(*ntmEntryViewModel, subPage);
+            }
+            else if (const auto extPkgViewModel = tag.try_as<ExtensionPackageViewModel>())
+            {
+                _Navigate(*extPkgViewModel, subPage);
             }
             else
             {
@@ -752,7 +849,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon" || args.PropertyName() == L"EvaluatedIcon")
+                if (args.PropertyName() == L"Icon")
                 {
                     menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
                 }
@@ -816,6 +913,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
     {
         return _breadcrumbs;
+    }
+
+    void MainPage::_NavigateToProfileHandler(const IInspectable& /*sender*/, winrt::guid profileGuid)
+    {
+        for (auto&& menuItem : _menuItemSource)
+        {
+            if (const auto& navViewItem{ menuItem.try_as<MUX::Controls::NavigationViewItem>() })
+            {
+                if (const auto& tag{ navViewItem.Tag() })
+                {
+                    if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
+                    {
+                        if (profileTag->OriginalProfileGuid() == profileGuid)
+                        {
+                            SettingsNav().SelectedItem(menuItem);
+                            _Navigate(*profileTag, BreadcrumbSubPage::None);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        // Silently fail if the profile wasn't found
+    }
+
+    void MainPage::_NavigateToColorSchemeHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        SettingsNav().SelectedItem(ColorSchemesNavItem());
+        _Navigate(hstring{ colorSchemesTag }, BreadcrumbSubPage::ColorSchemes_Edit);
     }
 
     winrt::Windows::UI::Xaml::Media::Brush MainPage::BackgroundBrush()

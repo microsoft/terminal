@@ -5,6 +5,7 @@
 
 #include "HighlightedTextControl.h"
 #include "FilteredCommand.g.h"
+#include "fzf/fzf.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -17,24 +18,23 @@ namespace winrt::TerminalApp::implementation
     struct FilteredCommand : FilteredCommandT<FilteredCommand>
     {
         FilteredCommand() = default;
-        FilteredCommand(const winrt::TerminalApp::PaletteItem& item);
+        FilteredCommand(const winrt::TerminalApp::IPaletteItem& item);
 
-        virtual void UpdateFilter(const winrt::hstring& filter);
+        void UpdateFilter(std::shared_ptr<fzf::matcher::Pattern> pattern);
 
         static int Compare(const winrt::TerminalApp::FilteredCommand& first, const winrt::TerminalApp::FilteredCommand& second);
 
+        bool HasSubtitle();
+
         til::property_changed_event PropertyChanged;
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::PaletteItem, Item, PropertyChanged.raise, nullptr);
-        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Filter, PropertyChanged.raise);
-        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::TerminalApp::IPaletteItem, Item, PropertyChanged.raise, nullptr);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>, NameHighlights, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(winrt::Windows::Foundation::Collections::IVector<winrt::TerminalApp::HighlightedRun>, SubtitleHighlights, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(int, Weight, PropertyChanged.raise);
 
-    protected:
-        void _constructFilteredCommand(const winrt::TerminalApp::PaletteItem& item);
-
     private:
-        winrt::TerminalApp::HighlightedText _computeHighlightedName();
-        int _computeWeight();
+        std::shared_ptr<fzf::matcher::Pattern> _pattern;
+        void _update();
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;
 
         friend class TerminalAppLocalTests::FilteredCommandTests;

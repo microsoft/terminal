@@ -14,13 +14,10 @@
         <ResourceDictionary x:Key="Light">
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondary}" />
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
-                             Color="{StaticResource SystemBaseMediumColor}" />
-            <Color x:Key="CardStrokeColorDefault">#0F000000</Color>
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush"
-                             Color="{StaticResource CardStrokeColorDefault}" />
+                             Color="{StaticResource TextFillColorSecondary}" />
             <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="CardStrokeColorDefaultBrush" />
 
@@ -83,13 +80,10 @@
         <ResourceDictionary x:Key="Dark">
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondary}" />
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
-                             Color="{StaticResource SystemBaseMediumColor}" />
-            <Color x:Key="CardStrokeColorDefault">#19000000</Color>
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush"
-                             Color="{StaticResource CardStrokeColorDefault}" />
+                             Color="{StaticResource TextFillColorSecondary}" />
             <StaticResource x:Key="ExpanderHeaderBorderBrush"
                             ResourceKey="CardStrokeColorDefaultBrush" />
 
@@ -134,10 +128,11 @@
     </Style>
 
     <Style x:Key="SettingContainerResetButtonStyle"
+           BasedOn="{StaticResource DefaultButtonStyle}"
            TargetType="Button">
-        <Setter Property="Margin" Value="5,0,0,0" />
-        <Setter Property="Height" Value="19" />
-        <Setter Property="Width" Value="19" />
+        <Setter Property="Margin" Value="4,0,0,0" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Width" Value="20" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Background" Value="Transparent" />
@@ -146,7 +141,7 @@
     <Style x:Key="SettingContainerFontIconStyle"
            TargetType="FontIcon">
         <Setter Property="Foreground" Value="{ThemeResource SettingContainerResetButtonIconForeground}" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontFamily" Value="{ThemeResource SymbolThemeFontFamily}" />
     </Style>
 
@@ -179,13 +174,18 @@
         <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
     </Style>
 
+    <Style x:Key="SettingContainerCurrentValueTextBlockStyle"
+           BasedOn="{StaticResource SettingsPageItemDescriptionStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="248" />
+        <Setter Property="Margin" Value="0,0,-16,0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
+    </Style>
+
     <DataTemplate x:Key="ExpanderSettingContainerStringPreviewTemplate">
-        <TextBlock MaxWidth="250"
-                   Margin="0,0,-16,0"
-                   HorizontalAlignment="Right"
-                   VerticalAlignment="Center"
-                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+        <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                    Text="{Binding}" />
     </DataTemplate>
 
@@ -222,6 +222,45 @@
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
                                           Content="{TemplateBinding Content}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  A basic setting container displaying immutable text as content  -->
+    <Style x:Key="SettingContainerWithTextContent"
+           TargetType="local:SettingContainer">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
+                          Style="{StaticResource NonExpanderGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"
+                                    Style="{StaticResource StackPanelInExpanderStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
+                                <Button x:Name="ResetButton"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    <FontIcon Glyph="&#xE845;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
+                            <TextBlock x:Name="HelpTextBlock"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{TemplateBinding HelpText}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Margin="0,0,8,0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Style="{ThemeResource SecondaryTextBlockStyle}"
+                                   Text="{TemplateBinding Content}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
@@ -302,8 +341,7 @@
                                 <StackPanel Grid.Column="0"
                                             Style="{StaticResource StackPanelInExpanderStyle}">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                                   Text="{TemplateBinding Header}" />
+                                        <ContentPresenter Content="{TemplateBinding Header}" />
                                         <Button x:Name="ResetButton"
                                                 Style="{StaticResource SettingContainerResetButtonStyle}">
                                             <FontIcon Glyph="&#xE845;"
@@ -418,7 +456,7 @@
                                                Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
                                 <ContentPresenter Grid.Column="1"
-                                                  MaxWidth="250"
+                                                  MaxWidth="248"
                                                   Margin="0,0,-16,0"
                                                   HorizontalAlignment="Right"
                                                   VerticalAlignment="Center"

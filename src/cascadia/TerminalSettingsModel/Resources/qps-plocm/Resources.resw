@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -415,7 +415,7 @@
     <value>Ċļéāґ àℓĺ màгķś !!! !</value>
   </data>
   <data name="SendInputCommandKey" xml:space="preserve">
-    <value>Šêлđ Ìñрµť: "{0}" !!! !!</value>
+    <value>Šêлđ íñрµť: "{0}" !!! !!</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>
   </data>
   <data name="SetColorSchemeCommandKey" xml:space="preserve">
@@ -739,5 +739,241 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Öφěп сùяŗĕŉŧ ώθяќìⁿġ ðїгéćţοŗу !!! !!! !!!</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>Ċĺōşě ţав !!!</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>Ѕёņδ ïпφυт !!!</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>Śėτ ƒосµŝ мσðз !!! !</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>Šеτ ƒũłĺ ѕċřěėŋ !!! !</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>Şέť mажïmιžėð !!! </value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>Ѕеτ ĉōĺόг ѕčĥєм℮ !!! !</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>Сŀθšê бťћêя тāьş !!! !</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>Čŀŏšе ťąъś àƒţêґ !!! !</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>Мôνé τąъ !!</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>₣īñð mдť¢ĥ !!!</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>Ѕэªř¢ĥ ƒŏř ţежτ !!! !</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>₣õçμѕ рáлě !!!</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>È×рθřť вũƒƒεґ !!! </value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>Ĉŀέαѓ ъµƒƒěѓ !!! </value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>Μūłŧϊφĺэ ǻċţíǿⁿš !!! !</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>Àđĵûşţ ôρāćìτý !!! !</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>Şéĺėςτ ¢θmmдņđ !!! !</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>Ş℮ĺэсŧ бŭţρűţ !!! </value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>Şцġĝëşŧιòňŝ !!!</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>Ĉøłоґ ŝєļé¢тíŏл !!! !</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>ẄŠ₤ Ďΐşţŗĭьúţĭοй Рŗоƒįĺé Ĝèŋëѓάтбŕ !!! !!! !!! !</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>РöшєřŜђěłŀ Ρѓòƒĭļз Ġèпéгâŧθѓ !!! !!! !!</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Δżúѓ℮ Ċℓǿύď Śнéļļ Рŗôƒìŀё Ğēņεřǻŧōґ !!! !!! !!! !</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Vΐšџаℓ Şτϋδίǿ Ρѓőƒϊĺĕ Ğёйěřąтοŕ !!! !!! !!!</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>ŠŚΗ Ħøŝť Рґǿƒιŀέ Ġеπèŕăťθґ !!! !!! !</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
+  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
+    <value>Ðīŝmіšѕ Ś℮ℓĕċţĩöл !!! !!</value>
+  </data>
+  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
+    <value>Ѕíηğłε £íпę !!!</value>
+  </data>
+  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
+    <value>Ŵĩтĥ Сōηťяøļ Şėqμєⁿčēś !!! !!! </value>
+  </data>
+  <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
+    <value>€ǿφỳ ₣θřmдťτιňģ !!! !</value>
+  </data>
+  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Ŧäъ Íŉðêх !!!</value>
+  </data>
+  <data name="WindowActionArgumentLocalized" xml:space="preserve">
+    <value>Ẃϊńđбώ !</value>
+  </data>
+  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Яèśīžę Ďîґēсťíöń !!! !</value>
+  </data>
+  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>₣όçůѕ Ðįгеĉтїöπ !!! !</value>
+  </data>
+  <data name="DirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Đίяêčţїóń !!!</value>
+  </data>
+  <data name="DeltaActionArgumentLocalized" xml:space="preserve">
+    <value>Ďэĺŧä !</value>
+  </data>
+  <data name="InputActionArgumentLocalized" xml:space="preserve">
+    <value>Įηρџт !</value>
+  </data>
+  <data name="TargetActionArgumentLocalized" xml:space="preserve">
+    <value>Ţάѓģėт !</value>
+  </data>
+  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
+    <value>İş ₣ôçûś Μøδé !!! </value>
+  </data>
+  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
+    <value>Ĭş Μąхímîźέð !!! </value>
+  </data>
+  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
+    <value>Їѕ ₣ùĺł Ŝčŕėéπ !!! !</value>
+  </data>
+  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
+    <value>Śςћεmĕ ∏åmé !!!</value>
+  </data>
+  <data name="TabColorActionArgumentLocalized" xml:space="preserve">
+    <value>Тáв Çσłоѓ !!!</value>
+  </data>
+  <data name="TitleActionArgumentLocalized" xml:space="preserve">
+    <value>Ţįţŀè !</value>
+  </data>
+  <data name="CommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Сóммäňðłîйě !!!</value>
+  </data>
+  <data name="IndexActionArgumentLocalized" xml:space="preserve">
+    <value>Ìпðéж !</value>
+  </data>
+  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
+    <value>Гőẃŝ Тŏ Šçѓοŀł !!! !</value>
+  </data>
+  <data name="ColorActionArgumentLocalized" xml:space="preserve">
+    <value>Čòļóг !</value>
+  </data>
+  <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Łªůŋĉћ Мőďè !!!</value>
+  </data>
+  <data name="NameActionArgumentLocalized" xml:space="preserve">
+    <value>Ñǻmé !</value>
+  </data>
+  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
+    <value>Κėŷ Ċħőŗð !!!</value>
+  </data>
+  <data name="SourceActionArgumentLocalized" xml:space="preserve">
+    <value>Śбυŕсé !</value>
+  </data>
+  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Ūѕè Ċőммáⁿđĺĭŉз !!! !</value>
+  </data>
+  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
+    <value>Ѕẁìť¢ħęя Μôď℮ !!! </value>
+  </data>
+  <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
+    <value>Qџëŗу ŪЯ₤ !!!</value>
+  </data>
+  <data name="DesktopActionArgumentLocalized" xml:space="preserve">
+    <value>Ďέšĸтбφ !!</value>
+  </data>
+  <data name="MonitorActionArgumentLocalized" xml:space="preserve">
+    <value>Μöŉітоŗ !!</value>
+  </data>
+  <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
+    <value>Ţòĝĝļè Vĩşĩьîľїŧŷ !!! !!</value>
+  </data>
+  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
+    <value>Ðяοрδõщŋ Đŭгåτīόⁿ !!! !!</value>
+  </data>
+  <data name="IdActionArgumentLocalized" xml:space="preserve">
+    <value>Īδ </value>
+  </data>
+  <data name="PathActionArgumentLocalized" xml:space="preserve">
+    <value>Ρâтђ !</value>
+  </data>
+  <data name="ClearActionArgumentLocalized" xml:space="preserve">
+    <value>Сłэàř !</value>
+  </data>
+  <data name="OpacityActionArgumentLocalized" xml:space="preserve">
+    <value>Õράςíţŷ !!</value>
+  </data>
+  <data name="RelativeActionArgumentLocalized" xml:space="preserve">
+    <value>Ŗèŀάŧĩνé !!</value>
+  </data>
+  <data name="ForegroundActionArgumentLocalized" xml:space="preserve">
+    <value>₣θяēğŗõυήđ !!!</value>
+  </data>
+  <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
+    <value>ßд¢кĝѓöüпδ !!!</value>
+  </data>
+  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Ματ¢н Мσðě !!!</value>
+  </data>
+  <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
+    <value>Śťǻятìŋģ Đίѓėĉţóŕу !!! !!</value>
+  </data>
+  <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Тάв Τìтłê !!!</value>
+  </data>
+  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Ρřσƒïĺэ Īňďз× !!! </value>
+  </data>
+  <data name="ProfileActionArgumentLocalized" xml:space="preserve">
+    <value>Рѓôƒíŀ℮ !!</value>
+  </data>
+  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Śцφφŕέšś Αρрľíçáťîои Ŧιŧłé !!! !!! !</value>
+  </data>
+  <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
+    <value>€οŀόг Ś¢ђєm℮ !!! </value>
+  </data>
+  <data name="ElevateActionArgumentLocalized" xml:space="preserve">
+    <value>Ёŀένăţέ !!</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
+    <value>Гĕŀõãð Ĕиνīřöŋm℮ηт Vàґίªъŀéš !!! !!! !!</value>
+  </data>
+  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Ѕρľїť Đΐŕєċŧĭőŉ !!! !</value>
+  </data>
+  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
+    <value>Ѕφŀĭτ Μσđе !!!</value>
+  </data>
+  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
+    <value>Šрļϊŧ Ѕìžє !!!</value>
   </data>
 </root>

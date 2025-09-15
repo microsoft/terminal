@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
+#include "MatchProfilesEntry.h"
 
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
@@ -113,6 +114,10 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+
+        // extension packages don't need a deep clone
+        // because they're fully immutable. We can just copy the reference over instead.
+        settings->_extensionPackages = _extensionPackages;
     }
 
     // load errors
@@ -171,6 +176,16 @@ IObservableVector<Model::Profile> CascadiaSettings::AllProfiles() const noexcept
 IObservableVector<Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
 {
     return _activeProfiles;
+}
+
+IVectorView<Model::ExtensionPackage> CascadiaSettings::Extensions()
+{
+    if (!_extensionPackages)
+    {
+        // Lazy load the ExtensionPackage objects
+        _extensionPackages = winrt::single_threaded_vector<Model::ExtensionPackage>(std::move(SettingsLoader::LoadExtensionPackages()));
+    }
+    return _extensionPackages.GetView();
 }
 
 // Method Description:
@@ -429,6 +444,7 @@ void CascadiaSettings::_validateSettings()
     _validateColorSchemesInCommands();
     _validateThemeExists();
     _validateProfileEnvironmentVariables();
+    _validateRegexes();
 }
 
 // Method Description:
@@ -472,90 +488,159 @@ void CascadiaSettings::_validateAllSchemesExist()
     }
 }
 
+extern bool TestHook_CascadiaSettings_ResolveSingleMediaResource(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
+
+static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
+{
+    if (TestHook_CascadiaSettings_ResolveSingleMediaResource(origin, basePath, resource))
+    {
+        // See the implementation in TestHooks.cpp. Link-time Code Generation (LTCG) will delete this entire call
+        // and the test hook function itself.
+        return;
+    }
+
+    auto resourcePath{ resource.Path() };
+
+    if (til::equals_insensitive_ascii(resourcePath, L"desktopWallpaper"))
+    {
+        WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
+        if (SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            resource.Resolve(winrt::hstring{ &desktopWallpaper[0] });
+        }
+        else
+        {
+            resource.Reject();
+        }
+
+        return;
+    }
+    else if (til::equals_insensitive_ascii(resourcePath, L"none"))
+    {
+        // Resolve "none" to the OK Empty string.
+        resource.Resolve({});
+        return;
+    }
+    else if (resourcePath.empty())
+    {
+        // Do nothing.
+        return;
+    }
+
+    resourcePath = wil::ExpandEnvironmentStringsW<std::wstring>(resourcePath.data());
+    const auto colon{ std::wstring_view{ resourcePath }.find_first_of(L':') };
+
+    // URI (contains a :, but only after a reasonable distance for a schema)
+    if (colon != std::wstring_view::npos && colon >= 4)
+    {
+        try
+        {
+            const winrt::Windows::Foundation::Uri resourceUri{ resourcePath };
+            if (!resourceUri)
+            {
+                resource.Reject();
+                return;
+            }
+
+            const auto scheme{ resourceUri.SchemeName() };
+            if (til::starts_with_insensitive_ascii(scheme, L"http") ||
+                (til::equals_insensitive_ascii(scheme, L"ms-appx") && !resourceUri.Domain().empty()))
+            {
+                // http(s) URLs (WSL Distro AppX fragments) and ms-appx://APPLICATION/ (Julia) URLs decay to fragment-relative paths
+                const auto path{ resourceUri.Path() };
+                const std::wstring_view pathView{ path };
+                const std::wstring_view file{ pathView.substr(pathView.find_last_of(L'/') + 1) };
+
+                resourcePath = winrt::hstring{ file };
+                // FALL THROUGH TO TRY FILESYSTEM PATHS
+            }
+            else if (til::equals_insensitive_ascii(scheme, L"file"))
+            {
+                const auto uriPath{ resourceUri.Path() };
+                if (uriPath.size() < 2)
+                {
+                    resource.Reject();
+                    return;
+                }
+                // Uri mangles file paths to begin with a / (ala /C:/) and escapes special characters such as Space.
+                // Try to un-mangle it.
+                resourcePath = til::safe_slice_abs(winrt::Windows::Foundation::Uri::UnescapeComponent(uriPath), 1, SIZE_T_MAX);
+                // FALL THROUGH TO TRY FILESYSTEM PATHS
+            }
+            else if (!til::starts_with_insensitive_ascii(scheme, L"ms-"))
+            {
+                // Other non-file and non-ms* URLs are disallowed
+                resource.Reject();
+                return;
+            }
+            else
+            {
+                // Other URLs (so, file and ms-*) are permissible.
+                resource.Resolve(resourcePath);
+                return;
+            }
+        }
+        catch (...)
+        {
+            // fall through
+        }
+    }
+
+    // Not a URI? Try a path.
+    try
+    {
+        std::filesystem::path resourceAsFilesystemPath{ std::wstring_view{ resourcePath } };
+        if (!basePath.empty())
+        {
+            resourceAsFilesystemPath = std::filesystem::path{ basePath } / resourceAsFilesystemPath;
+        }
+
+        if (!std::filesystem::exists(resourceAsFilesystemPath))
+        {
+            resource.Reject();
+            return;
+        }
+
+        resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.lexically_normal().native() });
+        return;
+    }
+    catch (...)
+    {
+        // fall through
+    }
+
+    resource.Reject();
+}
+
+void CascadiaSettings::_resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
+{
+    _resolveSingleMediaResourceInner(origin, basePath, resource);
+    if (!resource.Ok() && (origin == OriginTag::User || origin == OriginTag::ProfilesDefaults))
+    {
+        _foundInvalidUserResources = true;
+    }
+}
+
 // Method Description:
-// - Ensures that all specified images resources (icons and background images) are valid URIs.
-//   This does not verify that the icon or background image files are encoded as an image.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-// - Appends a SettingsLoadWarnings::InvalidBackgroundImage to our list of warnings if
-//   we find any invalid background images.
-// - Appends a SettingsLoadWarnings::InvalidIconImage to our list of warnings if
-//   we find any invalid icon images.
+// - Ensures that all specified images resources (icons and background images) are valid.
 void CascadiaSettings::_validateMediaResources()
 {
-    auto invalidBackground{ false };
-    auto invalidIcon{ false };
+    _foundInvalidUserResources = false;
 
-    for (auto profile : _allProfiles)
+    const MediaResourceResolver mediaResourceResolver{ this, &CascadiaSettings::_resolveSingleMediaResource };
+
+    for (const auto& profile : _allProfiles)
     {
-        if (const auto path = profile.DefaultAppearance().ExpandedBackgroundImagePath(); !path.empty())
-        {
-            // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
-            // This covers file paths on the machine, app data, URLs, and other resource paths.
-            try
-            {
-                winrt::Windows::Foundation::Uri imagePath{ path };
-            }
-            catch (...)
-            {
-                // reset background image path
-                profile.DefaultAppearance().ClearBackgroundImagePath();
-                invalidBackground = true;
-            }
-        }
-
-        if (profile.UnfocusedAppearance())
-        {
-            if (const auto path = profile.UnfocusedAppearance().ExpandedBackgroundImagePath(); !path.empty())
-            {
-                // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
-                // This covers file paths on the machine, app data, URLs, and other resource paths.
-                try
-                {
-                    winrt::Windows::Foundation::Uri imagePath{ path };
-                }
-                catch (...)
-                {
-                    // reset background image path
-                    profile.UnfocusedAppearance().ClearBackgroundImagePath();
-                    invalidBackground = true;
-                }
-            }
-        }
-
-        // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol, so treat
-        // it as an invalid path.
-        //
-        // Explicitly just use the Icon here, not the EvaluatedIcon. We don't
-        // want to blow up if we fell back to the commandline and the
-        // commandline _isn't an icon_.
-        // GH #17943: "none" is a special value interpreted as "remove the icon"
-        static constexpr std::wstring_view HideIconValue{ L"none" };
-        if (const auto icon = profile.Icon(); icon.size() > 2 && icon != HideIconValue)
-        {
-            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(icon.c_str()) };
-            try
-            {
-                winrt::Windows::Foundation::Uri imagePath{ iconPath };
-            }
-            catch (...)
-            {
-                profile.ClearIcon();
-                invalidIcon = true;
-            }
-        }
+        profile.as<IMediaResourceContainer>()->ResolveMediaResources(mediaResourceResolver);
     }
 
-    if (invalidBackground)
-    {
-        _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
-    }
+    _globals->ResolveMediaResources(mediaResourceResolver);
 
-    if (invalidIcon)
+    if (_foundInvalidUserResources)
     {
-        _warnings.Append(SettingsLoadWarnings::InvalidIcon);
+        _warnings.Append(SettingsLoadWarnings::InvalidMediaResource);
     }
 }
 
@@ -580,6 +665,41 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
                 return;
             }
         }
+    }
+}
+
+// Returns true if all regexes in the new tab menu are valid, false otherwise
+static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
+{
+    if (!entries)
+    {
+        return true;
+    }
+    for (const auto& ntmEntry : entries)
+    {
+        if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
+        {
+            if (!_validateNTMEntries(folderEntry.RawEntries()))
+            {
+                return false;
+            }
+        }
+        if (const auto& matchProfilesEntry = ntmEntry.try_as<Model::MatchProfilesEntry>())
+        {
+            if (!winrt::get_self<Model::implementation::MatchProfilesEntry>(matchProfilesEntry)->ValidateRegexes())
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void CascadiaSettings::_validateRegexes()
+{
+    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidRegex);
     }
 }
 
@@ -1137,4 +1257,9 @@ void CascadiaSettings::_validateThemeExists()
 void CascadiaSettings::ExpandCommands()
 {
     _globals->ExpandCommands(ActiveProfiles().GetView(), GlobalSettings().ColorSchemes());
+}
+
+void CascadiaSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
+{
+    _globals->UpdateCommandID(cmd, newID);
 }

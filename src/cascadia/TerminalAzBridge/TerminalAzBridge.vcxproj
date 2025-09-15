@@ -11,6 +11,7 @@
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
     <ApplicationType>Windows Store</ApplicationType>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <VersionInfoFileDescription>Windows Terminal Azure Cloud Shell Connector</VersionInfoFileDescription>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">

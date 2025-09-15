@@ -463,7 +463,7 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_SET_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
@@ -842,16 +842,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     {
         if (!gci.IsInVtIoMode())
         {
-            auto renderThread = std::make_unique<RenderThread>();
-            // stash a local pointer to the thread here -
-            // We're going to give ownership of the thread to the Renderer,
-            //      but the thread also need to be told who its renderer is,
-            //      and we can't do that until the renderer is constructed.
-            auto* const localPointerToThread = renderThread.get();
-
-            g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
-
-            THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
+            g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData);
 
             // Set up the renderer to be used to calculate the width of a glyph,
             //      should we be unable to figure out its width another way.

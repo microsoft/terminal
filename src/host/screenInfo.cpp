@@ -192,6 +192,9 @@ void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    gci.GetActiveInputBuffer()->WaitQueue.CancelWaitersForScreenBuffer(pScreenInfo);
+
     if (pScreenInfo == gci.ScreenBuffers)
     {
         gci.ScreenBuffers = pScreenInfo->Next;
@@ -1221,7 +1224,7 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const til::rect* const prcClientNew
                                              const til::size* const pcoordSize)
 {
     // If the left is the only one that changed (and not the right
-    // also), then adjust from the left. Otherwise if the right
+    // also), then adjust from the left. Otherwise, if the right
     // changes or both changed, bias toward leaving the top-left
     // corner in place and resize from the bottom right.
     // --
@@ -1668,39 +1671,71 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     return STATUS_SUCCESS;
 }
 
-void SCREEN_INFORMATION::MakeCursorVisible(const til::point CursorPosition)
+static constexpr bool IsInputKey(WORD vkey) noexcept
 {
-    til::point WindowOrigin;
+    return vkey != VK_CONTROL &&
+           vkey != VK_LCONTROL &&
+           vkey != VK_RCONTROL &&
+           vkey != VK_MENU &&
+           vkey != VK_LMENU &&
+           vkey != VK_RMENU &&
+           vkey != VK_SHIFT &&
+           vkey != VK_LSHIFT &&
+           vkey != VK_RSHIFT &&
+           vkey != VK_LWIN &&
+           vkey != VK_RWIN &&
+           vkey != VK_SNAPSHOT;
+}
 
-    if (CursorPosition.x > _viewport.RightInclusive())
-    {
-        WindowOrigin.x = CursorPosition.x - _viewport.RightInclusive();
-    }
-    else if (CursorPosition.x < _viewport.Left())
-    {
-        WindowOrigin.x = CursorPosition.x - _viewport.Left();
-    }
-    else
-    {
-        WindowOrigin.x = 0;
-    }
+void SCREEN_INFORMATION::MakeCursorVisible(til::point position)
+{
+    const auto viewportOrigin = _viewport.Origin();
+    const auto viewportSize = _viewport.Dimensions();
+    const auto bufferSize = _textBuffer->GetSize().Dimensions();
+    auto origin = viewportOrigin;
 
-    if (CursorPosition.y > _viewport.BottomInclusive())
-    {
-        WindowOrigin.y = CursorPosition.y - _viewport.BottomInclusive();
-    }
-    else if (CursorPosition.y < _viewport.Top())
-    {
-        WindowOrigin.y = CursorPosition.y - _viewport.Top();
-    }
-    else
-    {
-        WindowOrigin.y = 0;
-    }
+    // Ensure the given position is in bounds.
+    position.x = std::clamp(position.x, 0, bufferSize.width - 1);
+    position.y = std::clamp(position.y, 0, bufferSize.height - 1);
 
-    if (WindowOrigin.x != 0 || WindowOrigin.y != 0)
+    origin.y = std::min(origin.y, position.y); // shift up if above
+    origin.y = std::max(origin.y, position.y - (viewportSize.height - 1)); // shift down if below
+
+    origin.x = std::min(origin.x, position.x); // shift left if left
+    origin.x = std::max(origin.x, position.x - (viewportSize.width - 1)); // shift right if right
+
+    if (origin != viewportOrigin)
     {
-        LOG_IF_FAILED(SetViewportOrigin(false, WindowOrigin, false));
+        std::ignore = SetViewportOrigin(true, origin, false);
+    }
+}
+
+void SCREEN_INFORMATION::SnapOnInput(const WORD vkey)
+{
+    if (IsInputKey(vkey))
+    {
+        _makeCursorVisible();
+    }
+}
+
+SCREEN_INFORMATION::SnapOnScopeExit SCREEN_INFORMATION::SnapOnOutput() noexcept
+{
+    const auto call =
+        // We don't need to snap-on-output the alt buffer since it doesn't scroll anyway.
+        // More importantly though, in the current architecture the alt buffer gets deallocated
+        // the second we receive a \033[?1049l, which makes our this pointer hazardous to use.
+        _psiMainBuffer == nullptr &&
+        // We only want to snap if the user didn't intentionally scroll away.
+        // The snapping logic could be improved, but it's alright for now.
+        _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
+    return SnapOnScopeExit{ call ? this : nullptr };
+}
+
+void SCREEN_INFORMATION::_makeCursorVisible()
+{
+    if (_textBuffer->GetCursor().IsVisible())
+    {
+        MakeCursorVisible(_textBuffer->GetCursor().GetPosition());
     }
 }
 
@@ -2407,7 +2442,7 @@ const FontInfo& SCREEN_INFORMATION::GetCurrentFont() const noexcept
 
 // Method Description:
 // - Gets the desired font of the screen buffer. If we try loading this font and
-//      have to fallback to another, then GetCurrentFont()!=GetDesiredFont().
+//      have to fall back to another, then GetCurrentFont()!=GetDesiredFont().
 //      We store this separately, so that if we need to reload the font, we can
 //      try again with our preferred font info (in the desired font info) instead
 //      of re-using the looked up value from before.

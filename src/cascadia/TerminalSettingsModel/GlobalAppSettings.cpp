@@ -9,6 +9,8 @@
 
 #include "GlobalAppSettings.g.cpp"
 
+#include "MediaResourceSupport.h"
+
 #include <LibraryResources.h>
 
 using namespace Microsoft::Terminal::Settings::Model;
@@ -90,6 +92,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         for (const auto& entry : *_NewTabMenu)
         {
             globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
+        }
+    }
+    if (_DisabledProfileSources)
+    {
+        globals->_DisabledProfileSources = winrt::single_threaded_vector<hstring>();
+        for (const auto& src : *_DisabledProfileSources)
+        {
+            globals->_DisabledProfileSources->Append(src);
         }
     }
 
@@ -370,6 +380,25 @@ bool GlobalAppSettings::ShouldUsePersistedLayout() const
     return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
 }
 
+void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    _actionMap->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+    if (_NewTabMenu)
+    {
+        for (const auto& entry : *_NewTabMenu)
+        {
+            if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
+            {
+                resolvable->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+            }
+        }
+    }
+    for (auto& parent : _parents)
+    {
+        parent->ResolveMediaResources(resolver);
+    }
+}
+
 void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
 {
     if (setting == "theme")
@@ -427,6 +456,46 @@ void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
     else
     {
         _changeLog.emplace(setting);
+    }
+}
+
+void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
+{
+    const auto oldID = cmd.ID();
+    _actionMap->UpdateCommandID(cmd, newID);
+    // newID might have been empty when this function was called, if so actionMap would have generated a new ID, use that
+    newID = cmd.ID();
+    if (_NewTabMenu)
+    {
+        // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
+        std::function<void(const Model::NewTabMenuEntry&)> recursiveEntryIdUpdate;
+        recursiveEntryIdUpdate = [&](const Model::NewTabMenuEntry& entry) {
+            if (entry.Type() == NewTabMenuEntryType::Action)
+            {
+                if (const auto actionEntry{ entry.try_as<ActionEntry>() })
+                {
+                    if (actionEntry.ActionId() == oldID)
+                    {
+                        actionEntry.ActionId(newID);
+                    }
+                }
+            }
+            else if (entry.Type() == NewTabMenuEntryType::Folder)
+            {
+                if (const auto folderEntry{ entry.try_as<FolderEntry>() })
+                {
+                    for (const auto& nestedEntry : folderEntry.RawEntries())
+                    {
+                        recursiveEntryIdUpdate(nestedEntry);
+                    }
+                }
+            }
+        };
+
+        for (const auto& entry : *_NewTabMenu)
+        {
+            recursiveEntryIdUpdate(entry);
+        }
     }
 }
 

@@ -19,7 +19,7 @@ public:
     static void ShowCursorMaybe(const UINT message) noexcept;
 
     IslandWindow() noexcept;
-    virtual ~IslandWindow() override;
+    ~IslandWindow();
 
     virtual void MakeWindow() noexcept;
     virtual void Close();
@@ -27,13 +27,13 @@ public:
     virtual void OnSize(const UINT width, const UINT height);
     HWND GetInteropHandle() const;
 
-    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
-    [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
+    [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept;
 
-    void OnResize(const UINT width, const UINT height) override;
-    void OnMinimize() override;
-    void OnRestore() override;
+    void OnResize(const UINT width, const UINT height);
+    void OnMinimize();
+    void OnRestore();
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
@@ -74,7 +74,7 @@ public:
 
     til::event<winrt::delegate<>> DragRegionClicked;
     til::event<winrt::delegate<>> WindowCloseButtonClicked;
-    til::event<winrt::delegate<void(winrt::Windows::Foundation::Point, int32_t)>> MouseScrolled;
+    til::event<winrt::delegate<void(winrt::Windows::Foundation::Point, winrt::Microsoft::Terminal::Core::Point)>> MouseScrolled;
     til::event<winrt::delegate<void(bool)>> WindowActivated;
     til::event<winrt::delegate<void()>> NotifyNotificationIconPressed;
     til::event<winrt::delegate<void()>> NotifyWindowHidden;

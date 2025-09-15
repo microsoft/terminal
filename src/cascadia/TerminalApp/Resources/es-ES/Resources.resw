@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Dividir panel</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Haga clic con el botón derecho para dividir las direcciones: derecha/abajo/arriba/izquierda</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Panel dividido hacia abajo</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Panel dividido a la derecha</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Panel dividido hacia arriba</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Panel dividido a la izquierda</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Duplicar</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Intercambiar panel</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Intercambiar panel hacia abajo</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Intercambiar panel derecho</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Intercambiar panel hacia arriba</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Intercambiar panel izquierdo</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Zoom de panel de alternancia</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Cerrar otros paneles</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Búsqueda en la web</value>
   </data>
@@ -228,13 +267,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Duplicar pestaña</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>Se encontró un perfil con un "backgroundImage" no válido. Si se predetermina que ese perfil no tiene imagen de fondo. Asegúrese de que al establecer "backgroundImage", el valor sea una ruta de acceso de archivo válida a una imagen.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>Se encontró un perfil con un "icon" no válido. Estableciendo ese perfil para no tener icono. Asegúrese de que, al establecer un "icon", el valor es una ruta de acceso de archivo válida a una imagen.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>No se encontraron uno o varios recursos (como icon o backgroundImage) especificados en la configuración.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Se encontraron advertencias al analizar los enlaces de teclado:</value>
@@ -935,5 +970,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Mover a la derecha</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Se ha encontrado una expresión regular no válida.</value>
   </data>
 </root>

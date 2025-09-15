@@ -698,7 +698,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             for (auto&& sp : selection)
             {
                 sp.iterate_rows(textBuffer.GetSize().Width(), [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
-                    ColorSelection({ beg, row, end, row }, selectionAttr);
+                    ColorSelection({ beg, row, end, row + 1 }, selectionAttr);
                 });
             }
             ClearSelection();

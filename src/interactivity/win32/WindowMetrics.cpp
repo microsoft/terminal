@@ -75,7 +75,7 @@ til::rect WindowMetrics::GetMaxWindowRectInPixels()
 // - Gets the maximum possible window rectangle in pixels. Based on the monitor the window is on or the primary monitor if no window exists yet.
 // Arguments:
 // - prcSuggested - If we were given a suggested rectangle for where the window is going, we can pass it in here to find out the max size on that monitor.
-//                - If this value is zero and we had a valid window handle, we'll use that instead. Otherwise the value of 0 will make us use the primary monitor.
+//                - If this value is zero and we had a valid window handle, we'll use that instead. Otherwise, the value of 0 will make us use the primary monitor.
 // - pDpiSuggested - The dpi that matches the suggested rect. We will attempt to compute this during the function, but if we fail for some reason,
 //                 - the original value passed in will be left untouched.
 // Return Value:

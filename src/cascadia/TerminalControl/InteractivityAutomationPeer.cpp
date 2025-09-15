@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
-    XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
+    XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple /*childElement*/)
     {
         UIA::ITextRangeProvider* returnVal;
         // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
@@ -190,7 +190,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return nullptr;
         }
-        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.ProviderFromPeer(parent));
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.as<IAutomationPeerProtected>().ProviderFromPeer(parent));
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     };
 

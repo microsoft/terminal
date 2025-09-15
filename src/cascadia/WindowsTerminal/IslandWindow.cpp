@@ -61,7 +61,10 @@ void IslandWindow::HideCursor() noexcept
 
 void IslandWindow::ShowCursorMaybe(const UINT message) noexcept
 {
-    if (_cursorHidden && (message == WM_ACTIVATE || message == WM_POINTERUPDATE))
+    if (_cursorHidden &&
+        (message == WM_ACTIVATE ||
+         message == WM_POINTERUPDATE ||
+         message == WM_NCPOINTERUPDATE))
     {
         _cursorHidden = false;
         ShowCursor(TRUE);
@@ -592,6 +595,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         WindowCloseButtonClicked.raise();
         return 0;
     }
+    case WM_MOUSEHWHEEL:
     case WM_MOUSEWHEEL:
         try
         {
@@ -620,7 +624,11 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             const auto scale = GetCurrentDpiScale();
             const winrt::Windows::Foundation::Point real{ relative.x / scale, relative.y / scale };
 
-            const auto wheelDelta = static_cast<short>(HIWORD(wparam));
+            winrt::Microsoft::Terminal::Core::Point wheelDelta{ 0, static_cast<int32_t>(HIWORD(wparam)) };
+            if (message == WM_MOUSEHWHEEL)
+            {
+                std::swap(wheelDelta.X, wheelDelta.Y);
+            }
 
             // Raise an event, so any listeners can handle the mouse wheel event manually.
             MouseScrolled.raise(real, wheelDelta);
@@ -1239,9 +1247,12 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 // - <none>
 void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
 {
-    auto actualDropdownDuration = args.DropdownDuration();
+    const auto toggleVisibility = args ? args.ToggleVisibility() : false;
+    const auto toMonitor = args ? args.ToMonitor() : winrt::TerminalApp::MonitorBehavior::InPlace;
+    auto dropdownDuration = args ? args.DropdownDuration() : 0;
+
     // If the user requested an animation, let's check if animations are enabled in the OS.
-    if (actualDropdownDuration > 0)
+    if (dropdownDuration > 0)
     {
         auto animationsEnabled = TRUE;
         SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
@@ -1255,7 +1266,7 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
             // _globalActivateWindow/_globalDismissWindow might do if they think
             // there should be an animation (like making the window appear with
             // SetWindowPlacement rather than ShowWindow)
-            actualDropdownDuration = 0;
+            dropdownDuration = 0;
         }
     }
 
@@ -1266,33 +1277,33 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
     //      - activate the window
     //   - else
     //      - dismiss the window
-    if (args.ToggleVisibility() && GetForegroundWindow() == _window.get())
+    if (toggleVisibility && GetForegroundWindow() == _window.get())
     {
         auto handled = false;
 
         // They want to toggle the window when it is the FG window, and we are
         // the FG window. However, if we're on a different monitor than the
         // mouse, then we should move to that monitor instead of dismissing.
-        if (args.ToMonitor() == winrt::TerminalApp::MonitorBehavior::ToMouse)
+        if (toMonitor == winrt::TerminalApp::MonitorBehavior::ToMouse)
         {
             const til::rect cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
             const til::rect currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
             if (cursorMonitorRect != currentMonitorRect)
             {
                 // We're not on the same monitor as the mouse. Go to that monitor.
-                _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
+                _globalActivateWindow(dropdownDuration, toMonitor);
                 handled = true;
             }
         }
 
         if (!handled)
         {
-            _globalDismissWindow(actualDropdownDuration);
+            _globalDismissWindow(dropdownDuration);
         }
     }
     else
     {
-        _globalActivateWindow(actualDropdownDuration, args.ToMonitor());
+        _globalActivateWindow(dropdownDuration, toMonitor);
     }
 }
 

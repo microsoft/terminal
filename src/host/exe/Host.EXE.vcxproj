@@ -7,6 +7,7 @@
     <ProjectName>Host.EXE</ProjectName>
     <TargetName>OpenConsole</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <VersionInfoFileDescription>Console Window and PTY Host (Open Source)</VersionInfoFileDescription>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
   <Import Project="$(SolutionDir)common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -87,6 +88,7 @@
     <Link>
       <AllowIsolation>true</AllowIsolation>
       <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>icu.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

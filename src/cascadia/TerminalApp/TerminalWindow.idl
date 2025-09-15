@@ -30,7 +30,7 @@ namespace TerminalApp
     {
         Boolean Reload { get; };
         UInt64 Result { get; };
-        IVector<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> Warnings { get; };
+        IVectorView<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> Warnings { get; };
         String ExceptionText { get; };
 
         Microsoft.Terminal.Settings.Model.CascadiaSettings NewSettings { get; };
@@ -59,7 +59,7 @@ namespace TerminalApp
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
-        void PersistState();
+        void PersistState(Boolean serializeBuffer);
 
         Windows.UI.Xaml.UIElement GetRoot();
 
@@ -112,7 +112,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Theme> RequestedThemeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;

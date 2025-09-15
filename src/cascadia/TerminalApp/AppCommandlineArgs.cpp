@@ -962,18 +962,6 @@ std::vector<ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
 }
 
 // Method Description:
-// - Returns whether we should start listening for inbound PTY connections
-//   coming from the operating system default application feature.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the listener should be started. False otherwise.
-bool AppCommandlineArgs::IsHandoffListener() const noexcept
-{
-    return _isHandoffListener;
-}
-
-// Method Description:
 // - Get the string of text that should be displayed to the user on exit. This
 //   is usually helpful for cases where the user entered some sort of invalid
 //   commandline. It's additionally also used when the user has requested the
@@ -1015,34 +1003,28 @@ bool AppCommandlineArgs::ShouldExitEarly() const noexcept
 // - <none>
 void AppCommandlineArgs::ValidateStartupCommands()
 {
-    // Only check over the actions list for the potential to add a new-tab
-    // command if we are not starting for the purposes of receiving an inbound
-    // handoff connection from the operating system.
-    if (!_isHandoffListener)
+    // If we only have a single x-save command, then set our target to the
+    // current terminal window. This will prevent us from spawning a new
+    // window just to save the commandline.
+    if (_startupActions.size() == 1 &&
+        _startupActions.front().Action() == ShortcutAction::SaveSnippet &&
+        _windowTarget.empty())
     {
-        // If we only have a single x-save command, then set our target to the
-        // current terminal window. This will prevent us from spawning a new
-        // window just to save the commandline.
-        if (_startupActions.size() == 1 &&
-            _startupActions.front().Action() == ShortcutAction::SaveSnippet &&
-            _windowTarget.empty())
-        {
-            _windowTarget = "0";
-        }
-        // If we parsed no commands, or the first command we've parsed is not a new
-        // tab action, prepend a new-tab command to the front of the list.
-        // (also, we don't need to do this if the only action is a x-save)
-        else if (_startupActions.empty() ||
-                 (_startupActions.front().Action() != ShortcutAction::NewTab &&
-                  _startupActions.front().Action() != ShortcutAction::SaveSnippet))
-        {
-            // Build the NewTab action from the values we've parsed on the commandline.
-            NewTerminalArgs newTerminalArgs{};
-            NewTabArgs args{ newTerminalArgs };
-            ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
-            // push the arg onto the front
-            _startupActions.insert(_startupActions.begin(), 1, newTabAction);
-        }
+        _windowTarget = "0";
+    }
+    // If we parsed no commands, or the first command we've parsed is not a new
+    // tab action, prepend a new-tab command to the front of the list.
+    // (also, we don't need to do this if the only action is a x-save)
+    else if (_startupActions.empty() ||
+             (_startupActions.front().Action() != ShortcutAction::NewTab &&
+              _startupActions.front().Action() != ShortcutAction::SaveSnippet))
+    {
+        // Build the NewTab action from the values we've parsed on the commandline.
+        NewTerminalArgs newTerminalArgs{};
+        NewTabArgs args{ newTerminalArgs };
+        ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
+        // push the arg onto the front
+        _startupActions.insert(_startupActions.begin(), 1, newTabAction);
     }
 }
 std::optional<uint32_t> AppCommandlineArgs::GetPersistedLayoutIdx() const noexcept
@@ -1082,13 +1064,9 @@ std::optional<til::size> AppCommandlineArgs::GetSize() const noexcept
 // - 0 if the commandline was successfully parsed
 int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring> args)
 {
-    for (const auto& arg : args)
+    if (args.size() == 2 && args[1] == L"-Embedding")
     {
-        if (arg == L"-Embedding")
-        {
-            _isHandoffListener = true;
-            return 0;
-        }
+        return 0;
     }
 
     auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
@@ -1195,7 +1173,6 @@ void AppCommandlineArgs::FullResetState()
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;
-    _isHandoffListener = false;
 
     _windowTarget = {};
 }

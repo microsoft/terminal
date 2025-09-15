@@ -68,14 +68,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static bool _IsRemainingProfilesEntryMissing(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries);
         void _FolderPropertyChanged(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
-
-        void _PrintAll();
-#ifdef _DEBUG
-        void _PrintModel(Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> list, std::wstring prefix = L"");
-        void _PrintModel(const Model::NewTabMenuEntry& e, std::wstring prefix = L"");
-        void _PrintVM(Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel> list, std::wstring prefix = L"");
-        void _PrintVM(const Editor::NewTabMenuEntryViewModel& vm, std::wstring prefix = L"");
-#endif
     };
 
     struct FolderTreeViewEntry : FolderTreeViewEntryT<FolderTreeViewEntry>
@@ -140,8 +132,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool Inlining() const;
         void Inlining(bool value);
+
+        hstring Icon() const { return _FolderEntry.Icon().Path(); }
+
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Name);
-        GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Icon);
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, AllowEmpty);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>, Entries);

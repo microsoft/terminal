@@ -83,7 +83,7 @@ namespace Microsoft.Terminal.Settings.Editor
         FolderEntryViewModel(Microsoft.Terminal.Settings.Model.FolderEntry folderEntry, Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         String Name;
-        String Icon;
+        String Icon { get; };
         Boolean Inlining;
         Boolean AllowEmpty;
         IObservableVector<Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel> Entries;

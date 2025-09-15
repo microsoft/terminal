@@ -20,11 +20,12 @@ Author(s):
 #include "JsonUtils.h"
 #include "IInheritable.h"
 #include "MTSMSettings.h"
+#include "MediaResourceSupport.h"
 #include <DefaultSettings.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
+    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig, IMediaResourceContainer>, IInheritable<AppearanceConfig>
     {
     public:
         AppearanceConfig(winrt::weak_ref<Profile> sourceProfile);
@@ -35,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::Profile SourceProfile();
 
-        winrt::hstring ExpandedBackgroundImagePath();
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
 
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
@@ -57,5 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
+
+        std::tuple<winrt::hstring, Model::OriginTag> _getSourceProfileBasePathAndOrigin() const;
     };
 }
