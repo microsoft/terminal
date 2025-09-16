@@ -796,6 +796,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // how the cmd shell's CLS command resets the buffer.
         buffer.UpdateBottom();
 
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.CursorChanged(buffer.GetTextBuffer().GetCursor().GetPosition(), false);
         return S_OK;
     }
     CATCH_RETURN();

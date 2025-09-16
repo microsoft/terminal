@@ -202,11 +202,6 @@ public:
         Log::Comment(L"PlayMidiNote MOCK called...");
     }
 
-    void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
-    {
-        Log::Comment(L"NotifyAccessibilityChange MOCK called...");
-    }
-
     void NotifyBufferRotation(const int /*delta*/) override
     {
         Log::Comment(L"NotifyBufferRotation MOCK called...");

@@ -24,9 +24,10 @@ namespace Microsoft::Console::Interactivity::OneCore
     {
     public:
         // IConsoleControl Members
-        [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId) noexcept override;
-        [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground) noexcept override;
-        [[nodiscard]] NTSTATUS EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags) override;
-        [[nodiscard]] NTSTATUS SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept override;
+        void NotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG idChild) noexcept override;
+        void NotifyConsoleApplication(_In_ DWORD dwProcessId) noexcept override;
+        void SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground) noexcept override;
+        void EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags) noexcept override;
+        void SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept override;
     };
 }

@@ -51,7 +51,6 @@ namespace Microsoft::Console::Interactivity::OneCore
         void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) noexcept override;
         void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) noexcept override;
 
-        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id) noexcept override;
         [[nodiscard]] HRESULT UiaSetTextAreaFocus() noexcept override;
         til::rect GetWindowRect() const noexcept override;
     };

@@ -16,7 +16,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\AccessibilityNotifier.cpp" />
     <ClCompile Include="..\Clipboard.cpp" />
     <ClCompile Include="..\ConsoleControl.cpp" />
     <ClCompile Include="..\ConsoleInputThread.cpp" />
@@ -38,7 +37,6 @@
     <ClCompile Include="..\windowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\AccessibilityNotifier.hpp" />
     <ClInclude Include="..\Clipboard.hpp" />
     <ClInclude Include="..\ConsoleControl.hpp" />
     <ClInclude Include="..\ConsoleInputThread.hpp" />
