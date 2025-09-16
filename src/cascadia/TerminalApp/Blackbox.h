@@ -37,7 +37,7 @@ struct Blackbox : public std::enable_shared_from_this<Blackbox>
         HSTRING string{ nullptr };
     };
 
-    Blackbox() { }
+    Blackbox() {}
 
     ~Blackbox()
     {
