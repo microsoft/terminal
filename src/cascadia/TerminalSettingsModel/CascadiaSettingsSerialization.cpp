@@ -697,7 +697,7 @@ bool SettingsLoader::FixupUserSettings()
     if (!userSettings.globals->HasNewTabMenu())
     {
         userSettings.globals->NewTabMenu(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }));
-        // This one does not need to be written back to the settings file opporunistically, it can wait until we write one for another reason.
+        // This one does not need to be written back to the settings file immediately, it can wait until we write one for another reason.
     }
 
     return fixedUp;
