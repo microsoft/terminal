@@ -1048,6 +1048,11 @@ namespace winrt::TerminalApp::implementation
         // (or called TerminalWindow::Initialize)
         if (_appArgs->ExitCode() == 0)
         {
+            // The existing logic (before this commit) strictly relied on
+            // ValidateStartupCommands() only to be called for new windows.
+            // It modifies the actions it stores.
+            parsedArgs.ValidateStartupCommands();
+
             // If the size of the arguments list is 1,
             // then it contains only the executable name and no other arguments.
             _hasCommandLineArguments = _appArgs->CommandlineRef().size() > 1;
