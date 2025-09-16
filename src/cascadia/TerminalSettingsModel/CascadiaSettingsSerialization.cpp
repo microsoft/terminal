@@ -559,7 +559,12 @@ bool SettingsLoader::AddDynamicProfileFolders()
         folderEntry->Inlining(FolderEntryInlining::Auto);
         folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
 
-        userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
+        // We cannot edit globals.NewTabMenu directly because it could have been a temporary automatically-generated default value.
+        // If we want to make permanent changes to it, we need to expressly set it.
+        auto newTabMenu = userSettings.globals->NewTabMenu();
+        newTabMenu.Append(folderEntry.as<Model::NewTabMenuEntry>());
+        userSettings.globals->NewTabMenu(newTabMenu);
+
         state->SSHFolderGenerated(true);
         return true;
     }
