@@ -471,6 +471,12 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+    <Reference Include="$(MSBuildThisFileDirectory)\Microsoft.CommandPalette.Extensions.winmd">
+      <IsWinMDFile>true</IsWinMDFile>
+      <WinMDFile>true</WinMDFile>
+      <CopyLocal>true</CopyLocal>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="$(WindowsSDK_MetadataPathVersioned)\Windows.UI.Xaml.Hosting.HostingContract\*\*.winmd">
       <WinMDFile>true</WinMDFile>
       <CopyLocal>false</CopyLocal>

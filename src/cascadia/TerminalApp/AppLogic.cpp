@@ -12,6 +12,11 @@
 
 #include "../../types/inc/utils.hpp"
 
+#include <winrt/Microsoft.CommandPalette.Extensions.h>
+#include <wil/cppwinrt_authoring.h>
+
+#include "fzf/fzf.h"
+
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -26,8 +31,245 @@ using namespace ::TerminalApp;
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
+    namespace MCP = Microsoft::CommandPalette::Extensions;
     using IInspectable = Windows::Foundation::IInspectable;
 }
+
+static winrt::com_ptr<winrt::TerminalApp::implementation::TerminalWindow> s_lastWindow;
+
+struct StrIconData : winrt::implements<StrIconData, winrt::MCP::IIconData>
+{
+    StrIconData(winrt::hstring h) :
+        _h{ h } {};
+    winrt::hstring _h;
+    winrt::hstring Icon() { return _h; }
+    winrt::Windows::Storage::Streams::IRandomAccessStreamReference Data() { return nullptr; }
+};
+
+struct StrIconInfo : winrt::implements<StrIconInfo, winrt::MCP::IIconInfo>
+{
+    winrt::MCP::IIconData _i;
+    StrIconInfo(winrt::hstring h) :
+        _i{ winrt::make<StrIconData>(h) } {}
+    winrt::MCP::IIconData Light() { return _i; }
+    winrt::MCP::IIconData Dark() { return _i; }
+};
+
+struct CommandPaletteListItem : winrt::implements<CommandPaletteListItem, winrt::MCP::IListItem, winrt::MCP::ICommandItem, winrt::MCP::INotifyPropChanged>
+{
+    struct CommandPaletteInvokableCommand : winrt::implements<CommandPaletteInvokableCommand, winrt::MCP::IInvokableCommand, winrt::MCP::ICommand, winrt::MCP::INotifyPropChanged>
+    {
+        struct HideCommandResult : winrt::implements<HideCommandResult, winrt::MCP::ICommandResult>
+        {
+            winrt::MCP::CommandResultKind Kind() { return winrt::MCP::CommandResultKind::Hide; }
+            winrt::MCP::ICommandResultArgs Args() { return nullptr; }
+        };
+
+        winrt::Microsoft::Terminal::Settings::Model::Command _c{ nullptr };
+        CommandPaletteInvokableCommand(winrt::Microsoft::Terminal::Settings::Model::Command const& command) :
+            _c{ command } {}
+        ~CommandPaletteInvokableCommand() noexcept override = default;
+        // Invokable
+        winrt::MCP::ICommandResult Invoke(winrt::IInspectable const&)
+        {
+            auto lastPage{ s_lastWindow->GetRoot().as<winrt::TerminalApp::TerminalPage>() };
+            auto pp{ winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(lastPage) };
+            pp->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [=]() {
+                pp->DispatchAction(_c.ActionAndArgs());
+            });
+            return winrt::make<HideCommandResult>();
+        }
+        // Command
+        winrt::hstring Name() { return _c.Name(); }
+        winrt::hstring Id() { return _c.ID(); }
+        winrt::MCP::IIconInfo Icon() { return winrt::make<StrIconInfo>(_c.Icon().Resolved()); }
+        //Notifers
+        wil::typed_event<winrt::IInspectable, winrt::MCP::IPropChangedEventArgs> PropChanged;
+    };
+
+    winrt::Microsoft::Terminal::Settings::Model::Command _c{ nullptr };
+    CommandPaletteListItem(winrt::Microsoft::Terminal::Settings::Model::Command const& command) :
+        _c{ command } {}
+    ~CommandPaletteListItem() noexcept override = default;
+    // ListItem
+    winrt::com_array<winrt::MCP::ITag> Tags() { return {}; }
+    winrt::MCP::IDetails Details() { return nullptr; }
+    winrt::hstring Section() { return {}; }
+    winrt::hstring TextToSuggest() { return {}; }
+    // CommandItem
+    winrt::MCP::ICommand Command()
+    {
+        return winrt::make<CommandPaletteInvokableCommand>(_c);
+    }
+    winrt::com_array<winrt::MCP::IContextItem> MoreCommands() { return {}; }
+    winrt::MCP::IIconInfo Icon() { return winrt::make<StrIconInfo>(_c.Icon().Resolved()); }
+    winrt::hstring Title() { return _c.Name(); }
+    winrt::hstring Subtitle() { return _c.LanguageNeutralName(); }
+    //Notifers
+    wil::typed_event<winrt::IInspectable, winrt::MCP::IPropChangedEventArgs> PropChanged;
+};
+
+struct CommandPaletteProviderTopLevelPage : winrt::implements<CommandPaletteProviderTopLevelPage, winrt::MCP::IDynamicListPage, winrt::MCP::IListPage, winrt::MCP::IPage, winrt::MCP::ICommand, winrt::MCP::INotifyPropChanged, winrt::MCP::INotifyItemsChanged>
+{
+    struct ItemsChangedEventArgs : winrt::implements<ItemsChangedEventArgs, winrt::MCP::IItemsChangedEventArgs>
+    {
+        int32_t nr;
+        ItemsChangedEventArgs(int32_t n) :
+            nr(n) {}
+        int32_t TotalItems() const { return nr; }
+    };
+    CommandPaletteProviderTopLevelPage() { _items = _getItems(); }
+    winrt::hstring _searchText{};
+    // (Dynamic)ListPage
+    void SearchText(winrt::hstring st)
+    {
+        _searchText = st;
+        p = fzf::matcher::ParsePattern(_searchText);
+        _items = _getItems();
+        ItemsChanged.invoke(*this, winrt::make<ItemsChangedEventArgs>(static_cast<int32_t>(_items.size())));
+    }
+    winrt::hstring SearchText() { return _searchText; }
+    winrt::hstring PlaceholderText() { return L"Find something new"; }
+    bool ShowDetails() { return false; }
+    winrt::MCP::IFilters Filters() { return nullptr; }
+    winrt::MCP::IGridProperties GridProperties() { return nullptr; }
+    bool HasMoreItems() { return false; }
+    winrt::MCP::ICommandItem EmptyContent() { return nullptr; }
+    void LoadMore() {}
+
+    std::vector<winrt::MCP::IListItem> _items;
+    std::vector<winrt::MCP::IListItem> _getItems()
+    {
+        std::vector<winrt::MCP::IListItem> items;
+        const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+        struct mr
+        {
+            int32_t Score;
+            winrt::Microsoft::Terminal::Settings::Model::Command Command;
+        };
+        std::vector<mr> matches;
+        for (const auto& v : settings.ActionMap().AllCommands())
+        {
+            auto res{ fzf::matcher::Match(v.Name(), p) };
+            if (_searchText.empty() || (res && res->Score > 0))
+            {
+                matches.emplace_back(mr{ res->Score, v });
+            }
+        }
+        std::sort(std::begin(matches), std::end(matches), [](auto&& left, auto&& right) {
+            return left.Score > right.Score;
+        });
+        for (const auto& [_, v] : matches)
+        {
+            items.emplace_back(winrt::make<CommandPaletteListItem>(v));
+        }
+        return items;
+    }
+
+    winrt::com_array<winrt::MCP::IListItem> GetItems()
+    {
+        return { std::begin(_items), std::end(_items) };
+    }
+
+    // Page
+    winrt::hstring Title() { return L"Windows Terminal Command Palette"; }
+    bool IsLoading() { return false; }
+    winrt::MCP::OptionalColor AccentColor()
+    {
+        return { .HasValue = false };
+    }
+    // Command
+    winrt::hstring Name() { return L"Windows Terminal Commands"; }
+    winrt::hstring Id() { return L"doit"; }
+    winrt::MCP::IIconInfo Icon() { return nullptr; }
+    // Notifiers
+    wil::typed_event<winrt::IInspectable, winrt::MCP::IItemsChangedEventArgs> ItemsChanged;
+    wil::typed_event<winrt::IInspectable, winrt::MCP::IPropChangedEventArgs> PropChanged;
+
+private:
+    fzf::matcher::Pattern p;
+};
+
+struct CommandPaletteProviderTopLevelCommandItem : winrt::implements<CommandPaletteProviderTopLevelCommandItem, winrt::MCP::ICommandItem, winrt::MCP::INotifyPropChanged>
+{
+    winrt::MCP::ICommand Command() { return winrt::make<CommandPaletteProviderTopLevelPage>(); }
+    winrt::com_array<winrt::MCP::IContextItem> MoreCommands() { return {}; }
+    winrt::MCP::IIconInfo Icon() { return nullptr; }
+    winrt::hstring Title() { return L"Browse Windows Terminal Commands"; }
+    winrt::hstring Subtitle() { return L"Find out if it works, live"; }
+    wil::typed_event<winrt::IInspectable, winrt::MCP::IPropChangedEventArgs> PropChanged;
+};
+
+struct CommandPaletteProvider : winrt::implements<CommandPaletteProvider, winrt::MCP::ICommandProvider, winrt::Windows::Foundation::IClosable, winrt::MCP::INotifyItemsChanged>
+{
+    CommandPaletteProvider()
+    {
+        _theOneCommand = winrt::make<CommandPaletteProviderTopLevelCommandItem>();
+    }
+    using hstring = ::winrt::hstring;
+    hstring Id() { return L"WindowsTerminalDev"; }
+    hstring DisplayName() { return L"Windows Terminal Dev"; }
+    winrt::MCP::IIconInfo Icon() { return nullptr; }
+    winrt::MCP::ICommandSettings Settings()
+    {
+        return nullptr;
+    }
+    bool Frozen() { return false; }
+    winrt::com_array<winrt::MCP::ICommandItem> TopLevelCommands()
+    {
+        std::vector<winrt::MCP::ICommandItem> v;
+        v.emplace_back(_theOneCommand);
+        return { v.begin(), v.end() };
+    }
+    winrt::com_array<winrt::MCP::IFallbackCommandItem> FallbackCommands() { return {}; }
+    winrt::MCP::ICommand GetCommand(const hstring& id)
+    {
+        (void)id;
+        return nullptr;
+    }
+    wil::typed_event<winrt::IInspectable, winrt::MCP::IItemsChangedEventArgs> ItemsChanged;
+    void InitializeWithHost(const winrt::MCP::IExtensionHost& host)
+    {
+        _host = host;
+    }
+    void Close()
+    {
+    }
+    winrt::MCP::IExtensionHost _host{ nullptr };
+    winrt::MCP::ICommandItem _theOneCommand;
+};
+
+struct CommandPaletteExtension : winrt::implements<CommandPaletteExtension, winrt::MCP::IExtension>
+{
+    static winrt::MCP::ICommandProvider _getPaletteProvider()
+    {
+        static auto foo = winrt::make<CommandPaletteProvider>();
+        return foo;
+    }
+    winrt::IInspectable GetProvider(winrt::MCP::ProviderType type)
+    {
+        switch (type)
+        {
+        case winrt::MCP::ProviderType::Commands:
+            return _getPaletteProvider();
+        default:
+            FAIL_FAST();
+        }
+    }
+    void Dispose() {}
+};
+
+struct CPXFactory : winrt::implements<CPXFactory, IClassFactory>
+{
+    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result)
+    {
+        *result = nullptr;
+        if (outer)
+            return CLASS_E_NOAGGREGATION;
+        return winrt::make_self<CommandPaletteExtension>()->QueryInterface(iid, result);
+    }
+    HRESULT __stdcall LockServer(BOOL) noexcept final { return S_OK; }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Error message handling. This is in this file rather than with the warnings in
@@ -157,6 +399,13 @@ namespace winrt::TerminalApp::implementation
         // including this variable in the vars we serialize in the
         // Remoting::CommandlineArgs up in HandleCommandlineArgs.
         _setupFolderPathEnvVar();
+
+        static auto ext = winrt::make_self<CommandPaletteExtension>();
+        // {C1C5E6A5-07DB-4277-9108-D28C9129FCAF}
+        static const GUID cpxg = { 0xc1c5e6a5, 0x7db, 0x4277, { 0x91, 0x8, 0xd2, 0x8c, 0x91, 0x29, 0xfc, 0xaf } };
+
+        DWORD c;
+        CoRegisterClassObject(cpxg, winrt::make<CPXFactory>().get(), CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &c);
     }
 
     // Method Description:
@@ -507,6 +756,7 @@ namespace winrt::TerminalApp::implementation
         {
             window->SetSettingsStartupArgs(_settingsAppArgs.GetStartupActions());
         }
+        s_lastWindow = window;
         return *window;
     }
 

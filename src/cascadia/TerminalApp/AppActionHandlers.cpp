@@ -31,6 +31,11 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    void TerminalPage::DispatchAction(const Settings::Model::ActionAndArgs& args)
+    {
+        _actionDispatch->DoAction(args);
+    }
+
     TermControl TerminalPage::_senderOrActiveControl(const IInspectable& sender)
     {
         if (sender)

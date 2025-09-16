@@ -122,6 +122,7 @@
                 </com:ExeServer>
                 <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
                     <com:Class Id="051F34EE-C1FD-4B19-AF75-9BA54648434C"/>
+                    <com:Class Id="C1C5E6A5-07DB-4277-9108-D28C9129FCAF" />
                 </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
                     <com:Class Id="52065414-e077-47ec-a3ac-1cc5455e1b54" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
@@ -138,6 +139,25 @@
                 </desktop5:ItemType>
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
+
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.commandpalette"
+            Id="WindowsTerminalDev"
+            PublicFolder="Public"
+            DisplayName="Windows Terminal Dev"
+            Description="Windows Terminal Dev">
+            <uap3:Properties>
+              <CmdPalProvider>
+                <Activation>
+                  <CreateInstance ClassId="C1C5E6A5-07DB-4277-9108-D28C9129FCAF" />
+                </Activation>
+                <SupportedInterfaces>
+                  <Commands/>
+                </SupportedInterfaces>
+              </CmdPalProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
 
       </Extensions>
 
