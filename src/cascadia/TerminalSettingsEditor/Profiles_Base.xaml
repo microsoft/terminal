@@ -208,6 +208,22 @@
                          Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Tab Color  -->
+            <local:SettingContainer x:Name="TabColor"
+                                    x:Uid="Profile_TabColor"
+                                    ClearSettingValue="{x:Bind Profile.ClearTabColor}"
+                                    CurrentValue="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
+                                    CurrentValueAccessibleName="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
+                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
+                                    HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <local:NullableColorPicker x:Uid="Profile_TabColor_NullableColorPicker"
+                                           ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"
+                                           CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
+                                           NullColorPreview="{x:Bind Profile.TabThemeColorPreview, Mode=OneWay}" />
+            </local:SettingContainer>
+
             <!--  Elevate  -->
             <local:SettingContainer x:Uid="Profile_Elevate"
                                     ClearSettingValue="{x:Bind Profile.ClearElevate}"

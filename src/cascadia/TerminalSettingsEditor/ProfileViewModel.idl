@@ -121,6 +121,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         String TabTitlePreview { get; };
         String AnswerbackMessagePreview { get; };
+        Windows.UI.Color TabColorPreview { get; };
+        Windows.UI.Color TabThemeColorPreview { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
