@@ -15,6 +15,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 
+extern void _resolveSingleMediaResourceInner(OriginTag origin, std::wstring_view basePath, const IMediaResource& resource);
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs)
@@ -1257,6 +1259,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     std::unordered_map<hstring, Model::Command> ActionMap::_loadLocalSnippets(const std::filesystem::path& currentWorkingDirectory)
     {
         // This returns an empty string if we fail to load the file.
+        const winrt::hstring basePath{ currentWorkingDirectory.native() };
         std::filesystem::path localSnippetsPath = currentWorkingDirectory / std::filesystem::path{ ".wt.json" };
         const auto data = til::io::read_file_as_utf8_string_if_exists(localSnippetsPath);
         if (data.empty())
@@ -1283,6 +1286,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             for (const auto& json : actions)
             {
                 const auto snippet = Command::FromSnippetJson(json);
+                snippet->ResolveMediaResourcesWithBasePath(basePath, MediaResourceResolver{ _resolveSingleMediaResourceInner });
                 result.insert_or_assign(snippet->Name(), *snippet);
             }
         }

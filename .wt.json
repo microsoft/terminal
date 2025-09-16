@@ -26,8 +26,14 @@
         },
         {
             "input": "runut /name:**\u001b[D",
-            "name": "Run a test",
-            "icon": "",
+            "name": "This one uses the icon from terminal",
+            "icon": "res/terminal.ico",
+            "description": "Enter the name of a test to run"
+        },
+        {
+            "input": "runut /name:**\u001b[D",
+            "name": "This one uses the icon from conhost",
+            "icon": "res/console.ico",
             "description": "Enter the name of a test to run"
         }
     ]

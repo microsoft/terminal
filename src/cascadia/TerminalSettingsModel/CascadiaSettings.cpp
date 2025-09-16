@@ -490,7 +490,7 @@ void CascadiaSettings::_validateAllSchemesExist()
 
 extern bool TestHook_CascadiaSettings_ResolveSingleMediaResource(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
 
-static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
+void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource)
 {
     if (TestHook_CascadiaSettings_ResolveSingleMediaResource(origin, basePath, resource))
     {
