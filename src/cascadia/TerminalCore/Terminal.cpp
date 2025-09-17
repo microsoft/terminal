@@ -784,6 +784,7 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
 // - none
 TerminalInput::OutputType Terminal::FocusChanged(const bool focused)
 {
+    _isFocused = focused;
     return _getTerminalInput().HandleFocus(focused);
 }
 
