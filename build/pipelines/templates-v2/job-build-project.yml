@@ -68,7 +68,7 @@ parameters:
   - name: signingIdentity
     type: object
     default: {}
-  - name: enableCaching
+  - name: enableMsBuildCaching
     type: boolean
     default: false
 
@@ -144,7 +144,7 @@ jobs:
       }
     displayName: Prepare Build and Sign Targets
 
-  - ${{ if eq(parameters.enableCaching, true) }}:
+  - ${{ if eq(parameters.enableMsBuildCaching, true) }}:
     - pwsh: |-
         $MSBuildCacheParameters = ""
         $MSBuildCacheParameters += " -graph"
@@ -183,7 +183,7 @@ jobs:
       configuration: $(BuildConfiguration)
       msbuildArchitecture: x64
       maximumCpuCount: true
-    ${{ if eq(parameters.enableCaching, true) }}:
+    ${{ if eq(parameters.enableMsBuildCaching, true) }}:
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
@@ -192,7 +192,7 @@ jobs:
       artifact: logs-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
       condition: always()
       displayName: Publish Build Log
-    - ${{ if eq(parameters.enableCaching, true) }}:
+    - ${{ if eq(parameters.enableMsBuildCaching, true) }}:
       - publish: $(Build.SourcesDirectory)\MSBuildCacheLogs
         artifact: logs-msbuildcache-$(BuildPlatform)-$(BuildConfiguration)${{ parameters.artifactStem }}
         condition: always()
@@ -203,7 +203,7 @@ jobs:
       inputs:
         contents: $(Build.SourcesDirectory)/msbuild.binlog
         TargetFolder: $(Terminal.BinDir)
-    - ${{ if eq(parameters.enableCaching, true) }}:
+    - ${{ if eq(parameters.enableMsBuildCaching, true) }}:
       - task: CopyFiles@2
         displayName: Copy MSBuildCache Logs
         inputs:
