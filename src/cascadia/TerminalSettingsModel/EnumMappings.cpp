@@ -34,7 +34,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Model::NewTabPosition, NewTabPosition);
     DEFINE_ENUM_MAP(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabViewWidthMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope);
-    DEFINE_ENUM_MAP(Model::FirstWindowPreference, FirstWindowPreference);
     DEFINE_ENUM_MAP(Model::LaunchMode, LaunchMode);
     DEFINE_ENUM_MAP(Model::TabSwitcherMode, TabSwitcherMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::CopyFormat, CopyFormat);
@@ -79,6 +78,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Windows::UI::Text::FontWeight>::mappings)
             {
                 map.Insert(winrt::to_hstring(enumStr), enumVal);
+            }
+            return map;
+        }();
+        return enumMap;
+    }
+
+    winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Model::FirstWindowPreference> EnumMappings::FirstWindowPreference()
+    {
+        static auto enumMap = []() {
+            auto map = single_threaded_map<winrt::hstring, Model::FirstWindowPreference>();
+            for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Model::FirstWindowPreference>::mappings)
+            {
+                // exclude legacy value from enum map
+                if (enumStr != "persistedWindowLayout")
+                {
+                    map.Insert(winrt::to_hstring(enumStr), enumVal);
+                }
             }
             return map;
         }();
