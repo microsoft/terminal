@@ -133,8 +133,11 @@ namespace Microsoft::Console::VirtualTerminal
         void SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCSetColorTable
         void RequestColorTableEntry(const size_t tableIndex) override; // OSCGetColorTable
-        void SetXtermColorResource(const size_t resource, const DWORD color) override; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+        void ResetColorTable() override; // OSCResetColorTable
+        void ResetColorTableEntry(const size_t tableIndex) override; // OSCResetColorTable
+        void SetXtermColorResource(const size_t resource, const DWORD color) override; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor
         void RequestXtermColorResource(const size_t resource) override; // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
+        void ResetXtermColorResource(const size_t resource) override; // OSCResetForegroundColor, OSCResetBackgroundColor, OSCResetCursorColor, OSCResetHighlightColor
         void AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) override; // DECAC
 
         void WindowManipulation(const DispatchTypes::WindowManipulationType function,
@@ -185,7 +188,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void PlaySounds(const VTParameters parameters) override; // DECPS
 
-        void SetVtChecksumReportSupport(const bool enabled) noexcept override;
+        void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
 
     private:
         enum class Mode
@@ -310,7 +313,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
-        bool _vtChecksumReportEnabled = false;
+        til::enumset<OptionalFeature> _optionalFeatures = { OptionalFeature::ClipboardWrite };
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer

@@ -40,7 +40,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     X(FileSource::Local, Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
-    X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")
+    X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")                                                  \
+    X(FileSource::Local, std::unordered_set<hstring>, DismissedBadges, "dismissedBadges")                                                                                 \
+    X(FileSource::Shared, bool, SSHFolderGenerated, "sshFolderGenerated", false)
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
@@ -70,6 +72,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson(FileSource parseSource) const noexcept;
 
         void AppendPersistedWindowLayout(Model::WindowLayout layout);
+        bool DismissBadge(const hstring& badgeId);
+        bool BadgeDismissed(const hstring& badgeId) const;
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
@@ -88,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         til::shared_mutex<state_t> _state;
         std::filesystem::path _sharedPath;
         std::filesystem::path _elevatedPath;
-        til::throttled_func_trailing<> _throttler;
+        til::throttled_func<> _throttler;
 
         void _write() const noexcept;
         void _read() const noexcept;

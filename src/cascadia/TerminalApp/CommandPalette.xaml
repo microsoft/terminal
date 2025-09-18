@@ -44,6 +44,12 @@
                 <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
             </Style>
 
+            <Style x:Key="SubtitleTextStyle"
+                   TargetType="TextBlock">
+                <Setter Property="FontSize" Value="10" />
+                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
+            </Style>
+
             <DataTemplate x:Key="ListItemTemplate"
                           x:DataType="local:FilteredCommand">
                 <ListViewItem HorizontalContentAlignment="Stretch"
@@ -71,10 +77,19 @@
                                       Height="16"
                                       Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
-                    <local:HighlightedTextControl Grid.Column="1"
-                                                  HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                    <StackPanel Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Name, Mode=OneWay}" />
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind SubtitleHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Subtitle, Mode=OneWay}"
+                                                      TextBlockStyle="{StaticResource SubtitleTextStyle}"
+                                                      Visibility="{x:Bind HasSubtitle, Mode=OneWay}" />
 
+                    </StackPanel>
                     <!--
                         The block for the key chord is only visible
                         when there's actual text set as the label.
@@ -121,9 +136,19 @@
                                       Height="16"
                                       Content="{x:Bind Item.ResolvedIcon, Mode=OneWay}" />
 
-                    <local:HighlightedTextControl Grid.Column="1"
-                                                  HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                    <StackPanel Grid.Column="1"
+                                HorizontalAlignment="Left"
+                                Orientation="Vertical">
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Name, Mode=OneWay}" />
+                        <local:HighlightedTextControl HorizontalAlignment="Left"
+                                                      HighlightedRuns="{x:Bind SubtitleHighlights, Mode=OneWay}"
+                                                      Text="{x:Bind Item.Subtitle, Mode=OneWay}"
+                                                      TextBlockStyle="{StaticResource SubtitleTextStyle}"
+                                                      Visibility="{x:Bind HasSubtitle, Mode=OneWay}" />
+
+                    </StackPanel>
 
                     <!--
                         The block for the key chord is only visible
@@ -192,7 +217,8 @@
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
 
                     <StackPanel Grid.Column="2"
                                 HorizontalAlignment="Right"
@@ -284,7 +310,11 @@
                      IsSpellCheckEnabled="False"
                      PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
                      Text=""
-                     TextChanged="_filterTextChanged" />
+                     TextChanged="_filterTextChanged">
+                <TextBox.ContextFlyout>
+                    <mtu:TextMenuFlyout />
+                </TextBox.ContextFlyout>
+            </TextBox>
 
             <TextBlock x:Name="_prefixCharacter"
                        Grid.Row="0"

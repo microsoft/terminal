@@ -684,6 +684,10 @@
     <value>작업</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
+  <data name="Nav_Extensions.Content" xml:space="preserve">
+    <value>확장</value>
+    <comment>Header for the "extensions" menu item. This navigates to a page that lets you see and modify extensions for the app.</comment>
+  </data>
   <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>배경 불투명도</value>
     <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -941,6 +945,10 @@
   <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
     <value>항상</value>
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsAutomatic.Content" xml:space="preserve">
+    <value>자동</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table if and only if high contrast mode is enabled.</comment>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
     <value>막대( ┃ )</value>
@@ -1728,6 +1736,14 @@
     <value>마우스를 위에 가져다 대면 자동으로 포커스 창이 실행됨</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Ctrl 키를 누른 상태에서 스크롤하여 터미널 글꼴 크기 조정</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ctrl 키와 Shift 키를 누른 상태에서 스크롤하여 터미널 불투명도 조정</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>창 애니메이션</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
@@ -1908,10 +1924,26 @@
     <value>"터치 키보드 및 필기 패널 서비스"를 사용할 수 없는 경우 경고</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>5KiB가 넘는 문자를 붙여넣으려고 할 때 경고</value>
+    <value>붙여넣기가 5KiB를 초과하는 경우 경고</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>"줄 바꾸기" 문자를 붙여넣을 때 경고</value>
+    <value>붙여넣기에 줄 바꿈이 포함된 경우 경고</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>셸이 "대괄호로 묶은 붙여넣기" 모드를 지원하지 않는 경우, 보안상의 이유로 이 설정을 "항상"으로 변경하는 것이 좋습니다.</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>"대괄호로 묶은 붙여넣기"를 사용할 수 없는 경우에만</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>항상</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>사용 안 함</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows 터미널이 이식 가능 모드에서 실행되고 있습니다.</value>
@@ -2101,7 +2133,7 @@
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
-    <value>정의된 속성 중 하나 이상과 일치하는 프로필 그룹을 추가합니다.</value>
+    <value>정의된 정규식 속성 중 하나 이상과 일치하는 프로필 그룹을 추가합니다.</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
   <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
@@ -2117,15 +2149,15 @@
     <comment>Header for a control that adds a folder to the new tab menu.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
-    <value>프로필 이름</value>
+    <value>프로필 이름(정규식)</value>
     <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
-    <value>프로필 원본</value>
+    <value>프로필 원본(정규식)</value>
     <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
-    <value>명령줄</value>
+    <value>명령줄(정규식)</value>
     <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
   </data>
   <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
@@ -2312,6 +2344,10 @@
     <value>MSYS2(C:\ -&gt; /c)</value>
     <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
+  <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
+    <value>MinGW(C:\ -&gt; C:/)</value>
+    <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
+  </data>
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
     <value>프로필이 더 이상 검색되지 않음</value>
   </data>
@@ -2335,5 +2371,92 @@
   <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
     <value>이 옵션은 엔터프라이즈 정책에 의해 관리되므로 여기에서 변경할 수 없습니다.</value>
     <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
+  <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
+    <value>활성 확장</value>
+  </data>
+  <data name="Extensions_ModifiedProfilesHeader.Text" xml:space="preserve">
+    <value>수정된 프로필</value>
+  </data>
+  <data name="Extensions_AddedProfilesHeader.Text" xml:space="preserve">
+    <value>추가된 프로필</value>
+  </data>
+  <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
+    <value>추가된 색 구성표</value>
+  </data>
+  <data name="Extensions_DisclaimerHyperlink.Content" xml:space="preserve">
+    <value>확장에 대한 자세한 정보</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>프로필로 이동</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>프로필로 이동</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>색 구성표로 이동</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>색 구성표로 이동</value>
+  </data>
+  <data name="Extensions_ScopeUser" xml:space="preserve">
+    <value>현재 사용자</value>
+    <comment>Label for the installation scope of an extension.</comment>
+  </data>
+  <data name="Extensions_ScopeSystem" xml:space="preserve">
+    <value>All Users</value>
+    <comment>Label for the installation scope of an extension</comment>
+  </data>
+  <data name="Extensions_Scope.Header" xml:space="preserve">
+    <value>범위</value>
+    <comment>Header for the installation scope of the extension</comment>
+  </data>
+  <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
+    <value>새 기능</value>
+    <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
+    <value>정규식에 대한 자세한 정보</value>
+  </data>
+  <data name="Appearance_BackgroundImageNone" xml:space="preserve">
+    <value>없음</value>
+    <comment>Text displayed when the background image path is not defined.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
+    <value>없음</value>
+    <comment>Text displayed when the answerback message is not defined.</comment>
+  </data>
+  <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
+    <value>기본 설정으로 초기화</value>
+  </data>
+  <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
+    <value>캐시 지우기</value>
+  </data>
+  <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
+    <value>캐시는 저장된 세션과 관련된 데이터 및 자동으로 생성된 프로필을 저장합니다.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
+    <value>다시 설정</value>
+  </data>
+  <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
+    <value>취소</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
+    <value>이 작업은 즉시 적용되며 실행 취소할 수 없습니다.</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
+    <value>이 작업은 즉시 적용되며 실행 취소할 수 없습니다.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>설정을 초기화하시겠습니까?</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>캐시를 지우시겠습니까?</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationButton.Content" xml:space="preserve">
+    <value>예, 설정을 초기화합니다.</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
+    <value>예, 캐시를 지웁니다.</value>
   </data>
 </root>

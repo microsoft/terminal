@@ -32,7 +32,7 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff
     };
 
-    [default_interface] runtimeclass Profile : Windows.Foundation.IStringable, ISettingsModelObject {
+    runtimeclass Profile : Windows.Foundation.IStringable, ISettingsModelObject {
         Profile();
         Profile(Guid guid);
 
@@ -44,16 +44,12 @@ namespace Microsoft.Terminal.Settings.Model
         // True if the user *kept* this Profile, but it disappeared from the system.
         Boolean Orphaned { get; };
 
-        // Helper for magically using a commandline for an icon for a profile
-        // without an explicit icon.
-        String EvaluatedIcon { get; };
-
         INHERITABLE_PROFILE_SETTING(Guid, Guid);
         INHERITABLE_PROFILE_SETTING(String, Name);
         INHERITABLE_PROFILE_SETTING(String, Source);
         INHERITABLE_PROFILE_SETTING(Boolean, Hidden);
         INHERITABLE_PROFILE_SETTING(Guid, ConnectionType);
-        INHERITABLE_PROFILE_SETTING(String, Icon);
+        INHERITABLE_PROFILE_SETTING(IMediaResource, Icon);
         INHERITABLE_PROFILE_SETTING(CloseOnExitMode, CloseOnExit);
         INHERITABLE_PROFILE_SETTING(String, TabTitle);
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
@@ -80,7 +76,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IMap<String COMMA String>, EnvironmentVariables);
 
-        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
+        INHERITABLE_PROFILE_SETTING(Windows.Foundation.Collections.IVector<IMediaResource>, BellSound);
 
         INHERITABLE_PROFILE_SETTING(Boolean, Elevate);
         INHERITABLE_PROFILE_SETTING(Boolean, AutoMarkPrompts);

@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -415,7 +415,7 @@
     <value>Limpar todas as marcas</value>
   </data>
   <data name="SendInputCommandKey" xml:space="preserve">
-    <value>Enviar Entrada: "{0}"</value>
+    <value>Enviar entrada: "{0}"</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>
   </data>
   <data name="SetColorSchemeCommandKey" xml:space="preserve">
@@ -739,5 +739,241 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Abrir o diretório de trabalho atual</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>Fechar guia</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>Enviar entrada</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>Definir modo de foco</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>Definir tela inteira</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>Definir como maximizado</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>Definir esquema de cores</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>Fechar outras guias</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>Fechar guias após</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>Mover guia</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>Localizar correspondência</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>Pesquisar texto</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>Painel de foco</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>Exportar buffer</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>Limpar o buffer</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>Várias ações</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>Ajustar opacidade</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>Selecionar comando</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>Selecionar saída</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>Sugestões</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>Seleção de cor</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil de Distribuição WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil do PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil do Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil do Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Gerador de Perfil de Host SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
+  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
+    <value>Ignorar Seleção</value>
+  </data>
+  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
+    <value>Linha Única</value>
+  </data>
+  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
+    <value>Com Sequências de Controle</value>
+  </data>
+  <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
+    <value>Copiar Formatação</value>
+  </data>
+  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Índice de Guia</value>
+  </data>
+  <data name="WindowActionArgumentLocalized" xml:space="preserve">
+    <value>Janela</value>
+  </data>
+  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Direção do Redimensionamento</value>
+  </data>
+  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Direção do Foco</value>
+  </data>
+  <data name="DirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Direção</value>
+  </data>
+  <data name="DeltaActionArgumentLocalized" xml:space="preserve">
+    <value>Delta</value>
+  </data>
+  <data name="InputActionArgumentLocalized" xml:space="preserve">
+    <value>Entrada</value>
+  </data>
+  <data name="TargetActionArgumentLocalized" xml:space="preserve">
+    <value>Destino</value>
+  </data>
+  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
+    <value>Está no Modo de Foco</value>
+  </data>
+  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
+    <value>Está Maximizado</value>
+  </data>
+  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
+    <value>Está em Tela Inteira</value>
+  </data>
+  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
+    <value>Nome do Esquema</value>
+  </data>
+  <data name="TabColorActionArgumentLocalized" xml:space="preserve">
+    <value>Cor da Guia</value>
+  </data>
+  <data name="TitleActionArgumentLocalized" xml:space="preserve">
+    <value>Título</value>
+  </data>
+  <data name="CommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Commandline</value>
+  </data>
+  <data name="IndexActionArgumentLocalized" xml:space="preserve">
+    <value>Índice</value>
+  </data>
+  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
+    <value>Linhas para Rolagem</value>
+  </data>
+  <data name="ColorActionArgumentLocalized" xml:space="preserve">
+    <value>Cor</value>
+  </data>
+  <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Modo de Inicialização</value>
+  </data>
+  <data name="NameActionArgumentLocalized" xml:space="preserve">
+    <value>Nome</value>
+  </data>
+  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
+    <value>Pressionar Tecla Simultaneamente</value>
+  </data>
+  <data name="SourceActionArgumentLocalized" xml:space="preserve">
+    <value>Fonte</value>
+  </data>
+  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Usar Linha de Comando</value>
+  </data>
+  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
+    <value>Modo do Alternador</value>
+  </data>
+  <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
+    <value>URL da consulta</value>
+  </data>
+  <data name="DesktopActionArgumentLocalized" xml:space="preserve">
+    <value>Área de Trabalho</value>
+  </data>
+  <data name="MonitorActionArgumentLocalized" xml:space="preserve">
+    <value>Monitorar</value>
+  </data>
+  <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
+    <value>Ativar/Desativar Visibilidade</value>
+  </data>
+  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
+    <value>Duração do menu suspenso</value>
+  </data>
+  <data name="IdActionArgumentLocalized" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="PathActionArgumentLocalized" xml:space="preserve">
+    <value>Caminho</value>
+  </data>
+  <data name="ClearActionArgumentLocalized" xml:space="preserve">
+    <value>Limpar</value>
+  </data>
+  <data name="OpacityActionArgumentLocalized" xml:space="preserve">
+    <value>Opacidade</value>
+  </data>
+  <data name="RelativeActionArgumentLocalized" xml:space="preserve">
+    <value>Relativo</value>
+  </data>
+  <data name="ForegroundActionArgumentLocalized" xml:space="preserve">
+    <value>Primeiro Plano</value>
+  </data>
+  <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
+    <value>Tela de Fundo</value>
+  </data>
+  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Modo de Correspondência</value>
+  </data>
+  <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
+    <value>Diretório Inicial</value>
+  </data>
+  <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Título da Guia</value>
+  </data>
+  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Índice do Perfil</value>
+  </data>
+  <data name="ProfileActionArgumentLocalized" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Suprimir Título do Aplicativo</value>
+  </data>
+  <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
+    <value>Esquema de Cores</value>
+  </data>
+  <data name="ElevateActionArgumentLocalized" xml:space="preserve">
+    <value>Elevar</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
+    <value>Recarregar Variáveis de Ambiente</value>
+  </data>
+  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Direção da Divisão</value>
+  </data>
+  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
+    <value>Modo de Divisão</value>
+  </data>
+  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
+    <value>Tamanho da Divisão</value>
   </data>
 </root>

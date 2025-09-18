@@ -30,13 +30,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:
-        BellSoundViewModel(hstring path);
+        BellSoundViewModel(const Model::IMediaResource& resource);
 
+        hstring Path() const { return _resource.Path(); }
+        bool FileExists() const { return _resource.Ok(); }
         hstring DisplayPath() const;
         hstring SubText() const;
-        VIEW_MODEL_OBSERVABLE_PROPERTY(bool, FileExists, true);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, Path);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, ShowDirectory);
+
+    private:
+        Model::IMediaResource _resource;
     };
 
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
@@ -49,12 +52,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IVector<IInspectable> BuiltInIcons() noexcept { return _BuiltInIcons; };
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
-        Model::TerminalSettings TermSettings() const;
+        Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
 
         // bell style bits
+        hstring BellStylePreview() const;
         bool IsBellStyleFlagSet(const uint32_t flag);
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
@@ -80,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::hstring EvaluatedIcon() const
         {
-            return _profile.EvaluatedIcon();
+            return _profile.Icon().Resolved();
         }
         Windows::Foundation::IInspectable CurrentIconType() const noexcept
         {
@@ -93,11 +97,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UsingBuiltInIcon() const;
         bool UsingEmojiIcon() const;
         bool UsingImageIcon() const;
+        winrt::hstring IconPath() const { return _profile.Icon().Path(); }
+        void IconPath(const winrt::hstring& path)
+        {
+            Icon(Model::MediaResourceHelper::FromString(path));
+            _NotifyChanges(L"Icon", L"IconPath");
+        }
 
         // starting directory
-        bool UseParentProcessDirectory();
+        hstring CurrentStartingDirectoryPreview() const;
+        bool UseParentProcessDirectory() const;
         void UseParentProcessDirectory(const bool useParent);
-        bool UseCustomStartingDirectory();
 
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
@@ -116,6 +126,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool Orphaned() const;
         hstring TabTitlePreview() const;
+        hstring AnswerbackMessagePreview() const;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
@@ -182,7 +193,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();
         void _MarkDuplicateBellSoundDirectories();
-        safe_void_coroutine _CheckBellSoundsExistence();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
         static Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _BuiltInIcons;

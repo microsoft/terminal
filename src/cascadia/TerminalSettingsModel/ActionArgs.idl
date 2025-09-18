@@ -5,10 +5,34 @@ import "Command.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum ArgTypeHint
+    {
+        None = 0,
+        FilePath,
+        FolderPath,
+        ColorScheme
+    };
+
+    struct ArgDescriptor
+    {
+        String Name;
+        String Type;
+        Boolean Required;
+        ArgTypeHint TypeHint;
+    };
+
+    interface IActionArgsDescriptorAccess
+    {
+        Windows.Foundation.Collections.IVectorView<ArgDescriptor> GetArgDescriptors();
+        IInspectable GetArgAt(UInt32 index);
+        void SetArgAt(UInt32 index, Object value);
+    };
+
     interface IActionArgs
     {
         Boolean Equals(IActionArgs other);
         String GenerateName();
+        String GenerateName(Windows.ApplicationModel.Resources.Core.ResourceContext context);
         IActionArgs Copy();
         UInt64 Hash();
     };
@@ -130,6 +154,7 @@ namespace Microsoft.Terminal.Settings.Model
         UInt64 Hash();
         INewContentArgs Copy();
         String GenerateName();
+        String GenerateName(Windows.ApplicationModel.Resources.Core.ResourceContext context);
     };
 
     runtimeclass BaseContentArgs : [default] INewContentArgs {
@@ -137,7 +162,7 @@ namespace Microsoft.Terminal.Settings.Model
         BaseContentArgs(String type);
     };
 
-    runtimeclass NewTerminalArgs : INewContentArgs {
+    runtimeclass NewTerminalArgs : INewContentArgs, IActionArgsDescriptorAccess {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
 
@@ -176,7 +201,7 @@ namespace Microsoft.Terminal.Settings.Model
         ActionEventArgs(IActionArgs args);
     };
 
-    [default_interface] runtimeclass CopyTextArgs : IActionArgs
+    [default_interface] runtimeclass CopyTextArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         CopyTextArgs();
         Boolean DismissSelection { get; };
@@ -185,55 +210,55 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
 
-    [default_interface] runtimeclass NewTabArgs : IActionArgs
+    [default_interface] runtimeclass NewTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         NewTabArgs(INewContentArgs contentArgs);
         INewContentArgs ContentArgs { get; };
     };
 
-    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         MovePaneArgs(UInt32 tabIndex, String Window);
         UInt32 TabIndex;
         String Window;
     };
 
-    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
+    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SwitchToTabArgs(UInt32 tabIndex);
         UInt32 TabIndex;
     };
 
-    [default_interface] runtimeclass ResizePaneArgs : IActionArgs
+    [default_interface] runtimeclass ResizePaneArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         ResizeDirection ResizeDirection { get; };
     };
 
-    [default_interface] runtimeclass MoveFocusArgs : IActionArgs
+    [default_interface] runtimeclass MoveFocusArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         MoveFocusArgs(FocusDirection direction);
         FocusDirection FocusDirection { get; };
     };
 
-    [default_interface] runtimeclass SwapPaneArgs : IActionArgs
+    [default_interface] runtimeclass SwapPaneArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SwapPaneArgs(FocusDirection direction);
         FocusDirection Direction { get; };
     };
 
-    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
+    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         Single Delta { get; };
     };
 
-    [default_interface] runtimeclass SendInputArgs : IActionArgs
+    [default_interface] runtimeclass SendInputArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SendInputArgs(String input);
 
         String Input { get; };
     };
 
-    [default_interface] runtimeclass SplitPaneArgs : IActionArgs
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SplitPaneArgs(SplitType splitMode, SplitDirection split, Single size, INewContentArgs contentArgs);
         SplitPaneArgs(SplitDirection split, Single size, INewContentArgs contentArgs);
@@ -246,106 +271,106 @@ namespace Microsoft.Terminal.Settings.Model
         Single SplitSize { get; };
     };
 
-    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
+    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         OpenSettingsArgs(SettingsTarget target);
         SettingsTarget Target { get; };
     };
 
-    [default_interface] runtimeclass SetFocusModeArgs : IActionArgs
+    [default_interface] runtimeclass SetFocusModeArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SetFocusModeArgs(Boolean isFocusMode);
         Boolean IsFocusMode { get; };
     };
 
-    [default_interface] runtimeclass SetFullScreenArgs : IActionArgs
+    [default_interface] runtimeclass SetFullScreenArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SetFullScreenArgs(Boolean isFullScreen);
         Boolean IsFullScreen { get; };
     };
 
-    [default_interface] runtimeclass SetMaximizedArgs : IActionArgs
+    [default_interface] runtimeclass SetMaximizedArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SetMaximizedArgs(Boolean isMaximized);
         Boolean IsMaximized { get; };
     };
 
-    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
+    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SetColorSchemeArgs(String name);
         String SchemeName { get; };
     };
 
-    [default_interface] runtimeclass SetTabColorArgs : IActionArgs
+    [default_interface] runtimeclass SetTabColorArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SetTabColorArgs(Windows.UI.Color tabColor);
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
     };
 
-    [default_interface] runtimeclass RenameTabArgs : IActionArgs
+    [default_interface] runtimeclass RenameTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         RenameTabArgs(String title);
         String Title { get; };
     };
 
-    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         ExecuteCommandlineArgs(String commandline);
         String Commandline;
     };
 
-    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         CloseOtherTabsArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
-    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
-    [default_interface] runtimeclass CloseTabArgs : IActionArgs
+    [default_interface] runtimeclass CloseTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         CloseTabArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
-    [default_interface] runtimeclass MoveTabArgs : IActionArgs
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         MoveTabArgs(String window, MoveTabDirection direction);
         MoveTabDirection Direction { get; };
         String Window { get; };
     };
 
-    [default_interface] runtimeclass ScrollUpArgs : IActionArgs
+    [default_interface] runtimeclass ScrollUpArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
     };
 
-    [default_interface] runtimeclass ScrollDownArgs : IActionArgs
+    [default_interface] runtimeclass ScrollDownArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
     };
 
 
-    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs
+    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
     };
 
-    [default_interface] runtimeclass AddMarkArgs : IActionArgs
+    [default_interface] runtimeclass AddMarkArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
     };
 
-    [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
+    [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         CommandPaletteLaunchMode LaunchMode { get; };
     };
 
-    [default_interface] runtimeclass SuggestionsArgs : IActionArgs
+    [default_interface] runtimeclass SuggestionsArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SuggestionsArgs();
         SuggestionsArgs(SuggestionsSource source, Boolean useCommandline);
@@ -353,13 +378,13 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean UseCommandline { get; };
     };
 
-    [default_interface] runtimeclass FindMatchArgs : IActionArgs
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         FindMatchArgs(FindMatchDirection direction);
         FindMatchDirection Direction { get; };
     };
 
-    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs
+    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SaveSnippetArgs();
         SaveSnippetArgs(String Name, String Commandline, String KeyChord);
@@ -368,38 +393,38 @@ namespace Microsoft.Terminal.Settings.Model
         String KeyChord;
     };
 
-    [default_interface] runtimeclass NewWindowArgs : IActionArgs
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         NewWindowArgs(INewContentArgs contentArgs);
         INewContentArgs ContentArgs { get; };
     };
 
-    [default_interface] runtimeclass PrevTabArgs : IActionArgs
+    [default_interface] runtimeclass PrevTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         PrevTabArgs();
         PrevTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
-    [default_interface] runtimeclass NextTabArgs : IActionArgs
+    [default_interface] runtimeclass NextTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         NextTabArgs();
         NextTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
-    [default_interface] runtimeclass RenameWindowArgs : IActionArgs
+    [default_interface] runtimeclass RenameWindowArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         RenameWindowArgs(String name);
         String Name { get; };
     };
 
-    [default_interface] runtimeclass SearchForTextArgs : IActionArgs
+    [default_interface] runtimeclass SearchForTextArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         String QueryUrl { get; };
     };
 
-    [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
+    [default_interface] runtimeclass GlobalSummonArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         String Name { get; };
         DesktopBehavior Desktop { get; };
@@ -408,50 +433,50 @@ namespace Microsoft.Terminal.Settings.Model
         UInt32 DropdownDuration { get; };
     };
 
-    [default_interface] runtimeclass FocusPaneArgs : IActionArgs
+    [default_interface] runtimeclass FocusPaneArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
     };
 
-    [default_interface] runtimeclass ExportBufferArgs : IActionArgs
+    [default_interface] runtimeclass ExportBufferArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         ExportBufferArgs(String path);
         String Path { get; };
     };
 
-    [default_interface] runtimeclass ClearBufferArgs : IActionArgs
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
         Microsoft.Terminal.Control.ClearBufferType Clear { get; };
     };
 
-    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         MultipleActionsArgs();
         Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     };
 
-    [default_interface] runtimeclass AdjustOpacityArgs : IActionArgs
+    [default_interface] runtimeclass AdjustOpacityArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         AdjustOpacityArgs();
         Int32 Opacity { get; };
         Boolean Relative { get; };
     };
 
-    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs
+    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         Microsoft.Terminal.Control.SelectionColor Foreground;
         Microsoft.Terminal.Control.SelectionColor Background;
         Microsoft.Terminal.Core.MatchMode MatchMode { get; };
     };
 
-    [default_interface] runtimeclass SelectCommandArgs : IActionArgs
+    [default_interface] runtimeclass SelectCommandArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SelectCommandArgs(SelectOutputDirection direction);
         SelectOutputDirection Direction { get; };
     }
-    [default_interface] runtimeclass SelectOutputArgs : IActionArgs
+    [default_interface] runtimeclass SelectOutputArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SelectOutputArgs(SelectOutputDirection direction);
         SelectOutputDirection Direction { get; };

@@ -31,6 +31,7 @@
     -->
     <CppWinRTNamespaceMergeDepth>4</CppWinRTNamespaceMergeDepth>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <VersionInfoFileDescription>Windows Terminal Settings UI Library</VersionInfoFileDescription>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -125,6 +126,10 @@
       <DependentUpon>NewTabMenuViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Extensions.h">
+      <DependentUpon>Extensions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Profiles_Base.h">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -199,6 +204,9 @@
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Extensions.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Profiles_Base.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -226,6 +234,7 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="init.cpp" />
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
     </ClCompile>
@@ -307,6 +316,10 @@
     </ClCompile>
     <ClCompile Include="NewTabMenuViewModel.cpp">
       <DependentUpon>NewTabMenuViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Extensions.cpp">
+      <DependentUpon>Extensions.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Profiles_Base.cpp">
@@ -408,6 +421,10 @@
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
+    <Midl Include="Extensions.idl">
+      <DependentUpon>Extensions.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Profiles_Base.idl">
       <DependentUpon>Profiles_Base.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -474,6 +491,10 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsAppAdapterLib\TerminalSettingsAppAdapterLib.vcxproj">
+      <Project>{3c46e2b0-ae6c-4132-9122-6772fb411959}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

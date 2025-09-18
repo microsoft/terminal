@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -415,7 +415,7 @@
     <value>Очистить все метки</value>
   </data>
   <data name="SendInputCommandKey" xml:space="preserve">
-    <value>Отправить входное значение: "{0}"</value>
+    <value>Отправить входные данные: "{0}"</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>
   </data>
   <data name="SetColorSchemeCommandKey" xml:space="preserve">
@@ -739,5 +739,241 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Открыть текущую рабочую папку</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>Закрыть вкладку</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>Отправить входные данные</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>Настройка режима фокусировки</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>Настройка полноэкранного режима</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>Установить развернутое</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>Установить цветовую схему</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>Закрыть остальные вкладки</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>Закрыть вкладки после</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>Переместить вкладку</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>Найти совпадение</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>Поиск текста</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>Фокус на панели</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>Экспортировать буфер</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>Очистить буфер</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>Несколько действий</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>Настроить непрозрачность</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>Выбрать команду</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>Выбрать вывод</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>Предложения</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>Выбор цвета</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей дистрибутивов WSL</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей PowerShell</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей Azure Cloud Shell</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей Visual Studio</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профилей узлов SSH</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
+  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
+    <value>Закрыть выделение</value>
+  </data>
+  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
+    <value>Одна строка</value>
+  </data>
+  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
+    <value>С последовательностями управления</value>
+  </data>
+  <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
+    <value>Копировать формат</value>
+  </data>
+  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс перехода по клавише TAB</value>
+  </data>
+  <data name="WindowActionArgumentLocalized" xml:space="preserve">
+    <value>Окно</value>
+  </data>
+  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Направление изменения размера</value>
+  </data>
+  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Направление фокуса</value>
+  </data>
+  <data name="DirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Направление</value>
+  </data>
+  <data name="DeltaActionArgumentLocalized" xml:space="preserve">
+    <value>Дельта</value>
+  </data>
+  <data name="InputActionArgumentLocalized" xml:space="preserve">
+    <value>Входные данные</value>
+  </data>
+  <data name="TargetActionArgumentLocalized" xml:space="preserve">
+    <value>Цель</value>
+  </data>
+  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим фокусировки</value>
+  </data>
+  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
+    <value>Развернуто</value>
+  </data>
+  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
+    <value>Во весь экран</value>
+  </data>
+  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
+    <value>Имя схемы</value>
+  </data>
+  <data name="TabColorActionArgumentLocalized" xml:space="preserve">
+    <value>Цвет вкладки</value>
+  </data>
+  <data name="TitleActionArgumentLocalized" xml:space="preserve">
+    <value>Название</value>
+  </data>
+  <data name="CommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Командная строка</value>
+  </data>
+  <data name="IndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс</value>
+  </data>
+  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
+    <value>Строки для прокрутки</value>
+  </data>
+  <data name="ColorActionArgumentLocalized" xml:space="preserve">
+    <value>Цвет</value>
+  </data>
+  <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим запуска</value>
+  </data>
+  <data name="NameActionArgumentLocalized" xml:space="preserve">
+    <value>Имя</value>
+  </data>
+  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
+    <value>Аккорд клавиш</value>
+  </data>
+  <data name="SourceActionArgumentLocalized" xml:space="preserve">
+    <value>Источник</value>
+  </data>
+  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Использовать командную строку</value>
+  </data>
+  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим переключателя</value>
+  </data>
+  <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
+    <value>URL-адрес запроса</value>
+  </data>
+  <data name="DesktopActionArgumentLocalized" xml:space="preserve">
+    <value>Рабочий стол</value>
+  </data>
+  <data name="MonitorActionArgumentLocalized" xml:space="preserve">
+    <value>Мониторинг</value>
+  </data>
+  <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
+    <value>Изменить видимость</value>
+  </data>
+  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
+    <value>Длительность раскрывающегося списка</value>
+  </data>
+  <data name="IdActionArgumentLocalized" xml:space="preserve">
+    <value>Идентификатор</value>
+  </data>
+  <data name="PathActionArgumentLocalized" xml:space="preserve">
+    <value>Путь</value>
+  </data>
+  <data name="ClearActionArgumentLocalized" xml:space="preserve">
+    <value>Ясно</value>
+  </data>
+  <data name="OpacityActionArgumentLocalized" xml:space="preserve">
+    <value>Прозрачность</value>
+  </data>
+  <data name="RelativeActionArgumentLocalized" xml:space="preserve">
+    <value>Относительный</value>
+  </data>
+  <data name="ForegroundActionArgumentLocalized" xml:space="preserve">
+    <value>Передний план</value>
+  </data>
+  <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
+    <value>Фон</value>
+  </data>
+  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим соответствия</value>
+  </data>
+  <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
+    <value>Начальный каталог</value>
+  </data>
+  <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Название вкладки</value>
+  </data>
+  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс профиля</value>
+  </data>
+  <data name="ProfileActionArgumentLocalized" xml:space="preserve">
+    <value>Профиль</value>
+  </data>
+  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Скрыть название приложения</value>
+  </data>
+  <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
+    <value>Цветовая схема</value>
+  </data>
+  <data name="ElevateActionArgumentLocalized" xml:space="preserve">
+    <value>Повысить</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
+    <value>Перезагрузить переменные среды</value>
+  </data>
+  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Направление разделения</value>
+  </data>
+  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим разделения</value>
+  </data>
+  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
+    <value>Размер разделения</value>
   </data>
 </root>

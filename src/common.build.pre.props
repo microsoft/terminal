@@ -262,7 +262,7 @@
       <PreprocessorDefinitions>FUZZING_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libsancov.lib;clang_rt.asan-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libsancov.lib;clang_rt.asan_dynamic-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -279,12 +279,14 @@
     <VcpkgPlatformTarget Condition="'$(Platform)'=='ARM64'">arm64</VcpkgPlatformTarget>
 
     <VcpkgAdditionalInstallOptions>--x-feature=terminal</VcpkgAdditionalInstallOptions>
+    <VcpkgAdditionalInstallOptions Condition="'$(Configuration)'=='Fuzzing'">$(VcpkgAdditionalInstallOptions) --overlay-triplets=$(SolutionDir)\dep\vcpkg-overlay-triplets\fuzzing</VcpkgAdditionalInstallOptions>
     <!--
       Since we link everything statically, we don't need to copy anything.
       This saves running a powershell script for every project.
     -->
     <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
     <VcpkgInstalledDir>$(SolutionDir)\obj\$(Platform)\vcpkg</VcpkgInstalledDir>
+    <VcpkgInstalledDir Condition="'$(Configuration)'=='Fuzzing'">$(SolutionDir)\obj\$(Platform)\vcpkg-fuzzing</VcpkgInstalledDir>
     <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VCPKG_ROOT)</VcpkgRoot>
     <!-- VsInstallRoot is set by Visual Studio and MSBuild -->
     <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VsInstallRoot)\VC\vcpkg</VcpkgRoot>

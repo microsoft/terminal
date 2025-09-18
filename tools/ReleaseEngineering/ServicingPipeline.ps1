@@ -126,6 +126,10 @@ Function Get-GraphQlProjectWithNodes($Organization, $Number) {
                         pageInfo { hasNextPage endCursor }
                         nodes {
                             id
+                            type
+                            title: fieldValueByName(name: "Title") {
+                                ... on ProjectV2ItemFieldTextValue { text }
+                            }
                             status: fieldValueByName(name: "Status") {
                                 ... on ProjectV2ItemFieldSingleSelectValue { name }
                             }
@@ -160,6 +164,96 @@ Function Get-GraphQlProjectWithNodes($Organization, $Number) {
     $Project.organization.projectV2.items.nodes = $n
     $Project
 }
+
+Enum ServicingStatus {
+    Unknown
+    ToConsider
+    ToCherryPick
+    CherryPicked
+    Validated
+    Shipped
+    Rejected
+}
+
+Enum ServicingItemType {
+    Unknown
+    DraftIssue
+    Issue
+    PullRequest
+    Redacted
+}
+
+Class ServicingCard {
+    [String]$Id
+    [Int]$Number
+    [String]$Title
+    [String]$Commit
+    [ServicingStatus]$Status
+    [ServicingItemType]$Type
+    static [ServicingItemType]TypeFromString($name) {
+        $v = Switch -Exact ($name) {
+            "DRAFT_ISSUE"    { [ServicingItemType]::DraftIssue }
+            "ISSUE"          { [ServicingItemType]::Issue }
+            "PULL_REQUEST"   { [ServicingItemType]::PullRequest }
+            "REDACTED"       { [ServicingItemType]::Redacted }
+            Default          { [ServicingItemType]::Unknown }
+        }
+        Return $v
+    }
+
+    static [ServicingStatus]StatusFromString($name) {
+        $v = Switch -Exact ($name) {
+            "To Consider"    { [ServicingStatus]::ToConsider }
+            "To Cherry Pick" { [ServicingStatus]::ToCherryPick }
+            "Cherry Picked"  { [ServicingStatus]::CherryPicked }
+            "Validated"      { [ServicingStatus]::Validated }
+            "Shipped"        { [ServicingStatus]::Shipped }
+            "Rejected"       { [ServicingStatus]::Rejected }
+            Default          { [ServicingStatus]::Unknown }
+        }
+        Return $v
+    }
+
+    ServicingCard([object]$node) {
+        $this.Id = $node.id
+        $this.Title = $node.title.text
+        If (-Not [String]::IsNullOrEmpty($node.content.mergeCommit.oid)) {
+            $this.Commit = $node.content.mergeCommit.oid
+        } ElseIf (-Not [String]::IsNullOrEmpty($node.content.closedByPullRequestsReferences.nodes.mergeCommit.oid)) {
+            $this.Commit = $node.content.closedByPullRequestsReferences.nodes.mergeCommit.oid
+        }
+        If (-Not [String]::IsNullOrEmpty($node.content.number)) {
+            $this.Number = [Int]$node.content.number
+        }
+        $this.Status = [ServicingCard]::StatusFromString($node.status.name)
+        $this.Type = [ServicingCard]::TypeFromString($node.type)
+    }
+
+    [string]Format() {
+        $color = Switch -Exact ($this.Status) {
+            ([ServicingStatus]::ToConsider)   { "`e[38:5:166m" }
+            ([ServicingStatus]::ToCherryPick) { "`e[38:5:28m" }
+            ([ServicingStatus]::CherryPicked) { "`e[38:5:20m" }
+            ([ServicingStatus]::Validated)    { "`e[38:5:126m" }
+            ([ServicingStatus]::Shipped)      { "`e[38:5:92m" }
+            ([ServicingStatus]::Rejected)     { "`e[38:5:160m" }
+            Default                           { "`e[m" }
+        }
+        $symbol = Switch -Exact ($this.Type) {
+            ([ServicingItemType]::DraftIssue)  { "`u{25cb}" } # white circle
+            ([ServicingItemType]::Issue)       { "`u{2b24}" } # black circle
+            ([ServicingItemType]::PullRequest) { "`u{25c0}" } # black left triangle
+            ([ServicingItemType]::Redacted)    { "`u{25ec}" } # triangle with dot
+            Default                            { "`u{2b24}" }
+        }
+        $localTitle = $this.Title
+        If ($this.Number -Gt 0) {
+            $localTitle = "[`e]8;;https://github.com/microsoft/terminal/issues/{1}`e\Link`e]8;;`e\] {0} (#{1})" -f ($this.Title, $this.Number)
+        }
+        Return "{0}{1}`e[m ({2}) {3}" -f ($color, $symbol, $this.Status, $localTitle)
+    }
+}
+
 
 If ([String]::IsNullOrEmpty($Version)) {
     $BranchVersionRegex = [Regex]"^release-(\d+(\.\d+)+)$"
@@ -209,20 +303,50 @@ $StatusFieldId = $StatusField.id
 $StatusRejectOptionId = $StatusField.options | Where-Object name -eq $script:RejectStatusName | Select-Object -Expand id
 $StatusDoneOptionId = $StatusField.options | Where-Object name -eq $script:DoneStatusName | Select-Object -Expand id
 
-$ToPickList = $Project.organization.projectV2.items.nodes | Where-Object { $_.status.name -eq $TodoStatusName }
+# Create ServicingCards out of each node, but filter out the ones with no commits.
+$cards = $Project.organization.projectV2.items.nodes | ForEach-Object { [ServicingCard]::new($_) }
 
-$commits = New-Object System.Collections.ArrayList
-$cards = [System.Collections.Generic.Dictionary[String, String[]]]::new()
-$ToPickList | ForEach-Object {
-    If (-Not [String]::IsNullOrEmpty($_.content.mergeCommit.oid)) {
-        $co = $_.content.mergeCommit.oid
-    } ElseIf (-Not [String]::IsNullOrEmpty($_.content.closedByPullRequestsReferences.nodes.mergeCommit.oid)) {
-        $co = $_.content.closedByPullRequestsReferences.nodes.mergeCommit.oid
-    } Else {
-        Return
+$incompleteCards = $cards | Where-Object { [String]::IsNullOrEmpty($_.Commit) -And $_.Status -Eq ([ServicingStatus]::ToCherryPick) }
+If ($incompleteCards.Length -Gt 0) {
+    Write-Host "Cards to cherry pick are not associated with commits:"
+    $incompleteCards | ForEach-Object {
+        Write-Host " - $($_.Format())"
     }
-    $null = $commits.Add($co)
-    $cards[$co] += $_.id
+    Write-Host ""
+}
+
+$considerCards = $cards | Where-Object Status -Eq ([ServicingStatus]::ToConsider)
+If ($considerCards.Length -Gt 0) {
+    Write-Host "`e[7m CONSIDERATION QUEUE `e[27m"
+    $considerCards | ForEach-Object {
+        Write-Host " - $($_.Format())"
+    }
+    Write-Host ""
+}
+
+$commitGroups = $cards | Where-Object { -Not [String]::IsNullOrEmpty($_.Commit) } | Group-Object Commit
+$commits = New-Object System.Collections.ArrayList
+$finalCardsForCommit = [System.Collections.Generic.Dictionary[String, ServicingCard[]]]::new()
+
+$commitGroups | ForEach-Object {
+    $statuses = $_.Group | Select-Object -Unique Status
+    If ($statuses.Length -Gt 1) {
+        Write-Host "Commit $($_.Name) is present in more than one column:"
+        $_.Group | ForEach-Object {
+            Write-Host " - $($_.Format())"
+        }
+        Write-Host "`e[1mIt will be ignored.`e[m`n"
+    } Else {
+        If ($statuses[0].Status -eq ([ServicingStatus]::ToCherryPick)) {
+            $null = $commits.Add($_.Name)
+            $finalCardsForCommit[$_.Name] = $_.Group
+        }
+    }
+}
+
+If ($commits.Count -Eq 0) {
+    Write-Host "Nothing to do."
+    Exit
 }
 
 $sortedAllCommits = & git rev-list --no-walk=sorted $commits
@@ -235,6 +359,9 @@ If ($GpgSign) {
 
 $sortedAllCommits | ForEach-Object {
     Write-Host "`e[96m`e[1;7mPICK`e[22;27m`e[m $(& git show -q --pretty=oneline $_)"
+    ForEach($card In $finalCardsForCommit[$_]) {
+        Write-Host $card.Format()
+    }
     $null = & git cherry-pick -x $_ 2>&1
     $Err = ""
     While ($True) {
@@ -249,8 +376,8 @@ $sortedAllCommits | ForEach-Object {
             }
 
             If ($Global:Reject) {
-                ForEach($card In $cards[$_]) {
-                    Set-GraphQlProjectEntryStatus -Project $Project.organization.projectV2.id -Item $card -Field $StatusFieldId -Value $StatusRejectOptionId
+                ForEach($card In $finalCardsForCommit[$_]) {
+                    Set-GraphQlProjectEntryStatus -Project $Project.organization.projectV2.id -Item $card.Id -Field $StatusFieldId -Value $StatusRejectOptionId
                 }
                 # Fall through to Skip
             }
@@ -262,10 +389,10 @@ $sortedAllCommits | ForEach-Object {
 
             $Err = & git cherry-pick --continue --no-edit
         } Else {
-            & git commit @PickArgs --amend --no-edit --trailer "Service-Card-Id:$($cards[$_])" --trailer "Service-Version:$Version" | Out-Null
+            & git commit @PickArgs --amend --no-edit --trailer "Service-Card-Id:$($finalCardsForCommit[$_].Id)" --trailer "Service-Version:$Version" | Out-Null
             Write-Host "`e[92;1;7m OK `e[m"
-            ForEach($card In $cards[$_]) {
-                Set-GraphQlProjectEntryStatus -Project $Project.organization.projectV2.id -Item $card -Field $StatusFieldId -Value $StatusDoneOptionId
+            ForEach($card In $finalCardsForCommit[$_]) {
+                Set-GraphQlProjectEntryStatus -Project $Project.organization.projectV2.id -Item $card.Id -Field $StatusFieldId -Value $StatusDoneOptionId
             }
             Break
         }

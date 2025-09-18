@@ -68,24 +68,23 @@
     <Color x:Key="DeleteButtonColor">Firebrick</Color>
 
     <x:Double x:Key="StandardIconSize">14.0</x:Double>
-    <Thickness x:Key="StandardIndentMargin">13,0,0,0</Thickness>
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
-    <x:Double x:Key="StandardBoxMinWidth">250</x:Double>
+    <x:Double x:Key="StandardBoxMinWidth">248</x:Double>
     <x:Double x:Key="StandardControlMaxWidth">1000</x:Double>
-    <Thickness x:Key="SettingStackMargin">13,0,13,48</Thickness>
+    <Thickness x:Key="SettingStackMargin">0,0,0,0</Thickness>
 
     <!-- We're purposefully not providing a DataType here.
      This is expected to be used with an IReference<Microsoft::Terminal::Core::Color>.
      We're doing all the data type handling in the used converters.-->
     <DataTemplate x:Key="ColorPreviewTemplate">
-        <Grid ColumnSpacing="5">
+        <Grid ColumnSpacing="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Rectangle Grid.Column="0"
-                       Width="13"
-                       Height="13"
+                       Width="12"
+                       Height="12"
                        VerticalAlignment="Center"
                        Fill="{Binding Converter={StaticResource ColorToBrushConverter}}"
                        RadiusX="2"
@@ -112,13 +111,13 @@
     <!--  Used to stack a group of settings  -->
     <Style x:Key="SettingsStackStyle"
            TargetType="StackPanel">
-        <Setter Property="Margin" Value="{StaticResource SettingStackMargin}" />
+        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
     </Style>
 
     <!--  Used to stack a group of settings inside a pivot  -->
     <Style x:Key="PivotStackStyle"
            TargetType="StackPanel">
-        <Setter Property="Margin" Value="{StaticResource SettingStackMargin}" />
+        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
     </Style>
 
     <!--  Combo Box  -->
@@ -132,6 +131,11 @@
     <Style x:Key="TextBoxSettingStyle"
            BasedOn="{StaticResource DefaultTextBoxStyle}"
            TargetType="TextBox">
+        <Setter Property="ContextFlyout">
+            <Setter.Value>
+                <mtu:TextMenuFlyout />
+            </Setter.Value>
+        </Setter>
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
         <Setter Property="MaxWidth" Value="400" />
         <Setter Property="HorizontalAlignment" Value="Left" />
@@ -140,7 +144,7 @@
 
     <!--  Text Block  -->
     <Style x:Key="TextBlockSettingStyle"
-           BasedOn="{StaticResource BaseTextBlockStyle}"
+           BasedOn="{StaticResource BodyTextBlockStyle}"
            TargetType="TextBlock">
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
         <Setter Property="MaxWidth" Value="400" />
@@ -150,24 +154,34 @@
     </Style>
 
     <Style x:Key="TextBlockSubHeaderStyle"
+           BasedOn="{StaticResource BodyStrongTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+        <Setter Property="Margin" Value="0,32,0,4" />
+    </Style>
+
+    <Style x:Key="TextBlockSubtitleStyle"
            BasedOn="{StaticResource SubtitleTextBlockStyle}"
            TargetType="TextBlock">
         <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+        <Setter Property="Margin" Value="0,32,0,4" />
     </Style>
 
     <!--  Used for disclaimers  -->
     <Style x:Key="DisclaimerStyle"
            TargetType="TextBlock">
         <Setter Property="TextWrapping" Value="Wrap" />
-        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
     </Style>
 
     <!--  Used for flyout messages  -->
     <Style x:Key="CustomFlyoutTextStyle"
            BasedOn="{StaticResource BaseTextBlockStyle}"
            TargetType="TextBlock">
-        <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,8" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
@@ -195,8 +209,8 @@
     <Style x:Key="BrowseButtonStyle"
            BasedOn="{StaticResource BaseButtonStyle}"
            TargetType="Button">
-        <Setter Property="Margin" Value="10,0,0,0" />
-        <Setter Property="MinHeight" Value="33" />
+        <Setter Property="Margin" Value="8,0,0,0" />
+        <Setter Property="MinHeight" Value="32" />
     </Style>
 
     <!--  Delete button based on Accent button template  -->
@@ -301,8 +315,8 @@
     <Style x:Key="ExtraSmallButtonStyle"
            BasedOn="{StaticResource BrowseButtonStyle}"
            TargetType="Button">
-        <Setter Property="Height" Value="25" />
-        <Setter Property="Width" Value="25" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Width" Value="24" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="MinHeight" Value="0" />
@@ -312,25 +326,25 @@
     <Style x:Key="SmallButtonStyle"
            BasedOn="{StaticResource BrowseButtonStyle}"
            TargetType="Button">
-        <Setter Property="Height" Value="33" />
-        <Setter Property="Width" Value="33" />
-        <Setter Property="Padding" Value="5" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Padding" Value="4" />
     </Style>
 
     <Style x:Key="AccentBrowseButtonStyle"
            BasedOn="{StaticResource AccentButtonStyle}"
            TargetType="Button">
-        <Setter Property="Margin" Value="10,0,0,0" />
+        <Setter Property="Margin" Value="8,0,0,0" />
         <Setter Property="VerticalAlignment" Value="Bottom" />
     </Style>
 
     <Style x:Key="AccentSmallButtonStyle"
            BasedOn="{StaticResource AccentButtonStyle}"
            TargetType="Button">
-        <Setter Property="Margin" Value="10,0,0,0" />
+        <Setter Property="Margin" Value="8,0,0,0" />
         <Setter Property="VerticalAlignment" Value="Bottom" />
-        <Setter Property="Height" Value="33" />
-        <Setter Property="Width" Value="33" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Width" Value="32" />
         <Setter Property="Padding" Value="5" />
     </Style>
 
@@ -345,8 +359,8 @@
     <Style x:Key="DeleteExtraSmallButtonStyle"
            BasedOn="{StaticResource DeleteButtonStyle}"
            TargetType="Button">
-        <Setter Property="Height" Value="25" />
-        <Setter Property="Width" Value="25" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Width" Value="24" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="MinHeight" Value="0" />
@@ -355,7 +369,7 @@
 
     <Style x:Key="IconButtonTextBlockStyle"
            TargetType="TextBlock">
-        <Setter Property="Margin" Value="10,0,0,0" />
+        <Setter Property="Margin" Value="8,0,0,0" />
     </Style>
 
     <Style x:Key="BIAlignmentToggleButtonStyle"
@@ -1190,7 +1204,6 @@
            TargetType="Button">
         <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
         <Setter Property="MinWidth" Value="{ThemeResource FlyoutThemeMinWidth}" />
-        <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="MinHeight" Value="64" />
         <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
         <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
@@ -1199,7 +1212,7 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
-        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
@@ -1222,7 +1235,8 @@
                                           Content="{TemplateBinding Content}"
                                           ContentTemplate="{TemplateBinding ContentTemplate}"
                                           ContentTransitions="{TemplateBinding ContentTransitions}" />
-                        <FontIcon Margin="20,0,8,0"
+                        <FontIcon Grid.Column="1"
+                                  Margin="20,0,8,0"
                                   HorizontalAlignment="Right"
                                   FontSize="10"
                                   FontWeight="Black"
@@ -1262,6 +1276,26 @@
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
                     </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="NewInfoBadge"
+           TargetType="muxc:InfoBadge">
+        <Setter Property="Padding" Value="5,1,5,2" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="muxc:InfoBadge">
+                    <Border x:Name="RootGrid"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=TemplateSettings.InfoBadgeCornerRadius}">
+                        <TextBlock x:Uid="NewInfoBadgeTextBlock"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="10" />
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

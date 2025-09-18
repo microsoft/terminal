@@ -46,5 +46,47 @@
             <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
+
+        <!--  Reset Application State  -->
+        <local:SettingContainer x:Uid="Settings_ResetApplicationState">
+            <Button x:Uid="Settings_ResetApplicationStateButton"
+                    Style="{StaticResource DeleteButtonStyle}">
+                <Button.Flyout>
+                    <Flyout x:Name="ResetCacheFlyout"
+                            FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
+                        <StackPanel>
+                            <TextBlock x:Uid="Settings_ResetApplicationStateConfirmationMessageHeader"
+                                       Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <TextBlock x:Uid="Settings_ResetApplicationStateConfirmationMessageBody"
+                                       FontWeight="Normal"
+                                       Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <Button x:Uid="Settings_ResetApplicationStateConfirmationButton"
+                                    Click="ResetApplicationStateButton_Click" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </local:SettingContainer>
+
+        <!--  Reset to Default Settings  -->
+        <local:SettingContainer x:Uid="Settings_ResetToDefaultSettings">
+            <Button x:Uid="Settings_ResetToDefaultSettingsButton"
+                    Style="{StaticResource DeleteButtonStyle}">
+                <Button.Flyout>
+                    <Flyout FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
+                        <StackPanel>
+                            <TextBlock x:Uid="Settings_ResetToDefaultSettingsConfirmationMessageHeader"
+                                       Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <TextBlock x:Uid="Settings_ResetToDefaultSettingsConfirmationMessageBody"
+                                       FontWeight="Normal"
+                                       Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <Button x:Uid="Settings_ResetToDefaultSettingsConfirmationButton"
+                                    Click="{x:Bind ViewModel.ResetToDefaultSettings}" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </local:SettingContainer>
+
     </StackPanel>
 </Page>

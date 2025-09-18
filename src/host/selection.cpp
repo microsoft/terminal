@@ -415,7 +415,7 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
         // If we were using alternate selection, cancel it here before starting a new area.
         d->fUseAlternateSelection = false;
 
-        // Only unblock if we're not immediately starting a new selection. Otherwise stay blocked.
+        // Only unblock if we're not immediately starting a new selection. Otherwise, stay blocked.
         if (!fStartingNewSelection)
         {
             UnblockWriteConsole(CONSOLE_SELECTING);
@@ -428,9 +428,9 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 // - This does not validate whether there is a valid selection right now or not.
 //   It is assumed to already be in a proper selecting state and the given rectangle should be highlighted with the given color unconditionally.
 // Arguments:
-// - psrRect - Rectangular area to fill with color
+// - psrRect - Rectangular area to fill with color (exclusive)
 // - attr - The color attributes to apply
-void Selection::ColorSelection(const til::inclusive_rect& srRect, const TextAttribute attr)
+void Selection::ColorSelection(const til::rect& srRect, const TextAttribute attr)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -438,8 +438,8 @@ void Selection::ColorSelection(const til::inclusive_rect& srRect, const TextAttr
     auto& screenInfo = gci.GetActiveOutputBuffer();
 
     til::point coordTargetSize;
-    coordTargetSize.x = CalcWindowSizeX(srRect);
-    coordTargetSize.y = CalcWindowSizeY(srRect);
+    coordTargetSize.x = srRect.width();
+    coordTargetSize.y = srRect.height();
 
     til::point coordTarget;
     coordTarget.x = srRect.left;
@@ -475,9 +475,9 @@ void Selection::ColorSelection(const til::point coordSelectionStart, const til::
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
         const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd, false, true);
-        for (const auto& rect : rectangles)
+        for (const auto& inclusiveRect : rectangles)
         {
-            ColorSelection(rect, attr);
+            ColorSelection(til::rect{ inclusiveRect }, attr);
         }
     }
     CATCH_LOG();

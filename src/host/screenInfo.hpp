@@ -50,6 +50,25 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
+    // This little helper works like wil::scope_exit but is slimmer
+    // (= easier to optimize) and has a concrete type (= can declare).
+    struct SnapOnScopeExit
+    {
+        ~SnapOnScopeExit()
+        {
+            if (self)
+            {
+                try
+                {
+                    self->_makeCursorVisible();
+                }
+                CATCH_LOG();
+            }
+        }
+
+        SCREEN_INFORMATION* self;
+    };
+
     [[nodiscard]] static NTSTATUS CreateInstance(_In_ til::size coordWindowSize,
                                                  const FontInfo fontInfo,
                                                  _In_ til::size coordScreenBufferSize,
@@ -71,6 +90,9 @@ public:
     void GetRequiredConsoleSizeInPixels(_Out_ til::size* const pRequiredSize) const;
 
     void MakeCurrentCursorVisible();
+    void MakeCursorVisible(til::point position);
+    void SnapOnInput(WORD vkey);
+    SnapOnScopeExit SnapOnOutput() noexcept;
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
@@ -184,8 +206,6 @@ public:
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
 
-    void MakeCursorVisible(const til::point CursorPosition);
-
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
 
@@ -230,6 +250,7 @@ private:
     void _CalculateViewportSize(const til::rect* const prcClientArea, _Out_ til::size* const pcoordSize);
     void _AdjustViewportSize(const til::rect* const prcClientNew, const til::rect* const prcClientOld, const til::size* const pcoordSize);
     void _InternalSetViewportSize(const til::size* pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
+    void _makeCursorVisible();
 
     static void s_CalculateScrollbarVisibility(const til::rect* const prcClientArea,
                                                const til::size* const pcoordBufferSize,

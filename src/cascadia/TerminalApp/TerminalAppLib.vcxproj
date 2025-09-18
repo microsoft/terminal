@@ -26,6 +26,7 @@
     <TerminalCppWinrt>true</TerminalCppWinrt>
     <TerminalMUX>true</TerminalMUX>
     <TerminalWinGetInterop>true</TerminalWinGetInterop>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.props" />
@@ -60,7 +61,8 @@
     <Page Include="TabHeaderControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="HighlightedTextControl.xaml">
+    <Page Include="HighlightedTextControlStyle.xaml">
+      <Type>DefaultStyle</Type>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ColorPickupFlyout.xaml">
@@ -81,11 +83,10 @@
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="ActionPaletteItem.h" />
     <ClInclude Include="App.base.h" />
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
-    <ClInclude Include="CommandLinePaletteItem.h" />
+    <ClInclude Include="CommandPaletteItems.h" />
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="MinMaxCloseControl.h">
@@ -98,16 +99,12 @@
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="PaletteItem.h" />
-    <ClInclude Include="TabBase.h">
-      <DependentUpon>TabBase.idl</DependentUpon>
+    <ClInclude Include="BasePaletteItem.h" />
+    <ClInclude Include="Tab.h">
+      <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TabPaletteItem.h" />
     <ClInclude Include="TaskbarState.h">
       <DependentUpon>TaskbarState.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="TerminalTab.h">
-      <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
@@ -127,9 +124,8 @@
       <DependentUpon>TabHeaderControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="HighlightedTextControl.h">
-      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+      <DependentUpon>HighlightedTextControl.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
@@ -138,7 +134,7 @@
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="ColorHelper.h" />
+    <ClInclude Include="fzf/fzf.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -178,9 +174,7 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
-    <ClInclude Include="TerminalSettingsCache.h">
-      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="TerminalSettingsCache.h" />
     <ClInclude Include="SuggestionsControl.h">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClInclude>
@@ -191,11 +185,10 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="ActionPaletteItem.cpp" />
-    <ClCompile Include="CommandLinePaletteItem.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
+    <ClCompile Include="CommandPaletteItems.cpp" />
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
@@ -208,16 +201,12 @@
       <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="PaletteItem.cpp" />
-    <ClCompile Include="TabBase.cpp">
-      <DependentUpon>TabBase.idl</DependentUpon>
+    <ClCompile Include="Tab.cpp">
+      <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TabPaletteItem.cpp" />
+    <ClCompile Include="fzf/fzf.cpp" />
     <ClCompile Include="TaskbarState.cpp">
       <DependentUpon>TaskbarState.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="TerminalTab.cpp">
-      <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
@@ -245,9 +234,8 @@
       <DependentUpon>TabHeaderControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="HighlightedTextControl.cpp">
-      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+      <DependentUpon>HighlightedTextControl.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
@@ -257,9 +245,6 @@
     <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
-    <ClCompile Include="ColorHelper.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -302,9 +287,7 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
-    <ClCompile Include="TerminalSettingsCache.cpp">
-      <DependentUpon>TerminalSettingsCache.idl</DependentUpon>
-    </ClCompile>
+    <ClCompile Include="TerminalSettingsCache.cpp" />
     <ClCompile Include="SuggestionsControl.cpp">
       <DependentUpon>SuggestionsControl.xaml</DependentUpon>
     </ClCompile>
@@ -318,8 +301,6 @@
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
-    <Midl Include="ActionPaletteItem.idl" />
-    <Midl Include="CommandLinePaletteItem.idl" />
     <Midl Include="AboutDialog.idl">
       <DependentUpon>AboutDialog.xaml</DependentUpon>
     </Midl>
@@ -330,7 +311,7 @@
     <Midl Include="PaletteItemTemplateSelector.idl">
       <SubType>Designer</SubType>
     </Midl>
-    <Midl Include="PaletteItem.idl" />
+    <Midl Include="IPaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
@@ -339,10 +320,8 @@
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="TabBase.idl" />
-    <Midl Include="TabPaletteItem.idl" />
+    <Midl Include="Tab.idl" />
     <Midl Include="TaskbarState.idl" />
-    <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -363,10 +342,8 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="HighlightedTextControl.idl">
-      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -385,7 +362,6 @@
       <DependentUpon>TaskPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="TerminalSettingsCache.idl" />
     <Midl Include="MarkdownPaneContent.idl">
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -437,6 +413,9 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
       <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsAppAdapterLib\TerminalSettingsAppAdapterLib.vcxproj">
+      <Project>{3c46e2b0-ae6c-4132-9122-6772fb411959}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIMarkdown\UIMarkdown.vcxproj">
       <Project>{7615F03F-E56D-4DB4-B23D-BD4FB80DB36F}</Project>

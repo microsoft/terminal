@@ -25,7 +25,4 @@ void WriteClearScreen(SCREEN_INFORMATION& screenInfo);
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
-[[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(pcbBuffer) const wchar_t* pwchBuffer,
-                                      _Inout_ size_t* const pcbBuffer,
-                                      SCREEN_INFORMATION& screenInfo,
-                                      std::unique_ptr<WriteData>& waiter);
+[[nodiscard]] HRESULT DoWriteConsole(SCREEN_INFORMATION& screenInfo, std::wstring_view str);

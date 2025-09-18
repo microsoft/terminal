@@ -32,13 +32,21 @@
       ]
     },
     "DynamicProfileSource": {
-      "enum": [
-        "Windows.Terminal.Wsl",
-        "Windows.Terminal.Azure",
-        "Windows.Terminal.PowershellCore",
-        "Windows.Terminal.VisualStudio"
-      ],
-      "type": "string"
+      "type": "string",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "enum": [
+            "Microsoft.WSL",
+            "Windows.Terminal.Wsl",
+            "Windows.Terminal.Azure",
+            "Windows.Terminal.PowershellCore",
+            "Windows.Terminal.VisualStudio"
+          ]
+        }
+      ]
     },
     "BellStyle": {
       "oneOf": [
@@ -2294,8 +2302,15 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "The ID of the command this keybinding should execute.",
-          "type": "string"
+          "description": "The ID of the command this keybinding should execute (or null to disable a default).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
@@ -2366,6 +2381,16 @@
         "focusFollowMouse": {
           "default": false,
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
+          "type": "boolean"
+        },
+        "experimental.scrollToZoom": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl key while scrolling will increase or decrease the terminal font size.",
+          "type": "boolean"
+        },
+        "experimental.scrollToChangeOpacity": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl and Shift keys while scrolling will change the window opacity.",
           "type": "boolean"
         },
         "compatibility.allowHeadless": {
@@ -3114,12 +3139,13 @@
         },
         "pathTranslationStyle": {
           "default": "none",
-          "description": "Controls how file paths are transformed when they are dragged and dropped on the terminal. Possible values are \"none\", \"wsl\", \"cygwin\" and \"msys2\".",
+          "description": "Controls how file paths are transformed when they are dragged and dropped on the terminal. Possible values are \"none\", \"wsl\", \"cygwin\", \"msys2\" and \"mingw\".",
           "enum": [
             "none",
             "wsl",
             "cygwin",
-            "msys2"
+            "msys2",
+            "mingw"
           ],
           "type": "string"
         }

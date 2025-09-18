@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -739,5 +739,241 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>現在の作業ディレクトリを開く</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>タブを閉じる</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>入力の送信</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>フォーカス モードを設定</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>全画面表示を設定</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>最大化を設定</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>配色を設定</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>他のタブを閉じる</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>の後にタブを閉じる</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>タブの移動</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>一致を検索</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>テキストを検索する</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>ウィンドウをフォーカスする</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>バッファのエクスポート</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>バッファーのクリア</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>複数のアクション</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>不透明度の調整</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>コマンドの選択</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>出力の選択</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>候補</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>色の選択</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL ディストリビューション プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH ホスト プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
+  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
+    <value>選択を解除する</value>
+  </data>
+  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
+    <value>1 行表示</value>
+  </data>
+  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
+    <value>制御シーケンスを使用</value>
+  </data>
+  <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
+    <value>書式設定をコピー</value>
+  </data>
+  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Tab Index</value>
+  </data>
+  <data name="WindowActionArgumentLocalized" xml:space="preserve">
+    <value>ウィンドウ</value>
+  </data>
+  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>サイズ変更方向</value>
+  </data>
+  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>フォーカス方向</value>
+  </data>
+  <data name="DirectionActionArgumentLocalized" xml:space="preserve">
+    <value>方向</value>
+  </data>
+  <data name="DeltaActionArgumentLocalized" xml:space="preserve">
+    <value>ブルース</value>
+  </data>
+  <data name="InputActionArgumentLocalized" xml:space="preserve">
+    <value>入力</value>
+  </data>
+  <data name="TargetActionArgumentLocalized" xml:space="preserve">
+    <value>ターゲット</value>
+  </data>
+  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
+    <value>フォーカス モード</value>
+  </data>
+  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
+    <value>最大化しました</value>
+  </data>
+  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
+    <value>全画面表示</value>
+  </data>
+  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
+    <value>スキーム名</value>
+  </data>
+  <data name="TabColorActionArgumentLocalized" xml:space="preserve">
+    <value>シート見出しの色</value>
+  </data>
+  <data name="TitleActionArgumentLocalized" xml:space="preserve">
+    <value>タイトル</value>
+  </data>
+  <data name="CommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Commandline</value>
+  </data>
+  <data name="IndexActionArgumentLocalized" xml:space="preserve">
+    <value>インデックス</value>
+  </data>
+  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
+    <value>スクロールする行数</value>
+  </data>
+  <data name="ColorActionArgumentLocalized" xml:space="preserve">
+    <value>色</value>
+  </data>
+  <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
+    <value>起動モード</value>
+  </data>
+  <data name="NameActionArgumentLocalized" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
+    <value>キー コード</value>
+  </data>
+  <data name="SourceActionArgumentLocalized" xml:space="preserve">
+    <value>ソース</value>
+  </data>
+  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>コマンドラインを使用する</value>
+  </data>
+  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
+    <value>スイッチャー モード</value>
+  </data>
+  <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
+    <value>クエリの URL</value>
+  </data>
+  <data name="DesktopActionArgumentLocalized" xml:space="preserve">
+    <value>デスクトップ</value>
+  </data>
+  <data name="MonitorActionArgumentLocalized" xml:space="preserve">
+    <value>モニター</value>
+  </data>
+  <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
+    <value>表示の切り替え</value>
+  </data>
+  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
+    <value>ドロップダウンの期間</value>
+  </data>
+  <data name="IdActionArgumentLocalized" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="PathActionArgumentLocalized" xml:space="preserve">
+    <value>パス</value>
+  </data>
+  <data name="ClearActionArgumentLocalized" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="OpacityActionArgumentLocalized" xml:space="preserve">
+    <value>不透明度</value>
+  </data>
+  <data name="RelativeActionArgumentLocalized" xml:space="preserve">
+    <value>相対</value>
+  </data>
+  <data name="ForegroundActionArgumentLocalized" xml:space="preserve">
+    <value>前景</value>
+  </data>
+  <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
+    <value>背景</value>
+  </data>
+  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
+    <value>一致モード</value>
+  </data>
+  <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
+    <value>開始ディレクトリ</value>
+  </data>
+  <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
+    <value>タブのタイトル</value>
+  </data>
+  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
+    <value>プロファイル インデックス</value>
+  </data>
+  <data name="ProfileActionArgumentLocalized" xml:space="preserve">
+    <value>プロファイル</value>
+  </data>
+  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
+    <value>アプリケーション タイトルを表示しない</value>
+  </data>
+  <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
+    <value>配色</value>
+  </data>
+  <data name="ElevateActionArgumentLocalized" xml:space="preserve">
+    <value>昇格</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
+    <value>環境変数を再度読み込む</value>
+  </data>
+  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>分割方向</value>
+  </data>
+  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
+    <value>分割モード</value>
+  </data>
+  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
+    <value>分割サイズ</value>
   </data>
 </root>

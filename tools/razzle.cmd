@@ -21,7 +21,7 @@ rem Add nuget to PATH
 set PATH=%OPENCON%\dep\nuget;%PATH%
 
 rem Run nuget restore so you can use vswhere
-nuget restore %OPENCON%\OpenConsole.sln -Verbosity quiet
+nuget restore %OPENCON%\OpenConsole.slnx -Verbosity quiet
 nuget restore %OPENCON%\dep\nuget\packages.config -Verbosity quiet
 
 :FIND_MSBUILD

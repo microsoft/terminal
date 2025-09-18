@@ -5,7 +5,10 @@
     <XesUseOneStoreVersioning>true</XesUseOneStoreVersioning>
     <XesBaseYearForStoreVersion>2025</XesBaseYearForStoreVersion>
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>24</VersionMinor>
+    <VersionMinor>25</VersionMinor>
     <VersionInfoProductName>Windows Terminal</VersionInfoProductName>
+    <VersionInfoCulture>1033</VersionInfoCulture>
+    <!-- The default has a spacing problem -->
+    <VersionInfoCopyRight>\xa9 Microsoft Corporation. All rights reserved.</VersionInfoCopyRight>
   </PropertyGroup>
 </Project>

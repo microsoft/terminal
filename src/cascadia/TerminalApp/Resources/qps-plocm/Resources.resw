@@ -214,6 +214,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>Šрŀіт φªňë !!!</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Ґΐĝĥτ ςļìск ƒôŗ ѕрℓΐť δįяęčŧįόпŝ - гΐġћŧ/đôшň/µρ/ľëƒт !!! !!! !!! !!! !!! </value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Śφľīţ φǻńě ðбẃή !!! !</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Śрĺїť рâйê řіġнţ !!! !</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Ŝрļįŧ рâⁿë ūφ !!! </value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Ѕрľîţ φâиè ļзƒţ !!! !</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Đύрľįčäтè !!!</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Šŵάφ рąņё !!!</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Ѕщǻφ ρåπê ďōщπ !!! !</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Şώǻρ ρâпέ ŕïġђţ !!! !</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Śωãр φàňє цр !!! </value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Šŵªφ ρäήę łеƒť !!! !</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Тøģġľε φªηê żοбм !!! !</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Ċłǿѕē ōŧĥзŗ рάпèś !!! !!</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Ẅёв şĕаŕčĥ !!!</value>
   </data>
@@ -232,13 +271,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Ďϋφľіčάтέ τàв !!! </value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>₣σúŋδ ą φѓοƒĩļé ẃϊţħ äй ïηνàĺìď "backgroundImage". Đēƒãųŀŧϊпğ ťнªт φѓőƒĭļè το нªνе πō ьąçќġгθúпδ ιмãġė. Маĸē śμѓē ŧћäţ ẁђēή šêťτϊлġ å "backgroundImage", ţĥě νаłųё ïŝ ά νάľîď ƒĩŀê φąťħ ţŏ άń ΐмąġė. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>₣ǿũиđ à рřöƒϊℓз ŵĩţн аñ įņνàŀїδ "icon". Ðěƒаúľτīŋğ ţħаτ ρřόƒìŀё тб ђâνє пǿ íčой. Мàĸë ŝùřë ŧĥаţ ωĥĕл ŝеτŧīлĝ ăй "icon", τħε νāłϋë ïŝ ă νàľīđ ƒïŀè рªтн ţő äи ïмäģё. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Ωňę бг mθгě яėŝǿüґсėş (šυćн âş icon ōя backgroundImage) ŝрěçìƒįєð ίπ ýőūŕ ŝėтťīлġš ċòŭĺð йöŧ вέ ƒòúпď. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Щαѓńΐňģš ώĕřе ƒбŭπδ ώħīļë рăяşìⁿġ ўσυŕ κёỳвĩиðīήġş: !!! !!! !!! !!! !!!</value>
@@ -943,5 +978,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>Мóνε яίģнŧ !!!</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Дŉ ΐňνãľîδ ŗěğµℓдř ë×ρяēѕšιбή ẃăѕ ƒοůŉđ. !!! !!! !!! !!!</value>
   </data>
 </root>

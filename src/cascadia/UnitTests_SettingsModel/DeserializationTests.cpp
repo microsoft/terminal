@@ -36,8 +36,6 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestHideAllProfiles);
         TEST_METHOD(TestInvalidColorSchemeName);
         TEST_METHOD(TestHelperFunctions);
-        TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
-        TEST_METHOD(TestProfileBackgroundImageWithDesktopWallpaper);
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
         TEST_METHOD(TestLayerUserDefaultsBeforeProfiles);
@@ -897,44 +895,6 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(name1, settings->FindProfile(guid1).Name());
         VERIFY_ARE_EQUAL(name2, settings->FindProfile(guid2).Name());
         VERIFY_IS_NULL(settings->FindProfile(fakeGuid));
-    }
-
-    void DeserializationTests::TestProfileBackgroundImageWithEnvVar()
-    {
-        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "%WINDIR%\\System32\\x_80.png"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_NOT_EQUAL(0u, settings->AllProfiles().Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
-    }
-
-    void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
-    {
-        const winrt::hstring expectedBackgroundImagePath{ L"desktopWallpaper" };
-
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "backgroundImage": "desktopWallpaper"
-                }
-            ]
-        })" };
-
-        const auto settings = createSettings(settingsJson);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().BackgroundImagePath());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->AllProfiles().GetAt(0).DefaultAppearance().ExpandedBackgroundImagePath());
     }
 
     void DeserializationTests::TestCloseOnExitParsing()
@@ -1828,16 +1788,18 @@ namespace SettingsModelUnitTests
             "profiles":
             {
                 "defaults": {
-                    "name": "PROFILE DEFAULTS"
+                    "tabTitle": "PROFILE DEFAULTS TAB TITLE"
                 },
                 "list": [
                     {
                         "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
-                        "name": "CMD"
+                        "name": "CMD",
+                        "tabTitle": "CMD Tab Title"
                     },
                     {
                         "guid": "{61c54bbd-2222-5271-96e7-009a87ff44bf}",
-                        "name": "PowerShell"
+                        "name": "PowerShell",
+                        "tabTitle": "PowerShell Tab Title"
                     },
                     {
                         "guid": "{61c54bbd-3333-5271-96e7-009a87ff44bf}"
@@ -1856,25 +1818,30 @@ namespace SettingsModelUnitTests
         // test profiles
         VERIFY_ARE_EQUAL(settings->AllProfiles().Size(), copyImpl->AllProfiles().Size());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).Name(), copyImpl->AllProfiles().GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).TabTitle(), copyImpl->AllProfiles().GetAt(0).TabTitle());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).Name(), copyImpl->AllProfiles().GetAt(1).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).TabTitle(), copyImpl->AllProfiles().GetAt(1).TabTitle());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(2).Name(), copyImpl->AllProfiles().GetAt(2).Name());
-        VERIFY_ARE_EQUAL(settings->ProfileDefaults().Name(), copyImpl->ProfileDefaults().Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(2).TabTitle(), copyImpl->AllProfiles().GetAt(2).TabTitle());
+        VERIFY_ARE_EQUAL(settings->ProfileDefaults().TabTitle(), copyImpl->ProfileDefaults().TabTitle());
 
         // Modifying profile.defaults should...
-        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasName(), copyImpl->ProfileDefaults().HasName());
-        copyImpl->ProfileDefaults().Name(L"changed value");
+        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasTabTitle(), copyImpl->ProfileDefaults().HasTabTitle());
+        copyImpl->ProfileDefaults().TabTitle(L"changed value");
 
-        // ...keep the same name for the first two profiles
+        // ...keep the same name and tab title for the first two profiles
         VERIFY_ARE_EQUAL(settings->AllProfiles().Size(), copyImpl->AllProfiles().Size());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).Name(), copyImpl->AllProfiles().GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(0).TabTitle(), copyImpl->AllProfiles().GetAt(0).TabTitle());
         VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).Name(), copyImpl->AllProfiles().GetAt(1).Name());
+        VERIFY_ARE_EQUAL(settings->AllProfiles().GetAt(1).TabTitle(), copyImpl->AllProfiles().GetAt(1).TabTitle());
 
         // ...but change the name for the one that inherited it from profile.defaults
-        VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(2).Name(), copyImpl->AllProfiles().GetAt(2).Name());
+        VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(2).TabTitle(), copyImpl->AllProfiles().GetAt(2).TabTitle());
 
         // profile.defaults should be different between the two graphs
-        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasName(), copyImpl->ProfileDefaults().HasName());
-        VERIFY_ARE_NOT_EQUAL(settings->ProfileDefaults().Name(), copyImpl->ProfileDefaults().Name());
+        VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasTabTitle(), copyImpl->ProfileDefaults().HasTabTitle());
+        VERIFY_ARE_NOT_EQUAL(settings->ProfileDefaults().TabTitle(), copyImpl->ProfileDefaults().TabTitle());
 
         Log::Comment(L"Test empty profiles.defaults");
         static constexpr std::string_view emptyPDJson{ R"(
@@ -2131,7 +2098,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         VERIFY_IS_FALSE(loader.duplicateProfile);
@@ -2155,7 +2122,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2181,7 +2148,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2215,7 +2182,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2250,7 +2217,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2276,7 +2243,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
@@ -2303,7 +2270,7 @@ namespace SettingsModelUnitTests
 
         implementation::SettingsLoader loader{ std::string_view{}, implementation::LoadStringResource(IDR_DEFAULTS) };
         loader.MergeInboxIntoUserSettings();
-        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, {}, fragmentJson);
         loader.FinalizeLayering();
 
         const auto oldSettings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));

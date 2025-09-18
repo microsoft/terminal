@@ -6,6 +6,7 @@
 
 #include <mmsystem.h>
 
+#include "TerminalSettingsCache.h"
 #include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
@@ -20,7 +21,7 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 namespace winrt::TerminalApp::implementation
 {
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                                             const TerminalApp::TerminalSettingsCache& cache,
+                                             const std::shared_ptr<TerminalSettingsCache>& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
         _control{ control },
         _cache{ cache },
@@ -82,7 +83,7 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring TerminalPaneContent::Icon() const
     {
-        return _profile.EvaluatedIcon();
+        return _profile.Icon().Resolved();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TerminalPaneContent::TabColor() const noexcept
@@ -95,7 +96,7 @@ namespace winrt::TerminalApp::implementation
         NewTerminalArgs args{};
         const auto& controlSettings = _control.Settings();
 
-        args.Profile(controlSettings.ProfileName());
+        args.Profile(::Microsoft::Console::Utils::GuidToString(_profile.Guid()));
         // If we know the user's working directory use it instead of the profile.
         if (const auto dir = _control.WorkingDirectory(); !dir.empty())
         {
@@ -126,11 +127,9 @@ namespace winrt::TerminalApp::implementation
 
         // TODO:GH#9800 - we used to be able to persist the color scheme that a
         // TermControl was initialized with, by name. With the change to having the
-        // control own its own copy of its settings, this isn't possible anymore.
-        //
-        // We may be able to get around this by storing the Name in the Core::Scheme
-        // object. That would work for schemes set by the Terminal, but not ones set
-        // by VT, but that seems good enough.
+        // control own its own copy of its settings, this wasn't possible anymore.
+        // It probably is once again possible, but Dustin doesn't know how to undo
+        // the damage done in the ControlSettings migration.
 
         switch (kind)
         {
@@ -141,7 +140,7 @@ namespace winrt::TerminalApp::implementation
             // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
             break;
-        case BuildStartupKind::Persist:
+        case BuildStartupKind::PersistAll:
         {
             const auto connection = _control.Connection();
             const auto id = connection ? connection.SessionId() : winrt::guid{};
@@ -156,6 +155,7 @@ namespace winrt::TerminalApp::implementation
             }
             break;
         }
+        case BuildStartupKind::PersistLayout:
         default:
             break;
         }
@@ -277,7 +277,7 @@ namespace winrt::TerminalApp::implementation
                     auto sounds{ _profile.BellSound() };
                     if (sounds && sounds.Size() > 0)
                     {
-                        winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
+                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
                         winrt::Windows::Foundation::Uri uri{ soundPath };
                         _playBellSound(uri);
                     }
@@ -339,11 +339,15 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(*this, nullptr);
     }
 
-    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& /*settings*/)
+    void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
-        if (const auto& settings{ _cache.TryLookup(_profile) })
+        // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
+        const auto profile{ settings.FindProfile(_profile.Guid()) };
+        _profile = profile ? profile : settings.ProfileDefaults();
+
+        if (const auto settings{ _cache->TryLookup(_profile) })
         {
-            _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
+            _control.UpdateControlSettings(settings->DefaultSettings(), settings->UnfocusedSettings());
         }
     }
 

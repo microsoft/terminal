@@ -28,7 +28,6 @@ namespace winrt::Microsoft::Terminal::Core
 {
     struct ICoreSettings;
     struct ICoreAppearance;
-    struct Scheme;
     enum class MatchMode;
 }
 
@@ -92,9 +91,11 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void UpdateColorScheme(const winrt::Microsoft::Terminal::Core::ICoreScheme& scheme);
+    void SetHighContrastMode(bool hc) noexcept;
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
-    void SetVtChecksumReportSupport(const bool enabled);
+    void SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
 
@@ -155,6 +156,7 @@ public:
     bool IsVtInputEnabled() const noexcept override;
     void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
+    void NotifyShellIntegrationMark() override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
@@ -245,9 +247,6 @@ public:
     void UpdatePatternsUnderLock();
 
     const std::optional<til::color> GetTabColor() const;
-
-    winrt::Microsoft::Terminal::Core::Scheme GetColorScheme() const;
-    void ApplyScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
@@ -371,7 +370,7 @@ private:
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
     bool _suppressApplicationTitle = false;
-    bool _trimBlockSelection = false;
+    bool _trimBlockSelection = true;
     bool _autoMarkPrompts = false;
     bool _rainbowSuggestions = false;
 
@@ -382,6 +381,7 @@ private:
 
     std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
+    bool _highContrastMode = false;
 
     // This default fake font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.

@@ -22,8 +22,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        _entryTemplateSelector = Resources().Lookup(box_value(L"NewTabMenuEntryTemplateSelector")).as<Editor::NewTabMenuEntryTemplateSelector>();
-
         // Ideally, we'd bind IsEnabled to something like mtu:Converters.isEmpty(NewTabMenuListView.SelectedItems.Size) in the XAML,
         //   but the XAML compiler can't find NewTabMenuListView when we try that. Rather than copying the list of selected items over
         //   to the view model, we'll just do this instead (much simpler).
@@ -46,6 +44,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void NewTabMenu::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _ViewModel = e.Parameter().as<Editor::NewTabMenuViewModel>();
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue(_ViewModel.IsFolderView() ? "newTabMenu.folderView" : "newTabMenu", "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void NewTabMenu::FolderPickerDialog_Opened(const IInspectable& /*sender*/, const Controls::ContentDialogOpenedEventArgs& /*e*/)

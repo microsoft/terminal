@@ -58,7 +58,7 @@ public:
 
     void ClearSelection();
     void ClearSelection(const bool fStartingNewSelection);
-    void ColorSelection(const til::inclusive_rect& srRect, const TextAttribute attr);
+    void ColorSelection(const til::rect& srRect, const TextAttribute attr);
     void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr);
 
     // delete these or we can accidentally get copies of the singleton

@@ -294,9 +294,21 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
 
     const auto& buffer = _activeBuffer();
     const auto bufferSize = buffer.GetSize();
+    const auto height = buffer.GetSize().Height();
+
     switch (_multiClickSelectionMode)
     {
     case SelectionExpansion::Line:
+        // climb up to the first row that is wrapped
+        while (start.y > 0 && buffer.GetRowByOffset(start.y - 1).WasWrapForced())
+        {
+            --start.y;
+        }
+        // climb down to the last row that is wrapped
+        while (end.y + 1 < height && buffer.GetRowByOffset(end.y).WasWrapForced())
+        {
+            ++end.y;
+        }
         start = { bufferSize.Left(), start.y };
         end = { bufferSize.RightExclusive(), end.y };
         break;
@@ -426,7 +438,7 @@ void Terminal::ExpandSelectionToWord()
 // Arguments:
 // - dir: the direction we're scanning the buffer in to find the hyperlink of interest
 // Return Value:
-// - true if we found a hyperlink to select (and selected it). False otherwise.
+// - true if we found a hyperlink to select (and selected it); otherwise, false.
 void Terminal::SelectHyperlink(const SearchDirection dir)
 {
     if (_selectionMode != SelectionInteractionMode::Mark)

@@ -1,5 +1,35 @@
 # See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-patterns
 
+# Windows accelerators
+\b[A-Z][a-z]*&[a-z]+(?!;)\b
+
+# charsets.hpp
+\{ L.*\}, // (?:Cyrillic|Greek|Hebrew).*
+
+# Screen buffer tests
+\bQQ[A-Z]+\s*[A-Z]*Q+\b
+
+# Unicode references
+(?<=\W)(?:U\+?|)[0-9A-F]+b?\b
+
+# Verify
+VERIFY_IS_TRUE\(.*\)
+
+# TEST_METHOD(ApiScrollConsoleScreenBufferW)
+\bZ[A-Z]+$
+
+# TerminalApiTest
+stateMachine\.ProcessString\(L".*"
+
+# bundles
+[0-9a-z]+\\?\.msixbundle
+
+# text file names
+"[a-z]+\.txt"
+
+# Checksum
+L"[0-9A-F]{4}"
+
 # Direct 2D/3D
 \b(?:d[23]d(?=[a-z])|D[23]D(?=[A-Z]))
 
@@ -9,38 +39,126 @@
 # Windows Resources with accelerators
 \b[A-Z]&[a-z]+\b(?!;)
 
-# bug in check-spelling v0.0.24 (fixed later)
-\bok'd\b
-
 # Automatically suggested patterns
 
-# hit-count: 83 file-count: 18
+# hit-count: 3904 file-count: 577
+# IServiceProvider / isAThing
+(?:(?:\b|_|(?<=[a-z]))[IT]|(?:\b|_)(?:nsI|isA))(?=(?:[A-Z][a-z]{2,})+(?:[A-Z\d]|\b))
+
+# hit-count: 2437 file-count: 826
+# #includes
+^\s*#include\s*(?:<.*?>|".*?")
+
+# hit-count: 1131 file-count: 326
+# C# includes
+^\s*using [^;]+;
+
+# hit-count: 128 file-count: 47
 # C network byte conversions
 (?:\d|\bh)to(?!ken)(?=[a-z])|to(?=[adhiklpun]\()
 
-# hit-count: 59 file-count: 36
-# IServiceProvider / isAThing
-(?:\b|_)(?:(?:ns|)I|isA)(?=(?:[A-Z][a-z]{2,})+(?:[A-Z\d]|\b))
+# hit-count: 53 file-count: 10
+# ANSI color codes
+(?:\\(?:u00|x)1[Bb]|\\03[1-7]|\x1b|\\u\{1[Bb]\})\[\d+(?:;\d+)*m
 
-# hit-count: 9 file-count: 6
+# hit-count: 45 file-count: 29
+# version suffix <word>v#
+(?:(?<=[A-Z]{2})V|(?<=[a-z]{2}|[A-Z]{2})v)\d+(?:\b|(?=[a-zA-Z_]))
+
+# hit-count: 30 file-count: 19
+# uuid:
+\b[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}\b
+
+# hit-count: 17 file-count: 7
+# File extensions
+\*\.[+\w]+,
+
+# hit-count: 15 file-count: 9
 # Markdown anchor links
 \(#\S*?[a-zA-Z]\S*?\)
 
-# hit-count: 5 file-count: 5
-# libraries
-(?:\b|_)lib(?:re(?=office)|)(?!era[lt]|ero|ert(?:ies|y)|rar(?:i(?:an|es)|y))(?=[a-z])
+# hit-count: 14 file-count: 8
+# hex runs
+\b[0-9a-fA-F]{16,}\b
+
+# hit-count: 12 file-count: 8
+# hex digits including css/html color classes:
+(?:[\\0][xX]|\\u|[uU]\+|#x?|%23|&H)[0-9_a-fA-FgGrR]*?[a-fA-FgGrR]{2,}[0-9_a-fA-FgGrR]*(?:[uUlL]{0,3}|[iu]\d+)\b
+
+# hit-count: 12 file-count: 7
+# tar arguments
+\b(?:\\n|)g?tar(?:\.exe|)(?:(?:\s+--[-a-zA-Z]+|\s+-[a-zA-Z]+|\s[ABGJMOPRSUWZacdfh-pr-xz]+\b)(?:=[^ ]*|))+
+
+# hit-count: 9 file-count: 6
+# Repeated letters
+\b([a-z])\g{-1}{2,}\b
+
+# hit-count: 8 file-count: 2
+# regex choice
+\(\?:[^)]+\|[^)]+\)
+
+# hit-count: 8 file-count: 1
+# latex (check-spelling >= 0.0.22)
+\\\w{2,}\{
+
+# hit-count: 7 file-count: 4
+# Python string prefix / binary prefix
+# Note that there's a high false positive rate, remove the `?=` and search for the regex to see if the matches seem like reasonable strings
+(?<!['"])\b(?:B|BR|Br|F|FR|Fr|R|RB|RF|Rb|Rf|U|UR|Ur|b|bR|br|f|fR|fr|r|rB|rF|rb|rf|u|uR|ur)['"](?=[A-Z]{3,}|[A-Z][a-z]{2,}|[a-z]{3,})
+
+# hit-count: 5 file-count: 3
+# Alternatively, if you're using check-spelling v0.0.25+, and you would like to _check_ the Non-English content for spelling errors, you can. For information on how to do so, see:
+# https://docs.check-spelling.dev/Feature:-Configurable-word-characters.html#unicode
+[a-zA-Z]*[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź][a-zA-Z]{3}[a-zA-ZÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź]*|[a-zA-Z]{3,}[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź]|[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź][a-zA-Z]{3,}
 
 # hit-count: 3 file-count: 3
-# File extensions
-\*\.[+\w]+,
+# mailto urls
+mailto:[-a-zA-Z=;:/?%&0-9+@._]{3,}
+
+# hit-count: 2 file-count: 2
+# Alternative printf
+# %s
+%(?:s(?=[a-z]{2,}))(?!%)(?=[_a-zA-Z]+(?!%[^s])\b)(?=.*?['"])
 
 # hit-count: 2 file-count: 1
 # kubernetes crd patterns
 ^\s*pattern: .*$
 
 # hit-count: 1 file-count: 1
+# css fonts
+\bfont(?:-family|):[^;}]+
+
+# hit-count: 1 file-count: 1
+# microsoft
+\b(?:https?://|)(?:(?:(?:blogs|download\.visualstudio|docs|msdn2?|research)\.|)microsoft|blogs\.msdn)\.co(?:m|\.\w\w)/[-_a-zA-Z0-9()=./%]*
+
+# hit-count: 1 file-count: 1
+# Punycode
+\bxn--[-0-9a-z]+
+
+# hit-count: 1 file-count: 1
+# sha-... -- uses a fancy capture
+(\\?['"]|&quot;)[0-9a-f]{40,}\g{-1}
+
+# hit-count: 1 file-count: 1
+# Docker images
+^\s*(?i)FROM\s+\S+:\S+(?:\s+AS\s+\S+|)
+
+# hit-count: 1 file-count: 1
+# WWNN/WWPN (NAA identifiers)
+\b(?:0x)?10[0-9a-f]{14}\b|\b(?:0x|3)?[25][0-9a-f]{15}\b|\b(?:0x|3)?6[0-9a-f]{31}\b
+
+# hit-count: 1 file-count: 1
 # curl arguments
 \b(?:\\n|)curl(?:\.exe|)(?:\s+-[a-zA-Z]{1,2}\b)*(?:\s+-[a-zA-Z]{3,})(?:\s+-[a-zA-Z]+)*
+
+# hit-count: 1 file-count: 1
+# tput arguments -- https://man7.org/linux/man-pages/man5/terminfo.5.html -- technically they can be more than 5 chars long...
+\btput\s+(?:(?:-[SV]|-T\s*\w+)\s+)*\w{3,5}\b
+
+# bug in check-spelling v0.0.24 (fixed later)
+\bok'd\b
+
 
 https?://\S+
 [Pp]ublicKeyToken="?[0-9a-fA-F]{16}"?
@@ -72,24 +190,11 @@ ROY\sG\.\sBIV
 # ARM NEON intrinsics like "vsubq_u16"
 \bv\w+_[fsu](?:8|16|32|64)\b
 
-# color floating numbers
-0x[0-9a-f](?:\.[0-9a-f]*p)[-+]\d+f
-
 # AppX package
 _\d[0-9a-z]{12}['\.]
 
 # string test
 equals_insensitive_ascii\("\w+", "\w+"
-
-# Automatically suggested patterns
-# hit-count: 3788 file-count: 599
-# IServiceProvider / isAThing
-\b(?:I|isA)(?=(?:[A-Z][a-z]{2,})+\b)
-
-# hit-count: 314 file-count: 21
-# hex runs
-\b[0-9a-fA-F]{16,}\b
-
 # hit-count: 47 file-count: 11
 # special cased printf markers
 \\r\\n(?=[a-z])|(?<!\\)\\[nrt](?=[a-z]{2,})(?=.*(?:<.*['"`]|"(?:[;,]|\);)$|\) \+$))
@@ -97,84 +202,6 @@ equals_insensitive_ascii\("\w+", "\w+"
 # ConsoleArgumentsTests
 --headless\\.*?"
 
-# hit-count: 109 file-count: 62
-# Compiler flags (Unix, Java/Scala)
-# Use if you have things like `-Pdocker` and want to treat them as `docker`
-(?:^|[\t ,>"'`=(])-(?:D(?=[A-Z])|W(?!ork)|X|f(?=[ms]))(?=[A-Z]{2,}|[A-Z][a-z]|[a-z]{2,})
-
-# hit-count: 60 file-count: 35
-# version suffix <word>v#
-(?:(?<=[A-Z]{2})V|(?<=[a-z]{2}|[A-Z]{2})v)\d+(?:\b|(?=[a-zA-Z_]))
-
-# hit-count: 2 file-count: 2
-# This does not cover multiline strings, if your repository has them,
-# you'll want to remove the `(?=.*?")` suffix.
-# The `(?=.*?")` suffix should limit the false positives rate
-# printf
-%(?:s)(?!ize)(?=[a-z]{2,})
-
-# hit-count: 16 file-count: 10
-# uuid:
-\b[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}\b
-
-# hit-count: 13 file-count: 4
-# Non-English
-[a-zA-Z]*[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź][a-zA-Z]{3}[a-zA-ZÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź]*|[a-zA-Z]{3,}[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź]|[ÀÁÂÃÄÅÆČÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝßàáâãäåæčçèéêëìíîïðñòóôõöøùúûüýÿĀāŁłŃńŅņŒœŚśŠšŜŝŸŽžź][a-zA-Z]{3,}
-
-# hit-count: 7 file-count: 5
-# hex digits including css/html color classes:
-(?:[\\0][xX]|\\u|[uU]\+|#x?|\%23)[0-9_a-fA-FgGrR]*?[a-fA-FgGrR]{2,}[0-9_a-fA-FgGrR]*(?:[uUlL]{0,3}|[iu]\d+)\b
-
-# hit-count: 7 file-count: 1
-# regex choice
-\(\?:[^)]+\|[^)]+\)
-
-# hit-count: 4 file-count: 4
-# tar arguments
-\b(?:\\n|)g?tar(?:\.exe|)(?:(?:\s+--[-a-zA-Z]+|\s+-[a-zA-Z]+|\s[ABGJMOPRSUWZacdfh-pr-xz]+\b)(?:=[^ ]*|))+
-
-# hit-count: 4 file-count: 1
-# ANSI color codes
-(?:\\(?:u00|x)1[Bb]|\x1b|\\u\{1[Bb]\})\[\d+(?:;\d+|)m
-
-# hit-count: 4 file-count: 1
-# Update Lorem based on your content (requires `ge` and `w` from https://github.com/jsoref/spelling; and `review` from https://github.com/check-spelling/check-spelling/wiki/Looking-for-items-locally )
-# grep '^[^#].*lorem' .github/actions/spelling/patterns.txt|perl -pne 's/.*i..\?://;s/\).*//' |tr '|' "\n"|sort -f |xargs -n1 ge|perl -pne 's/^[^:]*://'|sort -u|w|sed -e 's/ .*//'|w|review -
-# Warning, while `(?i)` is very neat and fancy, if you have some binary files that aren't proper unicode, you might run into:
-## Operation "substitution (s///)" returns its argument for non-Unicode code point 0x1C19AE (the code point will vary).
-## You could manually change `(?i)X...` to use `[Xx]...`
-## or you could add the files to your `excludes` file (a version after 0.0.19 should identify the file path)
-# Lorem
-(?:\w|\s|[,.])*\b(?i)(?:amet|consectetur|cursus|dolor|eros|ipsum|lacus|libero|ligula|lorem|magna|neque|nulla|suscipit|tempus)\b(?:\w|\s|[,.])*
-
-# hit-count: 3 file-count: 3
-# mailto urls
-mailto:[-a-zA-Z=;:/?%&0-9+@.]{3,}
-
-# hit-count: 2 file-count: 1
-# Python string prefix / binary prefix
-# Note that there's a high false positive rate, remove the `?=` and search for the regex to see if the matches seem like reasonable strings
-(?<!')\b(?:B|BR|Br|F|FR|Fr|R|RB|RF|Rb|Rf|U|UR|Ur|b|bR|br|f|fR|fr|r|rB|rF|rb|rf|u|uR|ur)'(?=[A-Z]{3,}|[A-Z][a-z]{2,}|[a-z]{3,})
-
-# hit-count: 1 file-count: 1
-# Punycode
-\bxn--[-0-9a-z]+
-
-# hit-count: 1 file-count: 1
-# latex (check-spelling >= 0.0.22)
-\\\w{2,}\{
-
-# hit-count: 1 file-count: 1
-# tput arguments -- https://man7.org/linux/man-pages/man5/terminfo.5.html -- technically they can be more than 5 chars long...
-\btput\s+(?:(?:-[SV]|-T\s*\w+)\s+)*\w{3,5}\b
-
-# Questionably acceptable forms of `in to`
-# Personally, I prefer `log into`, but people object
-# https://www.tprteaching.com/log-into-log-in-to-login/
-\b(?:[Ll]og|[Ss]ign) in to\b
-
-# to opt in
-\bto opt in\b
 
 # Questionably acceptable forms of `in to`
 # Personally, I prefer `log into`, but people object
@@ -183,6 +210,10 @@ mailto:[-a-zA-Z=;:/?%&0-9+@.]{3,}
 
 # to opt in
 \bto opt in\b
+
+# pass(ed|ing) in
+\bpass(?:ed|ing) in\b
+
 # acceptable duplicates
 # ls directory listings
 [-bcdlpsw](?:[-r][-w][-SsTtx]){3}[\.+*]?\s+\d+\s+\S+\s+\S+\s+[.\d]+(?:[KMGT]|)\s+

@@ -20,26 +20,16 @@
     </ClCompile>
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
-    <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
-    <ClCompile Include="ActionPaletteItem.cpp">
+    <ClCompile Include="CommandPaletteItems.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
-    <ClCompile Include="PaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="TabPaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="CommandLinePaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="HighlightedText.cpp">
-      <Filter>highlightedText</Filter>
+    <ClCompile Include="fzf/fzf.cpp">
+      <Filter>fzf</Filter>
     </ClCompile>
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
@@ -57,25 +47,21 @@
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="DebugTapConnection.h" />
-    <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="FilteredCommand.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="ActionPaletteItem.h">
+    <ClInclude Include="CommandPaletteItems.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="PaletteItem.h">
+    <ClInclude Include="BasePaletteItem.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="TabPaletteItem.h">
-      <Filter>commandPalette</Filter>
+    <ClInclude Include="fzf/fzf.h">
+      <Filter>fzf</Filter>
     </ClInclude>
-    <ClInclude Include="CommandLinePaletteItem.h">
-      <Filter>commandPalette</Filter>
-    </ClInclude>
-    <ClInclude Include="HighlightedText.h">
-      <Filter>highlightedText</Filter>
+    <ClInclude Include="fzf/LICENSE">
+      <Filter>fzf</Filter>
     </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
@@ -93,24 +79,17 @@
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="TerminalTab.idl">
-      <Filter>tab</Filter>
-    </Midl>
     <Midl Include="FilteredCommand.idl">
       <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="HighlightedText.idl">
-      <Filter>highlightedText</Filter>
     </Midl>
     <Midl Include="TerminalTabStatus.idl">
       <Filter>tab</Filter>
     </Midl>
     <Midl Include="PaletteItemTemplateSelector.idl" />
-    <Midl Include="TabBase.idl" />
+    <Midl Include="Tab.idl" />
     <Midl Include="TerminalWindow.idl" />
     <Midl Include="TaskbarState.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalSettingsCache.idl" />
     <Midl Include="Monarch.idl" />
   </ItemGroup>
   <ItemGroup>
@@ -135,19 +114,10 @@
     <Page Include="CommandPalette.xaml">
       <Filter>commandPalette</Filter>
     </Page>
-    <Midl Include="PaletteItem.idl">
+    <Midl Include="IPaletteItem.idl">
       <Filter>commandPalette</Filter>
     </Midl>
-    <Midl Include="TabPaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="ActionPaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="CommandLinePaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Page Include="HighlightedTextControl.xaml">
+    <Page Include="HighlightedTextControlStyle.xaml">
       <Filter>highlightedText</Filter>
     </Page>
     <Page Include="AboutDialog.xaml" />
@@ -175,6 +145,9 @@
     </Filter>
     <Filter Include="highlightedText">
       <UniqueIdentifier>{e490f626-547d-4b5b-b22d-c6d33c9e3210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="fzf">
+      <UniqueIdentifier>{e4588ff4-c80a-40f7-be57-3e81f570a93d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

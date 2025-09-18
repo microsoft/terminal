@@ -1,36 +1,136 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "..\ICoreAppearance.idl";
-
 namespace Microsoft.Terminal.Core
 {
+    enum MatchMode
+    {
+        None,
+        All
+    };
+
+    enum CursorStyle
+    {
+        Vintage,
+        Bar,
+        Underscore,
+        DoubleUnderscore,
+        FilledBox,
+        EmptyBox
+    };
+
+    enum AdjustTextMode
+    {
+        Never,
+        Indexed,
+        Always,
+        Automatic
+    };
+
+    // TerminalCore declares its own Color struct to avoid depending
+    // on Windows.UI.Color and to avoid passing around unclothed uint32s.
+    // It is supported by til::color for conversions in and out of WinRT land.
+    struct Color
+    {
+        UInt8 R;
+        UInt8 G;
+        UInt8 B;
+        UInt8 A;
+    };
+
+    // Yes, this is also just an IReference<Color>. However, IReference has some
+    // weird ownership semantics that just make it a pain for something as
+    // simple as "maybe this color doesn't have a value set".
+    struct OptionalColor
+    {
+        Boolean HasValue;
+        Microsoft.Terminal.Core.Color Color;
+    };
+
+    // TerminalCore declares its own Color struct to avoid depending on
+    // Windows.UI. Windows.Foundation.Point also exists, but it's composed of
+    // floating-point coordinates, when we almost always need integer coordinates.
+    // It is supported by til::point for conversions in and out of WinRT land.
+    struct Point
+    {
+        Int32 X;
+        Int32 Y;
+    };
+
+    // Same thing here, but with padding. Can't use Windows.UI.Thickness, so
+    // we'll declare our own.
+    struct Padding {
+        Single Left;
+        Single Top;
+        Single Right;
+        Single Bottom;
+    };
+
+    // This is a projection of Microsoft::Terminal::Core::ControlKeyStates,
+    // for conversions in and out of WinRT land.
+    struct ControlKeyStates
+    {
+        UInt32 Value;
+    };
+
+    declare
+    {
+        // Forward declare this parameterized specialization so that it lives
+        // in TerminalCore instead of being flung to the winds of all IDL dependents.
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>;
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Point>;
+    }
+
+    interface ICoreScheme
+    {
+        // Table is callee-allocated
+        void GetColorTable(out Microsoft.Terminal.Core.Color[] table);
+
+        Microsoft.Terminal.Core.Color DefaultForeground { get; };
+        Microsoft.Terminal.Core.Color DefaultBackground { get; };
+        Microsoft.Terminal.Core.Color SelectionBackground { get; };
+        Microsoft.Terminal.Core.Color CursorColor { get; };
+
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
+    };
+
+    interface ICoreAppearance requires ICoreScheme
+    {
+        CursorStyle CursorShape { get; };
+        UInt32 CursorHeight { get; };
+        Boolean IntenseIsBold { get; };
+        Boolean IntenseIsBright { get; };
+        AdjustTextMode AdjustIndistinguishableColors { get; };
+
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
+    };
+
     interface ICoreSettings requires ICoreAppearance
     {
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
-        Int32 HistorySize;
-        Int32 InitialRows;
-        Int32 InitialCols;
+        Int32 HistorySize { get; };
+        Int32 InitialRows { get; };
+        Int32 InitialCols { get; };
 
-        Boolean SnapOnInput;
-        Boolean AltGrAliasing;
-        String AnswerbackMessage;
+        Boolean SnapOnInput { get; };
+        Boolean AltGrAliasing { get; };
+        String AnswerbackMessage { get; };
 
-        String StartingTitle;
-        Boolean SuppressApplicationTitle;
-        String WordDelimiters;
+        String StartingTitle { get; };
+        Boolean SuppressApplicationTitle { get; };
+        String WordDelimiters { get; };
 
-        Boolean ForceVTInput;
-        Boolean AllowVtChecksumReport;
-        Boolean AllowVtClipboardWrite;
-        Boolean TrimBlockSelection;
-        Boolean DetectURLs;
+        Boolean ForceVTInput { get; };
+        Boolean AllowVtChecksumReport { get; };
+        Boolean AllowVtClipboardWrite { get; };
+        Boolean TrimBlockSelection { get; };
+        Boolean DetectURLs { get; };
 
-        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor;
-        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor;
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> TabColor { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> StartingTabColor { get; };
 
-        Boolean AutoMarkPrompts;
-        Boolean RainbowSuggestions;
+        Boolean AutoMarkPrompts { get; };
+        Boolean RainbowSuggestions { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };

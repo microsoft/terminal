@@ -210,6 +210,45 @@
   <data name="SplitPaneText" xml:space="preserve">
     <value>拆分窗格</value>
   </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>右键单击以查看拆分方向 - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>向下拆分窗格</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>向右拆分窗格</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>向上拆分窗格</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>向左拆分窗格</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>交换窗格</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>向下交换窗格</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>向右交换窗格</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>向上交换窗格</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>向左交换窗格</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>切换窗格缩放</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>关闭其他窗格</value>
+  </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>网络搜索</value>
   </data>
@@ -228,13 +267,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>复制标签页</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>找到一个具有无效 "backgroundImage" 的配置文件。将该配置文件设置为默认设置为不包含背景图像。请确保在设置 "backgroundImage" 时，该值是指向图像的有效文件路径。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>找到一个带有无效 "icon" 的配置文件。将该配置文件默认为无图标。确保设置 "icon" 时，该值是图像的有效文件路径。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>找不到设置中指定的一个或多个资源 (，如 icon 或 backgroundImage)。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>分析键绑定时发现警告:</value>
@@ -935,5 +970,8 @@
   </data>
   <data name="TabMoveRight" xml:space="preserve">
     <value>右移</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>发现无效的正则表达式。</value>
   </data>
 </root>
