@@ -14,6 +14,8 @@ jobs:
   publish:
     runs-on: windows-latest # Action can only run on Windows
     steps:
+      - name: Restore NuGet packages
+        run: dotnet restore --source "https://api.nuget.org/v3/index.json"
       - name: Publish Windows Terminal ${{ github.event.release.prerelease && 'Preview' || 'Stable' }}
         run: |
           $assets = '${{ toJSON(github.event.release.assets) }}' | ConvertFrom-Json
@@ -25,3 +27,4 @@ jobs:
 
           & curl.exe -JLO https://aka.ms/wingetcreate/latest
           & .\wingetcreate.exe update $wingetPackage -s -v $version -u $wingetRelevantAsset.browser_download_url
+
