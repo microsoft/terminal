@@ -414,6 +414,7 @@ private:
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
     bool _clipboardOperationsAllowed = true;
+    bool _isFocused = false;
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize;
