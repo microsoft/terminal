@@ -28,7 +28,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     private:
         bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance& instance) const
         {
-            return instance.VersionInRange(L"[16.2,)");
+            std::error_code ec;
+            return instance.VersionInRange(L"[16.2,)") && std::filesystem::exists(GetDevShellModulePath(instance), ec) && !ec;
         }
 
         std::wstring GetProfileGuidSeed(const VsSetupConfiguration::VsSetupInstance& instance) const

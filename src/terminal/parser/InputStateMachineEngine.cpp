@@ -897,6 +897,22 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         eventFlags |= MOUSE_WHEELED;
         break;
     }
+    case CsiMouseButtonCodes::ScrollLeft:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        buttonState |= SCROLL_DELTA_BACKWARD;
+        eventFlags |= MOUSE_HWHEELED;
+        break;
+    }
+    case CsiMouseButtonCodes::ScrollRight:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        buttonState |= SCROLL_DELTA_FORWARD;
+        eventFlags |= MOUSE_HWHEELED;
+        break;
+    }
     case CsiMouseButtonCodes::Released:
         // hover event, we still want to send these but we don't
         // need to do anything special here, so just break

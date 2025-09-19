@@ -2303,8 +2303,15 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "The ID of the command this keybinding should execute.",
-          "type": "string"
+          "description": "The ID of the command this keybinding should execute (or null to disable a default).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",

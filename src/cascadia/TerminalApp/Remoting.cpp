@@ -44,10 +44,6 @@ namespace winrt::TerminalApp::implementation
     {
         _args = { value.begin(), value.end() };
         _parseResult = _parsed.ParseArgs(_args);
-        if (_parseResult == 0)
-        {
-            _parsed.ValidateStartupCommands();
-        }
     }
 
     winrt::com_array<winrt::hstring> CommandlineArgs::Commandline()
