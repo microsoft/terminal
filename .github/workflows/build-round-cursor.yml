@@ -1,47 +1,92 @@
-name: Build Terminal
+name: Build Microsoft Terminal (optimized)
 
 on:
   push:
-    branches: [main]
+    branches:
+      - round-cursor
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: powershell
 
     steps:
-      # 1️⃣ Checkout your repo
+      # --- 1. Checkout repository ---
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # 2️⃣ Setup NuGet (so missing packages can restore)
+      # --- 2. Setup MSBuild ---
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      # --- 3. Setup NuGet ---
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1
+
+      # --- 4. Cache NuGet packages ---
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
         with:
-          nuget-version: 6.6.1  # match your project version
+          path: |
+            ~/.nuget/packages
+            packages
+          key: nuget-${{ hashFiles('**/*.slnx') }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-
 
-      # 3️⃣ Restore NuGet packages
+      # --- 5. Restore NuGet packages ---
       - name: Restore NuGet packages
-        run: nuget restore D:\a\terminal\terminal\OpenConsole.slnx
-
-      # 4️⃣ Download vcpkg
-      - name: Download vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg-tool.git vcpkg
-          .\vcpkg\bootstrap-vcpkg.bat
+          nuget restore OpenConsole.slnx -PackagesDirectory packages
+          msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
 
-      # 5️⃣ Install vcpkg dependencies from manifest
+      # --- 6. Cache vcpkg artifacts ---
+      - name: Cache vcpkg
+        uses: actions/cache@v3
+        with:
+          path: |
+            vcpkg/installed
+            vcpkg/packages
+            vcpkg/buildtrees
+          key: vcpkg-${{ hashFiles('vcpkg.json') }}
+
+      # --- 7. Clone vcpkg ---
+      - name: Clone vcpkg
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+        run: git clone https://github.com/microsoft/vcpkg.git vcpkg
+
+      # --- 8. Bootstrap vcpkg ---
+      - name: Bootstrap vcpkg
+        run: |
+          .\vcpkg\bootstrap-vcpkg.bat
+          .\vcpkg\vcpkg integrate install
+
+      # --- 9. Install vcpkg dependencies via manifest ---
+      # In manifest mode, you must declare dependencies in vcpkg.json
       - name: Install vcpkg dependencies
         run: .\vcpkg\vcpkg install
 
-      # 6️⃣ Build solution
-      - name: Build solution
+      # --- 10. Retarget Windows SDK to latest version ---
+      - name: Retarget Windows SDK
         run: |
-          msbuild D:\a\terminal\terminal\OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
+          $sdks = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Lib" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
+          $latestSdk = ($sdks | Sort-Object -Descending | Select-Object -First 1)
+          Get-ChildItem -Recurse -Filter *.vcxproj | ForEach-Object {
+              (Get-Content $_.FullName) -replace '<WindowsTargetPlatformVersion>.*?</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$latestSdk</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
+          }
 
-      # 7️⃣ Optional: run tests
-      - name: Run tests
-        run: |
-          msbuild D:\a\terminal\terminal\OpenConsole.slnx /t:Test /p:Configuration=Release /p:Platform=x64
+      # --- 11. Build Microsoft Terminal ---
+      - name: Build Terminal
+        run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
 
+      # --- 12. Upload artifacts ---
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Terminal-MSIX
+          path: src\cascadia\CascadiaPackage\bin\x64\Release\
