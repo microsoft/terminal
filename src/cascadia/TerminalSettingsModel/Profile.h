@@ -132,6 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
+        INHERITABLE_SETTING(Model::Profile, int32_t, CursorCornerRadius, 0);
 
         winrt::hstring SourceBasePath;
 

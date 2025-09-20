@@ -195,6 +195,11 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     _logSettingIfSet(TabColorKey, _TabColor.has_value());
 
+    //To add cursor Radius
+    JsonUtils::GetValueForKey(json, "cursorCornerRadius", _CursorCornerRadius);
+    _logSettingIfSet("cursorCornerRadius", _CursorCornerRadius.has_value());
+
+
     // Try to load some legacy keys, to migrate them.
     // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
     JsonUtils::GetValueForKey(json, LegacyShowMarksKey, _ShowMarks);
@@ -350,6 +355,12 @@ Json::Value Profile::ToJson() const
 
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
+
+    if (_CursorCornerRadius != 0) // only write if not default
+    {
+    json["cursorCornerRadius"] = _CursorCornerRadius;
+    }
+
 
     if (auto fontJSON = winrt::get_self<FontConfig>(_FontInfo)->ToJson(); !fontJSON.empty())
     {

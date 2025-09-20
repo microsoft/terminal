@@ -1280,6 +1280,17 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
     {
         LOG_IF_FAILED(pEngine->PaintCursor(_currentCursorOptions));
     }
+    auto radius = _terminal.GetActiveProfile().CursorCornerRadius();
+    if (radius > 0)
+    {
+        D2D1_ROUNDED_RECT roundedRect{ rect, static_cast<float>(radius), static_cast<float>(radius) };
+        _d2dRenderTarget->FillRoundedRectangle(&roundedRect, brush);
+    }
+    else
+    {
+        _d2dRenderTarget->FillRectangle(&rect, brush);
+    }
+
 }
 
 // Routine Description:
