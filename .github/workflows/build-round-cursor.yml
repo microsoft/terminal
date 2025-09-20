@@ -10,50 +10,44 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     defaults:
       run:
         shell: powershell
 
     steps:
-      # --- Step 1: Checkout code ---
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Step 2: Setup MSBuild ---
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      # --- Step 3: Setup NuGet ---
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1
 
-      # --- Step 4: Auto-retarget Windows SDK to latest installed version ---
-      - name: Retarget Windows SDK in all projects
+      # --- Restore NuGet packages explicitly ---
+      - name: Restore NuGet packages
         run: |
-          Write-Host "Detecting installed Windows SDK versions..."
+          nuget restore OpenConsole.slnx -PackagesDirectory packages
+          msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
+
+      # --- Retarget all .vcxproj to latest Windows SDK installed ---
+      - name: Retarget Windows SDK
+        run: |
+          Write-Host "Finding latest installed Windows SDK..."
           $sdks = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Lib" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
-          if (-not $sdks) {
-              Write-Host "No Windows SDK found, installing latest..."
-              choco install windows-sdk-10-version-19041-all -y
-              $sdks = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Lib" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
-          }
           $latestSdk = ($sdks | Sort-Object -Descending | Select-Object -First 1)
           Write-Host "Latest Windows SDK found: $latestSdk"
-          
+
           Get-ChildItem -Recurse -Filter *.vcxproj | ForEach-Object {
               (Get-Content $_.FullName) -replace '<WindowsTargetPlatformVersion>.*?</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$latestSdk</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
           }
 
-      # --- Step 5: Restore NuGet packages ---
-      - name: Restore NuGet packages
-        run: msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
-
-      # --- Step 6: Build Terminal ---
+      # --- Build solution ---
       - name: Build Terminal
         run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
 
-      # --- Step 7: Upload built artifacts ---
+      # --- Upload artifacts ---
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
