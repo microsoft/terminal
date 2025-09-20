@@ -20,10 +20,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Setup MSBuild and NuGet ---
+      # --- Setup MSBuild ---
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
+      # --- Setup NuGet ---
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1
 
@@ -33,16 +34,19 @@ jobs:
           nuget restore OpenConsole.slnx -PackagesDirectory packages
           msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
 
-      # --- Bootstrap vcpkg & install packages from manifest ---
+      # --- Clone vcpkg ---
+      - name: Clone vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+
+      # --- Bootstrap vcpkg ---
       - name: Bootstrap vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg-tool.git vcpkg
           .\vcpkg\bootstrap-vcpkg.bat
           .\vcpkg\vcpkg integrate install
-          # Install all packages from vcpkg.json manifest
           .\vcpkg\vcpkg install
 
-      # --- Retarget all .vcxproj to latest Windows SDK installed ---
+      # --- Retarget Windows SDK ---
       - name: Retarget Windows SDK
         run: |
           Write-Host "Finding latest installed Windows SDK..."
@@ -53,11 +57,11 @@ jobs:
               (Get-Content $_.FullName) -replace '<WindowsTargetPlatformVersion>.*?</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$latestSdk</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
           }
 
-      # --- Build solution ---
+      # --- Build Microsoft Terminal ---
       - name: Build Terminal
         run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
 
-      # --- Upload artifacts ---
+      # --- Upload build artifacts ---
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
