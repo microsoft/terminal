@@ -31,11 +31,19 @@ jobs:
           nuget restore OpenConsole.slnx -PackagesDirectory packages
           msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
 
-      # --- Clone and bootstrap vcpkg ---
-      - name: Clone and bootstrap vcpkg
+      # --- Bootstrap vcpkg and install dependencies ---
+      - name: Bootstrap vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git vcpkg
           .\vcpkg\bootstrap-vcpkg.bat
+          .\vcpkg\vcpkg integrate install
+          .\vcpkg\vcpkg install cppwinrt wil
+
+      # --- Run Terminal dependencies script ---
+      - name: Run dependencies.ps1
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          .\tools\dependencies.ps1
 
       # --- Retarget all .vcxproj to latest Windows SDK installed ---
       - name: Retarget Windows SDK
