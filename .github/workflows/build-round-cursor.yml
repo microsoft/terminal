@@ -16,9 +16,11 @@ jobs:
         shell: powershell
 
     steps:
+      # --- Checkout repository ---
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --- Setup MSBuild and NuGet ---
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
@@ -31,19 +33,14 @@ jobs:
           nuget restore OpenConsole.slnx -PackagesDirectory packages
           msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
 
-      # --- Bootstrap vcpkg and install dependencies ---
+      # --- Bootstrap vcpkg & install packages from manifest ---
       - name: Bootstrap vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          git clone https://github.com/microsoft/vcpkg-tool.git vcpkg
           .\vcpkg\bootstrap-vcpkg.bat
           .\vcpkg\vcpkg integrate install
-          .\vcpkg\vcpkg install cppwinrt wil
-
-      # --- Run Terminal dependencies script ---
-      - name: Run dependencies.ps1
-        run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          .\tools\dependencies.ps1
+          # Install all packages from vcpkg.json manifest
+          .\vcpkg\vcpkg install
 
       # --- Retarget all .vcxproj to latest Windows SDK installed ---
       - name: Retarget Windows SDK
