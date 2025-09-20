@@ -1,4 +1,4 @@
-name: Build Round Cursor Terminal
+name: Build Microsoft Terminal (round-cursor)
 
 on:
   push:
@@ -11,28 +11,37 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
+      # Step 1: Checkout your repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1
+      # Step 2: Setup NuGet (for restoring packages)
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1
 
-    - name: Restore NuGet packages
-      run: nuget restore OpenConsole.slnx
+      # Step 3: Restore packages via MSBuild (slnx supported)
+      - name: Restore NuGet packages
+        run: msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
 
-    - name: Install VS Build Tools
-      uses: microsoft/setup-msbuild@v1
+      # Step 4: Install Windows SDK components if needed (usually already on runner)
+      - name: Install Windows SDK (optional)
+        run: |
+          choco install windows-sdk-10.1 -y
+        continue-on-error: true
 
-    - name: Build OpenConsole
-      run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
+      # Step 5: Build Microsoft Terminal
+      - name: Build Terminal
+        run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Terminal-MSIX
-        path: |
-          src\cascadia\CascadiaPackage\bin\x64\Release\
+      # Step 6: Upload build artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Terminal-MSIX
+          path: |
+            src\cascadia\CascadiaPackage\bin\x64\Release\
