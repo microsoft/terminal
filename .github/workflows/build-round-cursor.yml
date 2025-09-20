@@ -1,94 +1,48 @@
-name: Build Microsoft Terminal (optimized)
+name: Build Terminal
 
 on:
   push:
-    branches:
-      - round-cursor
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: windows-2022
-    defaults:
-      run:
-        shell: powershell
+    runs-on: windows-latest
 
     steps:
-      # --- 1. Checkout repository ---
+      # Step 1: Checkout repository
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # --- 2. Setup MSBuild ---
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
-
-      # --- 3. Setup NuGet ---
+      # Step 2: Set up NuGet (for Windows implementation library & Taef)
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1
 
-      # --- 4. Cache NuGet packages ---
-      - name: Cache NuGet packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.nuget/packages
-            packages
-          key: nuget-${{ hashFiles('**/*.slnx') }}-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            nuget-
+      # Step 3: Restore NuGet packages
+      - name: NuGet Restore
+        run: nuget restore "D:/a/terminal/terminal/OpenConsole.slnx"
 
-      # --- 5. Restore NuGet packages ---
-      - name: Restore NuGet packages
+      # Step 4: Download and bootstrap vcpkg
+      - name: Setup vcpkg
         run: |
-          nuget restore OpenConsole.slnx -PackagesDirectory packages
-          msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
+          git clone https://github.com/microsoft/vcpkg-tool.git vcpkg
+          .\vcpkg\bootstrap-vcpkg.bat
 
-      # --- 6. Cache vcpkg artifacts ---
+      # Step 5: Install all vcpkg packages from manifest
+      - name: Install vcpkg dependencies
+        run: .\vcpkg\vcpkg install
+
+      # Step 6: Build solution using MSBuild
+      - name: Build Solution
+        run: |
+          msbuild "D:/a/terminal/terminal/OpenConsole.slnx" /p:Configuration=Release /p:Platform=x64
+
+      # Optional: Cache vcpkg to speed up subsequent runs
       - name: Cache vcpkg
         uses: actions/cache@v3
         with:
-          path: |
-            vcpkg/installed
-            vcpkg/packages
-            vcpkg/buildtrees
-          key: vcpkg-${{ hashFiles('vcpkg.json') }}
-
-      # --- 7. Clone vcpkg ---
-      - name: Clone vcpkg
-        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
-        run: git clone https://github.com/microsoft/vcpkg.git vcpkg
-
-      # --- 8. Bootstrap vcpkg ---
-      - name: Bootstrap vcpkg
-        run: |
-          .\vcpkg\bootstrap-vcpkg.bat
-          .\vcpkg\vcpkg integrate install
-
-      # --- 9. Install vcpkg dependencies (optional) ---
-      # Only if you need extra C++ libraries via vcpkg
-      - name: Install vcpkg dependencies
-        run: |
-          .\vcpkg\vcpkg install fmt:x64-windows
-          .\vcpkg\vcpkg install some-other-lib:x64-windows
-
-      # --- 10. Retarget Windows SDK to latest version ---
-      - name: Retarget Windows SDK
-        run: |
-          $sdks = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Lib" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
-          $latestSdk = ($sdks | Sort-Object -Descending | Select-Object -First 1)
-          Get-ChildItem -Recurse -Filter *.vcxproj | ForEach-Object {
-              (Get-Content $_.FullName) -replace '<WindowsTargetPlatformVersion>.*?</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$latestSdk</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
-          }
-
-      # --- 11. Build Microsoft Terminal ---
-      - name: Build Terminal
-        run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
-
-      # --- 12. Upload artifacts ---
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: Terminal-MSIX
-          path: src\cascadia\CascadiaPackage\bin\x64\Release\
+          path: vcpkg/installed
+          key: vcpkg-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-cache-${{ runner.os }}-
