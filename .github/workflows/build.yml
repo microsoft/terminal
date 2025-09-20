@@ -1,0 +1,34 @@
+name: Build Windows Terminal
+
+on:
+  workflow_dispatch:   # lets you trigger manually from the Actions tab
+  push:
+    branches: [ main ] # runs automatically on pushes to main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore OpenConsole.slnx
+
+      - name: Build Solution
+        run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: WindowsTerminal-Binaries
+          path: |
+            bin\x64\Release\*
+            *.msixbundle
