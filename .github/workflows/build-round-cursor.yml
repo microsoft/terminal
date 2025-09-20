@@ -2,47 +2,46 @@ name: Build Terminal
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      # Step 1: Checkout repository
+      # 1️⃣ Checkout your repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up NuGet (for Windows implementation library & Taef)
+      # 2️⃣ Setup NuGet (so missing packages can restore)
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1
+        with:
+          nuget-version: 6.6.1  # match your project version
 
-      # Step 3: Restore NuGet packages
-      - name: NuGet Restore
-        run: nuget restore "D:/a/terminal/terminal/OpenConsole.slnx"
+      # 3️⃣ Restore NuGet packages
+      - name: Restore NuGet packages
+        run: nuget restore D:\a\terminal\terminal\OpenConsole.slnx
 
-      # Step 4: Download and bootstrap vcpkg
-      - name: Setup vcpkg
+      # 4️⃣ Download vcpkg
+      - name: Download vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg-tool.git vcpkg
           .\vcpkg\bootstrap-vcpkg.bat
 
-      # Step 5: Install all vcpkg packages from manifest
+      # 5️⃣ Install vcpkg dependencies from manifest
       - name: Install vcpkg dependencies
         run: .\vcpkg\vcpkg install
 
-      # Step 6: Build solution using MSBuild
-      - name: Build Solution
+      # 6️⃣ Build solution
+      - name: Build solution
         run: |
-          msbuild "D:/a/terminal/terminal/OpenConsole.slnx" /p:Configuration=Release /p:Platform=x64
+          msbuild D:\a\terminal\terminal\OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
 
-      # Optional: Cache vcpkg to speed up subsequent runs
-      - name: Cache vcpkg
-        uses: actions/cache@v3
-        with:
-          path: vcpkg/installed
-          key: vcpkg-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: |
-            vcpkg-cache-${{ runner.os }}-
+      # 7️⃣ Optional: run tests
+      - name: Run tests
+        run: |
+          msbuild D:\a\terminal\terminal\OpenConsole.slnx /t:Test /p:Configuration=Release /p:Platform=x64
+
