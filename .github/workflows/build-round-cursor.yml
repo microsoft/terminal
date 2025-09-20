@@ -1,0 +1,38 @@
+name: Build Round Cursor Terminal
+
+on:
+  push:
+    branches:
+      - round-cursor
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
+
+    - name: Restore NuGet packages
+      run: nuget restore OpenConsole.slnx
+
+    - name: Install VS Build Tools
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Build OpenConsole
+      run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Terminal-MSIX
+        path: |
+          src\cascadia\CascadiaPackage\bin\x64\Release\
