@@ -16,28 +16,28 @@ jobs:
         shell: powershell
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup MSBuild & NuGet
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1
 
-      # 3️⃣ Restore NuGet packages explicitly
+      # --- Restore NuGet packages ---
       - name: Restore NuGet packages
         run: |
           nuget restore OpenConsole.slnx -PackagesDirectory packages
           msbuild OpenConsole.slnx /t:Restore /p:Configuration=Release /p:Platform=x64
 
-      # 4️⃣ Bootstrap vcpkg (needed for native libs)
-      - name: Bootstrap vcpkg
-        run: .\vcpkg\bootstrap-vcpkg.bat
+      # --- Clone and bootstrap vcpkg ---
+      - name: Clone and bootstrap vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          .\vcpkg\bootstrap-vcpkg.bat
 
-      # 5️⃣ Retarget all .vcxproj to latest Windows SDK installed
+      # --- Retarget all .vcxproj to latest Windows SDK installed ---
       - name: Retarget Windows SDK
         run: |
           Write-Host "Finding latest installed Windows SDK..."
@@ -48,11 +48,11 @@ jobs:
               (Get-Content $_.FullName) -replace '<WindowsTargetPlatformVersion>.*?</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$latestSdk</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
           }
 
-      # 6️⃣ Build solution (skip UIA tests to avoid missing Microsoft.Taef)
+      # --- Build solution ---
       - name: Build Terminal
-        run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m /p:ExcludeProjects="WindowsTerminal.UIA.Tests"
+        run: msbuild OpenConsole.slnx /p:Configuration=Release /p:Platform=x64 /m
 
-      # 7️⃣ Upload artifacts
+      # --- Upload artifacts ---
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
