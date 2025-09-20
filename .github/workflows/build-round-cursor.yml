@@ -25,15 +25,17 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1
 
-      # Retarget all projects to a Windows SDK that exists on the runner
+      # --- Auto retarget Windows SDK to latest installed version ---
       - name: Retarget Windows SDK in all projects
         run: |
-          $availableSDK = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Include" | Sort-Object Name -Descending | Select-Object -First 1
-          if ($availableSDK -eq $null) { throw "No Windows SDK found on runner" }
-          $newSDK = $availableSDK.Name
-          Write-Host "Retargeting all projects to SDK version $newSDK"
+          # Find all installed Windows SDK versions
+          $sdks = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Lib" | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
+          $latestSdk = ($sdks | Sort-Object -Descending | Select-Object -First 1)
+          Write-Host "Latest Windows SDK found: $latestSdk"
+
+          # Update all .vcxproj files
           Get-ChildItem -Recurse -Filter *.vcxproj | ForEach-Object {
-              (Get-Content $_.FullName) -replace '<WindowsTargetPlatformVersion>.*?</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$newSDK</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
+              (Get-Content $_.FullName) -replace '<WindowsTargetPlatformVersion>.*?</WindowsTargetPlatformVersion>', "<WindowsTargetPlatformVersion>$latestSdk</WindowsTargetPlatformVersion>" | Set-Content $_.FullName
           }
 
       - name: Restore NuGet packages
