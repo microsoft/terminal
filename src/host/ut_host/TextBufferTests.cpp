@@ -363,9 +363,6 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
-    testTextBuffer->GetCursor().SetHasMoved(false);
-    otherTbi.GetCursor().SetHasMoved(true);
-
     testTextBuffer->GetCursor().SetIsVisible(false);
     otherTbi.GetCursor().SetIsVisible(true);
 
@@ -382,7 +379,6 @@ void TextBufferTests::TestCopyProperties()
     testTextBuffer->CopyProperties(otherTbi);
 
     // test that new now contains values from other
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor().HasMoved());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsVisible());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsDouble());

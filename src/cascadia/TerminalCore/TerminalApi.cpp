@@ -347,11 +347,6 @@ bool Terminal::IsVtInputEnabled() const noexcept
     return false;
 }
 
-void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
-{
-    // This is only needed in conhost. Terminal handles accessibility in another way.
-}
-
 void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
 {
     if (_pfnCompletionsChanged)

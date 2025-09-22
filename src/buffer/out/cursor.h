@@ -38,7 +38,6 @@ public:
     Cursor(Cursor&&) = default;
     Cursor& operator=(Cursor&&) & = delete;
 
-    bool HasMoved() const noexcept;
     bool IsVisible() const noexcept;
     bool IsOn() const noexcept;
     bool IsBlinkingAllowed() const noexcept;
@@ -54,7 +53,6 @@ public:
     bool IsDeferDrawing() noexcept;
     void EndDeferDrawing() noexcept;
 
-    void SetHasMoved(const bool fHasMoved) noexcept;
     void SetIsVisible(const bool fIsVisible) noexcept;
     void SetIsOn(const bool fIsOn) noexcept;
     void SetBlinkingAllowed(const bool fIsOn) noexcept;
@@ -90,7 +88,6 @@ private:
 
     til::point _cPosition; // current position on screen (in screen buffer coords).
 
-    bool _fHasMoved;
     bool _fIsVisible; // whether cursor is visible (set only through the API)
     bool _fIsOn; // whether blinking cursor is on or not
     bool _fIsDouble; // whether the cursor size should be doubled
