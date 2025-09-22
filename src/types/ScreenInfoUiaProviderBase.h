@@ -62,7 +62,7 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) override;
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override = 0;
         IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) noexcept override;
-        IFACEMETHODIMP SetFocus() override;
+        IFACEMETHODIMP SetFocus() noexcept override;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override = 0;
 
         // ITextProvider

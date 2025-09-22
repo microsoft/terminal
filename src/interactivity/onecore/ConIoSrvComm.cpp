@@ -82,7 +82,7 @@ ConIoSrvComm::~ConIoSrvComm()
 
 #pragma region Communication
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::Connect()
+[[nodiscard]] NTSTATUS ConIoSrvComm::Connect() noexcept
 {
     // Port handle and name.
     HANDLE PortHandle;
@@ -289,7 +289,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
     }
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const
+[[nodiscard]] NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const noexcept
 {
     Message->AlpcHeader.MessageId = 0;
     Message->AlpcHeader.u2.ZeroInit = 0;

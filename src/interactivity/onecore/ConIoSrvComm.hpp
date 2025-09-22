@@ -33,7 +33,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
         static ConIoSrvComm* GetConIoSrvComm();
 
-        [[nodiscard]] NTSTATUS Connect();
+        [[nodiscard]] NTSTATUS Connect() noexcept;
         VOID ServiceInputPipe();
 
         [[nodiscard]] NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
@@ -61,7 +61,7 @@ namespace Microsoft::Console::Interactivity::OneCore
 
     private:
         [[nodiscard]] NTSTATUS EnsureConnection();
-        [[nodiscard]] NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const;
+        [[nodiscard]] NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const noexcept;
 
         VOID HandleFocusEvent(const CIS_EVENT* const FocusEvent);
 

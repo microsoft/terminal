@@ -34,6 +34,7 @@ void ConsoleControl::EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In
     a->ConsoleEventCode = dwEventType;
     a->ConsoleFlags = ulCtrlFlags;
 
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
     LOG_IF_FAILED(CsrClientCallServer(reinterpret_cast<PCSR_API_MSG>(&m), nullptr, CSR_MAKE_API_NUMBER(USERSRV_SERVERDLL_INDEX, UserpEndTask), sizeof(*a)));
 }
 

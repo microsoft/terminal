@@ -185,7 +185,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_resul
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
+IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus() noexcept
 {
     UiaTracing::TextProvider::SetFocus(*this);
     return S_OK;
