@@ -14,7 +14,6 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 void ConsoleControl::NotifyWinEvent(DWORD /*event*/, HWND /*hwnd*/, LONG /*idObject*/, LONG /*idChild*/) noexcept
 {
-
 }
 
 void ConsoleControl::NotifyConsoleApplication(_In_ DWORD /*dwProcessId*/) noexcept

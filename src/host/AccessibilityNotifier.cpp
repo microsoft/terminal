@@ -315,7 +315,7 @@ void AccessibilityNotifier::_timerSet() noexcept
     }
 }
 
-void AccessibilityNotifier::_timerEmitMSAA(PTP_CALLBACK_INSTANCE, PVOID context, PTP_TIMER) noexcept
+void NTAPI AccessibilityNotifier::_timerEmitMSAA(PTP_CALLBACK_INSTANCE, PVOID context, PTP_TIMER) noexcept
 {
     const auto self = static_cast<AccessibilityNotifier*>(context);
     State state;
