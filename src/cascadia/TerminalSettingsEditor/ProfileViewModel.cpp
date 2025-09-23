@@ -458,12 +458,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto modelVal = _profile.TabColor())
         {
+            const auto color = modelVal.Value();
             // user defined an override value
             return Windows::UI::Color{
                 .A = 255,
-                .R = modelVal.Value().R,
-                .G = modelVal.Value().G,
-                .B = modelVal.Value().B
+                .R = color.R,
+                .G = color.G,
+                .B = color.B
             };
         }
         // set to null --> deduce value from theme
@@ -495,20 +496,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto appTheme = windowTheme.RequestedTheme();
             if (appTheme == ElementTheme::Dark)
             {
-                return Windows::UI::ColorHelper::FromArgb(0xFF, 0x28, 0x28, 0x28);
+                return Windows::UI::Color{
+                    .A = 0xFF,
+                    .R = 0x28,
+                    .G = 0x28,
+                    .B = 0x28
+                };
             }
             else if (appTheme == ElementTheme::Light)
             {
-                return Windows::UI::ColorHelper::FromArgb(0xFF, 0xF9, 0xF9, 0xF9);
+                return Windows::UI::Color{
+                    .A = 0xFF,
+                    .R = 0xF9,
+                    .G = 0xF9,
+                    .B = 0xF9
+                };
             }
         }
 
         // XAML default tab color
         if (Model::Theme::IsSystemInDarkTheme())
         {
-            return Windows::UI::ColorHelper::FromArgb(0xFF, 0x28, 0x28, 0x28);
+            return Windows::UI::Color{
+                .A = 0xFF,
+                .R = 0x28,
+                .G = 0x28,
+                .B = 0x28
+            };
         }
-        return Windows::UI::ColorHelper::FromArgb(0xFF, 0xF9, 0xF9, 0xF9);
+        return Windows::UI::Color{
+            .A = 0xFF,
+            .R = 0xF9,
+            .G = 0xF9,
+            .B = 0xF9
+        };
     }
 
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance() const
