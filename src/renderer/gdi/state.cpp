@@ -789,4 +789,3 @@ bool GdiEngine::_IsWindowValid() const
     return _hwndTargetWindow != INVALID_HANDLE_VALUE &&
            _hwndTargetWindow != nullptr;
 }
-
