@@ -608,7 +608,7 @@ GdiEngine::~GdiEngine()
         // For future reference, here is the engine weighting and internal details on Windows Font Mapping:
         // https://msdn.microsoft.com/en-us/library/ms969909.aspx
         // More relevant links:
-        // https://support.microsoft.com/en-us/kb/94646
+        // https://learn.microsoft.com/en-us/windows/win32/gdi/character-widths
 
         // IMPORTANT: Be very careful when modifying the values being passed in below. Even the slightest change can cause
         // GDI to return a font other than the one being requested. If you must change the below for any reason, make sure
@@ -789,3 +789,4 @@ bool GdiEngine::_IsWindowValid() const
     return _hwndTargetWindow != INVALID_HANDLE_VALUE &&
            _hwndTargetWindow != nullptr;
 }
+
