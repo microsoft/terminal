@@ -4,20 +4,17 @@
 #include "precomp.h"
 #include "renderer.hpp"
 
+#include <til/atomic.h>
+
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
-static constexpr auto maxRetriesForRenderEngine = 3;
+static constexpr TimerRepr TimerReprMax = std::numeric_limits<TimerRepr>::max();
+static constexpr DWORD maxRetriesForRenderEngine = 3;
 // The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
-static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
-
-#define FOREACH_ENGINE(var)   \
-    for (auto var : _engines) \
-        if (!var)             \
-            break;            \
-        else
+static constexpr DWORD renderBackoffBaseTimeMilliseconds = 150;
 
 // Routine Description:
 // - Creates a new renderer controller for a console.
@@ -29,11 +26,296 @@ Renderer::Renderer(RenderSettings& renderSettings, IRenderData* pData) :
     _renderSettings(renderSettings),
     _pData(pData)
 {
+    _cursorBlinker = RegisterTimer("cursor blink", [](Renderer& renderer, TimerHandle) {
+        renderer._cursorBlinkerOn = !renderer._cursorBlinkerOn;
+    });
+    _renditionBlinker = RegisterTimer("blink rendition", [](Renderer& renderer, TimerHandle) {
+        renderer._renderSettings.ToggleBlinkRendition();
+        renderer.TriggerRedrawAll();
+    });
+}
+
+Renderer::~Renderer()
+{
+    TriggerTeardown();
 }
 
 IRenderData* Renderer::GetRenderData() const noexcept
 {
     return _pData;
+}
+
+// Routine Description:
+// - Sets an event in the render thread that allows it to proceed, thus enabling painting.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::EnablePainting()
+{
+    // When the renderer is constructed, the initial viewport won't be available yet,
+    // but once EnablePainting is called it should be safe to retrieve.
+    _viewport = _pData->GetViewport();
+
+    _enable.SetEvent();
+
+    if (const auto guard = _threadMutex.lock_exclusive(); !_thread)
+    {
+        _threadKeepRunning.store(true, std::memory_order_relaxed);
+
+        _thread.reset(CreateThread(nullptr, 0, s_renderThread, this, 0, nullptr));
+        THROW_LAST_ERROR_IF(!_thread);
+
+        // SetThreadDescription only works on 1607 and higher. If we cannot find it,
+        // then it's no big deal. Just skip setting the description.
+        const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription);
+        if (func)
+        {
+            LOG_IF_FAILED(func(_thread.get(), L"Rendering Output Thread"));
+        }
+    }
+}
+
+void Renderer::_disablePainting() noexcept
+{
+    _enable.ResetEvent();
+}
+
+// Method Description:
+// - Called when the host is about to die, to give the renderer one last chance
+//      to paint before the host exits.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerTeardown() noexcept
+{
+    if (const auto guard = _threadMutex.lock_exclusive(); _thread)
+    {
+        // The render thread first waits for the event and then checks _threadKeepRunning. By doing it
+        // in reverse order here, we ensure that it's impossible for the render thread to miss this.
+        _threadKeepRunning.store(false, std::memory_order_relaxed);
+        NotifyPaintFrame();
+        _enable.SetEvent();
+
+        WaitForSingleObject(_thread.get(), INFINITE);
+        _thread.reset();
+    }
+
+    _disablePainting();
+}
+
+void Renderer::NotifyPaintFrame() noexcept
+{
+    _redraw.store(true, std::memory_order_relaxed);
+    til::atomic_notify_one(_redraw);
+}
+
+DWORD WINAPI Renderer::s_renderThread(void* param) noexcept
+{
+    return static_cast<Renderer*>(param)->_renderThread();
+}
+
+DWORD Renderer::_renderThread() noexcept
+{
+    while (true)
+    {
+        _enable.wait();
+        _waitUntilCanRender();
+        _waitUntilTimerOrRedraw();
+
+        if (!_threadKeepRunning.load(std::memory_order_relaxed))
+        {
+            break;
+        }
+
+        LOG_IF_FAILED(PaintFrame());
+    }
+
+    return S_OK;
+}
+
+void Renderer::_waitUntilCanRender() noexcept
+{
+    for (const auto pEngine : _engines)
+    {
+        pEngine->WaitUntilCanRender();
+    }
+}
+
+TimerHandle Renderer::RegisterTimer(const char* description, TimerCallback routine)
+{
+    // If it doesn't crash now, it would crash later.
+    WI_ASSERT(routine != nullptr);
+
+    const auto id = _nextTimerId++;
+
+    _timers.push_back(TimerRoutine{
+        .description = description,
+        .interval = TimerReprMax,
+        .next = TimerReprMax,
+        .routine = std::move(routine),
+    });
+
+    return TimerHandle{ id };
+}
+
+bool Renderer::IsTimerRunning(TimerHandle handle) const
+{
+    const auto& timer = _timers.at(handle.id);
+    return timer.next != TimerReprMax;
+}
+
+TimerDuration Renderer::GetTimerInterval(TimerHandle handle) const
+{
+    const auto& timer = _timers.at(handle.id);
+    return TimerDuration{ timer.interval };
+}
+
+void Renderer::StarTimer(TimerHandle handle, TimerDuration delay)
+{
+    _starTimer(handle, delay.count(), TimerReprMax);
+}
+
+void Renderer::StartRepeatingTimer(TimerHandle handle, TimerDuration interval)
+{
+    _starTimer(handle, interval.count(), interval.count());
+}
+
+void Renderer::_starTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval)
+{
+    // Nothing breaks if these assertions are violated, but you should still violate them.
+    // A timer with a 1-hour delay is weird and indicative of a bug. It should have been
+    // a max-wait (TimerReprMax) instead, which turns into an INFINITE timeout
+    // for WaitOnAddress(), which in turn is less costly than one with timeout.
+#ifndef NDEBUG
+    constexpr TimerRepr one_min_in_100ns = 60 * 1000 * 10000;
+    assert(delay > 0 && (delay < one_min_in_100ns || delay == TimerReprMax));
+    assert(interval > 0 && (interval < one_min_in_100ns || interval == TimerReprMax));
+#endif
+
+    auto& timer = _timers.at(handle.id);
+    timer.interval = interval;
+    timer.next = _timerSaturatingAdd(_timerInstant(), delay);
+
+    // Tickle _waitUntilCanRender() into calling _calculateTimerMaxWait() again.
+    // WaitOnAddress() will return with TRUE, even if the atomic didn't change.
+    til::atomic_notify_one(_redraw);
+}
+
+void Renderer::StopTimer(TimerHandle handle)
+{
+    auto& timer = _timers.at(handle.id);
+    timer.interval = TimerReprMax;
+    timer.next = TimerReprMax;
+}
+
+DWORD Renderer::_calculateTimerMaxWait() noexcept
+{
+    if (_timers.empty())
+    {
+        return INFINITE;
+    }
+
+    const auto now = _timerInstant();
+    auto wait = TimerReprMax;
+
+    for (const auto& timer : _timers)
+    {
+        wait = std::min(wait, _timerSaturatingSub(timer.next, now));
+    }
+
+    return _timerToMillis(wait);
+}
+
+void Renderer::_waitUntilTimerOrRedraw() noexcept
+{
+    // Did we get an explicit rendering request? Yes? Exit.
+    //
+    // We don't reset _redraw just yet because we can delay that until we
+    // actually acquired the console lock. That's the main synchronization
+    // point and the instant we know everyone else is blocked. See PaintFrame().
+    while (!_redraw.load(std::memory_order_relaxed))
+    {
+        // Otherwise calculate when the next timer expires.
+        const auto wait = _calculateTimerMaxWait();
+        if (wait == 0)
+        {
+            break;
+        }
+
+        // and wait until the timer expires, or we potentially got a rendering request.
+        constexpr auto bad = false;
+        if (!til::atomic_wait(_redraw, bad, wait))
+        {
+            // The timer expired.
+            assert(GetLastError() == ERROR_TIMEOUT); // What else could it be?
+            break;
+        }
+
+        // If WaitOnAddress returned TRUE, we got signaled and retry.
+    }
+}
+
+void Renderer::_tickTimers() noexcept
+{
+    const auto now = _timerInstant();
+    size_t id = 0;
+
+    for (auto& timer : _timers)
+    {
+        if (now >= timer.next)
+        {
+            // Prevent clock drift by incrementing the originally scheduled time.
+            timer.next = _timerSaturatingAdd(timer.next, timer.interval);
+            // ...but still take care to not schedule in the past.
+            if (timer.next <= now)
+            {
+                timer.next = now + timer.interval;
+            }
+
+            try
+            {
+                timer.routine(*this, TimerHandle{ id });
+            }
+            CATCH_LOG();
+        }
+
+        id++;
+    }
+}
+
+ULONGLONG Renderer::_timerInstant() noexcept
+{
+    // QueryUnbiasedInterruptTime is what WaitOnAddress uses internally.
+    ULONGLONG now;
+    QueryUnbiasedInterruptTime(&now);
+    return now;
+}
+
+TimerRepr Renderer::_timerSaturatingAdd(TimerRepr a, TimerRepr b) noexcept
+{
+    auto c = a + b;
+    if (c < a)
+    {
+        c = TimerReprMax;
+    }
+    return c;
+}
+
+TimerRepr Renderer::_timerSaturatingSub(TimerRepr a, TimerRepr b) noexcept
+{
+    auto c = a - b;
+    if (c > a)
+    {
+        c = 0;
+    }
+    return c;
+}
+
+DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
+{
+    return gsl::narrow_cast<DWORD>(std::min<TimerRepr>(t / 10000, DWORD_MAX));
 }
 
 // Routine Description:
@@ -61,7 +343,7 @@ IRenderData* Renderer::GetRenderData() const noexcept
         if (--tries == 0)
         {
             // Stop trying.
-            _thread.DisablePainting();
+            _disablePainting();
             if (_pfnRendererEnteredErrorState)
             {
                 _pfnRendererEnteredErrorState();
@@ -93,25 +375,36 @@ IRenderData* Renderer::GetRenderData() const noexcept
             _synchronizeWithOutput();
         }
 
-        // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+        _tickTimers();
+
+        // We reset _redraw after _tickTimers() so that NotifyPaintFrame() calls
+        // are picked up and ignored. We're about to render a frame after all.
+        // We do it before the remaining code below so that if we do have an
+        // intentional call to NotifyPaintFrame(), it triggers a redraw.
+        _redraw.store(false, std::memory_order_relaxed);
+
+        // NOTE: _CheckViewportAndScroll() updates _viewport which is used by all other functions.
         _CheckViewportAndScroll();
 
-        _invalidateCurrentCursor(); // Invalidate the previous cursor position.
+        _scheduleRenditionBlink();
+
+        // Add the previous cursor / composition to the dirty rect.
+        _invalidateCurrentCursor();
         _invalidateOldComposition();
 
+        // Add the new cursor position to the dirt rect.
+        // Prepare the composition for insertion into the output screen.
         _updateCursorInfo();
-        _compositionCache.reset();
-
-        _invalidateCurrentCursor(); // Invalidate the new cursor position.
+        _invalidateCurrentCursor(); // NOTE: This now refers to the updated cursor position.
         _prepareNewComposition();
 
-        FOREACH_ENGINE(pEngine)
+        for (const auto pEngine : _engines)
         {
             RETURN_IF_FAILED(_PaintFrameForEngine(pEngine));
         }
     }
 
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         RETURN_IF_FAILED(pEngine->Present());
     }
@@ -179,12 +472,6 @@ try
     return S_OK;
 }
 CATCH_RETURN()
-
-void Renderer::NotifyPaintFrame() noexcept
-{
-    // The thread will provide throttling for us.
-    _thread.NotifyPaint();
-}
 
 // NOTE: You must be holding the console lock when calling this function.
 void Renderer::SynchronizedOutputChanged() noexcept
@@ -257,6 +544,28 @@ void Renderer::_synchronizeWithOutput() noexcept
     _renderSettings.SetRenderMode(RenderSettings::Mode::SynchronizedOutput, false);
 }
 
+void Renderer::AllowCursorVisibility(InhibitionSource source, bool enable) noexcept
+{
+    const auto before = _cursorVisibilityInhibitors.any();
+    _cursorVisibilityInhibitors.set(source, !enable);
+    const auto after = _cursorVisibilityInhibitors.any();
+    if (before != after)
+    {
+        NotifyPaintFrame();
+    }
+}
+
+void Renderer::AllowCursorBlinking(InhibitionSource source, bool enable) noexcept
+{
+    const auto before = _cursorBlinkingInhibitors.any();
+    _cursorBlinkingInhibitors.set(source, !enable);
+    const auto after = _cursorBlinkingInhibitors.any();
+    if (before != after)
+    {
+        NotifyPaintFrame();
+    }
+}
+
 // Routine Description:
 // - Called when the system has requested we redraw a portion of the console.
 // Arguments:
@@ -265,7 +574,7 @@ void Renderer::_synchronizeWithOutput() noexcept
 // - <none>
 void Renderer::TriggerSystemRedraw(const til::rect* const prcDirtyClient)
 {
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->InvalidateSystem(prcDirtyClient));
     }
@@ -299,7 +608,7 @@ void Renderer::TriggerRedraw(const Viewport& region)
     if (view.TrimToViewport(&srUpdateRegion))
     {
         view.ConvertToOrigin(&srUpdateRegion);
-        FOREACH_ENGINE(pEngine)
+        for (const auto pEngine : _engines)
         {
             LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
         }
@@ -329,7 +638,7 @@ void Renderer::TriggerRedraw(const til::point* const pcoord)
 // - <none>
 void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool frameChanged)
 {
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->InvalidateAll());
     }
@@ -345,19 +654,6 @@ void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool frameCh
     {
         _pfnFrameColorChanged();
     }
-}
-
-// Method Description:
-// - Called when the host is about to die, to give the renderer one last chance
-//      to paint before the host exits.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::TriggerTeardown() noexcept
-{
-    // We need to shut down the paint thread on teardown.
-    _thread.TriggerTeardown();
 }
 
 // Routine Description:
@@ -394,7 +690,7 @@ try
             }
         }
 
-        FOREACH_ENGINE(pEngine)
+        for (const auto pEngine : _engines)
         {
             LOG_IF_FAILED(pEngine->InvalidateSelection(_lastSelectionRectsByViewport));
             LOG_IF_FAILED(pEngine->InvalidateSelection(newSelectionViewportRects));
@@ -423,7 +719,7 @@ try
 
     const auto& buffer = _pData->GetTextBuffer();
 
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->InvalidateHighlight(oldHighlights, buffer));
         LOG_IF_FAILED(pEngine->InvalidateHighlight(newHighlights, buffer));
@@ -456,7 +752,7 @@ bool Renderer::_CheckViewportAndScroll()
     coordDelta.x = srOldViewport.left - srNewViewport.left;
     coordDelta.y = srOldViewport.top - srNewViewport.top;
 
-    FOREACH_ENGINE(engine)
+    for (const auto engine : _engines)
     {
         LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
         LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
@@ -485,6 +781,38 @@ bool Renderer::_CheckViewportAndScroll()
     return true;
 }
 
+void Renderer::_scheduleRenditionBlink()
+{
+    const auto& buffer = _pData->GetTextBuffer();
+    bool blinkUsed = false;
+
+    for (auto row = _viewport.Top(); row < _viewport.BottomExclusive(); ++row)
+    {
+        const auto& r = buffer.GetRowByOffset(row);
+        for (const auto& attr : r.Attributes())
+        {
+            if (attr.IsBlinking())
+            {
+                blinkUsed = true;
+                goto why_does_cpp_not_have_labeled_loops;
+            }
+        }
+    }
+
+why_does_cpp_not_have_labeled_loops:
+    if (blinkUsed != IsTimerRunning(_renditionBlinker))
+    {
+        if (blinkUsed)
+        {
+            StartRepeatingTimer(_renditionBlinker, std::chrono::seconds(1));
+        }
+        else
+        {
+            StopTimer(_renditionBlinker);
+        }
+    }
+}
+
 // Routine Description:
 // - Called when a scroll operation has occurred by manipulating the viewport.
 // - This is a special case as calling out scrolls explicitly drastically improves performance.
@@ -511,7 +839,7 @@ void Renderer::TriggerScroll()
 // - <none>
 void Renderer::TriggerScroll(const til::point* const pcoordDelta)
 {
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
     }
@@ -531,7 +859,7 @@ void Renderer::TriggerScroll(const til::point* const pcoordDelta)
 void Renderer::TriggerTitleChange()
 {
     const auto newTitle = _pData->GetConsoleTitle();
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->InvalidateTitle(newTitle));
     }
@@ -540,7 +868,7 @@ void Renderer::TriggerTitleChange()
 
 void Renderer::TriggerNewTextNotification(const std::wstring_view newText)
 {
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->NotifyNewText(newText));
     }
@@ -568,7 +896,7 @@ HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 // - <none>
 void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
         LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo));
@@ -594,7 +922,7 @@ void Renderer::UpdateSoftFont(const std::span<const uint16_t> bitPattern, const 
     const auto softFontCharCount = cellSize.height ? bitPattern.size() / cellSize.height : 0;
     _lastSoftFontChar = _firstSoftFontChar + softFontCharCount - 1;
 
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         LOG_IF_FAILED(pEngine->UpdateSoftFont(bitPattern, cellSize, centeringHint));
     }
@@ -624,7 +952,7 @@ bool Renderer::s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSo
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         const auto hr = LOG_IF_FAILED(pEngine->GetProposedFont(FontInfoDesired, FontInfo, iDpi));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
@@ -655,7 +983,7 @@ bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
     //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         const auto hr = LOG_IF_FAILED(pEngine->IsGlyphWideByFont(glyph, &fIsFullWidth));
         // We're looking for specifically S_OK, S_FALSE is not good enough.
@@ -666,20 +994,6 @@ bool Renderer::IsGlyphWideByFont(const std::wstring_view glyph)
     }
 
     return fIsFullWidth;
-}
-
-// Routine Description:
-// - Sets an event in the render thread that allows it to proceed, thus enabling painting.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::EnablePainting()
-{
-    // When the renderer is constructed, the initial viewport won't be available yet,
-    // but once EnablePainting is called it should be safe to retrieve.
-    _viewport = _pData->GetViewport();
-    _thread.EnablePainting();
 }
 
 // Routine Description:
@@ -706,7 +1020,6 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     // This is the subsection of the entire screen buffer that is currently being presented.
     // It can move left/right or top/bottom depending on how the viewport is scrolled
     // relative to the entire buffer.
-    const auto view = _pData->GetViewport();
     const auto compositionRow = _compositionCache ? _compositionCache->absoluteOrigin.y : -1;
     const auto& activeComposition = _pData->GetActiveComposition();
 
@@ -731,12 +1044,12 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
         // Shift the origin of the dirty region to match the underlying buffer so we can
         // compare the two regions directly for intersection.
-        dirty = Viewport::Offset(dirty, view.Origin());
+        dirty = Viewport::Offset(dirty, _viewport.Origin());
 
         // The intersection between what is dirty on the screen (in need of repaint)
         // and what is supposed to be visible on the screen (the viewport) is what
         // we need to walk through line-by-line and repaint onto the screen.
-        const auto redraw = Viewport::Intersect(dirty, view);
+        const auto redraw = Viewport::Intersect(dirty, _viewport);
 
         // Retrieve the text buffer so we can read information out of it.
         auto& buffer = _pData->GetTextBuffer();
@@ -804,7 +1117,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // For example, the screen might say we need to paint line 1 because it is dirty but the viewport
             // is actually looking at line 26 relative to the buffer. This means that we need line 27 out
             // of the backing buffer to fill in line 1 of the screen.
-            const auto screenPosition = bufferLine.Origin() - til::point{ 0, view.Top() };
+            const auto screenPosition = bufferLine.Origin() - til::point{ 0, _viewport.Top() };
 
             // Retrieve the cell information iterator limited to just this line we want to redraw.
             auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
@@ -817,7 +1130,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                                      (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
             // Prepare the appropriate line transform for the current row and viewport offset.
-            LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.y, view.Left()));
+            LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.y, _viewport.Left()));
 
             // Ask the helper to paint through this specific line.
             _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
@@ -826,7 +1139,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             const auto imageSlice = buffer.GetRowByOffset(row).GetImageSlice();
             if (imageSlice) [[unlikely]]
             {
-                LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, view.Left()));
+                LOG_IF_FAILED(pEngine->PaintImageSlice(*imageSlice, screenPosition.y, _viewport.Left()));
             }
         }
     }
@@ -1119,8 +1432,10 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // - nullopt if the cursor is off or out-of-frame; otherwise, a CursorOptions
 void Renderer::_updateCursorInfo()
 {
-    // Get cursor position in buffer
-    auto coordCursor = _pData->GetCursorPosition();
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto& cursor = buffer.GetCursor();
+    const auto cursorPosition = cursor.GetPosition();
+    auto coordCursor = cursorPosition; // Later this will be viewport-relative
 
     // GH#3166: Only draw the cursor if it's actually in the viewport. It
     // might be on the line that's in that partially visible row at the
@@ -1130,12 +1445,12 @@ void Renderer::_updateCursorInfo()
 
     // The cursor is never rendered as double height, so we don't care about
     // the exact line rendition - only whether it's double width or not.
-    const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.y);
+    const auto doubleWidth = buffer.IsDoubleWidthLine(coordCursor.y);
     const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
 
     // We need to convert the screen coordinates of the viewport to an
     // equivalent range of buffer cells, taking line rendition into account.
-    const auto viewport = _pData->GetViewport().ToInclusive();
+    const auto viewport = _viewport.ToInclusive();
     const auto view = ScreenToBufferLine(viewport, lineRendition);
 
     // Note that we allow the X coordinate to be outside the left border by 1 position,
@@ -1150,17 +1465,80 @@ void Renderer::_updateCursorInfo()
     const auto cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
     const auto useColor = cursorColor != INVALID_COLOR;
 
+    // Update inhibitors based on whatever the VT parser (= client app) wants.
+    AllowCursorVisibility(InhibitionSource::Client, cursor.IsVisible());
+    AllowCursorBlinking(InhibitionSource::Client, cursor.IsBlinking());
+
+    // If the buffer or cursor changed, turn the cursor on for the next cycle. This makes it
+    // so that rapidly typing/printing keeps the cursor on continuously, which looks nicer.
+    {
+        const auto cursorBufferMutationId = buffer.GetLastMutationId();
+        const auto cursorCursorMutationId = cursor.GetLastMutationId();
+
+        if (_cursorBufferMutationId != cursorBufferMutationId || _cursorCursorMutationId != cursorCursorMutationId)
+        {
+            _cursorBufferMutationId = cursorBufferMutationId;
+            _cursorCursorMutationId = cursorCursorMutationId;
+            _cursorBlinkerOn = true;
+
+            // We'll restart the timer below if there are no inhibitors.
+            StopTimer(_cursorBlinker);
+        }
+    }
+
+    if (_cursorVisibilityInhibitors.any() || _cursorBlinkingInhibitors.any())
+    {
+        StopTimer(_cursorBlinker);
+    }
+    else if (!IsTimerRunning(_cursorBlinker))
+    {
+        const auto actual = GetTimerInterval(_cursorBlinker);
+        auto expected = _pData->GetBlinkInterval();
+
+        if (expected > TimerDuration::zero() && expected < TimerDuration::max())
+        {
+            if (expected != actual)
+            {
+                StartRepeatingTimer(_cursorBlinker, expected);
+            }
+        }
+        else
+        {
+            // If blinking is disabled due to the OS settings, then we force-enable it.
+            _cursorBlinkerOn = true;
+        }
+    }
+
+    // If blinking is disabled, the cursor is always on.
+    _cursorBlinkerOn |= _cursorBlinkingInhibitors.any();
+
+    auto cursorHeight = cursor.GetSize();
+    // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
+    // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
+    // then we need to shrink it by half.
+    if (cursor.IsDouble())
+    {
+        if (cursorHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
+        {
+            cursorHeight >>= 1;
+        }
+        else
+        {
+            cursorHeight <<= 1;
+        }
+    }
+
     _currentCursorOptions.coordCursor = coordCursor;
     _currentCursorOptions.viewportLeft = viewport.left;
     _currentCursorOptions.lineRendition = lineRendition;
-    _currentCursorOptions.ulCursorHeightPercent = _pData->GetCursorHeight();
+    _currentCursorOptions.ulCursorHeightPercent = cursorHeight;
     _currentCursorOptions.cursorPixelWidth = _pData->GetCursorPixelWidth();
-    _currentCursorOptions.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-    _currentCursorOptions.cursorType = _pData->GetCursorStyle();
+    _currentCursorOptions.fIsDoubleWidth = buffer.GetRowByOffset(cursorPosition.y).DbcsAttrAt(cursorPosition.x) != DbcsAttribute::Single;
+    _currentCursorOptions.cursorType = cursor.GetType();
     _currentCursorOptions.fUseColor = useColor;
     _currentCursorOptions.cursorColor = cursorColor;
-    _currentCursorOptions.isVisible = _pData->IsCursorVisible();
-    _currentCursorOptions.isOn = _currentCursorOptions.isVisible && _pData->IsCursorOn();
+    _currentCursorOptions.isVisible = !_cursorVisibilityInhibitors.any();
+    _currentCursorOptions.isOn = _currentCursorOptions.isVisible && _cursorBlinkerOn;
     _currentCursorOptions.inViewport = xInRange && yInRange;
 }
 
@@ -1184,7 +1562,7 @@ void Renderer::_invalidateCurrentCursor() const
 
     if (view.TrimToViewport(&rect))
     {
-        FOREACH_ENGINE(pEngine)
+        for (const auto pEngine : _engines)
         {
             LOG_IF_FAILED(pEngine->InvalidateCursor(&rect));
         }
@@ -1194,9 +1572,16 @@ void Renderer::_invalidateCurrentCursor() const
 // If we had previously drawn a composition at the previous cursor position
 // we need to invalidate the entire line because who knows what changed.
 // (It's possible to figure that out, but not worth the effort right now.)
-void Renderer::_invalidateOldComposition() const
+void Renderer::_invalidateOldComposition()
 {
-    if (!_compositionCache || !_currentCursorOptions.inViewport)
+    if (!_compositionCache)
+    {
+        return;
+    }
+
+    _compositionCache.reset();
+
+    if (!_currentCursorOptions.inViewport)
     {
         return;
     }
@@ -1208,7 +1593,7 @@ void Renderer::_invalidateOldComposition() const
     til::rect rect{ 0, coord.y, til::CoordTypeMax, coord.y + 1 };
     if (view.TrimToViewport(&rect))
     {
-        FOREACH_ENGINE(pEngine)
+        for (const auto pEngine : _engines)
         {
             LOG_IF_FAILED(pEngine->Invalidate(&rect));
         }
@@ -1224,20 +1609,19 @@ void Renderer::_prepareNewComposition()
         return;
     }
 
-    const auto viewport = _pData->GetViewport();
-    const auto coordCursor = _pData->GetCursorPosition();
+    auto& buffer = _pData->GetTextBuffer();
+    const auto coordCursor = buffer.GetCursor().GetPosition();
 
     til::rect line{ 0, coordCursor.y, til::CoordTypeMax, coordCursor.y + 1 };
-    if (viewport.TrimToViewport(&line))
+    if (_viewport.TrimToViewport(&line))
     {
-        viewport.ConvertToOrigin(&line);
+        _viewport.ConvertToOrigin(&line);
 
-        FOREACH_ENGINE(pEngine)
+        for (const auto pEngine : _engines)
         {
             LOG_IF_FAILED(pEngine->Invalidate(&line));
         }
 
-        auto& buffer = _pData->GetTextBuffer();
         auto& scratch = buffer.GetScratchpadRow();
         const auto& activeComposition = _pData->GetActiveComposition();
 
@@ -1399,32 +1783,17 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
-
-    for (auto& p : _engines)
-    {
-        if (!p)
-        {
-            p = pEngine;
-            _forceUpdateViewport = true;
-            return;
-        }
-    }
-
-    THROW_HR_MSG(E_UNEXPECTED, "engines array is full");
+    _engines.push_back(pEngine);
+    _forceUpdateViewport = true;
 }
 
 void Renderer::RemoveRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
 
-    for (auto& p : _engines)
-    {
-        if (p == pEngine)
-        {
-            p = nullptr;
-            return;
-        }
-    }
+    std::erase_if(_engines, [=](IRenderEngine* e) {
+        return pEngine == e;
+    });
 }
 
 // Method Description:
@@ -1464,7 +1833,7 @@ void Renderer::SetRendererEnteredErrorStateCallback(std::function<void()> pfn)
 void Renderer::UpdateHyperlinkHoveredId(uint16_t id) noexcept
 {
     _hyperlinkHoveredId = id;
-    FOREACH_ENGINE(pEngine)
+    for (const auto pEngine : _engines)
     {
         pEngine->UpdateHyperlinkHoveredId(id);
     }
@@ -1473,14 +1842,4 @@ void Renderer::UpdateHyperlinkHoveredId(uint16_t id) noexcept
 void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval>& newInterval)
 {
     _hoveredInterval = newInterval;
-}
-
-// Method Description:
-// - Blocks until the engines are able to render without blocking.
-void Renderer::WaitUntilCanRender()
-{
-    FOREACH_ENGINE(pEngine)
-    {
-        pEngine->WaitUntilCanRender();
-    }
 }

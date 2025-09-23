@@ -131,7 +131,7 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
         coordCursor.y = bufferSize.height - 1;
     }
 
-    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor, false));
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordCursor));
 }
 
 // As the name implies, this writes text without processing its control characters.
@@ -191,10 +191,9 @@ void WriteCharsLegacy(SCREEN_INFORMATION& screenInfo, const std::wstring_view& t
     // If we enter this if condition, then someone wrote text in VT mode and now switched to non-VT mode.
     // Since the Console APIs don't support delayed EOL wrapping, we need to first put the cursor back
     // to a position that the Console APIs expect (= not delayed).
-    if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
+    if (const auto delayed = cursor.GetDelayEOLWrap(); delayed && wrapAtEOL)
     {
         auto pos = cursor.GetPosition();
-        const auto delayed = cursor.GetDelayedAtPosition();
         cursor.ResetDelayEOLWrap();
         if (delayed == pos)
         {

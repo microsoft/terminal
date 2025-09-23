@@ -214,11 +214,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma endregion
 
-        void BlinkAttributeTick();
-        void BlinkCursor();
-        bool CursorOn() const;
-        void CursorOn(const bool isCursorOn);
-
         bool IsVtMouseModeEnabled() const;
         bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;

@@ -92,14 +92,6 @@ namespace Microsoft.Terminal.Wpf
             WM_MOUSEWHEEL = 0x020A,
         }
 
-        public enum VirtualKey : ushort
-        {
-            /// <summary>
-            /// ALT key
-            /// </summary>
-            VK_MENU = 0x12,
-        }
-
         [Flags]
         public enum SetWindowPosFlags : uint
         {
@@ -207,9 +199,6 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalUserScroll(IntPtr terminal, int viewTop);
 
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
-        public static extern void TerminalClearSelection(IntPtr terminal);
-
-        [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
         [return: MarshalAs(UnmanagedType.LPWStr)]
         public static extern string TerminalGetSelection(IntPtr terminal);
 
@@ -229,29 +218,11 @@ namespace Microsoft.Terminal.Wpf
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
         public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);
 
-        [DllImport("Microsoft.Terminal.Control.dll", CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
-        public static extern void TerminalBlinkCursor(IntPtr terminal);
-
-        [DllImport("Microsoft.Terminal.Control.dll", CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
-        public static extern void TerminalSetCursorVisible(IntPtr terminal, bool visible);
-
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
-        public static extern void TerminalSetFocus(IntPtr terminal);
-
-        [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = true)]
-        public static extern void TerminalKillFocus(IntPtr terminal);
+        public static extern void TerminalSetFocused(IntPtr terminal, bool focused);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern IntPtr GetFocus();
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern short GetKeyState(int keyCode);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern uint GetCaretBlinkTime();
 
         [StructLayout(LayoutKind.Sequential)]
         public struct WINDOWPOS
