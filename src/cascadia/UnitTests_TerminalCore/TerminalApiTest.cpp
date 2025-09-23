@@ -139,29 +139,24 @@ void TerminalApiTest::CursorVisibility()
     term.Create({ 100, 100 }, 0, renderer);
 
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinking());
 
     term.SetCursorOn(false);
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinking());
 
     term.SetCursorOn(true);
     VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinking());
 
     auto& textBuffer = term.GetBufferAndViewport().buffer;
     textBuffer.GetCursor().SetIsVisible(false);
     VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinking());
 
     term.SetCursorOn(false);
     VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsVisible());
-    VERIFY_IS_FALSE(term._mainBuffer->GetCursor().IsOn());
-    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinkingAllowed());
+    VERIFY_IS_TRUE(term._mainBuffer->GetCursor().IsBlinking());
 }
 
 void TerminalApiTest::CursorVisibilityViaStateMachine()
@@ -176,44 +171,35 @@ void TerminalApiTest::CursorVisibilityViaStateMachine()
     auto& cursor = tbi.GetCursor();
 
     stateMachine.ProcessString(L"Hello World");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
-    cursor.SetIsOn(false);
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12;25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 }
 

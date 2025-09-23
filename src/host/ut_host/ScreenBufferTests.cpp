@@ -408,7 +408,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     mainCursor.SetPosition(mainCursorPos);
     mainCursor.SetIsVisible(mainCursorVisible);
     mainCursor.SetStyle(mainCursorSize, mainCursorType);
-    mainCursor.SetBlinkingAllowed(mainCursorBlinking);
+    mainCursor.SetIsBlinking(mainCursorBlinking);
 
     Log::Comment(L"Switch to the alternate buffer.");
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
@@ -423,7 +423,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
     VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
     VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
-    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinkingAllowed());
+    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinking());
 
     Log::Comment(L"Set the cursor attributes in the alt buffer.");
     auto altCursorPos = til::point{ 5, 3 };
@@ -434,7 +434,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     altCursor.SetPosition(altCursorPos);
     altCursor.SetIsVisible(altCursorVisible);
     altCursor.SetStyle(altCursorSize, altCursorType);
-    altCursor.SetBlinkingAllowed(altCursorBlinking);
+    altCursor.SetIsBlinking(altCursorBlinking);
 
     Log::Comment(L"Switch back to the main buffer.");
     useMain.release();
@@ -448,7 +448,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
     VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
     VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
-    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinkingAllowed());
+    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinking());
 }
 
 void ScreenBufferTests::TestReverseLineFeed()
@@ -6890,7 +6890,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify initial position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
-    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
     cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
@@ -6905,7 +6905,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify initial saved position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
-    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
     cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
@@ -6923,7 +6923,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify home position, no delayed wrap, default attributes, and ascii character set.
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
-    VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_FALSE(cursor.GetDelayEOLWrap().has_value());
     VERIFY_ARE_EQUAL(defaultAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains(til::point(0, 0), asciiText, defaultAttrs));
@@ -7059,44 +7059,35 @@ void ScreenBufferTests::TestCursorIsOn()
     auto& cursor = tbi.GetCursor();
 
     stateMachine.ProcessString(L"Hello World");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
-    cursor.SetIsOn(false);
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12;25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 }
 
@@ -8158,7 +8149,7 @@ void ScreenBufferTests::DelayedWrapReset()
     stateMachine.ProcessCharacter(L'X');
     {
         auto& cursor = si.GetTextBuffer().GetCursor();
-        VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+        VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
         VERIFY_ARE_EQUAL(startPos, cursor.GetPosition());
     }
 
@@ -8170,7 +8161,7 @@ void ScreenBufferTests::DelayedWrapReset()
     {
         auto& cursor = si.GetTextBuffer().GetCursor();
         const auto actualPos = cursor.GetPosition() - si.GetViewport().Origin();
-        VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
+        VERIFY_IS_FALSE(cursor.GetDelayEOLWrap().has_value());
         VERIFY_ARE_EQUAL(expectedPos, actualPos);
     }
 }
