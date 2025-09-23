@@ -782,18 +782,6 @@ static constexpr TsfDataProvider s_tsfDataProvider;
         break;
     }
 
-    case EVENT_CONSOLE_CARET:
-    case EVENT_CONSOLE_UPDATE_REGION:
-    case EVENT_CONSOLE_UPDATE_SIMPLE:
-    case EVENT_CONSOLE_UPDATE_SCROLL:
-    case EVENT_CONSOLE_LAYOUT:
-    case EVENT_CONSOLE_START_APPLICATION:
-    case EVENT_CONSOLE_END_APPLICATION:
-    {
-        NotifyWinEvent(Message, hWnd, (LONG)wParam, (LONG)lParam);
-        break;
-    }
-
     default:
     CallDefWin:
     {
