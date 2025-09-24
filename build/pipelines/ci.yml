@@ -25,6 +25,8 @@ pr:
 variables:
   - name: runCodesignValidationInjectionBG
     value: false
+  - name: EnablePipelineCache 
+    value: true
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
@@ -45,6 +47,10 @@ parameters:
       - x64
       - x86
       - arm64
+  - name: enableMsBuildCaching
+    type: boolean
+    displayName: "Enable MSBuild Caching"
+    default: true
 
 stages:
   - ${{ if eq(parameters.auditMode, true) }}:
@@ -87,6 +93,8 @@ stages:
             buildConfigurations: [Release]
             buildEverything: true
             keepAllExpensiveBuildOutputs: false
+            ${{ if eq(variables['System.PullRequest.IsFork'], 'False') }}:
+              enableMsBuildCaching: ${{ parameters.enableMsBuildCaching }}
 
     - ${{ if eq(parameters.runTests, true) }}:
       - stage: Test_${{ platform }}
