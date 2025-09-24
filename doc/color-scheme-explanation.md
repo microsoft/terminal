@@ -72,10 +72,9 @@ Windows Terminal uses a 16-color naming scheme for color schemes. If you've been
 ```
 ### How to Use This Scheme
 
-1. Open **Windows Terminal Settings** → `settings.json`.
+1. Open **Windows Terminal Settings**(Ctrl+,) → `Open JSON file`(bottom left corner).
 2. Find the `"schemes"` section and paste the JSON block inside it.
-3. Then, tell Windows Terminal to use it by setting `"colorScheme"` in your profile:
-
+3. Set the color scheme in your profile by adding `"colorScheme"` property:
 ```jsonc
 "profiles": {
   "defaults": {
