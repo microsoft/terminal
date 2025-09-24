@@ -70,16 +70,16 @@ void AccessibilityNotifier::Initialize(HWND hwnd, DWORD msaaDelay, DWORD uiaDela
 
 void AccessibilityNotifier::SetUIAProvider(IRawElementProviderSimple* provider) noexcept
 {
-    // NOTE: The assumption is that you're holding the console lock when calling any of the member functions.
-    // This is why we can safely update these members (no worker thread is running nor can be scheduled).
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
-
     // If UIA events are disabled, don't set _uiaProvider either.
     // It would trigger unnecessary work.
     if (!_uiaEnabled)
     {
         return;
     }
+
+    // NOTE: The assumption is that you're holding the console lock when calling any of the member functions.
+    // This is why we can safely update these members (no worker thread is running nor can be scheduled).
+    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     // Of course we must ensure our precious provider object doesn't go away.
     if (provider)
