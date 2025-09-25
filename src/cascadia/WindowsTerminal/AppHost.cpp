@@ -745,7 +745,7 @@ void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
 // - delta: the wheel delta that triggered this event.
 // Return Value:
 // - <none>
-void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const int32_t delta)
+void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const winrt::Microsoft::Terminal::Core::Point delta)
 {
     if (_windowLogic)
     {

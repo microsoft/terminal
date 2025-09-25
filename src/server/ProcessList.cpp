@@ -298,5 +298,5 @@ bool ConsoleProcessList::IsEmpty() const
 // - <none>
 void ConsoleProcessList::_ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const
 {
-    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground));
+    ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground);
 }

@@ -89,7 +89,7 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
     }
 
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId));
+    ServiceLocator::LocateConsoleControl()->SetWindowOwner(hwnd, dwProcessId, dwThreadId);
 }
 
 // ----------------------------
@@ -567,7 +567,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
     if (!fShiftPressed && !pSelection->IsInSelectingState())
     {
         short sDelta = 0;
-        if (Message == WM_MOUSEWHEEL)
+        if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
         {
             sDelta = GET_WHEEL_DELTA_WPARAM(wParam);
         }
@@ -892,11 +892,14 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
     // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
     *phhook = SetWindowsHookExW(WH_MSGFILTER, DialogHookProc, nullptr, GetCurrentThreadId());
 
-    SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
+    const auto hwnd = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    SetConsoleWindowOwner(hwnd, ProcessData);
 
     LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow<Window>()->ActivateAndShow(gci.GetShowWindow()));
 
-    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData->dwProcessId, 0);
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.Initialize(hwnd, gci.GetMSAADelay(), gci.GetUIADelay());
+    an.ApplicationStart(ProcessData->dwProcessId);
 
     return STATUS_SUCCESS;
 }

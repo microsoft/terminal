@@ -595,6 +595,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         WindowCloseButtonClicked.raise();
         return 0;
     }
+    case WM_MOUSEHWHEEL:
     case WM_MOUSEWHEEL:
         try
         {
@@ -623,7 +624,11 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             const auto scale = GetCurrentDpiScale();
             const winrt::Windows::Foundation::Point real{ relative.x / scale, relative.y / scale };
 
-            const auto wheelDelta = static_cast<short>(HIWORD(wparam));
+            winrt::Microsoft::Terminal::Core::Point wheelDelta{ 0, static_cast<int32_t>(HIWORD(wparam)) };
+            if (message == WM_MOUSEHWHEEL)
+            {
+                std::swap(wheelDelta.X, wheelDelta.Y);
+            }
 
             // Raise an event, so any listeners can handle the mouse wheel event manually.
             MouseScrolled.raise(real, wheelDelta);

@@ -375,7 +375,7 @@ winget configure .config\configuration.winget
 
 ## Building the Code
 
-OpenConsole.sln may be built from within Visual Studio or from the command-line
+OpenConsole.slnx may be built from within Visual Studio or from the command-line
 using a set of convenience scripts & tools in the **/tools** directory:
 
 ### Building in PowerShell

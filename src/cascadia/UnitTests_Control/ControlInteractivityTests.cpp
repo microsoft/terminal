@@ -170,7 +170,7 @@ namespace ControlUnitTests
 
             // The mouse location and buttons don't matter here.
             interactivity->MouseWheel(modifiers,
-                                      30,
+                                      Core::Point{ 0, 30 },
                                       Core::Point{ 0, 0 },
                                       buttonState);
         }
@@ -188,7 +188,7 @@ namespace ControlUnitTests
 
             // The mouse location and buttons don't matter here.
             interactivity->MouseWheel(modifiers,
-                                      -30,
+                                      Core::Point{ 0, -30 },
                                       Core::Point{ 0, 0 },
                                       buttonState);
         }
@@ -245,7 +245,7 @@ namespace ControlUnitTests
         expectedTop = 20;
 
         interactivity->MouseWheel(modifiers,
-                                  WHEEL_DELTA,
+                                  Core::Point{ 0, WHEEL_DELTA },
                                   Core::Point{ 0, 0 },
                                   buttonState);
 
@@ -254,18 +254,18 @@ namespace ControlUnitTests
         {
             expectedTop--;
             interactivity->MouseWheel(modifiers,
-                                      WHEEL_DELTA,
+                                      Core::Point{ 0, WHEEL_DELTA },
                                       Core::Point{ 0, 0 },
                                       buttonState);
         }
         Log::Comment(L"Scrolling up more should do nothing");
         expectedTop = 0;
         interactivity->MouseWheel(modifiers,
-                                  WHEEL_DELTA,
+                                  Core::Point{ 0, WHEEL_DELTA },
                                   Core::Point{ 0, 0 },
                                   buttonState);
         interactivity->MouseWheel(modifiers,
-                                  WHEEL_DELTA,
+                                  Core::Point{ 0, WHEEL_DELTA },
                                   Core::Point{ 0, 0 },
                                   buttonState);
 
@@ -275,7 +275,7 @@ namespace ControlUnitTests
             Log::Comment(NoThrowString().Format(L"---scroll down #%d---", i));
             expectedTop++;
             interactivity->MouseWheel(modifiers,
-                                      -WHEEL_DELTA,
+                                      Core::Point{ 0, -WHEEL_DELTA },
                                       Core::Point{ 0, 0 },
                                       buttonState);
             Log::Comment(NoThrowString().Format(L"internal scrollbar pos:%f", interactivity->_internalScrollbarPosition));
@@ -283,11 +283,11 @@ namespace ControlUnitTests
         Log::Comment(L"Scrolling down more should do nothing");
         expectedTop = 21;
         interactivity->MouseWheel(modifiers,
-                                  -WHEEL_DELTA,
+                                  Core::Point{ 0, -WHEEL_DELTA },
                                   Core::Point{ 0, 0 },
                                   buttonState);
         interactivity->MouseWheel(modifiers,
-                                  -WHEEL_DELTA,
+                                  Core::Point{ 0, -WHEEL_DELTA },
                                   Core::Point{ 0, 0 },
                                   buttonState);
     }
@@ -444,7 +444,7 @@ namespace ControlUnitTests
 
         Log::Comment(L"Scroll up a line, with the left mouse button selected");
         interactivity->MouseWheel(modifiers,
-                                  WHEEL_DELTA,
+                                  Core::Point{ 0, WHEEL_DELTA },
                                   cursorPosition1.to_core_point(),
                                   leftMouseDown);
 
@@ -492,55 +492,55 @@ namespace ControlUnitTests
         const Core::Point mousePos{ 0, 0 };
         Control::MouseButtonState state{};
 
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
 
         Log::Comment(L"Scroll up 4 more times. Once we're at 3/5 scrolls, "
                      L"we'll round the internal scrollbar position to scrolling to the next row.");
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 2/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 2/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 3/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 3/5
         VERIFY_ARE_EQUAL(20, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 4/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 4/5
         VERIFY_ARE_EQUAL(20, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 5/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 5/5
         VERIFY_ARE_EQUAL(20, core->ScrollOffset());
 
         Log::Comment(L"Jump to line 5, so we can scroll down from there.");
         interactivity->UpdateScrollbar(5);
         VERIFY_ARE_EQUAL(5, core->ScrollOffset());
         Log::Comment(L"Scroll down 5 times, at which point we should accumulate a whole row of delta.");
-        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 1/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, -delta }, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(5, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 2/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, -delta }, mousePos, state); // 2/5
         VERIFY_ARE_EQUAL(5, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 3/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, -delta }, mousePos, state); // 3/5
         VERIFY_ARE_EQUAL(6, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 4/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, -delta }, mousePos, state); // 4/5
         VERIFY_ARE_EQUAL(6, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, -delta, mousePos, state); // 5/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, -delta }, mousePos, state); // 5/5
         VERIFY_ARE_EQUAL(6, core->ScrollOffset());
 
         Log::Comment(L"Jump to the bottom.");
         interactivity->UpdateScrollbar(21);
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
         Log::Comment(L"Scroll a bit, then emit a line of text. We should reset our internal scroll position.");
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 2/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 2/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
 
         conn->WriteInput(winrt_wstring_to_array_view(L"Foo\r\n"));
         VERIFY_ARE_EQUAL(22, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(22, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 2/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 2/5
         VERIFY_ARE_EQUAL(22, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 3/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 3/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 4/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 4/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
-        interactivity->MouseWheel(modifiers, delta, mousePos, state); // 5/5
+        interactivity->MouseWheel(modifiers, Core::Point{ 0, delta }, mousePos, state); // 5/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
     }
 
@@ -709,7 +709,7 @@ namespace ControlUnitTests
         {
             expectedTop--;
             interactivity->MouseWheel(modifiers,
-                                      WHEEL_DELTA,
+                                      Core::Point{ 0, WHEEL_DELTA },
                                       Core::Point{ 0, 0 },
                                       noMouseDown);
         }

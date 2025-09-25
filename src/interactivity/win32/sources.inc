@@ -37,7 +37,6 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\AccessibilityNotifier.cpp \
     ..\clipboard.cpp \
     ..\ConsoleControl.cpp \
     ..\ConsoleInputThread.cpp \

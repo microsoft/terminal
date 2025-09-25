@@ -35,19 +35,14 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 /*static*/ const std::wregex SshHostGenerator::_configKeyValueRegex{ LR"(^\s*(\w+)\s+([^\s]+.*[^\s])\s*$)" };
 
-/*static*/ std::wstring_view SshHostGenerator::_getProfileName(const std::wstring_view& hostName) noexcept
+winrt::hstring _getProfileName(const std::wstring_view& hostName) noexcept
 {
-    return std::wstring_view{ L"" + PROFILE_TITLE_PREFIX + hostName };
+    return winrt::hstring{ fmt::format(FMT_COMPILE(L"{0}{1}"), PROFILE_TITLE_PREFIX, hostName) };
 }
 
-/*static*/ std::wstring_view SshHostGenerator::_getProfileIconPath() noexcept
+winrt::hstring _getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
 {
-    return PROFILE_ICON_PATH;
-}
-
-/*static*/ std::wstring_view SshHostGenerator::_getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
-{
-    return std::wstring_view{ L"\"" + sshExePath + L"\" " + hostName };
+    return winrt::hstring{ fmt::format(FMT_COMPILE(LR"("{0}" {1})"), sshExePath, hostName) };
 }
 
 /*static*/ bool SshHostGenerator::_tryFindSshExePath(std::wstring& sshExePath) noexcept
@@ -164,8 +159,8 @@ void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementatio
         {
             const auto profile{ CreateDynamicProfile(_getProfileName(hostName)) };
 
-            profile->Commandline(winrt::hstring{ _getProfileCommandLine(sshExePath, hostName) });
-            profile->Icon(winrt::hstring{ _getProfileIconPath() });
+            profile->Commandline(_getProfileCommandLine(sshExePath, hostName));
+            profile->Icon(winrt::hstring{ PROFILE_ICON_PATH });
 
             profiles.emplace_back(profile);
         }

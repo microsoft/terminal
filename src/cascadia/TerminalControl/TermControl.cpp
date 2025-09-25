@@ -2160,15 +2160,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         RestorePointerCursor.raise(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
-        // GH#10329 - we don't need to handle horizontal scrolls. Only vertical ones.
-        // So filter out the horizontal ones.
-        if (point.Properties().IsHorizontalMouseWheel())
-        {
-            return;
-        }
-
+        auto delta = point.Properties().MouseWheelDelta();
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
-                                                point.Properties().MouseWheelDelta(),
+                                                point.Properties().IsHorizontalMouseWheel() ?
+                                                    Core::Point{ delta, 0 } :
+                                                    Core::Point{ 0, delta },
                                                 _toTerminalOrigin(point.Position()),
                                                 TermControl::GetPressedMouseButtons(point));
         if (result)
@@ -2188,7 +2184,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - delta: the mouse wheel delta that triggered this event.
     // - state: the state for each of the mouse buttons individually (pressed/unpressed)
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
-                                   const int32_t delta,
+                                   const Core::Point delta,
                                    const bool leftButtonDown,
                                    const bool midButtonDown,
                                    const bool rightButtonDown)
