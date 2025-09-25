@@ -682,7 +682,11 @@
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
-    <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
+    <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
+  </data>
+  <data name="Nav_EditAction.Content" xml:space="preserve">
+    <value>Edit Action...</value>
+    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>Extensions</value>
