@@ -81,7 +81,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                           \
     for (const auto [enumKey, enumValue] : mappings)                                                                                                            \
     {                                                                                                                                                           \
-        if (addedEnums.emplace(enumValue).second)                                                                                                                    \
+        if (addedEnums.emplace(enumValue).second)                                                                                                               \
         {                                                                                                                                                       \
             const auto enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);                                                  \
             auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<enumType>(enumValue)); \
