@@ -1,0 +1,71 @@
+// NinjaHunter - Personal Links Landing Page (React + Tailwind)
+
+import React from "react";
+
+const LINKS = [
+  {
+    title: "🎵 TikTok",
+    url: "https://www.tiktok.com/@sasaabukarma0",
+  },
+  {
+    title: "▶️ YouTube",
+    url: "https://youtu.be/imLg4EDYEZQ?si=-MgwIHPNi-Q0Ur0D",
+  },
+  {
+    title: "📸 Instagram",
+    url: "https://www.instagram.com/abwkian6?igsh=djUyaDd3eDVhZmtq",
+  },
+  {
+    title: "🐦 X (Twitter)",
+    url: "https://x.com/Abw0karma?t=dVAHFT6mEL2v8Vis8fHj1w&s=09",
+  },
+  {
+    title: "💬 WhatsApp Channel",
+    url: "https://whatsapp.com/channel/0029VbBbpkcBadmZIA2yjl09",
+  },
+  {
+    title: "💰 InstaPay (تبرعات)",
+    url: "https://ipn.eg/S/mostafa.shawky814505/instapay/4gH4b6",
+  },
+  {
+    title: "👍 Facebook",
+    url: "https://www.facebook.com/share/1EUutFkwjf/",
+  },
+];
+
+export default function PersonalLinksPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 flex flex-col items-center justify-center p-6">
+      {/* Profile Header */}
+      <div className="text-center mb-8">
+        <img
+          src="https://avatars.githubusercontent.com/u/1?v=4" // استبدل الصورة بصورة بروفايلك
+          alt="Profile"
+          className="w-28 h-28 rounded-full mx-auto shadow-md"
+        />
+        <h1 className="mt-4 text-2xl font-bold">NinjaHunter / Abu👉Kuain</h1>
+        <p className="text-gray-600">كل الروابط في مكان واحد ✨</p>
+      </div>
+
+      {/* Links */}
+      <div className="w-full max-w-sm space-y-3">
+        {LINKS.map((link, i) => (
+          <a
+            key={i}
+            href={link.url}
+            target="_blank"
+            rel="noreferrer"
+            className="block w-full text-center py-3 rounded-xl bg-white shadow hover:bg-gray-50 transition border"
+          >
+            {link.title}
+          </a>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <footer className="mt-10 text-xs text-gray-500 text-center">
+        © {new Date().getFullYear()} NinjaHunter - Landing Page
+      </footer>
+    </div>
+  );
+}
