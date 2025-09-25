@@ -49,6 +49,9 @@ parameters:
   - name: symbolExpiryTime
     type: string
     default: 36530 # This is the default from PublishSymbols@2
+  - name: createVpack
+    type: boolean
+    default: false
   - name: publishVpackToWindows
     type: boolean
     default: false
@@ -192,8 +195,8 @@ extends:
                   ob_outputDirectory: $(JobOutputDirectory)
                   ob_artifactBaseName: $(JobOutputArtifactName)
                   ### This job is also in charge of submitting the vpack to Windows if it's enabled
-                  ob_createvpack_enabled: ${{ and(parameters.buildTerminal, parameters.publishVpackToWindows) }}
-                  ob_updateOSManifest_enabled: ${{ and(parameters.buildTerminal, parameters.publishVpackToWindows) }}
+                  ob_createvpack_enabled: ${{ and(parameters.buildTerminal, parameters.createVpack) }}
+                  ob_updateOSManifest_enabled: ${{ and(parameters.buildTerminal, parameters.createVpack, parameters.publishVpackToWindows) }}
                   ### If enabled above, these options are in play.
                   ob_createvpack_packagename: 'WindowsTerminal.app'
                   ob_createvpack_owneralias: 'conhost@microsoft.com'
@@ -229,7 +232,7 @@ extends:
                       New-Item "$(JobOutputDirectory)/vpack" -Type Directory
                     displayName: Make sure the vpack directory exists
 
-                  - ${{ if parameters.publishVpackToWindows }}:
+                  - ${{ if parameters.createVpack }}:
                     - pwsh: |-
                         Copy-Item -Verbose -Path "$(MsixBundlePath)" -Destination (Join-Path "$(JobOutputDirectory)/vpack" 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle')
                       displayName: Stage msixbundle for vpack
