@@ -47,7 +47,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                           \
     for (const auto [enumKey, enumValue] : mappings)                                                                                                            \
     {                                                                                                                                                           \
-        if (!addedEnums.contains(enumValue))                                                                                                                    \
+        if (addedEnums.emplace(enumValue).second)                                                                                                               \
         {                                                                                                                                                       \
             const auto enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);                                                  \
             auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<enumType>(enumValue)); \
@@ -56,7 +56,6 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
             {                                                                                                                                                   \
                 _EnumValue = entry;                                                                                                                             \
             }                                                                                                                                                   \
-            addedEnums.emplace(enumValue);                                                                                                                      \
         }                                                                                                                                                       \
     }                                                                                                                                                           \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                        \
@@ -82,7 +81,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                           \
     for (const auto [enumKey, enumValue] : mappings)                                                                                                            \
     {                                                                                                                                                           \
-        if (!addedEnums.contains(enumValue))                                                                                                                    \
+        if (addedEnums.emplace(enumValue).second)                                                                                                                    \
         {                                                                                                                                                       \
             const auto enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);                                                  \
             auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<enumType>(enumValue)); \
@@ -91,7 +90,6 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
             {                                                                                                                                                   \
                 _EnumValue = entry;                                                                                                                             \
             }                                                                                                                                                   \
-            addedEnums.emplace(enumValue);                                                                                                                      \
         }                                                                                                                                                       \
     }                                                                                                                                                           \
     std::sort(enumList.begin(), enumList.end(), EnumEntryReverseComparator<enumType>());                                                                        \
@@ -109,7 +107,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                                  \
     for (const auto [flagKey, flagValue] : mappings)                                                                                                                   \
     {                                                                                                                                                                  \
-        if (flagKey != L"all" && flagKey != L"none" && !addedEnums.contains(flagValue))                                                                                \
+        if (flagKey != L"all" && flagKey != L"none" && addedEnums.emplace(flagValue).second)                                                                           \
         {                                                                                                                                                              \
             const auto flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);                                                         \
             bool isSet = WI_IsAnyFlagSet(unboxedValue, flagValue);                                                                                                     \
@@ -125,7 +123,6 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
                 }                                                                                                                                                      \
             });                                                                                                                                                        \
             flagList.emplace_back(entry);                                                                                                                              \
-            addedEnums.emplace(flagValue);                                                                                                                             \
         }                                                                                                                                                              \
     }                                                                                                                                                                  \
     std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
@@ -147,7 +144,7 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
     }                                                                                                                                                                  \
     for (const auto [flagKey, flagValue] : mappings)                                                                                                                   \
     {                                                                                                                                                                  \
-        if (flagKey != L"all" && flagKey != L"none" && !addedEnums.contains(flagValue))                                                                                \
+        if (flagKey != L"all" && flagKey != L"none" && addedEnums.emplace(flagValue).second)                                                                           \
         {                                                                                                                                                              \
             const auto flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);                                                         \
             bool isSet = WI_IsAnyFlagSet(unboxedValue, flagValue);                                                                                                     \
@@ -176,7 +173,6 @@ inline const std::set<winrt::Microsoft::Terminal::Settings::Model::ShortcutActio
                 }                                                                                                                                                      \
             });                                                                                                                                                        \
             flagList.emplace_back(entry);                                                                                                                              \
-            addedEnums.emplace(flagValue);                                                                                                                             \
         }                                                                                                                                                              \
     }                                                                                                                                                                  \
     std::sort(flagList.begin(), flagList.end(), FlagEntryReverseComparator<enumType>());                                                                               \
@@ -379,12 +375,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         kcVM.DeleteKeyChordRequested([&, actionsPageVMWeakRef = _actionsPageVM](const Editor::KeyChordViewModel& sender, const Control::KeyChord& args) {
             if (const auto actionsPageVM{ actionsPageVMWeakRef.get() })
             {
-                _keyChordList.erase(
-                    std::remove_if(
-                        _keyChordList.begin(),
-                        _keyChordList.end(),
-                        [&](const Control::KeyChord& kc) { return kc == args; }),
-                    _keyChordList.end());
+                std::erase_if(_keyChordList,
+                              [&](const Control::KeyChord& kc) { return kc == args; });
                 for (uint32_t i = 0; i < _KeyChordViewModelList.Size(); i++)
                 {
                     if (_KeyChordViewModelList.GetAt(i) == sender)
@@ -707,11 +699,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    float ArgWrapper::UnboxUInt64(const Windows::Foundation::IInspectable& value)
-    {
-        return static_cast<float>(winrt::unbox_value<uint64_t>(value));
-    }
-
     float ArgWrapper::UnboxFloat(const Windows::Foundation::IInspectable& value)
     {
         return winrt::unbox_value<float>(value);
@@ -810,14 +797,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (!_Value)
         {
             Value(nullptr);
-        }
-    }
-
-    void ArgWrapper::UInt64BindBack(const double newValue)
-    {
-        if (UnboxUInt64(_Value) != newValue)
-        {
-            Value(box_value(static_cast<uint64_t>(newValue)));
         }
     }
 
@@ -1123,19 +1102,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (!UnimplementedShortcutActions.contains(cmd.ActionAndArgs().Action()))
             {
-                std::vector<Control::KeyChord> keyChordList;
-                for (const auto& keys : _Settings.ActionMap().AllKeyBindingsForAction(cmd.ID()))
-                {
-                    keyChordList.emplace_back(keys);
-                }
-                auto cmdVM{ make_self<CommandViewModel>(cmd, keyChordList, *this) };
+                std::vector<Control::KeyChord> keyChordList = wil::to_vector(_Settings.ActionMap().AllKeyBindingsForAction(cmd.ID()));
+                auto cmdVM{ make_self<CommandViewModel>(cmd, std::move(keyChordList), *this) };
                 _RegisterCmdVMEvents(cmdVM);
                 cmdVM->Initialize();
                 commandList.push_back(*cmdVM);
             }
         }
 
-        std::sort(begin(commandList), end(commandList), CommandViewModelComparator{});
+        std::sort(commandList.begin(), commandList.end(), [](const Editor::CommandViewModel& lhs, const Editor::CommandViewModel& rhs) {
+            return lhs.DisplayName() < rhs.DisplayName();
+        });
         _CommandList = single_threaded_observable_vector(std::move(commandList));
     }
 
@@ -1300,6 +1277,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     const auto schemeVM = winrt::make<ColorSchemeViewModel>(scheme, nullptr, _Settings);
                     wrapper.DefaultColorScheme(schemeVM);
+                    break;
                 }
             }
         }

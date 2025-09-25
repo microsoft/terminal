@@ -48,14 +48,6 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct CommandViewModelComparator
-    {
-        bool operator()(const Editor::CommandViewModel& lhs, const Editor::CommandViewModel& rhs) const
-        {
-            return lhs.DisplayName() < rhs.DisplayName();
-        }
-    };
-
     struct NavigateToCommandArgs : NavigateToCommandArgsT<NavigateToCommandArgs>
     {
     public:
@@ -158,7 +150,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         float UnboxInt32Optional(const Windows::Foundation::IInspectable& value);
         uint32_t UnboxUInt32(const Windows::Foundation::IInspectable& value);
         float UnboxUInt32Optional(const Windows::Foundation::IInspectable& value);
-        float UnboxUInt64(const Windows::Foundation::IInspectable& value);
         float UnboxFloat(const Windows::Foundation::IInspectable& value);
         bool UnboxBool(const Windows::Foundation::IInspectable& value);
         winrt::Windows::Foundation::IReference<bool> UnboxBoolOptional(const Windows::Foundation::IInspectable& value);
@@ -171,7 +162,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Int32OptionalBindBack(const double newValue);
         void UInt32BindBack(const double newValue);
         void UInt32OptionalBindBack(const double newValue);
-        void UInt64BindBack(const double newValue);
         void FloatBindBack(const double newValue);
         void BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue);
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);

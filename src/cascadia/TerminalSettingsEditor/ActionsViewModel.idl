@@ -74,7 +74,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Single UnboxInt32Optional(Object value);
         UInt32 UnboxUInt32(Object value);
         Single UnboxUInt32Optional(Object value);
-        Single UnboxUInt64(Object value);
         Single UnboxFloat(Object value);
         Boolean UnboxBool(Object value);
         Windows.Foundation.IReference<Boolean> UnboxBoolOptional(Object value);
@@ -87,7 +86,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void Int32OptionalBindBack(Double newValue);
         void UInt32BindBack(Double newValue);
         void UInt32OptionalBindBack(Double newValue);
-        void UInt64BindBack(Double newValue);
         void FloatBindBack(Double newValue);
         void BoolOptionalBindBack(Windows.Foundation.IReference<Boolean> newValue);
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);

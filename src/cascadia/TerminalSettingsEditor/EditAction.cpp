@@ -21,14 +21,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToCommandArgs>();
         _ViewModel = args.Command();
-        _windowRoot = args.WindowRoot();
-        _ViewModel.PropagateWindowRootRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
-            if (auto weak = weakThis.get())
+        _ViewModel.PropagateWindowRootRequested([windowRoot = args.WindowRoot()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+            if (wrapper)
             {
-                if (wrapper)
-                {
-                    wrapper.WindowRoot(weak->_windowRoot);
-                }
+                wrapper.WindowRoot(windowRoot);
             }
         });
         _ViewModel.FocusContainer([this](const auto& /*sender*/, const auto& args) {

@@ -22,7 +22,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         friend struct EditActionT<EditAction>; // for Xaml to bind events
-        Editor::IHostedInWindow _windowRoot;
         winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
     };
 }
