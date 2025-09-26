@@ -69,7 +69,7 @@ std::vector<til::point_span> Terminal::_GetSelectionSpans() const noexcept
 // - None
 // Return Value:
 // - None
-const til::point Terminal::GetSelectionAnchor() const noexcept
+til::point Terminal::GetSelectionAnchor() const noexcept
 {
     _assertLocked();
     return _selection->start;
@@ -81,7 +81,7 @@ const til::point Terminal::GetSelectionAnchor() const noexcept
 // - None
 // Return Value:
 // - None
-const til::point Terminal::GetSelectionEnd() const noexcept
+til::point Terminal::GetSelectionEnd() const noexcept
 {
     _assertLocked();
     return _selection->end;
@@ -139,7 +139,7 @@ til::point Terminal::SelectionEndForRendering() const
     return til::point{ pos };
 }
 
-const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noexcept
+Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noexcept
 {
     return _selectionEndpoint;
 }
@@ -148,13 +148,13 @@ const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noex
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
-const bool Terminal::IsSelectionActive() const noexcept
+bool Terminal::IsSelectionActive() const noexcept
 {
     _assertLocked();
     return _selection->active;
 }
 
-const bool Terminal::IsBlockSelection() const noexcept
+bool Terminal::IsBlockSelection() const noexcept
 {
     _assertLocked();
     return _selection->blockSelection;
@@ -362,7 +362,6 @@ void Terminal::ToggleMarkMode()
     {
         // Enter Mark Mode
         // NOTE: directly set cursor state. We already should have locked before calling this function.
-        _activeBuffer().GetCursor().SetIsOn(false);
         if (!IsSelectionActive())
         {
             // No selection --> start one at the cursor

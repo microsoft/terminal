@@ -167,14 +167,11 @@ void Window::_UpdateSystemMetrics() const
 {
     const auto dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
     auto& g = ServiceLocator::LocateGlobals();
-    auto& gci = g.getConsoleInformation();
 
     Scrolling::s_UpdateSystemMetrics();
 
     g.sVerticalScrollSize = dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
     g.sHorizontalScrollSize = dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
-
-    gci.GetCursorBlinker().UpdateSystemMetrics();
 
     const auto sysConfig = ServiceLocator::LocateSystemConfigurationProvider();
 
