@@ -112,8 +112,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
-        Editor::AppearanceViewModel DefaultAppearance();
-        Editor::AppearanceViewModel UnfocusedAppearance();
+        Editor::AppearanceViewModel DefaultAppearance() const;
+        Editor::AppearanceViewModel UnfocusedAppearance() const;
         bool HasUnfocusedAppearance();
         bool EditableUnfocusedAppearance() const noexcept;
         bool ShowUnfocusedAppearance();
@@ -127,6 +127,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool Orphaned() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
+        Windows::UI::Color TabColorPreview() const;
+        Windows::UI::Color TabThemeColorPreview() const;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
