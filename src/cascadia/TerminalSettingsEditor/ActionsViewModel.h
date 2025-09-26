@@ -192,6 +192,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::IInspectable _EnumValue{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> _FlagList;
+
+        // Regular enum list + value
+        template<typename EnumType>
+        void _InitializeEnumListAndValue(
+            const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, EnumType>& mappings,
+            const winrt::hstring& resourceSectionAndType,
+            const winrt::hstring& resourceProperty);
+
+        // Nullable enum list + value
+        template<typename EnumType>
+        void _InitializeNullableEnumListAndValue(
+            const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, EnumType>& mappings,
+            const winrt::hstring& resourceSectionAndType,
+            const winrt::hstring& resourceProperty);
+
+        // Flag list + value
+        template<typename EnumType>
+        void _InitializeFlagListAndValue(
+            const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, EnumType>& mappings,
+            const winrt::hstring& resourceSectionAndType,
+            const winrt::hstring& resourceProperty);
+
+        // Nullable flag list + value
+        template<typename EnumType>
+        void _InitializeNullableFlagListAndValue(
+            const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, EnumType>& mappings,
+            const winrt::hstring& resourceSectionAndType,
+            const winrt::hstring& resourceProperty);
     };
 
     struct ActionArgsViewModel : ActionArgsViewModelT<ActionArgsViewModel>, ViewModelHelper<ActionArgsViewModel>
