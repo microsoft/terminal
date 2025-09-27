@@ -2466,6 +2466,7 @@
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
           "enum": [
+            "automatic",
             "direct2d",
             "direct3d11"
           ]
@@ -2744,6 +2745,11 @@
         "compatibility.reloadEnvironmentVariables": {
           "default": true,
           "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
+          "type": "boolean"
+        },
+        "compatibility.input.forceVT": {
+          "default": false,
+          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
           "type": "boolean"
         },
         "compatibility.allowDECRQCRA": {
@@ -3096,7 +3102,10 @@
         },
         "answerbackMessage": {
           "description": "The response that is sent when an ENQ control character is received.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
