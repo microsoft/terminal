@@ -2480,8 +2480,9 @@
           "type": "boolean"
         },
         "experimental.input.forceVT": {
-          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"compatibility.input.forceVT\" setting.",
+          "deprecated": true
         },
         "experimental.useBackgroundImageForWindow": {
           "default": false,
