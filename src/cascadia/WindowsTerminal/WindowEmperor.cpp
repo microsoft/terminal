@@ -880,16 +880,16 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 {
                     if (host == it->get())
                     {
-                        // NOTE: The AppHost destructor is highly non-trivial.
+                        // NOTE: AppHost::Close is highly non-trivial.
                         //
                         // It _may_ call into XAML, which _may_ pump the message loop, which would then recursively
                         // re-enter this function, which _may_ then handle another WM_CLOSE_TERMINAL_WINDOW,
                         // which would change the _windows array, and invalidate our iterator and crash.
                         //
-                        // We can prevent this by deferring destruction until after the erase() call.
+                        // We can prevent this by deferring Close() until after the erase() call.
                         const auto strong = *it;
-                        strong->Close();
                         _windows.erase(it);
+                        strong->Close();
                         break;
                     }
                 }
