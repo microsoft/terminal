@@ -27,12 +27,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 wrapper.WindowRoot(windowRoot);
             }
         });
-        _ViewModel.FocusContainer([this](const auto& /*sender*/, const auto& args) {
-            if (auto kcVM{ args.try_as<KeyChordViewModel>() })
+        auto weakThis = get_weak();
+        _ViewModel.FocusContainer([weakThis](const auto& /*sender*/, const auto& args) {
+            if (auto page{ weakThis.get() })
             {
-                if (const auto& container = KeyChordListView().ContainerFromItem(*kcVM))
+                if (auto kcVM{ args.try_as<KeyChordViewModel>() })
                 {
-                    container.as<Controls::ListViewItem>().Focus(FocusState::Programmatic);
+                    if (const auto& container = page->KeyChordListView().ContainerFromItem(*kcVM))
+                    {
+                        container.as<Controls::ListViewItem>().Focus(FocusState::Programmatic);
+                    }
                 }
             }
         });
