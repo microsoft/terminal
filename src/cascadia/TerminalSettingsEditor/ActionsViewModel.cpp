@@ -460,7 +460,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // even though the arg type is technically a string, we want an enum list for color schemes specifically
             std::vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> namesList;
             const auto currentSchemeName = unbox_value<winrt::hstring>(_Value);
-            auto nullEntry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(RS_(L"Actions_NullEnumValue"), nullptr);
+            auto nullEntry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(RS_(L"Actions_NullEnumValue"), nullptr, -1);
             if (currentSchemeName.empty())
             {
                 _EnumValue = nullEntry;
@@ -475,7 +475,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _EnumValue = entry;
                 }
             }
-            std::sort(namesList.begin(), namesList.end(), EnumEntryReverseComparator<winrt::hstring>());
             namesList.emplace_back(nullEntry);
             _EnumList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>(std::move(namesList));
             _NotifyChanges(L"EnumList", L"EnumValue");
@@ -775,7 +774,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 winrt::hstring enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);
                 auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(
-                    enumName, winrt::box_value<EnumType>(enumValue));
+                    enumName, winrt::box_value<EnumType>(enumValue), static_cast<int32_t>(enumValue));
                 enumList.emplace_back(entry);
                 if (_Value && unboxedValue == enumValue)
                 {
@@ -802,7 +801,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         EnumType unboxedValue{};
 
         auto nullEntry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(
-            RS_(L"Actions_NullEnumValue"), nullptr);
+            RS_(L"Actions_NullEnumValue"), nullptr, -1);
 
         if (_Value)
         {
@@ -819,7 +818,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 winrt::hstring enumName = LocalizedNameForEnumName(resourceSectionAndType, enumKey, resourceProperty);
                 auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(
-                    enumName, winrt::box_value<EnumType>(enumValue));
+                    enumName, winrt::box_value<EnumType>(enumValue), static_cast<int32_t>(enumValue));
                 enumList.emplace_back(entry);
                 if (_Value && unboxedValue == enumValue)
                 {
@@ -854,7 +853,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 winrt::hstring flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);
                 bool isSet = WI_IsAnyFlagSet(unboxedValue, flagValue);
                 auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(
-                    flagName, winrt::box_value<EnumType>(flagValue), isSet);
+                    flagName, winrt::box_value<EnumType>(flagValue), isSet, static_cast<int32_t>(flagValue));
                 entry.PropertyChanged([this, flagValue](const winrt::Windows::Foundation::IInspectable& sender,
                                                         const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
                     const auto itemProperty = args.PropertyName();
@@ -891,7 +890,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         EnumType unboxedValue{ 0 };
 
         auto nullEntry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(
-            RS_(L"Actions_NullEnumValue"), nullptr, true);
+            RS_(L"Actions_NullEnumValue"), nullptr, true, -1);
 
         if (_Value)
         {
@@ -909,7 +908,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 winrt::hstring flagName = LocalizedNameForEnumName(resourceSectionAndType, flagKey, resourceProperty);
                 bool isSet = WI_IsAnyFlagSet(unboxedValue, flagValue);
                 auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::FlagEntry>(
-                    flagName, winrt::box_value<EnumType>(flagValue), isSet);
+                    flagName, winrt::box_value<EnumType>(flagValue), isSet, static_cast<int32_t>(flagValue));
                 entry.PropertyChanged([this, flagValue, nullEntry](const winrt::Windows::Foundation::IInspectable& sender,
                                                                    const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
                     const auto itemProperty = args.PropertyName();
