@@ -2481,7 +2481,7 @@
         },
         "experimental.input.forceVT": {
           "type": "boolean",
-          "description": "[Deprecated] Replaced with the \"compatibility.input.forceVT\" setting.",
+          "description": "[Deprecated] Replaced with the \"compatibility.input.forceVT\" profile setting.",
           "deprecated": true
         },
         "experimental.useBackgroundImageForWindow": {
@@ -2533,7 +2533,7 @@
             "integer",
             "string"
           ],
-          "description": "[Deprecated] This setting no longer has any effect. However, you can customize the number of lines to scroll using the \"scrollUp\" and \"scrollDown\" key bindings.",
+          "description": "[Deprecated] This setting no longer has any effect. However, you can customize the number of lines to scroll using the \"rowsToScroll\" argument on the \"scrollUp\" and \"scrollDown\" actions.",
           "default": "system",
           "minimum": 0,
           "maximum": 999,
