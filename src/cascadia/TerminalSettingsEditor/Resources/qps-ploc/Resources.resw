@@ -2080,6 +2080,10 @@
     <value>Ůŝë śĉћ℮mĕ çòĺőг !!! !</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
   </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Ůşĕ τђемė сθľøѓ !!! !</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
+  </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
     <value>Ибйě !</value>
     <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon for the profile.</comment>
