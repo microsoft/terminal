@@ -220,4 +220,10 @@
     <value>Не може да се приступи почетном директоријуму „{0}”</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
   </data>
+    <data name="ElevationRequired" xml:space="preserve">
+    <value>Тражена операција захтева веће привилегије.</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>Систем не може да пронађе наведени фајл.</value>
+  </data>
 </root>

@@ -328,6 +328,9 @@
     <value>Отвори settings (JSON) фајл подешавања</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Отвори директоријум settings фајла</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>Постави боју картице...</value>
   </data>
@@ -733,5 +736,244 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>Отвори quick fix мени</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Отвори текући радни директоријум</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>Затвори картицу</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>Пошаљи унос</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>Постави режим фокуса</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>Постави пун екран</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>Постави увећано</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>Постави шему боја</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>Затвори остале картице</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>Затвори картице након</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>Премести картицу</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>Пронађи подударање</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>Претражи текст</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>Фокусирај панел</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>Извези бафер</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>Очисти бафер</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>Више акција</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>Подеси непрозирност</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>Изабери команду</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>Изабери излаз</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>Предлози</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>Избор боје</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профила WSL дистрибуције</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор PowerShell профила</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор Azure Cloud Shell профила</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор Visual Studio профила</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор SSH хост профила</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
+  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
+    <value>Одбаци избор</value>
+  </data>
+  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
+    <value>Једна линија</value>
+  </data>
+  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
+    <value>Са контролним низовима</value>
+  </data>
+  <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
+    <value>Копирај форматирање</value>
+  </data>
+  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс картице</value>
+  </data>
+  <data name="WindowActionArgumentLocalized" xml:space="preserve">
+    <value>Прозор</value>
+  </data>
+  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер промене величине</value>
+  </data>
+  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер фокуса</value>
+  </data>
+  <data name="DirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер</value>
+  </data>
+  <data name="DeltaActionArgumentLocalized" xml:space="preserve">
+    <value>Делта</value>
+  </data>
+  <data name="InputActionArgumentLocalized" xml:space="preserve">
+    <value>Унос</value>
+  </data>
+  <data name="TargetActionArgumentLocalized" xml:space="preserve">
+    <value>Циљ</value>
+  </data>
+  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
+    <value>је Фокус режим</value>
+  </data>
+  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
+    <value>је Увећано</value>
+  </data>
+  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
+    <value>је Пун екран</value>
+  </data>
+  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
+    <value>Име шеме</value>
+  </data>
+  <data name="TabColorActionArgumentLocalized" xml:space="preserve">
+    <value>Боја картице</value>
+  </data>
+  <data name="TitleActionArgumentLocalized" xml:space="preserve">
+    <value>Наслов</value>
+  </data>
+  <data name="CommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Командна линија</value>
+  </data>
+  <data name="IndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс</value>
+  </data>
+  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
+    <value>Редова који се скролују</value>
+  </data>
+  <data name="ColorActionArgumentLocalized" xml:space="preserve">
+    <value>Боја</value>
+  </data>
+  <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим покретања</value>
+  </data>
+  <data name="NameActionArgumentLocalized" xml:space="preserve">
+    <value>Назив</value>
+  </data>
+  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
+    <value>Акорд тастера</value>
+  </data>
+  <data name="SourceActionArgumentLocalized" xml:space="preserve">
+    <value>Извор</value>
+  </data>
+  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Користи Командну линију</value>
+  </data>
+  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим пребацивачае</value>
+  </data>
+  <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
+    <value>URL за упит</value>
+  </data>
+  <data name="DesktopActionArgumentLocalized" xml:space="preserve">
+    <value>Десктоп</value>
+  </data>
+  <data name="MonitorActionArgumentLocalized" xml:space="preserve">
+    <value>Монитор</value>
+  </data>
+  <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
+    <value>Укљ./Искљ. видљивост</value>
+  </data>
+  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
+    <value>Трајање падајуће листе</value>
+  </data>
+  <data name="IdActionArgumentLocalized" xml:space="preserve">
+    <value>Ид</value>
+  </data>
+  <data name="PathActionArgumentLocalized" xml:space="preserve">
+    <value>Путања</value>
+  </data>
+  <data name="ClearActionArgumentLocalized" xml:space="preserve">
+    <value>Очисти</value>
+  </data>
+  <data name="OpacityActionArgumentLocalized" xml:space="preserve">
+    <value>Непрозирност</value>
+  </data>
+  <data name="RelativeActionArgumentLocalized" xml:space="preserve">
+    <value>Релативно</value>
+  </data>
+  <data name="ForegroundActionArgumentLocalized" xml:space="preserve">
+    <value>Предњи план</value>
+  </data>
+  <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
+    <value>Позадина</value>
+  </data>
+  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим упаривања</value>
+  </data>
+  <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
+    <value>Почетни директоријум</value>
+  </data>
+  <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Наслов картице</value>
+  </data>
+  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс профила</value>
+  </data>
+  <data name="ProfileActionArgumentLocalized" xml:space="preserve">
+    <value>Профил</value>
+  </data>
+  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Потисни назив апликације</value>
+  </data>
+  <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
+    <value>Шема боја</value>
+  </data>
+  <data name="ElevateActionArgumentLocalized" xml:space="preserve">
+    <value>Подигни привилегије</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
+    <value>Поново учитај променљиве окружења</value>
+  </data>
+  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер поделе</value>
+  </data>
+  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим поделе</value>
+  </data>
+  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
+    <value>Величина поделе</value>
   </data>
 </root>
