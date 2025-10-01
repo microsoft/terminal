@@ -71,12 +71,12 @@ This provides defense-in-depth, though conhost already returns early in VT mode.
 When `IsInVtIoMode()` returns true (ConPTY mode), conhost's `ReturnResponse()` returns early without sending responses. This is by design - in ConPTY mode, the terminal (Windows Terminal) is supposed to handle terminal queries, not conhost.
 
 ### Why Windows Terminal must block DA responses for ConPTY
-- For SSH sessions: DA queries from remote applications (like tmux) should be answered by the remote terminal, not the local Windows Terminal
+- For SSH sessions: DA responses should not be sent through ConPTY's input pipe where ssh.exe reads them from stdin, causing corruption
 - For local apps: Most local Windows applications don't send DA queries, so this isn't a practical issue
 - Sending DA responses through ConPTY's input pipe causes them to be read by applications (like ssh.exe) that don't expect them, resulting in corruption
 
 ### Known Limitation
-Running `printf "\e[c"` over SSH will not produce a DA response from Windows Terminal. This is expected behavior - the remote terminal should respond to DA queries from remote applications. Windows Terminal correctly responds to DA queries from directly connected applications (non-ConPTY connections).
+Running `printf "\e[c"` over SSH will not produce a DA response from Windows Terminal. This is expected behavior - DA responses should not be sent through ConPTY's input pipe. Windows Terminal correctly responds to DA queries from directly connected applications (non-ConPTY connections).
 
 ## Testing
 
