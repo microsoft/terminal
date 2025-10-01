@@ -90,5 +90,4 @@ Running `printf "\e[c"` over SSH will not produce a DA response from Windows Ter
 1. `src/cascadia/TerminalControl/ControlCore.cpp`
 2. `src/cascadia/TerminalConnection/ConptyConnection.h`
 3. `src/cascadia/TerminalConnection/ConptyConnection.cpp`
-4. `src/host/outputStream.cpp`
 
