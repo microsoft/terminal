@@ -110,15 +110,25 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
             switch (mode)
             {
             case FillConsoleMode::WriteAttribute:
+            {
                 for (; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
                 {
-                    infoBuffer[columns].Attributes = input[inputPos];
+                    // Overwrite all attributes except for the lead/trail byte markers.
+                    // Those are used by WriteConsoleOutputWImplHelper to correctly serialize the input.
+                    constexpr auto LT = COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
+                    auto& attributes = infoBuffer[columns].Attributes;
+                    attributes = (input[inputPos] & ~LT) | (attributes & LT);
                 }
                 break;
+            }
             case FillConsoleMode::FillAttribute:
                 for (const auto attr = input[0]; columns < columnsAvailable && inputPos < lengthToWrite; ++columns, ++inputPos)
                 {
-                    infoBuffer[columns].Attributes = attr;
+                    // Overwrite all attributes except for the lead/trail byte markers.
+                    // Those are used by WriteConsoleOutputWImplHelper to correctly serialize the input.
+                    constexpr auto LT = COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE;
+                    auto& attributes = infoBuffer[columns].Attributes;
+                    attributes = (attr & ~LT) | (attributes & LT);
                 }
                 break;
             case FillConsoleMode::WriteCharacter:
@@ -243,12 +253,13 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         ImageSlice::EraseCells(screenInfo.GetTextBuffer(), startingCoordinate, result.cellsModified);
     }
 
-    if (screenBuffer.HasAccessibilityEventing())
     {
         // Notify accessibility
         auto endingCoordinate = startingCoordinate;
         bufferSize.WalkInBounds(endingCoordinate, result.cellsModified);
-        screenBuffer.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
+
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.RegionChanged(startingCoordinate, endingCoordinate);
     }
 
     return result;

@@ -190,6 +190,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>閉じる</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>タブの移動</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>タブを右側に閉じる</value>
   </data>
@@ -203,10 +206,49 @@
     <value>ウィンドウを閉じる</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
-    <value>[分割] タブ</value>
+    <value>タブを分割</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>ウィンドウを分割する</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>分割する方向を右クリック - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>下にペインを分割</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>右にペインを分割</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>上にペインを分割</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>左にペインを分割</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>複製</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>ウィンドウを入れ替える</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>下とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>右とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>上とペインを入れ替え</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>左とペインを入れ替え</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>ウィンドウのズームの切り替え</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>他のウィンドウを閉じる</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web 検索</value>
@@ -221,18 +263,14 @@
     <value>リセット</value>
   </data>
   <data name="RenameTabText" xml:space="preserve">
-    <value>[名前の変更] タブ</value>
+    <value>タブ名を変更</value>
   </data>
   <data name="DuplicateTabText" xml:space="preserve">
     <value>タブを複製する</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>無効な "backgroundImage" を持つプロファイルが見つかりました。既定では、そのプロファイルに背景画像はありません。"backgroundImage" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>無効な "icon" を持つプロファイルが見つかりました。既定では、そのプロファイルにアイコンはありません。"icon" を設定するときに、値が画像への有効なファイル パスとなっていることをご確認ください。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>設定で指定された 1 つ以上のリソース (icon や backgroundImage など) が見つかりませんでした。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>キー バインドの解析中に警告が検出されました:</value>
@@ -723,12 +761,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>キャンセル</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>ウィンドウの名前を変更できませんでした</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>その名前の別のウィンドウがすでに存在します</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>
@@ -933,5 +965,14 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>ウィンドウを閉じる</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>左へ移動</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>右へ移動</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>無効な正規表現が見つかりました。</value>
   </data>
 </root>

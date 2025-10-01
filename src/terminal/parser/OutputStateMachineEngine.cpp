@@ -256,6 +256,12 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
     case EscActionCodes::DECAC1_AcceptC1Controls:
         _dispatch->AcceptC1Controls(true);
         break;
+    case EscActionCodes::S7C1T_Send7bitC1Controls:
+        _dispatch->SendC1Controls(false);
+        break;
+    case EscActionCodes::S8C1T_Send8bitC1Controls:
+        _dispatch->SendC1Controls(true);
+        break;
     case EscActionCodes::ACS_AnsiLevel1:
         _dispatch->AnnounceCodeStructure(1);
         break;
@@ -804,10 +810,40 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         }
         break;
     }
-    case OscActionCodes::ResetCursorColor:
+    case OscActionCodes::ResetColor:
     {
-        // The reset codes for xterm dynamic resources are the set codes + 100
-        _dispatch->SetXtermColorResource(parameter - 100u, INVALID_COLOR);
+        if (string.empty())
+        {
+            _dispatch->ResetColorTable();
+        }
+        else
+        {
+            for (auto&& c : til::split_iterator{ string, L';' })
+            {
+                if (const auto index{ til::parse_unsigned<size_t>(c, 10) }; index)
+                {
+                    _dispatch->ResetColorTableEntry(*index);
+                }
+                else
+                {
+                    // NOTE: xterm stops at the first unparseable index whereas VTE keeps going.
+                    break;
+                }
+            }
+        }
+        break;
+    }
+    case OscActionCodes::ResetForegroundColor:
+    case OscActionCodes::ResetBackgroundColor:
+    case OscActionCodes::ResetCursorColor:
+    case OscActionCodes::ResetHighlightColor:
+    {
+        // NOTE: xterm ignores the request if there's any parameters whereas VTE resets the provided index and ignores the rest
+        if (string.empty())
+        {
+            // The reset codes for xterm dynamic resources are the set codes + 100
+            _dispatch->ResetXtermColorResource(parameter - 100u);
+        }
         break;
     }
     case OscActionCodes::Hyperlink:
@@ -988,7 +1024,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 // - OSC 10, 11, 12 ; spec ST
 //      spec: The colors are specified by name or RGB specification as per XParseColor
 //
-//   It's possible to have multiple "spec", which by design equals to a series of OSC command
+//   It's possible to have multiple "spec", which by design equals a series of OSC command
 //   with accumulated Ps. For example "OSC 10;color1;color2" is effectively an "OSC 10;color1"
 //   and an "OSC 11;color2".
 //
@@ -1009,7 +1045,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
     }
 
     std::vector<DWORD> newRgbs;
-    for (auto&& part : parts)
+    for (const auto& part : parts)
     {
         if (part == L"?"sv) [[unlikely]]
         {

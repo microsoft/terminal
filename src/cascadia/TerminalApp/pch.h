@@ -27,6 +27,7 @@
 
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.Metadata.h>
@@ -63,6 +64,8 @@
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.UI.h>
+#include <winrt/Microsoft.Terminal.UI.Markdown.h>
+
 #include <winrt/Windows.Services.Store.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Provider.h>

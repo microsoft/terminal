@@ -128,6 +128,9 @@ GdiEngine::~GdiEngine()
     // We need the advanced graphics mode in order to set a transform.
     SetGraphicsMode(hdcNewMemoryContext, GM_ADVANCED);
 
+    // We set the bitmap stretching mode to improve the Sixel image quality.
+    SetStretchBltMode(hdcNewMemoryContext, COLORONCOLOR);
+
     // If we had an existing memory context stored, release it before proceeding.
     if (nullptr != _hdcMemoryContext)
     {
@@ -557,7 +560,7 @@ GdiEngine::~GdiEngine()
 // Arguments:
 // - newTitle: the new string to use for the title of the window
 // Return Value:
-// -  S_OK if PostMessageW succeeded, otherwise E_FAIL
+// -  S_OK if PostMessageW succeeded; otherwise, E_FAIL
 [[nodiscard]] HRESULT GdiEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
@@ -605,7 +608,7 @@ GdiEngine::~GdiEngine()
         // For future reference, here is the engine weighting and internal details on Windows Font Mapping:
         // https://msdn.microsoft.com/en-us/library/ms969909.aspx
         // More relevant links:
-        // https://support.microsoft.com/en-us/kb/94646
+        // https://learn.microsoft.com/en-us/windows/win32/gdi/character-widths
 
         // IMPORTANT: Be very careful when modifying the values being passed in below. Even the slightest change can cause
         // GDI to return a font other than the one being requested. If you must change the below for any reason, make sure

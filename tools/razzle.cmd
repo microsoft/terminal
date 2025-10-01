@@ -18,10 +18,10 @@ rem The opencon root is at ...\open\tools\, without the last 7 chars ('\tools\')
 set OPENCON=%OPENCON_TOOLS:~0,-7%
 
 rem Add nuget to PATH
-set PATH=%PATH%%OPENCON%\dep\nuget;
+set PATH=%OPENCON%\dep\nuget;%PATH%
 
 rem Run nuget restore so you can use vswhere
-nuget restore %OPENCON%\OpenConsole.sln -Verbosity quiet
+nuget restore %OPENCON%\OpenConsole.slnx -Verbosity quiet
 nuget restore %OPENCON%\dep\nuget\packages.config -Verbosity quiet
 
 :FIND_MSBUILD

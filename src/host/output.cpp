@@ -5,10 +5,6 @@
 
 #include "_output.h"
 #include "output.h"
-#include "handle.h"
-
-#include "getset.h"
-#include "misc.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
@@ -35,6 +31,8 @@ using namespace Microsoft::Console::Interactivity;
     // codepage by console.cpl or shell32. The default codepage is OEMCP.
     gci.CP = gci.GetCodePage();
     gci.OutputCP = gci.GetCodePage();
+    gci.DefaultCP = gci.GetCodePage();
+    gci.DefaultOutputCP = gci.GetCodePage();
 
     gci.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
@@ -281,17 +279,8 @@ void ScreenBufferSizeChange(const til::size coordNewSize)
 // - source - The viewport describing the region where data was copied from
 // - fill - The viewport describing the area that was filled in with the fill character (uncovered area)
 // - target - The viewport describing the region where data was copied to
-static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source, const Viewport& fill, const Viewport& target)
+static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& fill, const Viewport& target)
 {
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier != nullptr)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().x - source.Left(), target.Origin().y - source.RightInclusive());
-        }
-    }
-
     // Get the text buffer and send it commands.
     // It will figure out whether or not we're active and where the messages need to go.
     auto& textBuffer = screenInfo.GetTextBuffer();
@@ -411,7 +400,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         _CopyRectangle(screenInfo, source, target.Origin());
 
         // Notify the renderer and accessibility as to what moved and where.
-        _ScrollScreen(screenInfo, source, fill, target);
+        _ScrollScreen(screenInfo, fill, target);
     }
 
     // ------ 6. FILL ------

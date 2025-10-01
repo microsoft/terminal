@@ -1099,7 +1099,10 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
     const auto rectY = rect.top;
     const auto rectW = rect.right - rect.left;
     const auto rectH = rect.bottom - rect.top;
-    const auto lightLineWidth = std::max(1.0f, roundf(rectW / 8.0f));
+    // 1/6th of the cell width roughly matches the thin line width that Cascadia Mono
+    // uses for its box drawing characters. Same for the corner radius factor.
+    const auto lightLineWidth = std::max(1.0f, roundf(rectW / 6.0f));
+    const auto cornerRadius = std::min(lightLineWidth * 5.0f, std::min(rectW, rectH) * 0.5f);
     D2D1_POINT_2F geometryPoints[2 * InstructionsPerGlyph];
     size_t geometryPointsCount = 0;
 
@@ -1176,7 +1179,7 @@ void BuiltinGlyphs::DrawBuiltinGlyph(ID2D1Factory* factory, ID2D1DeviceContext* 
         }
         case Shape_RoundRect:
         {
-            const D2D1_ROUNDED_RECT rr{ { begXabs, begYabs, endXabs, endYabs }, lightLineWidth * 2, lightLineWidth * 2 };
+            const D2D1_ROUNDED_RECT rr{ { begXabs, begYabs, endXabs, endYabs }, cornerRadius, cornerRadius };
             renderTarget->DrawRoundedRectangle(&rr, brush, lineWidth, nullptr);
             break;
         }

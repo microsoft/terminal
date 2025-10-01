@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ShowTitlebarToggled(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AlwaysShowTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ShowTabsFullscreen);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ShowTabsInTitlebar);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, UseAcrylicInTabRow);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ShowTitleInTitlebar);
@@ -39,6 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AutoHideWindow);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, AlwaysShowNotificationIcon);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, MinimizeToNotificationArea);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ShowAdminShield);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, EnableUnfocusedAcrylic);
 
     private:
         Model::GlobalAppSettings _GlobalSettings;

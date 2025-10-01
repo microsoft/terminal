@@ -22,7 +22,7 @@ Abstract:
 #define NOMCX
 #define NOHELP
 #define NOCOMM
-#include <unknwn.h>
+#include <Unknwn.h>
 
 #include <windows.h>
 

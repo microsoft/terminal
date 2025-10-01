@@ -108,7 +108,7 @@ try
 
         // If we were previously called with a huge buffer we have an equally large _inputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
-        if (_inputBuffer.capacity() > 16 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
+        if (_inputBuffer.capacity() > 128 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
         {
             _inputBuffer.shrink_to_fit();
         }
@@ -151,7 +151,7 @@ try
 
         // If we were previously called with a huge buffer we have an equally large _outputBuffer.
         // We shouldn't just keep this huge buffer around, if no one needs it anymore.
-        if (_outputBuffer.capacity() > 16 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
+        if (_outputBuffer.capacity() > 128 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
         {
             _outputBuffer.shrink_to_fit();
         }
@@ -180,12 +180,8 @@ CATCH_RETURN();
 //   (if any) to the message.
 // Arguments:
 // - <none>
-// Return Value:
-// - HRESULT indicating if the payload was successfully written if applicable.
-[[nodiscard]] HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
+void _CONSOLE_API_MSG::ReleaseMessageBuffers()
 {
-    auto hr = S_OK;
-
     if (State.InputBuffer != nullptr)
     {
         _inputBuffer.clear();
@@ -203,15 +199,15 @@ CATCH_RETURN();
             IoOperation.Buffer.Data = State.OutputBuffer;
             IoOperation.Buffer.Size = (ULONG)Complete.IoStatus.Information;
 
-            LOG_IF_FAILED(_pDeviceComm->WriteOutput(&IoOperation));
+            // This call fails when the server pipe is closed on us,
+            // which results in log spam in practice.
+            std::ignore = _pDeviceComm->WriteOutput(&IoOperation);
         }
 
         _outputBuffer.clear();
         State.OutputBuffer = nullptr;
         State.OutputBufferSize = 0;
     }
-
-    return hr;
 }
 
 void _CONSOLE_API_MSG::SetReplyStatus(const NTSTATUS Status)

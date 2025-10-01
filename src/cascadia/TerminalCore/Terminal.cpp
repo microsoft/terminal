@@ -12,6 +12,7 @@
 #include "../../buffer/out/UTextAdapter.h"
 
 #include <til/hash.h>
+#include <til/regex.h>
 #include <winrt/Microsoft.Terminal.Core.h>
 
 using namespace winrt::Microsoft::Terminal::Core;
@@ -89,6 +90,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
+    _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
+
+    if (_stateMachine)
+    {
+        SetOptionalFeatures(settings);
+    }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
 
@@ -136,7 +143,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
-    switch (appearance.AdjustIndistinguishableColors())
+    // If AIC is set to Automatic,
+    // update the value based on if high contrast mode is enabled.
+    AdjustTextMode deducedAIC = appearance.AdjustIndistinguishableColors();
+    if (deducedAIC == AdjustTextMode::Automatic)
+    {
+        deducedAIC = _highContrastMode ? AdjustTextMode::Indexed : AdjustTextMode::Never;
+    }
+
+    switch (deducedAIC)
     {
     case AdjustTextMode::Always:
         renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
@@ -150,20 +165,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         renderSettings.SetRenderMode(RenderSettings::Mode::IndexedDistinguishableColors, false);
         renderSettings.SetRenderMode(RenderSettings::Mode::AlwaysDistinguishableColors, false);
         break;
-    }
-
-    const til::color newBackgroundColor{ appearance.DefaultBackground() };
-    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
-    const til::color newForegroundColor{ appearance.DefaultForeground() };
-    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
-    const til::color newCursorColor{ appearance.CursorColor() };
-    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
-    const til::color newSelectionColor{ appearance.SelectionBackground() };
-    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
-
-    for (auto i = 0; i < 16; i++)
-    {
-        renderSettings.SetColorTableEntry(i, til::color{ appearance.GetColorTableEntry(i) });
     }
 
     auto cursorShape = CursorType::VerticalBar;
@@ -200,16 +201,56 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     _defaultCursorShape = cursorShape;
 
+    UpdateColorScheme(appearance);
+}
+
+void Terminal::UpdateColorScheme(const ICoreScheme& scheme)
+{
+    auto& renderSettings = GetRenderSettings();
+
+    const til::color newBackgroundColor{ scheme.DefaultBackground() };
+    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
+    const til::color newForegroundColor{ scheme.DefaultForeground() };
+    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
+    const til::color newCursorColor{ scheme.CursorColor() };
+    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
+    const til::color newSelectionColor{ scheme.SelectionBackground() };
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
+
+    winrt::com_array<Color> colors;
+    scheme.GetColorTable(colors);
+
+    assert(colors.size() == 16);
+
+    for (auto i = 0; i < 16; i++)
+    {
+        renderSettings.SetColorTableEntry(i, til::color{ til::at(colors, i) });
+    }
+
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color
     // may have changed.
     _NotifyScrollEvent();
 }
 
+void Terminal::SetHighContrastMode(bool hc) noexcept
+{
+    _highContrastMode = hc;
+}
+
 void Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     engine.Dispatch().SetCursorStyle(cursorStyle);
+}
+
+void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings)
+{
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    auto features = til::enumset<ITermDispatch::OptionalFeature>{};
+    features.set(ITermDispatch::OptionalFeature::ChecksumReport, settings.AllowVtChecksumReport());
+    features.set(ITermDispatch::OptionalFeature::ClipboardWrite, settings.AllowVtClipboardWrite());
+    engine.Dispatch().SetOptionalFeatures(features);
 }
 
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
@@ -440,7 +481,7 @@ void Terminal::TrySnapOnInput()
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool Terminal::IsTrackingMouseInput() const noexcept
 {
     return _getTerminalInput().IsTrackingMouseInput();
@@ -453,7 +494,7 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
                                          const int32_t delta) const noexcept
 {
@@ -466,7 +507,7 @@ bool Terminal::ShouldSendAlternateScroll(const unsigned int uiButton,
 // - The position relative to the viewport
 std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportPos)
 {
-    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos));
+    return GetHyperlinkAtBufferPosition(_ConvertToBufferCell(viewportPos, false));
 }
 
 std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
@@ -490,12 +531,8 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
         result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
         if (result.has_value())
         {
-            // GetPlainText and _ConvertToBufferCell work with inclusive coordinates, but interval's
-            // stop point is (horizontally) exclusive, so let's just update it.
-            result->stop.x--;
-
-            result->start = _ConvertToBufferCell(result->start);
-            result->stop = _ConvertToBufferCell(result->stop);
+            result->start = _ConvertToBufferCell(result->start, false);
+            result->stop = _ConvertToBufferCell(result->stop, true);
         }
     }
     else
@@ -532,7 +569,7 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 // - The hyperlink ID
 uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos)
 {
-    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos))->TextAttr().GetHyperlinkId();
+    return _activeBuffer().GetCellDataAt(_ConvertToBufferCell(viewportPos, false))->TextAttr().GetHyperlinkId();
 }
 
 // Method description:
@@ -574,7 +611,7 @@ std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPos
 // - vkey: The vkey of the last pressed key.
 // - scanCode: The scan code of the last pressed key.
 // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-// - keyDown: If true, the key was pressed, otherwise the key was released.
+// - keyDown: If true, the key was pressed; otherwise, the key was released.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
@@ -896,7 +933,7 @@ void Terminal::_StoreKeyEvent(const WORD vkey, const WORD scanCode) noexcept
 // Arguments:
 // - scanCode: The scan code.
 // Return Value:
-// - The key code matching the given scan code. Otherwise 0.
+// - The key code matching the given scan code. Otherwise, 0.
 WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 {
     const auto codes = _lastKeyEventCodes.value_or(KeyEventCodes{});
@@ -1273,69 +1310,6 @@ void Terminal::ScrollToSearchHighlight(til::CoordType searchScrollOffset)
     }
 }
 
-Scheme Terminal::GetColorScheme() const
-{
-    const auto& renderSettings = GetRenderSettings();
-
-    Scheme s;
-    s.Foreground = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
-    s.Background = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
-
-    s.CursorColor = til::color{ renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
-    s.SelectionBackground = til::color{ renderSettings.GetColorTableEntry(TextColor::SELECTION_BACKGROUND) };
-
-    s.Black = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_BLACK) };
-    s.Red = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_RED) };
-    s.Green = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_GREEN) };
-    s.Yellow = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_YELLOW) };
-    s.Blue = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_BLUE) };
-    s.Purple = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_MAGENTA) };
-    s.Cyan = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_CYAN) };
-    s.White = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_WHITE) };
-    s.BrightBlack = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLACK) };
-    s.BrightRed = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED) };
-    s.BrightGreen = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN) };
-    s.BrightYellow = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW) };
-    s.BrightBlue = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLUE) };
-    s.BrightPurple = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_MAGENTA) };
-    s.BrightCyan = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_CYAN) };
-    s.BrightWhite = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_WHITE) };
-    return s;
-}
-
-void Terminal::ApplyScheme(const Scheme& colorScheme)
-{
-    auto& renderSettings = GetRenderSettings();
-
-    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, til::color{ colorScheme.Foreground });
-    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, til::color{ colorScheme.Background });
-
-    renderSettings.SetColorTableEntry(TextColor::DARK_BLACK, til::color{ colorScheme.Black });
-    renderSettings.SetColorTableEntry(TextColor::DARK_RED, til::color{ colorScheme.Red });
-    renderSettings.SetColorTableEntry(TextColor::DARK_GREEN, til::color{ colorScheme.Green });
-    renderSettings.SetColorTableEntry(TextColor::DARK_YELLOW, til::color{ colorScheme.Yellow });
-    renderSettings.SetColorTableEntry(TextColor::DARK_BLUE, til::color{ colorScheme.Blue });
-    renderSettings.SetColorTableEntry(TextColor::DARK_MAGENTA, til::color{ colorScheme.Purple });
-    renderSettings.SetColorTableEntry(TextColor::DARK_CYAN, til::color{ colorScheme.Cyan });
-    renderSettings.SetColorTableEntry(TextColor::DARK_WHITE, til::color{ colorScheme.White });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLACK, til::color{ colorScheme.BrightBlack });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_RED, til::color{ colorScheme.BrightRed });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_GREEN, til::color{ colorScheme.BrightGreen });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_YELLOW, til::color{ colorScheme.BrightYellow });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLUE, til::color{ colorScheme.BrightBlue });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_MAGENTA, til::color{ colorScheme.BrightPurple });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_CYAN, til::color{ colorScheme.BrightCyan });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_WHITE, til::color{ colorScheme.BrightWhite });
-
-    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
-    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, til::color{ colorScheme.SelectionBackground });
-
-    // Tell the control that the scrollbar has somehow changed. Used as a
-    // workaround to force the control to redraw any scrollbar marks whose color
-    // may have changed.
-    _NotifyScrollEvent();
-}
-
 bool Terminal::_inAltBuffer() const noexcept
 {
     _assertLocked();
@@ -1367,7 +1341,7 @@ struct URegularExpressionInterner
     //
     // An alternative approach would be to not make this method thread-safe and give each
     // Terminal instance its own cache. I'm not sure which approach would have been better.
-    ICU::unique_uregex Intern(const std::wstring_view& pattern)
+    til::ICU::unique_uregex Intern(const std::wstring_view& pattern)
     {
         UErrorCode status = U_ZERO_ERROR;
 
@@ -1375,14 +1349,14 @@ struct URegularExpressionInterner
             const auto guard = _lock.lock_shared();
             if (const auto it = _cache.find(pattern); it != _cache.end())
             {
-                return ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
+                return til::ICU::unique_uregex{ uregex_clone(it->second.re.get(), &status) };
             }
         }
 
         // Even if the URegularExpression creation failed, we'll insert it into the cache, because there's no point in retrying.
         // (Apart from OOM but in that case this application will crash anyways in 3.. 2.. 1..)
-        auto re = ICU::CreateRegex(pattern, 0, &status);
-        ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
+        auto re = til::ICU::CreateRegex(pattern, 0, &status);
+        til::ICU::unique_uregex clone{ uregex_clone(re.get(), &status) };
         std::wstring key{ pattern };
 
         const auto guard = _lock.lock_exclusive();
@@ -1404,7 +1378,7 @@ struct URegularExpressionInterner
 private:
     struct CacheValue
     {
-        ICU::unique_uregex re;
+        til::ICU::unique_uregex re;
         size_t generation = 0;
     };
 
@@ -1454,7 +1428,6 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
                 // PointTree uses half-open ranges and viewport-relative coordinates.
                 range.start.y -= beg;
                 range.end.y -= beg;
-                range.end.x++;
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));
             } while (uregex_findNext(re.get(), &status));
         }
@@ -1559,15 +1532,15 @@ std::wstring Terminal::CurrentCommand() const
 
 void Terminal::SerializeMainBuffer(const wchar_t* destination) const
 {
-    _mainBuffer->Serialize(destination);
+    _mainBuffer->SerializeToPath(destination);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
-    const auto colorSelection = [this](const til::point coordStart, const til::point coordEnd, const TextAttribute& attr) {
+    const auto colorSelection = [this](const til::point coordStartInclusive, const til::point coordEndExclusive, const TextAttribute& attr) {
         auto& textBuffer = _activeBuffer();
-        const auto spanLength = textBuffer.SpanLength(coordStart, coordEnd);
-        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStart);
+        const auto spanLength = textBuffer.GetSize().CompareInBounds(coordEndExclusive, coordStartInclusive, true);
+        textBuffer.Write(OutputCellIterator(attr, spanLength), coordStartInclusive);
     };
 
     for (const auto [start, end] : _GetSelectionSpans())

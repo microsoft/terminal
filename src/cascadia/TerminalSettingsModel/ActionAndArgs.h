@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _Args{ args } {};
         com_ptr<ActionAndArgs> Copy() const;
 
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context) const;
         hstring GenerateName() const;
         hstring GenerateID() const;
 

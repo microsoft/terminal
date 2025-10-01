@@ -2,7 +2,7 @@
 # Licensed under the MIT license.
 
 ################################################################################
-# This script generates the an array of UiaTextRange tests suitable for replacing the body of
+# This script generates an array of UiaTextRange tests suitable for replacing the body of
 # src\interactivity\win32\ut_interactivity_win32\UiaTextRangeTests.cpp TEST_METHOD(GeneratedMovementTests)
 #
 # See tools\TestTableWriter\README.md for more details on how to use this script.

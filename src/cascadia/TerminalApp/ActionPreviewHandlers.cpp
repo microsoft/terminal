@@ -5,6 +5,7 @@
 #include "TerminalPage.h"
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 #include <LibraryResources.h>
 
@@ -97,24 +98,19 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
-            const auto backup = _restorePreviewFuncs.empty();
+            // Clear the saved preview funcs because we don't need to add a restore each time
+            // the preview color changes, we only need to be able to restore the last one.
+            _restorePreviewFuncs.clear();
 
             _ApplyToActiveControls([&](const auto& control) {
-                // Stash a copy of the current scheme.
-                auto originalScheme{ control.ColorScheme() };
+                auto temporarySettings{ winrt::make_self<Settings::TerminalSettings>() };
+                temporarySettings->ApplyColorScheme(scheme);
+                control.ApplyPreviewColorScheme(temporarySettings.try_as<winrt::Microsoft::Terminal::Core::ICoreScheme>());
 
-                // Apply the new scheme.
-                control.ColorScheme(scheme.ToCoreScheme());
-
-                if (backup)
-                {
-                    // Each control will emplace a revert into the
-                    // _restorePreviewFuncs for itself.
-                    _restorePreviewFuncs.emplace_back([=]() {
-                        // On dismiss, restore the original scheme.
-                        control.ColorScheme(originalScheme);
-                    });
-                }
+                // Take a copy of the inputs, since they are pointers anyways.
+                _restorePreviewFuncs.emplace_back([=]() {
+                    control.ResetPreviewColorScheme();
+                });
             });
         }
     }

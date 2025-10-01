@@ -36,7 +36,7 @@ Settings::Settings() :
     _bAutoPosition(true),
     _uHistoryBufferSize(DEFAULT_NUMBER_OF_COMMANDS),
     _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
-    _bHistoryNoDup(true),
+    _bHistoryNoDup(false),
     // ColorTable initialized below
     _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
     _uScrollScale(1),
@@ -110,7 +110,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _bQuickEdit = TRUE;
     _uHistoryBufferSize = 50;
     _uNumberOfHistoryBuffers = 4;
-    _bHistoryNoDup = true;
+    _bHistoryNoDup = FALSE;
 
     _renderSettings.ResetColorTable();
 
@@ -775,6 +775,16 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
 std::wstring_view Settings::GetAnswerbackMessage() const noexcept
 {
     return _answerbackMessage;
+}
+
+DWORD Settings::GetMSAADelay() const noexcept
+{
+    return _msaaDelay;
+}
+
+DWORD Settings::GetUIADelay() const noexcept
+{
+    return _uiaDelay;
 }
 
 // Determines whether our primary renderer should be DirectX or GDI.

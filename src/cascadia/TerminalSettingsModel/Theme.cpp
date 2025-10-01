@@ -372,7 +372,7 @@ winrt::hstring Theme::ToString()
 //   RequestedTheme, this saves some hassle. If there wasn't a `window` defined
 //   for this theme, this'll quickly just return `system`, to use the OS theme.
 // Return Value:
-// - the set applicationTheme for this Theme, otherwise the system theme.
+// - the set applicationTheme for this Theme; otherwise, the system theme.
 winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
 {
     return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;

@@ -4,8 +4,6 @@
 #include "precomp.h"
 #include "renderer.hpp"
 
-#pragma hdrstop
-
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
@@ -25,35 +23,12 @@ static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 // - Creates a new renderer controller for a console.
 // Arguments:
 // - pData - The interface to console data structures required for rendering
-// - pEngine - The output engine for targeting each rendering frame
 // Return Value:
 // - An instance of a Renderer.
-Renderer::Renderer(const RenderSettings& renderSettings,
-                   IRenderData* pData,
-                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                   const size_t cEngines,
-                   std::unique_ptr<RenderThread> thread) :
+Renderer::Renderer(RenderSettings& renderSettings, IRenderData* pData) :
     _renderSettings(renderSettings),
-    _pData(pData),
-    _pThread{ std::move(thread) }
+    _pData(pData)
 {
-    for (size_t i = 0; i < cEngines; i++)
-    {
-        AddRenderEngine(rgpEngines[i]);
-    }
-}
-
-// Routine Description:
-// - Destroys an instance of a renderer
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-Renderer::~Renderer()
-{
-    // RenderThread blocks until it has shut down.
-    _destructing = true;
-    _pThread.reset();
 }
 
 IRenderData* Renderer::GetRenderData() const noexcept
@@ -72,11 +47,6 @@ IRenderData* Renderer::GetRenderData() const noexcept
     auto tries = maxRetriesForRenderEngine;
     while (tries > 0)
     {
-        if (_destructing)
-        {
-            return S_FALSE;
-        }
-
         // BODGY: Optimally we would want to retry per engine, but that causes different
         // problems (intermittent inconsistent states between text renderer and UIA output,
         // not being able to lock the cursor location, etc.).
@@ -91,7 +61,7 @@ IRenderData* Renderer::GetRenderData() const noexcept
         if (--tries == 0)
         {
             // Stop trying.
-            _pThread->DisablePainting();
+            _thread.DisablePainting();
             if (_pfnRendererEnteredErrorState)
             {
                 _pfnRendererEnteredErrorState();
@@ -117,6 +87,11 @@ IRenderData* Renderer::GetRenderData() const noexcept
         auto unlock = wil::scope_exit([&]() {
             _pData->UnlockConsole();
         });
+
+        if (_isSynchronizingOutput)
+        {
+            _synchronizeWithOutput();
+        }
 
         // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
         _CheckViewportAndScroll();
@@ -207,12 +182,79 @@ CATCH_RETURN()
 
 void Renderer::NotifyPaintFrame() noexcept
 {
-    // If we're running in the unittests, we might not have a render thread.
-    if (_pThread)
+    // The thread will provide throttling for us.
+    _thread.NotifyPaint();
+}
+
+// NOTE: You must be holding the console lock when calling this function.
+void Renderer::SynchronizedOutputChanged() noexcept
+{
+    const auto so = _renderSettings.GetRenderMode(RenderSettings::Mode::SynchronizedOutput);
+    if (_isSynchronizingOutput == so)
     {
-        // The thread will provide throttling for us.
-        _pThread->NotifyPaint();
+        return;
     }
+
+    // If `_isSynchronizingOutput` is true, it'll kick the
+    // render thread into calling `_synchronizeWithOutput()`...
+    _isSynchronizingOutput = so;
+
+    if (!_isSynchronizingOutput)
+    {
+        // ...otherwise, unblock `_synchronizeWithOutput()` from the `WaitOnAddress` call.
+        WakeByAddressSingle(&_isSynchronizingOutput);
+
+        // It's crucial to give the render thread at least a chance to gain the lock.
+        // Otherwise, a VT application could continuously spam DECSET 2026 (Synchronized Output) and
+        // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
+        //
+        // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
+        // since there's no guarantee that this is the same lock as the one the VT parser uses.
+        // But the alternative is Denial-Of-Service of the render thread.
+        //
+        // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
+        // Apps that use DECSET 2026 don't produce that sequence continuously, but rather at a fixed rate.
+        _pData->UnlockConsole();
+        _pData->LockConsole();
+    }
+}
+
+void Renderer::_synchronizeWithOutput() noexcept
+{
+    constexpr DWORD timeout = 100;
+
+    UINT64 start = 0;
+    DWORD elapsed = 0;
+    bool wrong = false;
+
+    QueryUnbiasedInterruptTime(&start);
+
+    // Wait for `_isSynchronizingOutput` to be set to false or for a timeout to occur.
+    while (true)
+    {
+        // We can't call a blocking function while holding the console lock, so release it temporarily.
+        _pData->UnlockConsole();
+        const auto ok = WaitOnAddress(&_isSynchronizingOutput, &wrong, sizeof(_isSynchronizingOutput), timeout - elapsed);
+        _pData->LockConsole();
+
+        if (!ok || !_isSynchronizingOutput)
+        {
+            break;
+        }
+
+        UINT64 now;
+        QueryUnbiasedInterruptTime(&now);
+        elapsed = static_cast<DWORD>((now - start) / 10000);
+        if (elapsed >= timeout)
+        {
+            break;
+        }
+    }
+
+    // If a timeout occurred, `_isSynchronizingOutput` may still be true.
+    // Set it to false now to skip calling `_synchronizeWithOutput()` on the next frame.
+    _isSynchronizingOutput = false;
+    _renderSettings.SetRenderMode(RenderSettings::Mode::SynchronizedOutput, false);
 }
 
 // Routine Description:
@@ -315,7 +357,7 @@ void Renderer::TriggerRedrawAll(const bool backgroundChanged, const bool frameCh
 void Renderer::TriggerTeardown() noexcept
 {
     // We need to shut down the paint thread on teardown.
-    _pThread->WaitForPaintCompletionAndDisable(INFINITE);
+    _thread.TriggerTeardown();
 }
 
 // Routine Description:
@@ -342,9 +384,8 @@ try
             const til::rect vp{ _viewport.ToExclusive() };
             for (auto&& sp : spans)
             {
-                sp.iterate_rows(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
+                sp.iterate_rows_exclusive(bufferWidth, [&](til::CoordType row, til::CoordType min, til::CoordType max) {
                     const auto shift = buffer.GetLineRendition(row) != LineRendition::SingleWidth ? 1 : 0;
-                    max += 1; // Selection spans are inclusive (still)
                     min <<= shift;
                     max <<= shift;
                     til::rect r{ min, row, max, row + 1 };
@@ -638,25 +679,7 @@ void Renderer::EnablePainting()
     // When the renderer is constructed, the initial viewport won't be available yet,
     // but once EnablePainting is called it should be safe to retrieve.
     _viewport = _pData->GetViewport();
-
-    // When running the unit tests, we may be using a render without a render thread.
-    if (_pThread)
-    {
-        _pThread->EnablePainting();
-    }
-}
-
-// Routine Description:
-// - Waits for the current paint operation to complete, if any, up to the specified timeout.
-// - Resets an event in the render thread that precludes it from advancing, thus disabling rendering.
-// - If no paint operation is currently underway, returns immediately.
-// Arguments:
-// - dwTimeoutMs - Milliseconds to wait for the current paint operation to complete, if any (can be INFINITE).
-// Return Value:
-// - <none>
-void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
-{
-    _pThread->WaitForPaintCompletionAndDisable(dwTimeoutMs);
+    _thread.EnablePainting();
 }
 
 // Routine Description:
@@ -1093,7 +1116,7 @@ bool Renderer::_isInHoveredInterval(const til::point coordTarget) const noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
+// - nullopt if the cursor is off or out-of-frame; otherwise, a CursorOptions
 void Renderer::_updateCursorInfo()
 {
     // Get cursor position in buffer
@@ -1436,14 +1459,6 @@ void Renderer::SetFrameColorChangedCallback(std::function<void()> pfn)
 void Renderer::SetRendererEnteredErrorStateCallback(std::function<void()> pfn)
 {
     _pfnRendererEnteredErrorState = std::move(pfn);
-}
-
-// Method Description:
-// - Attempts to restart the renderer.
-void Renderer::ResetErrorStateAndResume()
-{
-    // because we're not stateful (we could be in the future), all we want to do is reenable painting.
-    EnablePainting();
 }
 
 void Renderer::UpdateHyperlinkHoveredId(uint16_t id) noexcept

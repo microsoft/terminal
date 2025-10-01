@@ -363,9 +363,6 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
-    testTextBuffer->GetCursor().SetHasMoved(false);
-    otherTbi.GetCursor().SetHasMoved(true);
-
     testTextBuffer->GetCursor().SetIsVisible(false);
     otherTbi.GetCursor().SetIsVisible(true);
 
@@ -382,7 +379,6 @@ void TextBufferTests::TestCopyProperties()
     testTextBuffer->CopyProperties(otherTbi);
 
     // test that new now contains values from other
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor().HasMoved());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsVisible());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsDouble());
@@ -1390,22 +1386,18 @@ void TextBufferTests::TestBackspaceStringsAPI()
     //      backspacing it with "\b \b".
     // Regardless of how we write those sequences of characters, the end result
     //      should be the same.
-    std::unique_ptr<WriteData> waiter;
 
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
-    size_t aCb = 2;
-    size_t seqCb = 6;
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, waiter));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b \b", &seqCb, si, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(si, L"a"));
+    VERIFY_SUCCEEDED(DoWriteConsole(si, L"\b \b"));
     VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 
-    seqCb = 2;
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, waiter));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
-    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, waiter));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(si, L"a"));
+    VERIFY_SUCCEEDED(DoWriteConsole(si, L"\b"));
+    VERIFY_SUCCEEDED(DoWriteConsole(si, L" "));
+    VERIFY_SUCCEEDED(DoWriteConsole(si, L"\b"));
     VERIFY_ARE_EQUAL(cursor.GetPosition().x, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().y, y0);
 }
@@ -2432,11 +2424,11 @@ void TextBufferTests::GetTextRects()
     std::vector<til::inclusive_rect> expected{};
     if (blockSelection)
     {
-        expected.push_back({ 1, 0, 7, 0 });
-        expected.push_back({ 1, 1, 8, 1 }); // expand right
-        expected.push_back({ 1, 2, 7, 2 });
-        expected.push_back({ 0, 3, 7, 3 }); // expand left
-        expected.push_back({ 1, 4, 7, 4 });
+        expected.push_back({ 1, 0, 8, 0 });
+        expected.push_back({ 1, 1, 9, 1 }); // expand right
+        expected.push_back({ 1, 2, 8, 2 });
+        expected.push_back({ 0, 3, 8, 3 }); // do not expand
+        expected.push_back({ 1, 4, 8, 4 });
     }
     else
     {
@@ -2444,11 +2436,11 @@ void TextBufferTests::GetTextRects()
         expected.push_back({ 0, 1, 19, 1 });
         expected.push_back({ 0, 2, 19, 2 });
         expected.push_back({ 0, 3, 19, 3 });
-        expected.push_back({ 0, 4, 7, 4 });
+        expected.push_back({ 0, 4, 8, 4 });
     }
 
     til::point start{ 1, 0 };
-    til::point end{ 7, 4 };
+    til::point end{ 8, 4 };
     const auto result = _buffer->GetTextRects(start, end, blockSelection, false);
     VERIFY_ARE_EQUAL(expected.size(), result.size());
     for (size_t i = 0; i < expected.size(); ++i)
@@ -2494,8 +2486,9 @@ void TextBufferTests::GetPlainText()
                                                        L"  3  " };
         WriteLinesToBuffer(bufferText, *_buffer);
 
-        // simulate a selection from origin to {4,4}
-        constexpr til::point_span selection = { { 0, 0 }, { 4, 4 } };
+        // simulate a selection from origin to {5,4}
+        // Remember! End is exclusive!
+        constexpr til::point_span selection = { { 0, 0 }, { 5, 4 } };
 
         const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, false };
         const auto result = _buffer->GetPlainText(req);
@@ -2589,8 +2582,9 @@ void TextBufferTests::GetPlainText()
         // |     |
         // |_____|
 
-        // simulate a selection from origin to {4,5}
-        constexpr til::point_span selection = { { 0, 0 }, { 4, 5 } };
+        // simulate a selection from origin to {5,5}
+        // Remember! End is exclusive!
+        constexpr til::point_span selection = { { 0, 0 }, { 5, 5 } };
 
         const auto formatWrappedRows = blockSelection;
         const auto req = TextBuffer::CopyRequest{ *_buffer, selection.start, selection.end, blockSelection, includeCRLF, trimTrailingWhitespace, formatWrappedRows };

@@ -21,6 +21,7 @@
          projects compile properly when they depend on this "Microsoft.winmd."
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
+    <VersionInfoFileDescription>Windows Terminal Control Library</VersionInfoFileDescription>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">
@@ -95,7 +96,7 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>delayimp.lib;Uiautomationcore.lib;onecoreuap.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <DelayLoadDLLs>uiautomationcore.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <DelayLoadDLLs>uiautomationcore.dll;icu.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <!--
       ControlLib contains a DllMain that we need to force the use of.
       If you don't have this, then you'll see an error like

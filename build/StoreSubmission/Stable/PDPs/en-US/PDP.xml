@@ -54,14 +54,11 @@ This is an open source project and we welcome community participation. To partic
     <!-- _locComment_text="{MaxLength=255} App DevStudio" -->
   </DevStudio>
   <ReleaseNotes _locID="App_ReleaseNotes">
-    <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__} App Release Note" -->Version __VERSION_NUMBER__
+    <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__}{Locked=wt.exe} App Release Note" -->Version __VERSION_NUMBER__
 
-- Terminal will now remember the contents of the window when you use session restoration.
-- You can now use multiple fonts at the same time.
-- Box-drawing characters are now rendered with pixel perfection.
-- The experience of using an IME inside Terminal has been significantly improved.
-- The color schemes inside your JSON file will now be much simpler.
-- A number of bugs around URL handling, double-width rows, line wrapping, and more have been fixed.
+- We've added dozens of settings to the UI that once only existed in the JSON file, including a new page for customizing the layout of your New Tab menu!
+- We have rearchitected window management to improve reliability; please file any bugs you encounter with the wt.exe alias
+- Profiles now show an icon if they've been hidden or refer to programs which were uninstalled.
 
 Please see our GitHub releases page for additional details.
   </ReleaseNotes>

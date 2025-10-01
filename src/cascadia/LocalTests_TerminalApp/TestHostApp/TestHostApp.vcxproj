@@ -22,6 +22,7 @@
     <VcpkgAutoLink>false</VcpkgAutoLink>
 
     <TerminalMUX>true</TerminalMUX>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
 
     <!--
     These two properties are very important!
@@ -114,6 +115,9 @@
       <Project>{CA5CAD1A-082C-4476-9F33-94B339494076}</Project>
     </ProjectReference>
 
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\UIHelpers\UIHelpers.vcxproj">
+      <Project>{6515F03F-E56D-4DB4-B23D-AC4FB80DB36F}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <PropertyGroup>

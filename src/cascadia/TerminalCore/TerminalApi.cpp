@@ -116,20 +116,34 @@ bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType hei
     return false;
 }
 
-void Terminal::SetConsoleOutputCP(const unsigned int /*codepage*/) noexcept
+void Terminal::SetCodePage(const unsigned int /*codepage*/) noexcept
 {
-    // TODO: This will be needed to support 8-bit charsets and DOCS sequences.
+    // Code pages are dealt with in ConHost, so this isn't needed.
 }
 
-unsigned int Terminal::GetConsoleOutputCP() const noexcept
+void Terminal::ResetCodePage() noexcept
 {
-    // TODO: See SetConsoleOutputCP above.
+    // There is nothing to reset, since the code page never changes.
+}
+
+unsigned int Terminal::GetOutputCodePage() const noexcept
+{
+    // See above. The code page is always UTF-8.
+    return CP_UTF8;
+}
+
+unsigned int Terminal::GetInputCodePage() const noexcept
+{
+    // See above. The code page is always UTF-8.
     return CP_UTF8;
 }
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    _pfnCopyToClipboard(content);
+    if (_clipboardOperationsAllowed)
+    {
+        _pfnCopyToClipboard(content);
+    }
 }
 
 // Method Description:
@@ -333,11 +347,6 @@ bool Terminal::IsVtInputEnabled() const noexcept
     return false;
 }
 
-void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
-{
-    // This is only needed in conhost. Terminal handles accessibility in another way.
-}
-
 void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
 {
     if (_pfnCompletionsChanged)
@@ -363,7 +372,7 @@ void Terminal::NotifyBufferRotation(const int delta)
         auto selection{ _selection.write() };
         wil::hide_name _selection;
         // If the end of the selection will be out of range after the move, we just
-        // clear the selection. Otherwise we move both the start and end points up
+        // clear the selection. Otherwise, we move both the start and end points up
         // by the given delta and clamp to the first row.
         if (selection->end.y < delta)
         {
@@ -389,4 +398,10 @@ void Terminal::NotifyBufferRotation(const int delta)
     {
         _NotifyScrollEvent();
     }
+}
+
+void Terminal::NotifyShellIntegrationMark()
+{
+    // Notify the scrollbar that marks have been added so it can refresh the mark indicators
+    _NotifyScrollEvent();
 }

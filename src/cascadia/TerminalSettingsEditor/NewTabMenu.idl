@@ -1,0 +1,25 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "NewTabMenuViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass NewTabMenu : Windows.UI.Xaml.Controls.Page
+    {
+        NewTabMenu();
+        NewTabMenuViewModel ViewModel { get; };
+    }
+
+    [default_interface] runtimeclass NewTabMenuEntryTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        NewTabMenuEntryTemplateSelector();
+
+        Windows.UI.Xaml.DataTemplate ProfileEntryTemplate;
+        Windows.UI.Xaml.DataTemplate ActionEntryTemplate;
+        Windows.UI.Xaml.DataTemplate SeparatorEntryTemplate;
+        Windows.UI.Xaml.DataTemplate FolderEntryTemplate;
+        Windows.UI.Xaml.DataTemplate MatchProfilesEntryTemplate;
+        Windows.UI.Xaml.DataTemplate RemainingProfilesEntryTemplate;
+    }
+}

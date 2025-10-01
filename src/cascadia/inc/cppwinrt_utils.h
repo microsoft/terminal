@@ -208,10 +208,50 @@ public:                                                                         
                                                                                           \
 protected:                                                                                \
     type _##name{ __VA_ARGS__ };                                                          \
-    void _set##name(const type& value)                                                    \
+    void _set##name(const type& value) noexcept(noexcept(_##name = value))                \
     {                                                                                     \
         _##name = value;                                                                  \
     };
+
+// This macro defines a dependency property for a WinRT class.
+// Use this in your class' header file after declaring it in the idl.
+// Remember to register your dependency property in the respective cpp file.
+#ifndef DEPENDENCY_PROPERTY
+#define DEPENDENCY_PROPERTY(type, name)                                                       \
+public:                                                                                       \
+    static winrt::Windows::UI::Xaml::DependencyProperty name##Property()                      \
+    {                                                                                         \
+        return _##name##Property;                                                             \
+    }                                                                                         \
+    type name() const                                                                         \
+    {                                                                                         \
+        auto&& temp{ GetValue(_##name##Property) };                                           \
+        if (temp)                                                                             \
+        {                                                                                     \
+            return winrt::unbox_value<type>(temp);                                            \
+        }                                                                                     \
+                                                                                              \
+        if constexpr (std::is_same_v<type, winrt::hstring>)                                   \
+        {                                                                                     \
+            return winrt::hstring{};                                                          \
+        }                                                                                     \
+        else if constexpr (std::is_base_of_v<winrt::Windows::Foundation::IInspectable, type>) \
+        {                                                                                     \
+            return { nullptr };                                                               \
+        }                                                                                     \
+        else                                                                                  \
+        {                                                                                     \
+            return {};                                                                        \
+        }                                                                                     \
+    }                                                                                         \
+    void name(const type& value)                                                              \
+    {                                                                                         \
+        SetValue(_##name##Property, winrt::box_value(value));                                 \
+    }                                                                                         \
+                                                                                              \
+private:                                                                                      \
+    static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
+#endif
 
 // Use this macro for quickly defining the factory_implementation part of a
 // class. CppWinrt requires these for the compiler, but more often than not,
@@ -288,4 +328,78 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     namespace nameSpace::factory_implementation                                                                   \
     {                                                                                                             \
         BASIC_FACTORY(className);                                                                                 \
-    }\
+    }
+
+#ifdef WINRT_Windows_UI_Xaml_H
+
+inline ::winrt::hstring XamlThicknessToOptimalString(const ::winrt::Windows::UI::Xaml::Thickness& t)
+{
+    if (t.Left == t.Right)
+    {
+        if (t.Top == t.Bottom)
+        {
+            if (t.Top == t.Left)
+            {
+                return ::winrt::hstring{ fmt::format(FMT_COMPILE(L"{}"), t.Left) };
+            }
+            return ::winrt::hstring{ fmt::format(FMT_COMPILE(L"{},{}"), t.Left, t.Top) };
+        }
+        // fall through
+    }
+    return ::winrt::hstring{ fmt::format(FMT_COMPILE(L"{},{},{},{}"), t.Left, t.Top, t.Right, t.Bottom) };
+}
+
+inline ::winrt::Windows::UI::Xaml::Thickness StringToXamlThickness(std::wstring_view padding)
+try
+{
+    uintptr_t count{ 0 };
+    double t[4]{ 0. }; // left, top, right, bottom
+    std::wstring buf;
+    auto& errnoRef = errno; // Nonzero cost, pay it once
+    for (const auto& token : til::split_iterator{ padding, L',' })
+    {
+        buf.assign(token);
+        // wcstod handles whitespace prefix (which is ignored) & stops the
+        // scan when first char outside the range of radix is encountered.
+        // We'll be permissive till the extent that stod function allows us to be by default
+        // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
+        errnoRef = 0;
+        wchar_t* end;
+        const auto val{ std::wcstod(buf.c_str(), &end) };
+        if (end != buf.c_str() && errnoRef != ERANGE)
+        {
+            til::at(t, count) = val;
+        }
+
+        if (++count >= 4)
+        {
+            break;
+        }
+    }
+
+#pragma warning(push)
+#pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+    switch (count)
+    {
+    case 1: // one input = all 4 values are the same
+        t[1] = t[0]; // top = left
+        __fallthrough;
+    case 2: // two inputs = top/bottom and left/right are the same
+        t[2] = t[0]; // right = left
+        t[3] = t[1]; // bottom = top
+        __fallthrough;
+    case 4: // four inputs = fully specified
+        break;
+    default:
+        return {};
+    }
+    return { t[0], t[1], t[2], t[3] };
+#pragma warning(pop)
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+
+#endif

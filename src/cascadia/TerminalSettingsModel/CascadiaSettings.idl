@@ -8,7 +8,13 @@ import "DefaultTerminal.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    [default_interface] runtimeclass CascadiaSettings {
+    enum FragmentScope
+    {
+        User,
+        Machine
+    };
+
+    runtimeclass CascadiaSettings {
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
 
@@ -23,7 +29,9 @@ namespace Microsoft.Terminal.Settings.Model
         CascadiaSettings(String userJSON, String inboxJSON);
 
         CascadiaSettings Copy();
-        void WriteSettingsToDisk();
+        void ResetApplicationState();
+        void ResetToDefaultSettings();
+        Boolean WriteSettingsToDisk();
         void LogSettingChanges(Boolean isJsonLoad);
 
         String Hash { get; };
@@ -38,6 +46,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile DuplicateProfile(Profile sourceProfile);
 
         ActionMap ActionMap { get; };
+        Windows.Foundation.Collections.IVectorView<ExtensionPackage> Extensions { get; };
 
         IVectorView<SettingsLoadWarnings> Warnings { get; };
         Windows.Foundation.IReference<SettingsLoadErrors> GetLoadingError { get; };
@@ -55,5 +64,39 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultTerminal CurrentDefaultTerminal;
 
         void ExpandCommands();
+        void UpdateCommandID(Command cmd, String newID);
+
+        void ResolveMediaResources();
+    }
+
+    runtimeclass FragmentProfileEntry
+    {
+        Guid ProfileGuid { get; };
+        String Json { get; };
+    }
+
+    runtimeclass FragmentColorSchemeEntry
+    {
+        String ColorSchemeName { get; };
+        String Json { get; };
+    }
+
+    runtimeclass FragmentSettings
+    {
+        String Source { get; };
+        String Json { get; };
+        String Filename { get; };
+        IVectorView<FragmentProfileEntry> ModifiedProfilesView { get; };
+        IVectorView<FragmentProfileEntry> NewProfilesView { get; };
+        IVectorView<FragmentColorSchemeEntry> ColorSchemesView { get; };
+    }
+
+    runtimeclass ExtensionPackage
+    {
+        String Source { get; };
+        String DisplayName { get; };
+        String Icon { get; };
+        FragmentScope Scope { get; };
+        IVectorView<FragmentSettings> FragmentsView { get; };
     }
 }

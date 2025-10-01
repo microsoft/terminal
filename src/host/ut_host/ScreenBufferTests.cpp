@@ -44,7 +44,6 @@ class ScreenBufferTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont({ 1, 1 });
-        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -54,7 +53,6 @@ class ScreenBufferTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
@@ -581,8 +579,6 @@ void ScreenBufferTests::TestResetClearTabStops()
     // Reset the screen buffer to test the defaults.
     m_state->CleanupNewTextBufferInfo();
     m_state->CleanupGlobalScreenBuffer();
-    m_state->CleanupGlobalRenderer();
-    m_state->PrepareGlobalRenderer();
     m_state->PrepareGlobalScreenBuffer();
     m_state->PrepareNewTextBufferInfo();
 
@@ -2553,11 +2549,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         // We're going to write some data to either the main buffer or the alt
         //  buffer, as if we were using the API.
 
-        std::unique_ptr<WriteData> waiter;
-        std::wstring seq = L"\x1b[5;6H";
-        auto seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"\x1b[5;6H"));
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         // recall: vt coordinates are (row, column), 1-indexed
         VERIFY_ARE_EQUAL(til::point(5, 4), altCursor.GetPosition());
@@ -2569,17 +2561,11 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedDefaults, alternate.GetAttributes());
 
-        seq = L"\x1b[48;2;255;0;255m";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"\x1b[48;2;255;0;255m"));
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedRgb, alternate.GetAttributes());
 
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"X"));
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         VERIFY_ARE_EQUAL(til::point(6, 4), altCursor.GetPosition());
 
@@ -5996,7 +5982,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
-        // Set the position to home, otherwise it's inherited from the main buffer.
+        // Set the position to home; otherwise, it's inherited from the main buffer.
         VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }, true));
 
         WriteText(altBuffer.GetTextBuffer());

@@ -39,17 +39,43 @@ std::wstring VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsS
 
 std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const
 {
-    // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
-    // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
-    // so the path in the profile will be used instead.
+    // Build this in stages, so reserve space now
     std::wstring commandLine;
     commandLine.reserve(256);
-    commandLine.append(LR"(powershell.exe -NoExit -Command "&{Import-Module """)");
+
+    // Try to detect if `pwsh.exe` is available in the PATH, if so we want to use that
+    // Allow some extra space in case user put it somewhere odd
+    // We do need to allocate space for the full path even if we don't want to paste the whole thing in
+    wchar_t pwshPath[MAX_PATH] = { 0 };
+    const auto pwshExeName = L"pwsh.exe";
+    if (SearchPathW(nullptr, pwshExeName, nullptr, MAX_PATH, pwshPath, nullptr))
+    {
+        commandLine.append(pwshExeName);
+    }
+    else
+    {
+        commandLine.append(L"powershell.exe");
+    }
+
+    // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
+    // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
+    // so the path in the profile will be used instead
+    commandLine.append(LR"( -NoExit -Command "&{Import-Module """)");
     commandLine.append(GetDevShellModulePath(instance));
     commandLine.append(LR"("""; Enter-VsDevShell )");
     commandLine.append(instance.GetInstanceId());
 #if defined(_M_ARM64)
-    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=arm64 -host_arch=x64"""}")");
+    // This part stays constant no matter what
+    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=arm64 -host_arch=)");
+    if (instance.VersionInRange(L"[17.4,"))
+    {
+        commandLine.append(LR"("arm64 """}")");
+    }
+    // If an old version of VS is installed without ARM64 host support
+    else
+    {
+        commandLine.append(LR"("x64 """}")");
+    }
 #elif defined(_M_AMD64)
     commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=x64 -host_arch=x64"""}")");
 #else

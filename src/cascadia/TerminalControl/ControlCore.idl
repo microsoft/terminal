@@ -102,10 +102,17 @@ namespace Microsoft.Terminal.Control
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };
         Boolean HasUnfocusedAppearance();
+        void SetHighContrastMode(Boolean enabled);
+
+        void ApplyPreviewColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
+        void ResetPreviewColorScheme();
+
+        void SetOverrideColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
 
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
+        Windows.Foundation.Size FontSizeInDips { get; };
         UInt16 FontWeight { get; };
         Single Opacity { get; };
         Boolean UseAcrylic { get; };
@@ -177,10 +184,13 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
 
+        void OpenCWD();
+
         void ClearQuickFix();
 
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, WriteToClipboardEventArgs> WriteToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> BackgroundColorChanged;

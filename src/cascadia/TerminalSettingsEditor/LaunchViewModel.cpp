@@ -14,6 +14,8 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::UI::Xaml::Data;
 
+static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     // For ComboBox an empty SelectedItem string denotes no selection.
@@ -62,6 +64,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"LaunchParametersCurrentValue");
             }
+            else if (viewModelProperty == L"InitialCols" || viewModelProperty == L"InitialRows")
+            {
+                _NotifyChanges(L"LaunchSizeCurrentValue");
+            }
         });
     }
 
@@ -76,16 +82,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return language.NativeName();
     }
 
-    // Returns whether the language selector is available/shown.
-    //
-    // winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride()
-    // doesn't work for unpackaged applications. The corresponding code in TerminalApp is disabled.
-    // It would be confusing for our users if we presented a dysfunctional language selector.
-    bool LaunchViewModel::LanguageSelectorAvailable()
-    {
-        return IsPackaged();
-    }
-
     // Returns the list of languages the user may override the application language with.
     // The returned list are BCP 47 language tags like {"und", "en-US", "de-DE", "es-ES", ...}.
     // "und" is short for "undefined" and is synonymous for "Use system language" in this code.
@@ -93,12 +89,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (_languageList)
         {
-            return _languageList;
-        }
-
-        if (!LanguageSelectorAvailable())
-        {
-            _languageList = {};
             return _languageList;
         }
 
@@ -173,19 +163,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return _currentLanguage;
         }
 
-        if (!LanguageSelectorAvailable())
+        winrt::hstring currentLanguage;
+        if (IsPackaged())
         {
-            _currentLanguage = {};
-            return _currentLanguage;
+            // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
+            currentLanguage = winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride();
+        }
+        else
+        {
+            if (_Settings.GlobalSettings().HasLanguage())
+            {
+                currentLanguage = _Settings.GlobalSettings().Language();
+            }
         }
 
-        // NOTE: PrimaryLanguageOverride throws if this instance is unpackaged.
-        auto currentLanguage = winrt::Windows::Globalization::ApplicationLanguages::PrimaryLanguageOverride();
         if (currentLanguage.empty())
         {
             currentLanguage = systemLanguageTag;
         }
-
         _currentLanguage = winrt::box_value(currentLanguage);
         return _currentLanguage;
     }
@@ -203,6 +198,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _Settings.GlobalSettings().Language(currentLanguage);
         }
+    }
+
+    winrt::hstring LaunchViewModel::LaunchSizeCurrentValue() const
+    {
+        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{} × {}"), InitialCols(), InitialRows()) };
     }
 
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
@@ -332,7 +332,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // from menus, but still work as the startup profile for instance.
         for (const auto& profile : allProfiles)
         {
-            if (!profile.Deleted())
+            if (!profile.Deleted() && !profile.Orphaned())
             {
                 profiles.emplace_back(profile);
             }
@@ -355,5 +355,87 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> LaunchViewModel::DefaultTerminals() const
     {
         return _Settings.DefaultTerminals();
+    }
+
+    bool LaunchViewModel::StartOnUserLoginAvailable()
+    {
+        return IsPackaged();
+    }
+
+    safe_void_coroutine LaunchViewModel::PrepareStartOnUserLoginSettings()
+    {
+        if (!StartOnUserLoginAvailable())
+        {
+            co_return;
+        }
+
+        auto strongThis{ get_strong() };
+        auto task{ co_await winrt::Windows::ApplicationModel::StartupTask::GetAsync(StartupTaskName) };
+        _startOnUserLoginTask = std::move(task);
+        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
+    }
+
+    bool LaunchViewModel::StartOnUserLoginConfigurable()
+    {
+        if (!_startOnUserLoginTask)
+        {
+            return false;
+        }
+        namespace WAM = winrt::Windows::ApplicationModel;
+        const auto state{ _startOnUserLoginTask.State() };
+        // Terminal cannot change the state of the login task if it is any of the "ByUser" or "ByPolicy" states.
+        return state == WAM::StartupTaskState::Disabled || state == WAM::StartupTaskState::Enabled;
+    }
+
+    winrt::hstring LaunchViewModel::StartOnUserLoginStatefulHelpText()
+    {
+        if (_startOnUserLoginTask)
+        {
+            namespace WAM = winrt::Windows::ApplicationModel;
+            switch (_startOnUserLoginTask.State())
+            {
+            case WAM::StartupTaskState::EnabledByPolicy:
+            case WAM::StartupTaskState::DisabledByPolicy:
+                return winrt::hstring{ L"\uE72E " } /*lock icon*/ + RS_(L"Globals_StartOnUserLogin_UnavailableByPolicy");
+            case WAM::StartupTaskState::DisabledByUser:
+                return RS_(L"Globals_StartOnUserLogin_DisabledByUser");
+            case WAM::StartupTaskState::Enabled:
+            case WAM::StartupTaskState::Disabled:
+            default:
+                break; // fall through to the common case (no task, not configured, etc.)
+            }
+        }
+        return RS_(L"Globals_StartOnUserLogin/HelpText");
+    }
+
+    bool LaunchViewModel::StartOnUserLogin()
+    {
+        if (!_startOnUserLoginTask)
+        {
+            return false;
+        }
+        namespace WAM = winrt::Windows::ApplicationModel;
+        const auto state{ _startOnUserLoginTask.State() };
+        return state == WAM::StartupTaskState::Enabled || state == WAM::StartupTaskState::EnabledByPolicy;
+    }
+
+    safe_void_coroutine LaunchViewModel::StartOnUserLogin(bool enable)
+    {
+        if (!_startOnUserLoginTask)
+        {
+            co_return;
+        }
+
+        auto strongThis{ get_strong() };
+        if (enable)
+        {
+            co_await _startOnUserLoginTask.RequestEnableAsync();
+        }
+        else
+        {
+            _startOnUserLoginTask.Disable();
+        }
+        // Any of these could have changed in response to an attempt to enable (e.g. it was disabled in task manager since our last check)
+        _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
 }

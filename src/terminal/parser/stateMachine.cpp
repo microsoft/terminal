@@ -25,6 +25,9 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _oscString{},
     _cachedSequence{ std::nullopt }
 {
+    // The state machine must always accept C1 controls for the input engine,
+    // otherwise it won't work when the ConPTY terminal has S8C1T enabled.
+    _parserMode.set(Mode::AcceptC1, _isEngineForInput);
     _ActionClear();
 }
 
@@ -1508,7 +1511,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
 // - Handle the two-character termination of a OSC sequence.
 //   Events in this state will:
 //   1. Trigger the OSC action associated with the param on an OscTerminator
-//   2. Otherwise treat this as a normal escape character event.
+//   2. Otherwise, treat this as a normal escape character event.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:

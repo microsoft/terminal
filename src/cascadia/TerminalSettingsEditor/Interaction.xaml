@@ -83,9 +83,36 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Enable Font Size Changes with Scrolling  -->
+            <local:SettingContainer x:Uid="Globals_ScrollToZoom">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToZoom, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Enable Window Opacity Changes with Scrolling  -->
+            <local:SettingContainer x:Uid="Globals_ScrollToChangeOpacity">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToChangeOpacity, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Detect URLs  -->
             <local:SettingContainer x:Uid="Globals_DetectURLs">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
+            <!--  Search Web Default Query URL  -->
+            <local:SettingContainer x:Uid="Globals_SearchWebDefaultQueryUrl"
+                                    CurrentValue="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Enable Color Selection  -->
+            <local:SettingContainer x:Uid="Globals_EnableColorSelection">
+                <ToggleSwitch IsOn="{x:Bind ViewModel.EnableColorSelection, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
         </StackPanel>
@@ -115,8 +142,11 @@
 
             <!--  Multi Line Paste Warning  -->
             <local:SettingContainer x:Uid="Globals_WarnAboutMultiLinePaste">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.WarnAboutMultiLinePaste, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind WarnAboutMultiLinePasteList}"
+                          SelectedItem="{x:Bind CurrentWarnAboutMultiLinePaste, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
         </StackPanel>

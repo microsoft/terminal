@@ -7,10 +7,11 @@
 #include "pch.h"
 
 #include "TitlebarControl.h"
-
-#include "ColorHelper.h"
+#include "../../types/inc/ColorFix.hpp"
 
 #include "TitlebarControl.g.cpp"
+
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -75,6 +76,11 @@ namespace winrt::TerminalApp::implementation
         {
             ContentRoot().MaxWidth(maxWidth);
         }
+    }
+
+    void TitlebarControl::FullscreenChanged(const bool fullscreen)
+    {
+        MinMaxCloseControl().Visibility(fullscreen ? Visibility::Collapsed : Visibility::Visible);
     }
 
     void TitlebarControl::_OnMaximizeOrRestore(byte flag)
@@ -182,7 +188,8 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto isBrightColor = ColorHelper::IsBrightColor(c);
+        constexpr auto lightnessThreshold = 0.6f;
+        const auto isBrightColor = ColorFix::GetLightness(c) >= lightnessThreshold;
         MinMaxCloseControl().RequestedTheme(isBrightColor ? winrt::Windows::UI::Xaml::ElementTheme::Light :
                                                             winrt::Windows::UI::Xaml::ElementTheme::Dark);
     }

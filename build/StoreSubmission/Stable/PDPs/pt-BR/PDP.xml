@@ -54,14 +54,11 @@ Este é um projeto de código aberto e a participação da comunidade é bem-vin
     
   </DevStudio>
   <ReleaseNotes>
-    Versão __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-- O terminal agora se lembra do conteúdo da janela quando você usa a restauração de sessão.
-- Agora você pode usar várias fontes ao mesmo tempo.
-- Os caracteres da caixa de desenho agora são renderizados com a perfeição de pixels.
-- A experiência de usar uma IME dentro do Terminal foi significativamente aprimorada.
-- Os esquemas de cores dentro do seu arquivo JSON agora estão muito mais simples.
-- Foram corrigidos vários bugs envolvendo o tratamento de URLs, linhas de largura dupla, quebra de linha automática e muito mais.
+– Adicionamos várias configurações à interface do usuário que antes só existiam no arquivo JSON, incluindo uma nova página para personalizar o layout do seu menu Nova Guia!
+– Reestruturamos o gerenciamento de janelas para melhorar a confiabilidade; registre os bugs que você encontrar com o alias wt.exe
+– Os perfis agora exibem um ícone se estiverem ocultos ou se referirem a programas que foram desinstalados.
 
 Confira nossa página de lançamentos no GitHub para obter mais detalhes.
   </ReleaseNotes>

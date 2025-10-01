@@ -99,7 +99,7 @@ public:
 
         TerminalInput::StringType str;
         str.append(std::wstring_view{ buffer });
-        str[str.size() - 1] = IsButtonDown(uiButton) ? L'M' : L'm';
+        str[str.size() - 1] = IsButtonUp(uiButton) ? L'm' : L'M';
         return str;
     }
 
@@ -127,9 +127,12 @@ public:
             wch = L'!';
             break;
         case WM_MOUSEWHEEL:
-        case WM_MOUSEHWHEEL:
             Log::Comment(NoThrowString().Format(L"MOUSEWHEEL"));
             wch = L'`' + (sScrollDelta > 0 ? 0 : 1);
+            break;
+        case WM_MOUSEHWHEEL:
+            Log::Comment(NoThrowString().Format(L"MOUSEHWHEEL"));
+            wch = L'b' + (sScrollDelta > 0 ? 1 : 0);
             break;
         case WM_MOUSEMOVE:
         default:
@@ -168,8 +171,10 @@ public:
             result = 3 + 0x20; // we add 0x20 to hover events, which are all encoded as WM_MOUSEMOVE events
             break;
         case WM_MOUSEWHEEL:
-        case WM_MOUSEHWHEEL:
             result = (sScrollDelta > 0 ? 64 : 65);
+            break;
+        case WM_MOUSEHWHEEL:
+            result = (sScrollDelta > 0 ? 67 : 66);
             break;
         default:
             result = 0;
@@ -182,23 +187,18 @@ public:
         return result;
     }
 
-    bool IsButtonDown(unsigned int uiButton)
+    bool IsButtonUp(unsigned int uiButton)
     {
-        auto fIsDown = false;
         switch (uiButton)
         {
-        case WM_LBUTTONDBLCLK:
-        case WM_LBUTTONDOWN:
-        case WM_RBUTTONDOWN:
-        case WM_RBUTTONDBLCLK:
-        case WM_MBUTTONDOWN:
-        case WM_MBUTTONDBLCLK:
-        case WM_MOUSEWHEEL:
-        case WM_MOUSEHWHEEL:
-            fIsDown = true;
-            break;
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONUP:
+        case WM_XBUTTONUP:
+            return true;
+        default:
+            return false;
         }
-        return fIsDown;
     }
 
     /* From winuser.h - Needed to manually specify the test properties
@@ -587,6 +587,12 @@ public:
         Log::Comment(L"Test mouse wheel scrolling down");
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[B"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
+        Log::Comment(L"Test mouse wheel scrolling right");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[C"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+
+        Log::Comment(L"Test mouse wheel scrolling left");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[D"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+
         Log::Comment(L"Enable cursor keys mode");
         mouseInput.SetInputMode(TerminalInput::Mode::CursorKey, true);
 
@@ -595,6 +601,12 @@ public:
 
         Log::Comment(L"Test mouse wheel scrolling down");
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOB"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+
+        Log::Comment(L"Test mouse wheel scrolling right");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOC"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+
+        Log::Comment(L"Test mouse wheel scrolling left");
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOD"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Confirm no effect when scroll mode is disabled");
         mouseInput.UseAlternateScreenBuffer();

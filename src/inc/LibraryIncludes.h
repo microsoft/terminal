@@ -65,7 +65,6 @@
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
-#include <gsl/gsl>
 #include <gsl/gsl_util>
 #include <gsl/pointers>
 
@@ -102,6 +101,8 @@
 // The compiler doesn't like that. --> Suppress the warning.
 #pragma warning(push)
 #pragma warning(disable: 4324) // structure was padded due to alignment specifier
+// undefine BUILD_WINDOWS so that wrl/event.h doesn't include wrl/internalevent.h
+#undef BUILD_WINDOWS
 #include <wrl.h>
 #pragma warning(pop)
 

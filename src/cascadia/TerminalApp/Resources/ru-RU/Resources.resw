@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Закрыть</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Переместить вкладку</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>Закрыть вкладки справа</value>
   </data>
@@ -206,6 +209,45 @@
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>Разделить область</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Щелкните правой кнопкой мыши для направлений разделения — вправо, вниз, вверх, влево</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Разделить панель вниз</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Разделить панель вправо</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Разделить панель вверх</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Разделить панель влево</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Дублировать</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Переключить панель</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Переключить панель вниз</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Переключить панель вправо</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Переключить панель вверх</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Переключить панель влево</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Переключить масштаб области</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Закрыть другие панели</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Поиск в Интернете</value>
@@ -225,13 +267,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Дублировать вкладку</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>Найден профиль с недопустимым объектом "backgroundImage". По умолчанию для этого профиля не используется фоновое изображение. Убедитесь, что значение, заданное для "backgroundImage", является допустимым путем файла к изображению.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>Найден профиль с недопустимым объектом "icon". По умолчанию для этого профиля не используется значок. Убедитесь, что значение, заданное для "icon", является допустимым путем файла к изображению.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Не удалось найти один или несколько ресурсов (icon или backgroundImage), указанных в параметрах.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>При анализе настраиваемых сочетаний клавиш найдены предупреждения:</value>
@@ -722,12 +760,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>Отмена</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>Не удалось переименовать окно</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>Окно с таким именем уже существует</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>Развернуть</value>
   </data>
@@ -932,5 +964,14 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Закрыть панель</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Влево</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Вправо</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Обнаружено недопустимое регулярное выражение.</value>
   </data>
 </root>

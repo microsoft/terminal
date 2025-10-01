@@ -24,14 +24,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     {
     public:
         std::wstring_view GetNamespace() const noexcept override;
+        std::wstring_view GetDisplayName() const noexcept override;
+        std::wstring_view GetIcon() const noexcept override;
         void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
 
     private:
         static const std::wregex _configKeyValueRegex;
-
-        static std::wstring_view _getProfileName(const std::wstring_view& hostName) noexcept;
-        static std::wstring_view _getProfileIconPath() noexcept;
-        static std::wstring_view _getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept;
 
         static bool _tryFindSshExePath(std::wstring& sshExePath) noexcept;
         static bool _tryParseConfigKeyValue(const std::wstring_view& line, std::wstring& key, std::wstring& value) noexcept;

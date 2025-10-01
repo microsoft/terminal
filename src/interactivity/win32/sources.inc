@@ -37,7 +37,6 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\AccessibilityNotifier.cpp \
     ..\clipboard.cpp \
     ..\ConsoleControl.cpp \
     ..\ConsoleInputThread.cpp \
@@ -60,4 +59,5 @@ INCLUDES = \
     ..; \
 
 TARGETLIBS = \
+    $(TARGETLIBS) \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib  \

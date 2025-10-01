@@ -73,13 +73,17 @@ using namespace Microsoft::Console::Interactivity;
 //  SignalHandle: an optional file handle that will be used to send signals into the console.
 //      This represents the ability to send signals to a *nix tty/pty.
 // Return Value:
-//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
+//  S_OK if we initialized successfully; otherwise, an appropriate HRESULT
 //      indicating failure.
 [[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
                                         const HANDLE OutHandle,
                                         _In_opt_ const HANDLE SignalHandle)
 {
-    FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
+    if (_state != State::Uninitialized)
+    {
+        assert(false); // Don't call initialize twice.
+        return E_UNEXPECTED;
+    }
 
     _hInput.reset(InHandle);
     _hOutput.reset(OutHandle);
@@ -95,28 +99,54 @@ using namespace Microsoft::Console::Interactivity;
         }
     }
 
+    // - Create and start the signal thread. The signal thread can be created
+    //      independent of the i/o threads, and doesn't require a client first
+    //      attaching to the console. We need to create it first and foremost,
+    //      because it's possible that a terminal application could
+    //      CreatePseudoConsole, then ClosePseudoConsole without ever attaching a
+    //      client. Should that happen, we still need to exit.
+    if (IsValidHandle(_hSignal.get()))
+    {
+        try
+        {
+            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal));
+
+            // Start it if it was successfully created.
+            RETURN_IF_FAILED(_pPtySignalInputThread->Start());
+        }
+        CATCH_RETURN();
+    }
+
     // The only way we're initialized is if the args said we're in conpty mode.
     // If the args say so, then at least one of in, out, or signal was specified
-    _initialized = true;
+    _state = State::Initialized;
     return S_OK;
 }
 
-// Method Description:
-// - Create the VtEngine and the VtInputThread for this console.
-// MUST BE DONE AFTER CONSOLE IS INITIALIZED, to make sure we've gotten the
-//  buffer size from the attached client application.
-// Arguments:
-// - <none>
-// Return Value:
-//  S_OK if we initialized successfully,
-//  S_FALSE if VtIo hasn't been initialized (or we're not in conpty mode)
-//  otherwise an appropriate HRESULT indicating failure.
-[[nodiscard]] HRESULT VtIo::CreateIoHandlers() noexcept
+bool VtIo::IsUsingVt() const
 {
-    if (!_initialized)
+    return _state != State::Uninitialized;
+}
+
+// Routine Description:
+//  Potentially starts this VtIo's input thread and render engine.
+//      If the VtIo hasn't yet been given pipes, then this function will
+//      silently do nothing. It's the responsibility of the caller to make sure
+//      that the pipes are initialized first with VtIo::Initialize
+// Arguments:
+//  <none>
+// Return Value:
+//  S_OK if we started successfully or had nothing to start; otherwise, an
+//      appropriate HRESULT indicating failure.
+[[nodiscard]] HRESULT VtIo::StartIfNeeded()
+{
+    // If we haven't been set up, do nothing (because there's nothing to start)
+    if (_state != State::Initialized)
     {
         return S_FALSE;
     }
+
+    _state = State::Starting;
 
     // SetWindowVisibility uses the console lock to protect access to _pVtRenderEngine.
     assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
@@ -130,71 +160,45 @@ using namespace Microsoft::Console::Interactivity;
     }
     CATCH_RETURN();
 
-    return S_OK;
-}
-
-bool VtIo::IsUsingVt() const
-{
-    return _initialized;
-}
-
-// Routine Description:
-//  Potentially starts this VtIo's input thread and render engine.
-//      If the VtIo hasn't yet been given pipes, then this function will
-//      silently do nothing. It's the responsibility of the caller to make sure
-//      that the pipes are initialized first with VtIo::Initialize
-// Arguments:
-//  <none>
-// Return Value:
-//  S_OK if we started successfully or had nothing to start, otherwise an
-//      appropriate HRESULT indicating failure.
-[[nodiscard]] HRESULT VtIo::StartIfNeeded()
-{
-    // If we haven't been set up, do nothing (because there's nothing to start)
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-
     if (_pVtInputThread)
     {
         LOG_IF_FAILED(_pVtInputThread->Start());
-    }
 
-    {
-        Writer writer{ this };
-
-        // MSFT: 15813316
-        // If the terminal application wants us to inherit the cursor position,
-        // we're going to emit a VT sequence to ask for the cursor position.
-        // If we get a response, the InteractDispatch will call SetCursorPosition,
-        // which will call to our VtIo::SetCursorPosition method.
-        //
-        // By sending the request before sending the DA1 one, we can simply
-        // wait for the DA1 response below and effectively wait for both.
-        if (_lookingForCursorPosition)
         {
-            writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+            Writer writer{ this };
+
+            // MSFT: 15813316
+            // If the terminal application wants us to inherit the cursor position,
+            // we're going to emit a VT sequence to ask for the cursor position.
+            // If we get a response, the InteractDispatch will call SetCursorPosition,
+            // which will call to our VtIo::SetCursorPosition method.
+            //
+            // By sending the request before sending the DA1 one, we can simply
+            // wait for the DA1 response below and effectively wait for both.
+            if (_lookingForCursorPosition)
+            {
+                writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+            }
+
+            // GH#4999 - Send a sequence to the connected terminal to request
+            // win32-input-mode from them. This will enable the connected terminal to
+            // send us full INPUT_RECORDs as input. If the terminal doesn't understand
+            // this sequence, it'll just ignore it.
+            writer.WriteUTF8(
+                "\x1b[c" // DA1 Report (Primary Device Attributes)
+                "\x1b[?1004h" // Focus Event Mode
+                "\x1b[?9001h" // Win32 Input Mode
+            );
+
+            writer.Submit();
         }
 
-        // GH#4999 - Send a sequence to the connected terminal to request
-        // win32-input-mode from them. This will enable the connected terminal to
-        // send us full INPUT_RECORDs as input. If the terminal doesn't understand
-        // this sequence, it'll just ignore it.
-        writer.WriteUTF8(
-            "\x1b[c" // DA1 Report (Primary Device Attributes)
-            "\x1b[?1004h" // Focus Event Mode
-            "\x1b[?9001h" // Win32 Input Mode
-        );
-
-        writer.Submit();
-    }
-
-    {
-        // Allow the input thread to momentarily gain the console lock.
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto suspension = gci.SuspendLock();
-        _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
+        {
+            // Allow the input thread to momentarily gain the console lock.
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            const auto suspension = gci.SuspendLock();
+            _deviceAttributes = _pVtInputThread->WaitUntilDA1(3000);
+        }
     }
 
     if (_pPtySignalInputThread)
@@ -208,7 +212,40 @@ bool VtIo::IsUsingVt() const
         _pPtySignalInputThread->ConnectConsole();
     }
 
+    if (_state != State::Starting)
+    {
+        // Here's where we _could_ call CloseConsoleProcessState(), but this function
+        // only gets called once when the first client connects and CONSOLE_INITIALIZED
+        // is not set yet. The process list may already contain that first client,
+        // but since it hasn't finished connecting yet, it won't react to a CTRL_CLOSE_EVENT.
+        // Instead, we return an error here which will abort the connection setup.
+        return E_FAIL;
+    }
+
+    _state = State::Running;
     return S_OK;
+}
+
+void VtIo::Shutdown() noexcept
+{
+    if (_state != State::Running)
+    {
+        return;
+    }
+
+    // The reverse of what we did in StartIfNeeded.
+    try
+    {
+        Writer writer{ this };
+
+        writer.WriteUTF8(
+            "\x1b[?1004l" // Focus Event Mode
+            "\x1b[?9001l" // Win32 Input Mode
+        );
+
+        writer.Submit();
+    }
+    CATCH_LOG();
 }
 
 void VtIo::SetDeviceAttributes(const til::enumset<DeviceAttribute, uint64_t> attributes) noexcept
@@ -244,46 +281,20 @@ void VtIo::CreatePseudoWindow()
     }
 }
 
-// Method Description:
-// - Create and start the signal thread. The signal thread can be created
-//      independent of the i/o threads, and doesn't require a client first
-//      attaching to the console. We need to create it first and foremost,
-//      because it's possible that a terminal application could
-//      CreatePseudoConsole, then ClosePseudoConsole without ever attaching a
-//      client. Should that happen, we still need to exit.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_FALSE if we're not in VtIo mode,
-//   S_OK if we succeeded,
-//   otherwise an appropriate HRESULT indicating failure.
-[[nodiscard]] HRESULT VtIo::CreateAndStartSignalThread() noexcept
-{
-    if (!_initialized)
-    {
-        return S_FALSE;
-    }
-
-    // If we were passed a signal handle, try to open it and make a signal reading thread.
-    if (IsValidHandle(_hSignal.get()))
-    {
-        try
-        {
-            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal));
-
-            // Start it if it was successfully created.
-            RETURN_IF_FAILED(_pPtySignalInputThread->Start());
-        }
-        CATCH_RETURN();
-    }
-
-    return S_OK;
-}
-
 void VtIo::SendCloseEvent()
 {
     LockConsole();
     const auto unlock = wil::scope_exit([] { UnlockConsole(); });
+
+    // If we're still in the process of starting up, and we're asked to shut down
+    // (broken pipe), `VtIo::StartIfNeeded()` will handle the cleanup for us.
+    // This can happen during the call to `WaitUntilDA1`, because we relinquish
+    // ownership of the console lock.
+    if (_state == State::Starting)
+    {
+        _state = State::StartupFailed;
+        return;
+    }
 
     // This function is called when the ConPTY signal pipe is closed (PtySignalInputThread) and when the input
     // pipe is closed (VtIo). Usually these two happen at about the same time. This if condition is a bit of
@@ -372,7 +383,7 @@ void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attribute
 wchar_t VtIo::SanitizeUCS2(wchar_t ch)
 {
     // If any of the values in the buffer are C0 or C1 controls, we need to
-    // convert them to printable codepoints, otherwise they'll end up being
+    // convert them to printable codepoints; otherwise, they'll end up being
     // evaluated as control characters by the receiving terminal. We use the
     // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
     // C1 controls, since that's what you would most likely have seen in the
@@ -567,10 +578,11 @@ void VtIo::Writer::WriteUTF16(std::wstring_view str) const
 
     // C++23's resize_and_overwrite is too valuable to not use.
     // It reduce the CPU overhead by roughly half.
-#if !defined(_HAS_CXX23) || !_HAS_CXX23
+#if !defined(__cpp_lib_string_resize_and_overwrite) && _MSVC_STL_UPDATE >= 202111L
 #define resize_and_overwrite _Resize_and_overwrite
+#elif !defined(__cpp_lib_string_resize_and_overwrite)
+#error "rely on resize_and_overwrite"
 #endif
-
     // NOTE: Throwing inside resize_and_overwrite invokes undefined behavior.
     _io->_back.resize_and_overwrite(totalUTF8Cap, [&](char* buf, const size_t) noexcept {
         const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), gsl::narrow_cast<int>(incomingUTF16Len), buf + existingUTF8Len, gsl::narrow_cast<int>(incomingUTF8Cap), nullptr, nullptr);

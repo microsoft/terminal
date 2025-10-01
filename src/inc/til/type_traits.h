@@ -3,6 +3,11 @@
 
 #pragma once
 
+namespace winrt
+{
+    struct hstring;
+}
+
 namespace til
 {
     namespace details
@@ -49,6 +54,12 @@ namespace til
         struct as_view<std::basic_string<T, Traits, Alloc>>
         {
             using type = std::basic_string_view<T, Traits>;
+        };
+
+        template<>
+        struct as_view<winrt::hstring>
+        {
+            using type = std::wstring_view;
         };
     }
 

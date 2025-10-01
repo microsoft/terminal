@@ -64,7 +64,7 @@
                                 <IconSourceElement Grid.Column="0"
                                                    Width="16"
                                                    Height="16"
-                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon), Mode=OneTime}" />
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon.Resolved), Mode=OneTime}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind Name}" />
@@ -116,6 +116,7 @@
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
                                            Grid.ColumnSpan="2"
+                                           VerticalAlignment="Center"
                                            AutomationProperties.AccessibilityView="Raw"
                                            Text="{x:Bind Name}" />
 
@@ -140,8 +141,7 @@
             </local:SettingContainer>
 
             <!--  Language  -->
-            <local:SettingContainer x:Uid="Globals_Language"
-                                    Visibility="{x:Bind ViewModel.LanguageSelectorAvailable}">
+            <local:SettingContainer x:Uid="Globals_Language">
                 <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
                           SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
@@ -163,8 +163,11 @@
             </local:SettingContainer>
 
             <!--  Start on User Login  -->
-            <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
+            <local:SettingContainer x:Uid="Globals_StartOnUserLogin"
+                                    HelpText="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
+                                    Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
+                <ToggleSwitch IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}"
+                              IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
@@ -186,10 +189,12 @@
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
+            <!--  Launch Size  -->
             <local:SettingContainer x:Uid="Globals_LaunchSize"
+                                    CurrentValue="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
-                <Grid ColumnSpacing="10"
-                      RowSpacing="10">
+                <Grid ColumnSpacing="12"
+                      RowSpacing="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -231,7 +236,7 @@
             <local:SettingContainer x:Uid="Globals_LaunchParameters"
                                     CurrentValue="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
-                <Grid RowSpacing="10">
+                <Grid RowSpacing="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />

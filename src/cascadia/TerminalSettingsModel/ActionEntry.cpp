@@ -4,33 +4,57 @@
 #include "pch.h"
 #include "ActionEntry.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 #include "ActionEntry.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view ActionIdKey{ "id" };
+static constexpr std::string_view IconKey{ "icon" };
 
-ActionEntry::ActionEntry() noexcept :
-    ActionEntryT<ActionEntry, NewTabMenuEntry>(NewTabMenuEntryType::Action)
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-}
 
-Json::Value ActionEntry::ToJson() const
-{
-    auto json = NewTabMenuEntry::ToJson();
+    ActionEntry::ActionEntry() noexcept :
+        ActionEntryT<ActionEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Action)
+    {
+    }
 
-    JsonUtils::SetValueForKey(json, ActionIdKey, _ActionId);
+    Json::Value ActionEntry::ToJson() const
+    {
+        auto json = NewTabMenuEntry::ToJson();
 
-    return json;
-}
+        JsonUtils::SetValueForKey(json, ActionIdKey, _ActionId);
+        JsonUtils::SetValueForKey(json, IconKey, _icon);
 
-winrt::com_ptr<NewTabMenuEntry> ActionEntry::FromJson(const Json::Value& json)
-{
-    auto entry = winrt::make_self<ActionEntry>();
+        return json;
+    }
 
-    JsonUtils::GetValueForKey(json, ActionIdKey, entry->_ActionId);
+    winrt::com_ptr<NewTabMenuEntry> ActionEntry::FromJson(const Json::Value& json)
+    {
+        auto entry = winrt::make_self<ActionEntry>();
 
-    return entry;
+        JsonUtils::GetValueForKey(json, ActionIdKey, entry->_ActionId);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_icon);
+
+        return entry;
+    }
+
+    Model::NewTabMenuEntry ActionEntry::Copy() const
+    {
+        auto entry = winrt::make_self<ActionEntry>();
+        entry->_ActionId = _ActionId;
+        entry->_icon = _icon;
+        return *entry;
+    }
+
+    void ActionEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (_icon)
+        {
+            // TODO GH#19191 (Hardcoded Origin, since that's the only place it could have come from)
+            ResolveIconMediaResource(OriginTag::User, basePath, _icon, resolver);
+        }
+    }
 }

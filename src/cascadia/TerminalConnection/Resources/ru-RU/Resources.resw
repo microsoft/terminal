@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>Теперь вы можете закрыть этот терминал с помощью клавиш CTRL+D. Или нажмите клавишу ВВОД для перезапуска.</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[ошибка {0} при запуске "{1}"]</value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>Не удалось получить доступ к запуску каталога "{0}"</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>Запрошенная операция требует получения дополнительных прав.</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>Не удается найти указанный файл.</value>
   </data>
 </root>

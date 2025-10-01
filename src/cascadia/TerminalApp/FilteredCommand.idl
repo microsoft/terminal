@@ -1,21 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "PaletteItem.idl";
+import "IPaletteItem.idl";
 import "HighlightedTextControl.idl";
 
 namespace TerminalApp
 {
-    [default_interface] unsealed runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         FilteredCommand();
-        FilteredCommand(PaletteItem item);
+        FilteredCommand(IPaletteItem item);
 
-        PaletteItem Item { get; };
-        String Filter;
-        HighlightedText HighlightedName { get; };
+        IPaletteItem Item { get; };
+        IVector<HighlightedRun> NameHighlights { get; };
+        IVector<HighlightedRun> SubtitleHighlights { get; };
+        Boolean HasSubtitle { get; };
         Int32 Weight;
-
-        void UpdateFilter(String filter);
     }
 }

@@ -7,11 +7,13 @@
 #include "../../inc/DefaultSettings.h"
 
 #include "DynamicProfileUtils.h"
+#include <LibraryResources.h>
 
 static constexpr std::wstring_view SshHostGeneratorNamespace{ L"Windows.Terminal.SSH" };
 
 static constexpr std::wstring_view PROFILE_TITLE_PREFIX = L"SSH - ";
-static constexpr std::wstring_view PROFILE_ICON_PATH = L"ms-appx:///ProfileIcons/{550ce7b8-d500-50ad-8a1a-c400c3262db3}.png";
+static constexpr std::wstring_view PROFILE_ICON_PATH = L"\uE977"; // PC1
+static constexpr std::wstring_view GENERATOR_ICON_PATH = L"\uE969"; // StorageNetworkWireless
 
 // OpenSSH is installed under System32 when installed via Optional Features
 static constexpr std::wstring_view SSH_EXE_PATH1 = L"%SystemRoot%\\System32\\OpenSSH\\ssh.exe";
@@ -33,19 +35,14 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 /*static*/ const std::wregex SshHostGenerator::_configKeyValueRegex{ LR"(^\s*(\w+)\s+([^\s]+.*[^\s])\s*$)" };
 
-/*static*/ std::wstring_view SshHostGenerator::_getProfileName(const std::wstring_view& hostName) noexcept
+winrt::hstring _getProfileName(const std::wstring_view& hostName) noexcept
 {
-    return std::wstring_view{ L"" + PROFILE_TITLE_PREFIX + hostName };
+    return winrt::hstring{ fmt::format(FMT_COMPILE(L"{0}{1}"), PROFILE_TITLE_PREFIX, hostName) };
 }
 
-/*static*/ std::wstring_view SshHostGenerator::_getProfileIconPath() noexcept
+winrt::hstring _getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
 {
-    return PROFILE_ICON_PATH;
-}
-
-/*static*/ std::wstring_view SshHostGenerator::_getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
-{
-    return std::wstring_view{ L"\"" + sshExePath + L"\" " + hostName };
+    return winrt::hstring{ fmt::format(FMT_COMPILE(LR"("{0}" {1})"), sshExePath, hostName) };
 }
 
 /*static*/ bool SshHostGenerator::_tryFindSshExePath(std::wstring& sshExePath) noexcept
@@ -132,6 +129,16 @@ std::wstring_view SshHostGenerator::GetNamespace() const noexcept
     return SshHostGeneratorNamespace;
 }
 
+std::wstring_view SshHostGenerator::GetDisplayName() const noexcept
+{
+    return RS_(L"SshHostGeneratorDisplayName");
+}
+
+std::wstring_view SshHostGenerator::GetIcon() const noexcept
+{
+    return GENERATOR_ICON_PATH;
+}
+
 // Method Description:
 // - Generate a list of profiles for each detected OpenSSH host.
 // Arguments:
@@ -152,8 +159,8 @@ void SshHostGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementatio
         {
             const auto profile{ CreateDynamicProfile(_getProfileName(hostName)) };
 
-            profile->Commandline(winrt::hstring{ _getProfileCommandLine(sshExePath, hostName) });
-            profile->Icon(winrt::hstring{ _getProfileIconPath() });
+            profile->Commandline(_getProfileCommandLine(sshExePath, hostName));
+            profile->Icon(winrt::hstring{ PROFILE_ICON_PATH });
 
             profiles.emplace_back(profile);
         }

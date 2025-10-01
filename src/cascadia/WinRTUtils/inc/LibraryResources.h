@@ -67,6 +67,9 @@ namespace Microsoft::Console::Utils
     __pragma(warning(suppress : 26485));       \
     __declspec(selectany) extern const wchar_t* g_WinRTUtilsLibraryResourceScope{ (x) };
 
+class ScopedResourceLoader;
+
+const ScopedResourceLoader& GetLibraryResourceLoader();
 winrt::hstring GetLibraryResourceString(const std::wstring_view key);
 bool HasLibraryResourceWithName(const std::wstring_view key);
 
