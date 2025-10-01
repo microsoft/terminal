@@ -86,6 +86,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(SwapPanes);
 
         TEST_METHOD(NextMRUTab);
+        TEST_METHOD(TabRowVisibilityReflectsTabCount);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
         TEST_METHOD(TestWindowRenameSuccessful);
@@ -1141,6 +1142,24 @@ namespace TerminalAppLocalTests
         TestOnUIThread([&page]() {
             auto focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
+        });
+    }
+
+    void TabTests::TabRowVisibilityReflectsTabCount()
+    {
+        auto page = _commonSetup();
+
+        TestOnUIThread([&page]() {
+            VERIFY_IS_FALSE(page->IsTabRowVisible(), L"Single tab with tabs hidden in title bar should not show the tab row.");
+        });
+
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+
+        TestOnUIThread([&page]() {
+            VERIFY_IS_TRUE(page->IsTabRowVisible(), L"Multiple tabs should make the tab row visible when tabs are outside the title bar.");
         });
     }
 
