@@ -61,10 +61,6 @@ Changed from single duplex pipe to separate input/output pipes for clearer archi
 
 This change improves code clarity but doesn't directly fix the ghost chars issue.
 
-#### 3. outputStream.cpp (lines 44-59)
-Added response deduplication to prevent duplicate responses within 100ms window.
-This provides defense-in-depth, though conhost already returns early in VT mode.
-
 ## Architectural Notes
 
 ### Why conhost doesn't respond in ConPTY mode
@@ -95,3 +91,4 @@ Running `printf "\e[c"` over SSH will not produce a DA response from Windows Ter
 2. `src/cascadia/TerminalConnection/ConptyConnection.h`
 3. `src/cascadia/TerminalConnection/ConptyConnection.cpp`
 4. `src/host/outputStream.cpp`
+
