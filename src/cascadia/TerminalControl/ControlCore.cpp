@@ -2203,7 +2203,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             if (!_pendingResponses.empty())
             {
-                _sendInputToConnection(_pendingResponses);
+                // GH#18004: For ConPTY, only send non-DA responses to prevent ghost chars
+                // DA responses through ConPTY input cause corruption with SSH/tmux
+                const bool isConPty = _connection.try_as<TerminalConnection::ConptyConnection>() != nullptr;
+                bool shouldSend = true;
+
+                if (isConPty)
+                {
+                    const bool hasDA = _pendingResponses.find(L"\x1b[?") != std::wstring::npos ||
+                                      _pendingResponses.find(L"\x1b[>") != std::wstring::npos;
+                    shouldSend = !hasDA;
+                }
+
+                if (shouldSend)
+                {
+                    _sendInputToConnection(_pendingResponses);
+                }
                 _pendingResponses.clear();
             }
 

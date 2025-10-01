@@ -41,6 +41,23 @@ void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
         return;
     }
 
+    // GH#18004: Deduplicate responses to work around duplicate kernel messages.
+    // If the same response was sent very recently (within 100ms), skip it.
+    static std::wstring lastResponse;
+    static std::chrono::steady_clock::time_point lastResponseTime;
+
+    const auto now = std::chrono::steady_clock::now();
+    const auto timeSinceLastResponse = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastResponseTime);
+
+    if (response == lastResponse && timeSinceLastResponse < std::chrono::milliseconds(100))
+    {
+        // This is a duplicate response within 100ms, skip it
+        return;
+    }
+
+    lastResponse = response;
+    lastResponseTime = now;
+
     // TODO GH#4954 During the input refactor we may want to add a "priority" input list
     // to make sure that "response" input is spooled directly into the application.
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
