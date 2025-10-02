@@ -131,7 +131,7 @@ static constexpr std::string_view OpenSettingsKey{ "openSettings" };
 [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
 {
     // this declares the "target" arg
-    SettingsTarget Target { get; };
+    SettingsTarget Target { get; }
 };
 ```
   - In `ActionArgs.h`, define the new runtime class
