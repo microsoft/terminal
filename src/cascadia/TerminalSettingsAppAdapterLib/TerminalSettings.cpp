@@ -351,6 +351,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _ForceVTInput = profile.ForceVTInput();
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
+        _BlockConPtyDAResponses = profile.BlockConPtyDAResponses();
         _PathTranslationStyle = profile.PathTranslationStyle();
     }
 

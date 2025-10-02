@@ -75,6 +75,7 @@ namespace Microsoft.Terminal.Control
         Boolean RepositionCursorWithMouse { get; };
 
         PathTranslationStyle PathTranslationStyle { get; };
+        Boolean BlockConPtyDAResponses { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
