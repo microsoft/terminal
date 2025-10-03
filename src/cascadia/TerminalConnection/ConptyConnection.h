@@ -77,7 +77,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool _receivedFirstByte{ false };
         std::chrono::high_resolution_clock::time_point _startTime{};
 
-        wil::unique_hfile _pipe;
+        wil::unique_hfile _inPipe;
+        wil::unique_hfile _outPipe;
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piClient;
         wil::unique_any<HPCON, decltype(closePseudoConsoleAsync), closePseudoConsoleAsync> _hPC;

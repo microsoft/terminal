@@ -334,8 +334,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _sessionId = Utils::CreateGuid();
 
-        auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
-        auto pipeClientClone = duplicateHandle(pipe.client.get());
+        // inPipe: Terminal writes (OUTBOUND), ConPTY reads (ConPTY's input)
+        // outPipe: Terminal reads (INBOUND), ConPTY writes (ConPTY's output)
+        auto inPipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_OUTBOUND, 128 * 1024);
+        auto outPipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_INBOUND, 128 * 1024);
+        auto outPipeClientClone = duplicateHandle(outPipe.client.get());
 
         auto ownedSignal = duplicateHandle(signal);
         auto ownedReference = duplicateHandle(reference);
@@ -373,9 +376,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         CATCH_LOG()
 
-        _pipe = std::move(pipe.server);
-        *in = pipe.client.release();
-        *out = pipeClientClone.release();
+        *in = inPipe.client.release();
+        *out = outPipeClientClone.release();
+        _inPipe = std::move(inPipe.server);
+        _outPipe = std::move(outPipe.server);
     }
 
     winrt::hstring ConptyConnection::Commandline() const
@@ -402,11 +406,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
         // handoff from an already-started PTY process.
-        if (!_pipe)
+        if (!_inPipe)
         {
-            auto pipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_DUPLEX, 128 * 1024);
-            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), pipe.client.get(), pipe.client.get(), _flags, &_hPC));
-            _pipe = std::move(pipe.server);
+            // inPipe: Terminal writes (OUTBOUND), ConPTY reads (ConPTY's input)
+            // outPipe: Terminal reads (INBOUND), ConPTY writes (ConPTY's output)
+            auto inPipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_OUTBOUND, 128 * 1024);
+            auto outPipe = Utils::CreateOverlappedPipe(PIPE_ACCESS_INBOUND, 128 * 1024);
+            THROW_IF_FAILED(ConptyCreatePseudoConsole(til::unwrap_coord_size(dimensions), inPipe.client.get(), outPipe.client.get(), _flags, &_hPC));
+            _inPipe = std::move(inPipe.server);
+            _outPipe = std::move(outPipe.server);
 
             if (_initialParentHwnd != 0)
             {
@@ -567,7 +575,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _writePending = false;
 
             DWORD read;
-            if (!GetOverlappedResult(_pipe.get(), &_writeOverlapped, &read, TRUE))
+            if (!GetOverlappedResult(_inPipe.get(), &_writeOverlapped, &read, TRUE))
             {
                 // Not much we can do when the wait fails. This will kill the connection.
                 LOG_LAST_ERROR();
@@ -581,7 +589,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        if (!WriteFile(_pipe.get(), _writeBuffer.data(), gsl::narrow_cast<DWORD>(_writeBuffer.length()), nullptr, &_writeOverlapped))
+        if (!WriteFile(_inPipe.get(), _writeBuffer.data(), gsl::narrow_cast<DWORD>(_writeBuffer.length()), nullptr, &_writeOverlapped))
         {
             switch (const auto gle = GetLastError())
             {
@@ -678,7 +686,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             for (;;)
             {
                 // The output thread may be stuck waiting for the OVERLAPPED to be signaled.
-                CancelIoEx(_pipe.get(), nullptr);
+                CancelIoEx(_outPipe.get(), nullptr);
 
                 // Waiting for the output thread to exit ensures that all pending TerminalOutput.raise()
                 // calls have returned and won't notify our caller (ControlCore) anymore. This ensures that
@@ -693,7 +701,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _hOutputThread.reset();
         _piClient.reset();
-        _pipe.reset();
+        _inPipe.reset();
+        _outPipe.reset();
 
         // The output thread should have already transitioned us to Closed.
         // This exists just in case there was no output thread.
@@ -761,7 +770,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // When we have a `wstr` that's ready for processing we must do so without blocking.
             // Otherwise, whatever the user typed will be delayed until the next IO operation.
             // With overlapped IO that's not a problem because the ReadFile() calls won't block.
-            if (!ReadFile(_pipe.get(), &buffer[0], sizeof(buffer), &read, &overlapped))
+            if (!ReadFile(_outPipe.get(), &buffer[0], sizeof(buffer), &read, &overlapped))
             {
                 if (GetLastError() != ERROR_IO_PENDING)
                 {

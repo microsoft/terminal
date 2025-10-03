@@ -102,6 +102,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Connection(connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring_view wstr) {
+            std::lock_guard<std::mutex> lock(_pendingResponsesMutex);
             _pendingResponses.append(wstr);
         });
 
@@ -2201,10 +2202,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _terminal->Write(hstr);
             }
 
-            if (!_pendingResponses.empty())
             {
-                _sendInputToConnection(_pendingResponses);
-                _pendingResponses.clear();
+                std::lock_guard<std::mutex> lock(_pendingResponsesMutex);
+                if (!_pendingResponses.empty())
+                {
+                    // GH#18004: For ConPTY, only send non-DA responses to prevent ghost chars
+                    // DA responses through ConPTY input cause corruption with SSH/tmux
+                    const bool isConPty = _connection.try_as<TerminalConnection::ConptyConnection>() != nullptr;
+                    bool shouldSend = true;
+
+                    if (isConPty && _settings.BlockConPtyDAResponses())
+                    {
+                        const bool hasDA = _pendingResponses.find(L"\x1b[?") != std::wstring::npos ||
+                                          _pendingResponses.find(L"\x1b[>") != std::wstring::npos;
+                        shouldSend = !hasDA;
+                    }
+
+                    if (shouldSend)
+                    {
+                        _sendInputToConnection(_pendingResponses);
+                    }
+                    _pendingResponses.clear();
+                }
             }
 
             // Start the throttled update of where our hyperlinks are.
