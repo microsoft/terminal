@@ -2582,9 +2582,12 @@
           "$ref": "#/$defs/NewTabMenu"
         },
         "language": {
-          "default": "",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
-          "type": "string"
+          "default": null
         },
         "theme": {
           "default": "dark",
