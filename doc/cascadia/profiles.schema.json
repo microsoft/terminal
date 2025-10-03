@@ -2945,6 +2945,11 @@
           "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
+        "experimental.rainbowSuggestions": {
+          "type": "boolean",
+          "description": "Enables displaying command suggestions in the terminal in RGB (all the colors of the rainbow!).",
+          "default": false
+        },
         "experimental.rightClickContextMenu": {
           "default": false,
           "description": "When true, right-click shows a context menu; otherwise, it pastes from the clipboard or copies selection.",
