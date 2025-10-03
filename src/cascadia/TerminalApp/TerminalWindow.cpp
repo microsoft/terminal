@@ -1316,26 +1316,37 @@ namespace winrt::TerminalApp::implementation
 
         if (!FocusMode())
         {
-            if (!_settings.GlobalSettings().AlwaysShowTabs())
+            const auto tabsInTitlebar = _settings.GlobalSettings().ShowTabsInTitlebar();
+            const auto tabRowVisible = _root ? _root->IsTabRowVisible() :
+                                             (_settings.GlobalSettings().AlwaysShowTabs() || tabsInTitlebar);
+
+            if (!tabsInTitlebar)
             {
-                // Hide the title bar = off, Always show tabs = off.
-                static constexpr auto titlebarHeight = 10;
+                if (tabRowVisible)
+                {
+                    // Hide the title bar = off, tab row visible. Account for
+                    // both the system title bar and the tab strip height.
+                    static constexpr auto titlebarAndTabBarHeight = 40;
+                    pixelSize.Height += (titlebarAndTabBarHeight)*scale;
+                }
+                else
+                {
+                    // Hide the title bar = off, tab row hidden. Only account
+                    // for the native title bar height.
+                    static constexpr auto titlebarHeight = 10;
+                    pixelSize.Height += (titlebarHeight)*scale;
+                }
+            }
+            else if (tabRowVisible)
+            {
+                // Hide the title bar = on, tabs drawn in the title bar. Add
+                // the custom tab row height so the client area fits.
+                static constexpr auto titlebarHeight = 40;
                 pixelSize.Height += (titlebarHeight)*scale;
             }
-            else if (!_settings.GlobalSettings().ShowTabsInTitlebar())
-            {
-                // Hide the title bar = off, Always show tabs = on.
-                static constexpr auto titlebarAndTabBarHeight = 40;
-                pixelSize.Height += (titlebarAndTabBarHeight)*scale;
-            }
-            // Hide the title bar = on, Always show tabs = on.
-            // In this case, we don't add any height because
-            // NonClientIslandWindow::GetTotalNonClientExclusiveSize() gets
-            // called in AppHost::_resizeWindow and it already takes title bar
-            // height into account.  In other cases above
-            // IslandWindow::GetTotalNonClientExclusiveSize() is called, and it
-            // doesn't take the title bar height into account, so we have to do
-            // the calculation manually.
+            // When tabs are hosted in the title bar but not visible we don't
+            // need to adjust the size – the non-client window chrome already
+            // accounts for it.
         }
 
         args.Width(static_cast<int32_t>(pixelSize.Width));
