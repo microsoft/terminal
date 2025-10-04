@@ -73,6 +73,8 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestElevateArg);
 
+        TEST_METHOD(TestInitialPositionParsing);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1619,4 +1621,49 @@ namespace TerminalAppLocalTests
         }
     }
 
+    void SettingsTests::TestInitialPositionParsing()
+    {
+        {
+            const auto pos = LaunchPositionFromString("50");
+            VERIFY_IS_TRUE(pos.X.has_value());
+            VERIFY_IS_TRUE(pos.Y.has_value());
+            VERIFY_ARE_EQUAL(50, pos.X.Value());
+            VERIFY_ARE_EQUAL(50, pos.Y.Value());
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("100,");
+            VERIFY_IS_TRUE(pos.X.has_value());
+            VERIFY_ARE_EQUAL(100, pos.X.Value());
+            VERIFY_IS_FALSE(pos.Y.has_value());
+        }
+
+        {
+            const auto pos = LaunchPositionFromString(",100");
+            VERIFY_IS_FALSE(pos.X.has_value());
+            VERIFY_IS_TRUE(pos.Y.has_value());
+            VERIFY_ARE_EQUAL(100, pos.Y.Value());
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("50,50");
+            VERIFY_IS_TRUE(pos.X.has_value());
+            VERIFY_ARE_EQUAL(50, pos.X.Value());
+            VERIFY_IS_TRUE(pos.Y.has_value());
+            VERIFY_ARE_EQUAL(50, pos.Y.Value());
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("abc,100");
+            VERIFY_IS_FALSE(pos.X.has_value());
+            VERIFY_IS_TRUE(pos.Y.has_value());
+            VERIFY_ARE_EQUAL(100, pos.Y.Value());
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("abc");
+            VERIFY_IS_FALSE(pos.X.has_value());
+            VERIFY_IS_FALSE(pos.Y.has_value());
+        }
+    }
 }

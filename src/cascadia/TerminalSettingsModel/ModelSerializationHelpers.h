@@ -67,6 +67,10 @@ _TIL_INLINEPREFIX ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition 
         string,
         [&initialPosition](int32_t left) { initialPosition.X = left; },
         [&initialPosition](int32_t right) { initialPosition.Y = right; });
+    if (initialPosition.X && !initialPosition.Y && string.find(',') == std::string::npos)
+    {
+        initialPosition.Y = initialPosition.X;
+    }
     return initialPosition;
 }
 
