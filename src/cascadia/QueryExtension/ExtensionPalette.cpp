@@ -7,6 +7,8 @@
 #include "LibraryResources.h"
 #include <winrt/Windows.UI.Xaml.Media.Imaging.h>
 
+#include <winrt/Windows.ApplicationModel.DataTransfer.h>
+
 #include "ExtensionPalette.g.cpp"
 #include "ChatMessage.g.cpp"
 #include "GroupedChatMessages.g.cpp"
@@ -16,6 +18,7 @@ using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Controls::Primitives;
 using namespace winrt::Windows::System;
 namespace WWH = ::winrt::Windows::Web::Http;
 namespace WSS = ::winrt::Windows::Storage::Streams;
@@ -340,6 +343,14 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
     void ExtensionPalette::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
                                              const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        const auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
+        if (focusedElement && (focusedElement.try_as<RichTextBlock>() || focusedElement.try_as<MenuFlyoutPresenter>() || focusedElement.try_as<Popup>()))
+        {
+            // The context menu for the message doesn't seem to be found when the VisualTreeHelper walks the visual tree. So we check here
+            // if one of the focused elements is a message or a context menu of one of those messages and return early to support
+            // copy and select all using a mouse
+            return;
+        }
         const auto flyout = _queryBox().ContextFlyout();
         if (flyout && flyout.IsOpen())
         {
@@ -404,7 +415,17 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
         else if (key == VirtualKey::C && ctrlDown)
         {
-            _queryBox().CopySelectionToClipboard();
+            // Get the focused element. If it is a chat message copy its selection (if any) to the clipboard.
+            const auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
+            if (focusedElement && focusedElement.try_as<RichTextBlock>())
+            {
+                const auto textBlock = focusedElement.as<RichTextBlock>();
+                textBlock.CopySelectionToClipboard();
+            }
+            else
+            {
+                _queryBox().CopySelectionToClipboard();
+            }
             e.Handled(true);
         }
         else if (key == VirtualKey::V && ctrlDown)
