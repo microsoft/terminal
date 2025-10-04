@@ -249,7 +249,7 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
         auto& tgtCursor = _altBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
-        tgtCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        tgtCursor.SetIsBlinking(myCursor.IsBlinking());
 
         // The new position should match the viewport-relative position of the main buffer.
         auto tgtCursorPos = myCursor.GetPosition();
@@ -307,7 +307,7 @@ void Terminal::UseMainScreenBuffer()
 
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+        mainCursor.SetIsBlinking(altCursor.IsBlinking());
 
         auto tgtCursorPos = altCursor.GetPosition();
         tgtCursorPos.y += _mutableViewport.Top();
@@ -359,7 +359,7 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
 {
     if (_pfnSearchMissingCommand)
     {
-        const auto bufferRow = GetCursorPosition().y;
+        const auto bufferRow = _activeBuffer().GetCursor().GetPosition().y;
         _pfnSearchMissingCommand(command, bufferRow);
     }
 }
