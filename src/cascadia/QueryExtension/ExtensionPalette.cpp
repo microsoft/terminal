@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             }
             else
             {
-                _close();
+                _closeChat(nullptr, nullptr);
             }
         });
     }
@@ -214,7 +214,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 pos += 1; // Move past the replaced character
             }
             _InputSuggestionRequestedHandlers(*this, winrt::to_hstring(suggestion));
-            _close();
 
             const auto lmProviderName = _lmProvider ? _lmProvider.BrandingData().Name() : winrt::hstring{};
             TraceLoggingWrite(
@@ -246,7 +245,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
     void ExtensionPalette::_setFocusAndPlaceholderTextHelper()
     {
-        // We are visible, set the placeholder text so the user knows what the shell context is
         _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
 
         // Now that we have the context, make sure the lmProvider knows it too
@@ -300,74 +298,25 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         }
     }
 
-    // Method Description:
-    // - This event is triggered when someone clicks anywhere in the bounds of
-    //   the window that's _not_ the query palette UI. When that happens,
-    //   we'll want to dismiss the palette.
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_rootPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
-                                               const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
+    void ExtensionPalette::_closeChat(const Windows::Foundation::IInspectable& /*sender*/,
+                                      const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        if (Visibility() != Visibility::Collapsed)
-        {
-            _close();
-        }
+        Visibility(Visibility::Collapsed);
     }
 
     void ExtensionPalette::_backdropPointerPressed(const Windows::Foundation::IInspectable& /*sender*/,
                                                    const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
+        _setFocusAndPlaceholderTextHelper();
         e.Handled(true);
     }
 
-    // Method Description:
-    // - The purpose of this event handler is to hide the palette if it loses focus.
-    // We say we lost focus if our root element and all its descendants lost focus.
-    // This handler is invoked when our root element or some descendant loses focus.
-    // At this point we need to learn if the newly focused element belongs to this palette.
-    // To achieve this:
-    // - We start with the newly focused element and traverse its visual ancestors up to the Xaml root.
-    // - If one of the ancestors is this ExtensionPalette, then by our definition the focus is not lost
-    // - If we reach the Xaml root without meeting this ExtensionPalette,
-    // then the focus is not contained in it anymore and it should be dismissed
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_lostFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
-                                             const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    void ExtensionPalette::_queryBoxGotFocusHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                                    const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        const auto flyout = _queryBox().ContextFlyout();
-        if (flyout && flyout.IsOpen())
-        {
-            return;
-        }
-
-        auto root = this->XamlRoot();
-        if (!root)
-        {
-            return;
-        }
-
-        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(root).try_as<DependencyObject>();
-        while (focusedElementOrAncestor)
-        {
-            if (focusedElementOrAncestor == *this)
-            {
-                // This palette is the focused element or an ancestor of the focused element. No need to dismiss.
-                return;
-            }
-
-            // Go up to the next ancestor
-            focusedElementOrAncestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElementOrAncestor);
-        }
-
-        // We got to the root (the element with no parent) and didn't meet this palette on the path.
-        // It means that it lost the focus and needs to be dismissed.
-        _close();
+        _ActiveControlInfoRequestedHandlers(nullptr, nullptr);
+        const auto context = winrt::make<TerminalContext>(_ActiveCommandline);
+        _lmProvider.SetContext(std::move(context));
     }
 
     void ExtensionPalette::_previewKeyDownHandler(const IInspectable& /*sender*/,
@@ -383,7 +332,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
             // Dismiss the palette if the text is empty
             if (_queryBox().Text().empty())
             {
-                _close();
+                _closeChat(nullptr, nullptr);
             }
 
             e.Handled(true);
@@ -418,20 +367,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                                                       const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
         _SetUpProviderInSettingsRequestedHandlers(nullptr, nullptr);
-        _close();
-    }
-
-    // Method Description:
-    // - Dismiss the query palette. This will:
-    //   * clear all the current text in the input box
-    //   * set our visibility to Collapsed
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void ExtensionPalette::_close()
-    {
-        Visibility(Visibility::Collapsed);
+        _closeChat(nullptr, nullptr);
     }
 
     ChatMessage::ChatMessage(winrt::hstring content, bool isQuery) :

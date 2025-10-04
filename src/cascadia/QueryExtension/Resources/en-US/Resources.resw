@@ -153,6 +153,10 @@
     <value>Export the message history to a text file</value>
     <comment>Tooltip for the button that allows the user to export the message history.</comment>
   </data>
+  <data name="CloseChatButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close the chat pane</value>
+    <comment>Tooltip for the button that allows the user to close the chat pane.</comment>
+  </data>
   <data name="TitleSubheader.Text" xml:space="preserve">
     <value>Take command of your Terminal. Ask Terminal Chat for assistance right in your terminal.</value>
     <comment>Subheader of the AI chat box control.</comment>

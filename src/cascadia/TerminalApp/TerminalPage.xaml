@@ -20,6 +20,10 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
         <local:TabRowControl x:Name="TabRow"
                              Grid.Row="0"
@@ -168,7 +172,9 @@
                               Visibility="Collapsed" />
 
         <ContentPresenter x:Name="ExtensionPresenter"
-                          Grid.Row="2"
+                          Grid.Row="1"
+                          Grid.RowSpan="2"
+                          Grid.Column="1"
                           VerticalAlignment="Stretch"
                           PreviewKeyDown="_KeyDownHandler"
                           Visibility="Collapsed" />
