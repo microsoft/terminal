@@ -193,8 +193,8 @@ public:
 
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
-    void SetSnapOnInputEnabled(const bool enabled) noexcept { _snapOnInputEnabled = enabled; }
-    [[nodiscard]] bool IsSnapOnInputEnabled() const noexcept { return _snapOnInputEnabled; }
+    void SetSnapOnInputEnabled(const bool enabled) noexcept;
+    [[nodiscard]] bool IsSnapOnInputEnabled() const noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);

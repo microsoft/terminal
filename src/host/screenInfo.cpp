@@ -1616,7 +1616,6 @@ static constexpr bool IsInputKey(WORD vkey) noexcept
 
 void SCREEN_INFORMATION::MakeCursorVisible(til::point position)
 {
-
     const auto viewportOrigin = _viewport.Origin();
     const auto viewportSize = _viewport.Dimensions();
     const auto bufferSize = _textBuffer->GetSize().Dimensions();
@@ -2388,4 +2387,14 @@ FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() noexcept
 const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;
+}
+
+void SCREEN_INFORMATION::SetSnapOnInputEnabled(const bool enabled) noexcept
+{
+    _snapOnInputEnabled = enabled;
+}
+
+bool SCREEN_INFORMATION::IsSnapOnInputEnabled() const noexcept
+{
+    return _snapOnInputEnabled;
 }

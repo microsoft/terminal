@@ -178,8 +178,6 @@ void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
             }
         }
     }
-
-
 }
 
 #ifdef DBG
