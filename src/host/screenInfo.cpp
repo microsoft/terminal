@@ -1616,6 +1616,7 @@ static constexpr bool IsInputKey(WORD vkey) noexcept
 
 void SCREEN_INFORMATION::MakeCursorVisible(til::point position)
 {
+
     const auto viewportOrigin = _viewport.Origin();
     const auto viewportSize = _viewport.Dimensions();
     const auto bufferSize = _textBuffer->GetSize().Dimensions();
