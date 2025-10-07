@@ -315,7 +315,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     }
     if (!IsPackaged())
     {
-        const auto path = wil::GetModuleFileNameW<std::wstring>(nullptr);
+        const auto path = wil::QueryFullProcessImageNameW<std::wstring>();
         const auto hash = til::hash(path);
 #ifdef _WIN64
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
