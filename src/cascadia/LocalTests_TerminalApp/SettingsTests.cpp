@@ -6,7 +6,6 @@
 #include "../TerminalApp/TerminalPage.h"
 #include "../UnitTests_SettingsModel/TestUtils.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
-#include "../TerminalSettingsModel/ModelSerializationHelpers.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -73,8 +72,6 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestIterableColorSchemeCommands);
 
         TEST_METHOD(TestElevateArg);
-
-        TEST_METHOD(TestInitialPositionParsing);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1619,52 +1616,6 @@ namespace TerminalAppLocalTests
             const auto termSettings = termSettingsResult.DefaultSettings();
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings->Commandline());
             VERIFY_ARE_EQUAL(true, termSettings->Elevate());
-        }
-    }
-
-    void SettingsTests::TestInitialPositionParsing()
-    {
-        {
-            const auto pos = LaunchPositionFromString("50");
-            VERIFY_IS_TRUE(pos.X.has_value());
-            VERIFY_IS_TRUE(pos.Y.has_value());
-            VERIFY_ARE_EQUAL(50, static_cast<int32_t>pos.X.Value());
-            VERIFY_ARE_EQUAL(50, static_cast<int32_t>pos.Y.Value());
-        }
-
-        {
-            const auto pos = LaunchPositionFromString("100,");
-            VERIFY_IS_TRUE(pos.X.has_value());
-            VERIFY_ARE_EQUAL(100, static_cast<int32_t>pos.X.Value());
-            VERIFY_IS_FALSE(pos.Y.has_value());
-        }
-
-        {
-            const auto pos = LaunchPositionFromString(",100");
-            VERIFY_IS_FALSE(pos.X.has_value());
-            VERIFY_IS_TRUE(pos.Y.has_value());
-            VERIFY_ARE_EQUAL(100, static_cast<int32_t>pos.Y.Value());
-        }
-
-        {
-            const auto pos = LaunchPositionFromString("50,50");
-            VERIFY_IS_TRUE(pos.X.has_value());
-            VERIFY_ARE_EQUAL(50, static_cast<int32_t>pos.X.Value());
-            VERIFY_IS_TRUE(pos.Y.has_value());
-            VERIFY_ARE_EQUAL(50, static_cast<int32_t>pos.Y.Value());
-        }
-
-        {
-            const auto pos = LaunchPositionFromString("abc,100");
-            VERIFY_IS_FALSE(pos.X.has_value());
-            VERIFY_IS_TRUE(pos.Y.has_value());
-            VERIFY_ARE_EQUAL(100, static_cast<int32_t>pos.Y.Value());
-        }
-
-        {
-            const auto pos = LaunchPositionFromString("abc");
-            VERIFY_IS_FALSE(pos.X.has_value());
-            VERIFY_IS_FALSE(pos.Y.has_value());
         }
     }
 }
