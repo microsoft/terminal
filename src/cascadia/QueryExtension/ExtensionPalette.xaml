@@ -14,8 +14,6 @@
              AllowFocusOnInteraction="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
              IsTabStop="True"
-             LostFocus="_lostFocusHandler"
-             PointerPressed="_rootPointerPressed"
              PreviewKeyDown="_previewKeyDownHandler"
              TabNavigation="Cycle"
              mc:Ignorable="d">
@@ -178,14 +176,12 @@
         <Grid x:Name="_backdrop"
               Grid.Row="0"
               Grid.Column="1"
-              Margin="8"
               Padding="0,8,0,0"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"
               Background="{ThemeResource BackdropBackground}"
-              BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
-              BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
-              CornerRadius="{ThemeResource OverlayCornerRadius}"
+              BorderBrush="{ThemeResource TabViewBackground}"
+              BorderThickness="2,0,0,0"
               PointerPressed="_backdropPointerPressed"
               Shadow="{StaticResource SharedShadow}"
               Translation="0,0,32">
@@ -341,6 +337,13 @@
                                           Glyph="&#xEDE1;" />
                             </Button.Content>
                         </Button>
+                        <Button x:Uid="CloseChatButton"
+                                Click="_closeChat">
+                            <Button.Content>
+                                <FontIcon FontSize="14"
+                                          Glyph="&#xE8BB;" />
+                            </Button.Content>
+                        </Button>
                     </StackPanel>
                     <mux:ProgressRing Grid.Row="1"
                                       Grid.Column="0"
@@ -362,6 +365,7 @@
                      Margin="16,0,16,4"
                      Padding="18,8,8,8"
                      AcceptsReturn="True"
+                     GotFocus="_queryBoxGotFocusHandler"
                      IsSpellCheckEnabled="False"
                      PlaceholderText="{x:Bind QueryBoxPlaceholderText}"
                      Text=""
