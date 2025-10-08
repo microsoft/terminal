@@ -1318,7 +1318,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto tabsInTitlebar = _settings.GlobalSettings().ShowTabsInTitlebar();
             const auto tabRowVisible = _root ? _root->IsTabRowVisible() :
-                                             (_settings.GlobalSettings().AlwaysShowTabs() || tabsInTitlebar);
+                                               (_settings.GlobalSettings().AlwaysShowTabs() || tabsInTitlebar);
 
             if (!tabsInTitlebar)
             {
