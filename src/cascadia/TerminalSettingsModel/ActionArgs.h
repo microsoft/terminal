@@ -611,7 +611,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_ContentArgs.Equals(_ContentArgs);
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -712,7 +712,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -840,7 +840,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_ContentArgs.Equals(_ContentArgs);
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
@@ -990,7 +990,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_Actions == _Actions;
             }
             return false;
-        };
+        }
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
