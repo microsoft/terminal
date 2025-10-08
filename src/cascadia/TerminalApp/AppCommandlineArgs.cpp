@@ -707,6 +707,15 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 
     if (*subcommand.startingDirectoryOption)
     {
+        // This is a fix for the way CommandLineToArgvW parse the command line removing
+        // the opening quote and maintaining the closing quote because of a trailing
+        // slash from the path.
+        // Example: --startingDirectory "C:\Users\my user\"
+        if (_startingDirectory.length() > 2 && _startingDirectory.front() != '\"' && _startingDirectory.back() == '\"')
+        {
+            _startingDirectory.pop_back();
+            _startingDirectory.push_back('\\');
+        }
         args.StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
 
