@@ -10,6 +10,8 @@
 #include "EnumEntry.h"
 #include "ProfileViewModel.h"
 
+#include "CursorColorTemplateSelector.g.cpp"
+#include "AppearanceViewModel.g.cpp"
 #include "Appearances.g.cpp"
 
 using namespace winrt::Windows::UI::Text;
@@ -201,6 +203,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool FontKeyValuePair::IsFontFeature() const noexcept
     {
         return _isFontFeature;
+    }
+
+    DataTemplate CursorColorTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)
+    {
+        return SelectTemplateCore(item);
+    }
+
+    DataTemplate CursorColorTemplateSelector::SelectTemplateCore(const IInspectable& item)
+    {
+        if (const auto maybeCursorColor = item.try_as<Windows::UI::Color>())
+        {
+            const auto cursorColor = *maybeCursorColor;
+            if (cursorColor.R == 0xFF && cursorColor.G == 0xFF && cursorColor.B == 0xFF)
+            {
+                return InvertColorTemplate();
+            }
+            return DefaultTemplate();
+        }
+        assert(false);
+        return nullptr;
     }
 
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
@@ -1036,11 +1058,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (modelVal)
         {
             // user defined an override value
+            const auto color = modelVal.Value();
             return Windows::UI::Color{
                 .A = 255,
-                .R = modelVal.Value().R,
-                .G = modelVal.Value().G,
-                .B = modelVal.Value().B
+                .R = color.R,
+                .G = color.G,
+                .B = color.B
             };
         }
         // set to null --> deduce value from color scheme

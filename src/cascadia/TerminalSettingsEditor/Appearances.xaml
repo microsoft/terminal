@@ -61,6 +61,62 @@
                     </Button>
                 </Grid>
             </DataTemplate>
+
+            <DataTemplate x:Key="InvertCursorColorPreviewTemplate"
+                          x:DataType="Color">
+                <Grid ColumnSpacing="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <!-- Display the text "ABC" where the first half is white on black, and the second half is black on white -->
+                    <!--TODO CARLOS: Replace Black/White below with binding to color scheme foreground/background-->
+                    <Border Grid.Column="0"
+                            CornerRadius="2">
+                        <Grid>
+                            <Border>
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="{Binding ColorScheme.BackgroundColor.Color, Source={StaticResource CursorColorTemplateSelector}}" Offset="0.0" />
+                                        <GradientStop Color="{Binding ColorScheme.BackgroundColor.Color, Source={StaticResource CursorColorTemplateSelector}}" Offset="0.5" />
+                                        <GradientStop Color="{Binding ColorScheme.ForegroundColor.Color, Source={StaticResource CursorColorTemplateSelector}}" Offset="0.5" />
+                                        <GradientStop Color="{Binding ColorScheme.ForegroundColor.Color, Source={StaticResource CursorColorTemplateSelector}}" Offset="1.0" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <TextBlock Text="ABC"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Cascadia Code, Consolas, 'Courier New', monospace"
+                                       FontWeight="Bold"
+                                       FontSize="12"
+                                       Padding="2,0">
+                                <TextBlock.Foreground>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="White" Offset="0.0" />
+                                        <GradientStop Color="White" Offset="0.5" />
+                                        <GradientStop Color="Black" Offset="0.5" />
+                                        <GradientStop Color="Black" Offset="1.0" />
+                                    </LinearGradientBrush>
+                                </TextBlock.Foreground>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                    <TextBlock x:Uid="Profile_CursorColor_InvertTextBlock"
+                               Grid.Column="1"
+                               Margin="0"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                               Style="{StaticResource SettingsPageItemDescriptionStyle}" />
+                </Grid>
+            </DataTemplate>
+
+            <local:CursorColorTemplateSelector
+                x:Key="CursorColorTemplateSelector"
+                DefaultTemplate="{StaticResource ColorPreviewTemplate}"
+                InvertColorTemplate="{StaticResource InvertCursorColorPreviewTemplate}"
+                ColorScheme="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -514,10 +570,10 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorColor}"
                                     CurrentValue="{x:Bind Appearance.CursorColorPreview, Mode=OneWay}"
                                     CurrentValueAccessibleName="{x:Bind Appearance.CursorColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
-                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
+                                    CurrentValueTemplateSelector="{StaticResource CursorColorTemplateSelector}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorColorOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithTemplateSelector}">
                 <local:NullableColorPicker x:Uid="Profile_CursorColor_NullableColorPicker"
                                            ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                            CurrentColor="{x:Bind Appearance.CursorColor, Mode=TwoWay}"

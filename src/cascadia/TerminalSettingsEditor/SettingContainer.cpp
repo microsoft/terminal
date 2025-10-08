@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingContainer::_FontIconGlyphProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueTemplateProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueTemplateSelectorProperty{ nullptr };
     DependencyProperty SettingContainer::_CurrentValueAccessibleNameProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
@@ -75,6 +76,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ nullptr });
         }
+        if (!_CurrentValueTemplateSelectorProperty)
+        {
+            _CurrentValueTemplateSelectorProperty =
+                DependencyProperty::Register(
+                    L"CurrentValueTemplateSelector",
+                    xaml_typename<Windows::UI::Xaml::Controls::DataTemplateSelector>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ nullptr });
+        }
         if (!_CurrentValueAccessibleNameProperty)
         {
             _CurrentValueAccessibleNameProperty =
@@ -116,7 +126,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void SettingContainer::_OnCurrentValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& /*e*/)
     {
         const auto& obj{ d.try_as<Editor::SettingContainer>() };
-        get_self<SettingContainer>(obj)->_UpdateCurrentValueAutoProp();
+        const auto& settingContainer = get_self<SettingContainer>(obj);
+        settingContainer->_UpdateCurrentValueAutoProp();
+        settingContainer->_UpdateCurrentValueTemplate();
     }
 
     void SettingContainer::_OnHasSettingValueChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
@@ -275,6 +287,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
             {
                 Automation::AutomationProperties::SetName(expander, _GenerateAccessibleName());
+            }
+        }
+    }
+
+    void SettingContainer::_UpdateCurrentValueTemplate()
+    {
+        if (const auto& child{ GetTemplateChild(L"CurrentValuePresenter") })
+        {
+            if (const auto& contentPresenter{ child.try_as<Controls::ContentPresenter>() })
+            {
+                const auto newTemplate = contentPresenter.ContentTemplateSelector().SelectTemplate(CurrentValue());
+                contentPresenter.ContentTemplate(newTemplate);
             }
         }
     }

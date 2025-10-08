@@ -470,6 +470,58 @@
         </Setter>
     </Style>
 
+    <!--  A setting container which can expand. Supports data template override for preview  -->
+    <Style x:Key="ExpanderSettingContainerStyleWithTemplateSelector"
+           TargetType="local:SettingContainer">
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <muxc:Expander x:Name="Expander"
+                                   Margin="0,4,0,0"
+                                   HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Stretch"
+                                   Content="{TemplateBinding Content}"
+                                   IsExpanded="{TemplateBinding StartExpanded}">
+                        <muxc:Expander.Header>
+                            <Grid MinHeight="64">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"
+                                            Style="{StaticResource StackPanelInExpanderStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                                   Text="{TemplateBinding Header}" />
+                                        <Button x:Name="ResetButton"
+                                                Style="{StaticResource SettingContainerResetButtonStyle}">
+                                            <FontIcon Glyph="&#xE845;"
+                                                      Style="{StaticResource SettingContainerFontIconStyle}" />
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBlock x:Name="HelpTextBlock"
+                                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                               Text="{TemplateBinding HelpText}" />
+                                </StackPanel>
+                                <ContentPresenter x:Name="CurrentValuePresenter"
+                                                  Grid.Column="1"
+                                                  MaxWidth="248"
+                                                  Margin="0,0,-16,0"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="Center"
+                                                  Content="{TemplateBinding CurrentValue}"
+                                                  ContentTemplateSelector="{TemplateBinding CurrentValueTemplateSelector}" />
+                            </Grid>
+                        </muxc:Expander.Header>
+                    </muxc:Expander>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!--  A setting container that displays a warning with an icon  -->
     <Style x:Key="SettingContainerWarningStyle"
            TargetType="local:SettingContainer">

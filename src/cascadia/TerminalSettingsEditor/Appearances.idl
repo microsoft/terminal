@@ -30,6 +30,14 @@ namespace Microsoft.Terminal.Settings.Editor
         Single Value;
     }
 
+    runtimeclass CursorColorTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        CursorColorTemplateSelector();
+        Windows.UI.Xaml.DataTemplate DefaultTemplate;
+        Windows.UI.Xaml.DataTemplate InvertColorTemplate;
+        ColorSchemeViewModel ColorScheme;
+    }
+
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Boolean IsDefault;

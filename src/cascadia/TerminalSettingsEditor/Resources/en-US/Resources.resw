@@ -2463,4 +2463,8 @@
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>Yes, clear the cache</value>
   </data>
+  <data name="Profile_CursorColor_InvertTextBlock.Text" xml:space="preserve">
+    <value>Invert</value>
+    <comment>Label displayed when the selected cursor color value inverts the selected text's color.</comment>
+  </data>
 </root>

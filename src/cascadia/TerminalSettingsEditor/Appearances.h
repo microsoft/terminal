@@ -19,6 +19,7 @@ Author(s):
 #include "Font.g.h"
 #include "FontKeyValuePair.g.h"
 #include "Appearances.g.h"
+#include "CursorColorTemplateSelector.g.h"
 #include "AppearanceViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -58,6 +59,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         uint32_t _key;
         float _value;
         bool _isFontFeature;
+    };
+
+    struct CursorColorTemplateSelector : public CursorColorTemplateSelectorT<CursorColorTemplateSelector>
+    {
+    public:
+        CursorColorTemplateSelector() = default;
+
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item, const Windows::UI::Xaml::DependencyObject& container);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item);
+
+        WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, DefaultTemplate, nullptr);
+        WINRT_PROPERTY(Windows::UI::Xaml::DataTemplate, InvertColorTemplate, nullptr);
+        WINRT_PROPERTY(Editor::ColorSchemeViewModel, ColorScheme, nullptr);
     };
 
     struct AppearanceViewModel : AppearanceViewModelT<AppearanceViewModel>, ViewModelHelper<AppearanceViewModel>
@@ -247,5 +261,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
+    BASIC_FACTORY(CursorColorTemplateSelector);
     BASIC_FACTORY(Appearances);
 }
