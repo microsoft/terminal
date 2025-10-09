@@ -3217,33 +3217,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         PackageCatalog catalog = connectResult.PackageCatalog();
-        // clang-format off
-        static constexpr std::array<WinGetSearchParams, 3> searches{ {
-            { .Field = PackageMatchField::Command, .MatchOption = PackageFieldMatchOption::StartsWithCaseInsensitive },
-            { .Field = PackageMatchField::Name, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive },
-            { .Field = PackageMatchField::Moniker, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive } } };
-        // clang-format on
-
         PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
         filter.Value(query);
+        filter.Field(PackageMatchField::Command);
+        filter.Option(PackageFieldMatchOption::Equals);
 
         FindPackagesOptions options = WindowsPackageManagerFactory::CreateFindPackagesOptions();
         options.Filters().Append(filter);
         options.ResultLimit(20);
 
-        IVectorView<MatchResult> pkgList;
-        for (const auto& search : searches)
-        {
-            filter.Field(search.Field);
-            filter.Option(search.MatchOption);
-
-            const auto result = co_await catalog.FindPackagesAsync(options);
-            pkgList = result.Matches();
-            if (pkgList.Size() > 0)
-            {
-                break;
-            }
-        }
+        const auto result = co_await catalog.FindPackagesAsync(options);
+        const IVectorView<MatchResult> pkgList = result.Matches();
         co_return pkgList;
     }
 
