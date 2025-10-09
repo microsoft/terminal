@@ -376,12 +376,6 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         _richBlock{ nullptr }
     {
         _richBlock = Microsoft::Terminal::UI::Markdown::Builder::Convert(_messageContent, L"");
-        const auto resources = Application::Current().Resources();
-        const auto textBrushObj = _isQuery ? resources.Lookup(box_value(L"TextOnAccentFillColorPrimaryBrush")) : resources.Lookup(box_value(L"TextFillColorPrimaryBrush"));
-        if (const auto textBrush = textBrushObj.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
-        {
-            _richBlock.Foreground(textBrush);
-        }
         if (!_isQuery)
         {
             for (const auto& b : _richBlock.Blocks())
@@ -394,16 +388,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                         {
                             if (const auto& codeBlock{ otherContent.Child().try_as<Microsoft::Terminal::UI::Markdown::CodeBlock>() })
                             {
-                                codeBlock.Margin({ 0, 8, 0, 8 });
                                 codeBlock.PlayButtonVisibility(Windows::UI::Xaml::Visibility::Visible);
-                                if (const auto backgroundBrush = resources.Lookup(box_value(L"ControlAltFillColorSecondaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
-                                {
-                                    codeBlock.Background(backgroundBrush);
-                                }
-                                if (const auto foregroundBrush = resources.Lookup(box_value(L"AccentTextFillColorPrimaryBrush")).try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
-                                {
-                                    codeBlock.Foreground(foregroundBrush);
-                                }
                                 codeBlock.RequestRunCommands([this, commandlines = codeBlock.Commandlines()](auto&&, auto&&) {
                                     _RunCommandClickedHandlers(*this, commandlines);
                                 });

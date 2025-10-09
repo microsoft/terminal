@@ -7,6 +7,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:Microsoft.Terminal.Query.Extension"
+             xmlns:markdown="using:Microsoft.Terminal.UI.Markdown"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:mtu="using:Microsoft.Terminal.UI"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
@@ -60,7 +61,8 @@
                                 BorderBrush="{ThemeResource MessageBorderBrush}"
                                 BorderThickness="{ThemeResource MessageBorderThickness}"
                                 CornerRadius="8">
-                        <ContentPresenter Content="{x:Bind RichBlock}" />
+                        <ContentPresenter Content="{x:Bind RichBlock}"
+                                          Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
                     </StackPanel>
                 </Grid>
             </DataTemplate>
@@ -80,7 +82,19 @@
                                 BorderBrush="{ThemeResource MessageBorderBrush}"
                                 BorderThickness="{ThemeResource MessageBorderThickness}"
                                 CornerRadius="8">
-                        <ContentPresenter Content="{x:Bind RichBlock}" />
+                        <ContentPresenter Content="{x:Bind RichBlock}"
+                                          Foreground="{ThemeResource TextFillColorPrimaryBrush}">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="markdown:CodeBlock">
+                                    <Setter Property="Foreground"
+                                            Value="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
+                                    <Setter Property="Background"
+                                            Value="{ThemeResource ControlAltFillColorSecondaryBrush}"/>
+                                    <Setter Property="Margin"
+                                            Value="0,8"/>
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
                     </StackPanel>
                 </Grid>
             </DataTemplate>
