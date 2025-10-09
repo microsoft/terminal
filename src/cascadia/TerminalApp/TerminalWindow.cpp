@@ -1320,29 +1320,16 @@ namespace winrt::TerminalApp::implementation
             const auto tabRowVisible = _root ? _root->IsTabRowVisible() :
                                                (_settings.GlobalSettings().AlwaysShowTabs() || tabsInTitlebar);
 
-            if (!tabsInTitlebar)
+            static constexpr auto titlebarHeight = 10;
+            static constexpr auto titlebarAndTabBarHeight = 40;
+
+            if (tabRowVisible)
             {
-                if (tabRowVisible)
-                {
-                    // Hide the title bar = off, tab row visible. Account for
-                    // both the system title bar and the tab strip height.
-                    static constexpr auto titlebarAndTabBarHeight = 40;
-                    pixelSize.Height += (titlebarAndTabBarHeight)*scale;
-                }
-                else
-                {
-                    // Hide the title bar = off, tab row hidden. Only account
-                    // for the native title bar height.
-                    static constexpr auto titlebarHeight = 10;
-                    pixelSize.Height += (titlebarHeight)*scale;
-                }
+                pixelSize.Height += titlebarAndTabBarHeight * scale;
             }
-            else if (tabRowVisible)
+            else if (!tabsInTitlebar)
             {
-                // Hide the title bar = on, tabs drawn in the title bar. Add
-                // the custom tab row height so the client area fits.
-                static constexpr auto titlebarHeight = 40;
-                pixelSize.Height += (titlebarHeight)*scale;
+                pixelSize.Height += titlebarHeight * scale;
             }
             // When tabs are hosted in the title bar but not visible we don't
             // need to adjust the size – the non-client window chrome already
