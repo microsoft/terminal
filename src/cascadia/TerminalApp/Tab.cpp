@@ -2417,7 +2417,7 @@ namespace winrt::TerminalApp::implementation
             const auto& currentDictionary = v.as<ResourceDictionary>();
 
             // TabViewItem.Background
-            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), selectedTabBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), isHighContrast ? fontBrush : hoverTabBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
