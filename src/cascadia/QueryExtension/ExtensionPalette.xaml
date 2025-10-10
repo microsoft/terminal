@@ -86,12 +86,9 @@
                                           Foreground="{ThemeResource TextFillColorPrimaryBrush}">
                             <ContentPresenter.Resources>
                                 <Style TargetType="markdown:CodeBlock">
-                                    <Setter Property="Foreground"
-                                            Value="{ThemeResource AccentTextFillColorPrimaryBrush}"/>
-                                    <Setter Property="Background"
-                                            Value="{ThemeResource ControlAltFillColorSecondaryBrush}"/>
-                                    <Setter Property="Margin"
-                                            Value="0,8"/>
+                                    <Setter Property="Foreground" Value="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                    <Setter Property="Background" Value="{ThemeResource ControlAltFillColorSecondaryBrush}" />
+                                    <Setter Property="Margin" Value="0,8" />
                                 </Style>
                             </ContentPresenter.Resources>
                         </ContentPresenter>
