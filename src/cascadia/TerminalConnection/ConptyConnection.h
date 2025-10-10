@@ -101,6 +101,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             WORD showWindow{};
 
         } _startupInfo{};
+      
+        bool _isWSLConnection{ false };
+        winrt::event<winrt::delegate<void(const std::wstring&)>> _environmentChangedEventHandlers;
 
         DWORD _OutputThread();
     };

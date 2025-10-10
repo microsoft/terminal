@@ -420,6 +420,29 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             _LaunchAttachedClient();
+
+if (!_commandline.empty())
+{
+    std::wstring cmd = _commandline;
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::towlower);
+
+    if (cmd.find(L"wsl") != std::wstring::npos)
+    {
+        TraceLoggingWrite(
+            g_hTerminalConnectionProvider,
+            "ConPtyDetectedWSLCommand",
+            TraceLoggingDescription("Detected WSL command execution inside ConPTY connection"),
+            TraceLoggingWideString(cmd.c_str(), "CommandLine", "The command line that triggered WSL"));
+       
+        _isWSLConnection = true;
+
+        if (_environmentChangedEventHandlers)
+        {
+            _environmentChangedEventHandlers(*this, L"WSL");
+        }
+    }
+}
+
         }
         // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
         // window is expecting it to be on the first layout.
