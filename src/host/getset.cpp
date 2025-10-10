@@ -434,6 +434,12 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 
         screenInfo.OutputMode = dwNewMode;
 
+        if (WI_IsFlagSet(diff, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+        {
+            const bool isVtModeEnabled = WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            screenInfo.SetSnapOnInputEnabled(isVtModeEnabled);
+        }
+
         // if we're moving from VT on->off
         if (WI_IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
             WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
