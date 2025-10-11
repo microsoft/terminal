@@ -16,6 +16,10 @@ Author(s):
 - Michael Niksa (MiNiksa) 17-Nov-2015
 --*/
 
+
+#ifndef FONT_INFO_DESIRED_HPP
+#define FONT_INFO_DESIRED_HPP
+
 #pragma once
 
 #include "FontInfoBase.hpp"
@@ -30,27 +34,34 @@ public:
                     const unsigned int weight,
                     const float fontSize,
                     const unsigned int uiCodePage) noexcept;
-    FontInfoDesired(const FontInfo& fiFont) noexcept;
+    explicit FontInfoDesired(const FontInfo& fiFont) noexcept;
 
-    bool operator==(const FontInfoDesired& other) = delete;
+    // Deleted comparison operator to avoid accidental equality checks
+    bool operator==(const FontInfoDesired& other) const = delete;
+
 
     void SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept;
     void SetEnableBuiltinGlyphs(bool builtinGlyphs) noexcept;
     void SetEnableColorGlyphs(bool colorGlyphs) noexcept;
 
-    const CSSLengthPercentage& GetCellWidth() const noexcept;
-    const CSSLengthPercentage& GetCellHeight() const noexcept;
-    bool GetEnableBuiltinGlyphs() const noexcept;
-    bool GetEnableColorGlyphs() const noexcept;
-    float GetFontSize() const noexcept;
-    til::size GetEngineSize() const noexcept;
-    bool IsDefaultRasterFont() const noexcept;
+    // Getters (nodiscard prevents ignored important values)
+    [[nodiscard]] const CSSLengthPercentage& GetCellWidth() const noexcept;
+    [[nodiscard]] const CSSLengthPercentage& GetCellHeight() const noexcept;
+    [[nodiscard]] bool GetEnableBuiltinGlyphs() const noexcept;
+    [[nodiscard]] bool GetEnableColorGlyphs() const noexcept;
+    [[nodiscard]] float GetFontSize() const noexcept;
+    [[nodiscard]] til::size GetEngineSize() const noexcept;
+    [[nodiscard]] bool IsDefaultRasterFont() const noexcept;
+
+    // Destructor (only needed if polymorphism is expected)
+    ~FontInfoDesired() override = default;
 
 private:
-    til::size _coordSizeDesired;
-    float _fontSize;
+    til::size _coordSizeDesired{};    // initialized to default (0,0)
+    float _fontSize{ 0.0f };   // safe default
     CSSLengthPercentage _cellWidth;
     CSSLengthPercentage _cellHeight;
-    bool _builtinGlyphs = false;
-    bool _colorGlyphs = true;
+    bool _builtinGlyphs{ false };
+    bool _colorGlyphs{ true };
 };
+
