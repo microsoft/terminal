@@ -4,7 +4,6 @@
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
-    <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
     <ClCompile Include="..\dbcs.cpp" />
@@ -59,7 +58,6 @@
     <ClInclude Include="..\ConsoleArguments.hpp" />
     <ClInclude Include="..\conserv.h" />
     <ClInclude Include="..\conwinuserrefs.h" />
-    <ClInclude Include="..\CursorBlinker.hpp" />
     <ClInclude Include="..\dbcs.h" />
     <ClInclude Include="..\directio.h" />
     <ClInclude Include="..\getset.h" />
