@@ -66,5 +66,3 @@ Zamora
 zljubisic
 Zoey
 zorio
-vscroll
-exstyle
