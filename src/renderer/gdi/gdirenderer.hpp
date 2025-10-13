@@ -103,7 +103,9 @@ namespace Microsoft::Console::Render
         bool _isTrueTypeFont;
         UINT _fontCodepage;
         HFONT _hfont;
+        HFONT _hfontBold;
         HFONT _hfontItalic;
+        HFONT _hfontBoldItalic;
         TEXTMETRICW _tmFontMetrics;
         FontResource _softFont;
 
@@ -151,7 +153,9 @@ namespace Microsoft::Console::Render
         {
             Undefined,
             Default,
+            Bold,
             Italic,
+            BoldItalic,
             Soft
         };
         FontType _lastFontType;
@@ -195,7 +199,9 @@ namespace Microsoft::Console::Render
                                                _Out_ FontInfo& Font,
                                                const int iDpi,
                                                _Inout_ wil::unique_hfont& hFont,
-                                               _Inout_ wil::unique_hfont& hFontItalic) noexcept;
+                                               _Inout_ wil::unique_hfont& hFontBold,
+                                               _Inout_ wil::unique_hfont& hFontItalic,
+                                               _Inout_ wil::unique_hfont& hFontBoldItalic) noexcept;
 
         til::size _GetFontSize() const;
         bool _IsMinimized() const;

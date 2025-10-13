@@ -35,7 +35,9 @@ GdiEngine::GdiEngine() :
     _fPaintStarted(false),
     _invalidCharacters{},
     _hfont(nullptr),
+    _hfontBold(nullptr),
     _hfontItalic(nullptr),
+    _hfontBoldItalic(nullptr),
     _pool{ til::pmr::get_default_resource() }, // It's important the pool is first so it can be given to the others on construction.
     _polyStrings{ &_pool },
     _polyWidths{ &_pool }
@@ -96,10 +98,22 @@ GdiEngine::~GdiEngine()
         _hfont = nullptr;
     }
 
+    if (_hfontBold != nullptr)
+    {
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBold)));
+        _hfontBold = nullptr;
+    }
+
     if (_hfontItalic != nullptr)
     {
         LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontItalic)));
         _hfontItalic = nullptr;
+    }
+
+    if (_hfontBoldItalic != nullptr)
+    {
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBoldItalic)));
+        _hfontBoldItalic = nullptr;
     }
 
     if (_hdcMemoryContext != nullptr)
@@ -300,10 +314,27 @@ GdiEngine::~GdiEngine()
     }
 
     // If the font type has changed, select an appropriate font variant or soft font.
-    const auto usingItalicFont = textAttributes.IsItalic();
-    const auto fontType = usingSoftFont   ? FontType::Soft :
-                          usingItalicFont ? FontType::Italic :
-                                            FontType::Default;
+    const auto fontType = [&]
+    {
+        if (usingSoftFont)
+            return FontType::Soft;
+
+        // TODO: GH-18919 "Intense text as bold" option
+        const auto usingBoldFont = textAttributes.IsBold(false);
+        const auto usingItalicFont = textAttributes.IsItalic();
+
+        if (usingBoldFont && !usingItalicFont)
+            return FontType::Bold;
+
+        if (!usingBoldFont && usingItalicFont)
+            return FontType::Italic;
+
+        if (usingBoldFont && usingItalicFont)
+            return FontType::BoldItalic;
+
+        return FontType::Default;
+    }();
+
     if (fontType != _lastFontType)
     {
         switch (fontType)
@@ -311,8 +342,14 @@ GdiEngine::~GdiEngine()
         case FontType::Soft:
             SelectFont(_hdcMemoryContext, _softFont);
             break;
+        case FontType::Bold:
+            SelectFont(_hdcMemoryContext, _hfontBold);
+            break;
         case FontType::Italic:
             SelectFont(_hdcMemoryContext, _hfontItalic);
+            break;
+        case FontType::BoldItalic:
+            SelectFont(_hdcMemoryContext, _hfontBoldItalic);
             break;
         case FontType::Default:
         default:
@@ -336,8 +373,8 @@ GdiEngine::~GdiEngine()
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font) noexcept
 {
-    wil::unique_hfont hFont, hFontItalic;
-    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont, hFontItalic));
+    wil::unique_hfont hFont, hFontBold, hFontItalic, hFontBoldItalic;
+    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont, hFontBold, hFontItalic, hFontBoldItalic));
 
     // Select into DC
     RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
@@ -464,6 +501,13 @@ GdiEngine::~GdiEngine()
     // Save the font.
     _hfont = hFont.release();
 
+    // Persist bold font for cleanup (and free existing if necessary)
+    if (_hfontBold != nullptr)
+    {
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBold)));
+        _hfontBold = nullptr;
+    }
+
     // Persist italic font for cleanup (and free existing if necessary)
     if (_hfontItalic != nullptr)
     {
@@ -471,8 +515,21 @@ GdiEngine::~GdiEngine()
         _hfontItalic = nullptr;
     }
 
+    // Persist bold italic font for cleanup (and free existing if necessary)
+    if (_hfontBoldItalic != nullptr)
+    {
+        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBoldItalic)));
+        _hfontBoldItalic = nullptr;
+    }
+
+    // Save the bold font.
+    _hfontBold = hFontBold.release();
+
     // Save the italic font.
     _hfontItalic = hFontItalic.release();
+
+    // Save the bold italic font.
+    _hfontBoldItalic = hFontBoldItalic.release();
 
     // Save raster vs. TrueType and codepage data in case we need to convert.
     _isTrueTypeFont = Font.IsTrueTypeFont();
@@ -550,8 +607,8 @@ GdiEngine::~GdiEngine()
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const int iDpi) noexcept
 {
-    wil::unique_hfont hFont, hFontItalic;
-    return _GetProposedFont(FontDesired, Font, iDpi, hFont, hFontItalic);
+    wil::unique_hfont hFont, hFontBold, hFontItalic, hFontBoldItalic;
+    return _GetProposedFont(FontDesired, Font, iDpi, hFont, hFontBold, hFontItalic, hFontBoldItalic);
 }
 
 // Method Description:
@@ -577,14 +634,18 @@ GdiEngine::~GdiEngine()
 // - Font - the actual font
 // - iDpi - The DPI we will have when rendering
 // - hFont - A smart pointer to receive a handle to a ready-to-use GDI font.
+// - hFontBold - A smart pointer to receive a handle to a bold variant of the font.
 // - hFontItalic - A smart pointer to receive a handle to an italic variant of the font.
+// - hFontBoldItalic - A smart pointer to receive a handle to a bold italic variant of the font.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
                                                   _Out_ FontInfo& Font,
                                                   const int iDpi,
                                                   _Inout_ wil::unique_hfont& hFont,
-                                                  _Inout_ wil::unique_hfont& hFontItalic) noexcept
+                                                  _Inout_ wil::unique_hfont& hFontBold,
+                                                  _Inout_ wil::unique_hfont& hFontItalic,
+                                                  _Inout_ wil::unique_hfont& hFontBoldItalic) noexcept
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
@@ -601,7 +662,9 @@ GdiEngine::~GdiEngine()
         // it may very well decide to choose Courier New instead of the Terminal raster.
 #pragma prefast(suppress : 38037, "raster fonts get special handling, we need to get it this way")
         hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
+        hFontBold.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
         hFontItalic.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
+        hFontBoldItalic.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
     }
     else
     {
@@ -662,10 +725,22 @@ GdiEngine::~GdiEngine()
         hFont.reset(CreateFontIndirectW(&lf));
         RETURN_HR_IF_NULL(E_FAIL, hFont.get());
 
+        // Create bold variant of the font.
+        lf.lfWeight = FW_BOLD;
+        hFontBold.reset(CreateFontIndirectW(&lf));
+        RETURN_HR_IF_NULL(E_FAIL, hFontBold.get());
+
         // Create italic variant of the font.
+        lf.lfWeight = FontDesired.GetWeight();
         lf.lfItalic = TRUE;
         hFontItalic.reset(CreateFontIndirectW(&lf));
         RETURN_HR_IF_NULL(E_FAIL, hFontItalic.get());
+
+        // Create bold italic variant of the font.
+        lf.lfWeight = FW_BOLD;
+        lf.lfItalic = TRUE;
+        hFontBoldItalic.reset(CreateFontIndirectW(&lf));
+        RETURN_HR_IF_NULL(E_FAIL, hFontBoldItalic.get());
     }
 
     // Select into DC
