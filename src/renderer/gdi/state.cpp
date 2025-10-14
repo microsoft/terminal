@@ -34,10 +34,6 @@ GdiEngine::GdiEngine() :
     _currentLineRendition(LineRendition::SingleWidth),
     _fPaintStarted(false),
     _invalidCharacters{},
-    _hfont(nullptr),
-    _hfontBold(nullptr),
-    _hfontItalic(nullptr),
-    _hfontBoldItalic(nullptr),
     _pool{ til::pmr::get_default_resource() }, // It's important the pool is first so it can be given to the others on construction.
     _polyStrings{ &_pool },
     _polyWidths{ &_pool }
@@ -92,28 +88,13 @@ GdiEngine::~GdiEngine()
         _hbitmapMemorySurface = nullptr;
     }
 
-    if (_hfont != nullptr)
+    for (auto& hfont: _hfonts)
     {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfont)));
-        _hfont = nullptr;
-    }
-
-    if (_hfontBold != nullptr)
-    {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBold)));
-        _hfontBold = nullptr;
-    }
-
-    if (_hfontItalic != nullptr)
-    {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontItalic)));
-        _hfontItalic = nullptr;
-    }
-
-    if (_hfontBoldItalic != nullptr)
-    {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBoldItalic)));
-        _hfontBoldItalic = nullptr;
+        if (hfont != nullptr)
+        {
+            LOG_HR_IF(E_FAIL, !(DeleteObject(hfont)));
+            hfont = nullptr;
+        }
     }
 
     if (_hdcMemoryContext != nullptr)
@@ -339,22 +320,19 @@ GdiEngine::~GdiEngine()
     {
         switch (fontType)
         {
+        case FontType::Default:
+        case FontType::Bold:
+        case FontType::Italic:
+        case FontType::BoldItalic:
+            SelectFont(_hdcMemoryContext, _hfonts[static_cast<size_t>(fontType)]);
+            break;
+
         case FontType::Soft:
             SelectFont(_hdcMemoryContext, _softFont);
             break;
-        case FontType::Bold:
-            SelectFont(_hdcMemoryContext, _hfontBold);
-            break;
-        case FontType::Italic:
-            SelectFont(_hdcMemoryContext, _hfontItalic);
-            break;
-        case FontType::BoldItalic:
-            SelectFont(_hdcMemoryContext, _hfontBoldItalic);
-            break;
-        case FontType::Default:
+
         default:
-            SelectFont(_hdcMemoryContext, _hfont);
-            break;
+            __assume(false);
         }
         _lastFontType = fontType;
         _fontHasWesternScript = FontHasWesternScript(_hdcMemoryContext);
@@ -373,11 +351,11 @@ GdiEngine::~GdiEngine()
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font) noexcept
 {
-    wil::unique_hfont hFont, hFontBold, hFontItalic, hFontBoldItalic;
-    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont, hFontBold, hFontItalic, hFontBoldItalic));
+    std::array<wil::unique_hfont, static_cast<size_t>(FontType::FontCount)> hFonts;
+    RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFonts));
 
     // Select into DC
-    RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
+    RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFonts[static_cast<size_t>(FontType::Default)].get()));
 
     // Save off the font metrics for various other calculations
     RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics)));
@@ -491,45 +469,18 @@ GdiEngine::~GdiEngine()
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
 
-    // Persist font for cleanup (and free existing if necessary)
-    if (_hfont != nullptr)
+    for (auto& hfont: _hfonts)
     {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfont)));
-        _hfont = nullptr;
+        // Persist font for cleanup (and free existing if necessary)
+        if (hfont != nullptr)
+        {
+            LOG_HR_IF(E_FAIL, !(DeleteObject(hfont)));
+            hfont = nullptr;
+        }
+
+        // Save the font.
+        hfont = hFonts[&hfont - _hfonts.data()].release();
     }
-
-    // Save the font.
-    _hfont = hFont.release();
-
-    // Persist bold font for cleanup (and free existing if necessary)
-    if (_hfontBold != nullptr)
-    {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBold)));
-        _hfontBold = nullptr;
-    }
-
-    // Persist italic font for cleanup (and free existing if necessary)
-    if (_hfontItalic != nullptr)
-    {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontItalic)));
-        _hfontItalic = nullptr;
-    }
-
-    // Persist bold italic font for cleanup (and free existing if necessary)
-    if (_hfontBoldItalic != nullptr)
-    {
-        LOG_HR_IF(E_FAIL, !(DeleteObject(_hfontBoldItalic)));
-        _hfontBoldItalic = nullptr;
-    }
-
-    // Save the bold font.
-    _hfontBold = hFontBold.release();
-
-    // Save the italic font.
-    _hfontItalic = hFontItalic.release();
-
-    // Save the bold italic font.
-    _hfontBoldItalic = hFontBoldItalic.release();
 
     // Save raster vs. TrueType and codepage data in case we need to convert.
     _isTrueTypeFont = Font.IsTrueTypeFont();
@@ -557,10 +508,10 @@ GdiEngine::~GdiEngine()
 {
     // If we previously called SelectFont(_hdcMemoryContext, _softFont), it will
     // still hold a reference to the _softFont object we're planning to overwrite.
-    // --> First revert back to the standard _hfont, lest we have dangling pointers.
+    // --> First revert back to the standard font, lest we have dangling pointers.
     if (_lastFontType == FontType::Soft)
     {
-        RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
+        RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfonts[static_cast<size_t>(FontType::Default)]));
         _lastFontType = FontType::Default;
     }
 
@@ -607,8 +558,8 @@ GdiEngine::~GdiEngine()
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::GetProposedFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, const int iDpi) noexcept
 {
-    wil::unique_hfont hFont, hFontBold, hFontItalic, hFontBoldItalic;
-    return _GetProposedFont(FontDesired, Font, iDpi, hFont, hFontBold, hFontItalic, hFontBoldItalic);
+    std::array<wil::unique_hfont, static_cast<size_t>(FontType::FontCount)> hFonts;
+    return _GetProposedFont(FontDesired, Font, iDpi, hFonts);
 }
 
 // Method Description:
@@ -633,19 +584,13 @@ GdiEngine::~GdiEngine()
 // - FontDesired - reference to font information we should use while instantiating a font.
 // - Font - the actual font
 // - iDpi - The DPI we will have when rendering
-// - hFont - A smart pointer to receive a handle to a ready-to-use GDI font.
-// - hFontBold - A smart pointer to receive a handle to a bold variant of the font.
-// - hFontItalic - A smart pointer to receive a handle to an italic variant of the font.
-// - hFontBoldItalic - A smart pointer to receive a handle to a bold italic variant of the font.
+// - hFonts - An array of smart pointers to receive handles to ready-to-use GDI fonts, corresponding to FontType enum.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::_GetProposedFont(const FontInfoDesired& FontDesired,
                                                   _Out_ FontInfo& Font,
                                                   const int iDpi,
-                                                  _Inout_ wil::unique_hfont& hFont,
-                                                  _Inout_ wil::unique_hfont& hFontBold,
-                                                  _Inout_ wil::unique_hfont& hFontItalic,
-                                                  _Inout_ wil::unique_hfont& hFontBoldItalic) noexcept
+                                                  _Inout_ std::array<wil::unique_hfont, static_cast<size_t>(FontType::FontCount)>& hFonts) noexcept
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
@@ -661,10 +606,10 @@ GdiEngine::~GdiEngine()
         // We do this because, for instance, if we ask GDI for an 8x12 OEM_FIXED_FONT,
         // it may very well decide to choose Courier New instead of the Terminal raster.
 #pragma prefast(suppress : 38037, "raster fonts get special handling, we need to get it this way")
-        hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
-        hFontBold.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
-        hFontItalic.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
-        hFontBoldItalic.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
+        for (auto& hFont : hFonts)
+        {
+            hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
+        }
     }
     else
     {
@@ -721,30 +666,35 @@ GdiEngine::~GdiEngine()
 
         FontDesired.FillLegacyNameBuffer(lf.lfFaceName);
 
-        // Create font.
-        hFont.reset(CreateFontIndirectW(&lf));
-        RETURN_HR_IF_NULL(E_FAIL, hFont.get());
+        constexpr struct font_styles
+        {
+            LONG weight;
+            BYTE italic;
+        }
+        FontStyles[]
+        {
+            { FW_NORMAL, FALSE }, // Default
+            { FW_BOLD,   FALSE }, // Bold
+            { FW_NORMAL, TRUE  }, // Italic
+            { FW_BOLD,   TRUE  }, // BoldItalic
+        };
 
-        // Create bold variant of the font.
-        lf.lfWeight = FW_BOLD;
-        hFontBold.reset(CreateFontIndirectW(&lf));
-        RETURN_HR_IF_NULL(E_FAIL, hFontBold.get());
+        static_assert(std::size(FontStyles) == static_cast<size_t>(FontType::FontCount));
 
-        // Create italic variant of the font.
-        lf.lfWeight = FontDesired.GetWeight();
-        lf.lfItalic = TRUE;
-        hFontItalic.reset(CreateFontIndirectW(&lf));
-        RETURN_HR_IF_NULL(E_FAIL, hFontItalic.get());
+        for (const auto& style: FontStyles)
+        {
+            lf.lfWeight = style.weight == FW_NORMAL ? FontDesired.GetWeight() : style.weight;
+            lf.lfItalic = style.italic;
 
-        // Create bold italic variant of the font.
-        lf.lfWeight = FW_BOLD;
-        lf.lfItalic = TRUE;
-        hFontBoldItalic.reset(CreateFontIndirectW(&lf));
-        RETURN_HR_IF_NULL(E_FAIL, hFontBoldItalic.get());
+            // Create font.
+            auto& hFont = hFonts[&style - FontStyles];
+            hFont.reset(CreateFontIndirectW(&lf));
+            RETURN_HR_IF_NULL(E_FAIL, hFont.get());
+        }
     }
 
     // Select into DC
-    wil::unique_hfont hFontOld(SelectFont(hdcTemp.get(), hFont.get()));
+    wil::unique_hfont hFontOld(SelectFont(hdcTemp.get(), hFonts[static_cast<size_t>(FontType::Default)].get()));
     RETURN_HR_IF_NULL(E_FAIL, hFontOld.get());
 
     // Save off the font metrics for various other calculations
