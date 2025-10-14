@@ -43,7 +43,6 @@ bool IslandWindow::IsCursorHidden() noexcept
 {
     return _cursorHidden;
 }
-
 void IslandWindow::HideCursor() noexcept
 {
     static const auto shouldVanish = []() noexcept {
@@ -52,12 +51,15 @@ void IslandWindow::HideCursor() noexcept
         return shouldVanish != FALSE;
     }();
 
-    if (!_cursorHidden && shouldVanish)
+    // 🚫 Do not hide the cursor if Shift or Ctrl is currently pressed
+    const bool shiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    const bool ctrlPressed  = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+
+    if (!_cursorHidden && shouldVanish && !shiftPressed && !ctrlPressed)
     {
         ShowCursor(FALSE);
         _cursorHidden = true;
     }
-}
 
 void IslandWindow::ShowCursorMaybe(const UINT message) noexcept
 {
