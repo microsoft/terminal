@@ -501,6 +501,7 @@
                     <StackPanel>
                         <!--  Scope  -->
                         <local:SettingContainer x:Uid="Extensions_Scope"
+                                                x:Name="Scope"
                                                 Content="{x:Bind ViewModel.CurrentExtensionPackage.Scope, Mode=OneWay}"
                                                 IsTabStop="False"
                                                 Style="{StaticResource SettingContainerWithTextContent}" />

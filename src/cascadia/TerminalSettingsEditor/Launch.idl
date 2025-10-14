@@ -6,6 +6,12 @@ import "LaunchViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass NavigateToLaunchArgs
+    {
+        LaunchViewModel ViewModel { get; };
+        String ElementToFocus { get; };
+    }
+
     [default_interface] runtimeclass Launch : Windows.UI.Xaml.Controls.Page
     {
         Launch();

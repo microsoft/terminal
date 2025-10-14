@@ -4,12 +4,27 @@
 #pragma once
 
 #include "Compatibility.g.h"
+#include "NavigateToCompatibilityArgs.g.h"
 #include "CompatibilityViewModel.g.h"
 #include "ViewModelHelpers.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct NavigateToCompatibilityArgs : NavigateToCompatibilityArgsT<NavigateToCompatibilityArgs>
+    {
+        NavigateToCompatibilityArgs(const Editor::CompatibilityViewModel& vm, const hstring& elementToFocus = {}) :
+            _ViewModel(vm),
+            _ElementToFocus(elementToFocus) {}
+
+        Editor::CompatibilityViewModel ViewModel() const noexcept { return _ViewModel; }
+        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
+
+    private:
+        Editor::CompatibilityViewModel _ViewModel{ nullptr };
+        hstring _ElementToFocus{};
+    };
+
     struct CompatibilityViewModel : CompatibilityViewModelT<CompatibilityViewModel>, ViewModelHelper<CompatibilityViewModel>
     {
     public:

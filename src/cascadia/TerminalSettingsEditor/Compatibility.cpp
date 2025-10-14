@@ -54,7 +54,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Compatibility::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::CompatibilityViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToCompatibilityArgs>();
+        _ViewModel = args.ViewModel();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

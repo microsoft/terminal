@@ -5,6 +5,12 @@ import "ActionsViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass NavigateToActionsArgs
+    {
+        ActionsViewModel ViewModel { get; };
+        String ElementToFocus { get; };
+    }
+
     [default_interface] runtimeclass Actions : Windows.UI.Xaml.Controls.Page
     {
         Actions();

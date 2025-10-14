@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Extensions.g.h"
+#include "NavigateToExtensionsArgs.g.h"
 #include "ExtensionsViewModel.g.h"
 #include "ExtensionPackageViewModel.g.h"
 #include "FragmentExtensionViewModel.g.h"
@@ -15,6 +16,20 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct NavigateToExtensionsArgs : NavigateToExtensionsArgsT<NavigateToExtensionsArgs>
+    {
+        NavigateToExtensionsArgs(const Editor::ExtensionsViewModel& vm, const hstring& elementToFocus = {}) :
+            _ViewModel(vm),
+            _ElementToFocus(elementToFocus) {}
+
+        Editor::ExtensionsViewModel ViewModel() const noexcept { return _ViewModel; }
+        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
+
+    private:
+        Editor::ExtensionsViewModel _ViewModel{ nullptr };
+        hstring _ElementToFocus{};
+    };
+
     struct Extensions : public HasScrollViewer<Extensions>, ExtensionsT<Extensions>
     {
     public:

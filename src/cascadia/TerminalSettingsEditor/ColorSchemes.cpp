@@ -35,8 +35,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ColorSchemesPageViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToColorSchemesArgs>();
+        _ViewModel = args.ViewModel();
         _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
+
+        // TODO CARLOS: runtime indexing and retrieval support
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // Only let this succeed once.

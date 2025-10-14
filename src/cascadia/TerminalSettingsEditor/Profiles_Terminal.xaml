@@ -33,6 +33,7 @@
 
             <!--  Suppress Application Title  -->
             <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
+                                    x:Name="SuppressApplicationTitle"
                                     ClearSettingValue="{x:Bind Profile.ClearSuppressApplicationTitle}"
                                     HasSettingValue="{x:Bind Profile.HasSuppressApplicationTitle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
@@ -42,6 +43,7 @@
 
             <!--  Force VT Input  -->
             <local:SettingContainer x:Uid="Profile_ForceVTInput"
+                                    x:Name="ForceVTInput"
                                     ClearSettingValue="{x:Bind Profile.ClearForceVTInput}"
                                     HasSettingValue="{x:Bind Profile.HasForceVTInput, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.ForceVTInputOverrideSource, Mode=OneWay}">
@@ -51,6 +53,7 @@
 
             <!--  Allow VT Checksum Report  -->
             <local:SettingContainer x:Uid="Profile_AllowVtChecksumReport"
+                                    x:Name="AllowVtChecksumReport"
                                     ClearSettingValue="{x:Bind Profile.ClearAllowVtChecksumReport}"
                                     HasSettingValue="{x:Bind Profile.HasAllowVtChecksumReport, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.AllowVtChecksumReportOverrideSource, Mode=OneWay}">
@@ -60,6 +63,7 @@
 
             <!--  Allow VT Clipboard Writing  -->
             <local:SettingContainer x:Uid="Profile_AllowVtClipboardWrite"
+                                    x:Name="AllowVtClipboardWrite"
                                     ClearSettingValue="{x:Bind Profile.ClearAllowVtClipboardWrite}"
                                     HasSettingValue="{x:Bind Profile.HasAllowVtClipboardWrite, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.AllowVtClipboardWriteOverrideSource, Mode=OneWay}">
@@ -69,6 +73,7 @@
 
             <!--  Answerback Message  -->
             <local:SettingContainer x:Uid="Profile_AnswerbackMessage"
+                                    x:Name="AnswerbackMessage"
                                     ClearSettingValue="{x:Bind Profile.ClearAnswerbackMessage}"
                                     CurrentValue="{x:Bind Profile.AnswerbackMessagePreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasAnswerbackMessage, Mode=OneWay}"

@@ -26,6 +26,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile = args.Profile();
         _windowRoot = args.WindowRoot();
 
+        // TODO CARLOS: how to handle Appearances object
+        BringIntoViewWhenLoaded(args.ElementToFocus());
+
         if (!_previewControl)
         {
             const auto settings = winrt::get_self<implementation::ProfileViewModel>(_Profile)->TermSettings();

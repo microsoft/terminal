@@ -43,7 +43,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenu::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::NewTabMenuViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToNewTabMenuArgs>();
+        _ViewModel = args.ViewModel();
+
+        // TODO CARLOS: runtime indexing and retrieval support
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

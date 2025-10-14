@@ -34,11 +34,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Extensions::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ExtensionsViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToExtensionsArgs>();
+        _ViewModel = args.ViewModel();
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
         vmImpl->MarkAsVisited();
+
+        // TODO CARLOS: runtime indexing and retrieval support
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         if (vmImpl->IsExtensionView())
         {

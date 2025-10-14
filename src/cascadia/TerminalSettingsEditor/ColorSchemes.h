@@ -5,12 +5,27 @@
 
 #include "ColorTableEntry.g.h"
 #include "ColorSchemes.g.h"
+#include "NavigateToColorSchemesArgs.g.h"
 #include "ColorSchemeViewModel.h"
 #include "ColorSchemesPageViewModel.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct NavigateToColorSchemesArgs : NavigateToColorSchemesArgsT<NavigateToColorSchemesArgs>
+    {
+        NavigateToColorSchemesArgs(const Editor::ColorSchemesPageViewModel& vm, const hstring& elementToFocus = {}) :
+            _ViewModel(vm),
+            _ElementToFocus(elementToFocus) {}
+
+        Editor::ColorSchemesPageViewModel ViewModel() const noexcept { return _ViewModel; }
+        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
+
+    private:
+        Editor::ColorSchemesPageViewModel _ViewModel{ nullptr };
+        hstring _ElementToFocus{};
+    };
+
     struct ColorSchemes : public HasScrollViewer<ColorSchemes>, ColorSchemesT<ColorSchemes>
     {
     public:

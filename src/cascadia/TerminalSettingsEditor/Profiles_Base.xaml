@@ -41,6 +41,7 @@
                 so the name will always be overridden.
             -->
             <local:SettingContainer x:Uid="Profile_Name"
+                                    x:Name="Name"
                                     CurrentValue="{x:Bind Profile.Name, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
@@ -49,7 +50,7 @@
             </local:SettingContainer>
 
             <!--  Commandline  -->
-            <local:SettingContainer x:Name="CommandlineContainer"
+            <local:SettingContainer x:Name="Commandline"
                                     x:Uid="Profile_Commandline"
                                     ClearSettingValue="{x:Bind Profile.ClearCommandline}"
                                     CurrentValue="{x:Bind Profile.Commandline, Mode=OneWay}"
@@ -70,7 +71,7 @@
             </local:SettingContainer>
 
             <!--  Starting Directory  -->
-            <local:SettingContainer x:Name="StartingDirectoryContainer"
+            <local:SettingContainer x:Name="StartingDirectory"
                                     x:Uid="Profile_StartingDirectory"
                                     ClearSettingValue="{x:Bind Profile.ClearStartingDirectory}"
                                     CurrentValue="{x:Bind Profile.CurrentStartingDirectoryPreview, Mode=OneWay}"
@@ -100,6 +101,7 @@
 
             <!--  Icon  -->
             <local:SettingContainer x:Uid="Profile_Icon"
+                                    x:Name="Icon"
                                     ClearSettingValue="{x:Bind Profile.ClearIcon}"
                                     CurrentValueAccessibleName="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
@@ -199,6 +201,7 @@
 
             <!--  Tab Title  -->
             <local:SettingContainer x:Uid="Profile_TabTitle"
+                                    x:Name="TabTitle"
                                     ClearSettingValue="{x:Bind Profile.ClearTabTitle}"
                                     CurrentValue="{x:Bind Profile.TabTitlePreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasTabTitle, Mode=OneWay}"
@@ -226,6 +229,7 @@
 
             <!--  Elevate  -->
             <local:SettingContainer x:Uid="Profile_Elevate"
+                                    x:Name="Elevate"
                                     ClearSettingValue="{x:Bind Profile.ClearElevate}"
                                     HasSettingValue="{x:Bind Profile.HasElevate, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.ElevateOverrideSource, Mode=OneWay}">
@@ -235,6 +239,7 @@
 
             <!--  Hidden  -->
             <local:SettingContainer x:Uid="Profile_Hidden"
+                                    x:Name="Hidden"
                                     Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                 <ToggleSwitch IsOn="{x:Bind Profile.Hidden, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />

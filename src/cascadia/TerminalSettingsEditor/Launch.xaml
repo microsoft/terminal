@@ -44,9 +44,9 @@
     <StackPanel>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Default Profile  -->
-            <local:SettingContainer x:Uid="Globals_DefaultProfile">
-                <ComboBox x:Name="DefaultProfile"
-                          ItemsSource="{x:Bind ViewModel.DefaultProfiles}"
+            <local:SettingContainer x:Uid="Globals_DefaultProfile"
+                                    x:Name="DefaultProfile">
+                <ComboBox ItemsSource="{x:Bind ViewModel.DefaultProfiles}"
                           SelectedItem="{x:Bind ViewModel.CurrentDefaultProfile, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
@@ -141,7 +141,8 @@
             </local:SettingContainer>
 
             <!--  Language  -->
-            <local:SettingContainer x:Uid="Globals_Language">
+            <local:SettingContainer x:Uid="Globals_Language"
+                                    x:Name="Language">
                 <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
                           SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
@@ -154,7 +155,8 @@
             </local:SettingContainer>
 
             <!--  Language  -->
-            <local:SettingContainer x:Uid="Globals_DefaultInputScope">
+            <local:SettingContainer x:Uid="Globals_DefaultInputScope"
+                                    x:Name="DefaultInputScope">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.DefaultInputScopeList}"
@@ -164,6 +166,7 @@
 
             <!--  Start on User Login  -->
             <local:SettingContainer x:Uid="Globals_StartOnUserLogin"
+                                    x:Name="StartOnUserLogin"
                                     HelpText="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
                                     Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
                 <ToggleSwitch IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}"
@@ -172,7 +175,8 @@
             </local:SettingContainer>
 
             <!--  First Window Behavior  -->
-            <local:SettingContainer x:Uid="Globals_FirstWindowPreference">
+            <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
+                                    x:Name="FirstWindowPreference">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.FirstWindowPreferenceList}"
@@ -181,7 +185,8 @@
             </local:SettingContainer>
 
             <!--  Windowing Behavior  -->
-            <local:SettingContainer x:Uid="Globals_WindowingBehavior">
+            <local:SettingContainer x:Uid="Globals_WindowingBehavior"
+                                    x:Name="WindowingBehavior">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.WindowingBehaviorList}"
@@ -191,6 +196,7 @@
 
             <!--  Launch Size  -->
             <local:SettingContainer x:Uid="Globals_LaunchSize"
+                                    x:Name="LaunchSize"
                                     CurrentValue="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <Grid ColumnSpacing="12"
@@ -234,6 +240,7 @@
 
             <!--  Launch Parameters  -->
             <local:SettingContainer x:Uid="Globals_LaunchParameters"
+                                    x:Name="LaunchParameters"
                                     CurrentValue="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <Grid RowSpacing="8">

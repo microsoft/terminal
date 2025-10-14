@@ -28,7 +28,8 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Theme  -->
-        <local:SettingContainer x:Uid="Globals_Theme">
+        <local:SettingContainer x:Uid="Globals_Theme"
+                                x:Name="Theme">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemsSource="{x:Bind ViewModel.ThemeList, Mode=OneWay}"
                       SelectedItem="{x:Bind ViewModel.CurrentTheme, Mode=TwoWay}"
@@ -42,7 +43,8 @@
         </local:SettingContainer>
 
         <!--  Position of new tab  -->
-        <local:SettingContainer x:Uid="Globals_NewTabPosition">
+        <local:SettingContainer x:Uid="Globals_NewTabPosition"
+                                x:Name="NewTabPosition">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.NewTabPositionList, Mode=OneWay}"
@@ -51,45 +53,52 @@
         </local:SettingContainer>
 
         <!--  Show Titlebar  -->
-        <local:SettingContainer x:Uid="Globals_ShowTitlebar">
+        <local:SettingContainer x:Uid="Globals_ShowTitlebar"
+                                x:Name="ShowTitlebar">
             <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsInTitlebar, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}"
                           Toggled="{x:Bind ViewModel.ShowTitlebarToggled}" />
         </local:SettingContainer>
 
         <!--  Always show tabs  -->
-        <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
+        <local:SettingContainer x:Uid="Globals_AlwaysShowTabs"
+                                x:Name="AlwaysShowTabs">
             <ToggleSwitch IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}"
                           IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Show tabs in full screen  -->
-        <local:SettingContainer x:Uid="Globals_ShowTabsFullscreen">
+        <local:SettingContainer x:Uid="Globals_ShowTabsFullscreen"
+                                x:Name="ShowTabsFullscreen">
             <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTabsFullscreen, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Show Acrylic in Tab Row  -->
-        <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
+        <local:SettingContainer x:Uid="Globals_AcrylicTabRow"
+                                x:Name="AcrylicTabRow">
             <ToggleSwitch IsOn="{x:Bind ViewModel.UseAcrylicInTabRow, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Show Title in Titlebar  -->
-        <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
+        <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar"
+                                x:Name="ShowTitleInTitlebar">
             <ToggleSwitch IsOn="{x:Bind ViewModel.ShowTitleInTitlebar, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Always on Top  -->
-        <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
+        <local:SettingContainer x:Uid="Globals_AlwaysOnTop"
+                                x:Name="AlwaysOnTop">
             <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysOnTop, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Tab Width Mode  -->
-        <local:SettingContainer x:Uid="Globals_TabWidthMode">
+        <local:SettingContainer x:Uid="Globals_TabWidthMode"
+                                x:Name="TabWidthMode">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.TabWidthModeList, Mode=OneWay}"
@@ -99,37 +108,43 @@
 
         <!--  Disable Animations  -->
         <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
-        <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
+        <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed"
+                                x:Name="DisableAnimations">
             <ToggleSwitch IsOn="{x:Bind ViewModel.InvertedDisableAnimations, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Always Show Notification Icon  -->
-        <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon">
+        <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon"
+                                x:Name="AlwaysShowNotificationIcon">
             <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysShowNotificationIcon, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Minimize To Notification Area  -->
-        <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea">
+        <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea"
+                                x:Name="MinimizeToNotificationArea">
             <ToggleSwitch IsOn="{x:Bind ViewModel.MinimizeToNotificationArea, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Automatically hide window  -->
-        <local:SettingContainer x:Uid="Globals_AutoHideWindow">
+        <local:SettingContainer x:Uid="Globals_AutoHideWindow"
+                                x:Name="AutoHideWindow">
             <ToggleSwitch IsOn="{x:Bind ViewModel.AutoHideWindow, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Show Admin Shield  -->
-        <local:SettingContainer x:Uid="Globals_ShowAdminShield">
+        <local:SettingContainer x:Uid="Globals_ShowAdminShield"
+                                x:Name="ShowAdminShield">
             <ToggleSwitch IsOn="{x:Bind ViewModel.ShowAdminShield, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Enable Unfocused Acrylic  -->
-        <local:SettingContainer x:Uid="Globals_EnableUnfocusedAcrylic">
+        <local:SettingContainer x:Uid="Globals_EnableUnfocusedAcrylic"
+                                x:Name="EnableUnfocusedAcrylic">
             <ToggleSwitch IsOn="{x:Bind ViewModel.EnableUnfocusedAcrylic, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>

@@ -24,7 +24,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::GlobalAppearanceViewModel>();
+        const auto& args = e.Parameter().as<Editor::NavigateToGlobalAppearanceArgs>();
+        _ViewModel = args.ViewModel();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

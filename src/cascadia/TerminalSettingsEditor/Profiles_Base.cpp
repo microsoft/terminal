@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
         _Profile = args.Profile();
         _windowRoot = args.WindowRoot();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         // Check the use parent directory box if the starting directory is empty
         if (_Profile.StartingDirectory().empty())

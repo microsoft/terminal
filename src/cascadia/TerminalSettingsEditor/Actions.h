@@ -4,12 +4,27 @@
 #pragma once
 
 #include "Actions.g.h"
+#include "NavigateToActionsArgs.g.h"
 #include "ActionsViewModel.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct NavigateToActionsArgs : NavigateToActionsArgsT<NavigateToActionsArgs>
+    {
+        NavigateToActionsArgs(Editor::ActionsViewModel vm, hstring elementToFocus = {}) :
+            _ViewModel(vm),
+            _ElementToFocus(elementToFocus) {}
+
+        Editor::ActionsViewModel ViewModel() const noexcept { return _ViewModel; }
+        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
+
+    private:
+        Editor::ActionsViewModel _ViewModel{ nullptr };
+        hstring _ElementToFocus{};
+    };
+
     struct Actions : public HasScrollViewer<Actions>, ActionsT<Actions>
     {
     public:

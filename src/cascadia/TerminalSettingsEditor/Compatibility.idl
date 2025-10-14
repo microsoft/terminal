@@ -7,6 +7,12 @@ import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass NavigateToCompatibilityArgs
+    {
+        CompatibilityViewModel ViewModel { get; };
+        String ElementToFocus { get; };
+    }
+
     runtimeclass CompatibilityViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         CompatibilityViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);

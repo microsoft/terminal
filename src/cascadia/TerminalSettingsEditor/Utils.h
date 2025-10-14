@@ -116,4 +116,34 @@ struct HasScrollViewer
             DismissAllPopups(uielem.XamlRoot());
         }
     }
+
+    // Finds the element with the given name and brings it into view
+    void BringIntoViewWhenLoaded(const winrt::hstring elementName)
+    {
+        if (elementName.empty())
+        {
+            return;
+        }
+
+        auto* pThis = static_cast<T*>(this);
+        _loadedRevoker = pThis->Loaded(winrt::auto_revoke, [weakThis{ pThis->get_weak() }, elementName](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                if (const auto& elementToFocus{ page->FindName(elementName).try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingContainer>() })
+                {
+                    // We need to wait for the page to be loaded
+                    // or else the call to StartBringIntoView()
+                    // will end up doing nothing
+                    elementToFocus.StartBringIntoView();
+
+                    // TODO CARLOS: ensure this works in all scenarios (easiest to test when navigating to page by keyboard)
+                    elementToFocus.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+                }
+                page->_loadedRevoker.revoke();
+            }
+        });
+    }
+
+protected:
+    winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 };

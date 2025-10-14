@@ -201,6 +201,7 @@
         </Border>
 
         <local:SettingContainer x:Uid="ColorScheme_InboxSchemeDuplicate"
+                                x:Name="InboxSchemeDuplicate"
                                 Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
             <Button x:Name="DuplicateSchemeButton"
                     x:Uid="ColorScheme_DuplicateButton"
@@ -209,6 +210,7 @@
         </local:SettingContainer>
 
         <local:SettingContainer x:Uid="ColorScheme_ColorsHeader"
+                                x:Name="ColorsHeader"
                                 StartExpanded="True"
                                 Style="{StaticResource ExpanderSettingContainerStyle}"
                                 Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">

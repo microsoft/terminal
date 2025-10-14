@@ -27,7 +27,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ActionsViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToActionsArgs>();
+        _ViewModel = args.ViewModel();
+
+        // TODO CARLOS: runtime indexing and retrieval support
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         // Subscribe to the view model's FocusContainer event.
         // Use the KeyBindingViewModel or index provided in the event to focus the corresponding container

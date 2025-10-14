@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface]
+    runtimeclass SearchMetadata : Windows.UI.Xaml.DependencyObject
+    {
+        SearchMetadata();
+
+        static Windows.UI.Xaml.DependencyProperty ParentPageProperty { get; };
+        static Windows.UI.Xaml.Interop.TypeName GetParentPage(Windows.UI.Xaml.DependencyObject target);
+        static void SetParentPage(Windows.UI.Xaml.DependencyObject target, Windows.UI.Xaml.Interop.TypeName val);
+
+        static Windows.UI.Xaml.DependencyProperty SettingNameProperty { get; };
+        static String GetSettingName(Windows.UI.Xaml.DependencyObject target);
+        static void SetSettingName(Windows.UI.Xaml.DependencyObject target, String val);
+    }
+}

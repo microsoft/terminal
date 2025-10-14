@@ -4,10 +4,25 @@
 #pragma once
 
 #include "Launch.g.h"
+#include "NavigateToLaunchArgs.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct NavigateToLaunchArgs : NavigateToLaunchArgsT<NavigateToLaunchArgs>
+    {
+        NavigateToLaunchArgs(const Editor::LaunchViewModel& vm, const hstring& elementToFocus = {}) :
+            _ViewModel(vm),
+            _ElementToFocus(elementToFocus) {}
+
+        Editor::LaunchViewModel ViewModel() const noexcept { return _ViewModel; }
+        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
+
+    private:
+        Editor::LaunchViewModel _ViewModel{ nullptr };
+        hstring _ElementToFocus{};
+    };
+
     struct Launch : public HasScrollViewer<Launch>, LaunchT<Launch>
     {
     public:
