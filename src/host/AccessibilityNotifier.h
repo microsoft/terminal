@@ -71,7 +71,7 @@ namespace Microsoft::Console
         PTP_TIMER _createTimer(PTP_TIMER_CALLBACK callback) noexcept;
         void _timerSet() noexcept;
         static void NTAPI _timerEmitMSAA(PTP_CALLBACK_INSTANCE instance, PVOID context, PTP_TIMER timer) noexcept;
-        void _emitMSAA(State& msaa) const noexcept;
+        void _emitEvents(State& msaa) const noexcept;
         static void _emitUIAEvent(IRawElementProviderSimple* provider, EVENTID id) noexcept;
 
         // The main window, used for NotifyWinEvent / ConsoleControl(ConsoleSetCaretInfo) calls.

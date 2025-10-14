@@ -177,9 +177,6 @@ void Selection::InitializeMouseSelection(const til::point coordBufferPos)
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-
-        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
-        an.SelectionChanged();
     }
 
     // Fire off an event to let accessibility apps know the selection has changed.
@@ -302,7 +299,6 @@ void Selection::_ExtendSelection(Selection::SelectionData* d, _In_ til::point co
     // Fire off an event to let accessibility apps know the selection has changed.
     auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
     an.CursorChanged(coordBufferPos, true);
-    an.SelectionChanged();
 }
 
 // Routine Description:
