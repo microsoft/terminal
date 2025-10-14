@@ -167,10 +167,18 @@ void AccessibilityNotifier::SelectionChanged() noexcept
     }
 }
 
+bool AccessibilityNotifier::WantsRegionChangedEvents() const noexcept
+{
+    // See RegionChanged().
+    return (_msaaEnabled && IsWinEventHookInstalled(EVENT_CONSOLE_UPDATE_REGION)) ||
+           (_uiaProvider.load(std::memory_order_relaxed) != nullptr);
+}
+
 // Emits EVENT_CONSOLE_UPDATE_REGION, the region of the console that changed.
+// `end` is expected to be an inclusive coordinate.
 void AccessibilityNotifier::RegionChanged(til::point begin, til::point end) noexcept
 {
-    if (begin >= end)
+    if (begin > end)
     {
         return;
     }

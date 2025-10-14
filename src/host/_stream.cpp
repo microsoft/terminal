@@ -17,7 +17,6 @@
 #include "VtIo.hpp"
 
 #include "../types/inc/convert.hpp"
-#include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/Viewport.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
@@ -34,29 +33,46 @@ constexpr bool controlCharPredicate(wchar_t wch)
 static auto raiseAccessibilityEventsOnExit(SCREEN_INFORMATION& screenInfo)
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& bufferBefore = gci.GetActiveOutputBuffer();
-    const auto cursorBefore = bufferBefore.GetTextBuffer().GetCursor().GetPosition();
+    const auto bufferBefore = &gci.GetActiveOutputBuffer();
+    const auto cursorBefore = bufferBefore->GetTextBuffer().GetCursor().GetPosition();
 
-    auto raise = wil::scope_exit([&bufferBefore, cursorBefore] {
+    auto raise = wil::scope_exit([bufferBefore, cursorBefore] {
         // !!! NOTE !!! `bufferBefore` may now be a stale pointer, because VT
         // sequences can switch between the main and alternative screen buffer.
         auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        const auto& bufferAfter = gci.GetActiveOutputBuffer();
-        const auto cursorAfter = bufferAfter.GetTextBuffer().GetCursor().GetPosition();
+        const auto& bufferAfter = &gci.GetActiveOutputBuffer();
+        const auto cursorAfter = bufferAfter->GetTextBuffer().GetCursor().GetPosition();
 
-        if (&bufferBefore == &bufferAfter)
-        {
-            an.RegionChanged(cursorBefore, cursorAfter);
-        }
         if (cursorBefore != cursorAfter)
         {
+            if (bufferBefore == bufferAfter && an.WantsRegionChangedEvents())
+            {
+                // Make the range ordered...
+                auto beg = cursorBefore;
+                auto end = cursorAfter;
+                if (beg > end)
+                {
+                    std::swap(beg, end);
+                }
+
+                // ...and make it inclusive.
+                end.x--;
+                if (end.x < 0)
+                {
+                    end.y--;
+                    end.x = bufferAfter->GetBufferSize().Width() - 1;
+                }
+
+                an.RegionChanged(beg, end);
+            }
+
             an.CursorChanged(cursorAfter, false);
         }
     });
 
     // Don't raise any events for inactive buffers.
-    if (&bufferBefore != &screenInfo)
+    if (bufferBefore != &screenInfo)
     {
         raise.release();
     }

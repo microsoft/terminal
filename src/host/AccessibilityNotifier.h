@@ -26,6 +26,7 @@ namespace Microsoft::Console
 
         void CursorChanged(til::point position, bool activeSelection) noexcept;
         void SelectionChanged() noexcept;
+        bool WantsRegionChangedEvents() const noexcept;
         void RegionChanged(til::point begin, til::point end) noexcept;
         void ScrollBuffer(til::CoordType delta) noexcept;
         void ScrollViewport(til::point delta) noexcept;
