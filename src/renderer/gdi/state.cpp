@@ -88,7 +88,7 @@ GdiEngine::~GdiEngine()
         _hbitmapMemorySurface = nullptr;
     }
 
-    for (auto& hfont: _hfonts)
+    for (auto& hfont : _hfonts)
     {
         if (hfont != nullptr)
         {
@@ -295,24 +295,28 @@ GdiEngine::~GdiEngine()
     }
 
     // If the font type has changed, select an appropriate font variant or soft font.
-    const auto fontType = [&]
-    {
+    const auto fontType = [&] {
         if (usingSoftFont)
+        {
             return FontType::Soft;
+        }
 
         // TODO: GH-18919 "Intense text as bold" option
         const auto usingBoldFont = textAttributes.IsBold(false);
         const auto usingItalicFont = textAttributes.IsItalic();
 
         if (usingBoldFont && !usingItalicFont)
+        {
             return FontType::Bold;
-
+        }
         if (!usingBoldFont && usingItalicFont)
+        {
             return FontType::Italic;
-
+        }
         if (usingBoldFont && usingItalicFont)
+        {
             return FontType::BoldItalic;
-
+        }
         return FontType::Default;
     }();
 
@@ -469,7 +473,7 @@ GdiEngine::~GdiEngine()
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
 
-    for (auto& hfont: _hfonts)
+    for (auto& hfont : _hfonts)
     {
         // Persist font for cleanup (and free existing if necessary)
         if (hfont != nullptr)
@@ -666,28 +670,28 @@ GdiEngine::~GdiEngine()
 
         FontDesired.FillLegacyNameBuffer(lf.lfFaceName);
 
-        constexpr struct font_styles
+        struct FontStyle
         {
             LONG weight;
             BYTE italic;
-        }
-        FontStyles[]
-        {
-            { FW_NORMAL, FALSE }, // Default
-            { FW_BOLD,   FALSE }, // Bold
-            { FW_NORMAL, TRUE  }, // Italic
-            { FW_BOLD,   TRUE  }, // BoldItalic
         };
 
-        static_assert(std::size(FontStyles) == static_cast<size_t>(FontType::FontCount));
+        static constexpr FontStyle s_fontStyles[] = {
+            { FW_NORMAL, FALSE }, // Default
+            { FW_BOLD, FALSE }, // Bold
+            { FW_NORMAL, TRUE }, // Italic
+            { FW_BOLD, TRUE }, // BoldItalic
+        };
 
-        for (const auto& style: FontStyles)
+        static_assert(std::size(s_fontStyles) == static_cast<size_t>(FontType::FontCount));
+
+        for (const auto& style : s_fontStyles)
         {
             lf.lfWeight = style.weight == FW_NORMAL ? FontDesired.GetWeight() : style.weight;
             lf.lfItalic = style.italic;
 
             // Create font.
-            auto& hFont = hFonts[&style - FontStyles];
+            auto& hFont = hFonts[&style - s_fontStyles];
             hFont.reset(CreateFontIndirectW(&lf));
             RETURN_HR_IF_NULL(E_FAIL, hFont.get());
         }
