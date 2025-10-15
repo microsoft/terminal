@@ -44,8 +44,8 @@ public:
     til::point GetPosition() const noexcept;
     CursorType GetType() const noexcept;
 
-    void SetIsVisible(bool enable);
-    void SetIsBlinking(bool enable);
+    void SetIsVisible(bool enable) noexcept;
+    void SetIsBlinking(bool enable) noexcept;
     void SetIsDouble(const bool fIsDouble) noexcept;
     void SetSize(const ULONG ulSize) noexcept;
     void SetStyle(const ULONG ulSize, const CursorType type) noexcept;

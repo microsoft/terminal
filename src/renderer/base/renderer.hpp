@@ -97,7 +97,7 @@ namespace Microsoft::Console::Render
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
         // Base rendering loop
-        static DWORD s_renderThread(void*) noexcept;
+        static DWORD WINAPI s_renderThread(void*) noexcept;
         DWORD _renderThread() noexcept;
         void _waitUntilCanRender() noexcept;
 

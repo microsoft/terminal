@@ -47,7 +47,7 @@ ULONG Cursor::GetSize() const noexcept
     return _ulSize;
 }
 
-void Cursor::SetIsVisible(bool enable)
+void Cursor::SetIsVisible(bool enable) noexcept
 {
     if (_isVisible != enable)
     {
@@ -56,7 +56,7 @@ void Cursor::SetIsVisible(bool enable)
     }
 }
 
-void Cursor::SetIsBlinking(bool enable)
+void Cursor::SetIsBlinking(bool enable) noexcept
 {
     if (_isBlinking != enable)
     {
