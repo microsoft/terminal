@@ -185,7 +185,7 @@
     <value>終了</value>
   </data>
   <data name="MultiplePanes" xml:space="preserve">
-    <value>複数ウィンドウ</value>
+    <value>複数ペイン</value>
   </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>閉じる</value>
@@ -203,13 +203,13 @@
     <value>タブを閉じる</value>
   </data>
   <data name="PaneClose" xml:space="preserve">
-    <value>ウィンドウを閉じる</value>
+    <value>ペインを閉じる</value>
   </data>
   <data name="SplitTabText" xml:space="preserve">
     <value>タブを分割</value>
   </data>
   <data name="SplitPaneText" xml:space="preserve">
-    <value>ウィンドウを分割する</value>
+    <value>ペインを分割する</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>Web 検索</value>
@@ -310,17 +310,17 @@
     <value>指定されたインデックスのタブにフォーカスを移動する</value>
   </data>
   <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
-    <value>フォーカスされたウィンドウを指定されたインデックスのタブに移動する</value>
+    <value>フォーカスされたペインを指定されたインデックスのタブに移動する</value>
   </data>
   <data name="CmdMovePaneDesc" xml:space="preserve">
-    <value>フォーカスされたウィンドウを別のタブに移動する</value>
+    <value>フォーカスされたペインを別のタブに移動する</value>
   </data>
   <data name="CmdMPDesc" xml:space="preserve">
     <value>"move-pane" サブコマンドのエイリアス。</value>
     <comment>{Locked="\"move-pane\""}</comment>
   </data>
   <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
-    <value>サイズを親ウィンドウに対する割合として指定します。有効な値は (0,1) の間で、排他的です。</value>
+    <value>サイズを親ペインに対する割合として指定します。有効な値は (0,1) の間で、排他的です。</value>
   </data>
   <data name="CmdNewTabDesc" xml:space="preserve">
     <value>新しいタブの作成</value>
@@ -330,14 +330,14 @@
     <comment>{Locked="\"new-tab\""}</comment>
   </data>
   <data name="CmdFocusPaneDesc" xml:space="preserve">
-    <value>別のウィンドウにフォーカスを移動する</value>
+    <value>別のペインにフォーカスを移動する</value>
   </data>
   <data name="CmdFPDesc" xml:space="preserve">
     <value>"focus-pane" サブコマンドのエイリアス。</value>
     <comment>{Locked="\"focus-pane\""}</comment>
   </data>
   <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
-    <value>指定されたインデックスのウィンドウをフォーカスする</value>
+    <value>指定されたインデックスのペインをフォーカスする</value>
   </data>
   <data name="CmdProfileArgDesc" xml:space="preserve">
     <value>指定されたプロファイルで開きます。プロファイルの名前または GUID を指定できます</value>
@@ -346,20 +346,20 @@
     <value>WT_SESSION 変数を設定します; GUID である必要があります</value>
   </data>
   <data name="CmdSplitPaneDesc" xml:space="preserve">
-    <value>新しい分割ウィンドウの作成</value>
+    <value>新しい分割ペインの作成</value>
   </data>
   <data name="CmdSPDesc" xml:space="preserve">
     <value>"split-pane" サブコマンドのエイリアス。</value>
     <comment>{Locked="\"split-pane\""}</comment>
   </data>
   <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
-    <value>新しいウィンドウを水平方向に分割して作成します ([-]と考えてください)</value>
+    <value>新しいペインを水平方向に分割して作成します ([-]と考えてください)</value>
   </data>
   <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
-    <value>新しいウィンドウを垂直方向に分割して作成します ([|]と考えてください)</value>
+    <value>新しいペインを垂直方向に分割して作成します ([|]と考えてください)</value>
   </data>
   <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
-    <value>フォーカスされたウィンドウのプロファイルを複製して、新しいウィンドウを作成します</value>
+    <value>フォーカスされたペインのプロファイルを複製して、新しいペインを作成します</value>
   </data>
   <data name="CmdStartingDirArgDesc" xml:space="preserve">
     <value>プロファイルの "startingDirectory" の設定ではなく、指定されたディレクトリで開きます</value>
@@ -404,10 +404,10 @@
     <value>フォーカスを移動する方向</value>
   </data>
   <data name="CmdSwapPaneDesc" xml:space="preserve">
-    <value>フォーカスされたウィンドウを、指定された方向の隣接するウィンドウと入れ替える</value>
+    <value>フォーカスされたペインを、指定された方向の隣接するペインと入れ替える</value>
   </data>
   <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
-    <value>フォーカスされたウィンドウを移動する方向</value>
+    <value>フォーカスされたペインを移動する方向</value>
   </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>ウィンドウをフォーカス モードで起動</value>
@@ -837,10 +837,10 @@
     <value>なし</value>
   </data>
   <data name="ClosePaneText" xml:space="preserve">
-    <value>ウィンドウを閉じる</value>
+    <value>ペインを閉じる</value>
   </data>
   <data name="ClosePaneToolTip" xml:space="preserve">
-    <value>複数のウィンドウが存在する場合は、アクティブなウィンドウを閉じます</value>
+    <value>複数のペインが存在する場合は、アクティブなペインを閉じます</value>
   </data>
   <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
     <value>タブの色をリセット</value>
@@ -857,7 +857,7 @@
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
-    <value>アクティブなウィンドウを [{0}] タブに移動しました</value>
+    <value>アクティブなペインを [{0}] タブに移動しました</value>
     <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
@@ -873,19 +873,19 @@
     <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
-    <value>アクティブなウィンドウを "{1}" ウィンドウの [{0}] タブに移動しました</value>
+    <value>アクティブなペインを "{1}" ウィンドウの [{0}] タブに移動しました</value>
     <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
-    <value>アクティブなウィンドウを "{0}" ウィンドウに移動しました</value>
+    <value>アクティブなペインを "{0}" ウィンドウに移動しました</value>
     <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
-    <value>アクティブなウィンドウを新しいウィンドウに移動しました</value>
+    <value>アクティブなペインを新しいウィンドウに移動しました</value>
     <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
-    <value>アクティブなウィンドウを新しいタブに移動しました</value>
+    <value>アクティブなペインを新しいタブに移動しました</value>
     <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
   </data>
   <data name="CmdAppendCommandLineDesc" xml:space="preserve">
@@ -926,10 +926,10 @@
     <value>操作の保存に失敗しました</value>
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>ウィンドウを閉じる</value>
+    <value>ペインを閉じる</value>
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>ウィンドウを閉じる</value>
+    <value>ペインを閉じる</value>
   </data>
   <data name="TabMoveLeft" xml:space="preserve">
     <value>左へ移動</value>
