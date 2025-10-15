@@ -325,6 +325,7 @@
 
             <!--  Name  -->
             <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderName"
+                                    x:Name="CurrentFolderName"
                                     Grid.Row="0"
                                     CurrentValue="{x:Bind ViewModel.CurrentFolderName, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
@@ -334,6 +335,7 @@
 
             <!--  Inlining  -->
             <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderInlining"
+                                    x:Name="CurrentFolderInlining"
                                     Grid.Row="1">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderInlining, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
@@ -341,6 +343,7 @@
 
             <!--  Allow Empty  -->
             <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderAllowEmpty"
+                                    x:Name="CurrentFolderAllowEmpty"
                                     Grid.Row="2">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderAllowEmpty, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
@@ -354,6 +357,7 @@
 
             <!--  Add Profile  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddProfile"
+                                    x:Name="AddProfile"
                                     FontIconGlyph="&#xE756;"
                                     Style="{StaticResource SettingContainerWithIcon}">
 
@@ -403,6 +407,7 @@
 
             <!--  Add Separator  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
+                                    x:Name="AddSeparator"
                                     FontIconGlyph="&#xE76f;"
                                     Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddSeparatorButton"
@@ -419,6 +424,7 @@
 
             <!--  Add Folder  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddFolder"
+                                    x:Name="AddFolder"
                                     FontIconGlyph="&#xF12B;"
                                     Style="{StaticResource SettingContainerWithIcon}">
                 <StackPanel Orientation="Horizontal"
@@ -445,6 +451,7 @@
 
             <!--  Add Match Profiles  -->
             <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
+                                    x:Name="AddMatchProfiles"
                                     FontIconGlyph="&#xE748;"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
                 <StackPanel Spacing="8">

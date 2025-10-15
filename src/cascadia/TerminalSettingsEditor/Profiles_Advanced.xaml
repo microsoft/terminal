@@ -38,6 +38,7 @@
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Antialiasing Mode  -->
             <local:SettingContainer x:Uid="Profile_AntialiasingMode"
+                                    x:Name="AntialiasingMode"
                                     ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"
                                     HasSettingValue="{x:Bind Profile.HasAntialiasingMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
@@ -50,6 +51,7 @@
 
             <!--  AltGr Aliasing  -->
             <local:SettingContainer x:Uid="Profile_AltGrAliasing"
+                                    x:Name="AltGrAliasing"
                                     ClearSettingValue="{x:Bind Profile.ClearAltGrAliasing}"
                                     HasSettingValue="{x:Bind Profile.HasAltGrAliasing, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
@@ -59,6 +61,7 @@
 
             <!--  Snap On Input  -->
             <local:SettingContainer x:Uid="Profile_SnapOnInput"
+                                    x:Name="SnapOnInput"
                                     ClearSettingValue="{x:Bind Profile.ClearSnapOnInput}"
                                     HasSettingValue="{x:Bind Profile.HasSnapOnInput, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.SnapOnInputOverrideSource, Mode=OneWay}">
@@ -68,6 +71,7 @@
 
             <!--  History Size  -->
             <local:SettingContainer x:Uid="Profile_HistorySize"
+                                    x:Name="HistorySize"
                                     ClearSettingValue="{x:Bind Profile.ClearHistorySize}"
                                     HasSettingValue="{x:Bind Profile.HasHistorySize, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.HistorySizeOverrideSource, Mode=OneWay}">
@@ -81,6 +85,7 @@
 
             <!--  Close On Exit  -->
             <local:SettingContainer x:Uid="Profile_CloseOnExit"
+                                    x:Name="CloseOnExit"
                                     ClearSettingValue="{x:Bind Profile.ClearCloseOnExit}"
                                     HasSettingValue="{x:Bind Profile.HasCloseOnExit, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}">
@@ -93,6 +98,7 @@
 
             <!--  Bell Style  -->
             <local:SettingContainer x:Uid="Profile_BellStyle"
+                                    x:Name="BellStyle"
                                     ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
                                     CurrentValue="{x:Bind Profile.BellStylePreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
@@ -110,6 +116,7 @@
 
             <!--  Bell Sound  -->
             <local:SettingContainer x:Uid="Profile_BellSound"
+                                    x:Name="BellSound"
                                     ClearSettingValue="{x:Bind Profile.ClearBellSound}"
                                     CurrentValue="{x:Bind Profile.BellSoundPreview, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasBellSound, Mode=OneWay}"
@@ -191,6 +198,7 @@
 
             <!--  RightClickContextMenu  -->
             <local:SettingContainer x:Uid="Profile_RightClickContextMenu"
+                                    x:Name="RightClickContextMenu"
                                     ClearSettingValue="{x:Bind Profile.ClearRightClickContextMenu}"
                                     HasSettingValue="{x:Bind Profile.HasRightClickContextMenu, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.RightClickContextMenuOverrideSource, Mode=OneWay}">
@@ -200,6 +208,7 @@
 
             <!--  ShowMarks  -->
             <local:SettingContainer x:Uid="Profile_ShowMarks"
+                                    x:Name="ShowMarks"
                                     ClearSettingValue="{x:Bind Profile.ClearShowMarks}"
                                     HasSettingValue="{x:Bind Profile.HasShowMarks, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.ShowMarksOverrideSource, Mode=OneWay}"
@@ -210,6 +219,7 @@
 
             <!--  AutoMarkPrompts  -->
             <local:SettingContainer x:Uid="Profile_AutoMarkPrompts"
+                                    x:Name="AutoMarkPrompts"
                                     ClearSettingValue="{x:Bind Profile.ClearAutoMarkPrompts}"
                                     HasSettingValue="{x:Bind Profile.HasAutoMarkPrompts, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.AutoMarkPromptsOverrideSource, Mode=OneWay}"
@@ -220,6 +230,7 @@
 
             <!--  ReloadEnvVars  -->
             <local:SettingContainer x:Uid="Profile_ReloadEnvVars"
+                                    x:Name="ReloadEnvVars"
                                     ClearSettingValue="{x:Bind Profile.ClearReloadEnvironmentVariables}"
                                     HasSettingValue="{x:Bind Profile.HasReloadEnvironmentVariables, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.ReloadEnvironmentVariablesOverrideSource, Mode=OneWay}">
@@ -229,6 +240,7 @@
 
             <!--  RepositionCursorWithMouse  -->
             <local:SettingContainer x:Uid="Profile_RepositionCursorWithMouse"
+                                    x:Name="RepositionCursorWithMouse"
                                     ClearSettingValue="{x:Bind Profile.ClearRepositionCursorWithMouse}"
                                     HasSettingValue="{x:Bind Profile.HasRepositionCursorWithMouse, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.RepositionCursorWithMouseOverrideSource, Mode=OneWay}"
@@ -239,6 +251,7 @@
 
             <!--  RainbowSuggestions  -->
             <local:SettingContainer x:Uid="Profile_RainbowSuggestions"
+                                    x:Name="RainbowSuggestions"
                                     ClearSettingValue="{x:Bind Profile.ClearRainbowSuggestions}"
                                     HasSettingValue="{x:Bind Profile.HasRainbowSuggestions, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.RainbowSuggestionsOverrideSource, Mode=OneWay}">
@@ -248,6 +261,7 @@
 
             <!--  Path Translation  -->
             <local:SettingContainer x:Uid="Profile_PathTranslationStyle"
+                                    x:Name="PathTranslationStyle"
                                     ClearSettingValue="{x:Bind Profile.ClearPathTranslationStyle}"
                                     HasSettingValue="{x:Bind Profile.HasPathTranslationStyle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.PathTranslationStyleOverrideSource, Mode=OneWay}">

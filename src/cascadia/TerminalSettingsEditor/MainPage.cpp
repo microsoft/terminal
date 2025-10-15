@@ -22,6 +22,7 @@
 #include "NewTabMenu.h"
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
+#include "GeneratedSettingsIndex.g.h"
 
 #include <LibraryResources.h>
 #include <dwmapi.h>
