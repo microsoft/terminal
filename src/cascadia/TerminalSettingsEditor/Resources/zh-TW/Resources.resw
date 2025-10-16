@@ -335,7 +335,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
-    <value>Direct3D 11 提供更具效能且功能更豐富的體驗，而 Direct2D 則較穩定。默認選項 [自動] 會挑選最適合您圖形硬體的 API。如果您遇到重大問題，請考慮使用 Direct2D。</value>
+    <value>Direct3D 11 提供更具效能且功能更豐富的體驗，而 Direct2D 則較穩定。預設選項 [自動] 會挑選最適合您圖形硬體的 API。如果您遇到重大問題，請考慮使用 Direct2D。</value>
   </data>
   <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
     <value>自動</value>
@@ -1018,7 +1018,7 @@
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
   <data name="Profile_CellWidth.HelpText" xml:space="preserve">
-    <value>覆寫終端機的單元格寬度。以字型大小的倍數表示。默認值取決於您的字型，通常大約是0.6。</value>
+    <value>覆寫終端機的單元格寬度。以字型大小的倍數表示。預設值取決於您的字型，通常大約是0.6。</value>
     <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
   </data>
   <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
@@ -2075,6 +2075,10 @@
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>使用配置色彩</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>使用佈景主題色彩</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
     <value>無</value>

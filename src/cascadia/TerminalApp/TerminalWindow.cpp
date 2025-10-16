@@ -13,6 +13,8 @@
 #include "SettingsLoadEventArgs.g.cpp"
 #include "WindowProperties.g.cpp"
 
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
+
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Graphics::Display;
@@ -613,11 +615,11 @@ namespace winrt::TerminalApp::implementation
         if ((_appArgs && _appArgs->ParsedArgs().GetSize().has_value()) || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
-            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr) };
 
             const til::size emptySize{};
             const auto commandlineSize = _appArgs ? _appArgs->ParsedArgs().GetSize().value_or(emptySize) : til::size{};
-            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(),
+            proposedSize = TermControl::GetProposedDimensions(*settings.DefaultSettings(),
                                                               dpi,
                                                               commandlineSize.width,
                                                               commandlineSize.height);
@@ -1048,6 +1050,11 @@ namespace winrt::TerminalApp::implementation
         // (or called TerminalWindow::Initialize)
         if (_appArgs->ExitCode() == 0)
         {
+            // The existing logic (before this commit) strictly relied on
+            // ValidateStartupCommands() only to be called for new windows.
+            // It modifies the actions it stores.
+            parsedArgs.ValidateStartupCommands();
+
             // If the size of the arguments list is 1,
             // then it contains only the executable name and no other arguments.
             _hasCommandLineArguments = _appArgs->CommandlineRef().size() > 1;

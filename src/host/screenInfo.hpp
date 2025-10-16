@@ -19,8 +19,6 @@ Revision History:
 
 #pragma once
 
-#include "conapi.h"
-#include "settings.hpp"
 #include "outputStream.hpp"
 
 #include "../buffer/out/OutputCellRect.hpp"
@@ -30,15 +28,10 @@ Revision History:
 #include "../buffer/out/textBufferTextIterator.hpp"
 
 #include "IIoProvider.hpp"
-#include "outputStream.hpp"
-#include "../terminal/adapter/adaptDispatch.hpp"
 #include "../terminal/parser/stateMachine.hpp"
-#include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #include "../server/ObjectHeader.h"
 
-#include "../interactivity/inc/IAccessibilityNotifier.hpp"
-#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
 #include "../renderer/inc/FontInfo.hpp"
@@ -50,6 +43,25 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
+    // This little helper works like wil::scope_exit but is slimmer
+    // (= easier to optimize) and has a concrete type (= can declare).
+    struct SnapOnScopeExit
+    {
+        ~SnapOnScopeExit()
+        {
+            if (self)
+            {
+                try
+                {
+                    self->_makeCursorVisible();
+                }
+                CATCH_LOG();
+            }
+        }
+
+        SCREEN_INFORMATION* self;
+    };
+
     [[nodiscard]] static NTSTATUS CreateInstance(_In_ til::size coordWindowSize,
                                                  const FontInfo fontInfo,
                                                  _In_ til::size coordScreenBufferSize,
@@ -73,16 +85,7 @@ public:
     void MakeCurrentCursorVisible();
     void MakeCursorVisible(til::point position);
     void SnapOnInput(WORD vkey);
-    auto SnapOnOutput() noexcept
-    {
-        const auto inBounds = _viewport.IsInBounds(_textBuffer->GetCursor().GetPosition());
-        return wil::scope_exit([this, inBounds]() {
-            if (inBounds)
-            {
-                _makeCursorVisible();
-            }
-        });
-    }
+    SnapOnScopeExit SnapOnOutput() noexcept;
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
@@ -99,9 +102,6 @@ public:
     void RefreshFontWithRenderer();
 
     [[nodiscard]] NTSTATUS ResizeScreenBuffer(const til::size coordNewScreenSize, const bool fDoScrollBarUpdate);
-
-    bool HasAccessibilityEventing() const noexcept;
-    void NotifyAccessibilityEventing(const til::CoordType sStartX, const til::CoordType sStartY, const til::CoordType sEndX, const til::CoordType sEndY);
 
     struct ScrollBarState
     {
@@ -226,12 +226,10 @@ public:
 
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
-                       _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier* pNotifier,
                        const TextAttribute popupAttributes,
                        const FontInfo fontInfo);
 
     Microsoft::Console::Interactivity::IWindowMetrics* _pConsoleWindowMetrics;
-    Microsoft::Console::Interactivity::IAccessibilityNotifier* _pAccessibilityNotifier;
 
     [[nodiscard]] HRESULT _AdjustScreenBufferHelper(const til::rect* const prcClientNew,
                                                     const til::size coordBufferOld,

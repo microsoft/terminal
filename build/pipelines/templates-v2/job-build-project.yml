@@ -170,9 +170,9 @@ jobs:
   - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
-    displayName: Build OpenConsole.sln
+    displayName: Build OpenConsole.slnx
     inputs:
-      solution: 'OpenConsole.sln'
+      solution: 'OpenConsole.slnx'
       msbuildArgs: >-
         /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }}
         ${{ parameters.additionalBuildOptions }}

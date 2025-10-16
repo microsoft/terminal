@@ -487,25 +487,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Function Description:
     // - Static helper for building a new TermControl from an already existing
     //   content. We'll attach the existing swapchain to this new control's
-    //   SwapChainPanel. The IKeyBindings might belong to a non-agile object on
-    //   a new thread, so we'll hook up the core to these new bindings.
+    //   SwapChainPanel.
     // Arguments:
     // - content: The preexisting ControlInteractivity to connect to.
-    // - keybindings: The new IKeyBindings instance to use for this control.
     // Return Value:
     // - The newly constructed TermControl.
-    Control::TermControl TermControl::NewControlByAttachingContent(Control::ControlInteractivity content,
-                                                                   const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    Control::TermControl TermControl::NewControlByAttachingContent(Control::ControlInteractivity content)
     {
         const auto term{ winrt::make_self<TermControl>(content) };
-        term->_initializeForAttach(keyBindings);
+        term->_initializeForAttach();
         return *term;
     }
 
-    void TermControl::_initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    void TermControl::_initializeForAttach()
     {
         _AttachDxgiSwapChainToXaml(reinterpret_cast<HANDLE>(_core.SwapChainHandle()));
-        _interactivity.AttachToNewControl(keyBindings);
+        _interactivity.AttachToNewControl();
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -1848,13 +1845,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
-        auto bindings = _core.Settings().KeyBindings();
-        if (!bindings)
+        if (!_keyBindings)
         {
             return false;
         }
 
-        auto success = bindings.TryKeyChord({
+        auto success = _keyBindings.TryKeyChord({
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),
@@ -2164,15 +2160,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         RestorePointerCursor.raise(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
-        // GH#10329 - we don't need to handle horizontal scrolls. Only vertical ones.
-        // So filter out the horizontal ones.
-        if (point.Properties().IsHorizontalMouseWheel())
-        {
-            return;
-        }
-
+        auto delta = point.Properties().MouseWheelDelta();
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
-                                                point.Properties().MouseWheelDelta(),
+                                                point.Properties().IsHorizontalMouseWheel() ?
+                                                    Core::Point{ delta, 0 } :
+                                                    Core::Point{ 0, delta },
                                                 _toTerminalOrigin(point.Position()),
                                                 TermControl::GetPressedMouseButtons(point));
         if (result)
@@ -2192,7 +2184,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - delta: the mouse wheel delta that triggered this event.
     // - state: the state for each of the mouse buttons individually (pressed/unpressed)
     bool TermControl::OnMouseWheel(const Windows::Foundation::Point location,
-                                   const int32_t delta,
+                                   const Core::Point delta,
                                    const bool leftButtonDown,
                                    const bool midButtonDown,
                                    const bool rightButtonDown)
@@ -3789,16 +3781,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions)
     {
         get_self<ControlCore>(_core)->UpdateQuickFixes(suggestions);
-    }
-
-    Core::Scheme TermControl::ColorScheme() const noexcept
-    {
-        return _core.ColorScheme();
-    }
-
-    void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
-    {
-        _core.ColorScheme(scheme);
     }
 
     void TermControl::AdjustOpacity(const float opacity, const bool relative)

@@ -84,6 +84,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     Command::Command() = default;
 
+    Model::Command Command::NewUserCommand()
+    {
+        auto newCmd{ winrt::make_self<Command>() };
+        newCmd->_Origin = OriginTag::User;
+        return *newCmd;
+    }
+
+    Model::Command Command::CopyAsUserCommand(const Model::Command& originalCmd)
+    {
+        auto command{ winrt::get_self<Command>(originalCmd) };
+        auto copy{ command->Copy() };
+        copy->_Origin = OriginTag::User;
+        return *copy;
+    }
+
     com_ptr<Command> Command::Copy() const
     {
         auto command{ winrt::make_self<Command>() };
@@ -197,6 +212,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hstring{ _ID };
     }
 
+    void Command::ID(const hstring& ID) noexcept
+    {
+        _ID = ID;
+    }
+
     void Command::GenerateID()
     {
         if (_ActionAndArgs)
@@ -204,8 +224,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto actionAndArgsImpl{ winrt::get_self<implementation::ActionAndArgs>(_ActionAndArgs) };
             if (const auto generatedID = actionAndArgsImpl->GenerateID(); !generatedID.empty())
             {
-                _ID = generatedID;
                 _IDWasGenerated = true;
+                ID(generatedID);
             }
         }
     }

@@ -541,7 +541,6 @@ EPres
 EQU
 ERASEBKGND
 ERRORONEXIT
-ESFCIB
 esrp
 ESV
 ETW
@@ -604,7 +603,6 @@ FONTSTRING
 FONTTYPE
 FONTWIDTH
 FONTWINDOW
-foob
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FRAMECHANGED
@@ -621,7 +619,6 @@ FUNCTIONCALL
 fuzzmain
 fuzzmap
 fuzzwrapper
-fuzzyfinder
 fwdecl
 fwe
 fwlink
@@ -808,6 +805,7 @@ IMPEXP
 inbox
 inclusivity
 INCONTEXT
+INDEXID
 INFOEX
 inheritcursor
 INITCOMMONCONTROLSEX
@@ -909,6 +907,7 @@ LNM
 LOADONCALL
 LOBYTE
 localappdata
+LOCATIONCHANGE
 locsrc
 Loewen
 LOGBRUSH
@@ -960,7 +959,6 @@ lsb
 lsconfig
 lstatus
 lstrcmp
-lstrcmpi
 LTEXT
 lto
 ltsc
@@ -1034,6 +1032,7 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOVESTART
+msaa
 msb
 msbuildcache
 msctls
@@ -1123,7 +1122,6 @@ NOREPOSITION
 NORMALDISPLAY
 NOSCRATCH
 NOSEARCH
-noselect
 NOSELECTION
 NOSENDCHANGING
 NOSIZE
@@ -1181,7 +1179,6 @@ onecoreuuid
 ONECOREWINDOWS
 onehalf
 oneseq
-oob
 openbash
 opencode
 opencon
@@ -1586,6 +1583,7 @@ SLGP
 SLIST
 slmult
 sln
+slnx
 slpit
 SManifest
 SMARTQUOTE

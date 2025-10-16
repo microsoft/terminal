@@ -456,14 +456,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     // ConsoleApp will be false in the AttachConsole case.
     if (Cac.ConsoleApp)
     {
-        LOG_IF_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(dwProcessId));
+        ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(dwProcessId);
     }
 
-    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    if (pNotifier)
-    {
-        pNotifier->NotifyConsoleStartApplicationEvent(dwProcessId);
-    }
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.ApplicationStart(dwProcessId);
 
     if (WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED))
     {
@@ -556,11 +553,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
 {
     const auto pProcessData = pMessage->GetProcessHandle();
 
-    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    if (pNotifier)
-    {
-        pNotifier->NotifyConsoleEndApplicationEvent(pProcessData->dwProcessId);
-    }
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.ApplicationEnd(pProcessData->dwProcessId);
 
     Tracing::s_TraceConsoleAttachDetach(pProcessData, false);
 

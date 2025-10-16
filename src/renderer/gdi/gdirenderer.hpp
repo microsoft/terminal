@@ -102,8 +102,25 @@ namespace Microsoft::Console::Render
         HDC _hdcMemoryContext;
         bool _isTrueTypeFont;
         UINT _fontCodepage;
-        HFONT _hfont;
-        HFONT _hfontItalic;
+
+        enum class FontType : uint8_t
+        {
+            // Indices for _hfonts array below
+            Default,
+            Bold,
+            Italic,
+            BoldItalic,
+
+            // The number of fonts in _hfonts array below
+            FontCount,
+
+            // Other
+            Undefined = FontCount,
+            Soft
+        };
+
+        std::array<HFONT, static_cast<size_t>(FontType::FontCount)> _hfonts{};
+
         TEXTMETRICW _tmFontMetrics;
         FontResource _softFont;
 
@@ -147,13 +164,6 @@ namespace Microsoft::Console::Render
         COLORREF _lastFg;
         COLORREF _lastBg;
 
-        enum class FontType : uint8_t
-        {
-            Undefined,
-            Default,
-            Italic,
-            Soft
-        };
         FontType _lastFontType;
         bool _fontHasWesternScript = false;
 
@@ -194,8 +204,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
                                                _Out_ FontInfo& Font,
                                                const int iDpi,
-                                               _Inout_ wil::unique_hfont& hFont,
-                                               _Inout_ wil::unique_hfont& hFontItalic) noexcept;
+                                               _Inout_ std::array<wil::unique_hfont, static_cast<size_t>(FontType::FontCount)>& hFonts) noexcept;
 
         til::size _GetFontSize() const;
         bool _IsMinimized() const;
