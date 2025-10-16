@@ -263,7 +263,7 @@ int Viewport::CompareInBounds(const til::point first, const til::point second, b
 
     // Now adjust for horizontal differences
     //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
-    retVal += (first.x - second.x);
+    retVal += til::HugeCoordType{ first.x } - second.x;
 
     // Further notes:
     //   If we already moved behind one row, this will help correct for when first is right of second.
