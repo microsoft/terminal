@@ -110,9 +110,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         lineWidth = std::min(lineWidth, rightMargin + 1);
     }
 
-    // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
-    cursor.SetIsOn(false);
-
     RowWriteState state{
         .text = string,
         .columnLimit = lineWidth,
@@ -120,9 +117,8 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     while (!state.text.empty())
     {
-        if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
+        if (const auto delayedCursorPosition = cursor.GetDelayEOLWrap(); delayedCursorPosition && wrapAtEOL)
         {
-            const auto delayedCursorPosition = cursor.GetDelayedAtPosition();
             cursor.ResetDelayEOLWrap();
             // Only act on a delayed EOL if we didn't move the cursor to a
             // different position from where the EOL was marked.
@@ -191,8 +187,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             }
         }
     }
-
-    _ApplyCursorMovementFlags(cursor);
 
     // Notify terminal and UIA of new text.
     // It's important to do this here instead of in TextBuffer, because here you
@@ -400,22 +394,6 @@ void AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 
     // Finally, attempt to set the adjusted cursor position back into the console.
     cursor.SetPosition(page.Buffer().ClampPositionWithinLine({ col, row }));
-    _ApplyCursorMovementFlags(cursor);
-}
-
-// Routine Description:
-// - Helper method which applies a bunch of flags that are typically set whenever
-//   the cursor is moved. The IsOn flag is set to true, and the Delay flag to false,
-//   to force a blinking cursor to be visible, so the user can immediately see the
-//   new position.
-// Arguments:
-// - cursor - The cursor instance to be updated
-// Return Value:
-// - <none>
-void AdaptDispatch::_ApplyCursorMovementFlags(Cursor& cursor) noexcept
-{
-    cursor.SetDelay(false);
-    cursor.SetIsOn(true);
 }
 
 // Routine Description:
@@ -494,7 +472,7 @@ void AdaptDispatch::CursorSaveState()
     savedCursorState.Column = cursorPosition.x + 1;
     savedCursorState.Row = cursorPosition.y + 1;
     savedCursorState.Page = page.Number();
-    savedCursorState.IsDelayedEOLWrap = page.Cursor().IsDelayedEOLWrap();
+    savedCursorState.IsDelayedEOLWrap = page.Cursor().GetDelayEOLWrap().has_value();
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = page.Attributes();
     savedCursorState.TermOutput = _termOutput;
@@ -1825,7 +1803,7 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        _pages.ActivePage().Cursor().SetBlinkingAllowed(enable);
+        _pages.ActivePage().Cursor().SetIsBlinking(enable);
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         _pages.ActivePage().Cursor().SetIsVisible(enable);
@@ -1990,7 +1968,7 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat));
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        state = mapTemp(_pages.ActivePage().Cursor().IsBlinkingAllowed());
+        state = mapTemp(_pages.ActivePage().Cursor().IsBlinking());
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
@@ -2099,7 +2077,6 @@ void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         cursor.SetXPosition(leftMargin);
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2457,10 +2434,7 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         textBuffer.IncrementCircularBuffer(eraseAttributes);
         _api.NotifyBufferRotation(1);
 
-        // We trigger a scroll rather than a redraw, since that's more efficient,
-        // but we need to turn the cursor off before doing so; otherwise, a ghost
-        // cursor can be left behind in the previous position.
-        cursor.SetIsOn(false);
+        // We trigger a scroll rather than a redraw, since that's more efficient.
         textBuffer.TriggerScroll({ 0, -1 });
 
         // And again, if the bottom margin didn't cover the full page, we
@@ -2472,7 +2446,6 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
     }
 
     cursor.SetPosition(newPosition);
-    _ApplyCursorMovementFlags(cursor);
     return viewportMoved;
 }
 
@@ -2524,7 +2497,6 @@ void AdaptDispatch::ReverseLineFeed()
     {
         // Otherwise we move the cursor up, but not past the top of the page.
         cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.x, cursorPosition.y - 1 }));
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2550,7 +2522,6 @@ void AdaptDispatch::BackIndex()
     else if (cursorPosition.x > 0)
     {
         cursor.SetXPosition(cursorPosition.x - 1);
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2576,7 +2547,6 @@ void AdaptDispatch::ForwardIndex()
     else if (cursorPosition.x < page.Buffer().GetLineWidth(cursorPosition.y) - 1)
     {
         cursor.SetXPosition(cursorPosition.x + 1);
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2639,9 +2609,8 @@ void AdaptDispatch::ForwardTab(const VTInt numTabs)
     // approach (i.e. they don't reset). For us this is a bit messy, since all
     // cursor movement resets the flag automatically, so we need to save the
     // original state here, and potentially reapply it after the move.
-    const auto delayedWrapOriginallySet = cursor.IsDelayedEOLWrap();
+    const auto delayedWrapOriginallySet = cursor.GetDelayEOLWrap().has_value();
     cursor.SetXPosition(column);
-    _ApplyCursorMovementFlags(cursor);
     if (delayedWrapOriginallySet)
     {
         cursor.DelayEOLWrap();
@@ -2678,7 +2647,6 @@ void AdaptDispatch::BackwardsTab(const VTInt numTabs)
     }
 
     cursor.SetXPosition(column);
-    _ApplyCursorMovementFlags(cursor);
 }
 
 //Routine Description:
@@ -3055,7 +3023,7 @@ void AdaptDispatch::HardReset()
     _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
-    _pages.ActivePage().Cursor().SetBlinkingAllowed(true);
+    _pages.ActivePage().Cursor().SetIsBlinking(true);
 
     // Delete all current tab stops and reapply
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
@@ -3240,7 +3208,7 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     auto& cursor = _pages.ActivePage().Cursor();
     cursor.SetType(actualType);
-    cursor.SetBlinkingAllowed(fEnableBlinking);
+    cursor.SetIsBlinking(fEnableBlinking);
 }
 
 // Routine Description:
@@ -4310,7 +4278,7 @@ void AdaptDispatch::_ReportDECSLRMSetting()
 void AdaptDispatch::_ReportDECSCUSRSetting() const
 {
     const auto& cursor = _pages.ActivePage().Cursor();
-    const auto blinking = cursor.IsBlinkingAllowed();
+    const auto blinking = cursor.IsBlinking();
     // A valid response always starts with 1 $ r. This is followed by a
     // number from 1 to 6 representing the cursor style. The ' q' indicates
     // this is a DECSCUSR response.
@@ -4488,7 +4456,7 @@ void AdaptDispatch::_ReportCursorInformation()
     flags += (_modes.test(Mode::Origin) ? 1 : 0);
     flags += (_termOutput.IsSingleShiftPending(2) ? 2 : 0);
     flags += (_termOutput.IsSingleShiftPending(3) ? 4 : 0);
-    flags += (cursor.IsDelayedEOLWrap() ? 8 : 0);
+    flags += (cursor.GetDelayEOLWrap().has_value() ? 8 : 0);
 
     // Character set designations.
     const auto leftSetNumber = _termOutput.GetLeftSetNumber();

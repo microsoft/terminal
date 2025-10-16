@@ -9,12 +9,12 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 UINT SystemConfigurationProvider::GetCaretBlinkTime() noexcept
 {
-    return s_DefaultCaretBlinkTime;
+    return 530; // milliseconds
 }
 
 bool SystemConfigurationProvider::IsCaretBlinkingEnabled() noexcept
 {
-    return s_DefaultIsCaretBlinkingEnabled;
+    return true;
 }
 
 int SystemConfigurationProvider::GetNumberOfMouseButtons() noexcept
@@ -25,23 +25,23 @@ int SystemConfigurationProvider::GetNumberOfMouseButtons() noexcept
     }
     else
     {
-        return s_DefaultNumberOfMouseButtons;
+        return 3;
     }
 }
 
 ULONG SystemConfigurationProvider::GetCursorWidth() noexcept
 {
-    return s_DefaultCursorWidth;
+    return 1;
 }
 
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollLines() noexcept
 {
-    return s_DefaultNumberOfWheelScrollLines;
+    return 3;
 }
 
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollCharacters() noexcept
 {
-    return s_DefaultNumberOfWheelScrollCharacters;
+    return 3;
 }
 
 void SystemConfigurationProvider::GetSettingsFromLink(

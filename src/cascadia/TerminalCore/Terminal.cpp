@@ -784,6 +784,19 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
 // - none
 TerminalInput::OutputType Terminal::FocusChanged(const bool focused)
 {
+    if (_focused == focused)
+    {
+        return {};
+    }
+
+    _focused = focused;
+
+    // Recalculate the IRenderData::GetBlinkInterval() on the next call.
+    if (focused)
+    {
+        _cursorBlinkInterval.reset();
+    }
+
     return _getTerminalInput().HandleFocus(focused);
 }
 
@@ -1021,6 +1034,11 @@ int Terminal::ViewEndIndex() const noexcept
     return _inAltBuffer() ? _altBufferSize.height - 1 : _mutableViewport.BottomInclusive();
 }
 
+bool Terminal::IsFocused() const noexcept
+{
+    return _focused;
+}
+
 RenderSettings& Terminal::GetRenderSettings() noexcept
 {
     _assertLocked();
@@ -1180,31 +1198,6 @@ void Terminal::SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)
 void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept
 {
     _pfnPlayMidiNote.swap(pfn);
-}
-
-void Terminal::BlinkCursor() noexcept
-{
-    if (_selectionMode != SelectionInteractionMode::Mark)
-    {
-        auto& cursor = _activeBuffer().GetCursor();
-        if (cursor.IsBlinkingAllowed() && cursor.IsVisible())
-        {
-            cursor.SetIsOn(!cursor.IsOn());
-        }
-    }
-}
-
-// Method Description:
-// - Sets the cursor to be currently on. On/Off is tracked independently of
-//   cursor visibility (hidden/visible). On/off is controlled by the cursor
-//   blinker. Visibility is usually controlled by the client application. If the
-//   cursor is hidden, then the cursor will remain hidden. If the cursor is
-//   Visible, then it will immediately become visible.
-// Arguments:
-// - isVisible: whether the cursor should be visible
-void Terminal::SetCursorOn(const bool isOn) noexcept
-{
-    _activeBuffer().GetCursor().SetIsOn(isOn);
 }
 
 // Method Description:
@@ -1580,7 +1573,7 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 // - Returns the position of the cursor relative to the visible viewport
 til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 {
-    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto absoluteCursorPosition{ _activeBuffer().GetCursor().GetPosition() };
     const auto mutableViewport{ _GetMutableViewport() };
     const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
     return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };

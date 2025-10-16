@@ -1759,6 +1759,7 @@ UINTs
 uld
 uldash
 uldb
+ULONGLONG
 ulwave
 Unadvise
 unattend
