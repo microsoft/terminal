@@ -44,6 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
         Editor::ExtensionsViewModel ExtensionsVM() const noexcept { return _extensionsVM; }
+        Editor::ActionsViewModel ActionsVM() const noexcept { return _actionsVM; }
 
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::Collections::IVectorView<Model::SettingsLoadWarnings>> ShowLoadWarningsDialog;
@@ -78,11 +79,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _MoveXamlParsedNavItemsIntoItemSource();
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ActionsViewModel _actionsVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _actionsViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ntmViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _extensionsViewModelChangedRevoker;
     };
