@@ -2388,3 +2388,13 @@ const FontInfoDesired& SCREEN_INFORMATION::GetDesiredFont() const noexcept
 {
     return _desiredFont;
 }
+
+void SCREEN_INFORMATION::SetSnapOnInputEnabled(const bool enabled) noexcept
+{
+    _snapOnInputEnabled = enabled;
+}
+
+bool SCREEN_INFORMATION::IsSnapOnInputEnabled() const noexcept
+{
+    return _snapOnInputEnabled;
+}
