@@ -150,6 +150,7 @@ namespace Microsoft.Terminal.Control
         void SetReadOnlyMode(Boolean readOnlyState);
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
+        Boolean ForceCursorVisible;
         void ResumeRendering();
 
         SearchResults Search(SearchRequest request);

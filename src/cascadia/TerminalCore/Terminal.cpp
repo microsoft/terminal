@@ -1034,6 +1034,11 @@ int Terminal::ViewEndIndex() const noexcept
     return _inAltBuffer() ? _altBufferSize.height - 1 : _mutableViewport.BottomInclusive();
 }
 
+bool Terminal::IsFocused() const noexcept
+{
+    return _focused;
+}
+
 RenderSettings& Terminal::GetRenderSettings() noexcept
 {
     _assertLocked();

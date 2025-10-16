@@ -4063,18 +4063,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ContextMenuSelectOutput();
     }
 
-    // Should the text cursor be displayed, even when the control isn't focused?
-    // n.b. "blur" is the opposite of "focus".
-    bool TermControl::_displayCursorWhileBlurred() const noexcept
-    {
-        return CursorVisibility() == Control::CursorDisplayState::Shown;
-    }
     Control::CursorDisplayState TermControl::CursorVisibility() const noexcept
     {
         return _cursorVisibility;
     }
+
     void TermControl::CursorVisibility(Control::CursorDisplayState cursorVisibility)
     {
         _cursorVisibility = cursorVisibility;
+
+        // NOTE: This code is specific to broadcast input. It's never been well integrated.
+        // Ideally TermControl should not tie focus to XAML in the first place,
+        // allowing us to truly say "yeah these two controls both have focus".
+        if (_core)
+        {
+            _core.ForceCursorVisible(cursorVisibility == CursorDisplayState::Shown);
+        }
     }
 }

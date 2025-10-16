@@ -1493,7 +1493,7 @@ void Renderer::_updateCursorInfo()
     else if (!IsTimerRunning(_cursorBlinker))
     {
         const auto actual = GetTimerInterval(_cursorBlinker);
-        auto expected = _pData->GetBlinkInterval();
+        const auto expected = _pData->GetBlinkInterval();
 
         if (expected > TimerDuration::zero() && expected < TimerDuration::max())
         {

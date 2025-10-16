@@ -114,6 +114,7 @@ public:
 
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
+    bool IsFocused() const noexcept;
 
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;

@@ -2434,9 +2434,7 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         textBuffer.IncrementCircularBuffer(eraseAttributes);
         _api.NotifyBufferRotation(1);
 
-        // We trigger a scroll rather than a redraw, since that's more efficient,
-        // but we need to turn the cursor off before doing so; otherwise, a ghost
-        // cursor can be left behind in the previous position.
+        // We trigger a scroll rather than a redraw, since that's more efficient.
         textBuffer.TriggerScroll({ 0, -1 });
 
         // And again, if the bottom margin didn't cover the full page, we

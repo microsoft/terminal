@@ -1969,6 +1969,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetViewportRelativeCursorPosition().to_core_point();
     }
 
+    bool ControlCore::ForceCursorVisible() const noexcept
+    {
+        return _forceCursorVisible;
+    }
+
+    void ControlCore::ForceCursorVisible(bool force)
+    {
+        const auto lock = _terminal->LockForWriting();
+        _renderer->AllowCursorVisibility(Render::InhibitionSource::Host, _terminal->IsFocused() || force);
+        _forceCursorVisible = force;
+    }
+
     // This one's really pushing the boundary of what counts as "encapsulation".
     // It really belongs in the "Interactivity" layer, which doesn't yet exist.
     // There's so many accesses to the selection in the Core though, that I just
@@ -2437,7 +2449,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalInput::OutputType out;
         {
             const auto lock = _terminal->LockForWriting();
-            _renderer->AllowCursorVisibility(Render::InhibitionSource::Host, focused);
+            _renderer->AllowCursorVisibility(Render::InhibitionSource::Host, focused || _forceCursorVisible);
             out = _terminal->FocusChanged(focused);
         }
         if (out && !out->empty())
