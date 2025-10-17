@@ -156,10 +156,13 @@ void TextBuffer::_decommit(til::CoordType rowsToKeep) noexcept
 
         rowsToKeep = std::min(rowsToKeep, _height);
 
+        // +1 for the scratchpad row at offset 0.
+        const auto rows = gsl::narrow_cast<size_t>(rowsToKeep) + 1;
+
         // Offset in bytes to the first row that we were asked to destroy.
         // We must ensure that the offset is not past the end of the current _commitWatermark,
         // since we don't want to finish with a watermark that's somehow larger than what we started with.
-        const auto byteOffset = std::min(commitBytes, rowsToKeep * _bufferRowStride);
+        const auto byteOffset = std::min(commitBytes, rows * _bufferRowStride);
         newWatermark = _buffer.get() + byteOffset;
 
         // Since the last row we were asked to keep may reside in the middle
