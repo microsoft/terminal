@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"qps-PLOCA",
         L"qps-PLOCM",
         L"ru",
+        L"sr-Cyrl-RS",
         L"zh-Hans",
         L"zh-Hant",
     };
@@ -439,3 +440,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"StartOnUserLoginConfigurable", L"StartOnUserLoginStatefulHelpText", L"StartOnUserLogin");
     }
 }
+
