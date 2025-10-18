@@ -486,7 +486,17 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
             if (msg.message == WM_KEYDOWN)
             {
-                IslandWindow::HideCursor();
+                const bool modifierKey = (msg.wParam == VK_SHIFT ||
+                                          msg.wParam == VK_CONTROL ||
+                                          msg.wParam == VK_MENU ||
+                                          msg.wParam == VK_LWIN ||
+                                          msg.wParam == VK_RWIN);
+
+                // Hide the cursor only when the key pressed is not a modifier key.
+                if (!modifierKey)
+                {
+                    IslandWindow::HideCursor();
+                }
             }
         }
 
