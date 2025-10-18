@@ -649,7 +649,7 @@
     <value>Откуцајте име команде...</value>
   </data>
   <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
-    <value>No matching commands</value>
+    <value>Ниједна команда се не подудара</value>
   </data>
   <data name="SuggestionsControlName" xml:space="preserve">
     <value>Мени предлога</value>
@@ -677,7 +677,7 @@
     <value>Средње љубичастоцрвена</value>
   </data>
   <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Доџер-плавае</value>
+    <value>Доџер-плава</value>
   </data>
   <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Лимета-зелена</value>
@@ -792,7 +792,7 @@
     <value>Отвори нови прозор са наведеним почетним директоријумом</value>
   </data>
   <data name="DropPathTabSplit.Text" xml:space="preserve">
-    <value>Split the window and start in given directory</value>
+    <value>Подели прозор и покрени у наведеном директоријуму</value>
   </data>
   <data name="ExportTabText" xml:space="preserve">
     <value>Извези текст</value>
