@@ -140,7 +140,8 @@ unsigned int Terminal::GetInputCodePage() const noexcept
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    if (_clipboardOperationsAllowed)
+    // Only allow VT clipboard writes when the terminal has focus
+    if (_clipboardOperationsAllowed && _isFocused)
     {
         _pfnCopyToClipboard(content);
     }
