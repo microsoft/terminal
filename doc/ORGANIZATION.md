@@ -61,67 +61,47 @@
 * Generally related to handling input/output data and sometimes intertwined with the actual service calls
 	* `_output.cpp`
 	* `_stream.cpp`
-* Handles copy/paste/etc.
-	* `clipboard.cpp`
 * Handles the command prompt line as you see in CMD.exe (known as the processed input line… most other shells handle this themselves with raw input and don’t use ours. This is a legacy of bad architectural design, putting stuff in conhost not in CMD)
 	* `cmdline.cpp`
 * Contains the global state for the entire console application
 	* `consoleInformation.cpp`
 * Stuff related to the low-level server communication over our protocol with the driver
-	* `Csrutil.cpp`
-	* `Srvinit.cpp`
-	* `Handle.cpp`
+	* `srvinit.cpp`
+	* `handle.cpp`
 * Routines related to startup of the application
-	* `Srvinit.cpp`
+	* `srvinit.cpp`
 * Routines related to the API calls (and the servicing thereof, muxes a bit with the server protocol)
-	* `Directio.cpp`
-	* `Getset.cpp`
-	* `Srvinit.cpp`
+	* `directio.cpp`
+	* `getset.cpp`
+	* `srvinit.cpp`
 * Extra stuff strapped onto the buffer to enable CJK languages
-	* `Dbcs.cpp`
-* Attempted class-ification of existing Cursor structures to take them out of Screen Info/Text Info
-	* `Cursor.cpp`
-* Related to searching through the back buffer of the console (the output scroll buffer as defined in screeninfo/textinfo)
-	* `Find.cpp`
+	* `dbcs.cpp`
 * Contains global state data
-	* `Globals.cpp`
-* Attempted class-ification of existing Icon manipulation to take them out of ConsoleInformation/Settings
-	* `Icon.cpp`
+	* `globals.cpp`
 * Contains all keyboard/mouse input handling, capture of keys, conversion of keys, and some manipulation of the input buffer
-	* `Input.cpp`
-	* `Inputkeyinfo.cpp`
-	* `Inputreadhandledata.cpp`
-* Main entry point used ONLY by the OS to send a pre-configured driver handle to conhostv2.dll
-	* `Main.cpp`
+	* `input.cpp`
+	* `inputkeyinfo.cpp`
+	* `inputReadHandleData.cpp`
 * Assorted utilities and stuff
-	* `Misc.cpp` (left for us by previous eras of random console devs)
-	* `Util.cpp` (created in our era)
-* Custom zeroing and non-throwing allocator
-	* `Newdelete.cpp`
+	* `misc.cpp` (left for us by previous eras of random console devs)
+	* `utils.cpp` (created in our era)
 * Related to inserting text into the TextInfo buffer
-	* `Output.cpp`
-	* `Stream.cpp`
+	* `output.cpp`
+	* `stream.cpp`
 * Connects to interfaces in the PropsLib to manipulate persistent settings state
-	* `Registry.cpp`
+	* `registry.cpp`
 * Connects to our relatively recently extracted renderer LIB to give it data about console state and user prefs
 	* `renderData.cpp`
 	* `renderFontDefaults.cpp`
 * Maintains most of the information about what we should present inside the window on the screen (sizes, dimensions, also holds a text buffer instance and a cursor instance and a selection instance)
 	* `screenInfo.cpp`
 * Handles some aspects of scrolling with the mouse and keyboard
-	* `Scrolling.cpp`
+	* `scrolling.cpp`
 * Handles the click-and-drag highlighting of text on the screen to select (or the keyboard-based Mark mode selection where you can enter the mode and select around). Often calls clipboard when done
-	* `Selection.cpp`
+	* `selection.cpp`
 	* `selectionInput.cpp`
 	* `selectionState.cpp`
 * Handles all user preferences and state. Was extracted from consoleInformation and CI subclasses it still (because it was hard to break the association out)
-	* `Settings.cpp`
+	* `settings.cpp`
 * Good ol’ Windows 10 telemetry pipeline & ETW events as debugging aids (they use the same channel with a different flag)
-	* `Telemetry.cpp`
-	* `Tracing.cpp`
-* Private calls into the Windows Window Manager to perform privileged actions related to the console process (working to eliminate) or for High DPI stuff (also working to eliminate)
-	* `Userprivapi.cpp`
-	* `Windowdpiapi.cpp`
-* Window resizing/layout/management/window messaging loops and all that other stuff that has us interact with Windows to create a visual display surface and control the user interaction entry point
-	* `Window.cpp`
-	* `Windowproc.cpp`
+	* `tracing.cpp`
