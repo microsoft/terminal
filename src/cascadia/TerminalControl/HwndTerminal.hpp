@@ -49,7 +49,6 @@ __declspec(dllexport) HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ v
 __declspec(dllexport) HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-__declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
 __declspec(dllexport) const wchar_t* _stdcall TerminalGetSelection(void* terminal);
 __declspec(dllexport) bool _stdcall TerminalIsSelectionActive(void* terminal);
 __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
@@ -57,10 +56,7 @@ __declspec(dllexport) void _stdcall TerminalSetTheme(void* terminal, TerminalThe
 __declspec(dllexport) void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
 __declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
 __declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD flags, WORD scanCode);
-__declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
-__declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
-__declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
-__declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
+__declspec(dllexport) void _stdcall TerminalSetFocused(void* terminal, bool focused);
 };
 
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
@@ -91,9 +87,9 @@ private:
         TsfDataProvider(HwndTerminal* t) :
             _terminal(t) {}
         virtual ~TsfDataProvider() = default;
-        STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept override;
-        ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept override;
-        ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept override;
+        STDMETHODIMP QueryInterface(REFIID, void**) noexcept override;
+        ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+        ULONG STDMETHODCALLTYPE Release() noexcept override;
         HWND GetHwnd() override;
         RECT GetViewport() override;
         RECT GetCursorPosition() override;
@@ -132,16 +128,12 @@ private:
     friend HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
     friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-    friend void _stdcall TerminalClearSelection(void* terminal);
     friend const wchar_t* _stdcall TerminalGetSelection(void* terminal);
     friend bool _stdcall TerminalIsSelectionActive(void* terminal);
     friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
     friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags);
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, til::CoordType fontSize, int newDpi);
-    friend void _stdcall TerminalBlinkCursor(void* terminal);
-    friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
-    friend void _stdcall TerminalSetFocus(void* terminal);
-    friend void _stdcall TerminalKillFocus(void* terminal);
+    friend void _stdcall TerminalSetFocused(void* terminal, bool focused);
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring_view text) noexcept;
@@ -149,7 +141,7 @@ private:
     HRESULT _CopyToSystemClipboard(wil::zstring_view stringToCopy, LPCWSTR lpszFormat) const;
     void _PasteTextFromClipboard() noexcept;
 
-    void _FocusTSF() noexcept;
+    void _setFocused(bool focused) noexcept;
 
     const unsigned int _NumberOfClicks(til::point clickPos, std::chrono::steady_clock::time_point clickTime) noexcept;
     HRESULT _StartSelection(LPARAM lParam) noexcept;

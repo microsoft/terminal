@@ -27,17 +27,17 @@ struct TsfDataProvider : Microsoft::Console::TSF::IDataProvider
 {
     virtual ~TsfDataProvider() = default;
 
-    STDMETHODIMP TsfDataProvider::QueryInterface(REFIID, void**) noexcept override
+    STDMETHODIMP QueryInterface(REFIID, void**) noexcept override
     {
         return E_NOTIMPL;
     }
 
-    ULONG STDMETHODCALLTYPE TsfDataProvider::AddRef() noexcept override
+    ULONG STDMETHODCALLTYPE AddRef() noexcept override
     {
         return 1;
     }
 
-    ULONG STDMETHODCALLTYPE TsfDataProvider::Release() noexcept override
+    ULONG STDMETHODCALLTYPE Release() noexcept override
     {
         return 1;
     }
@@ -287,12 +287,12 @@ static constexpr TsfDataProvider s_tsfDataProvider;
     case WM_SETFOCUS:
     {
         gci.ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
-
         gci.Flags |= CONSOLE_HAS_FOCUS;
 
-        gci.GetCursorBlinker().FocusStart();
-
-        HandleFocusEvent(TRUE);
+        if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
+        {
+            renderer->AllowCursorVisibility(Render::InhibitionSource::Host, true);
+        }
 
         if (!g.tsf)
         {
@@ -306,21 +306,21 @@ static constexpr TsfDataProvider s_tsfDataProvider;
             LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
         }
 
+        HandleFocusEvent(TRUE);
         break;
     }
 
     case WM_KILLFOCUS:
     {
         gci.ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
-
         gci.Flags &= ~CONSOLE_HAS_FOCUS;
 
-        // turn it off when we lose focus.
-        gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(false);
-        gci.GetCursorBlinker().FocusEnd();
+        if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
+        {
+            renderer->AllowCursorVisibility(Render::InhibitionSource::Host, false);
+        }
 
         HandleFocusEvent(FALSE);
-
         break;
     }
 
@@ -364,9 +364,9 @@ static constexpr TsfDataProvider s_tsfDataProvider;
     case WM_SETTINGCHANGE:
     {
         LOG_IF_FAILED(Microsoft::Console::Internal::Theming::TrySetDarkMode(hWnd));
-        gci.GetCursorBlinker().SettingsChanged();
-    }
+        gci.renderData.UpdateSystemMetrics();
         __fallthrough;
+    }
 
     case WM_DISPLAYCHANGE:
     {
