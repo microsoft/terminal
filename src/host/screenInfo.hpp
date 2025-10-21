@@ -193,6 +193,9 @@ public:
 
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
+    void SetSnapOnInputEnabled(const bool enabled) noexcept;
+    [[nodiscard]] bool IsSnapOnInputEnabled() const noexcept;
+
     void SetCursorDBMode(const bool DoubleCursor);
     [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
 
@@ -282,6 +285,8 @@ private:
     til::CoordType _virtualBottom;
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
+
+    bool _snapOnInputEnabled{ false };
 
     static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 
