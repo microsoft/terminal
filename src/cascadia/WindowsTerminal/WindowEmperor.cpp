@@ -194,6 +194,22 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
     return {};
 }
 
+static constexpr bool IsInputKey(WORD vkey) noexcept
+{
+    return vkey != VK_CONTROL &&
+           vkey != VK_LCONTROL &&
+           vkey != VK_RCONTROL &&
+           vkey != VK_MENU &&
+           vkey != VK_LMENU &&
+           vkey != VK_RMENU &&
+           vkey != VK_SHIFT &&
+           vkey != VK_LSHIFT &&
+           vkey != VK_RSHIFT &&
+           vkey != VK_LWIN &&
+           vkey != VK_RWIN &&
+           vkey != VK_SNAPSHOT;
+}
+
 HWND WindowEmperor::GetMainWindow() const noexcept
 {
     _assertIsMainThread();
@@ -484,7 +500,13 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
             if (msg.message == WM_KEYDOWN)
             {
-                IslandWindow::HideCursor();
+                const auto vkey = static_cast<WORD>(msg.wParam);
+
+                // Hide the cursor only when the key pressed is an input key (ignore modifier keys).
+                if (IsInputKey(vkey))
+                {
+                    IslandWindow::HideCursor();
+                }
             }
         }
 
