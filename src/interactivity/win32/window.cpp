@@ -59,6 +59,10 @@ Window::Window() :
     ZeroMemory((void*)&_rcClientLast, sizeof(_rcClientLast));
     ZeroMemory((void*)&_rcWindowBeforeFullscreen, sizeof(_rcWindowBeforeFullscreen));
     ZeroMemory((void*)&_rcWorkBeforeFullscreen, sizeof(_rcWorkBeforeFullscreen));
+
+    ZeroMemory((void*)&_clientBeforeFullscreen, sizeof(_clientBeforeFullscreen));
+    _viewportCellsBeforeFullscreen = { 0, 0 };
+    _bufferCellsBeforeFullscreen = { 0, 0 };
 }
 
 Window::~Window()
@@ -1106,6 +1110,10 @@ void Window::_SetFullscreenPosition(const RECT& rcMonitor, const RECT& rcWork)
     _fWasMaximizedBeforeFullscreen = IsZoomed(GetWindowHandle());
     _rcWorkBeforeFullscreen = rcWork;
 
+    GetClientRect(GetWindowHandle(), &_clientBeforeFullscreen);
+    _viewportCellsBeforeFullscreen = _GetViewportInCharacters();
+    _bufferCellsBeforeFullscreen = _GetBufferInCharacters();
+
     SetWindowPos(GetWindowHandle(),
                  HWND_TOP,
                  rcMonitor.left,
@@ -1165,6 +1173,50 @@ void Window::_RestoreFullscreenPosition(const RECT& rcWork)
     {
         OffsetRect(&rcRestore, 0, rcWork.top - rcRestore.top);
     }
+
+    // Get the width of scrollbars
+    auto scrollbarWidth = GetSystemMetrics(SM_CXVSCROLL); // vertical scrollbar width
+    auto scrollbarHeight = GetSystemMetrics(SM_CYHSCROLL); // horizontal scrollbar height
+
+    // Calculate new window dimensions that compensate for scrollbars
+    auto newWidth = rcRestore.right - rcRestore.left + scrollbarWidth;
+    auto newHeight = rcRestore.bottom - rcRestore.top + scrollbarHeight;
+
+    // Desired client size is what we had before fullscreen.
+    int desiredClientW = _clientBeforeFullscreen.right - _clientBeforeFullscreen.left;
+    int desiredClientH = _clientBeforeFullscreen.bottom - _clientBeforeFullscreen.top;
+
+    // Compare current buffer vs viewport to know if scrollbars are needed.
+    const COORD curBuffer = _GetBufferInCharacters();
+    const COORD curViewport = _GetViewportInCharacters();
+
+    // If buffer exceeds viewport, Windows will show scrollbars.
+    // We grow the *outer* window so the client stays the same visible size.
+    bool needVScroll = curBuffer.X > curViewport.X; // vertical scrollbar (for wider buffer)
+    bool needHScroll = curBuffer.Y > curViewport.Y; // horizontal scrollbar (for taller buffer)
+
+    // Use per-monitor DPI-aware metrics if available.
+    UINT dpi = _dpiBeforeFullscreen; // you already track this
+    int vScrollW = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+    int hScrollH = GetSystemMetricsForDpi(SM_CYHSCROLL, dpi);
+
+    if (needVScroll)
+        desiredClientW += vScrollW;
+    if (needHScroll)
+        desiredClientH += hScrollH;
+
+    // Convert desired *client* size → *window* (outer) size for current styles/DPI.
+    RECT outer = { 0, 0, desiredClientW, desiredClientH };
+    DWORD style = static_cast<DWORD>(GetWindowLongW(GetWindowHandle(), GWL_STYLE));
+    DWORD exstyle = static_cast<DWORD>(GetWindowLongW(GetWindowHandle(), GWL_EXSTYLE));
+    AdjustWindowRectExForDpi(&outer, style, FALSE, exstyle, dpi);
+
+    int targetW = outer.right - outer.left;
+    int targetH = outer.bottom - outer.top;
+
+    // Apply the computed size to your restored position.
+    rcRestore.right = rcRestore.left + targetW;
+    rcRestore.bottom = rcRestore.top + targetH;
 
     // Show the window at the computed position.
     SetWindowPos(GetWindowHandle(),
