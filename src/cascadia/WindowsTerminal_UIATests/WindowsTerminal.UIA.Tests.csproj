@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{F19DACD5-0C6E-40DC-B6E4-767A3200542C}</ProjectGuid>
@@ -50,14 +50,56 @@
     <Reference Include="appium-dotnet-driver, Version=3.0.0.2, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>$(AppiumWebDriverPathRoot)\lib\net45\appium-dotnet-driver.dll</HintPath>
     </Reference>
+    <Reference Include="Axe.Windows.Actions, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.Actions.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.Automation, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.Automation.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.Core, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.Desktop, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.Desktop.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.Rules, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.Rules.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.RuleSelection, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.RuleSelection.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.SystemAbstractions, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.SystemAbstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.Telemetry, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.Telemetry.dll</HintPath>
+    </Reference>
+    <Reference Include="Axe.Windows.Win32, Version=2.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Axe.Windows.2.1.3\lib\netstandard20\Axe.Windows.Win32.dll</HintPath>
+    </Reference>
     <Reference Include="Castle.Core, Version=4.1.1.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <HintPath>$(CastleCorePathRoot)\lib\net45\Castle.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Win32.Registry, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Microsoft.Win32.Registry.5.0.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>$(NewtonsoftJSONPathRoot)\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Common, Version=7.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\System.Drawing.Common.7.0.0\lib\net462\System.Drawing.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Packaging, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\System.IO.Packaging.7.0.0\lib\net462\System.IO.Packaging.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.AccessControl, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\System.Security.AccessControl.5.0.0\lib\net461\System.Security.AccessControl.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Principal.Windows, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\System.Security.Principal.Windows.5.0.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
+    </Reference>
     <Reference Include="TE.Managed, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>$(TAEFPackagePathRoot)\lib\net452\TE.Managed.dll</HintPath>
     </Reference>
@@ -93,6 +135,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="AccessibilityTests.cs" />
     <Compile Include="Common\Globals.cs" />
     <Compile Include="Common\NativeMethods.cs" />
     <Compile Include="Common\PgoManager.cs" />
@@ -102,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
