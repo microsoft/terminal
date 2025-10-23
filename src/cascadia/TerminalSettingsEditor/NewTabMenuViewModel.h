@@ -49,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::Foundation::Collections::IObservableVector<Model::Profile> AvailableProfiles() const { return _Settings.AllProfiles(); }
         Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> FolderTree() const;
+        Windows::Foundation::Collections::IObservableVector<Editor::FolderEntryViewModel> FolderTreeFlatList() const;
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> CurrentView() const;
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderEntryViewModel, CurrentFolder, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderTreeViewEntry, CurrentFolderTreeViewSelectedItem, nullptr);

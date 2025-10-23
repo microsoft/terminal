@@ -63,7 +63,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     MainPage::MainPage(const CascadiaSettings& settings) :
         _settingsSource{ settings },
-        _settingsClone{ settings.Copy() }
+        _settingsClone{ settings.Copy() },
+        _profileVMs{ single_threaded_observable_vector<Editor::ProfileViewModel>() }
     {
         InitializeComponent();
         _UpdateBackgroundForMica();
@@ -152,6 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
         _breadcrumbs = single_threaded_observable_vector<IInspectable>();
+        _UpdateSearchIndex();
     }
 
     // Method Description:
@@ -266,6 +268,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& firstItem{ _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
         _Navigate(unbox_value<hstring>(firstItem.Tag()), BreadcrumbSubPage::None);
+
+        _UpdateSearchIndex();
     }
 
     void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
@@ -465,7 +469,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (clickedItemTag == launchTag)
         {
-            _newTabMenuPageVM.CurrentFolder(nullptr);
             contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<NavigateToLaunchArgs>(winrt::make<LaunchViewModel>(_settingsClone)));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Launch/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
@@ -870,6 +873,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Add an event handler for when the user wants to delete a profile.
         profile.DeleteProfileRequested({ this, &MainPage::_DeleteProfile });
 
+        // Register the VM so that it appears in the search index
+        _profileVMs.Append(profile);
+
         return profileNavItem;
     }
 
@@ -894,6 +900,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _menuItemSource.IndexOf(selectedItem, index);
             _menuItemSource.RemoveAt(index);
+
+            // Remove it from the list of VMs
+            auto profileVM = selectedItem.as<MUX::Controls::NavigationViewItem>().Tag().as<Editor::ProfileViewModel>();
+            uint32_t vmIndex;
+            if (_menuItemSource.IndexOf(profileVM, vmIndex))
+            {
+                _profileVMs.RemoveAt(vmIndex); 
+            }
 
             // navigate to the profile next to this one
             const auto newSelectedItem{ _menuItemSource.GetAt(index < _menuItemSource.Size() - 1 ? index : index - 1) };
@@ -1008,4 +1022,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::_UpdateSearchIndex()
+    {
+        _searchIndex = {};
+
+        const auto buildIndex = LoadBuildTimeIndex();
+        _searchIndex.reserve(buildIndex.size());
+        _searchIndex.assign(buildIndex.begin(), buildIndex.end());
+
+        // Load profiles
+        for (const auto& profile : _profileVMs)
+        {
+            const auto& profileIndex = LoadProfileIndex(profile);
+            _searchIndex.reserve(_searchIndex.size() + profileIndex.size());
+            _searchIndex.insert(_searchIndex.end(), profileIndex.begin(), profileIndex.end());
+        }
+
+        // Load new tab menu
+        for (const auto& folderVM : get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList())
+        {
+            const auto& folderIndex = LoadNTMFolderIndex(folderVM);
+            _searchIndex.reserve(_searchIndex.size() + folderIndex.size());
+            _searchIndex.insert(_searchIndex.end(), folderIndex.begin(), folderIndex.end());
+        }
+
+        // Load extensions
+        // TODO CARLOS: annoying that we have to load the extensions to build the index. Can we defer this until the user searches?
+        get_self<ExtensionsViewModel>(_extensionsVM)->LazyLoadExtensions();
+        for (const auto& extPkg : _extensionsVM.ExtensionPackages())
+        {
+            const auto& extPkgIndex = LoadExtensionIndex(extPkg);
+            _searchIndex.reserve(_searchIndex.size() + extPkgIndex.size());
+            _searchIndex.insert(_searchIndex.end(), extPkgIndex.begin(), extPkgIndex.end());
+        }
+
+        // Load color schemes
+        for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
+        {
+            const auto& schemeIndex = LoadColorSchemeIndex(schemeVM.Name());
+            _searchIndex.reserve(_searchIndex.size() + schemeIndex.size());
+            _searchIndex.insert(_searchIndex.end(), schemeIndex.begin(), schemeIndex.end());
+        }
+
+        // Load actions
+        // TODO CARLOS: postpone until actions page is updated
+    }
 }

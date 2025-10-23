@@ -6,6 +6,7 @@
 #include "MainPage.g.h"
 #include "Breadcrumb.g.h"
 #include "Utils.h"
+#include "GeneratedSettingsIndex.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -76,10 +77,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _UpdateBackgroundForMica();
         void _MoveXamlParsedNavItemsIntoItemSource();
+        void _UpdateSearchIndex();
 
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel> _profileVMs{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
+
+        std::vector<IndexEntry> _searchIndex;
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
