@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//property of shashwat
 
 #include "pch.h"
 #include "WindowEmperor.h"
