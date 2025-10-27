@@ -1075,7 +1075,7 @@ void WindowEmperor::_finalizeSessionPersistence() const
 
     const auto state = ApplicationState::SharedInstance();
 
-    _persistState(state, true);
+    _persistState(state, _app.Logic().Settings().GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedLayoutAndContent);
 
     if (_needsPersistenceCleanup)
     {

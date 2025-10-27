@@ -40,7 +40,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum FirstWindowPreference
     {
         DefaultProfile,
-        PersistedWindowLayout,
+        PersistedLayout,
+        PersistedLayoutAndContent,
     };
 
     enum NewTabPosition
