@@ -202,7 +202,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     // We just need to detect if the legacy value was used and mark it for fixup, if so.
     if (const auto firstWindowPreferenceValue = json[FirstWindowPreferenceKey.data()])
     {
-        _fixupsAppliedDuringLoad = _fixupsAppliedDuringLoad || firstWindowPreferenceValue == LegacyPersistedWindowLayout.data();
+        _fixupsAppliedDuringLoad |= firstWindowPreferenceValue == LegacyPersistedWindowLayout.data();
     }
 
     // Remove settings included in userDefaults
