@@ -26,6 +26,7 @@
 
 #include <LibraryResources.h>
 #include <dwmapi.h>
+#include <fmt/compile.h>
 
 namespace winrt
 {
@@ -463,31 +464,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
-    void MainPage::_Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage)
+    void MainPage::_Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage, hstring elementToFocus)
     {
         _PreNavigateHelper();
 
         if (clickedItemTag == launchTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<NavigateToLaunchArgs>(winrt::make<LaunchViewModel>(_settingsClone)));
+            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<NavigateToLaunchArgs>(winrt::make<LaunchViewModel>(_settingsClone), elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Launch/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == interactionTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToInteractionArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings())));
+            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToInteractionArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()), elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == renderingTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<NavigateToRenderingArgs>(winrt::make<RenderingViewModel>(_settingsClone)));
+            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<NavigateToRenderingArgs>(winrt::make<RenderingViewModel>(_settingsClone), elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == compatibilityTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<NavigateToCompatibilityArgs>(winrt::make<CompatibilityViewModel>(_settingsClone)));
+            contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<NavigateToCompatibilityArgs>(winrt::make<CompatibilityViewModel>(_settingsClone), elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
@@ -508,7 +509,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else
             {
                 // Navigate to the NewTabMenu page
-                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToNewTabMenuArgs>(_newTabMenuPageVM));
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToNewTabMenuArgs>(_newTabMenuPageVM, elementToFocus));
                 const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
                 _breadcrumbs.Append(crumb);
             }
@@ -523,7 +524,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else
             {
-                contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToExtensionsArgs>(_extensionsVM));
+                contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToExtensionsArgs>(_extensionsVM, elementToFocus));
                 const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
                 _breadcrumbs.Append(crumb);
             }
@@ -536,7 +537,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             _SetupProfileEventHandling(profileVM);
 
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profileVM, *this));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profileVM, *this, elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
 
@@ -558,7 +559,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToColorSchemesArgs>(_colorSchemesPageVM));
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToColorSchemesArgs>(_colorSchemesPageVM, elementToFocus));
 
             if (subPage == BreadcrumbSubPage::ColorSchemes_Edit)
             {
@@ -567,13 +568,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToGlobalAppearanceArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings())));
+            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToGlobalAppearanceArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
         }
         else if (clickedItemTag == addProfileTag)
         {
-            auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
+            auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone, elementToFocus) };
             addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
             contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_AddNewProfile/Content"), BreadcrumbSubPage::None);
@@ -586,7 +587,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - NOTE: this does not update the selected item.
     // Arguments:
     // - profile - the profile object we are getting a view of
-    void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage)
+    void MainPage::_Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, hstring elementToFocus)
     {
         _PreNavigateHelper();
 
@@ -594,14 +595,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (profile.Orphaned())
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this, elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
             profile.CurrentPage(ProfileSubPage::Base);
             return;
         }
 
-        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this, elementToFocus));
         const auto crumb = winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
 
@@ -625,11 +626,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::_Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage)
+    void MainPage::_Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage, hstring elementToFocus)
     {
         _PreNavigateHelper();
 
-        contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToNewTabMenuArgs>(_newTabMenuPageVM));
+        contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToNewTabMenuArgs>(_newTabMenuPageVM, elementToFocus));
         const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
 
@@ -658,11 +659,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::_Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage)
+    void MainPage::_Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage, hstring elementToFocus)
     {
         _PreNavigateHelper();
 
-        contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToExtensionsArgs>(_extensionsVM));
+        contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToExtensionsArgs>(_extensionsVM, elementToFocus));
         const auto crumb = winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
 
@@ -906,7 +907,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             uint32_t vmIndex;
             if (_menuItemSource.IndexOf(profileVM, vmIndex))
             {
-                _profileVMs.RemoveAt(vmIndex); 
+                _profileVMs.RemoveAt(vmIndex);
             }
 
             // navigate to the profile next to this one
@@ -1022,13 +1023,145 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    safe_void_coroutine MainPage::SettingsSearchBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
+    {
+        // TODO CARLOS: debug this function. May still need debounce?
+        if (args.Reason() != AutoSuggestionBoxTextChangeReason::UserInput)
+        {
+            // Only respond to user input, not programmatic text changes
+            co_return;
+        }
+
+        // remove leading spaces
+        std::wstring queryW{ sender.Text() };
+        const auto firstNonSpace{ queryW.find_first_not_of(L' ') };
+        if (firstNonSpace == std::wstring::npos)
+        {
+            // only spaces
+            const auto& searchBox = SettingsSearchBox();
+            searchBox.ItemsSource(nullptr);
+            searchBox.IsSuggestionListOpen(false);
+            co_return;
+        }
+
+        const hstring sanitizedQuery{ queryW.substr(firstNonSpace) };
+        if (sanitizedQuery.empty())
+        {
+            // empty query
+            const auto& searchBox = SettingsSearchBox();
+            searchBox.ItemsSource(nullptr);
+            searchBox.IsSuggestionListOpen(false);
+            co_return;
+        }
+
+        // search the index on the background thread
+        co_await winrt::resume_background();
+        const auto searchGeneration = _QuerySearchIndex(sanitizedQuery);
+
+        // convert and display results on the foreground thread
+        co_await winrt::resume_foreground(Dispatcher());
+        if (searchGeneration != _filteredSearchIndex.generation())
+        {
+            // search index was updated while we were searching, discard results
+            co_return;
+        }
+
+        // must be IInspectable to be used as ItemsSource
+        std::vector<IInspectable> results;
+        if (_filteredSearchIndex->empty())
+        {
+            // Explicitly show "no results"
+
+            // TODO CARLOS: use RS_switchable_fmt from ActionArgs.cpp
+            const hstring noResultsText{ fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), sanitizedQuery) };
+
+            results.reserve(1);
+            results.push_back(winrt::make<FilteredSearchResult>(noResultsText));
+        }
+        else
+        {
+            for (const auto* indexEntry : *_filteredSearchIndex)
+            {
+                results.push_back(winrt::make<FilteredSearchResult>(*indexEntry));
+            }
+        }
+
+        // Update the UI with the results
+        const auto& searchBox = SettingsSearchBox();
+        searchBox.ItemsSource(winrt::single_threaded_observable_vector<IInspectable>(std::move(results)));
+        searchBox.IsSuggestionListOpen(true);
+    }
+
+    // Update _filteredSearchIndex with results matching queryText
+    til::generation_t MainPage::_QuerySearchIndex(const hstring& queryText)
+    {
+        auto filteredResults{ _filteredSearchIndex.write() };
+
+        filteredResults->clear();
+        for (const auto& entry : _searchIndex)
+        {
+            // TODO CARLOS: replace with fuzzy search
+            const auto& displayText = entry.DisplayText;
+            if (til::contains_linguistic_insensitive(displayText, queryText))
+            {
+                filteredResults->push_back(&entry);
+            }
+        }
+        return _filteredSearchIndex.generation();
+    }
+
+    void MainPage::SettingsSearchBox_QuerySubmitted(const AutoSuggestBox& /*sender*/, const AutoSuggestBoxQuerySubmittedEventArgs& args)
+    {
+        if (args.ChosenSuggestion())
+        {
+            const auto& chosenResult{ args.ChosenSuggestion().as<FilteredSearchResult>() };
+            if (chosenResult->IsNoResultsPlaceholder())
+            {
+                // don't navigate anywhere
+                return;
+            }
+
+            // Navigate to the target page
+            const auto& indexEntry{ chosenResult->SearchIndexEntry() };
+            const auto& navigationParam{ indexEntry.NavigationParam };
+            if (navigationParam.try_as<hstring>())
+            {
+                _Navigate(navigationParam.as<hstring>(), indexEntry.SubPage, indexEntry.ElementName);
+            }
+            else if (const auto profileVM = navigationParam.try_as<ProfileViewModel>())
+            {
+                _Navigate(*profileVM, indexEntry.SubPage, indexEntry.ElementName);
+            }
+            else if (const auto ntmEntryVM = navigationParam.try_as<NewTabMenuEntryViewModel>())
+            {
+                _Navigate(*ntmEntryVM, indexEntry.SubPage, indexEntry.ElementName);
+            }
+            else if (const auto extPkgVM = navigationParam.try_as<ExtensionPackageViewModel>())
+            {
+                _Navigate(*extPkgVM, indexEntry.SubPage, indexEntry.ElementName);
+            }
+        }
+    }
+
+    void MainPage::SettingsSearchBox_SuggestionChosen(const AutoSuggestBox&, const AutoSuggestBoxSuggestionChosenEventArgs&)
+    {
+        // Don't navigate on arrow keys
+        // Handle Enter/Click with QuerySubmitted() to instead
+        // AutoSuggestBox will pass the chosen item to QuerySubmitted() via args.ChosenSuggestion()
+    }
+
     void MainPage::_UpdateSearchIndex()
     {
         _searchIndex = {};
 
+        // TODO CARLOS: delay evaluating resources to here.
+        //   - we also want to allow searching in English regardless or the selected language
+        //   - we still want to only show the native language though
+        //   - we should update the index to use USES_RESOURCE instead of RS_, then evaluate resources here
+
         const auto buildIndex = LoadBuildTimeIndex();
         _searchIndex.reserve(buildIndex.size());
-        _searchIndex.assign(buildIndex.begin(), buildIndex.end());
+        _searchIndex.insert(_searchIndex.end(), buildIndex.begin(), buildIndex.end());
 
         // Load profiles
         for (const auto& profile : _profileVMs)

@@ -99,6 +99,21 @@
             </Grid>
         </muxc:NavigationView.Header>
 
+        <muxc:NavigationView.AutoSuggestBox>
+            <AutoSuggestBox x:Uid="Nav_SearchBox"
+                            x:Name="SettingsSearchBox"
+                            QueryIcon="Find"
+                            TextChanged="SettingsSearchBox_TextChanged"
+                            QuerySubmitted="SettingsSearchBox_QuerySubmitted"
+                            SuggestionChosen="SettingsSearchBox_SuggestionChosen">
+                <AutoSuggestBox.ItemTemplate>
+                    <DataTemplate x:DataType="local:FilteredSearchResult">
+                        <TextBlock Text="{x:Bind Label}" />
+                    </DataTemplate>
+                </AutoSuggestBox.ItemTemplate>
+            </AutoSuggestBox>
+        </muxc:NavigationView.AutoSuggestBox>
+
         <muxc:NavigationView.MenuItems>
 
             <muxc:NavigationViewItem x:Uid="Nav_Launch"

@@ -5,8 +5,10 @@
 
 #include "MainPage.g.h"
 #include "Breadcrumb.g.h"
+#include "FilteredSearchResult.g.h"
 #include "Utils.h"
 #include "GeneratedSettingsIndex.g.h"
+#include <til/generational.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -24,12 +26,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
     };
 
+    struct FilteredSearchResult : FilteredSearchResultT<FilteredSearchResult>
+    {
+        FilteredSearchResult(const winrt::hstring& label) :
+            _overrideLabel{ label } {}
+
+        FilteredSearchResult(const IndexEntry& entry) :
+            _SearchIndexEntry{ &entry } {}
+
+        hstring ToString() { return Label(); }
+
+        winrt::hstring Label() const
+        {
+            if (_overrideLabel)
+            {
+                return _overrideLabel.value();
+            }
+            else if (_SearchIndexEntry)
+            {
+                return _SearchIndexEntry->DisplayText;
+            }
+            return {};
+        }
+
+        bool IsNoResultsPlaceholder() const
+        {
+            return _overrideLabel.has_value();
+        }
+
+        const IndexEntry& SearchIndexEntry() const noexcept
+        {
+            return *_SearchIndexEntry;
+        }
+
+    private:
+        std::optional<winrt::hstring> _overrideLabel{ std::nullopt };
+        const IndexEntry* _SearchIndexEntry{ nullptr };
+    };
+
     struct MainPage : MainPageT<MainPage>
     {
         MainPage() = delete;
         MainPage(const Model::CascadiaSettings& settings);
 
         void UpdateSettings(const Model::CascadiaSettings& settings);
+
+        safe_void_coroutine SettingsSearchBox_TextChanged(const Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs& args);
+        void SettingsSearchBox_QuerySubmitted(const Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs& args);
+        void SettingsSearchBox_SuggestionChosen(const Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxSuggestionChosenEventArgs& args);
 
         void SettingsNav_Loaded(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void SettingsNav_ItemInvoked(const Microsoft::UI::Xaml::Controls::NavigationView& sender, const Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs& args);
@@ -68,15 +112,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel profile);
 
         void _PreNavigateHelper();
-        void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage);
-        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage);
-        void _Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage);
-        void _Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage);
+        void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage, hstring elementToFocus = {});
+        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, hstring elementToFocus = {});
+        void _Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
+        void _Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
 
         void _UpdateBackgroundForMica();
         void _MoveXamlParsedNavItemsIntoItemSource();
+
+        til::generation_t _QuerySearchIndex(const hstring& queryText);
         void _UpdateSearchIndex();
 
         Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel> _profileVMs{ nullptr };
@@ -85,6 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
 
         std::vector<IndexEntry> _searchIndex;
+        til::generational<std::vector<const IndexEntry*>> _filteredSearchIndex;
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;

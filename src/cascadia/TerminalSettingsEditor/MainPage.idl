@@ -26,6 +26,11 @@ namespace Microsoft.Terminal.Settings.Editor
         Extensions_Extension
     };
 
+    runtimeclass FilteredSearchResult : Windows.Foundation.IStringable
+    {
+        String Label { get; };
+    }
+
     runtimeclass Breadcrumb : Windows.Foundation.IStringable
     {
         IInspectable Tag;

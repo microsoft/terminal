@@ -2467,4 +2467,12 @@
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>Yes, clear the cache</value>
   </data>
+  <data name="Nav_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Search for settings</value>
+    <comment>Placeholder text for the main search box in the settings editor.</comment>
+  </data>
+  <data name="Search_NoResults" xml:space="preserve">
+    <value>No results for {}</value>
+    <comment>{Locked="{}"} Displayed when no results were found for a given query. "{}" will be replaced with the query.</comment>
+  </data>
 </root>
