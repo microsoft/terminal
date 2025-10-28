@@ -269,9 +269,13 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
 {
-    JSON_MAPPINGS(2) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "defaultProfile", ValueType::DefaultProfile },
-        pair_type{ "persistedWindowLayout", ValueType::PersistedWindowLayout },
+        pair_type{ "persistedLayoutAndContent", ValueType::PersistedLayoutAndContent },
+        pair_type{ "persistedLayout", ValueType::PersistedLayout },
+
+        // Keep deprecated keys last, so when they get serialized again they aren't written out
+        pair_type{ "persistedWindowLayout", ValueType::PersistedLayoutAndContent },
     };
 };
 
