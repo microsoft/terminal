@@ -35,6 +35,7 @@ $ProhibitedXamlFiles = @(
 if (-not (Test-Path $SourceDir)) { throw "SourceDir not found: $SourceDir" }
 if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir | Out-Null }
 
+$resourceKeys = ([xml](Get-Content "$($SourceDir)\Resources\en-US\Resources.resw")).root.data.name
 $entries = @()
 
 Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
@@ -96,48 +97,53 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
     {
         # ColorSchemes.xaml doesn't have any SettingContainers!
         
+        # TODO CARLOS: remove from script; hard code in MainPage instead
         # Register the page itself
-        $entries += [pscustomobject]@{
-            DisplayText     = 'vm'
-            ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::ColorSchemes>()"
-            NavigationParam = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
-            SubPage         = 'BreadcrumbSubPage::ColorSchemes_Edit'
-            ElementName    = 'L""'
-            File            = $filename
-        }
+        # $entries += [pscustomobject]@{
+        #     DisplayText     = 'vm'
+        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::ColorSchemes>()"
+        #     NavigationParam = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
+        #     SubPage         = 'BreadcrumbSubPage::ColorSchemes_Edit'
+        #     ElementName    = 'L""'
+        #     File            = $filename
+        # }
 
+        # TODO CARLOS: remove from script; hard code in MainPage instead
         # Manually register the "add new" button
-        $entries += [pscustomobject]@{
-            DisplayText     = 'RS_(L"ColorScheme_AddNewButton/Text")'
-            ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::ColorSchemes>()"
-            NavigationParam = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
-            SubPage         = 'BreadcrumbSubPage::None'
-            ElementName    = 'L"AddNewButton"'
-            File            = $filename
-        }
+        # $entries += [pscustomobject]@{
+        #     DisplayText     = 'RS_(L"ColorScheme_AddNewButton/Text")'
+        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::ColorSchemes>()"
+        #     NavigationParam = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
+        #     SubPage         = 'BreadcrumbSubPage::None'
+        #     ElementName    = 'L"AddNewButton"'
+        #     File            = $filename
+        # }
         return
     }
     elseif ($filename -eq 'Extensions.xaml')
     {
-        # Register the main extension page
-        $entries += [pscustomobject]@{
-            DisplayText     = 'RS_(L"Nav_Extensions/Content")'
-            ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Extensions>()"
-            NavigationParam = "nullptr"
-            SubPage         = 'BreadcrumbSubPage::None'
-            ElementName    = 'L""'
-            File            = $filename
-        }
 
+        # TODO CARLOS: remove from script; hard code in MainPage instead
+        # Register the main extension page
+        # $entries += [pscustomobject]@{
+        #     DisplayText     = 'RS_(L"Nav_Extensions/Content")'
+        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Extensions>()"
+        #     NavigationParam = "nullptr"
+        #     SubPage         = 'BreadcrumbSubPage::None'
+        #     ElementName    = 'L""'
+        #     File            = $filename
+        # }
+
+        # TODO CARLOS: remove from script; hard code in MainPage instead
         # Register the extension view
-        $entries += [pscustomobject]@{
-            DisplayText     = 'vm.Package().DisplayName()'
-            ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Extensions>()"
-            NavigationParam = "vm"
-            SubPage         = 'BreadcrumbSubPage::Extensions_Extension'
-            ElementName    = 'L""'
-            File            = $filename
-        }
+        # $entries += [pscustomobject]@{
+        #     DisplayText     = 'vm.Package().DisplayName()'
+        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Extensions>()"
+        #     NavigationParam = "vm"
+        #     SubPage         = 'BreadcrumbSubPage::Extensions_Extension'
+        #     ElementName    = 'L""'
+        #     File            = $filename
+        # }
         return
     }
 
@@ -207,7 +213,7 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         {
             if ($uid -match 'NewTabMenu_CurrentFolder')
             {
-                $navigationParam = 'vm'
+                $navigationParam = 'nullptr'
                 $subPage = 'BreadcrumbSubPage::NewTabMenu_Folder'
             }
             else
@@ -241,8 +247,8 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         }
         elseif ($pageClass -match 'Editor::EditColorScheme')
         {
-            # EditColorScheme.xaml always uses a boxed vm param
-            $navigationParam = 'winrt::box_value(vm)'
+            # populate with color scheme name at runtime
+            $navigationParam = 'nullptr'
         }
         elseif ($pageClass -match 'Editor::GlobalAppearance')
         {
@@ -254,31 +260,63 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         }
 
         $entries += [pscustomobject]@{
-            DisplayText     = "RS_(L`"$($uid)/Header`")"
-            ParentPage      = "winrt::xaml_typename<$($pageClass)>()"
-            NavigationParam = $navigationParam -eq "vm" -or $navigationParam -eq "winrt::box_value(vm)" -or $navigationParam -eq "nullptr" ? $navigationParam : "winrt::box_value(hstring{L`"$($navigationParam)`"})"
-            SubPage         = $subPage
-            ElementName    = "L`"$($name)`""
-            File            = $filename
+            DisplayTextLocalized = "RS_(L`"$($uid)/Header`")"
+            HelpTextLocalized    = $resourceKeys -contains "$($uid)/HelpText" ? "std::optional<hstring>{ RS_(L`"$($uid)/HelpText`") }" : "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = $navigationParam -eq "nullptr" ? $navigationParam : "winrt::box_value(hstring{L`"$($navigationParam)`"})"
+            SubPage              = $subPage
+            ElementName          = "L`"$($name)`""
+            File                 = $filename
         }
 
         # Duplicate entry for VM param if needed
         if ($duplicateForVM)
         {
             $entries += [pscustomobject]@{
-                DisplayText     = "RS_(L`"$($uid)/Header`")"
-                ParentPage      = "winrt::xaml_typename<$($pageClass)>()"
-                NavigationParam = 'vm'
-                SubPage         = $navigationParam -eq 'NewTabMenu_Nav' ? 'BreadcrumbSubPage::NewTabMenu_Folder' : $subPage
-                ElementName    = "L`"$($name)`""
-                File            = $filename
+                DisplayTextLocalized = "RS_(L`"$($uid)/Header`")"
+                HelpTextLocalized    = $resourceKeys -contains "$($uid)/HelpText" ? "std::optional<hstring>{ RS_(L`"$($uid)/HelpText`") }" : "std::nullopt"
+                ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+                NavigationParam      = 'nullptr'  # VM param at runtime
+                SubPage              = $navigationParam -eq 'NewTabMenu_Nav' ? 'BreadcrumbSubPage::NewTabMenu_Folder' : $subPage
+                ElementName          = "L`"$($name)`""
+                File                 = $filename
             }
         }
     }
 }
 
 # Ensure there aren't any duplicate entries
-$entries = $entries | Sort-Object DisplayText, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
+$entries = $entries | Sort-Object RootUid, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
+
+$buildTimeEntries = @()
+$profileEntries = @()
+$schemeEntries = @()
+$ntmEntries = @()
+foreach ($e in $entries)
+{
+    $formattedEntry = "            IndexEntry{ $($e.DisplayTextLocalized), $($e.HelpTextLocalized), $($e.ParentPage), $($e.NavigationParam), $($e.SubPage), $($e.ElementName) }, // $($e.File)"
+    
+    if ($e.NavigationParam -eq 'nullptr' -and
+        ($e.ParentPage -match 'Profiles_Base' -or
+         $e.ParentPage -match 'Profiles_Appearance' -or
+         $e.ParentPage -match 'Profiles_Terminal' -or
+         $e.ParentPage -match 'Profiles_Advanced'))
+    {
+        $profileEntries += $formattedEntry
+    }
+    elseif ($e.SubPage -eq 'BreadcrumbSubPage::ColorSchemes_Edit')
+    {
+        $schemeEntries += $formattedEntry
+    }
+    elseif ($e.SubPage -eq 'BreadcrumbSubPage::NewTabMenu_Folder')
+    {
+        $ntmEntries += $formattedEntry
+    }
+    else
+    {
+        $buildTimeEntries += $formattedEntry
+    }
+}
 
 $headerPath = Join-Path $OutputDir 'GeneratedSettingsIndex.g.h'
 $cppPath    = Join-Path $OutputDir 'GeneratedSettingsIndex.g.cpp'
@@ -295,56 +333,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct IndexEntry
     {
-        hstring DisplayText; // RS_(L"<x:uid>/Header")
+        // Localized display text shown in the SettingContainer (i.e. RS_(L"Globals_DefaultProfile/Header"))
+        hstring DisplayTextLocalized;
+
+        // Localized help text shown in the SettingContainer (i.e. RS_(L"Globals_DefaultProfile/HelpText"))
+        // May not exist for all entries
+        std::optional<hstring> HelpTextLocalized;
+
+        // x:Class of the parent Page (i.e. winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Launch>())
         winrt::Windows::UI::Xaml::Interop::TypeName ParentPage;
-        winrt::Windows::Foundation::IInspectable NavigationParam; // VM or hstring tag
+
+        // Navigation argument (i.e. winrt::box_value(hstring) or nullptr)
+        // Use nullptr as placeholder for runtime navigation with a view model object
+        winrt::Windows::Foundation::IInspectable NavigationArg;
+
         BreadcrumbSubPage SubPage;
+        
+        // x:Name of the SettingContainer to navigate to on the page (i.e. "DefaultProfile")
         hstring ElementName;
     };
 
-    std::vector<IndexEntry> LoadBuildTimeIndex();
-    std::vector<IndexEntry> LoadProfileIndex(const Editor::ProfileViewModel& vm);
-    std::vector<IndexEntry> LoadNTMFolderIndex(const Editor::FolderEntryViewModel& vm);
-    std::vector<IndexEntry> LoadExtensionIndex(const Editor::ExtensionPackageViewModel& vm);
-    std::vector<IndexEntry> LoadColorSchemeIndex(const hstring colorSchemeName);
+    const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex();
+    const std::array<IndexEntry, $($profileEntries.Count)>& LoadProfileIndex();
+    const std::array<IndexEntry, $($ntmEntries.Count)>& LoadNTMFolderIndex();
+    const std::array<IndexEntry, $($schemeEntries.Count)>& LoadColorSchemeIndex();
 }
 "@
-
-
-$buildTimeEntries = @()
-$profileEntries = @()
-$schemeEntries = @()
-$ntmEntries = @()
-$extensionEntries = @()
-foreach ($e in $entries)
-{
-    $formattedEntry = "            { $($e.DisplayText), $($e.ParentPage), $($e.NavigationParam), $($e.SubPage), $($e.ElementName) }, // $($e.File)"
-    
-    if ($e.NavigationParam -eq 'vm' -and
-        ($e.ParentPage -match 'Profiles_Base' -or
-         $e.ParentPage -match 'Profiles_Appearance' -or
-         $e.ParentPage -match 'Profiles_Terminal' -or
-         $e.ParentPage -match 'Profiles_Advanced'))
-    {
-        $profileEntries += $formattedEntry
-    }
-    elseif ($e.SubPage -eq 'BreadcrumbSubPage::ColorSchemes_Edit')
-    {
-        $schemeEntries += $formattedEntry
-    }
-    elseif ($e.SubPage -eq 'BreadcrumbSubPage::NewTabMenu_Folder')
-    {
-        $ntmEntries += $formattedEntry
-    }
-    elseif ($e.SubPage -eq 'BreadcrumbSubPage::Extensions_Extension')
-    {
-        $extensionEntries += $formattedEntry
-    }
-    else
-    {
-        $buildTimeEntries += $formattedEntry
-    }
-}
 
 $cpp = @"
 // Copyright (c) Microsoft Corporation.
@@ -357,59 +371,40 @@ $cpp = @"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    std::vector<IndexEntry> LoadBuildTimeIndex()
+    const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex()
     {
-        static const IndexEntry entries[] =
+        static std::array<IndexEntry, $($buildTimeEntries.Count)> entries =
         {
 $( ($buildTimeEntries -join "`r`n") )
         };
-        std::vector<IndexEntry> index;
-        index.assign(std::begin(entries), std::end(entries));
-        return index;
+        return entries;
     }
 
-    std::vector<IndexEntry> LoadProfileIndex(const Editor::ProfileViewModel& vm)
+    const std::array<IndexEntry, $($profileEntries.Count)>& LoadProfileIndex()
     {
-        const IndexEntry entries[] =
+        static std::array<IndexEntry, $($profileEntries.Count)> entries =
         {
 $( ($profileEntries -join "`r`n") )
         };
-        std::vector<IndexEntry> index;
-        index.assign(std::begin(entries), std::end(entries));
-        return index;
+        return entries;
     }
 
-    std::vector<IndexEntry> LoadNTMFolderIndex(const Editor::FolderEntryViewModel& vm)
+    const std::array<IndexEntry, $($ntmEntries.Count)>& LoadNTMFolderIndex()
     {
-        const IndexEntry entries[] =
+        static std::array<IndexEntry, $($ntmEntries.Count)> entries =
         {
 $( ($ntmEntries -join "`r`n") )
         };
-        std::vector<IndexEntry> index;
-        index.assign(std::begin(entries), std::end(entries));
-        return index;
+        return entries;
     }
 
-    std::vector<IndexEntry> LoadExtensionIndex(const Editor::ExtensionPackageViewModel& vm)
+    const std::array<IndexEntry, $($schemeEntries.Count)>& LoadColorSchemeIndex()
     {
-        const IndexEntry entries[] =
-        {
-$( ($extensionEntries -join "`r`n") )
-        };
-        std::vector<IndexEntry> index;
-        index.assign(std::begin(entries), std::end(entries));
-        return index;
-    }
-    
-    std::vector<IndexEntry> LoadColorSchemeIndex(const hstring vm)
-    {
-        const IndexEntry entries[] =
+        static std::array<IndexEntry, $($schemeEntries.Count)> entries =
         {
 $( ($schemeEntries -join "`r`n") )
         };
-        std::vector<IndexEntry> index;
-        index.assign(std::begin(entries), std::end(entries));
-        return index;
+        return entries;
     }
 }
 "@

@@ -10,8 +10,12 @@
 #include "GeneratedSettingsIndex.g.h"
 #include <til/generational.h>
 
+class ScopedResourceLoader;
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept;
+
     struct Breadcrumb : BreadcrumbT<Breadcrumb>
     {
         Breadcrumb(IInspectable tag, winrt::hstring label, BreadcrumbSubPage subPage) :
@@ -26,13 +30,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
     };
 
+    struct LocalizedIndexEntry
+    {
+        std::optional<winrt::hstring> DisplayTextNeutral = std::nullopt;
+        std::optional<winrt::hstring> HelpTextNeutral = std::nullopt;
+        const IndexEntry* Entry = nullptr;
+    };
+
     struct FilteredSearchResult : FilteredSearchResultT<FilteredSearchResult>
     {
         FilteredSearchResult(const winrt::hstring& label) :
             _overrideLabel{ label } {}
 
-        FilteredSearchResult(const IndexEntry& entry) :
-            _SearchIndexEntry{ &entry } {}
+        FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr) :
+            _SearchIndexEntry{ entry },
+            _NavigationArgOverride{ navigationArgOverride } {}
 
         hstring ToString() { return Label(); }
 
@@ -44,7 +56,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (_SearchIndexEntry)
             {
-                return _SearchIndexEntry->DisplayText;
+                if (_SearchIndexEntry->Entry)
+                {
+                    return _SearchIndexEntry->Entry->DisplayTextLocalized;
+                }
+                else if (_SearchIndexEntry->DisplayTextNeutral.has_value())
+                {
+                    return _SearchIndexEntry->DisplayTextNeutral.value();
+                }
             }
             return {};
         }
@@ -54,14 +73,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return _overrideLabel.has_value();
         }
 
-        const IndexEntry& SearchIndexEntry() const noexcept
+        const LocalizedIndexEntry& SearchIndexEntry() const noexcept
         {
             return *_SearchIndexEntry;
         }
 
+        Windows::Foundation::IInspectable NavigationArg() const
+        {
+            if (_NavigationArgOverride)
+            {
+                return _NavigationArgOverride;
+            }
+            else if (_SearchIndexEntry)
+            {
+                return _SearchIndexEntry->Entry->NavigationArg;
+            }
+            return nullptr;
+        }
+
     private:
-        std::optional<winrt::hstring> _overrideLabel{ std::nullopt };
-        const IndexEntry* _SearchIndexEntry{ nullptr };
+        const std::optional<winrt::hstring> _overrideLabel{ std::nullopt };
+        const Windows::Foundation::IInspectable& _NavigationArgOverride{ nullptr };
+        const LocalizedIndexEntry* _SearchIndexEntry{ nullptr };
     };
 
     struct MainPage : MainPageT<MainPage>
@@ -123,15 +156,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _MoveXamlParsedNavItemsIntoItemSource();
 
         til::generation_t _QuerySearchIndex(const hstring& queryText);
-        void _UpdateSearchIndex();
+        safe_void_coroutine _UpdateSearchIndex();
 
         Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel> _profileVMs{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
 
-        std::vector<IndexEntry> _searchIndex;
-        til::generational<std::vector<const IndexEntry*>> _filteredSearchIndex;
+        std::vector<LocalizedIndexEntry> _searchIndex;
+        std::vector<LocalizedIndexEntry> _searchProfileIndex;
+        std::vector<LocalizedIndexEntry> _searchNTMFolderIndex;
+        std::vector<LocalizedIndexEntry> _searchColorSchemeIndex;
+        til::generational<std::vector<const LocalizedIndexEntry*>> _filteredSearchIndex;
+        std::vector<const LocalizedIndexEntry*> _filteredSearchProfileIndex;
+        std::vector<const LocalizedIndexEntry*> _filteredSearchNTMFolderIndex;
+        std::vector<const LocalizedIndexEntry*> _filteredSearchColorSchemeIndex;
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;

@@ -24,7 +24,9 @@
 #include <..\WinRTUtils\inc\Utils.h>
 #include "GeneratedSettingsIndex.g.h"
 
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <LibraryResources.h>
+#include <ScopedResourceLoader.h>
 #include <dwmapi.h>
 #include <fmt/compile.h>
 
@@ -54,6 +56,15 @@ static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
+
+// Like RS_, but uses an ambient context to determine whether
+// to load the English verion of a resource or the localized one.
+#define RS_switchable_(x) RS_switchable_impl(context, USES_RESOURCE(x))
+
+static winrt::hstring RS_switchable_impl(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context, std::wstring_view key)
+{
+    return GetLibraryResourceLoader().ResourceMap().GetValue(key, context).ValueAsString();
+}
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -155,6 +166,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _breadcrumbs = single_threaded_observable_vector<IInspectable>();
         _UpdateSearchIndex();
+        extensionsVMImpl->LazyLoadExtensions();
     }
 
     // Method Description:
@@ -1080,11 +1092,92 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else
         {
+            // Package filtered search index objects into WinRT FilteredSearchResults for UI
             for (const auto* indexEntry : *_filteredSearchIndex)
             {
-                results.push_back(winrt::make<FilteredSearchResult>(*indexEntry));
+                results.push_back(winrt::make<FilteredSearchResult>(indexEntry));
+            }
+
+            // TODO CARLOS: use the macro below for runtime objects once everything is verified to be working right
+#define APPEND_RUNTIME_OBJECT_RESULTS(runtimeObjectList, runtimeObjectIdentifier, filteredSearchIndex, navigationArgOverride) \
+    for (const auto& runtimeObj : runtimeObjectList)                                                                          \
+    {                                                                                                                         \
+        if (til::contains_linguistic_insensitive(runtimeObjectIdentifier, sanitizedQuery))                                    \
+        {                                                                                                                     \
+            /*results.push_back(winrt::make<FilteredSearchResult>(, profile));*/                                              \
+        }                                                                                                                     \
+                                                                                                                              \
+        for (const auto* indexEntry : filteredSearchIndex)                                                                    \
+        {                                                                                                                     \
+            results.push_back(winrt::make<FilteredSearchResult>(indexEntry, navigationArgOverride));                          \
+        }                                                                                                                     \
+    }
+
+            // Profiles
+            //APPEND_RUNTIME_OBJECT_RESULTS(_profileVMs, runtimeObj.Name(), _filteredSearchProfileIndex, runtimeObj)
+            for (const auto& profile : _profileVMs)
+            {
+                // TODO CARLOS: replace with fuzzy search
+                if (til::contains_linguistic_insensitive(profile.Name(), sanitizedQuery))
+                {
+                    // TODO CARLOS: if name matches, link the top-level page
+                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
+                    //results.push_back(winrt::make<FilteredSearchResult>(, profile));
+                }
+
+                for (const auto* indexEntry : _filteredSearchProfileIndex)
+                {
+                    results.push_back(winrt::make<FilteredSearchResult>(indexEntry, profile));
+                }
+            }
+
+            // New Tab Menu (Folder View)
+            //APPEND_RUNTIME_OBJECT_RESULTS(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), runtimeObj.Name(), _filteredSearchNTMFolderIndex, runtimeObj)
+            for (const auto& ntmFolder : get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList())
+            {
+                if (til::contains_linguistic_insensitive(ntmFolder.Name(), sanitizedQuery))
+                {
+                    // TODO CARLOS: if name matches, link the top-level page
+                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
+                    //results.push_back(winrt::make<FilteredSearchResult>(, ntmFolder));
+                }
+
+                for (const auto* indexEntry : _filteredSearchNTMFolderIndex)
+                {
+                    results.push_back(winrt::make<FilteredSearchResult>(indexEntry, ntmFolder));
+                }
+            }
+
+            // Color schemes
+            //APPEND_RUNTIME_OBJECT_RESULTS(_colorSchemesPageVM.AllColorSchemes(), runtimeObj.Name(), _filteredSearchColorSchemeIndex, winrt::box_value(runtimeObj.Name()))
+            for (const auto& scheme : _colorSchemesPageVM.AllColorSchemes())
+            {
+                if (til::contains_linguistic_insensitive(scheme.Name(), sanitizedQuery))
+                {
+                    // TODO CARLOS: if name matches, link the top-level page
+                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
+                    //results.push_back(winrt::make<FilteredSearchResult>(, scheme));
+                }
+
+                for (const auto* indexEntry : _filteredSearchColorSchemeIndex)
+                {
+                    results.push_back(winrt::make<FilteredSearchResult>(indexEntry, winrt::box_value(scheme.Name())));
+                }
+            }
+
+            // TODO CARLOS:
+            // - if match with extension name, go to extension page
+            for (const auto& extension : _extensionsVM.ExtensionPackages())
+            {
+                if (til::contains_linguistic_insensitive(extension.Package().DisplayName(), sanitizedQuery))
+                {
+                    // TODO CARLOS: if name matches, link the top-level page
+                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
+                    //results.push_back(winrt::make<FilteredSearchResult>(, ntmFolder));
+                }
             }
         }
+#undef APPEND_RUNTIME_OBJECT_RESULTS
 
         // Update the UI with the results
         const auto& searchBox = SettingsSearchBox();
@@ -1097,16 +1190,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto filteredResults{ _filteredSearchIndex.write() };
 
-        filteredResults->clear();
-        for (const auto& entry : _searchIndex)
-        {
-            // TODO CARLOS: replace with fuzzy search
-            const auto& displayText = entry.DisplayText;
-            if (til::contains_linguistic_insensitive(displayText, queryText))
+        auto findMatchingResults = [&queryText](const std::vector<LocalizedIndexEntry>& searchIndex, std::vector<const LocalizedIndexEntry*>& filteredIndex) {
+            filteredIndex.clear();
+            for (const auto& entry : searchIndex)
             {
-                filteredResults->push_back(&entry);
+                // TODO CARLOS: replace with fuzzy search
+                // Check for a match with DisplayText (i.e. "Globals_DefaultProfile/Header") and HelpText (i.e. "Globals_DefaultProfile/HelpText")
+                // in language neutral and current language
+                if (til::contains_linguistic_insensitive(entry.Entry->DisplayTextLocalized, queryText) ||
+                    (entry.Entry->HelpTextLocalized.has_value() && til::contains_linguistic_insensitive(entry.Entry->HelpTextLocalized.value(), queryText)) ||
+                    (entry.DisplayTextNeutral.has_value() && til::contains_linguistic_insensitive(entry.DisplayTextNeutral.value(), queryText)) ||
+                    (entry.HelpTextNeutral.has_value() && til::contains_linguistic_insensitive(entry.HelpTextNeutral.value(), queryText)))
+                {
+                    filteredIndex.push_back(&entry);
+                }
             }
-        }
+        };
+
+        // build-time search index can be filtered and returned pretty much as-is
+        findMatchingResults(_searchIndex, *filteredResults);
+
+        // Profiles
+        findMatchingResults(_searchProfileIndex, _filteredSearchProfileIndex);
+
+        // New Tab Menu (Folder View)
+        findMatchingResults(_searchNTMFolderIndex, _filteredSearchNTMFolderIndex);
+
+        // Color schemes
+        findMatchingResults(_searchColorSchemeIndex, _filteredSearchColorSchemeIndex);
+
         return _filteredSearchIndex.generation();
     }
 
@@ -1123,22 +1235,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             // Navigate to the target page
             const auto& indexEntry{ chosenResult->SearchIndexEntry() };
-            const auto& navigationParam{ indexEntry.NavigationParam };
-            if (navigationParam.try_as<hstring>())
+            const auto& navigationArg{ chosenResult->NavigationArg() };
+            const auto& subpage{ indexEntry.Entry->SubPage };
+            const auto& elementToFocus{ indexEntry.Entry->ElementName };
+            if (navigationArg.try_as<hstring>())
             {
-                _Navigate(navigationParam.as<hstring>(), indexEntry.SubPage, indexEntry.ElementName);
+                _Navigate(navigationArg.as<hstring>(), subpage, elementToFocus);
             }
-            else if (const auto profileVM = navigationParam.try_as<ProfileViewModel>())
+            else if (const auto profileVM = navigationArg.try_as<ProfileViewModel>())
             {
-                _Navigate(*profileVM, indexEntry.SubPage, indexEntry.ElementName);
+                _Navigate(*profileVM, subpage, elementToFocus);
             }
-            else if (const auto ntmEntryVM = navigationParam.try_as<NewTabMenuEntryViewModel>())
+            else if (const auto ntmEntryVM = navigationArg.try_as<NewTabMenuEntryViewModel>())
             {
-                _Navigate(*ntmEntryVM, indexEntry.SubPage, indexEntry.ElementName);
+                _Navigate(*ntmEntryVM, subpage, elementToFocus);
             }
-            else if (const auto extPkgVM = navigationParam.try_as<ExtensionPackageViewModel>())
+            else if (const auto extPkgVM = navigationArg.try_as<ExtensionPackageViewModel>())
             {
-                _Navigate(*extPkgVM, indexEntry.SubPage, indexEntry.ElementName);
+                _Navigate(*extPkgVM, subpage, elementToFocus);
             }
         }
     }
@@ -1150,54 +1264,94 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // AutoSuggestBox will pass the chosen item to QuerySubmitted() via args.ChosenSuggestion()
     }
 
-    void MainPage::_UpdateSearchIndex()
+    safe_void_coroutine MainPage::_UpdateSearchIndex()
     {
-        _searchIndex = {};
+        co_await winrt::resume_background();
 
-        // TODO CARLOS: delay evaluating resources to here.
-        //   - we also want to allow searching in English regardless or the selected language
-        //   - we still want to only show the native language though
-        //   - we should update the index to use USES_RESOURCE instead of RS_, then evaluate resources here
+        // These are the new index entries we are building.
+        // Don't actually modify the members until we're completely done here.
+        std::vector<LocalizedIndexEntry> localizedIndex;
+        std::vector<LocalizedIndexEntry> localizedProfileIndex;
+        std::vector<LocalizedIndexEntry> localizedNTMFolderIndex;
+        std::vector<LocalizedIndexEntry> localizedColorSchemeIndex;
 
-        const auto buildIndex = LoadBuildTimeIndex();
-        _searchIndex.reserve(buildIndex.size());
-        _searchIndex.insert(_searchIndex.end(), buildIndex.begin(), buildIndex.end());
+        // TODO CARLOS: actually use this
+        // copied from CommandPaletteItems.h
+        static bool shouldIncludeLanguageNeutralResources = [] {
+            try
+            {
+                const auto context{ winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::GetForViewIndependentUse() };
+                const auto qualifiers{ context.QualifierValues() };
+                if (const auto language{ qualifiers.TryLookup(L"language") })
+                {
+                    return !til::starts_with_insensitive_ascii(*language, L"en-");
+                }
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+            }
+            return false;
+        }();
+
+        const auto& buildIndex = LoadBuildTimeIndex();
+        localizedIndex.reserve(buildIndex.size());
+        for (const auto& entry : buildIndex)
+        {
+            // TODO CARLOS: properly populate LocalizedIndexEntry
+            LocalizedIndexEntry localizedEntry;
+            localizedEntry.Entry = &entry;
+            localizedIndex.push_back(localizedEntry);
+        }
 
         // Load profiles
-        for (const auto& profile : _profileVMs)
+        const auto& profileIndex = LoadProfileIndex();
+        localizedProfileIndex.reserve(profileIndex.size());
+        for (const auto& entry : profileIndex)
         {
-            const auto& profileIndex = LoadProfileIndex(profile);
-            _searchIndex.reserve(_searchIndex.size() + profileIndex.size());
-            _searchIndex.insert(_searchIndex.end(), profileIndex.begin(), profileIndex.end());
+            // TODO CARLOS: properly populate LocalizedIndexEntry
+            LocalizedIndexEntry localizedEntry;
+            localizedEntry.Entry = &entry;
+            localizedProfileIndex.push_back(localizedEntry);
         }
 
         // Load new tab menu
-        for (const auto& folderVM : get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList())
+        const auto& ntmFolderIndex = LoadNTMFolderIndex();
+        localizedNTMFolderIndex.reserve(ntmFolderIndex.size());
+        for (const auto& entry : ntmFolderIndex)
         {
-            const auto& folderIndex = LoadNTMFolderIndex(folderVM);
-            _searchIndex.reserve(_searchIndex.size() + folderIndex.size());
-            _searchIndex.insert(_searchIndex.end(), folderIndex.begin(), folderIndex.end());
+            // TODO CARLOS: properly populate LocalizedIndexEntry
+            LocalizedIndexEntry localizedEntry;
+            localizedEntry.Entry = &entry;
+            localizedNTMFolderIndex.push_back(localizedEntry);
         }
 
-        // Load extensions
-        // TODO CARLOS: annoying that we have to load the extensions to build the index. Can we defer this until the user searches?
-        get_self<ExtensionsViewModel>(_extensionsVM)->LazyLoadExtensions();
-        for (const auto& extPkg : _extensionsVM.ExtensionPackages())
-        {
-            const auto& extPkgIndex = LoadExtensionIndex(extPkg);
-            _searchIndex.reserve(_searchIndex.size() + extPkgIndex.size());
-            _searchIndex.insert(_searchIndex.end(), extPkgIndex.begin(), extPkgIndex.end());
-        }
+        // Nothing to load for extensions.
+        // At query time, we'll search for matching extension names.
 
         // Load color schemes
-        for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
+        const auto& colorSchemesIndex = LoadColorSchemeIndex();
+        localizedColorSchemeIndex.reserve(colorSchemesIndex.size());
+        for (const auto& entry : colorSchemesIndex)
         {
-            const auto& schemeIndex = LoadColorSchemeIndex(schemeVM.Name());
-            _searchIndex.reserve(_searchIndex.size() + schemeIndex.size());
-            _searchIndex.insert(_searchIndex.end(), schemeIndex.begin(), schemeIndex.end());
+            // TODO CARLOS: properly populate LocalizedIndexEntry
+            LocalizedIndexEntry localizedEntry;
+            localizedEntry.Entry = &entry;
+            localizedColorSchemeIndex.push_back(localizedEntry);
         }
 
         // Load actions
         // TODO CARLOS: postpone until actions page is updated
+
+        _searchIndex = std::move(localizedIndex);
+        _searchProfileIndex = std::move(localizedProfileIndex);
+        _searchNTMFolderIndex = std::move(localizedNTMFolderIndex);
+        _searchColorSchemeIndex = std::move(localizedColorSchemeIndex);
+    }
+
+    const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept
+    {
+        static ScopedResourceLoader loader{ GetLibraryResourceLoader().WithQualifier(L"language", L"en-US") };
+        return loader;
     }
 }
