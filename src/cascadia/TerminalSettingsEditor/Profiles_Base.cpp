@@ -116,16 +116,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static constexpr winrt::guid clientGuidExecutables{ 0x2E7E4331, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
         const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
         auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
-            THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExecutables));
+            try
+            {
+                THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExecutables));
+            }
+            CATCH_LOG(); // non-fatal
             try
             {
                 auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, nullptr) };
                 dialog->SetDefaultFolder(folderShellItem.get());
             }
             CATCH_LOG(); // non-fatal
-            THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
-            THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
-            THROW_IF_FAILED(dialog->SetDefaultExtension(L"exe;cmd;bat"));
+            try
+            {
+                THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                THROW_IF_FAILED(dialog->SetDefaultExtension(L"exe;cmd;bat"));
+            }
+            CATCH_LOG(); // non-fatal
         });
 
         if (!path.empty())
@@ -152,7 +160,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
         auto folder = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             static constexpr winrt::guid clientGuidFolderPicker{ 0xAADAA433, 0xB04D, 0x4BAE, { 0xB1, 0xEA, 0x1E, 0x6C, 0xD1, 0xCD, 0xA6, 0x8B } };
-            THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolderPicker));
+            try
+            {
+                THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolderPicker));
+            }
+            CATCH_LOG(); // non-fatal
             try
             {
                 auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, nullptr) };
@@ -160,9 +172,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             CATCH_LOG(); // non-fatal
 
-            DWORD flags{};
-            THROW_IF_FAILED(dialog->GetOptions(&flags));
-            THROW_IF_FAILED(dialog->SetOptions(flags | FOS_PICKFOLDERS)); // folders only
+            try
+            {
+                DWORD flags{};
+                THROW_IF_FAILED(dialog->GetOptions(&flags));
+                THROW_IF_FAILED(dialog->SetOptions(flags | FOS_PICKFOLDERS)); // folders only
+            }
+            CATCH_LOG(); // non-fatal
         });
 
         if (!folder.empty())
