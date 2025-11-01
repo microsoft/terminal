@@ -1883,7 +1883,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (read < sizeof(buffer))
             {
                 // Normally the cursor should already be at the start of the line, but let's be absolutely sure it is.
-                if (_terminal->GetCursorPosition().x != 0)
+                if (_terminal->GetTextBuffer().GetCursor().GetPosition().x != 0)
                 {
                     _terminal->Write(L"\r\n");
                 }
@@ -1938,31 +1938,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TabColorChanged.raise(*this, nullptr);
     }
 
-    void ControlCore::BlinkAttributeTick()
-    {
-        const auto lock = _terminal->LockForWriting();
-
-        auto& renderSettings = _terminal->GetRenderSettings();
-        renderSettings.ToggleBlinkRendition(_renderer.get());
-    }
-
-    void ControlCore::BlinkCursor()
-    {
-        const auto lock = _terminal->LockForWriting();
-        _terminal->BlinkCursor();
-    }
-
-    bool ControlCore::CursorOn() const
-    {
-        return _terminal->IsCursorOn();
-    }
-
-    void ControlCore::CursorOn(const bool isCursorOn)
-    {
-        const auto lock = _terminal->LockForWriting();
-        _terminal->SetCursorOn(isCursorOn);
-    }
-
     void ControlCore::ResumeRendering()
     {
         // The lock must be held, because it calls into IRenderData which is shared state.
@@ -1992,6 +1967,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto lock = _terminal->LockForReading();
         return _terminal->GetViewportRelativeCursorPosition().to_core_point();
+    }
+
+    bool ControlCore::ForceCursorVisible() const noexcept
+    {
+        return _forceCursorVisible;
+    }
+
+    void ControlCore::ForceCursorVisible(bool force)
+    {
+        const auto lock = _terminal->LockForWriting();
+        _renderer->AllowCursorVisibility(Render::InhibitionSource::Host, _terminal->IsFocused() || force);
+        _forceCursorVisible = force;
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
@@ -2073,7 +2060,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // As noted in GH #8573, there's plenty of edge cases with this
         // approach, but it's good enough to bring value to 90% of use cases.
-        const auto cursorPos{ _terminal->GetCursorPosition() };
 
         // Does the current buffer line have a mark on it?
         const auto& marks{ _terminal->GetMarkExtents() };
@@ -2081,8 +2067,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto& last{ marks.back() };
             const auto [start, end] = last.GetExtent();
-            const auto bufferSize = _terminal->GetTextBuffer().GetSize();
-            auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+            const auto& buffer = _terminal->GetTextBuffer();
+            const auto cursorPos = buffer.GetCursor().GetPosition();
+            const auto bufferSize = buffer.GetSize();
+            auto lastNonSpace = buffer.GetLastNonSpaceCharacter();
             bufferSize.IncrementInBounds(lastNonSpace, true);
 
             // If the user clicked off to the right side of the prompt, we
@@ -2460,7 +2448,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TerminalInput::OutputType out;
         {
-            const auto lock = _terminal->LockForReading();
+            const auto lock = _terminal->LockForWriting();
+            _renderer->AllowCursorVisibility(Render::InhibitionSource::Host, focused || _forceCursorVisible);
             out = _terminal->FocusChanged(focused);
         }
         if (out && !out->empty())

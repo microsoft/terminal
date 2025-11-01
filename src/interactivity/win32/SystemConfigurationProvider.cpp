@@ -35,7 +35,7 @@ ULONG SystemConfigurationProvider::GetCursorWidth()
     else
     {
         LOG_LAST_ERROR();
-        return s_DefaultCursorWidth;
+        return 1;
     }
 }
 
