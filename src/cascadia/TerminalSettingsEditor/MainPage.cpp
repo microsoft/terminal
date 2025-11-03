@@ -1074,6 +1074,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (searchGeneration != _filteredSearchIndex.generation())
         {
+            // TODO CARLOS: look into til::throttled_func (winrt version and non-winrt version) for debounce (used in BellSound and TaskbarProgressUpdates)
             // search index was updated while we were searching, discard results
             co_return;
         }
@@ -1099,18 +1100,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
 
             // TODO CARLOS: use the macro below for runtime objects once everything is verified to be working right
-#define APPEND_RUNTIME_OBJECT_RESULTS(runtimeObjectList, runtimeObjectIdentifier, filteredSearchIndex, navigationArgOverride) \
-    for (const auto& runtimeObj : runtimeObjectList)                                                                          \
-    {                                                                                                                         \
-        if (til::contains_linguistic_insensitive(runtimeObjectIdentifier, sanitizedQuery))                                    \
-        {                                                                                                                     \
-            /*results.push_back(winrt::make<FilteredSearchResult>(, profile));*/                                              \
-        }                                                                                                                     \
-                                                                                                                              \
-        for (const auto* indexEntry : filteredSearchIndex)                                                                    \
-        {                                                                                                                     \
-            results.push_back(winrt::make<FilteredSearchResult>(indexEntry, navigationArgOverride));                          \
-        }                                                                                                                     \
+#define APPEND_RUNTIME_OBJECT_RESULTS(runtimeObjectList, runtimeObjectIdentifier, filteredSearchIndex, navigationArgOverride)    \
+    for (const auto& runtimeObj : runtimeObjectList)                                                                             \
+    {                                                                                                                            \
+        if (til::contains_linguistic_insensitive(runtimeObjectIdentifier, sanitizedQuery))                                       \
+        {                                                                                                                        \
+            /*results.push_back(winrt::make<FilteredSearchResult>(<NEED ANOTHER PARAM>, runtimeObj, runtimeObjectIdentifier));*/ \
+        }                                                                                                                        \
+                                                                                                                                 \
+        for (const auto* indexEntry : filteredSearchIndex)                                                                       \
+        {                                                                                                                        \
+            results.push_back(winrt::make<FilteredSearchResult>(indexEntry, navigationArgOverride));                             \
+        }                                                                                                                        \
     }
 
             // Profiles
@@ -1122,7 +1123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     // TODO CARLOS: if name matches, link the top-level page
                     //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
-                    //results.push_back(winrt::make<FilteredSearchResult>(, profile));
+                    // SPECIFICALLY, I NEED TO CONVERT PartialProfileIndexEntry into a LocalizedIndexEntry (which is dumb, because there's nothing to localize)
+                    //results.push_back(winrt::make<FilteredSearchResult>(&PartialProfileIndexEntry(), profile));//, std::optional<hstring>{ profile.Name() }));
                 }
 
                 for (const auto* indexEntry : _filteredSearchProfileIndex)

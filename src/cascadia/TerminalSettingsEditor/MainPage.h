@@ -42,9 +42,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         FilteredSearchResult(const winrt::hstring& label) :
             _overrideLabel{ label } {}
 
-        FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr) :
+        FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr, const std::optional<hstring>& label = std::nullopt) :
             _SearchIndexEntry{ entry },
-            _NavigationArgOverride{ navigationArgOverride } {}
+            _NavigationArgOverride{ navigationArgOverride },
+            _overrideLabel{ label } {}
 
         hstring ToString() { return Label(); }
 

@@ -93,58 +93,126 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $subPage += 'None'
     }
 
-    if ($filename -eq 'ColorSchemes.xaml')
+    # Register top-level pages
+    if ($filename -eq 'Launch.xaml')
     {
-        # ColorSchemes.xaml doesn't have any SettingContainers!
-        
-        # TODO CARLOS: remove from script; hard code in MainPage instead
-        # Register the page itself
-        # $entries += [pscustomobject]@{
-        #     DisplayText     = 'vm'
-        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::ColorSchemes>()"
-        #     NavigationParam = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
-        #     SubPage         = 'BreadcrumbSubPage::ColorSchemes_Edit'
-        #     ElementName    = 'L""'
-        #     File            = $filename
-        # }
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_Launch/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"Launch_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+    }
+    elseif ($filename -eq 'Interaction.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_Interaction/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"Interaction_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+    }
+    elseif ($filename -eq 'GlobalAppearance.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_Appearance/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"Appearance_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+    }
+    elseif ($filename -eq 'ColorSchemes.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_ColorSchemes/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
 
-        # TODO CARLOS: remove from script; hard code in MainPage instead
         # Manually register the "add new" button
-        # $entries += [pscustomobject]@{
-        #     DisplayText     = 'RS_(L"ColorScheme_AddNewButton/Text")'
-        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::ColorSchemes>()"
-        #     NavigationParam = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
-        #     SubPage         = 'BreadcrumbSubPage::None'
-        #     ElementName    = 'L"AddNewButton"'
-        #     File            = $filename
-        # }
-        return
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = 'RS_(L"ColorScheme_AddNewButton/Text")'
+            HelpTextLocalized    = 'std::nullopt'
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
+            SubPage              = 'BreadcrumbSubPage::None'
+            ElementName          = 'L"AddNewButton"'
+            File                 = $filename
+        }
+
+    }
+    elseif ($filename -eq 'Rendering.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_Rendering/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"Rendering_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+    }
+    elseif ($filename -eq 'Compatibility.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_Compatibility/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"Compatibility_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+    }
+    elseif ($filename -eq 'Actions.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_Actions/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"Actions_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+    }
+    elseif ($filename -eq 'NewTabMenu.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_NewTabMenu/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"NewTabMenu_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
     }
     elseif ($filename -eq 'Extensions.xaml')
     {
-
-        # TODO CARLOS: remove from script; hard code in MainPage instead
-        # Register the main extension page
-        # $entries += [pscustomobject]@{
-        #     DisplayText     = 'RS_(L"Nav_Extensions/Content")'
-        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Extensions>()"
-        #     NavigationParam = "nullptr"
-        #     SubPage         = 'BreadcrumbSubPage::None'
-        #     ElementName    = 'L""'
-        #     File            = $filename
-        # }
-
-        # TODO CARLOS: remove from script; hard code in MainPage instead
-        # Register the extension view
-        # $entries += [pscustomobject]@{
-        #     DisplayText     = 'vm.Package().DisplayName()'
-        #     ParentPage      = "winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Extensions>()"
-        #     NavigationParam = "vm"
-        #     SubPage         = 'BreadcrumbSubPage::Extensions_Extension'
-        #     ElementName    = 'L""'
-        #     File            = $filename
-        # }
-        return
+        $entries += [pscustomobject]@{
+            DisplayTextLocalized = "RS_(L`"Nav_Extensions/Content`")"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = "winrt::xaml_typename<$($pageClass)>()"
+            NavigationParam      = "winrt::box_value(hstring{L`"Extensions_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
     }
 
     # Find all local:SettingContainer start tags
@@ -286,7 +354,7 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
 }
 
 # Ensure there aren't any duplicate entries
-$entries = $entries | Sort-Object RootUid, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
+$entries = $entries | Sort-Object DisplayTextLocalized, HelpTextLocalized, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
 
 $buildTimeEntries = @()
 $profileEntries = @()
@@ -340,6 +408,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // May not exist for all entries
         std::optional<hstring> HelpTextLocalized;
 
+        // TODO CARLOS: this might not be necessary; remove
         // x:Class of the parent Page (i.e. winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Launch>())
         winrt::Windows::UI::Xaml::Interop::TypeName ParentPage;
 
@@ -357,6 +426,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     const std::array<IndexEntry, $($profileEntries.Count)>& LoadProfileIndex();
     const std::array<IndexEntry, $($ntmEntries.Count)>& LoadNTMFolderIndex();
     const std::array<IndexEntry, $($schemeEntries.Count)>& LoadColorSchemeIndex();
+
+    const IndexEntry& PartialProfileIndexEntry();
 }
 "@
 
@@ -405,6 +476,12 @@ $( ($ntmEntries -join "`r`n") )
 $( ($schemeEntries -join "`r`n") )
         };
         return entries;
+    }
+
+    const IndexEntry& PartialProfileIndexEntry()
+    {
+        static IndexEntry entry{ L"", std::nullopt, winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Profiles_Base>(), nullptr, BreadcrumbSubPage::None, L"" };
+        return entry;
     }
 }
 "@
