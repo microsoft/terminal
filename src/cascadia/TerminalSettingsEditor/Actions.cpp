@@ -30,7 +30,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = e.Parameter().as<Editor::NavigateToActionsArgs>();
         _ViewModel = args.ViewModel();
 
-        // TODO CARLOS: runtime indexing and retrieval support
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
         // Subscribe to the view model's FocusContainer event.

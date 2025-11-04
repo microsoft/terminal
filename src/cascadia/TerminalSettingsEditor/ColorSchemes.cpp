@@ -39,7 +39,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ViewModel = args.ViewModel();
         _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
 
-        // TODO CARLOS: runtime indexing and retrieval support
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
         _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {

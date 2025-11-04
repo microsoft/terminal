@@ -428,6 +428,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     const std::array<IndexEntry, $($schemeEntries.Count)>& LoadColorSchemeIndex();
 
     const IndexEntry& PartialProfileIndexEntry();
+    const IndexEntry& PartialNTMFolderIndexEntry();
+    const IndexEntry& PartialColorSchemeIndexEntry();
+    const IndexEntry& PartialExtensionIndexEntry();
 }
 "@
 
@@ -481,6 +484,24 @@ $( ($schemeEntries -join "`r`n") )
     const IndexEntry& PartialProfileIndexEntry()
     {
         static IndexEntry entry{ L"", std::nullopt, winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Profiles_Base>(), nullptr, BreadcrumbSubPage::None, L"" };
+        return entry;
+    }
+
+    const IndexEntry& PartialNTMFolderIndexEntry()
+    {
+        static IndexEntry entry{ L"", std::nullopt, winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::NewTabMenu>(), nullptr, BreadcrumbSubPage::NewTabMenu_Folder, L"" };
+        return entry;
+    }
+
+    const IndexEntry& PartialColorSchemeIndexEntry()
+    {
+        static IndexEntry entry{ L"", std::nullopt, winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::EditColorScheme>(), nullptr, BreadcrumbSubPage::ColorSchemes_Edit, L"" };
+        return entry;
+    }
+
+    const IndexEntry& PartialExtensionIndexEntry()
+    {
+        static IndexEntry entry{ L"", std::nullopt, winrt::xaml_typename<Microsoft::Terminal::Settings::Editor::Extensions>(), nullptr, BreadcrumbSubPage::Extensions_Extension, L"" };
         return entry;
     }
 }

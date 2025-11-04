@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool IsNoResultsPlaceholder() const
         {
-            return _overrideLabel.has_value();
+            return _overrideLabel.has_value() && !_NavigationArgOverride;
         }
 
         const LocalizedIndexEntry& SearchIndexEntry() const noexcept
@@ -94,7 +94,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         const std::optional<winrt::hstring> _overrideLabel{ std::nullopt };
-        const Windows::Foundation::IInspectable& _NavigationArgOverride{ nullptr };
+        const Windows::Foundation::IInspectable _NavigationArgOverride{ nullptr };
         const LocalizedIndexEntry* _SearchIndexEntry{ nullptr };
     };
 
@@ -164,14 +164,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
 
-        std::vector<LocalizedIndexEntry> _searchIndex;
-        std::vector<LocalizedIndexEntry> _searchProfileIndex;
-        std::vector<LocalizedIndexEntry> _searchNTMFolderIndex;
-        std::vector<LocalizedIndexEntry> _searchColorSchemeIndex;
-        til::generational<std::vector<const LocalizedIndexEntry*>> _filteredSearchIndex;
-        std::vector<const LocalizedIndexEntry*> _filteredSearchProfileIndex;
-        std::vector<const LocalizedIndexEntry*> _filteredSearchNTMFolderIndex;
-        std::vector<const LocalizedIndexEntry*> _filteredSearchColorSchemeIndex;
+        struct SearchIndex
+        {
+            SearchIndex& operator=(const SearchIndex& other) = default;
+
+            std::vector<LocalizedIndexEntry> mainIndex;
+            std::vector<LocalizedIndexEntry> profileIndex;
+            std::vector<LocalizedIndexEntry> ntmFolderIndex;
+            std::vector<LocalizedIndexEntry> colorSchemeIndex;
+
+            // Links to main page; used when searching runtime objects (i.e. profile/extension name --> Profile_Base/Extension View)
+            LocalizedIndexEntry profileIndexEntry;
+            LocalizedIndexEntry ntmFolderIndexEntry;
+            LocalizedIndexEntry colorSchemeIndexEntry;
+            LocalizedIndexEntry extensionIndexEntry;
+        };
+        til::generational<SearchIndex> _searchIndex;
+
+        struct FilteredSearchIndex
+        {
+            std::vector<const LocalizedIndexEntry*> mainIndex;
+            std::vector<const LocalizedIndexEntry*> profileIndex;
+            std::vector<const LocalizedIndexEntry*> ntmFolderIndex;
+            std::vector<const LocalizedIndexEntry*> colorSchemeIndex;
+        };
+        til::generational<FilteredSearchIndex> _filteredSearchIndex;
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;

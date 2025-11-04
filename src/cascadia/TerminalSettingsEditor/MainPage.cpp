@@ -1081,7 +1081,47 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // must be IInspectable to be used as ItemsSource
         std::vector<IInspectable> results;
-        if (_filteredSearchIndex->empty())
+        // Package filtered search index objects into WinRT FilteredSearchResults for UI
+        for (const auto* indexEntry : _filteredSearchIndex->mainIndex)
+        {
+            results.push_back(winrt::make<FilteredSearchResult>(indexEntry));
+        }
+
+#define APPEND_RUNTIME_OBJECT_RESULTS(runtimeObjectList, nameAccessor, filteredSearchIndex, partialSearchIndexEntry, navigationArgTransform) \
+    for (const auto& runtimeObj : runtimeObjectList)                                                                                         \
+    {                                                                                                                                        \
+        const auto& objName = nameAccessor;                                                                                                  \
+        const bool nameMatches = til::contains_linguistic_insensitive(objName, sanitizedQuery);                                              \
+                                                                                                                                             \
+        if (nameMatches)                                                                                                                     \
+        {                                                                                                                                    \
+            results.push_back(winrt::make<FilteredSearchResult>(&partialSearchIndexEntry, runtimeObj, std::optional<hstring>{ objName }));   \
+        }                                                                                                                                    \
+                                                                                                                                             \
+        for (const auto* indexEntry : filteredSearchIndex)                                                                                   \
+        {                                                                                                                                    \
+            results.push_back(winrt::make<FilteredSearchResult>(indexEntry, navigationArgTransform));                                        \
+        }                                                                                                                                    \
+    }
+
+        // Profiles
+        APPEND_RUNTIME_OBJECT_RESULTS(_profileVMs, runtimeObj.Name(), _filteredSearchIndex->profileIndex, _searchIndex->profileIndexEntry, runtimeObj)
+
+        // New Tab Menu (Folder View)
+        APPEND_RUNTIME_OBJECT_RESULTS(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), runtimeObj.Name(), _filteredSearchIndex->ntmFolderIndex, _searchIndex->ntmFolderIndexEntry, runtimeObj)
+
+        // Color schemes
+        APPEND_RUNTIME_OBJECT_RESULTS(_colorSchemesPageVM.AllColorSchemes(), runtimeObj.Name(), _filteredSearchIndex->colorSchemeIndex, _searchIndex->colorSchemeIndexEntry, winrt::box_value(runtimeObj.Name()))
+
+        for (const auto& extension : _extensionsVM.ExtensionPackages())
+        {
+            if (til::contains_linguistic_insensitive(extension.Package().DisplayName(), sanitizedQuery))
+            {
+                results.push_back(winrt::make<FilteredSearchResult>(&_searchIndex->extensionIndexEntry, extension, std::optional<hstring>{ extension.Package().DisplayName() }));
+            }
+        }
+
+        if (results.empty())
         {
             // Explicitly show "no results"
 
@@ -1090,94 +1130,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             results.reserve(1);
             results.push_back(winrt::make<FilteredSearchResult>(noResultsText));
-        }
-        else
-        {
-            // Package filtered search index objects into WinRT FilteredSearchResults for UI
-            for (const auto* indexEntry : *_filteredSearchIndex)
-            {
-                results.push_back(winrt::make<FilteredSearchResult>(indexEntry));
-            }
-
-            // TODO CARLOS: use the macro below for runtime objects once everything is verified to be working right
-#define APPEND_RUNTIME_OBJECT_RESULTS(runtimeObjectList, runtimeObjectIdentifier, filteredSearchIndex, navigationArgOverride)    \
-    for (const auto& runtimeObj : runtimeObjectList)                                                                             \
-    {                                                                                                                            \
-        if (til::contains_linguistic_insensitive(runtimeObjectIdentifier, sanitizedQuery))                                       \
-        {                                                                                                                        \
-            /*results.push_back(winrt::make<FilteredSearchResult>(<NEED ANOTHER PARAM>, runtimeObj, runtimeObjectIdentifier));*/ \
-        }                                                                                                                        \
-                                                                                                                                 \
-        for (const auto* indexEntry : filteredSearchIndex)                                                                       \
-        {                                                                                                                        \
-            results.push_back(winrt::make<FilteredSearchResult>(indexEntry, navigationArgOverride));                             \
-        }                                                                                                                        \
-    }
-
-            // Profiles
-            //APPEND_RUNTIME_OBJECT_RESULTS(_profileVMs, runtimeObj.Name(), _filteredSearchProfileIndex, runtimeObj)
-            for (const auto& profile : _profileVMs)
-            {
-                // TODO CARLOS: replace with fuzzy search
-                if (til::contains_linguistic_insensitive(profile.Name(), sanitizedQuery))
-                {
-                    // TODO CARLOS: if name matches, link the top-level page
-                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
-                    // SPECIFICALLY, I NEED TO CONVERT PartialProfileIndexEntry into a LocalizedIndexEntry (which is dumb, because there's nothing to localize)
-                    //results.push_back(winrt::make<FilteredSearchResult>(&PartialProfileIndexEntry(), profile));//, std::optional<hstring>{ profile.Name() }));
-                }
-
-                for (const auto* indexEntry : _filteredSearchProfileIndex)
-                {
-                    results.push_back(winrt::make<FilteredSearchResult>(indexEntry, profile));
-                }
-            }
-
-            // New Tab Menu (Folder View)
-            //APPEND_RUNTIME_OBJECT_RESULTS(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), runtimeObj.Name(), _filteredSearchNTMFolderIndex, runtimeObj)
-            for (const auto& ntmFolder : get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList())
-            {
-                if (til::contains_linguistic_insensitive(ntmFolder.Name(), sanitizedQuery))
-                {
-                    // TODO CARLOS: if name matches, link the top-level page
-                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
-                    //results.push_back(winrt::make<FilteredSearchResult>(, ntmFolder));
-                }
-
-                for (const auto* indexEntry : _filteredSearchNTMFolderIndex)
-                {
-                    results.push_back(winrt::make<FilteredSearchResult>(indexEntry, ntmFolder));
-                }
-            }
-
-            // Color schemes
-            //APPEND_RUNTIME_OBJECT_RESULTS(_colorSchemesPageVM.AllColorSchemes(), runtimeObj.Name(), _filteredSearchColorSchemeIndex, winrt::box_value(runtimeObj.Name()))
-            for (const auto& scheme : _colorSchemesPageVM.AllColorSchemes())
-            {
-                if (til::contains_linguistic_insensitive(scheme.Name(), sanitizedQuery))
-                {
-                    // TODO CARLOS: if name matches, link the top-level page
-                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
-                    //results.push_back(winrt::make<FilteredSearchResult>(, scheme));
-                }
-
-                for (const auto* indexEntry : _filteredSearchColorSchemeIndex)
-                {
-                    results.push_back(winrt::make<FilteredSearchResult>(indexEntry, winrt::box_value(scheme.Name())));
-                }
-            }
-
-            // TODO CARLOS:
-            // - if match with extension name, go to extension page
-            for (const auto& extension : _extensionsVM.ExtensionPackages())
-            {
-                if (til::contains_linguistic_insensitive(extension.Package().DisplayName(), sanitizedQuery))
-                {
-                    // TODO CARLOS: if name matches, link the top-level page
-                    //   can't do that rn because I need a LocalizedIndexEntry stored somewhere for that
-                    //results.push_back(winrt::make<FilteredSearchResult>(, ntmFolder));
-                }
-            }
         }
 #undef APPEND_RUNTIME_OBJECT_RESULTS
 
@@ -1190,7 +1142,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Update _filteredSearchIndex with results matching queryText
     til::generation_t MainPage::_QuerySearchIndex(const hstring& queryText)
     {
-        auto filteredResults{ _filteredSearchIndex.write() };
+        auto filteredSearchIndex{ _filteredSearchIndex.write() };
+        const auto generation = _filteredSearchIndex.generation();
+        wil::hide_name _filteredSearchIndex;
 
         auto findMatchingResults = [&queryText](const std::vector<LocalizedIndexEntry>& searchIndex, std::vector<const LocalizedIndexEntry*>& filteredIndex) {
             filteredIndex.clear();
@@ -1210,18 +1164,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
 
         // build-time search index can be filtered and returned pretty much as-is
-        findMatchingResults(_searchIndex, *filteredResults);
+        findMatchingResults(_searchIndex->mainIndex, filteredSearchIndex->mainIndex);
 
         // Profiles
-        findMatchingResults(_searchProfileIndex, _filteredSearchProfileIndex);
+        findMatchingResults(_searchIndex->profileIndex, filteredSearchIndex->profileIndex);
 
         // New Tab Menu (Folder View)
-        findMatchingResults(_searchNTMFolderIndex, _filteredSearchNTMFolderIndex);
+        findMatchingResults(_searchIndex->ntmFolderIndex, filteredSearchIndex->ntmFolderIndex);
 
         // Color schemes
-        findMatchingResults(_searchColorSchemeIndex, _filteredSearchColorSchemeIndex);
+        findMatchingResults(_searchIndex->colorSchemeIndex, filteredSearchIndex->colorSchemeIndex);
 
-        return _filteredSearchIndex.generation();
+        return generation;
     }
 
     void MainPage::SettingsSearchBox_QuerySubmitted(const AutoSuggestBox& /*sender*/, const AutoSuggestBoxQuerySubmittedEventArgs& args)
@@ -1272,10 +1226,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // These are the new index entries we are building.
         // Don't actually modify the members until we're completely done here.
-        std::vector<LocalizedIndexEntry> localizedIndex;
-        std::vector<LocalizedIndexEntry> localizedProfileIndex;
-        std::vector<LocalizedIndexEntry> localizedNTMFolderIndex;
-        std::vector<LocalizedIndexEntry> localizedColorSchemeIndex;
+        SearchIndex searchIndex;
 
         // TODO CARLOS: actually use this
         // copied from CommandPaletteItems.h
@@ -1297,58 +1248,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }();
 
         const auto& buildIndex = LoadBuildTimeIndex();
-        localizedIndex.reserve(buildIndex.size());
+        searchIndex.mainIndex.reserve(buildIndex.size());
         for (const auto& entry : buildIndex)
         {
             // TODO CARLOS: properly populate LocalizedIndexEntry
             LocalizedIndexEntry localizedEntry;
             localizedEntry.Entry = &entry;
-            localizedIndex.push_back(localizedEntry);
+            searchIndex.mainIndex.push_back(localizedEntry);
         }
 
         // Load profiles
         const auto& profileIndex = LoadProfileIndex();
-        localizedProfileIndex.reserve(profileIndex.size());
+        searchIndex.profileIndex.reserve(profileIndex.size());
         for (const auto& entry : profileIndex)
         {
             // TODO CARLOS: properly populate LocalizedIndexEntry
             LocalizedIndexEntry localizedEntry;
             localizedEntry.Entry = &entry;
-            localizedProfileIndex.push_back(localizedEntry);
+            searchIndex.profileIndex.push_back(localizedEntry);
         }
+        searchIndex.profileIndexEntry.Entry = &PartialProfileIndexEntry();
 
         // Load new tab menu
         const auto& ntmFolderIndex = LoadNTMFolderIndex();
-        localizedNTMFolderIndex.reserve(ntmFolderIndex.size());
+        searchIndex.ntmFolderIndex.reserve(ntmFolderIndex.size());
         for (const auto& entry : ntmFolderIndex)
         {
             // TODO CARLOS: properly populate LocalizedIndexEntry
             LocalizedIndexEntry localizedEntry;
             localizedEntry.Entry = &entry;
-            localizedNTMFolderIndex.push_back(localizedEntry);
+            searchIndex.ntmFolderIndex.push_back(localizedEntry);
         }
+        searchIndex.ntmFolderIndexEntry.Entry = &PartialNTMFolderIndexEntry();
 
-        // Nothing to load for extensions.
-        // At query time, we'll search for matching extension names.
+        // Load extensions
+        // Nothing to load at build time.
+        // At query time, we'll search for matching extension names and use this entry below
+        searchIndex.extensionIndexEntry.Entry = &PartialExtensionIndexEntry();
 
         // Load color schemes
         const auto& colorSchemesIndex = LoadColorSchemeIndex();
-        localizedColorSchemeIndex.reserve(colorSchemesIndex.size());
+        searchIndex.colorSchemeIndex.reserve(colorSchemesIndex.size());
         for (const auto& entry : colorSchemesIndex)
         {
             // TODO CARLOS: properly populate LocalizedIndexEntry
             LocalizedIndexEntry localizedEntry;
             localizedEntry.Entry = &entry;
-            localizedColorSchemeIndex.push_back(localizedEntry);
+            searchIndex.colorSchemeIndex.push_back(localizedEntry);
         }
+        searchIndex.colorSchemeIndexEntry.Entry = &PartialColorSchemeIndexEntry();
 
         // Load actions
         // TODO CARLOS: postpone until actions page is updated
 
-        _searchIndex = std::move(localizedIndex);
-        _searchProfileIndex = std::move(localizedProfileIndex);
-        _searchNTMFolderIndex = std::move(localizedNTMFolderIndex);
-        _searchColorSchemeIndex = std::move(localizedColorSchemeIndex);
+        *_searchIndex.write() = std::move(searchIndex);
     }
 
     const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept

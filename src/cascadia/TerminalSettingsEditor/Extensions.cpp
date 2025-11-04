@@ -41,7 +41,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         vmImpl->LazyLoadExtensions();
         vmImpl->MarkAsVisited();
 
-        // TODO CARLOS: runtime indexing and retrieval support
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
         if (vmImpl->IsExtensionView())
