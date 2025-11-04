@@ -74,7 +74,7 @@ stages:
         parameters:
           jobName: MergePGD
           pool:
-            vmImage: 'windows-2022'
+            vmImage: 'windows-latest'
           buildConfiguration: Release
           buildPlatforms: ${{ parameters.buildPlatforms }}
           artifactStem: -instrumentation
@@ -82,7 +82,7 @@ stages:
       - template: ./templates-v2/job-pgo-build-nuget-and-publish.yml
         parameters:
           pool:
-            vmImage: 'windows-2022'
+            vmImage: 'windows-latest'
           dependsOn: MergePGD
           buildConfiguration: Release
           artifactStem: -instrumentation
