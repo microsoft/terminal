@@ -29,7 +29,6 @@
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
-    <Midl Include="SearchMetadata.idl" />
     <Midl Include="SettingContainer.idl" />
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />

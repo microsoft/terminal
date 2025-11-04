@@ -157,9 +157,6 @@
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="SearchMetadata.h">
-      <DependentUpon>SearchMetadata.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="SettingContainer.h">
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClInclude>
@@ -353,10 +350,6 @@
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="SearchMetadata.cpp">
-      <DependentUpon>SearchMetadata.idl</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile>
     <ClCompile Include="SettingContainer.cpp">
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClCompile>
@@ -456,9 +449,6 @@
     </Midl>
     <Midl Include="Appearances.idl">
       <DependentUpon>Appearances.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="SearchMetadata.idl">
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingContainer.idl">
