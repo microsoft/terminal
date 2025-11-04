@@ -1124,12 +1124,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (results.empty())
         {
             // Explicitly show "no results"
-
-            // TODO CARLOS: use RS_switchable_fmt from ActionArgs.cpp
-            const hstring noResultsText{ fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), sanitizedQuery) };
-
             results.reserve(1);
-            results.push_back(winrt::make<FilteredSearchResult>(noResultsText));
+            results.push_back(winrt::make<FilteredSearchResult>(fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), sanitizedQuery)));
         }
 #undef APPEND_RUNTIME_OBJECT_RESULTS
 
@@ -1228,7 +1224,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Don't actually modify the members until we're completely done here.
         SearchIndex searchIndex;
 
-        // TODO CARLOS: actually use this
         // copied from CommandPaletteItems.h
         static bool shouldIncludeLanguageNeutralResources = [] {
             try
@@ -1247,38 +1242,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return false;
         }();
 
-        const auto& buildIndex = LoadBuildTimeIndex();
-        searchIndex.mainIndex.reserve(buildIndex.size());
-        for (const auto& entry : buildIndex)
-        {
-            // TODO CARLOS: properly populate LocalizedIndexEntry
-            LocalizedIndexEntry localizedEntry;
-            localizedEntry.Entry = &entry;
-            searchIndex.mainIndex.push_back(localizedEntry);
-        }
+#define REGISTER_INDEX(index, storage)                                                                                          \
+    {                                                                                                                           \
+        const auto& indexRef = index;                                                                                           \
+        storage.reserve(indexRef.size());                                                                                       \
+        for (const auto& entry : indexRef)                                                                                      \
+        {                                                                                                                       \
+            LocalizedIndexEntry localizedEntry;                                                                                 \
+            localizedEntry.Entry = &entry;                                                                                      \
+            if (shouldIncludeLanguageNeutralResources)                                                                          \
+            {                                                                                                                   \
+                localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.DisplayTextUid);       \
+                if (entry.HelpTextUid)                                                                                          \
+                {                                                                                                               \
+                    localizedEntry.HelpTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.HelpTextUid.value()); \
+                }                                                                                                               \
+            }                                                                                                                   \
+            storage.push_back(localizedEntry);                                                                                  \
+        }                                                                                                                       \
+    }
+
+        REGISTER_INDEX(LoadBuildTimeIndex(), searchIndex.mainIndex);
 
         // Load profiles
-        const auto& profileIndex = LoadProfileIndex();
-        searchIndex.profileIndex.reserve(profileIndex.size());
-        for (const auto& entry : profileIndex)
-        {
-            // TODO CARLOS: properly populate LocalizedIndexEntry
-            LocalizedIndexEntry localizedEntry;
-            localizedEntry.Entry = &entry;
-            searchIndex.profileIndex.push_back(localizedEntry);
-        }
+        REGISTER_INDEX(LoadProfileIndex(), searchIndex.profileIndex);
         searchIndex.profileIndexEntry.Entry = &PartialProfileIndexEntry();
 
         // Load new tab menu
-        const auto& ntmFolderIndex = LoadNTMFolderIndex();
-        searchIndex.ntmFolderIndex.reserve(ntmFolderIndex.size());
-        for (const auto& entry : ntmFolderIndex)
-        {
-            // TODO CARLOS: properly populate LocalizedIndexEntry
-            LocalizedIndexEntry localizedEntry;
-            localizedEntry.Entry = &entry;
-            searchIndex.ntmFolderIndex.push_back(localizedEntry);
-        }
+        REGISTER_INDEX(LoadNTMFolderIndex(), searchIndex.ntmFolderIndex);
         searchIndex.ntmFolderIndexEntry.Entry = &PartialNTMFolderIndexEntry();
 
         // Load extensions
@@ -1287,15 +1278,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         searchIndex.extensionIndexEntry.Entry = &PartialExtensionIndexEntry();
 
         // Load color schemes
-        const auto& colorSchemesIndex = LoadColorSchemeIndex();
-        searchIndex.colorSchemeIndex.reserve(colorSchemesIndex.size());
-        for (const auto& entry : colorSchemesIndex)
-        {
-            // TODO CARLOS: properly populate LocalizedIndexEntry
-            LocalizedIndexEntry localizedEntry;
-            localizedEntry.Entry = &entry;
-            searchIndex.colorSchemeIndex.push_back(localizedEntry);
-        }
+        REGISTER_INDEX(LoadColorSchemeIndex(), searchIndex.colorSchemeIndex)
         searchIndex.colorSchemeIndexEntry.Entry = &PartialColorSchemeIndexEntry();
 
         // Load actions
