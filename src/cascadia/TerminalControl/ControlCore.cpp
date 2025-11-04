@@ -2629,7 +2629,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            if (direction == ScrollToMarkDirection::Last || direction == ScrollToMarkDirection::Next)
+            // GH#19488: Don't scroll back down when no mark is found for Next direction
+            // to avoid unwanted scrolling when pressing ctrl-shift-M
+            if (direction == ScrollToMarkDirection::Last)
             {
                 UserScrollViewport(BufferHeight());
                 _terminalScrollPositionChanged(BufferHeight(), viewHeight, bufferSize);
@@ -2639,6 +2641,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 UserScrollViewport(0);
                 _terminalScrollPositionChanged(0, viewHeight, bufferSize);
             }
+            // For Next direction, do nothing if no mark is found
         }
     }
 

@@ -311,10 +311,9 @@ namespace winrt::Microsoft::Terminal::Settings
         // use the profile name
         _StartingTitle = !profile.TabTitle().empty() ? profile.TabTitle() : profile.Name();
 
-        if (profile.SuppressApplicationTitle())
-        {
-            _SuppressApplicationTitle = profile.SuppressApplicationTitle();
-        }
+        // Always set SuppressApplicationTitle from the profile, regardless of its value
+        // to ensure the setting is properly applied (GH#19493)
+        _SuppressApplicationTitle = profile.SuppressApplicationTitle();
 
         _ScrollState = profile.ScrollState();
 

@@ -1295,6 +1295,14 @@ namespace winrt::TerminalApp::implementation
         _activePane = pane;
         _activePane->SetActive();
 
+        // GH#13388: Explicitly focus the pane's content to ensure keyboard input works
+        // immediately when a new pane or tab is created. This is especially important
+        // for newly created panes that may not have received focus yet.
+        if (const auto& content{ pane->GetContent() })
+        {
+            content.Focus(FocusState::Programmatic);
+        }
+
         // Update our own title text to match the newly-active pane.
         UpdateTitle();
         _UpdateProgressState();
