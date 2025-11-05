@@ -30,7 +30,6 @@
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingContainer.idl" />
-    <Midl Include="ArgsTemplateSelectors.idl" />
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
   </ItemGroup>

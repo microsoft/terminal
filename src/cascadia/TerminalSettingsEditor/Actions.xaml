@@ -193,7 +193,7 @@
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
                     Margin="0,12,0,0"
-                    Click="AddNew_Click">
+                    Click="{x:Bind ViewModel.AddNewCommand}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"

@@ -7,6 +7,33 @@ import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    [default_interface] runtimeclass ArgsTemplateSelectors : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        ArgsTemplateSelectors();
+
+        Windows.UI.Xaml.DataTemplate Int32Template;
+        Windows.UI.Xaml.DataTemplate Int32OptionalTemplate;
+        Windows.UI.Xaml.DataTemplate UInt32Template;
+        Windows.UI.Xaml.DataTemplate UInt32OptionalTemplate;
+        Windows.UI.Xaml.DataTemplate FloatTemplate;
+        Windows.UI.Xaml.DataTemplate StringTemplate;
+        Windows.UI.Xaml.DataTemplate ColorSchemeTemplate;
+        Windows.UI.Xaml.DataTemplate FilePickerTemplate;
+        Windows.UI.Xaml.DataTemplate FolderPickerTemplate;
+        Windows.UI.Xaml.DataTemplate BoolTemplate;
+        Windows.UI.Xaml.DataTemplate BoolOptionalTemplate;
+        Windows.UI.Xaml.DataTemplate EnumTemplate;
+        Windows.UI.Xaml.DataTemplate FlagTemplate;
+        Windows.UI.Xaml.DataTemplate TerminalCoreColorOptionalTemplate;
+        Windows.UI.Xaml.DataTemplate WindowsUIColorOptionalTemplate;
+    }
+
+    [default_interface] runtimeclass EditAction : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        EditAction();
+        CommandViewModel ViewModel { get; };
+    }
+
     runtimeclass NavigateToCommandArgs
     {
         CommandViewModel Command { get; };

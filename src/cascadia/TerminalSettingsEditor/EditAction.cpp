@@ -14,21 +14,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     EditAction::EditAction()
     {
-        InitializeComponent();
     }
 
     void EditAction::OnNavigatedTo(const NavigationEventArgs& e)
     {
         const auto args = e.Parameter().as<Editor::NavigateToCommandArgs>();
         _ViewModel = args.Command();
-        _ViewModel.PropagateWindowRootRequested([windowRoot = args.WindowRoot()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+        _propagateWindowRootToken = _ViewModel.PropagateWindowRootRequested([windowRoot = args.WindowRoot()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
             if (wrapper)
             {
                 wrapper.WindowRoot(windowRoot);
             }
         });
         auto weakThis = get_weak();
-        _ViewModel.FocusContainer([weakThis](const auto& /*sender*/, const auto& args) {
+        _focusContainerToken = _ViewModel.FocusContainer([weakThis](const auto& /*sender*/, const auto& args) {
             if (auto page{ weakThis.get() })
             {
                 if (auto kcVM{ args.try_as<KeyChordViewModel>() })
@@ -46,5 +45,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             CommandNameTextBox().Focus(FocusState::Programmatic);
         });
+    }
+
+    void EditAction::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
+    {
+        _ViewModel.PropagateWindowRootRequested(_propagateWindowRootToken);
+        _ViewModel.FocusContainer(_focusContainerToken);
     }
 }

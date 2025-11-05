@@ -241,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             if (value.empty())
             {
-                _name = std::nullopt;
+                _name.reset();
             }
             else
             {

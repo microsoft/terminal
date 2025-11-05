@@ -11,24 +11,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         ArgsTemplateSelectors() = default;
 
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject&);
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::DependencyObject& = nullptr);
 
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, Int32Template);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, Int32OptionalTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, UInt32Template);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, UInt32OptionalTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FloatTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, StringTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, ColorSchemeTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FilePickerTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FolderPickerTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, BoolOptionalTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, EnumTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, FlagTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, TerminalCoreColorOptionalTemplate);
-        WINRT_PROPERTY(winrt::Windows::UI::Xaml::DataTemplate, WindowsUIColorOptionalTemplate);
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> Int32Template;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> Int32OptionalTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> UInt32Template;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> UInt32OptionalTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> FloatTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> StringTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> ColorSchemeTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> FilePickerTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> FolderPickerTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> BoolTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> BoolOptionalTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> EnumTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> FlagTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> TerminalCoreColorOptionalTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> WindowsUIColorOptionalTemplate;
     };
 }
 

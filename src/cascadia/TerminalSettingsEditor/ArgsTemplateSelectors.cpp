@@ -7,11 +7,6 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    Windows::UI::Xaml::DataTemplate ArgsTemplateSelectors::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
-    {
-        return SelectTemplateCore(item);
-    }
-
     // Method Description:
     // - This method is called once command palette decides how to render a filtered command.
     //   Currently we support two ways to render command, that depend on its palette item type:
@@ -21,35 +16,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - item - an instance of filtered command to render
     // Return Value:
     // - data template to use for rendering
-    Windows::UI::Xaml::DataTemplate ArgsTemplateSelectors::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item)
+    Windows::UI::Xaml::DataTemplate ArgsTemplateSelectors::SelectTemplateCore(const winrt::Windows::Foundation::IInspectable& item, const winrt::Windows::UI::Xaml::DependencyObject& /*container*/)
     {
-        static constexpr std::pair<std::wstring_view, Windows::UI::Xaml::DataTemplate ArgsTemplateSelectors::*> lut[] = {
-            { L"int32_t", &ArgsTemplateSelectors::_Int32Template },
-            { L"uint32_t", &ArgsTemplateSelectors::_UInt32Template },
-            { L"float", &ArgsTemplateSelectors::_FloatTemplate },
-            { L"bool", &ArgsTemplateSelectors::_BoolTemplate },
-            { L"Windows::Foundation::IReference<bool>", &ArgsTemplateSelectors::_BoolOptionalTemplate },
-            { L"Windows::Foundation::IReference<int32_t>", &ArgsTemplateSelectors::_Int32OptionalTemplate },
-            { L"Windows::Foundation::IReference<uint32_t>", &ArgsTemplateSelectors::_UInt32OptionalTemplate },
-            { L"SuggestionsSource", &ArgsTemplateSelectors::_FlagTemplate },
-            { L"Windows::Foundation::IReference<Control::CopyFormat>", &ArgsTemplateSelectors::_FlagTemplate },
-            { L"Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>", &ArgsTemplateSelectors::_TerminalCoreColorOptionalTemplate },
-            { L"Windows::Foundation::IReference<Windows::UI::Color>", &ArgsTemplateSelectors::_WindowsUIColorOptionalTemplate },
-            { L"Model::ResizeDirection", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"Model::FocusDirection", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"SettingsTarget", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"MoveTabDirection", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"Microsoft::Terminal::Control::ScrollToMarkDirection", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"CommandPaletteLaunchMode", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"FindMatchDirection", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"Model::DesktopBehavior", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"Model::MonitorBehavior", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"winrt::Microsoft::Terminal::Control::ClearBufferType", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"SelectOutputDirection", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"Windows::Foundation::IReference<TabSwitcherMode>", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"Model::SplitDirection", &ArgsTemplateSelectors::_EnumTemplate },
-            { L"SplitType", &ArgsTemplateSelectors::_EnumTemplate },
-        };
+        static constexpr std::pair<
+            std::wstring_view,
+            til::property<Windows::UI::Xaml::DataTemplate> ArgsTemplateSelectors::*>
+            lut[] = {
+                { L"int32_t", &ArgsTemplateSelectors::Int32Template },
+                { L"uint32_t", &ArgsTemplateSelectors::UInt32Template },
+                { L"float", &ArgsTemplateSelectors::FloatTemplate },
+                { L"bool", &ArgsTemplateSelectors::BoolTemplate },
+                { L"Windows::Foundation::IReference<bool>", &ArgsTemplateSelectors::BoolOptionalTemplate },
+                { L"Windows::Foundation::IReference<int32_t>", &ArgsTemplateSelectors::Int32OptionalTemplate },
+                { L"Windows::Foundation::IReference<uint32_t>", &ArgsTemplateSelectors::UInt32OptionalTemplate },
+                { L"SuggestionsSource", &ArgsTemplateSelectors::FlagTemplate },
+                { L"Windows::Foundation::IReference<Control::CopyFormat>", &ArgsTemplateSelectors::FlagTemplate },
+                { L"Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>", &ArgsTemplateSelectors::TerminalCoreColorOptionalTemplate },
+                { L"Windows::Foundation::IReference<Windows::UI::Color>", &ArgsTemplateSelectors::WindowsUIColorOptionalTemplate },
+                { L"Model::ResizeDirection", &ArgsTemplateSelectors::EnumTemplate },
+                { L"Model::FocusDirection", &ArgsTemplateSelectors::EnumTemplate },
+                { L"SettingsTarget", &ArgsTemplateSelectors::EnumTemplate },
+                { L"MoveTabDirection", &ArgsTemplateSelectors::EnumTemplate },
+                { L"Microsoft::Terminal::Control::ScrollToMarkDirection", &ArgsTemplateSelectors::EnumTemplate },
+                { L"CommandPaletteLaunchMode", &ArgsTemplateSelectors::EnumTemplate },
+                { L"FindMatchDirection", &ArgsTemplateSelectors::EnumTemplate },
+                { L"Model::DesktopBehavior", &ArgsTemplateSelectors::EnumTemplate },
+                { L"Model::MonitorBehavior", &ArgsTemplateSelectors::EnumTemplate },
+                { L"winrt::Microsoft::Terminal::Control::ClearBufferType", &ArgsTemplateSelectors::EnumTemplate },
+                { L"SelectOutputDirection", &ArgsTemplateSelectors::EnumTemplate },
+                { L"Windows::Foundation::IReference<TabSwitcherMode>", &ArgsTemplateSelectors::EnumTemplate },
+                { L"Model::SplitDirection", &ArgsTemplateSelectors::EnumTemplate },
+                { L"SplitType", &ArgsTemplateSelectors::EnumTemplate },
+            };
 
         if (const auto argWrapper{ item.try_as<Microsoft::Terminal::Settings::Editor::ArgWrapper>() })
         {
@@ -76,7 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (type == argType)
                 {
-                    return this->*member;
+                    return (this->*member)();
                 }
             }
         }
