@@ -974,7 +974,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(Opacity());
             TransparencyChanged.raise(*this, *eventArgs);
 
-            _renderer->TriggerRedrawAll(true, true);
+            // When applying unfocused appearance, only trigger a regular redraw
+            // to avoid color flickering issues when the window is not focused.
+            // The full redraw with background and frame changes is only needed
+            // when regaining focus.
+            _renderer->TriggerRedrawAll(focused, focused);
         }
     }
 
