@@ -39,13 +39,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     struct FilteredSearchResult : FilteredSearchResultT<FilteredSearchResult>
     {
-        FilteredSearchResult(const winrt::hstring& label) :
-            _overrideLabel{ label } {}
-
         FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr, const std::optional<hstring>& label = std::nullopt) :
             _SearchIndexEntry{ entry },
             _NavigationArgOverride{ navigationArgOverride },
             _overrideLabel{ label } {}
+
+        static Editor::FilteredSearchResult CreateNoResultsItem(const winrt::hstring& query);
+        static Editor::FilteredSearchResult CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj);
 
         hstring ToString() { return Label(); }
 

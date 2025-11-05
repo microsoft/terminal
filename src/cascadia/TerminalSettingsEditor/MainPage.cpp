@@ -57,20 +57,58 @@ static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
-// Like RS_, but uses an ambient context to determine whether
-// to load the English verion of a resource or the localized one.
-#define RS_switchable_(x) RS_switchable_impl(context, USES_RESOURCE(x))
-
-static winrt::hstring RS_switchable_impl(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context, std::wstring_view key)
-{
-    return GetLibraryResourceLoader().ResourceMap().GetValue(key, context).ValueAsString();
-}
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
     {
         return winrt::make<implementation::ProfileViewModel>(profile, appSettings, dispatcher);
+    }
+
+    Editor::FilteredSearchResult FilteredSearchResult::CreateNoResultsItem(const winrt::hstring& query)
+    {
+        return winrt::make<FilteredSearchResult>(nullptr, nullptr, hstring{ fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), query) });
+    }
+
+    // Creates a FilteredSearchResult with the given search index entry and runtime object.
+    // The resulting search result will have a label like "<ProfileName>: <display text>" or "<ProfileName>".
+    // This is so that we can reuse the display text from the search index, but also add additional context to which runtime object this search result maps to.
+    Editor::FilteredSearchResult FilteredSearchResult::CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj)
+    {
+        hstring runtimeObjLabel{};
+        if (const auto profileVM = runtimeObj.try_as<Editor::ProfileViewModel>())
+        {
+            runtimeObjLabel = profileVM.Name();
+        }
+        else if (const auto ntmFolderEntryVM = runtimeObj.try_as<Editor::FolderEntryViewModel>())
+        {
+            runtimeObjLabel = ntmFolderEntryVM.Name();
+        }
+        else if (const auto extensionPackageVM = runtimeObj.try_as<Editor::ExtensionPackageViewModel>())
+        {
+            runtimeObjLabel = extensionPackageVM.Package().DisplayName();
+        }
+        else if (const auto colorSchemeName = runtimeObj.try_as<hstring>())
+        {
+            runtimeObjLabel = *colorSchemeName;
+        }
+
+        hstring displayText{};
+        if (searchIndexEntry)
+        {
+            if (searchIndexEntry->Entry)
+            {
+                displayText = searchIndexEntry->Entry->DisplayTextLocalized;
+            }
+            else if (searchIndexEntry->DisplayTextNeutral)
+            {
+                displayText = searchIndexEntry->DisplayTextNeutral.value();
+            }
+        }
+
+        // empty display text --> just show runtime object label (i.e. "PowerShell") --> navigates to main runtime object page (i.e. Profiles_Base)
+        // otherwise --> "<ProfileName>: <display text>" (i.e. "PowerShell: Command line") --> navigates to setting container
+        const hstring label = displayText.empty() ? runtimeObjLabel : hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), runtimeObjLabel, displayText) };
+        return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, label);
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -1095,29 +1133,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                                                                                              \
         if (nameMatches)                                                                                                                     \
         {                                                                                                                                    \
-            results.push_back(winrt::make<FilteredSearchResult>(&partialSearchIndexEntry, runtimeObj, std::optional<hstring>{ objName }));   \
+            /* navigates to runtime object main page (i.e. "PowerShell" Profiles_Base page) */                                               \
+            results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(&partialSearchIndexEntry, runtimeObj));                          \
         }                                                                                                                                    \
                                                                                                                                              \
         for (const auto* indexEntry : filteredSearchIndex)                                                                                   \
         {                                                                                                                                    \
-            results.push_back(winrt::make<FilteredSearchResult>(indexEntry, navigationArgTransform));                                        \
+            /* navigates to runtime object's setting (i.e. "PowerShell: Command line" ) */                                                   \
+            results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(indexEntry, navigationArgTransform));                            \
         }                                                                                                                                    \
     }
 
         // Profiles
-        APPEND_RUNTIME_OBJECT_RESULTS(_profileVMs, runtimeObj.Name(), _filteredSearchIndex->profileIndex, _searchIndex->profileIndexEntry, runtimeObj)
+        APPEND_RUNTIME_OBJECT_RESULTS(_profileVMs, runtimeObj.Name(), _filteredSearchIndex->profileIndex, _searchIndex->profileIndexEntry, runtimeObj);
 
         // New Tab Menu (Folder View)
-        APPEND_RUNTIME_OBJECT_RESULTS(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), runtimeObj.Name(), _filteredSearchIndex->ntmFolderIndex, _searchIndex->ntmFolderIndexEntry, runtimeObj)
+        APPEND_RUNTIME_OBJECT_RESULTS(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), runtimeObj.Name(), _filteredSearchIndex->ntmFolderIndex, _searchIndex->ntmFolderIndexEntry, runtimeObj);
 
         // Color schemes
-        APPEND_RUNTIME_OBJECT_RESULTS(_colorSchemesPageVM.AllColorSchemes(), runtimeObj.Name(), _filteredSearchIndex->colorSchemeIndex, _searchIndex->colorSchemeIndexEntry, winrt::box_value(runtimeObj.Name()))
+        APPEND_RUNTIME_OBJECT_RESULTS(_colorSchemesPageVM.AllColorSchemes(), runtimeObj.Name(), _filteredSearchIndex->colorSchemeIndex, _searchIndex->colorSchemeIndexEntry, winrt::box_value(runtimeObj.Name()));
 
+        // Extensions
         for (const auto& extension : _extensionsVM.ExtensionPackages())
         {
             if (til::contains_linguistic_insensitive(extension.Package().DisplayName(), sanitizedQuery))
             {
-                results.push_back(winrt::make<FilteredSearchResult>(&_searchIndex->extensionIndexEntry, extension, std::optional<hstring>{ extension.Package().DisplayName() }));
+                results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(&_searchIndex->extensionIndexEntry, extension));
             }
         }
 
@@ -1125,7 +1166,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             // Explicitly show "no results"
             results.reserve(1);
-            results.push_back(winrt::make<FilteredSearchResult>(fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), sanitizedQuery)));
+            results.push_back(FilteredSearchResult::CreateNoResultsItem(sanitizedQuery));
         }
 #undef APPEND_RUNTIME_OBJECT_RESULTS
 
