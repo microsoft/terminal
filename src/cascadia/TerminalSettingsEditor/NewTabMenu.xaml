@@ -324,8 +324,8 @@
             <!--  Once PR #17965 merges, we can add that kind of control to set an icon  -->
 
             <!--  Name  -->
-            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderName"
-                                    x:Name="CurrentFolderName"
+            <local:SettingContainer x:Name="CurrentFolderName"
+                                    x:Uid="NewTabMenu_CurrentFolderName"
                                     Grid.Row="0"
                                     CurrentValue="{x:Bind ViewModel.CurrentFolderName, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
@@ -334,16 +334,16 @@
             </local:SettingContainer>
 
             <!--  Inlining  -->
-            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderInlining"
-                                    x:Name="CurrentFolderInlining"
+            <local:SettingContainer x:Name="CurrentFolderInlining"
+                                    x:Uid="NewTabMenu_CurrentFolderInlining"
                                     Grid.Row="1">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderInlining, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Allow Empty  -->
-            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderAllowEmpty"
-                                    x:Name="CurrentFolderAllowEmpty"
+            <local:SettingContainer x:Name="CurrentFolderAllowEmpty"
+                                    x:Uid="NewTabMenu_CurrentFolderAllowEmpty"
                                     Grid.Row="2">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderAllowEmpty, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
@@ -356,8 +356,8 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Add Profile  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddProfile"
-                                    x:Name="AddProfile"
+            <local:SettingContainer x:Name="AddProfile"
+                                    x:Uid="NewTabMenu_AddProfile"
                                     FontIconGlyph="&#xE756;"
                                     Style="{StaticResource SettingContainerWithIcon}">
 
@@ -406,8 +406,8 @@
             </local:SettingContainer>
 
             <!--  Add Separator  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
-                                    x:Name="AddSeparator"
+            <local:SettingContainer x:Name="AddSeparator"
+                                    x:Uid="NewTabMenu_AddSeparator"
                                     FontIconGlyph="&#xE76f;"
                                     Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddSeparatorButton"
@@ -423,8 +423,8 @@
             </local:SettingContainer>
 
             <!--  Add Folder  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddFolder"
-                                    x:Name="AddFolder"
+            <local:SettingContainer x:Name="AddFolder"
+                                    x:Uid="NewTabMenu_AddFolder"
                                     FontIconGlyph="&#xF12B;"
                                     Style="{StaticResource SettingContainerWithIcon}">
                 <StackPanel Orientation="Horizontal"
@@ -450,8 +450,8 @@
             </local:SettingContainer>
 
             <!--  Add Match Profiles  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
-                                    x:Name="AddMatchProfiles"
+            <local:SettingContainer x:Name="AddMatchProfiles"
+                                    x:Uid="NewTabMenu_AddMatchProfiles"
                                     FontIconGlyph="&#xE748;"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
                 <StackPanel Spacing="8">

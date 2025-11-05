@@ -46,7 +46,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto innerViewModel{ winrt::get_self<Editor::implementation::LaunchViewModel>(_ViewModel) };
         /* coroutine dispatch */ innerViewModel->PrepareStartOnUserLoginSettings();
 
-
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,
             "NavigatedToPage",

@@ -100,25 +100,25 @@
         </muxc:NavigationView.Header>
 
         <muxc:NavigationView.AutoSuggestBox>
-            <AutoSuggestBox x:Uid="Nav_SearchBox"
-                            x:Name="SettingsSearchBox"
+            <AutoSuggestBox x:Name="SettingsSearchBox"
+                            x:Uid="Nav_SearchBox"
                             QueryIcon="Find"
-                            TextChanged="SettingsSearchBox_TextChanged"
                             QuerySubmitted="SettingsSearchBox_QuerySubmitted"
-                            SuggestionChosen="SettingsSearchBox_SuggestionChosen">
+                            SuggestionChosen="SettingsSearchBox_SuggestionChosen"
+                            TextChanged="SettingsSearchBox_TextChanged">
                 <AutoSuggestBox.ItemTemplate>
                     <DataTemplate x:DataType="local:FilteredSearchResult">
                         <Grid HorizontalAlignment="Stretch"
                               ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
                             <ContentPresenter Grid.Column="0"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
-                                              Content="{x:Bind Icon}"/>
+                                              Content="{x:Bind Icon}" />
                             <TextBlock Grid.Column="1"
                                        Text="{x:Bind Label}" />
                         </Grid>

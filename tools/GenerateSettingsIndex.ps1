@@ -56,7 +56,7 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
     }
     elseif ($filename -eq 'Appearances.xaml')
     {
-        # Apperances.xaml is a UserControl that is hosted in Profiles_Appearance.xaml
+        # Appearances.xaml is a UserControl that is hosted in Profiles_Appearance.xaml
         $pageClass = 'Microsoft::Terminal::Settings::Editor::Profiles_Appearance'
     }
     else

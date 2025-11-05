@@ -37,8 +37,8 @@
             </Button>
         </Border>
         <StackPanel Margin="{StaticResource StandardControlMargin}">
-            <local:SettingContainer x:Uid="AddProfile_Duplicate"
-                                    x:Name="DuplicateProfile">
+            <local:SettingContainer x:Name="DuplicateProfile"
+                                    x:Uid="AddProfile_Duplicate">
                 <ComboBox x:Name="Profiles"
                           AutomationProperties.AccessibilityView="Content"
                           ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
