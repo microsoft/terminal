@@ -1618,4 +1618,5 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
     }
+    
 }

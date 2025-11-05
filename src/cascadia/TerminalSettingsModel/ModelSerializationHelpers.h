@@ -16,10 +16,10 @@ Abstract:
 // - Helper for converting a pair of comma separated, potentially absent integer values
 //   into the corresponding left and right values. The leftValue and rightValue functions
 //   will be called back with the associated parsed integer value, assuming it's present.
-//   (100, 100): leftValue and rightValue functions both called back with 100.
+//   (100, 100), (100): leftValue and rightValue functions both called back with 100.
 //   (100, ), (100, abc): leftValue function called back with 100
 //   (, 100), (abc, 100): rightValue function called back with 100
-//   (,): no function called back
+//   (,), (abc): no function called back
 //   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
 // Arguments:
 // - string: The string to parse
@@ -45,6 +45,7 @@ _TIL_INLINEPREFIX void ParseCommaSeparatedPair(const std::string& string,
             if (index == 0)
             {
                 leftValue(value);
+                if (string.find(',') == std::string::npos) {rightValue(value);}
             }
 
             if (index == 1)
@@ -67,10 +68,6 @@ _TIL_INLINEPREFIX ::winrt::Microsoft::Terminal::Settings::Model::LaunchPosition 
         string,
         [&initialPosition](int32_t left) { initialPosition.X = left; },
         [&initialPosition](int32_t right) { initialPosition.Y = right; });
-    if (initialPosition.X && !initialPosition.Y && string.find(',') == std::string::npos)
-    {
-        initialPosition.Y = initialPosition.X;
-    }
     return initialPosition;
 }
 
