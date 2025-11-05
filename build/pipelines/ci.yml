@@ -57,6 +57,7 @@ stages:
                 name: SHINE-INT-L
               ${{ else }}:
                 name: SHINE-OSS-L
+              demands: ImageOverride -equals SHINE-VS17-Latest-2022
             buildPlatforms:
               - ${{ platform }}
             buildConfigurations: [Release]
