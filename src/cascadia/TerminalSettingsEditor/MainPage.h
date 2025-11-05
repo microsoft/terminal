@@ -48,49 +48,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Editor::FilteredSearchResult CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj);
 
         hstring ToString() { return Label(); }
-
-        winrt::hstring Label() const
-        {
-            if (_overrideLabel)
-            {
-                return _overrideLabel.value();
-            }
-            else if (_SearchIndexEntry)
-            {
-                if (_SearchIndexEntry->Entry)
-                {
-                    return _SearchIndexEntry->Entry->DisplayTextLocalized;
-                }
-                else if (_SearchIndexEntry->DisplayTextNeutral.has_value())
-                {
-                    return _SearchIndexEntry->DisplayTextNeutral.value();
-                }
-            }
-            return {};
-        }
-
-        bool IsNoResultsPlaceholder() const
-        {
-            return _overrideLabel.has_value() && !_NavigationArgOverride;
-        }
-
-        const LocalizedIndexEntry& SearchIndexEntry() const noexcept
-        {
-            return *_SearchIndexEntry;
-        }
-
-        Windows::Foundation::IInspectable NavigationArg() const
-        {
-            if (_NavigationArgOverride)
-            {
-                return _NavigationArgOverride;
-            }
-            else if (_SearchIndexEntry)
-            {
-                return _SearchIndexEntry->Entry->NavigationArg;
-            }
-            return nullptr;
-        }
+        winrt::hstring Label() const;
+        bool IsNoResultsPlaceholder() const;
+        const LocalizedIndexEntry& SearchIndexEntry() const noexcept { return *_SearchIndexEntry; }
+        Windows::Foundation::IInspectable NavigationArg() const;
+        Windows::UI::Xaml::Controls::IconElement Icon() const;
 
     private:
         const std::optional<winrt::hstring> _overrideLabel{ std::nullopt };

@@ -111,6 +111,141 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, label);
     }
 
+    winrt::hstring FilteredSearchResult::Label() const
+    {
+        if (_overrideLabel)
+        {
+            return _overrideLabel.value();
+        }
+        else if (_SearchIndexEntry)
+        {
+            if (_SearchIndexEntry->Entry)
+            {
+                return _SearchIndexEntry->Entry->DisplayTextLocalized;
+            }
+            else if (_SearchIndexEntry->DisplayTextNeutral.has_value())
+            {
+                return _SearchIndexEntry->DisplayTextNeutral.value();
+            }
+        }
+        return {};
+    }
+
+    bool FilteredSearchResult::IsNoResultsPlaceholder() const
+    {
+        return _overrideLabel.has_value() && !_NavigationArgOverride;
+    }
+
+    Windows::Foundation::IInspectable FilteredSearchResult::NavigationArg() const
+    {
+        if (_NavigationArgOverride)
+        {
+            return _NavigationArgOverride;
+        }
+        else if (_SearchIndexEntry)
+        {
+            return _SearchIndexEntry->Entry->NavigationArg;
+        }
+        return nullptr;
+    }
+
+    Windows::UI::Xaml::Controls::IconElement FilteredSearchResult::Icon() const
+    {
+        // We need to set the icon size here as opposed to in the XAML.
+        // Setting it in the XAML just crops the icon.
+        static constexpr double iconSize = 16;
+        if (auto navigationArg = NavigationArg())
+        {
+            if (const auto profileVM = navigationArg.try_as<Editor::ProfileViewModel>())
+            {
+                auto icon = UI::IconPathConverter::IconWUX(profileVM.EvaluatedIcon());
+                icon.Width(iconSize);
+                icon.Height(iconSize);
+                return icon;
+            }
+            else if (const auto ntmFolderEntryVM = navigationArg.try_as<Editor::FolderEntryViewModel>())
+            {
+                auto icon = UI::IconPathConverter::IconWUX(ntmFolderEntryVM.Icon());
+                icon.Width(iconSize);
+                icon.Height(iconSize);
+                return icon;
+            }
+            else if (const auto extensionPackageVM = navigationArg.try_as<Editor::ExtensionPackageViewModel>())
+            {
+                auto icon = UI::IconPathConverter::IconWUX(extensionPackageVM.Package().Icon());
+                icon.Width(iconSize);
+                icon.Height(iconSize);
+                return icon;
+            }
+            else if (const auto stringNavArg = navigationArg.try_as<hstring>())
+            {
+                // The hstring navArg can be...
+                // - a color scheme name
+                // - an hstring tag (all defined at the top of the file)
+                // Regardless, we'll use the font icon used by the navigation view item
+                WUX::Controls::FontIcon icon{};
+                icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+                icon.FontSize(iconSize);
+                if (stringNavArg == colorSchemesTag || _SearchIndexEntry->Entry->SubPage == BreadcrumbSubPage::ColorSchemes_Edit)
+                {
+                    icon.Glyph(L"\xE790");
+                    return icon;
+                }
+                else if (stringNavArg == launchTag)
+                {
+                    icon.Glyph(L"\xE7B5");
+                    return icon;
+                }
+                else if (stringNavArg == interactionTag)
+                {
+                    icon.Glyph(L"\xE7C9");
+                    return icon;
+                }
+                else if (stringNavArg == renderingTag)
+                {
+                    icon.Glyph(L"\xE7F8");
+                    return icon;
+                }
+                else if (stringNavArg == compatibilityTag)
+                {
+                    icon.Glyph(L"\xEC7A");
+                    return icon;
+                }
+                else if (stringNavArg == actionsTag)
+                {
+                    icon.Glyph(L"\xE765");
+                    return icon;
+                }
+                else if (stringNavArg == newTabMenuTag)
+                {
+                    icon.Glyph(L"\xE71d");
+                    return icon;
+                }
+                else if (stringNavArg == extensionsTag)
+                {
+                    icon.Glyph(L"\xEA86");
+                    return icon;
+                }
+                else if (stringNavArg == globalProfileTag)
+                {
+                    icon.Glyph(L"\xE81E");
+                    return icon;
+                }
+                else if (stringNavArg == addProfileTag)
+                {
+                    icon.Glyph(L"\xE710");
+                    return icon;
+                }
+                else if (stringNavArg == globalAppearanceTag)
+                {
+                    icon.Glyph(L"\xE771");
+                    return icon;
+                }
+            }
+        }
+        return nullptr;
+    }
+
     MainPage::MainPage(const CascadiaSettings& settings) :
         _settingsSource{ settings },
         _settingsClone{ settings.Copy() },

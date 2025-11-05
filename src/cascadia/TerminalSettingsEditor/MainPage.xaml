@@ -108,7 +108,20 @@
                             SuggestionChosen="SettingsSearchBox_SuggestionChosen">
                 <AutoSuggestBox.ItemTemplate>
                     <DataTemplate x:DataType="local:FilteredSearchResult">
-                        <TextBlock Text="{x:Bind Label}" />
+                        <Grid HorizontalAlignment="Stretch"
+                              ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ContentPresenter Grid.Column="0"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Content="{x:Bind Icon}"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{x:Bind Label}" />
+                        </Grid>
                     </DataTemplate>
                 </AutoSuggestBox.ItemTemplate>
             </AutoSuggestBox>

@@ -29,6 +29,7 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass FilteredSearchResult : Windows.Foundation.IStringable
     {
         String Label { get; };
+        Windows.UI.Xaml.Controls.IconElement Icon { get; };
     }
 
     runtimeclass Breadcrumb : Windows.Foundation.IStringable
