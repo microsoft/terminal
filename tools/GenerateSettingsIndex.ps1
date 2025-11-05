@@ -344,7 +344,7 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         }
         elseif ($pageClass -match 'Editor::AddProfile')
         {
-            $navigationParam = 'AddProfile_Nav'
+            $navigationParam = 'AddProfile'
         }
 
         $entries += [pscustomobject]@{
