@@ -1426,9 +1426,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _Navigate(*extPkgVM, subpage, elementToFocus);
             }
-            // TODO CARLOS:
-            // - update selected item
-            // - clear text box
+            SettingsSearchBox().Text(L"");
         }
     }
 
