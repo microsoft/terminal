@@ -129,21 +129,24 @@
 
         <muxc:NavigationView.MenuItems>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Launch"
+            <muxc:NavigationViewItem x:Name="LaunchNavItem"
+                                     x:Uid="Nav_Launch"
                                      Tag="Launch_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7B5;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Interaction"
+            <muxc:NavigationViewItem x:Name="InteractionNavItem"
+                                     x:Uid="Nav_Interaction"
                                      Tag="Interaction_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7C9;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Appearance"
+            <muxc:NavigationViewItem x:Name="GlobalAppearanceNavItem"
+                                     x:Uid="Nav_Appearance"
                                      Tag="GlobalAppearance_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE771;" />
@@ -158,35 +161,40 @@
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Rendering"
+            <muxc:NavigationViewItem x:Name="RenderingNavItem"
+                                     x:Uid="Nav_Rendering"
                                      Tag="Rendering_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE7F8;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Compatibility"
+            <muxc:NavigationViewItem x:Name="CompatibilityNavItem"
+                                     x:Uid="Nav_Compatibility"
                                      Tag="Compatibility_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xEC7A;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Actions"
+            <muxc:NavigationViewItem x:Name="ActionsNavItem"
+                                     x:Uid="Nav_Actions"
                                      Tag="Actions_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE765;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_NewTabMenu"
+            <muxc:NavigationViewItem x:Name="NewTabMenuNavItem"
+                                     x:Uid="Nav_NewTabMenu"
                                      Tag="NewTabMenu_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE71d;" />
                 </muxc:NavigationViewItem.Icon>
             </muxc:NavigationViewItem>
 
-            <muxc:NavigationViewItem x:Uid="Nav_Extensions"
+            <muxc:NavigationViewItem x:Name="ExtensionsNavItem"
+                                     x:Uid="Nav_Extensions"
                                      Tag="Extensions_Nav">
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xEA86;" />
