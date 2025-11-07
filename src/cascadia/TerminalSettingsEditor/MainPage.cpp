@@ -79,6 +79,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             runtimeObjLabel = profileVM.Name();
         }
+        else if (const auto colorSchemeVM = runtimeObj.try_as<Editor::ColorSchemeViewModel>())
+        {
+            runtimeObjLabel = colorSchemeVM.Name();
+        }
         else if (const auto ntmFolderEntryVM = runtimeObj.try_as<Editor::FolderEntryViewModel>())
         {
             runtimeObjLabel = ntmFolderEntryVM.Name();
@@ -161,6 +165,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 auto icon = UI::IconPathConverter::IconWUX(profileVM.EvaluatedIcon());
                 icon.Width(iconSize);
                 icon.Height(iconSize);
+                return icon;
+            }
+            else if (const auto colorSchemeVM = navigationArg.try_as<Editor::ColorSchemeViewModel>())
+            {
+                WUX::Controls::FontIcon icon{};
+                icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+                icon.FontSize(iconSize);
+                icon.Glyph(L"\xE790");
                 return icon;
             }
             else if (const auto ntmFolderEntryVM = navigationArg.try_as<Editor::FolderEntryViewModel>())
@@ -846,6 +858,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::_Navigate(const Editor::ColorSchemeViewModel& colorSchemeVM, BreadcrumbSubPage subPage, hstring elementToFocus)
+    {
+        _PreNavigateHelper();
+
+        const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
+        _breadcrumbs.Append(crumb);
+        contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToColorSchemesArgs>(_colorSchemesPageVM, elementToFocus));
+        SettingsNav().SelectedItem(ColorSchemesNavItem());
+
+        // Set CurrentScheme BEFORE the CurrentPage!
+        if (subPage == BreadcrumbSubPage::None)
+        {
+            _colorSchemesPageVM.CurrentScheme(nullptr);
+            _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::Base);
+        }
+        else
+        {
+            _colorSchemesPageVM.CurrentScheme(colorSchemeVM);
+            _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::EditColorScheme);
+        }
+    }
+
     void MainPage::_Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage, hstring elementToFocus)
     {
         _PreNavigateHelper();
@@ -1304,33 +1338,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             results.push_back(winrt::make<FilteredSearchResult>(indexEntry));
         }
 
-#define APPEND_RUNTIME_OBJECT_RESULTS(runtimeObjectList, nameAccessor, filteredSearchIndex, partialSearchIndexEntry, navigationArgTransform) \
-    for (const auto& runtimeObj : runtimeObjectList)                                                                                         \
-    {                                                                                                                                        \
-        const auto& objName = nameAccessor;                                                                                                  \
-        const bool nameMatches = til::contains_linguistic_insensitive(objName, sanitizedQuery);                                              \
-                                                                                                                                             \
-        if (nameMatches)                                                                                                                     \
-        {                                                                                                                                    \
-            /* navigates to runtime object main page (i.e. "PowerShell" Profiles_Base page) */                                               \
-            results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(&partialSearchIndexEntry, runtimeObj));                          \
-        }                                                                                                                                    \
-                                                                                                                                             \
-        for (const auto* indexEntry : filteredSearchIndex)                                                                                   \
-        {                                                                                                                                    \
-            /* navigates to runtime object's setting (i.e. "PowerShell: Command line" ) */                                                   \
-            results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(indexEntry, navigationArgTransform));                            \
-        }                                                                                                                                    \
-    }
+        auto appendRuntimeObjectResults = [&](const auto& runtimeObjectList, const auto& filteredSearchIndex, const auto& partialSearchIndexEntry) {
+            for (const auto& runtimeObj : runtimeObjectList)
+            {
+                const auto& objName = runtimeObj.Name();
+                const bool nameMatches = til::contains_linguistic_insensitive(objName, sanitizedQuery);
+                if (nameMatches)
+                {
+                    // navigates to runtime object main page (i.e. "PowerShell" Profiles_Base page)
+                    results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(&partialSearchIndexEntry, runtimeObj));
+                }
+                for (const auto* indexEntry : filteredSearchIndex)
+                {
+                    // navigates to runtime object's setting (i.e. "PowerShell: Command line" )
+                    results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(indexEntry, runtimeObj));
+                }
+            }
+        };
 
         // Profiles
-        APPEND_RUNTIME_OBJECT_RESULTS(_profileVMs, runtimeObj.Name(), _filteredSearchIndex->profileIndex, _searchIndex->profileIndexEntry, runtimeObj);
+        appendRuntimeObjectResults(_profileVMs, _filteredSearchIndex->profileIndex, _searchIndex->profileIndexEntry);
 
         // New Tab Menu (Folder View)
-        APPEND_RUNTIME_OBJECT_RESULTS(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), runtimeObj.Name(), _filteredSearchIndex->ntmFolderIndex, _searchIndex->ntmFolderIndexEntry, runtimeObj);
+        appendRuntimeObjectResults(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), _filteredSearchIndex->ntmFolderIndex, _searchIndex->ntmFolderIndexEntry);
 
         // Color schemes
-        APPEND_RUNTIME_OBJECT_RESULTS(_colorSchemesPageVM.AllColorSchemes(), runtimeObj.Name(), _filteredSearchIndex->colorSchemeIndex, _searchIndex->colorSchemeIndexEntry, winrt::box_value(runtimeObj.Name()));
+        appendRuntimeObjectResults(_colorSchemesPageVM.AllColorSchemes(), _filteredSearchIndex->colorSchemeIndex, _searchIndex->colorSchemeIndexEntry);
 
         // Extensions
         for (const auto& extension : _extensionsVM.ExtensionPackages())
@@ -1414,17 +1447,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _Navigate(*navArgString, subpage, elementToFocus);
             }
-            else if (const auto profileVM = navigationArg.try_as<ProfileViewModel>())
+            else if (const auto& profileVM = navigationArg.try_as<Editor::ProfileViewModel>())
             {
-                _Navigate(*profileVM, subpage, elementToFocus);
+                _Navigate(profileVM, subpage, elementToFocus);
             }
-            else if (const auto ntmEntryVM = navigationArg.try_as<NewTabMenuEntryViewModel>())
+            else if (const auto& colorSchemeVM = navigationArg.try_as<Editor::ColorSchemeViewModel>())
             {
-                _Navigate(*ntmEntryVM, subpage, elementToFocus);
+                _Navigate(colorSchemeVM, subpage, elementToFocus);
             }
-            else if (const auto extPkgVM = navigationArg.try_as<ExtensionPackageViewModel>())
+            else if (const auto& ntmEntryVM = navigationArg.try_as<Editor::NewTabMenuEntryViewModel>())
             {
-                _Navigate(*extPkgVM, subpage, elementToFocus);
+                _Navigate(ntmEntryVM, subpage, elementToFocus);
+            }
+            else if (const auto& extPkgVM = navigationArg.try_as<Editor::ExtensionPackageViewModel>())
+            {
+                _Navigate(extPkgVM, subpage, elementToFocus);
             }
             SettingsSearchBox().Text(L"");
         }
