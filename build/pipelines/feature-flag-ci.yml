@@ -32,7 +32,7 @@ stages:
           parameters:
             pool: # This only runs in CI
               name: SHINE-OSS-L
-              demands: ImageOverride -equals SHINE-VS17-Latest-2022
+              demands: ImageOverride -equals SHINE-VS17-Latest-2025
             buildPlatforms: [x64]
             buildConfigurations: [Release]
             buildEverything: true
