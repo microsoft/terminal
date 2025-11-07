@@ -2473,6 +2473,6 @@
   </data>
   <data name="Search_NoResults" xml:space="preserve">
     <value>No results for "{}"</value>
-    <comment>{Locked=""{}""} Displayed when no results were found for a given query. "{}" will be replaced with the query.</comment>
+    <comment>{Locked="{}"} Displayed when no results were found for a given query. "{}" will be replaced with the query.</comment>
   </data>
 </root>

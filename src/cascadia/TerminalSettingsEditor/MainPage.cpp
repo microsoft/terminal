@@ -862,6 +862,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _PreNavigateHelper();
 
+        // TODO CARLOS:
+        // - should navigate to EditColorScheme, not ColorSchemes
+        // - EditColorScheme::OnNavigatedTo needs to accept NavigateToColorSchemesArgs (or similar)
+        // - EditColorScheme::OnNavigatedTo needs BringIntoViewWhenLoaded(args.ElementToFocus())
         const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
         contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToColorSchemesArgs>(_colorSchemesPageVM, elementToFocus));
@@ -1380,7 +1384,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             results.reserve(1);
             results.push_back(FilteredSearchResult::CreateNoResultsItem(sanitizedQuery));
         }
-#undef APPEND_RUNTIME_OBJECT_RESULTS
 
         // Update the UI with the results
         const auto& searchBox = SettingsSearchBox();

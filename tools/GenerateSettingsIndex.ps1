@@ -19,9 +19,12 @@ param(
 
 # Prohibited UIDs (exact match, case-insensitive by default)
 $ProhibitedUids = @(
-    # TODO CARLOS: AddRemainingProfiles should probably be allowed
-    'NewTabMenu_AddRemainingProfiles',
-    'Extensions_Scope'
+    'Extensions_Scope',
+    'Profile_MissingFontFaces',
+    'Profile_ProportionalFontFaces',
+    'ColorScheme_InboxSchemeDuplicate',
+    'ColorScheme_ColorsHeader',
+    'ColorScheme_Rename'
 )
 
 # Prohibited XAML files
@@ -130,7 +133,7 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
             HelpTextUid          = "std::nullopt"
             HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
-            NavigationParam      = "winrt::box_value(hstring{L`"Appearance_Nav`"})"
+            NavigationParam      = "winrt::box_value(hstring{L`"GlobalAppearance_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
             ElementName          = 'L""'
             File                 = $filename
@@ -234,6 +237,46 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
             File                 = $filename
         }
     }
+    elseif ($filename -eq 'Profiles_Base.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextUid       = "L`"Nav_ProfileDefaults/Content`""
+            DisplayTextLocalized = "RS_(L`"Nav_ProfileDefaults/Content`")"
+            HelpTextUid          = "std::nullopt"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = $pageClass
+            NavigationParam      = "winrt::box_value(hstring{L`"GlobalProfile_Nav`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+    }
+    elseif ($filename -eq 'AddProfile.xaml')
+    {
+        $entries += [pscustomobject]@{
+            DisplayTextUid       = "L`"Nav_AddNewProfile/Content`""
+            DisplayTextLocalized = "RS_(L`"Nav_AddNewProfile/Content`")"
+            HelpTextUid          = "std::nullopt"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = $pageClass
+            NavigationParam      = "winrt::box_value(hstring{L`"AddProfile`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L""'
+            File                 = $filename
+        }
+
+        $entries += [pscustomobject]@{
+            DisplayTextUid       = "L`"AddProfile_AddNewTextBlock/Text`""
+            DisplayTextLocalized = "RS_(L`"AddProfile_AddNewTextBlock/Text`")"
+            HelpTextUid          = "std::nullopt"
+            HelpTextLocalized    = "std::nullopt"
+            ParentPage           = $pageClass
+            NavigationParam      = "winrt::box_value(hstring{L`"AddProfile`"})"
+            SubPage              = "BreadcrumbSubPage::None"
+            ElementName          = 'L"AddNewButton"'
+            File                 = $filename
+        }
+    }
 
     # Find all local:SettingContainer start tags
     $pattern = '<local:SettingContainer\b([^>/]*)(/?>)'
@@ -313,17 +356,8 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         }
         elseif ($pageClass -match 'Editor::Extensions')
         {
-            # TODO CARLOS: There's actually no UIDs for extension view! But I want the page to still exist in the index at runtime for each extension.
-            #if ($uid -match 'NewTabMenu_CurrentFolder')
-            #{
-            #    $navigationParam = 'vm'
-            #    $subPage = 'BreadcrumbSubPage::Extensions_Extension'
-            #}
-            #else
-            #{
             $navigationParam = 'Extensions_Nav'
             $subPage = 'BreadcrumbSubPage::None'
-            #}
         }
         elseif ($pageClass -match 'Editor::Profiles_Base' -or
                 $pageClass -match 'Editor::Profiles_Appearance' -or
@@ -337,6 +371,13 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         {
             # populate with color scheme name at runtime
             $navigationParam = 'nullptr'
+
+            # TODO CARLOS: Not sure if I need this. Turns out the issue is that EditColorScheme doesn't have a BringIntoViewWhenLoaded()!
+            if ($uid -match 'ColorScheme_SetAsDefault')
+            {
+                # SetAsDefault should focus SetAsDefaultButton, not wrapping SetAsDefaultContainer
+                $name = 'SetAsDefaultButton'
+            }
         }
         elseif ($pageClass -match 'Editor::GlobalAppearance')
         {
