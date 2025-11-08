@@ -170,7 +170,12 @@ void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
 
         if (gci.HasActiveOutputBuffer())
         {
-            gci.GetActiveOutputBuffer().SnapOnInput(keyEvent.wVirtualKeyCode);
+            auto& buffer = gci.GetActiveOutputBuffer();
+
+            if (WI_IsFlagSet(buffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+            {
+                buffer.SnapOnInput(keyEvent.wVirtualKeyCode);
+            }
         }
     }
 }
