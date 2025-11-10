@@ -222,7 +222,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
-        std::optional<std::wstring> _cachedSequence;
+        std::optional<std::wstring> _cachedOutgoingInputSequence;
         til::small_vector<Injection, 8> _injections;
 
         // This is tracked per state machine instance so that separate calls to Process*

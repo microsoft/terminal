@@ -23,7 +23,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bo
     _subParameterLimitOverflowed(false),
     _subParameterCounter(0),
     _oscString{},
-    _cachedSequence{ std::nullopt }
+    _cachedOutgoingInputSequence{ std::nullopt }
 {
     // The state machine must always accept C1 controls for the input engine,
     // otherwise it won't work when the ConPTY terminal has S8C1T enabled.
@@ -760,7 +760,7 @@ void StateMachine::_ActionDcsDispatch(const wchar_t wch)
 void StateMachine::_EnterGround() noexcept
 {
     _state = VTStates::Ground;
-    _cachedSequence.reset(); // entering ground means we've completed the pending sequence
+    _cachedOutgoingInputSequence.reset(); // entering ground means we've completed the pending sequence
     _trace.TraceStateChange(L"Ground");
 }
 
@@ -994,7 +994,7 @@ void StateMachine::_EnterDcsParam() noexcept
 void StateMachine::_EnterDcsIgnore() noexcept
 {
     _state = VTStates::DcsIgnore;
-    _cachedSequence.reset();
+    _cachedOutgoingInputSequence.reset();
     _trace.TraceStateChange(L"DcsIgnore");
 }
 
@@ -1026,7 +1026,7 @@ void StateMachine::_EnterDcsIntermediate() noexcept
 void StateMachine::_EnterDcsPassThrough() noexcept
 {
     _state = VTStates::DcsPassThrough;
-    _cachedSequence.reset();
+    _cachedOutgoingInputSequence.reset();
     _trace.TraceStateChange(L"DcsPassThrough");
 }
 
@@ -1043,7 +1043,7 @@ void StateMachine::_EnterDcsPassThrough() noexcept
 void StateMachine::_EnterSosPmApcString() noexcept
 {
     _state = VTStates::SosPmApcString;
-    _cachedSequence.reset();
+    _cachedOutgoingInputSequence.reset();
     _trace.TraceStateChange(L"SosPmApcString");
 }
 
@@ -1939,15 +1939,15 @@ bool StateMachine::FlushToTerminal()
 {
     auto success{ true };
 
-    if (success && _cachedSequence.has_value())
+    if (success && _cachedOutgoingInputSequence.has_value()) [[unlikely]]
     {
         // Flush the partial sequence to the terminal before we flush the rest of it.
         // We always want to clear the sequence, even if we failed, so we don't accumulate bad state
         // and dump it out elsewhere later.
         success = _SafeExecute([=]() {
-            return _engine->ActionPassThroughString(*_cachedSequence);
+            return _engine->ActionPassThroughString(*_cachedOutgoingInputSequence);
         });
-        _cachedSequence.reset();
+        _cachedOutgoingInputSequence.reset();
     }
 
     if (success)
@@ -2027,7 +2027,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     }
 
     // If we're at the end of the string and have remaining un-printed characters,
-    if (_state != VTStates::Ground)
+    if (_state != VTStates::Ground && _isEngineForInput)
     {
         const auto run = _CurrentRun();
         auto cacheUnusedRun = true;
@@ -2052,31 +2052,21 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // intentionally, it's far more likely now that we're looking at a broken up sequence.
         // The most common win32-input-mode is ConPTY itself after all, and we never emit
         // \x1b{some char} once it's enabled.
-        if (_isEngineForInput)
+        const auto win32 = _engine->EncounteredWin32InputModeSequence();
+        if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
         {
-            const auto win32 = _engine->EncounteredWin32InputModeSequence();
-            if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
+            _EnterGround();
+            if (run.size() == 1)
             {
-                _EnterGround();
-                if (run.size() == 1)
-                {
-                    _ActionExecute(L'\x1b');
-                }
-                else
-                {
-                    _EnterEscape();
-                    _ActionEscDispatch(run.back());
-                }
-                _EnterGround();
-                // No need to cache the run, since we've dealt with it now.
-                cacheUnusedRun = false;
+                _ActionExecute(L'\x1b');
             }
-        }
-        else if (_state == VTStates::SosPmApcString || _state == VTStates::DcsPassThrough || _state == VTStates::DcsIgnore)
-        {
-            // There is no need to cache the run if we've reached one of the
-            // string processing states in the output engine, since that data
-            // will be dealt with as soon as it is received.
+            else
+            {
+                _EnterEscape();
+                _ActionEscDispatch(run.back());
+            }
+            _EnterGround();
+            // No need to cache the run, since we've dealt with it now.
             cacheUnusedRun = false;
         }
 
@@ -2084,13 +2074,12 @@ void StateMachine::ProcessString(const std::wstring_view string)
         // the partial sequence in case we have to flush the whole thing later.
         if (cacheUnusedRun)
         {
-            if (!_cachedSequence)
+            if (!_cachedOutgoingInputSequence)
             {
-                _cachedSequence.emplace(std::wstring{});
+                _cachedOutgoingInputSequence.emplace(std::wstring{});
             }
 
-            auto& cachedSequence = *_cachedSequence;
-            cachedSequence.append(run);
+            _cachedOutgoingInputSequence->append(run);
         }
     }
 }
