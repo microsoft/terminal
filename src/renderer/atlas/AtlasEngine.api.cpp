@@ -526,17 +526,156 @@ void AtlasEngine::_resolveTransparencySettings() noexcept
     }
 }
 
-#include "../../pixfont/vga_rgba.c"
+namespace
+{
+    // For now we're only using fixed pitch single color fonts, but the rest
+    // of the flags are included here for completeness.
+    static constexpr DWORD DFF_FIXED = 0x0001;
+    static constexpr DWORD DFF_PROPORTIONAL = 0x0002;
+    static constexpr DWORD DFF_1COLOR = 0x0010;
+    static constexpr DWORD DFF_16COLOR = 0x0020;
+    static constexpr DWORD DFF_256COLOR = 0x0040;
+    static constexpr DWORD DFF_RGBCOLOR = 0x0080;
+
+#pragma pack(push, 1)
+    struct GLYPHENTRY
+    {
+        WORD geWidth;
+        DWORD geOffset;
+    };
+
+    struct FONTINFO
+    {
+        WORD dfVersion;
+        DWORD dfSize;
+        CHAR dfCopyright[60];
+        WORD dfType;
+        WORD dfPoints;
+        WORD dfVertRes;
+        WORD dfHorizRes;
+        WORD dfAscent;
+        WORD dfInternalLeading;
+        WORD dfExternalLeading;
+        BYTE dfItalic;
+        BYTE dfUnderline;
+        BYTE dfStrikeOut;
+        WORD dfWeight;
+        BYTE dfCharSet;
+        WORD dfPixWidth;
+        WORD dfPixHeight;
+        BYTE dfPitchAndFamily;
+        WORD dfAvgWidth;
+        WORD dfMaxWidth;
+        BYTE dfFirstChar;
+        BYTE dfLastChar;
+        BYTE dfDefaultChar;
+        BYTE dfBreakChar;
+        WORD dfWidthBytes;
+        DWORD dfDevice;
+        DWORD dfFace;
+        DWORD dfBitsPointer;
+        DWORD dfBitsOffset;
+        BYTE dfReserved;
+        DWORD dfFlags;
+        WORD dfAspace;
+        WORD dfBspace;
+        WORD dfCspace;
+        DWORD dfColorPointer;
+        DWORD dfReserved1[4];
+        // Character table follows
+        // Face name follows
+    };
+
+}
+
+BitmapFontInfo loadBitmapFont(wil::zwstring_view path)
+{
+    wil::unique_hfile fontFile{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr) };
+    THROW_LAST_ERROR_IF(!fontFile);
+    BY_HANDLE_FILE_INFORMATION fi;
+    GetFileInformationByHandle(fontFile.get(), &fi);
+
+    auto fileData{ std::make_unique_for_overwrite<std::byte[]>(fi.nFileSizeLow) };
+    DWORD dwRead{ 0 };
+    THROW_IF_WIN32_BOOL_FALSE(ReadFile(fontFile.get(), fileData.get(), fi.nFileSizeLow, &dwRead, nullptr));
+
+    const auto header = reinterpret_cast<const FONTINFO*>(fileData.get());
+    auto numGlyphs{ header->dfLastChar - header->dfFirstChar + 1 }; // there is always a sentinel entry
+    std::span<const GLYPHENTRY> glyphEntries{ reinterpret_cast<const GLYPHENTRY*>(fileData.get() + sizeof(FONTINFO)), gsl::narrow_cast<size_t>(numGlyphs) };
+
+    WORD maxPixWidth = 0;
+    std::for_each(std::begin(glyphEntries), std::end(glyphEntries), [&](auto&& ge) {
+        maxPixWidth = std::max(maxPixWidth, ge.geWidth);
+    });
+
+    auto rgbaBitmapSize{ (16 * maxPixWidth) * (16 * header->dfPixHeight) };
+    std::vector<uint8_t> rgbaBitmap;
+    rgbaBitmap.resize(rgbaBitmapSize * sizeof(uint32_t));
+    auto exploded = reinterpret_cast<uint32_t*>(rgbaBitmap.data());
+
+    auto didx = header->dfFirstChar;
+    const auto stride = 16 * maxPixWidth;
+    for (auto&& ge : glyphEntries)
+    {
+        // characters are stored end to end, scanline 0 ... N 0 ... N
+        // we need to transform that into 0 0 0 0 1 1 1 1 2 2 2 2 ...
+
+        // bitmap offset plus currently glyph number-rows
+        auto sgstart = reinterpret_cast<uint8_t*>(fileData.get()) + ge.geOffset;
+        auto dgstart = exploded + ((didx % 16) * maxPixWidth) + (((didx / 16) * header->dfPixHeight) * stride);
+        for (int y = 0; y < header->dfPixHeight; ++y)
+        {
+            auto scancol = 0;
+            auto width = ge.geWidth;
+            while (width)
+            {
+                auto row = sgstart[y + (scancol * header->dfPixHeight)];
+                auto drstart = dgstart + (scancol * 8);
+                auto cw = std::min<WORD>(width, 8);
+                for (int i = 0; i < cw; ++i)
+                {
+                    *drstart++ = 0xFFFFFFFF * ((row >> (7 - i)) & 1);
+                }
+                scancol++;
+                width -= cw;
+            }
+            dgstart += stride;
+        }
+        ++didx;
+    }
+
+#if 0
+    auto w = CreateFile(L"c:\\src\\terminal\\dev\\image.bin", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS, 0, nullptr);
+    WriteFile(w, rgbaBitmap.data(), (DWORD)rgbaBitmap.size(), nullptr, nullptr);
+    CloseHandle(w);
+#endif
+
+    return BitmapFontInfo{
+        .bitmap = std::move(rgbaBitmap),
+        .glyphSize = { maxPixWidth, header->dfPixHeight },
+        .bitmapSizeInCharacters = { 16, 16 },
+        .glyphResidence = {
+            0xFFFFFFFFFFFFFFFFULL,
+            0xFFFFFFFFFFFFFFFFULL,
+            0xFFFFFFFFFFFFFFFFULL,
+            0xFFFFFFFFFFFFFFFFULL,
+        },
+        .invalidGlyphBitmapIndex = header->dfDefaultChar,
+    };
+}
 
 [[nodiscard]] HRESULT AtlasEngine::_updateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, float>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
+    if (fontInfoDesired.GetFaceName().find_last_of(L'.') != std::wstring::npos)
     {
         const auto font = _api.s.write()->font.write();
         float scale = (float)font->dpi / 96.f;
+        font->bitmapFontInfo = loadBitmapFont(fontInfoDesired.GetFaceName());
+        scale = 1.0f;
         font->cellSize = {
-            gsl::narrow<u16>(lrintf(10.f * scale)),
-            gsl::narrow<u16>(lrintf(20.f * scale)),
+            gsl::narrow<u16>(lrintf(font->bitmapFontInfo.glyphSize.x * scale)),
+            gsl::narrow<u16>(lrintf(font->bitmapFontInfo.glyphSize.y * scale)),
         };
         const auto& cs = font->cellSize;
         auto lineWidth = gsl::narrow<u16>(lrintf(1.f * scale));
@@ -557,18 +696,6 @@ try
         font->builtinGlyphs = true;
         font->colorGlyphs = false;
         font->thinLineWidth = lineWidth;
-        const auto buf = reinterpret_cast<const uint8_t*>(&font_rgb[0]);
-        font->bitmapFontInfo = BitmapFontInfo{
-            .bitmap = { buf, buf + font_rgb_len },
-            .glyphSize = { 10, 20 },
-            .bitmapSizeInCharacters = { 32, 8 },
-            .glyphResidence = {
-                0xFFFFFFFFFFFFFFFFULL,
-                0xFFFFFFFFFFFFFFFFULL,
-                0xFFFFFFFFFFFFFFFFULL,
-                0xFFFFFFFFFFFFFFFFULL,
-            },
-        };
         fontInfo.SetFromEngine(L"VGA 8x16", FF_MODERN, 400, false, { font->cellSize.x, font->cellSize.y }, { 10, 20 });
         return S_OK;
     }
@@ -945,6 +1072,7 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     return true;
 }
 
+#if 0
 struct bdflex
 {
     enum tok
@@ -998,6 +1126,7 @@ public:
     }
     int e()
     {
-        bdflex::*(bdflex::*)(int);
+        bdflex::* (bdflex::*)(int);
     }
 };
+#endif

@@ -679,12 +679,12 @@ void BackendD3D::_debugUpdateShaders(const RenderingPayload& p) noexcept
         struct FileVS
         {
             std::wstring_view filename;
-            wil::com_ptr<ID3D11VertexShader> BackendD3D::*target;
+            wil::com_ptr<ID3D11VertexShader> BackendD3D::* target;
         };
         struct FilePS
         {
             std::wstring_view filename;
-            wil::com_ptr<ID3D11PixelShader> BackendD3D::*target;
+            wil::com_ptr<ID3D11PixelShader> BackendD3D::* target;
         };
 
         static constexpr std::array filesVS{
@@ -1722,7 +1722,7 @@ BackendD3D::ShadingType BackendD3D::_drawVGA816Glyph(const RenderingPayload& p, 
         const D2D1_RECT_U fillr{
             0, 0, size.width, size.height
         };
-	/* we have the entire bitmap right now, why not just blast the entire thing into D2D bitmap? */
+        /* we have the entire bitmap right now, why not just blast the entire thing into D2D bitmap? */
         _vgaBitmap->CopyFromMemory(&fillr, bfi.bitmap.data(), size.width * sizeof(u32));
     }
 

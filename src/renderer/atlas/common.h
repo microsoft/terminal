@@ -352,6 +352,7 @@ namespace Microsoft::Console::Render::Atlas
         u16x2 glyphSize;
         u16x2 bitmapSizeInCharacters;
         std::array<uint64_t, 256 / 64> glyphResidence;
+        u16 invalidGlyphBitmapIndex;
     };
 
     struct FontSettings
