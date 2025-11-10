@@ -253,11 +253,11 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::PersistState(bool serializeBuffer)
+    void TerminalWindow::PersistState()
     {
         if (_root)
         {
-            _root->PersistState(serializeBuffer);
+            _root->PersistState();
         }
     }
 
@@ -828,6 +828,11 @@ namespace winrt::TerminalApp::implementation
     UIElement TerminalWindow::GetRoot() noexcept
     {
         return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
+    }
+
+    winrt::Windows::Foundation::Collections::IVector<IPaneContent> TerminalWindow::Panes() const
+    {
+        return winrt::single_threaded_vector(_root->Panes());
     }
 
     // Method Description:

@@ -107,27 +107,6 @@
                 </uap3:Properties>
             </uap3:AppExtension>
         </uap3:Extension>
-        <com:Extension Category="windows.comInterface">
-            <com:ComInterface>
-                <com:ProxyStub Id="DEC4804D-56D1-4F73-9FBE-6828E7C85C56" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
-                <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
-                <com:Interface Id="6F23DA90-15C5-4203-9DB0-64E73F1B1B00" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/> <!-- ITerminalHandoff3 -->
-                <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
-            </com:ComInterface>
-        </com:Extension>
-        <com:Extension Category="windows.comServer">
-            <com:ComServer>
-                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
-                    <com:Class Id="1F9F2BF5-5BC3-4F17-B0E6-912413F1F451"/>
-                </com:ExeServer>
-                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
-                    <com:Class Id="051F34EE-C1FD-4B19-AF75-9BA54648434C"/>
-                </com:ExeServer>
-                <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
-                    <com:Class Id="52065414-e077-47ec-a3ac-1cc5455e1b54" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
-                </com:SurrogateServer>
-            </com:ComServer>
-        </com:Extension>
         <desktop4:Extension Category="windows.fileExplorerContextMenus">
             <desktop4:FileExplorerContextMenus>
                 <desktop5:ItemType Type="Directory">

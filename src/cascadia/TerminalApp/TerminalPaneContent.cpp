@@ -140,22 +140,16 @@ namespace winrt::TerminalApp::implementation
             // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
             break;
-        case BuildStartupKind::PersistAll:
+        case BuildStartupKind::Persist:
         {
             const auto connection = _control.Connection();
             const auto id = connection ? connection.SessionId() : winrt::guid{};
-
             if (id != winrt::guid{})
             {
-                const auto settingsDir = CascadiaSettings::SettingsDirectory();
-                const auto idStr = ::Microsoft::Console::Utils::GuidToPlainString(id);
-                const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
-                _control.PersistToPath(path);
                 args.SessionId(id);
             }
             break;
         }
-        case BuildStartupKind::PersistLayout:
         default:
             break;
         }
