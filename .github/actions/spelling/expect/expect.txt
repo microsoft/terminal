@@ -1138,6 +1138,7 @@ NOYIELD
 NOZORDER
 NPFS
 nrcs
+NRNW
 NSTATUS
 ntapi
 ntdef
