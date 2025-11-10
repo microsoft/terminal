@@ -1944,12 +1944,9 @@ bool StateMachine::FlushToTerminal()
         // Flush the partial sequence to the terminal before we flush the rest of it.
         // We always want to clear the sequence, even if we failed, so we don't accumulate bad state
         // and dump it out elsewhere later.
-        if (!_cachedSequence->spoiled)
-        {
-            success = _SafeExecute([=]() {
-                return _engine->ActionPassThroughString(_cachedSequence->data);
-            });
-        }
+        success = _SafeExecute([=]() {
+            return _engine->ActionPassThroughString(*_cachedSequence);
+        });
         _cachedSequence.reset();
     }
 
@@ -2085,24 +2082,15 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
         // If the run hasn't been dealt with in one of the cases above, we cache
         // the partial sequence in case we have to flush the whole thing later.
-        cacheUnusedRun = cacheUnusedRun && (!_cachedSequence.has_value() || !_cachedSequence->spoiled);
         if (cacheUnusedRun)
         {
             if (!_cachedSequence)
             {
-                _cachedSequence.emplace(SequenceCache{});
+                _cachedSequence.emplace(std::wstring{});
             }
 
             auto& cachedSequence = *_cachedSequence;
-            if (cachedSequence.data.length() + run.length() > MAX_CACHED_SEQUENCE_LENGTH) [[unlikely]]
-            {
-                cachedSequence.spoiled = true;
-                cachedSequence.data = {};
-            }
-            else
-            {
-                cachedSequence.data.append(run);
-            }
+            cachedSequence.append(run);
         }
     }
 }
