@@ -683,7 +683,19 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 {
     _trace.TraceOnAction(L"OscPut");
 
-    _oscString.push_back(wch);
+    if (_oscString.spoiled)
+    {
+        return;
+    }
+
+    if (_oscString.data.length() > MAX_OSC_LENGTH - 1)
+        [[unlikely]]
+    {
+        _oscString.spoil();
+        return;
+    }
+
+    _oscString.data.push_back(wch);
 }
 
 // Routine Description:
@@ -697,7 +709,13 @@ void StateMachine::_ActionOscDispatch()
 {
     _trace.TraceOnAction(L"OscDispatch");
     _trace.DispatchSequenceTrace(_SafeExecute([=]() {
-        return _engine->ActionOscDispatch(_oscParameter, _oscString);
+        bool success = true;
+        if (!_oscString.spoiled)
+        {
+            success = _engine->ActionOscDispatch(_oscParameter, _oscString.data);
+        }
+        _oscString.clear();
+        return success;
     }));
 }
 
