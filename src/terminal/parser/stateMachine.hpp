@@ -37,6 +37,15 @@ namespace Microsoft::Console::VirtualTerminal
     // the their indexes.
     static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
 
+    // xterm refuses to handle CSI and OSC sequences that are greater than a certain
+    // user-controllable length. We have a similar problem: for now, we cache input
+    // that we receive at the end of a write call that did not form a complete VT
+    // sequence (specifically a CSI or OSC). We do not want that cache to grow
+    // unbounded, however.
+    // Like xterm, once we pass this limit we'll ignore everything up until the next
+    // terminator.
+    constexpr size_t MAX_CACHED_SEQUENCE_LENGTH = 128 * 1048576;
+
     // When we encounter something like a RIS (hard reset), ConPTY must re-enable
     // modes that it relies on (like the Win32 Input Mode). To do this, the VT
     // parser tells it the positions of any such relevant VT sequences.
@@ -222,7 +231,12 @@ namespace Microsoft::Console::VirtualTerminal
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
-        std::optional<std::wstring> _cachedSequence;
+        struct SequenceCache
+        {
+            std::wstring data{};
+            bool spoiled{ false };
+        };
+        std::optional<SequenceCache> _cachedSequence;
         til::small_vector<Injection, 8> _injections;
 
         // This is tracked per state machine instance so that separate calls to Process*
