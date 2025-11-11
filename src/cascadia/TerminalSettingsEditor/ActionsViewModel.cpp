@@ -40,10 +40,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     static constexpr std::wstring_view ActionsPageId{ L"page.actions" };
 
-    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM) :
+    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM, Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap, Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> nameToActionMap) :
         _command{ cmd },
         _keyChordList{ keyChordList },
-        _actionsPageVM{ actionsPageVM }
+        _actionsPageVM{ actionsPageVM },
+        _availableActionsAndNamesMap{ availableActionsAndNamesMap },
+        _nameToActionMap{ nameToActionMap }
     {
     }
 
@@ -55,7 +57,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // The parent page is gone, just return early
             return;
         }
-        const auto shortcutActionsAndNames = actionsPageVM.AvailableShortcutActionsAndNames();
         std::vector<Editor::KeyChordViewModel> keyChordVMs;
         for (const auto keys : _keyChordList)
         {
@@ -63,17 +64,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _RegisterKeyChordVMEvents(kcVM);
             keyChordVMs.push_back(kcVM);
         }
-        _KeyChordViewModelList = single_threaded_observable_vector(std::move(keyChordVMs));
+        _KeyChordList = single_threaded_observable_vector(std::move(keyChordVMs));
 
         std::vector<hstring> shortcutActions;
-        for (const auto [action, name] : shortcutActionsAndNames)
+        for (const auto [action, name] : _availableActionsAndNamesMap)
         {
             shortcutActions.emplace_back(name);
         }
         std::sort(shortcutActions.begin(), shortcutActions.end());
         _AvailableShortcutActions = single_threaded_observable_vector(std::move(shortcutActions));
 
-        const auto shortcutActionString = shortcutActionsAndNames.Lookup(_command.ActionAndArgs().Action());
+        const auto shortcutActionString = _availableActionsAndNamesMap.Lookup(_command.ActionAndArgs().Action());
         ProposedShortcutActionName(winrt::box_value(shortcutActionString));
         _CreateAndInitializeActionArgsVMHelper();
 
@@ -86,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (viewModelProperty == L"ProposedShortcutActionName")
                 {
                     const auto actionString = unbox_value<hstring>(ProposedShortcutActionName());
-                    const auto actionEnum = actionsPageVM.NameToActionMap().Lookup(actionString);
+                    const auto actionEnum = _nameToActionMap.Lookup(actionString);
                     const auto emptyArgs = ActionArgFactory::GetEmptyArgsForAction(actionEnum);
                     // TODO: GH 19056
                     // probably need some better default values for empty args and/or validation
@@ -97,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _command.ActionAndArgs(newActionAndArgs);
                     if (_IsNewCommand)
                     {
-                        actionsPageVM.AttemptRegenerateCommandID(_command);
+                        actionsPageVM.RegenerateCommandID(_command);
                     }
                     else if (!IsUserAction())
                     {
@@ -142,9 +143,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring CommandViewModel::FirstKeyChordText()
     {
-        if (_KeyChordViewModelList.Size() != 0)
+        if (_KeyChordList.Size() != 0)
         {
-            return _KeyChordViewModelList.GetAt(0).KeyChordText();
+            return _KeyChordList.GetAt(0).KeyChordText();
         }
         return L"";
     }
@@ -174,7 +175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto kbdVM{ make_self<KeyChordViewModel>(nullptr) };
         kbdVM->IsInEditMode(true);
         _RegisterKeyChordVMEvents(*kbdVM);
-        KeyChordViewModelList().Append(*kbdVM);
+        KeyChordList().Append(*kbdVM);
     }
 
     winrt::hstring CommandViewModel::ActionNameTextBoxAutomationPropName()
@@ -212,15 +213,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 std::erase_if(_keyChordList,
                               [&](const Control::KeyChord& kc) { return kc == args; });
-                for (uint32_t i = 0; i < _KeyChordViewModelList.Size(); i++)
+                for (uint32_t i = 0; i < _KeyChordList.Size(); i++)
                 {
-                    if (_KeyChordViewModelList.GetAt(i) == sender)
+                    if (_KeyChordList.GetAt(i) == sender)
                     {
-                        KeyChordViewModelList().RemoveAt(i);
+                        KeyChordList().RemoveAt(i);
                         break;
                     }
                 }
-                actionsPageVM.AttemptDeleteKeyChord(args);
+                actionsPageVM.DeleteKeyChord(args);
             }
         });
         kcVM.PropertyChanged([weakThis{ get_weak() }](const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
@@ -276,7 +277,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (const auto actionsPageVM{ weak->_actionsPageVM.get() })
                     {
-                        actionsPageVM.AttemptRegenerateCommandID(weak->_command);
+                        actionsPageVM.RegenerateCommandID(weak->_command);
                     }
                 }
                 else if (!weak->IsUserAction())
@@ -297,7 +298,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto newCmd = Model::Command::CopyAsUserCommand(_command);
             _command = newCmd;
-            actionsPageVM.AttemptAddCopiedCommand(_command);
+            actionsPageVM.AddCopiedCommand(_command);
             if (reinitialize)
             {
                 // full reinitialize needed, recreate the action args VM
@@ -1073,7 +1074,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void KeyChordViewModel::AttemptAcceptChanges()
+    void KeyChordViewModel::AcceptChanges()
     {
         if (!_currentKeys)
         {
@@ -1199,7 +1200,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (!UnimplementedShortcutActions.contains(cmd.ActionAndArgs().Action()))
             {
                 std::vector<Control::KeyChord> keyChordList = wil::to_vector(_Settings.ActionMap().AllKeyBindingsForAction(cmd.ID()));
-                auto cmdVM{ make_self<CommandViewModel>(cmd, std::move(keyChordList), *this) };
+                auto cmdVM{ make_self<CommandViewModel>(cmd, std::move(keyChordList), *this, _AvailableActionsAndNamesMap, _NameToActionMap) };
                 _RegisterCmdVMEvents(cmdVM);
                 cmdVM->Initialize();
                 commandList.push_back(*cmdVM);
@@ -1220,7 +1221,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = ActionArgFactory::GetEmptyArgsForAction(shortcutAction);
         newCmd.ActionAndArgs(Model::ActionAndArgs{ shortcutAction, args });
         _Settings.ActionMap().AddAction(newCmd, nullptr);
-        auto cmdVM{ make_self<CommandViewModel>(newCmd, std::vector<Control::KeyChord>{}, *this) };
+        auto cmdVM{ make_self<CommandViewModel>(newCmd, std::vector<Control::KeyChord>{}, *this, _AvailableActionsAndNamesMap, _NameToActionMap) };
         cmdVM->IsNewCommand(true);
         _RegisterCmdVMEvents(cmdVM);
         cmdVM->Initialize();
@@ -1248,7 +1249,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ActionsViewModel::AttemptDeleteKeyChord(const Control::KeyChord& keys)
+    void ActionsViewModel::DeleteKeyChord(const Control::KeyChord& keys)
     {
         // Update the settings model
         assert(keys);
@@ -1327,7 +1328,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ActionsViewModel::AttemptAddCopiedCommand(const Model::Command& newCommand)
+    void ActionsViewModel::AddCopiedCommand(const Model::Command& newCommand)
     {
         // The command VM calls this when the user has edited an in-box action
         // newCommand is a copy of the in-box action that was edited, but with OriginTag::User
@@ -1335,7 +1336,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Settings.ActionMap().AddAction(newCommand, nullptr);
     }
 
-    void ActionsViewModel::AttemptRegenerateCommandID(const Model::Command& command)
+    void ActionsViewModel::RegenerateCommandID(const Model::Command& command)
     {
         _Settings.UpdateCommandID(command, {});
     }

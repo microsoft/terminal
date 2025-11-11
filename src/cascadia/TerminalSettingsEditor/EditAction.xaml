@@ -205,7 +205,7 @@
                             <Button x:Uid="Actions_AcceptButton"
                                     Grid.Column="2"
                                     AutomationProperties.Name="{x:Bind AcceptButtonName}"
-                                    Click="{x:Bind AttemptAcceptChanges}"
+                                    Click="{x:Bind AcceptChanges}"
                                     Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
                                     Style="{StaticResource AccentEditButtonStyle}">
                                 <FontIcon FontSize="{StaticResource EditButtonIconSize}"
@@ -679,7 +679,7 @@
                       Grid.Row="3"
                       Grid.Column="1"
                       ItemTemplate="{StaticResource KeyChordTemplate}"
-                      ItemsSource="{x:Bind ViewModel.KeyChordViewModelList, Mode=OneWay}"
+                      ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
                       SelectionMode="None">
                 <ListView.Header>
                     <Button Click="{x:Bind ViewModel.AddKeybinding_Click}">

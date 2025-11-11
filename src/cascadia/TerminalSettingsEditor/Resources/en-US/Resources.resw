@@ -1934,11 +1934,11 @@
   </data>
   <data name="Actions_SplitDirectionVertical.Content" xml:space="preserve">
     <value>Vertical</value>
-    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+    <comment>An option to choose from for the "split direction". Splits vertically.</comment>
   </data>
   <data name="Actions_SplitDirectionHorizontal.Content" xml:space="preserve">
     <value>Horizontal</value>
-    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+    <comment>An option to choose from for the "split direction". Splits horizontally.</comment>
   </data>
   <data name="Actions_SplitTypeManual.Content" xml:space="preserve">
     <value>Manual</value>

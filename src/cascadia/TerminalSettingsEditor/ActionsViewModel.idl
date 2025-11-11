@@ -53,7 +53,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String ID { get; };
         Boolean IsUserAction { get; };
         // keybindings
-        IObservableVector<KeyChordViewModel> KeyChordViewModelList { get; };
+        IObservableVector<KeyChordViewModel> KeyChordList { get; };
         // action args
         ActionArgsViewModel ActionArgsVM { get; };
 
@@ -145,7 +145,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
         Boolean IsInEditMode { get; };
         void ToggleEditMode();
-        void AttemptAcceptChanges();
+        void AcceptChanges();
         void CancelChanges();
         void DeleteKeyChord();
         String CancelButtonName { get; };
@@ -171,18 +171,15 @@ namespace Microsoft.Terminal.Settings.Editor
         void AddNewCommand();
 
         ActionsSubPage CurrentPage;
-        CommandViewModel CurrentCommand;
         Boolean DisplayBadge { get; };
 
         void AttemptAddOrModifyKeyChord(KeyChordViewModel senderVM, String commandID, Microsoft.Terminal.Control.KeyChord newKeys, Microsoft.Terminal.Control.KeyChord oldKeys);
-        void AttemptDeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
-        void AttemptAddCopiedCommand(Microsoft.Terminal.Settings.Model.Command newCommand);
-        void AttemptRegenerateCommandID(Microsoft.Terminal.Settings.Model.Command command);
+        void DeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
+        void AddCopiedCommand(Microsoft.Terminal.Settings.Model.Command newCommand);
+        void RegenerateCommandID(Microsoft.Terminal.Settings.Model.Command command);
 
+        CommandViewModel CurrentCommand;
         IObservableVector<CommandViewModel> CommandList { get; };
         void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
-
-        Windows.Foundation.Collections.IMap<Microsoft.Terminal.Settings.Model.ShortcutAction, String> AvailableShortcutActionsAndNames();
-        Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.ShortcutAction> NameToActionMap();
     }
 }

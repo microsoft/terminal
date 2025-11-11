@@ -79,7 +79,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd,
                          std::vector<Control::KeyChord> keyChordList,
-                         const Editor::ActionsViewModel actionsPageVM);
+                         const Editor::ActionsViewModel actionsPageVM,
+                         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap,
+                         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> nameToActionMap);
         void Initialize();
 
         winrt::hstring DisplayName();
@@ -113,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(IInspectable, ProposedShortcutActionName);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ActionArgsViewModel, ActionArgsVM, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableShortcutActions, nullptr);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyChordViewModel>, KeyChordViewModelList, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::KeyChordViewModel>, KeyChordList, nullptr);
         WINRT_PROPERTY(bool, IsNewCommand, false);
 
     private:
@@ -121,6 +123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Microsoft::Terminal::Settings::Model::Command _command;
         std::vector<Control::KeyChord> _keyChordList;
         weak_ref<Editor::ActionsViewModel> _actionsPageVM{ nullptr };
+        Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _availableActionsAndNamesMap;
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> _nameToActionMap;
         void _RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM);
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
         void _ReplaceCommandWithUserCopy(bool reinitialize);
@@ -251,7 +255,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Control::KeyChord CurrentKeys() const noexcept;
 
         void ToggleEditMode();
-        void AttemptAcceptChanges();
+        void AcceptChanges();
         void CancelChanges();
         void DeleteKeyChord();
 
@@ -288,10 +292,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::CommandViewModel CurrentCommand();
         void CmdListItemClicked(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::ItemClickEventArgs& e);
 
-        void AttemptDeleteKeyChord(const Control::KeyChord& keys);
+        void DeleteKeyChord(const Control::KeyChord& keys);
         void AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys);
-        void AttemptAddCopiedCommand(const Model::Command& newCommand);
-        void AttemptRegenerateCommandID(const Model::Command& command);
+        void AddCopiedCommand(const Model::Command& newCommand);
+        void RegenerateCommandID(const Model::Command& command);
 
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> NameToActionMap();
