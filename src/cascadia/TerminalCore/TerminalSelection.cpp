@@ -364,8 +364,10 @@ void Terminal::ToggleMarkMode()
         // NOTE: directly set cursor state. We already should have locked before calling this function.
         if (!IsSelectionActive())
         {
-            // No selection --> start one at the cursor
-            const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+            // If we're scrolled up, use the viewport origin as the selection start.
+            // Otherwise, use the cursor position.
+            const auto cursorPos = _scrollOffset != 0 ? _GetVisibleViewport().Origin() :
+                                                        _activeBuffer().GetCursor().GetPosition();
             *_selection.write() = SelectionInfo{
                 .start = cursorPos,
                 .end = cursorPos,
