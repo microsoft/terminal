@@ -540,7 +540,6 @@ EPres
 EQU
 ERASEBKGND
 ERRORONEXIT
-ESFCIB
 esrp
 ESV
 ETW
@@ -603,7 +602,6 @@ FONTSTRING
 FONTTYPE
 FONTWIDTH
 FONTWINDOW
-foob
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FRAMECHANGED
@@ -620,7 +618,6 @@ FUNCTIONCALL
 fuzzmain
 fuzzmap
 fuzzwrapper
-fuzzyfinder
 fwdecl
 fwe
 fwlink
@@ -961,7 +958,6 @@ lsb
 lsconfig
 lstatus
 lstrcmp
-lstrcmpi
 LTEXT
 lto
 ltsc
@@ -1125,7 +1121,6 @@ NOREPOSITION
 NORMALDISPLAY
 NOSCRATCH
 NOSEARCH
-noselect
 NOSELECTION
 NOSENDCHANGING
 NOSIZE
@@ -1183,7 +1178,6 @@ onecoreuuid
 ONECOREWINDOWS
 onehalf
 oneseq
-oob
 openbash
 opencode
 opencon
@@ -1765,6 +1759,7 @@ UINTs
 uld
 uldash
 uldb
+ULONGLONG
 ulwave
 Unadvise
 unattend

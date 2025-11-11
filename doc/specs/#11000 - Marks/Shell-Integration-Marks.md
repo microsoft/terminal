@@ -111,7 +111,7 @@ not understanding these sequences originally.
 The relevant FinalTerm sequences for marking up the prompt are as follows.
 
 
-![image](FTCS-diagram.png)
+![image](ftcs-diagram.png)
 
 * **FTCS_PROMPT**: `OSC 133 ; A ST`
   - The start of a prompt. Internally, this sets a marker in the buffer

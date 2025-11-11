@@ -194,6 +194,22 @@ static wil::unique_mutex acquireMutexOrAttemptHandoff(const wchar_t* className, 
     return {};
 }
 
+static constexpr bool IsInputKey(WORD vkey) noexcept
+{
+    return vkey != VK_CONTROL &&
+           vkey != VK_LCONTROL &&
+           vkey != VK_RCONTROL &&
+           vkey != VK_MENU &&
+           vkey != VK_LMENU &&
+           vkey != VK_RMENU &&
+           vkey != VK_SHIFT &&
+           vkey != VK_LSHIFT &&
+           vkey != VK_RSHIFT &&
+           vkey != VK_LWIN &&
+           vkey != VK_RWIN &&
+           vkey != VK_SNAPSHOT;
+}
+
 HWND WindowEmperor::GetMainWindow() const noexcept
 {
     _assertIsMainThread();
@@ -315,7 +331,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     }
     if (!IsPackaged())
     {
-        const auto path = wil::GetModuleFileNameW<std::wstring>(nullptr);
+        const auto path = wil::QueryFullProcessImageNameW<std::wstring>();
         const auto hash = til::hash(path);
 #ifdef _WIN64
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:016x}"), hash);
@@ -486,7 +502,13 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
             if (msg.message == WM_KEYDOWN)
             {
-                IslandWindow::HideCursor();
+                const auto vkey = static_cast<WORD>(msg.wParam);
+
+                // Hide the cursor only when the key pressed is an input key (ignore modifier keys).
+                if (IsInputKey(vkey))
+                {
+                    IslandWindow::HideCursor();
+                }
             }
         }
 
@@ -648,7 +670,8 @@ void WindowEmperor::_dispatchCommandlineCommon(winrt::array_view<const winrt::hs
 // This is an implementation-detail of _dispatchCommandline().
 safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args)
 {
-    std::weak_ptr<AppHost> mostRecentWeak;
+    std::shared_ptr<AppHost> mostRecent;
+    AppHost* window = nullptr;
 
     if (winrt::guid currentDesktop; VirtualDesktopUtils::GetCurrentVirtualDesktopId(reinterpret_cast<GUID*>(&currentDesktop)))
     {
@@ -660,19 +683,18 @@ safe_void_coroutine WindowEmperor::_dispatchCommandlineCurrentDesktop(winrt::Ter
             if (desktopId == currentDesktop && lastActivatedTime > max)
             {
                 max = lastActivatedTime;
-                mostRecentWeak = w;
+                mostRecent = w;
             }
         }
+
+        // GetVirtualDesktopId(), as current implemented, should always return on the main thread.
+        _assertIsMainThread();
+        window = mostRecent.get();
     }
-
-    // GetVirtualDesktopId(), as current implemented, should always return on the main thread.
-    _assertIsMainThread();
-
-    const auto mostRecent = mostRecentWeak.lock();
-    auto window = mostRecent.get();
-
-    if (!window)
+    else
     {
+        // If virtual desktops have never been used, and in turn Explorer never set them up,
+        // GetCurrentVirtualDesktopId will return false. In this case just use the current (only) desktop.
         window = _mostRecentWindow();
     }
 
@@ -880,16 +902,16 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 {
                     if (host == it->get())
                     {
-                        // NOTE: The AppHost destructor is highly non-trivial.
+                        // NOTE: AppHost::Close is highly non-trivial.
                         //
                         // It _may_ call into XAML, which _may_ pump the message loop, which would then recursively
                         // re-enter this function, which _may_ then handle another WM_CLOSE_TERMINAL_WINDOW,
                         // which would change the _windows array, and invalidate our iterator and crash.
                         //
-                        // We can prevent this by deferring destruction until after the erase() call.
+                        // We can prevent this by deferring Close() until after the erase() call.
                         const auto strong = *it;
-                        strong->Close();
                         _windows.erase(it);
+                        strong->Close();
                         break;
                     }
                 }
@@ -1053,7 +1075,7 @@ void WindowEmperor::_finalizeSessionPersistence() const
 
     const auto state = ApplicationState::SharedInstance();
 
-    _persistState(state, true);
+    _persistState(state, _app.Logic().Settings().GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedLayoutAndContent);
 
     if (_needsPersistenceCleanup)
     {
