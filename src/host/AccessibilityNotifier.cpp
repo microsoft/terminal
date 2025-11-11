@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "AccessibilityNotifier.h"
 
+#include "../types/inc/convert.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console;
@@ -70,16 +71,18 @@ void AccessibilityNotifier::Initialize(HWND hwnd, DWORD msaaDelay, DWORD uiaDela
 
 void AccessibilityNotifier::SetUIAProvider(IRawElementProviderSimple* provider) noexcept
 {
-    // NOTE: The assumption is that you're holding the console lock when calling any of the member functions.
-    // This is why we can safely update these members (no worker thread is running nor can be scheduled).
-    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
-
     // If UIA events are disabled, don't set _uiaProvider either.
     // It would trigger unnecessary work.
+    //
+    // NOTE: We check this before the assert() below so that unit tests don't trigger the assert.
     if (!_uiaEnabled)
     {
         return;
     }
+
+    // NOTE: The assumption is that you're holding the console lock when calling any of the member functions.
+    // This is why we can safely update these members (no worker thread is running nor can be scheduled).
+    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     // Of course we must ensure our precious provider object doesn't go away.
     if (provider)
@@ -90,7 +93,10 @@ void AccessibilityNotifier::SetUIAProvider(IRawElementProviderSimple* provider) 
     const auto old = _uiaProvider.exchange(provider, std::memory_order_relaxed);
 
     // Before we can release the old object, we must ensure it's not in use by a worker thread.
-    WaitForThreadpoolTimerCallbacks(_timer.get(), TRUE);
+    if (_timer)
+    {
+        WaitForThreadpoolTimerCallbacks(_timer.get(), TRUE);
+    }
 
     if (old)
     {
@@ -140,16 +146,26 @@ void AccessibilityNotifier::SetUIAProvider(IRawElementProviderSimple* provider) 
 // Unfortunately there's no way to know whether anyone even needs this information so we always raise this.
 void AccessibilityNotifier::CursorChanged(til::point position, bool activeSelection) noexcept
 {
+    const auto uiaEnabled = _uiaProvider.load(std::memory_order_relaxed) != nullptr;
+
     // Can't check for IsWinEventHookInstalled(EVENT_CONSOLE_CARET),
     // because we need to emit a ConsoleControl() call regardless.
-    if (_msaaEnabled)
+    if (_msaaEnabled || uiaEnabled)
     {
         const auto guard = _lock.lock_exclusive();
 
-        _state.eventConsoleCaretPositionX = position.x;
-        _state.eventConsoleCaretPositionY = position.y;
-        _state.eventConsoleCaretSelecting = activeSelection;
-        _state.eventConsoleCaretPrimed = true;
+        if (_msaaEnabled)
+        {
+            _state.eventConsoleCaretPositionX = position.x;
+            _state.eventConsoleCaretPositionY = position.y;
+            _state.eventConsoleCaretSelecting = activeSelection;
+            _state.eventConsoleCaretPrimed = true;
+        }
+
+        if (uiaEnabled)
+        {
+            _state.textSelectionChanged = true;
+        }
 
         _timerSet();
     }
@@ -167,10 +183,18 @@ void AccessibilityNotifier::SelectionChanged() noexcept
     }
 }
 
+bool AccessibilityNotifier::WantsRegionChangedEvents() const noexcept
+{
+    // See RegionChanged().
+    return (_msaaEnabled && IsWinEventHookInstalled(EVENT_CONSOLE_UPDATE_REGION)) ||
+           (_uiaProvider.load(std::memory_order_relaxed) != nullptr);
+}
+
 // Emits EVENT_CONSOLE_UPDATE_REGION, the region of the console that changed.
+// `end` is expected to be an inclusive coordinate.
 void AccessibilityNotifier::RegionChanged(til::point begin, til::point end) noexcept
 {
-    if (begin >= end)
+    if (begin > end)
     {
         return;
     }
@@ -306,7 +330,7 @@ void AccessibilityNotifier::_timerSet() noexcept
 {
     if (!_delay)
     {
-        _emitMSAA(_state);
+        _emitEvents(_state);
     }
     else if (!_state.timerScheduled)
     {
@@ -341,40 +365,79 @@ void NTAPI AccessibilityNotifier::_timerEmitMSAA(PTP_CALLBACK_INSTANCE, PVOID co
         memset(&self->_state, 0, sizeof(State));
     }
 
-    self->_emitMSAA(state);
+    self->_emitEvents(state);
 }
 
-void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
+void AccessibilityNotifier::_emitEvents(State& state) const noexcept
 {
     const auto cc = ServiceLocator::LocateConsoleControl<IConsoleControl>();
     const auto provider = _uiaProvider.load(std::memory_order_relaxed);
+    LONG updateRegionBeg = 0;
+    LONG updateRegionEnd = 0;
+    LONG updateSimpleCharAndAttr = 0;
+    LONG caretPosition = 0;
+    std::optional<CONSOLE_CARET_INFO> caretInfo;
 
-    if (state.eventConsoleCaretPrimed)
+    // vvv   Prepare any information we need   vvv
+    //
+    // Because NotifyWinEvent and UiaRaiseAutomationEvent are _very_ slow,
+    // and the following needs the console lock, we do it separately first.
+
+    if (state.eventConsoleUpdateRegionPrimed || state.eventConsoleCaretPrimed)
     {
-        const auto x = castSaturated<SHORT>(state.eventConsoleCaretPositionX);
-        const auto y = castSaturated<SHORT>(state.eventConsoleCaretPositionY);
-        // Technically, CONSOLE_CARET_SELECTION and CONSOLE_CARET_VISIBLE are bitflags,
-        // however Microsoft's _own_ example code for these assumes that they're an
-        // enumeration and also assumes that a value of 0 (= invisible cursor) is invalid.
-        // So, we just pretend as if the cursor is always visible.
-        const auto flags = state.eventConsoleCaretSelecting ? CONSOLE_CARET_SELECTION : CONSOLE_CARET_VISIBLE;
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.LockConsole();
 
-        // There's no need to check for IsWinEventHookInstalled,
-        // because NotifyWinEvent is very fast if no event is installed.
-        cc->NotifyWinEvent(EVENT_CONSOLE_CARET, _hwnd, flags, MAKELONG(x, y));
-
+        if (state.eventConsoleUpdateRegionPrimed)
         {
-            std::optional<CONSOLE_CARET_INFO> caretInfo;
+            const auto regionBegX = castSaturated<SHORT>(state.eventConsoleUpdateRegionBeginX);
+            const auto regionBegY = castSaturated<SHORT>(state.eventConsoleUpdateRegionBeginY);
+            const auto regionEndX = castSaturated<SHORT>(state.eventConsoleUpdateRegionEndX);
+            const auto regionEndY = castSaturated<SHORT>(state.eventConsoleUpdateRegionEndY);
+            updateRegionBeg = MAKELONG(regionBegX, regionBegY);
+            updateRegionEnd = MAKELONG(regionEndX, regionEndY);
+
+            // Historically we'd emit an EVENT_CONSOLE_UPDATE_SIMPLE event for single-char updates,
+            // but in the 30 years since, the way fast software is written has changed:
+            // We now have plenty CPU power but the speed of light is still the same.
+            // It's much more important to batch events to avoid NotifyWinEvent's latency problems.
+            // EVENT_CONSOLE_UPDATE_SIMPLE is not trivially batch-able, so we should avoid it.
+            //
+            // That said, NVDA is currently a very popular screen reader for Windows.
+            // IF you set its "Windows Console support" to "Legacy" AND disable
+            // "Use enhanced typed character support in legacy Windows Console when available"
+            // then it will purely rely on these WinEvents for accessibility.
+            //
+            // In this case it assumes that EVENT_CONSOLE_UPDATE_REGION is regular output
+            // and that EVENT_CONSOLE_UPDATE_SIMPLE is keyboard input (FYI: don't do this).
+            // The problem now is that it doesn't announce any EVENT_CONSOLE_UPDATE_REGION
+            // events where beg == end (i.e. a single character change).
+            //
+            // Unfortunately, the same is partially true for Microsoft's own Narrator.
+            if (gci.HasActiveOutputBuffer() && updateRegionBeg == updateRegionEnd)
+            {
+                auto& screenInfo = gci.GetActiveOutputBuffer();
+                auto& buffer = screenInfo.GetTextBuffer();
+                const auto& row = buffer.GetRowByOffset(regionBegY);
+                const auto glyph = row.GlyphAt(regionBegX);
+                const auto attr = row.GetAttrByColumn(regionBegX);
+                updateSimpleCharAndAttr = MAKELONG(Utf16ToUcs2(glyph), attr.GetLegacyAttributes());
+            }
+        }
+
+        if (state.eventConsoleCaretPrimed)
+        {
+            const auto caretX = castSaturated<SHORT>(state.eventConsoleCaretPositionX);
+            const auto caretY = castSaturated<SHORT>(state.eventConsoleCaretPositionY);
+            caretPosition = MAKELONG(caretX, caretY);
 
             // Convert the buffer position to the equivalent screen coordinates
             // required by CONSOLE_CARET_INFO, taking line rendition into account.
-            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            gci.LockConsole();
             if (gci.HasActiveOutputBuffer())
             {
                 auto& screenInfo = gci.GetActiveOutputBuffer();
                 auto& buffer = screenInfo.GetTextBuffer();
-                const auto position = buffer.BufferToScreenPosition({ x, y });
+                const auto position = buffer.BufferToScreenPosition({ caretX, caretY });
                 const auto viewport = screenInfo.GetViewport();
                 const auto fontSize = screenInfo.GetScreenFontSize();
                 const auto left = (position.x - viewport.Left()) * fontSize.width;
@@ -389,13 +452,64 @@ void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
                     },
                 });
             }
-            gci.UnlockConsole();
-
-            if (caretInfo)
-            {
-                cc->Control(ControlType::ConsoleSetCaretInfo, &*caretInfo, sizeof(*caretInfo));
-            }
         }
+
+        gci.UnlockConsole();
+    }
+
+    // vvv   Raise events now   vvv
+    //
+    // NOTE: When typing in a cooked read prompt (e.g. cmd.exe), the following events
+    // are historically raised synchronously/immediately in the listed order:
+    // * NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE)
+    // * UiaRaiseAutomationEvent(UIA_Text_TextChangedEventId)
+    //
+    // Then, between 0-530ms later, via the now removed blink timer routine,
+    // the following was raised asynchronously:
+    // * ConsoleControl(ConsoleSetCaretInfo)
+    // * NotifyWinEvent(EVENT_CONSOLE_CARET)
+    // * UiaRaiseAutomationEvent(UIA_Text_TextSelectionChangedEventId)
+
+    if (state.eventConsoleUpdateRegionPrimed)
+    {
+        if (updateSimpleCharAndAttr)
+        {
+            cc->NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE, _hwnd, updateRegionBeg, updateSimpleCharAndAttr);
+        }
+        else
+        {
+            cc->NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION, _hwnd, updateRegionBeg, updateRegionEnd);
+        }
+
+        state.eventConsoleUpdateRegionBeginX = 0;
+        state.eventConsoleUpdateRegionBeginY = 0;
+        state.eventConsoleUpdateRegionEndX = 0;
+        state.eventConsoleUpdateRegionEndY = 0;
+        state.eventConsoleUpdateRegionPrimed = false;
+    }
+
+    if (state.textChanged)
+    {
+        _emitUIAEvent(provider, UIA_Text_TextChangedEventId);
+        state.textChanged = false;
+    }
+
+    if (state.eventConsoleCaretPrimed)
+    {
+        if (caretInfo)
+        {
+            cc->Control(ControlType::ConsoleSetCaretInfo, &*caretInfo, sizeof(*caretInfo));
+        }
+
+        // There's no need to check for IsWinEventHookInstalled,
+        // because NotifyWinEvent is very fast if no event is installed.
+        //
+        // Technically, CONSOLE_CARET_SELECTION and CONSOLE_CARET_VISIBLE are bitflags,
+        // however Microsoft's _own_ example code for these assumes that they're an
+        // enumeration and also assumes that a value of 0 (= invisible cursor) is invalid.
+        // So, we just pretend as if the cursor is always visible.
+        const auto flags = state.eventConsoleCaretSelecting ? CONSOLE_CARET_SELECTION : CONSOLE_CARET_VISIBLE;
+        cc->NotifyWinEvent(EVENT_CONSOLE_CARET, _hwnd, flags, caretPosition);
 
         state.eventConsoleCaretPositionX = 0;
         state.eventConsoleCaretPositionY = 0;
@@ -403,72 +517,10 @@ void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
         state.eventConsoleCaretPrimed = false;
     }
 
-    if (state.eventConsoleUpdateRegionPrimed)
+    if (state.textSelectionChanged)
     {
-        const auto begX = castSaturated<SHORT>(state.eventConsoleUpdateRegionBeginX);
-        const auto begY = castSaturated<SHORT>(state.eventConsoleUpdateRegionBeginY);
-        const auto endX = castSaturated<SHORT>(state.eventConsoleUpdateRegionEndX);
-        const auto endY = castSaturated<SHORT>(state.eventConsoleUpdateRegionEndY);
-        const auto beg = MAKELONG(begX, begY);
-        const auto end = MAKELONG(endX, endY);
-
-        // Previously, we'd also emit a EVENT_CONSOLE_UPDATE_SIMPLE event for single-char updates,
-        // but in the 30 years since, the way fast software is written has changed:
-        // We now have plenty CPU power but the speed of light is still the same.
-        // It's much more important to batch events to avoid NotifyWinEvent's latency problems.
-        // EVENT_CONSOLE_UPDATE_SIMPLE is not trivially batch-able and so it got removed.
-        //
-        // That said, NVDA is currently a very popular screen reader for Windows.
-        // IF you set its "Windows Console support" to "Legacy" AND disable
-        // "Use enhanced typed character support in legacy Windows Console when available"
-        // then it will purely rely on these WinEvents for accessibility.
-        //
-        // In this case it assumes that EVENT_CONSOLE_UPDATE_REGION is regular output
-        // and that EVENT_CONSOLE_UPDATE_SIMPLE is keyboard input (FYI: don't do this).
-        // The problem now is that it doesn't announce any EVENT_CONSOLE_UPDATE_REGION
-        // events where beg == end (i.e. a single character change).
-        //
-        // The good news is that if you set these two options in NVDA, it crashes whenever
-        // any conhost instance exits, so... maybe we don't need to work around this? :D
-        //
-        // I'll leave this code here, in case we ever need to shim EVENT_CONSOLE_UPDATE_SIMPLE.
-#if 0
-        LONG charAndAttr = 0;
-
-        if (beg == end)
-        {
-            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            gci.LockConsole();
-
-            if (gci.HasActiveOutputBuffer())
-            {
-                auto& tb = gci.GetActiveOutputBuffer().GetTextBuffer();
-                const auto& row = tb.GetRowByOffset(begY);
-                const auto glyph = row.GlyphAt(begX);
-                const auto attr = row.GetAttrByColumn(begX);
-                charAndAttr = MAKELONG(Utf16ToUcs2(glyph), attr.GetLegacyAttributes());
-            }
-
-            gci.UnlockConsole();
-        }
-
-        if (charAndAttr)
-        {
-            cc->NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE, _hwnd, beg, charAndAttr);
-        }
-        else
-        {
-            cc->NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION, _hwnd, beg, end);
-        }
-#else
-        cc->NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION, _hwnd, beg, end);
-#endif
-
-        state.eventConsoleUpdateRegionBeginX = 0;
-        state.eventConsoleUpdateRegionBeginY = 0;
-        state.eventConsoleUpdateRegionEndX = 0;
-        state.eventConsoleUpdateRegionEndY = 0;
-        state.eventConsoleUpdateRegionPrimed = false;
+        _emitUIAEvent(provider, UIA_Text_TextSelectionChangedEventId);
+        state.textSelectionChanged = false;
     }
 
     if (state.eventConsoleUpdateScrollPrimed)
@@ -487,18 +539,6 @@ void AccessibilityNotifier::_emitMSAA(State& state) const noexcept
     {
         cc->NotifyWinEvent(EVENT_CONSOLE_LAYOUT, _hwnd, 0, 0);
         state.eventConsoleLayoutPrimed = false;
-    }
-
-    if (state.textSelectionChanged)
-    {
-        _emitUIAEvent(provider, UIA_Text_TextSelectionChangedEventId);
-        state.textSelectionChanged = false;
-    }
-
-    if (state.textChanged)
-    {
-        _emitUIAEvent(provider, UIA_Text_TextChangedEventId);
-        state.textChanged = false;
     }
 }
 

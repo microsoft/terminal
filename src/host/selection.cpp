@@ -177,9 +177,6 @@ void Selection::InitializeMouseSelection(const til::point coordBufferPos)
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-
-        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
-        an.SelectionChanged();
     }
 
     // Fire off an event to let accessibility apps know the selection has changed.
@@ -302,7 +299,6 @@ void Selection::_ExtendSelection(Selection::SelectionData* d, _In_ til::point co
     // Fire off an event to let accessibility apps know the selection has changed.
     auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
     an.CursorChanged(coordBufferPos, true);
-    an.SelectionChanged();
 }
 
 // Routine Description:
@@ -313,9 +309,6 @@ void Selection::_ExtendSelection(Selection::SelectionData* d, _In_ til::point co
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto& ScreenInfo = gci.GetActiveOutputBuffer();
-
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
     HideSelection();
@@ -331,6 +324,8 @@ void Selection::_CancelMouseSelection()
 
     // Mark the cursor position as changed so we'll fire off a win event.
     // NOTE(lhecker): Why is this the only cancel function that would raise a WinEvent? Makes no sense to me.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& ScreenInfo = gci.GetActiveOutputBuffer();
     auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
     an.CursorChanged(ScreenInfo.GetTextBuffer().GetCursor().GetPosition(), false);
 }
@@ -504,7 +499,7 @@ void Selection::InitializeMarkSelection()
     screenInfo.SetCursorInformation(100, TRUE);
 
     const auto coordPosition = cursor.GetPosition();
-    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition, true));
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,
