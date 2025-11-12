@@ -356,6 +356,30 @@
                 </Grid>
             </DataTemplate>
 
+            <!--  Example shortcut action to test this template: Split Pane  -->
+            <DataTemplate x:Key="SplitSizeTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="0.2"
+                                    Maximum="1"
+                                    Minimum="0"
+                                    SmallChange="0.1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}" />
+                </Grid>
+            </DataTemplate>
+
             <!--  Example shortcut action to test this template: Send Input  -->
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
@@ -610,6 +634,7 @@
                                          FolderPickerTemplate="{StaticResource FolderPickerTemplate}"
                                          Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"
                                          Int32Template="{StaticResource Int32Template}"
+                                         SplitSizeTemplate="{StaticResource SplitSizeTemplate}"
                                          StringTemplate="{StaticResource StringTemplate}"
                                          TerminalCoreColorOptionalTemplate="{StaticResource TerminalCoreColorOptionalTemplate}"
                                          UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"

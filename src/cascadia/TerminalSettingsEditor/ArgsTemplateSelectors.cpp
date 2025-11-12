@@ -24,7 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             lut[] = {
                 { L"int32_t", &ArgsTemplateSelectors::Int32Template },
                 { L"uint32_t", &ArgsTemplateSelectors::UInt32Template },
-                { L"float", &ArgsTemplateSelectors::FloatTemplate },
                 { L"bool", &ArgsTemplateSelectors::BoolTemplate },
                 { L"Windows::Foundation::IReference<bool>", &ArgsTemplateSelectors::BoolOptionalTemplate },
                 { L"Windows::Foundation::IReference<int32_t>", &ArgsTemplateSelectors::Int32OptionalTemplate },
@@ -67,6 +66,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 default:
                     // no special handling required, just return the normal string template
                     return StringTemplate();
+                }
+            }
+            else if (argType == L"float")
+            {
+                const auto argTag = argWrapper.TypeHint();
+                switch (argTag)
+                {
+                case Model::ArgTypeHint::SplitSize:
+                    return SplitSizeTemplate();
+                default:
+                    return FloatTemplate();
                 }
             }
 

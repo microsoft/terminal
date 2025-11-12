@@ -18,6 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::property<winrt::Windows::UI::Xaml::DataTemplate> UInt32Template;
         til::property<winrt::Windows::UI::Xaml::DataTemplate> UInt32OptionalTemplate;
         til::property<winrt::Windows::UI::Xaml::DataTemplate> FloatTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> SplitSizeTemplate;
         til::property<winrt::Windows::UI::Xaml::DataTemplate> StringTemplate;
         til::property<winrt::Windows::UI::Xaml::DataTemplate> ColorSchemeTemplate;
         til::property<winrt::Windows::UI::Xaml::DataTemplate> FilePickerTemplate;

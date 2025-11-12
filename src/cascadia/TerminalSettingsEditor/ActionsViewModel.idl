@@ -16,6 +16,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.DataTemplate UInt32Template;
         Windows.UI.Xaml.DataTemplate UInt32OptionalTemplate;
         Windows.UI.Xaml.DataTemplate FloatTemplate;
+        Windows.UI.Xaml.DataTemplate SplitSizeTemplate;
         Windows.UI.Xaml.DataTemplate StringTemplate;
         Windows.UI.Xaml.DataTemplate ColorSchemeTemplate;
         Windows.UI.Xaml.DataTemplate FilePickerTemplate;
