@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         CommandViewModel(const winrt::Microsoft::Terminal::Settings::Model::Command& cmd,
                          std::vector<Control::KeyChord> keyChordList,
-                         const Editor::ActionsViewModel actionsPageVM,
+                         const Editor::ActionsViewModel& actionsPageVM,
                          Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap,
                          Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> nameToActionMap);
         void Initialize();

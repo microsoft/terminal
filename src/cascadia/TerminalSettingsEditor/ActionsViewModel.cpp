@@ -40,9 +40,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     static constexpr std::wstring_view ActionsPageId{ L"page.actions" };
 
-    CommandViewModel::CommandViewModel(const Command& cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM, Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap, Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> nameToActionMap) :
+    CommandViewModel::CommandViewModel(const Command& cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel& actionsPageVM, Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap, Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> nameToActionMap) :
         _command{ cmd },
-        _keyChordList{ keyChordList },
+        _keyChordList{ std::move(keyChordList) },
         _actionsPageVM{ actionsPageVM },
         _availableActionsAndNamesMap{ availableActionsAndNamesMap },
         _nameToActionMap{ nameToActionMap }
