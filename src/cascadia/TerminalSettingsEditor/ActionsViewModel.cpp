@@ -40,7 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     static constexpr std::wstring_view ActionsPageId{ L"page.actions" };
 
-    CommandViewModel::CommandViewModel(Command cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM, Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap, Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> nameToActionMap) :
+    CommandViewModel::CommandViewModel(const Command& cmd, std::vector<Control::KeyChord> keyChordList, const Editor::ActionsViewModel actionsPageVM, Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap, Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> nameToActionMap) :
         _command{ cmd },
         _keyChordList{ keyChordList },
         _actionsPageVM{ actionsPageVM },
@@ -324,136 +324,132 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"DisplayName");
     }
 
-    ArgWrapper::ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTypeHint typeHint, const Windows::Foundation::IInspectable& value) :
-        _name{ name },
-        _type{ type },
-        _typeHint{ typeHint },
-        _required{ required }
+    ArgWrapper::ArgWrapper(const Model::ArgDescriptor& descriptor, const Windows::Foundation::IInspectable& value) :
+        _descriptor{ descriptor }
     {
         Value(value);
     }
 
     void ArgWrapper::Initialize()
     {
-        if (_type == L"Model::ResizeDirection")
+        if (_descriptor.Type == L"Model::ResizeDirection")
         {
             _InitializeEnumListAndValue<Model::ResizeDirection>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::ResizeDirection().GetView(),
                 L"Actions_ResizeDirection",
                 L"Content");
         }
-        else if (_type == L"Model::FocusDirection")
+        else if (_descriptor.Type == L"Model::FocusDirection")
         {
             _InitializeEnumListAndValue<Model::FocusDirection>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::FocusDirection().GetView(),
                 L"Actions_FocusDirection",
                 L"Content");
         }
-        else if (_type == L"SettingsTarget")
+        else if (_descriptor.Type == L"SettingsTarget")
         {
             _InitializeEnumListAndValue<Model::SettingsTarget>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::SettingsTarget().GetView(),
                 L"Actions_SettingsTarget",
                 L"Content");
         }
-        else if (_type == L"MoveTabDirection")
+        else if (_descriptor.Type == L"MoveTabDirection")
         {
             _InitializeEnumListAndValue<Model::MoveTabDirection>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::MoveTabDirection().GetView(),
                 L"Actions_MoveTabDirection",
                 L"Content");
         }
-        else if (_type == L"Microsoft::Terminal::Control::ScrollToMarkDirection")
+        else if (_descriptor.Type == L"Microsoft::Terminal::Control::ScrollToMarkDirection")
         {
             _InitializeEnumListAndValue<Control::ScrollToMarkDirection>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::ScrollToMarkDirection().GetView(),
                 L"Actions_ScrollToMarkDirection",
                 L"Content");
         }
-        else if (_type == L"CommandPaletteLaunchMode")
+        else if (_descriptor.Type == L"CommandPaletteLaunchMode")
         {
             _InitializeEnumListAndValue<Model::CommandPaletteLaunchMode>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::CommandPaletteLaunchMode().GetView(),
                 L"Actions_CommandPaletteLaunchMode",
                 L"Content");
         }
-        else if (_type == L"SuggestionsSource")
+        else if (_descriptor.Type == L"SuggestionsSource")
         {
             _InitializeFlagListAndValue<Model::SuggestionsSource>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::SuggestionsSource().GetView(),
                 L"Actions_SuggestionsSource",
                 L"Content");
         }
-        else if (_type == L"FindMatchDirection")
+        else if (_descriptor.Type == L"FindMatchDirection")
         {
             _InitializeEnumListAndValue<Model::FindMatchDirection>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::FindMatchDirection().GetView(),
                 L"Actions_FindMatchDirection",
                 L"Content");
         }
-        else if (_type == L"Model::DesktopBehavior")
+        else if (_descriptor.Type == L"Model::DesktopBehavior")
         {
             _InitializeEnumListAndValue<Model::DesktopBehavior>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::DesktopBehavior().GetView(),
                 L"Actions_DesktopBehavior",
                 L"Content");
         }
-        else if (_type == L"Model::MonitorBehavior")
+        else if (_descriptor.Type == L"Model::MonitorBehavior")
         {
             _InitializeEnumListAndValue<Model::MonitorBehavior>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::MonitorBehavior().GetView(),
                 L"Actions_MonitorBehavior",
                 L"Content");
         }
-        else if (_type == L"winrt::Microsoft::Terminal::Control::ClearBufferType")
+        else if (_descriptor.Type == L"winrt::Microsoft::Terminal::Control::ClearBufferType")
         {
             _InitializeEnumListAndValue<Control::ClearBufferType>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::ClearBufferType().GetView(),
                 L"Actions_ClearBufferType",
                 L"Content");
         }
-        else if (_type == L"SelectOutputDirection")
+        else if (_descriptor.Type == L"SelectOutputDirection")
         {
             _InitializeEnumListAndValue<Model::SelectOutputDirection>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::SelectOutputDirection().GetView(),
                 L"Actions_SelectOutputDirection",
                 L"Content");
         }
-        else if (_type == L"Model::SplitDirection")
+        else if (_descriptor.Type == L"Model::SplitDirection")
         {
             _InitializeEnumListAndValue<Model::SplitDirection>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::SplitDirection().GetView(),
                 L"Actions_SplitDirection",
                 L"Content");
         }
-        else if (_type == L"SplitType")
+        else if (_descriptor.Type == L"SplitType")
         {
             _InitializeEnumListAndValue<Model::SplitType>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::SplitType().GetView(),
                 L"Actions_SplitType",
                 L"Content");
         }
-        else if (_type == L"Windows::Foundation::IReference<TabSwitcherMode>")
+        else if (_descriptor.Type == L"Windows::Foundation::IReference<TabSwitcherMode>")
         {
             _InitializeNullableEnumListAndValue<Model::TabSwitcherMode>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::TabSwitcherMode().GetView(),
                 L"Actions_TabSwitcherMode",
                 L"Content");
         }
-        else if (_type == L"Windows::Foundation::IReference<Control::CopyFormat>")
+        else if (_descriptor.Type == L"Windows::Foundation::IReference<Control::CopyFormat>")
         {
             _InitializeNullableFlagListAndValue<Control::CopyFormat>(
                 winrt::Microsoft::Terminal::Settings::Model::EnumMappings::CopyFormat().GetView(),
                 L"Actions_CopyFormat",
                 L"Content");
         }
-
-        else if (_type == L"Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>" ||
-                 _type == L"Windows::Foundation::IReference<Windows::UI::Color>")
+        else if (_descriptor.Type == L"Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>" ||
+                 _descriptor.Type == L"Windows::Foundation::IReference<Windows::UI::Color>")
         {
             ColorSchemeRequested.raise(*this, *this);
         }
-        else if (_typeHint == Model::ArgTypeHint::ColorScheme)
+        else if (_descriptor.TypeHint == Model::ArgTypeHint::ColorScheme)
         {
             // special case of string, emit an event letting the actionsVM know we need the list of color scheme names
             ColorSchemeNamesRequested.raise(*this, *this);
@@ -654,7 +650,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 Value(box_value(static_cast<int32_t>(newValue)));
             }
         }
-        else if (!_Value)
+        else if (_Value)
         {
             Value(nullptr);
         }
@@ -678,7 +674,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 Value(box_value(static_cast<uint32_t>(newValue)));
             }
         }
-        else if (!_Value)
+        else if (_Value)
         {
             Value(nullptr);
         }
@@ -983,49 +979,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             for (const auto argDescription : shortcutArgsDescriptors)
             {
                 const auto argAtIndex = shortcutArgs.GetArgAt(i);
-                const auto argName = argDescription.Name;
-                const auto argType = argDescription.Type;
-                const auto argTypeHint = argDescription.TypeHint;
-                const auto argRequired = argDescription.Required;
-                const auto item = make_self<ArgWrapper>(argName, argType, argRequired, argTypeHint, argAtIndex);
-                item->PropertyChanged([weakThis = get_weak(), i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
-                    if (auto weak = weakThis.get())
+                const auto item = make_self<ArgWrapper>(argDescription, argAtIndex);
+                item->PropertyChanged([this, i](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+                    const auto itemProperty{ args.PropertyName() };
+                    if (itemProperty == L"Value")
                     {
-                        const auto itemProperty{ args.PropertyName() };
-                        if (itemProperty == L"Value")
-                        {
-                            const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
-                            const auto newValue = argWrapper.Value();
-                            weak->_actionAndArgs.Args().as<Model::IActionArgsDescriptorAccess>().SetArgAt(i, newValue);
-                            weak->WrapperValueChanged.raise(*weak, nullptr);
-                        }
+                        const auto argWrapper = sender.as<Microsoft::Terminal::Settings::Editor::ArgWrapper>();
+                        const auto newValue = argWrapper.Value();
+                        _actionAndArgs.Args().as<Model::IActionArgsDescriptorAccess>().SetArgAt(i, newValue);
+                        WrapperValueChanged.raise(*this, nullptr);
                     }
                 });
-                item->ColorSchemeRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
-                    if (auto weak = weakThis.get())
+                item->ColorSchemeRequested([this](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+                    if (wrapper)
                     {
-                        if (wrapper)
-                        {
-                            weak->PropagateColorSchemeRequested.raise(*weak, wrapper);
-                        }
+                        PropagateColorSchemeRequested.raise(*this, wrapper);
                     }
                 });
-                item->ColorSchemeNamesRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
-                    if (auto weak = weakThis.get())
+                item->ColorSchemeNamesRequested([this](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+                    if (wrapper)
                     {
-                        if (wrapper)
-                        {
-                            weak->PropagateColorSchemeNamesRequested.raise(*weak, wrapper);
-                        }
+                        PropagateColorSchemeNamesRequested.raise(*this, wrapper);
                     }
                 });
-                item->WindowRootRequested([weakThis = get_weak()](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
-                    if (auto weak = weakThis.get())
+                item->WindowRootRequested([this](const IInspectable& /*sender*/, const Editor::ArgWrapper& wrapper) {
+                    if (wrapper)
                     {
-                        if (wrapper)
-                        {
-                            weak->PropagateWindowRootRequested.raise(*weak, wrapper);
-                        }
+                        PropagateWindowRootRequested.raise(*this, wrapper);
                     }
                 });
                 item->Initialize();
@@ -1150,6 +1130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _MakeCommandVMsHelper();
 
         // Re-select the previously selected command if it exists
+        bool found{ false };
         if (!currentCommandID.empty())
         {
             const auto it = _CommandList.First();
@@ -1159,18 +1140,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (cmd.ID() == currentCommandID)
                 {
                     CurrentCommand(cmd);
+                    found = true;
                     break;
                 }
                 it.MoveNext();
             }
-            if (!it.HasCurrent())
-            {
-                // we didn't find the previously selected command
-                CurrentCommand(nullptr);
-                CurrentPage(ActionsSubPage::Base);
-            }
         }
-        else
+        if (!found)
         {
             // didn't have a command,
             // so skip over looking through the command

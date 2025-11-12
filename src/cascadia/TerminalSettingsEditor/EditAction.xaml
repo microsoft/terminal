@@ -349,7 +349,7 @@
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
-                                    Minimum="0"
+                                    Minimum="-999"
                                     SmallChange="1"
                                     Style="{StaticResource NumberBoxSettingStyle}"
                                     Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}" />

@@ -15,7 +15,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         EditAction();
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-        void OnNavigatedFrom(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         til::property_changed_event PropertyChanged;
 
@@ -24,8 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         friend struct EditActionT<EditAction>; // for Xaml to bind events
         winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
-        winrt::event_token _propagateWindowRootToken{};
-        winrt::event_token _focusContainerToken{};
+        Editor::CommandViewModel::PropagateWindowRootRequested_revoker _propagateWindowRootRevoker;
+        Editor::CommandViewModel::FocusContainer_revoker _focusContainerRevoker;
     };
 }
 

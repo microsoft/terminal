@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct CommandViewModel : CommandViewModelT<CommandViewModel>, ViewModelHelper<CommandViewModel>
     {
     public:
-        CommandViewModel(winrt::Microsoft::Terminal::Settings::Model::Command cmd,
+        CommandViewModel(const winrt::Microsoft::Terminal::Settings::Model::Command& cmd,
                          std::vector<Control::KeyChord> keyChordList,
                          const Editor::ActionsViewModel actionsPageVM,
                          Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> availableActionsAndNamesMap,
@@ -134,13 +134,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
     {
     public:
-        ArgWrapper(const winrt::hstring& name, const winrt::hstring& type, const bool required, const Model::ArgTypeHint typeHint, const Windows::Foundation::IInspectable& value);
+        ArgWrapper(const Model::ArgDescriptor& descriptor, const Windows::Foundation::IInspectable& value);
         void Initialize();
 
-        winrt::hstring Name() const noexcept { return _name; };
-        winrt::hstring Type() const noexcept { return _type; };
-        Model::ArgTypeHint TypeHint() const noexcept { return _typeHint; };
-        bool Required() const noexcept { return _required; };
+        winrt::hstring Name() const noexcept { return _descriptor.Name; };
+        winrt::hstring Type() const noexcept { return _descriptor.Type; };
+        Model::ArgTypeHint TypeHint() const noexcept { return _descriptor.TypeHint; };
+        bool Required() const noexcept { return _descriptor.Required; };
 
         // We cannot use the macro here because we need to implement additional logic for the setter
         Windows::Foundation::IInspectable EnumValue() const noexcept { return _EnumValue; };
@@ -189,10 +189,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Editor::IHostedInWindow, WindowRoot, nullptr);
 
     private:
-        winrt::hstring _name;
-        winrt::hstring _type;
-        Model::ArgTypeHint _typeHint;
-        bool _required;
+        Model::ArgDescriptor _descriptor;
         Windows::Foundation::IInspectable _EnumValue{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> _FlagList;
