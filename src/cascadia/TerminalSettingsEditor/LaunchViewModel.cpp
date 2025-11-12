@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"sr-Cyrl-RS",
         L"zh-Hans",
         L"zh-Hant",
+        L"uk-UA",
     };
 
     LaunchViewModel::LaunchViewModel(Model::CascadiaSettings settings) :
