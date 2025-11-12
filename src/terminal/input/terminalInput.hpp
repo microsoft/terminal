@@ -85,7 +85,7 @@ namespace Microsoft::Console::VirtualTerminal
         const wchar_t* _ss3 = L"\x1BO";
 
         void _initKeyboardMap() noexcept;
-        DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key);
+        DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept;
         std::array<byte, 256> _getKeyboardState(const WORD virtualKeyCode, const DWORD controlKeyState) const;
         [[nodiscard]] static wchar_t _makeCtrlChar(const wchar_t ch);
         [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
