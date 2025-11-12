@@ -15,6 +15,7 @@
 #include "GlobalAppearance.h"
 #include "GlobalAppearanceViewModel.h"
 #include "ColorSchemes.h"
+#include "EditColorScheme.h"
 #include "AddProfile.h"
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
@@ -293,16 +294,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto settingName{ args.PropertyName() };
             if (settingName == L"CurrentPage")
             {
+                // extract ElementToFocus and clear it; we only want to use it once
+                auto vmImpl = get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM);
+                const auto elementToFocus = vmImpl->ElementToFocus();
+                vmImpl->ElementToFocus(L"");
+
                 const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
                 if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), currentScheme);
+                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToEditColorSchemeArgs>(currentScheme, elementToFocus));
                     const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit);
                     _breadcrumbs.Append(crumb);
                 }
                 else if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::Base)
                 {
-                    _Navigate(winrt::hstring{ colorSchemesTag }, BreadcrumbSubPage::None);
+                    _Navigate(winrt::hstring{ colorSchemesTag }, BreadcrumbSubPage::None, elementToFocus);
                 }
             }
             else if (settingName == L"CurrentSchemeName")
@@ -862,16 +868,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _PreNavigateHelper();
 
-        // TODO CARLOS:
-        // - should navigate to EditColorScheme, not ColorSchemes
-        // - EditColorScheme::OnNavigatedTo needs to accept NavigateToColorSchemesArgs (or similar)
-        // - EditColorScheme::OnNavigatedTo needs BringIntoViewWhenLoaded(args.ElementToFocus())
         const auto crumb = winrt::make<Breadcrumb>(box_value(colorSchemesTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
         contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToColorSchemesArgs>(_colorSchemesPageVM, elementToFocus));
         SettingsNav().SelectedItem(ColorSchemesNavItem());
 
+        // Pass along the element to focus to the ColorSchemesPageViewModel.
+        // This will work as a staging area before we navigate to EditColorScheme
+        get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM)->ElementToFocus(elementToFocus);
+
         // Set CurrentScheme BEFORE the CurrentPage!
+        // Doing so triggers the PropertyChanged event which performs the navigation to EditColorScheme
         if (subPage == BreadcrumbSubPage::None)
         {
             _colorSchemesPageVM.CurrentScheme(nullptr);

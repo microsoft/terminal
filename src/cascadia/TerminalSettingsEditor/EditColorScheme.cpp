@@ -40,7 +40,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditColorScheme::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ColorSchemeViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToEditColorSchemeArgs>();
+        _ViewModel = args.ViewModel();
+
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         const auto schemeName = _ViewModel.Name();
         NameBox().Text(schemeName);

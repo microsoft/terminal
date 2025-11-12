@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_OBSERVABLE_PROPERTY(ColorSchemesSubPage, CurrentPage, _propertyChangedHandlers, ColorSchemesSubPage::Base);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, AllColorSchemes, _propertyChangedHandlers, nullptr);
+        WINRT_PROPERTY(hstring, ElementToFocus);
 
     private:
         Editor::ColorSchemeViewModel _CurrentScheme{ nullptr };

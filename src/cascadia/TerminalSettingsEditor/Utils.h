@@ -131,15 +131,15 @@ struct HasScrollViewer
         _loadedRevoker = pThis->Loaded(winrt::auto_revoke, [weakThis{ pThis->get_weak() }, elementName](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                if (const auto& elementToFocus{ page->FindName(elementName).try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingContainer>() })
+                if (const auto& controlToFocus{ page->FindName(elementName).try_as<winrt::Windows::UI::Xaml::Controls::Control>() })
                 {
                     // We need to wait for the page to be loaded
                     // or else the call to StartBringIntoView()
                     // will end up doing nothing
-                    elementToFocus.StartBringIntoView();
+                    controlToFocus.StartBringIntoView();
 
                     // TODO CARLOS: ensure this works in all scenarios (easiest to test when navigating to page by keyboard)
-                    elementToFocus.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+                    controlToFocus.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
                 }
                 page->_loadedRevoker.revoke();
             }
