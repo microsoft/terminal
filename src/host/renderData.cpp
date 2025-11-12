@@ -6,14 +6,19 @@
 #include "renderData.hpp"
 
 #include "dbcs.h"
-#include "handle.h"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
 using Microsoft::Console::Interactivity::ServiceLocator;
+
+void RenderData::UpdateSystemMetrics()
+{
+    _cursorBlinkInterval.reset();
+}
 
 // Routine Description:
 // - Retrieves the viewport that applies over the data available in the GetTextBuffer() call
@@ -96,93 +101,17 @@ void RenderData::UnlockConsole() noexcept
     gci.UnlockConsole();
 }
 
-// Method Description:
-// - Gets the cursor's position in the buffer, relative to the buffer origin.
-// Arguments:
-// - <none>
-// Return Value:
-// - the cursor's position in the buffer relative to the buffer origin.
-til::point RenderData::GetCursorPosition() const noexcept
+TimerDuration RenderData::GetBlinkInterval() noexcept
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetPosition();
-}
-
-// Method Description:
-// - Returns whether the cursor is currently visible or not. If the cursor is
-//      visible and blinking, this is true, even if the cursor has currently
-//      blinked to the "off" state.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the cursor is set to the visible state, regardless of blink state
-bool RenderData::IsCursorVisible() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible();
-}
-
-// Method Description:
-// - Returns whether the cursor is currently visually visible or not. If the
-//      cursor is visible, and blinking, this will alternate between true and
-//      false as the cursor blinks.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the cursor is currently visually visible, depending upon blink state
-bool RenderData::IsCursorOn() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.IsVisible() && cursor.IsOn();
-}
-
-// Method Description:
-// - The height of the cursor, out of 100, where 100 indicates the cursor should
-//      be the full height of the cell.
-// Arguments:
-// - <none>
-// Return Value:
-// - height of the cursor, out of 100
-ULONG RenderData::GetCursorHeight() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    // Determine cursor height
-    auto ulHeight = cursor.GetSize();
-
-    // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
-    // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
-    // then we need to shrink it by half.
-    if (cursor.IsDouble())
+    if (!_cursorBlinkInterval)
     {
-        if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
-        {
-            ulHeight >>= 1;
-        }
-        else
-        {
-            ulHeight <<= 1;
-        }
+        const auto enabled = ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled();
+        const auto interval = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
+        // >10s --> no blinking. The limit is arbitrary, because technically the valid range
+        // on Windows is 200-1200ms. GetCaretBlinkTime() returns INFINITE for no blinking, 0 for errors.
+        _cursorBlinkInterval = enabled && interval <= 10000 ? std ::chrono::milliseconds(interval) : TimerDuration::max();
     }
-
-    return ulHeight;
-}
-
-// Method Description:
-// - The CursorType of the cursor. The CursorType is used to determine what
-//      shape the cursor should be.
-// Arguments:
-// - <none>
-// Return Value:
-// - the CursorType of the cursor.
-CursorType RenderData::GetCursorStyle() const noexcept
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetType();
+    return *_cursorBlinkInterval;
 }
 
 // Method Description:
@@ -197,26 +126,13 @@ ULONG RenderData::GetCursorPixelWidth() const noexcept
     return ServiceLocator::LocateGlobals().cursorPixelWidth;
 }
 
-// Method Description:
-// - Returns true if the cursor should be drawn twice as wide as usual because
-//      the cursor is currently over a cell with a double-wide character in it.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const
-{
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
-}
-
 // Routine Description:
 // - Checks the user preference as to whether grid line drawing is allowed around the edges of each cell.
 // - This is for backwards compatibility with old behaviors in the legacy console.
 // Return Value:
 // - If true, line drawing information retrieved from the text buffer can/should be displayed.
 // - If false, it should be ignored and never drawn
-const bool RenderData::IsGridLineDrawingAllowed() noexcept
+bool RenderData::IsGridLineDrawingAllowed() noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto outputMode = gci.GetActiveOutputBuffer().OutputMode;
@@ -240,7 +156,7 @@ const bool RenderData::IsGridLineDrawingAllowed() noexcept
 // - Retrieves the title information to be displayed in the frame/edge of the window
 // Return Value:
 // - String with title information
-const std::wstring_view RenderData::GetConsoleTitle() const noexcept
+std::wstring_view RenderData::GetConsoleTitle() const noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetTitleAndPrefix();
@@ -252,7 +168,7 @@ const std::wstring_view RenderData::GetConsoleTitle() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const
+std::wstring RenderData::GetHyperlinkUri(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
@@ -264,14 +180,14 @@ const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const
 // - The hyperlink ID
 // Return Value:
 // - The custom ID if there was one, empty string otherwise
-const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const
+std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
 }
 
 // For now, we ignore regex patterns in conhost
-const std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const
+std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) const
 {
     return {};
 }
@@ -293,12 +209,12 @@ std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute
 // - <none>
 // Return Value:
 // - True if the selection variables contain valid selection data. False otherwise.
-const bool RenderData::IsSelectionActive() const
+bool RenderData::IsSelectionActive() const
 {
     return Selection::Instance().IsAreaSelected();
 }
 
-const bool RenderData::IsBlockSelection() const noexcept
+bool RenderData::IsBlockSelection() const
 {
     return !Selection::Instance().IsLineSelection();
 }
@@ -338,7 +254,7 @@ const til::point_span* RenderData::GetSearchHighlightFocused() const noexcept
 // - none
 // Return Value:
 // - current selection anchor
-const til::point RenderData::GetSelectionAnchor() const noexcept
+til::point RenderData::GetSelectionAnchor() const noexcept
 {
     return Selection::Instance().GetSelectionAnchor();
 }
@@ -349,7 +265,7 @@ const til::point RenderData::GetSelectionAnchor() const noexcept
 // - none
 // Return Value:
 // - current selection anchor
-const til::point RenderData::GetSelectionEnd() const noexcept
+til::point RenderData::GetSelectionEnd() const noexcept
 {
     // The selection area in ConHost is encoded as two things...
     //  - SelectionAnchor: the initial position where the selection was started
@@ -380,4 +296,9 @@ const til::point RenderData::GetSelectionEnd() const noexcept
     const auto y_pos = (selectionRect.top == anchor.y) ? selectionRect.bottom : selectionRect.top;
 
     return { x_pos, y_pos };
+}
+
+bool RenderData::IsUiaDataInitialized() const noexcept
+{
+    return true;
 }
