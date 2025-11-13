@@ -297,7 +297,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // extract ElementToFocus and clear it; we only want to use it once
                 auto vmImpl = get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM);
                 const auto elementToFocus = vmImpl->ElementToFocus();
-                vmImpl->ElementToFocus(L"");
+                vmImpl->ElementToFocus({});
 
                 const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
                 if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
@@ -634,31 +634,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto settingName{ args.PropertyName() };
             if (settingName == L"CurrentPage")
             {
+                // extract ElementToFocus and clear it; we only want to use it once
+                auto vmImpl = get_self<ProfileViewModel>(profile);
+                const auto elementToFocus = vmImpl->ElementToFocus();
+                vmImpl->ElementToFocus({});
+
                 const auto currentPage = profile.CurrentPage();
                 if (currentPage == ProfileSubPage::Base)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this, elementToFocus));
                     _breadcrumbs.Clear();
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None);
                     _breadcrumbs.Append(crumb);
+                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
                 else if (currentPage == ProfileSubPage::Appearance)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this, elementToFocus));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
                 else if (currentPage == ProfileSubPage::Terminal)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this, elementToFocus));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Terminal/Header"), BreadcrumbSubPage::Profile_Terminal);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
                 else if (currentPage == ProfileSubPage::Advanced)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this));
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<implementation::NavigateToProfileArgs>(profile, *this, elementToFocus));
                     const auto crumb = winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
@@ -844,23 +850,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             SettingsNav().SelectedItem(profileNavItem);
         }
 
+        // Pass along the element to focus to the ProfileViewModel.
+        // This will work as a staging area before we navigate to the correct sub-page
+        auto profileVMImpl = get_self<ProfileViewModel>(profile);
+        profileVMImpl->ElementToFocus(elementToFocus);
+
+        // convert the BreadcrumbSubPage to ProfileSubPage
+        const ProfileSubPage profileSubPage = [&](BreadcrumbSubPage subPage) {
+            switch (subPage)
+            {
+            case BreadcrumbSubPage::None:
+                return ProfileSubPage::Base;
+            case BreadcrumbSubPage::Profile_Appearance:
+                return ProfileSubPage::Appearance;
+            case BreadcrumbSubPage::Profile_Terminal:
+                return ProfileSubPage::Terminal;
+            case BreadcrumbSubPage::Profile_Advanced:
+                return ProfileSubPage::Advanced;
+            default:
+                // This should never happen
+                assert(false);
+            }
+        }(subPage);
+        const bool needsForcedRefresh = profile.CurrentPage() == profileSubPage;
+
         // Set the profile's 'CurrentPage' to the correct one, if this requires further navigation, the
         // event handler will do it
-        if (subPage == BreadcrumbSubPage::None)
+        profile.CurrentPage(profileSubPage);
+        if (needsForcedRefresh)
         {
-            profile.CurrentPage(ProfileSubPage::Base);
-        }
-        else if (subPage == BreadcrumbSubPage::Profile_Appearance)
-        {
-            profile.CurrentPage(ProfileSubPage::Appearance);
-        }
-        else if (subPage == BreadcrumbSubPage::Profile_Terminal)
-        {
-            profile.CurrentPage(ProfileSubPage::Terminal);
-        }
-        else if (subPage == BreadcrumbSubPage::Profile_Advanced)
-        {
-            profile.CurrentPage(ProfileSubPage::Advanced);
+            // If we're already on the correct sub-page, the PropertyChanged event won't fire.
+            // However, we still need to pass along the ElementToFocus, so we need to force a refresh.
+            profileVMImpl->ForceRefreshCurrentPage();   
         }
     }
 

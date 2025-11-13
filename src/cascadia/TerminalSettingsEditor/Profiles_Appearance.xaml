@@ -75,7 +75,8 @@
                         CornerRadius="{StaticResource ControlCornerRadius}" />
             </Border>
 
-            <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
+            <local:Appearances x:Name="DefaultAppearanceView"
+                               Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
                                SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
 
@@ -251,7 +252,8 @@
                 </StackPanel>
 
                 <!--  Unfocused Appearance  -->
-                <local:Appearances Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
+                <local:Appearances x:Name="UnfocusedAppearanceView"
+                                   Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
                                    SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                    Visibility="{x:Bind Profile.ShowUnfocusedAppearance, Mode=OneWay}"
                                    WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
