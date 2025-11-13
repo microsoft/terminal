@@ -140,7 +140,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             template<typename string_type, size_t stackBufferLength = 256>
             HRESULT GetShortPathNameW(PCWSTR file, string_type& path)
             {
-                const auto hr = wil::AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) -> HRESULT {
+                const auto hr = wil::AdaptFixedSizeToAllocatedResult<string_type, stackBufferLength>(path, [&](_Out_writes_(valueLength) PWSTR value, size_t valueLength, _Out_ size_t* valueLengthNeededWithNull) noexcept -> HRESULT {
                     // Note that GetShortPathNameW() is not limited to MAX_PATH
                     // but it does take a fixed size buffer.
                     *valueLengthNeededWithNull = ::GetShortPathNameW(file, value, static_cast<DWORD>(valueLength));
