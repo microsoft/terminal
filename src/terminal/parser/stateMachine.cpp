@@ -699,6 +699,27 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
 }
 
 // Routine Description:
+// - Stores this substring as part of the OSC string
+void StateMachine::_ActionOscPutRun(const std::wstring_view str)
+{
+    _trace.TraceOnAction(L"OscPutRun");
+
+    if (_oscString.spoiled)
+    {
+        return;
+    }
+
+    if (_oscString.data.length() + str.length() > MAX_OSC_LENGTH)
+        [[unlikely]]
+    {
+        _oscString.spoil();
+        return;
+    }
+
+    _oscString.data.append(str);
+}
+
+// Routine Description:
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
@@ -1999,7 +2020,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     _runSize = 0;
     _injections.clear();
 
-    if (_state != VTStates::Ground)
+    if (_state != VTStates::Ground && _state != VTStates::OscString)
     {
         // Jump straight to where we need to.
 #pragma warning(suppress : 26438) // Avoid 'goto'(es .76).
@@ -2020,7 +2041,15 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
             if (_runSize)
             {
-                _ActionPrintString(_CurrentRun());
+                if (_state == VTStates::Ground) [[likely]]
+                {
+                    _ActionPrintString(_CurrentRun());
+                }
+                else if (_state == VTStates::OscString)
+                    [[unlikely]]
+                {
+                    _ActionOscPutRun(_CurrentRun());
+                }
 
                 i += _runSize;
                 _runOffset = i;
@@ -2041,7 +2070,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // If we're processing characters individually, send it to the state machine.
             ProcessCharacter(til::at(string, i));
             ++i;
-        } while (i < string.size() && _state != VTStates::Ground);
+        } while (i < string.size() && (_state != VTStates::Ground && _state != VTStates::OscString));
     }
 
     // If we're at the end of the string and have remaining un-printed characters,

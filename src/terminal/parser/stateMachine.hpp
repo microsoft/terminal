@@ -115,6 +115,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
         void _ActionOscPut(const wchar_t wch);
+        void _ActionOscPutRun(const std::wstring_view str);
         void _ActionOscDispatch();
         void _ActionSs3Dispatch(const wchar_t wch);
         void _ActionDcsDispatch(const wchar_t wch);
