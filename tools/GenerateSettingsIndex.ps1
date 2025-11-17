@@ -316,6 +316,13 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
             $name = ""
         }
 
+        # Profile.Appearance settings need a special prefix for the ElementName.
+        # This allows us to bring the element into view at runtime.
+        if ($filename -eq 'Appearances.xaml')
+        {
+            $name = 'App.' + $name
+        }
+
         # Deduce NavigationParam
         # duplicateForVM is used to duplicate the entry if we need a VM param at runtime (i.e. profile vs global profile)
         $duplicateForVM = $false
@@ -435,6 +442,11 @@ foreach ($e in $entries)
          $e.ParentPage -match 'Profiles_Terminal' -or
          $e.ParentPage -match 'Profiles_Advanced'))
     {
+        # TODO CARLOS: needs special ElementToFocus (maybe I should be adding it earlier so that this works on Profiles.Defaults too)
+        # if ($e.File -eq 'Appearances.xaml')
+        # {
+        #     
+        # }
         $profileEntries += $formattedEntry
     }
     elseif ($e.SubPage -eq 'BreadcrumbSubPage::ColorSchemes_Edit')

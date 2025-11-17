@@ -123,6 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::generation_t _QuerySearchIndex(const hstring& queryText);
         safe_void_coroutine _UpdateSearchIndex();
 
+        winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel _profileDefaultsVM{ nullptr };
         Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel> _profileVMs{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
