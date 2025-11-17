@@ -10,6 +10,8 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    // TODO CARLOS: We have a bunch of NavigateToXArgs that have the same pattern.
+    // Leonard suggested replacing ViewModel with IInspectable so that we can just reuse this for everything.
     struct NavigateToEditColorSchemeArgs : NavigateToEditColorSchemeArgsT<NavigateToEditColorSchemeArgs>
     {
         NavigateToEditColorSchemeArgs(const Editor::ColorSchemeViewModel& vm, const hstring& elementToFocus = {}) :

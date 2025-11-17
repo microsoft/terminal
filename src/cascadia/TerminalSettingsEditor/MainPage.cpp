@@ -1531,34 +1531,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return false;
         }();
 
-#define REGISTER_INDEX(index, storage)                                                                                          \
-    {                                                                                                                           \
-        const auto& indexRef = index;                                                                                           \
-        storage.reserve(indexRef.size());                                                                                       \
-        for (const auto& entry : indexRef)                                                                                      \
-        {                                                                                                                       \
-            LocalizedIndexEntry localizedEntry;                                                                                 \
-            localizedEntry.Entry = &entry;                                                                                      \
-            if (shouldIncludeLanguageNeutralResources)                                                                          \
-            {                                                                                                                   \
-                localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.DisplayTextUid);       \
-                if (entry.HelpTextUid)                                                                                          \
-                {                                                                                                               \
-                    localizedEntry.HelpTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.HelpTextUid.value()); \
-                }                                                                                                               \
-            }                                                                                                                   \
-            storage.push_back(localizedEntry);                                                                                  \
-        }                                                                                                                       \
-    }
+        auto registerIndex = [&](const auto& index, auto& storage) {
+            const auto& indexRef = index;
+            storage.reserve(indexRef.size());
+            for (const auto& entry : indexRef)
+            {
+                LocalizedIndexEntry localizedEntry;
+                localizedEntry.Entry = &entry;
+                if (shouldIncludeLanguageNeutralResources)
+                {
+                    localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.DisplayTextUid);
+                    if (entry.HelpTextUid)
+                    {
+                        localizedEntry.HelpTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.HelpTextUid.value());
+                    }
+                }
+                storage.push_back(localizedEntry);
+            }
+        };
 
-        REGISTER_INDEX(LoadBuildTimeIndex(), searchIndex.mainIndex);
+        registerIndex(LoadBuildTimeIndex(), searchIndex.mainIndex);
 
         // Load profiles
-        REGISTER_INDEX(LoadProfileIndex(), searchIndex.profileIndex);
+        registerIndex(LoadProfileIndex(), searchIndex.profileIndex);
         searchIndex.profileIndexEntry.Entry = &PartialProfileIndexEntry();
 
         // Load new tab menu
-        REGISTER_INDEX(LoadNTMFolderIndex(), searchIndex.ntmFolderIndex);
+        registerIndex(LoadNTMFolderIndex(), searchIndex.ntmFolderIndex);
         searchIndex.ntmFolderIndexEntry.Entry = &PartialNTMFolderIndexEntry();
 
         // Load extensions
@@ -1567,7 +1566,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         searchIndex.extensionIndexEntry.Entry = &PartialExtensionIndexEntry();
 
         // Load color schemes
-        REGISTER_INDEX(LoadColorSchemeIndex(), searchIndex.colorSchemeIndex)
+        registerIndex(LoadColorSchemeIndex(), searchIndex.colorSchemeIndex);
         searchIndex.colorSchemeIndexEntry.Entry = &PartialColorSchemeIndexEntry();
 
         // Load actions
