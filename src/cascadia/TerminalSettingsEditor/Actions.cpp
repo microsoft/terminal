@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Actions.h"
 #include "Actions.g.cpp"
+#include "NavigateToPageArgs.g.h"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
@@ -27,7 +28,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ActionsViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::ActionsViewModel>();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         // Subscribe to the view model's FocusContainer event.
         // Use the KeyBindingViewModel or index provided in the event to focus the corresponding container

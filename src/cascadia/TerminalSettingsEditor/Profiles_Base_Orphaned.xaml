@@ -23,7 +23,8 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Delete Button  -->
-        <local:SettingContainer x:Uid="Profile_Delete_Orphaned">
+        <local:SettingContainer x:Name="DeleteOrphaned"
+                                x:Uid="Profile_Delete_Orphaned">
             <local:SettingContainer.Content>
                 <Button x:Name="DeleteButton"
                         Click="DeleteConfirmation_Click"
@@ -40,7 +41,8 @@
             </local:SettingContainer.Content>
         </local:SettingContainer>
 
-        <local:SettingContainer x:Uid="Profile_Name">
+        <local:SettingContainer x:Name="Name"
+                                x:Uid="Profile_Name">
             <local:SettingContainer.Content>
                 <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
@@ -48,7 +50,8 @@
             </local:SettingContainer.Content>
         </local:SettingContainer>
 
-        <local:SettingContainer x:Uid="Profile_Source_Orphaned">
+        <local:SettingContainer x:Name="Source"
+                                x:Uid="Profile_Source_Orphaned">
             <local:SettingContainer.Content>
                 <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                            Style="{StaticResource SettingsPageItemDescriptionStyle}"

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "SettingContainer.h"
+
 // This macro must be used alongside GETSET_BINDABLE_ENUM_SETTING.
 // Use this in your class's constructor after Initialize_Component().
 // It sorts and initializes the observable list of enum entries with the enum name
@@ -116,4 +118,32 @@ struct HasScrollViewer
             DismissAllPopups(uielem.XamlRoot());
         }
     }
+
+    // Finds the element with the given name and brings it into view
+    void BringIntoViewWhenLoaded(const winrt::hstring elementName)
+    {
+        if (elementName.empty())
+        {
+            return;
+        }
+
+        auto* pThis = static_cast<T*>(this);
+        _loadedRevoker = pThis->Loaded(winrt::auto_revoke, [weakThis{ pThis->get_weak() }, elementName](auto&&, auto&&) {
+            if (auto page{ weakThis.get() })
+            {
+                if (const auto& controlToFocus{ page->FindName(elementName).try_as<winrt::Windows::UI::Xaml::Controls::Control>() })
+                {
+                    // We need to wait for the page to be loaded
+                    // or else the call to StartBringIntoView()
+                    // will end up doing nothing
+                    controlToFocus.StartBringIntoView();
+                    controlToFocus.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+                }
+                page->_loadedRevoker.revoke();
+            }
+        });
+    }
+
+protected:
+    winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 };
