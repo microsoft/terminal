@@ -137,8 +137,6 @@ struct HasScrollViewer
                     // or else the call to StartBringIntoView()
                     // will end up doing nothing
                     controlToFocus.StartBringIntoView();
-
-                    // TODO CARLOS: ensure this works in all scenarios (easiest to test when navigating to page by keyboard)
                     controlToFocus.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
                 }
                 page->_loadedRevoker.revoke();

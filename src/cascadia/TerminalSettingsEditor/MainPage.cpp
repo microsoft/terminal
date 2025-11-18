@@ -212,8 +212,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto stringNavArg = navigationArg.try_as<hstring>())
             {
                 // The hstring navArg can be...
-                // - a color scheme name
-                // - an hstring tag (all defined at the top of the file)
+                // - color scheme name
+                // - hstring tag (all defined at the top of the file)
                 // Regardless, we'll use the font icon used by the navigation view item
                 WUX::Controls::FontIcon icon{};
                 icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
@@ -1439,7 +1439,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             filteredIndex.clear();
             for (const auto& entry : searchIndex)
             {
-                // TODO CARLOS: replace with fuzzy search
                 // Check for a match with DisplayText (i.e. "Globals_DefaultProfile/Header") and HelpText (i.e. "Globals_DefaultProfile/HelpText")
                 // in language neutral and current language
                 if (til::contains_linguistic_insensitive(entry.Entry->DisplayTextLocalized, queryText) ||
