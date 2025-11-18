@@ -89,15 +89,19 @@ static bool operator==(const Ss3ToVkey& pair, const Ss3ActionCodes code) noexcep
     return pair.action == code;
 }
 
-InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
+InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch) :
     _pDispatch(std::move(pDispatch)),
-    _lookingForDSR(lookingForDSR),
     _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
-til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DWORD timeout) const noexcept
+void InputStateMachineEngine::CaptureNextCursorPositionReport() noexcept
+{
+    _captureNextCursorPositionReport.store(true, std::memory_order_relaxed);
+}
+
+til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DWORD timeout) noexcept
 {
     uint64_t val = 0;
 
@@ -117,6 +121,10 @@ til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DW
             break;
         }
     }
+
+    // VtIo first sends a DSR CPR and then a DA1 request.
+    // If we encountered a DA1 response here, the DSR request is definitely done now.
+    _captureNextCursorPositionReport.store(false, std::memory_order_relaxed);
 
     return til::enumset<DeviceAttribute, uint64_t>::from_bits(val);
 }
@@ -413,12 +421,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // The F3 case is special - it shares a code with the DeviceStatusResponse.
         // If we're looking for that response, then do that, and break out.
         // Else, fall though to the _GetCursorKeysModifierState handler.
-        if (_lookingForDSR)
+        if (_captureNextCursorPositionReport.exchange(false, std::memory_order_relaxed))
         {
             _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
-            // Right now we're only looking for on initial cursor
-            //      position response. After that, only look for F3.
-            _lookingForDSR = false;
             return true;
         }
         // Heuristic: If the hosting terminal used the win32 input mode, chances are high
@@ -491,10 +496,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
 
             _deviceAttributes.fetch_or(attributes.bits(), std::memory_order_relaxed);
             til::atomic_notify_all(_deviceAttributes);
-
-            // VtIo first sends a DSR CPR and then a DA1 request.
-            // If we encountered a DA1 response here, the DSR request is definitely done now.
-            _lookingForDSR = false;
             return true;
         }
         return false;
