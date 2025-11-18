@@ -40,8 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToLaunchArgs>();
-        _ViewModel = args.ViewModel();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::LaunchViewModel>();
         BringIntoViewWhenLoaded(args.ElementToFocus());
         auto innerViewModel{ winrt::get_self<Editor::implementation::LaunchViewModel>(_ViewModel) };
         /* coroutine dispatch */ innerViewModel->PrepareStartOnUserLoginSettings();

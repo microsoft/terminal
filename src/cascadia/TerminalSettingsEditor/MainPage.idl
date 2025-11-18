@@ -15,6 +15,13 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    runtimeclass NavigateToPageArgs
+    {        
+        IHostedInWindow WindowRoot { get; };
+        IInspectable ViewModel { get; };
+        String ElementToFocus { get; };
+    }
+
     enum BreadcrumbSubPage
     {
         None = 0,

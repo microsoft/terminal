@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "GlobalAppearance.h"
+#include "NavigateToPageArgs.g.h"
 #include "GlobalAppearance.g.cpp"
 
 #include <LibraryResources.h>
@@ -24,8 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto& args = e.Parameter().as<Editor::NavigateToGlobalAppearanceArgs>();
-        _ViewModel = args.ViewModel();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::GlobalAppearanceViewModel>();
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(

@@ -5,12 +5,6 @@ import "RenderingViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass NavigateToRenderingArgs
-    {
-        RenderingViewModel ViewModel { get; };
-        String ElementToFocus { get; };
-    }
-
     [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
     {
         Rendering();

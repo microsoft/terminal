@@ -5,13 +5,7 @@ import "GlobalAppearanceViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass NavigateToGlobalAppearanceArgs
-    {
-        GlobalAppearanceViewModel ViewModel { get; };
-        String ElementToFocus { get; };
-    }
-
-    [default_interface] runtimeclass GlobalAppearance : Windows.UI.Xaml.Controls.Page
+    runtimeclass GlobalAppearance : Windows.UI.Xaml.Controls.Page
     {
         GlobalAppearance();
         GlobalAppearanceViewModel ViewModel { get; };

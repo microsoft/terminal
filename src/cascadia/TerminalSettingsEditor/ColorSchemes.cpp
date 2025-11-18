@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ColorSchemes.h"
 #include "ColorTableEntry.g.cpp"
+#include "NavigateToPageArgs.g.h"
 #include "ColorSchemes.g.cpp"
 
 #include <LibraryResources.h>
@@ -35,8 +36,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToColorSchemesArgs>();
-        _ViewModel = args.ViewModel();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::ColorSchemesPageViewModel>();
         _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
 
         BringIntoViewWhenLoaded(args.ElementToFocus());

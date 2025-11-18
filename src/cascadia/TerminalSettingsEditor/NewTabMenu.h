@@ -4,26 +4,11 @@
 #pragma once
 
 #include "NewTabMenu.g.h"
-#include "NavigateToNewTabMenuArgs.g.h"
 #include "NewTabMenuEntryTemplateSelector.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct NavigateToNewTabMenuArgs : NavigateToNewTabMenuArgsT<NavigateToNewTabMenuArgs>
-    {
-        NavigateToNewTabMenuArgs(const Editor::NewTabMenuViewModel& vm, const hstring& elementToFocus = {}) :
-            _ViewModel(vm),
-            _ElementToFocus(elementToFocus) {}
-
-        Editor::NewTabMenuViewModel ViewModel() const noexcept { return _ViewModel; }
-        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
-
-    private:
-        Editor::NewTabMenuViewModel _ViewModel{ nullptr };
-        hstring _ElementToFocus{};
-    };
-
     struct NewTabMenu : public HasScrollViewer<NewTabMenu>, NewTabMenuT<NewTabMenu>
     {
     public:

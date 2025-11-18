@@ -3,29 +3,12 @@
 
 #pragma once
 
-#include "NavigateToEditColorSchemeArgs.g.h"
 #include "EditColorScheme.g.h"
 #include "ColorSchemeViewModel.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    // TODO CARLOS: We have a bunch of NavigateToXArgs that have the same pattern.
-    // Leonard suggested replacing ViewModel with IInspectable so that we can just reuse this for everything.
-    struct NavigateToEditColorSchemeArgs : NavigateToEditColorSchemeArgsT<NavigateToEditColorSchemeArgs>
-    {
-        NavigateToEditColorSchemeArgs(const Editor::ColorSchemeViewModel& vm, const hstring& elementToFocus = {}) :
-            _ViewModel(vm),
-            _ElementToFocus(elementToFocus) {}
-
-        Editor::ColorSchemeViewModel ViewModel() const noexcept { return _ViewModel; }
-        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
-
-    private:
-        Editor::ColorSchemeViewModel _ViewModel{ nullptr };
-        hstring _ElementToFocus{};
-    };
-
     struct EditColorScheme : public HasScrollViewer<EditColorScheme>, EditColorSchemeT<EditColorScheme>
     {
         EditColorScheme();

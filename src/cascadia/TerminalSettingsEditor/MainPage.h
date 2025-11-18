@@ -5,6 +5,7 @@
 
 #include "MainPage.g.h"
 #include "Breadcrumb.g.h"
+#include "NavigateToPageArgs.g.h"
 #include "FilteredSearchResult.g.h"
 #include "Utils.h"
 #include "GeneratedSettingsIndex.g.h"
@@ -28,6 +29,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(IInspectable, Tag);
         WINRT_PROPERTY(winrt::hstring, Label);
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
+    };
+
+    struct NavigateToPageArgs : NavigateToPageArgsT<NavigateToPageArgs>
+    {
+    public:
+        NavigateToPageArgs(Windows::Foundation::IInspectable viewModel, Editor::IHostedInWindow windowRoot, const hstring& elementToFocus = {}) :
+            _ViewModel(viewModel),
+            _WindowRoot(windowRoot),
+            _ElementToFocus(elementToFocus) {}
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Windows::Foundation::IInspectable ViewModel() const noexcept { return _ViewModel; }
+        hstring ElementToFocus() const noexcept { return _ElementToFocus; }
+
+    private:
+        Editor::IHostedInWindow _WindowRoot;
+        Windows::Foundation::IInspectable _ViewModel{ nullptr };
+        hstring _ElementToFocus{};
     };
 
     struct LocalizedIndexEntry

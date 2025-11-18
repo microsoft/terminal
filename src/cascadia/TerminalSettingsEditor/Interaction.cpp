@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Interaction.h"
 #include "Interaction.g.cpp"
+#include "NavigateToPageArgs.g.h"
 
 #include "EnumEntry.h"
 
@@ -21,8 +22,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Interaction::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToInteractionArgs>();
-        _ViewModel = args.ViewModel();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::InteractionViewModel>();
+
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
