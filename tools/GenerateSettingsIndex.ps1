@@ -12,9 +12,8 @@ Directory to place generated C++ files.
 #>
 [CmdletBinding()]
 param(
-    # TODO CARLOS: set mandatory to true and remove default params
-    [Parameter(Mandatory=$false)][string]$SourceDir='D:\projects\terminal\src\cascadia\TerminalSettingsEditor\',
-    [Parameter(Mandatory=$false)][string]$OutputDir='D:\projects\terminal\src\cascadia\TerminalSettingsEditor\Generated Files\'
+    [Parameter(Mandatory=$false)][string]$SourceDir,
+    [Parameter(Mandatory=$false)][string]$OutputDir
 )
 
 # Prohibited UIDs (exact match, case-insensitive by default)
@@ -32,7 +31,8 @@ $ProhibitedXamlFiles = @(
     'CommonResources.xaml',
     'KeyChordListener.xaml',
     'NullableColorPicker.xaml',
-    'SettingContainerStyle.xaml'
+    'SettingContainerStyle.xaml',
+    'AISettings.xaml'
 )
 
 if (-not (Test-Path $SourceDir)) { throw "SourceDir not found: $SourceDir" }
@@ -378,13 +378,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         {
             # populate with color scheme name at runtime
             $navigationParam = 'nullptr'
-
-            # TODO CARLOS: Not sure if I need this. Turns out the issue is that EditColorScheme doesn't have a BringIntoViewWhenLoaded()!
-            if ($uid -match 'ColorScheme_SetAsDefault')
-            {
-                # SetAsDefault should focus SetAsDefaultButton, not wrapping SetAsDefaultContainer
-                $name = 'SetAsDefaultButton'
-            }
         }
         elseif ($pageClass -match 'Editor::GlobalAppearance')
         {
@@ -442,11 +435,6 @@ foreach ($e in $entries)
          $e.ParentPage -match 'Profiles_Terminal' -or
          $e.ParentPage -match 'Profiles_Advanced'))
     {
-        # TODO CARLOS: needs special ElementToFocus (maybe I should be adding it earlier so that this works on Profiles.Defaults too)
-        # if ($e.File -eq 'Appearances.xaml')
-        # {
-        #     
-        # }
         $profileEntries += $formattedEntry
     }
     elseif ($e.SubPage -eq 'BreadcrumbSubPage::ColorSchemes_Edit')
