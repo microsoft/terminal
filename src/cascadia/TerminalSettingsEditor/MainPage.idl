@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "Extensions.idl";
+import "ActionsViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -31,6 +32,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Profile_Terminal,
         Profile_Advanced,
         ColorSchemes_Edit,
+        Actions_Edit,
         NewTabMenu_Folder,
         Extensions_Extension
     };
@@ -63,6 +65,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
         ExtensionsViewModel ExtensionsVM { get; };
+        ActionsViewModel ActionsVM { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
 

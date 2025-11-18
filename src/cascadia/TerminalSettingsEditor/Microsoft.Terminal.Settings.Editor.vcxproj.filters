@@ -52,6 +52,7 @@
     <Page Include="Appearances.xaml" />
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
+    <Page Include="EditAction.xaml" />
     <Page Include="SettingContainerStyle.xaml" />
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
