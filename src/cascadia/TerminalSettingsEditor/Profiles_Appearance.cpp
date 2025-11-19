@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Profiles_Appearance.h"
+#include "Appearances.h"
 
 #include "ProfileViewModel.h"
 #include "PreviewConnection.h"
@@ -22,9 +23,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
-        _Profile = args.Profile();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
         _windowRoot = args.WindowRoot();
+
+        const auto elementToFocus = args.ElementToFocus();
+        if (elementToFocus.starts_with(L"App."))
+        {
+            // remove "App." prefix
+            std::wstring correctedName{ elementToFocus.c_str() };
+            get_self<implementation::Appearances>(DefaultAppearanceView())->BringIntoViewWhenLoaded(hstring{ correctedName.substr(4) });
+        }
+        else
+        {
+            BringIntoViewWhenLoaded(elementToFocus);
+        }
 
         if (!_previewControl)
         {

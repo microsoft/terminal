@@ -1134,6 +1134,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
+    void Appearances::BringIntoViewWhenLoaded(hstring elementToFocus)
+    {
+        if (elementToFocus.empty())
+        {
+            return;
+        }
+
+        _loadedRevoker = this->Loaded(winrt::auto_revoke, [weakThis{ get_weak() }, elementToFocus](auto&&, auto&&) {
+            if (const auto strongThis = weakThis.get())
+            {
+                if (const auto element = strongThis->FindName(elementToFocus))
+                {
+                    element.as<FrameworkElement>().StartBringIntoView();
+                }
+            }
+        });
+    }
+
     IObservableVector<Editor::Font> Appearances::FilteredFontList()
     {
         if (!_filteredFonts)
