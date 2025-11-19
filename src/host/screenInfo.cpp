@@ -1404,6 +1404,8 @@ NT_CATCH_RETURN()
 
     if (SUCCEEDED_NTSTATUS(status))
     {
+        SetConptyCursorPositionMayBeWrong();
+
         // Fire off an event to let accessibility apps know the layout has changed.
         if (IsActiveScreenBuffer())
         {
@@ -1420,6 +1422,86 @@ NT_CATCH_RETURN()
     }
 
     return status;
+}
+
+// If we're ConPTY, our copy of the buffer may be out of sync with the terminal,
+// because our VT, resize reflow, etc., implementation may be different.
+// For some operations we set a flag to indicate the cursor position may be wrong.
+// For GetConsoleScreenBufferInfo(Ex) we then fetch the latest position from the terminal.
+// This fixes some of the most glaring out of sync issues. See GH#18725.
+bool SCREEN_INFORMATION::ConptyCursorPositionMayBeWrong() const noexcept
+{
+    return _conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed);
+}
+
+// This should be called whenever we do something that may desynchronize
+// our cursor position from the terminal's, e.g. a buffer resize.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::SetConptyCursorPositionMayBeWrong() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    assert(gci.IsConsoleLocked());
+
+    if (gci.IsInVtIoMode())
+    {
+        _conptyCursorPositionMayBeWrong.store(true, std::memory_order_relaxed);
+    }
+}
+
+// This should be called whenever we've synchronized our cursor position again.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::ResetConptyCursorPositionMayBeWrong() noexcept
+{
+    _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
+    til::atomic_notify_all(_conptyCursorPositionMayBeWrong);
+}
+
+// Call this to synchronously wait until the ConPTY cursor position
+// is known to be correct again. To do so, this emits a DSR CPR sequence
+// and waits for a response from the terminal.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
+{
+    if (!_conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed))
+    {
+        return;
+    }
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    {
+        gci.LockConsole();
+        const auto exit = wil::scope_exit([&] { gci.UnlockConsole(); });
+        auto writer = gci.GetVtWriterForBuffer(this);
+
+        if (!writer || !writer.WriteDSRCPR())
+        {
+            _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
+            return;
+        }
+
+        writer.Submit();
+    }
+
+    // If you were to hold the lock, the ConPTY input thread couldn't
+    // process any input and thus couldn't update the cursor position.
+    assert(!gci.IsConsoleLocked());
+
+    for (;;)
+    {
+        if (!_conptyCursorPositionMayBeWrong.load(std::memory_order::relaxed))
+        {
+            break;
+        }
+
+        // atomic_wait() returns false when the timeout expires.
+        // Technically we should decrement the timeout with each iteration,
+        // but I suspect infinite spurious wake-ups are a theoretical problem.
+        if (!til::atomic_wait(_conptyCursorPositionMayBeWrong, true, 500))
+        {
+            break;
+        }
+    }
 }
 
 // Routine Description:

@@ -222,6 +222,11 @@ public:
     [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
     [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
+    bool ConptyCursorPositionMayBeWrong() const noexcept;
+    void SetConptyCursorPositionMayBeWrong() noexcept;
+    void ResetConptyCursorPositionMayBeWrong() noexcept;
+    void WaitForConptyCursorPositionToBeSynchronized() noexcept;
+
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
                        const TextAttribute popupAttributes,
@@ -280,6 +285,7 @@ private:
     til::CoordType _virtualBottom;
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
+    std::atomic<bool> _conptyCursorPositionMayBeWrong = false;
 
     static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 

@@ -1787,6 +1787,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ClearSearch()
     {
         const auto lock = _terminal->LockForWriting();
+
+        // GH #19358: select the focused search result before clearing search
+        if (const auto focusedSearchResult = _terminal->GetSearchHighlightFocused())
+        {
+            _terminal->SetSelectionAnchor(focusedSearchResult->start);
+            _terminal->SetSelectionEnd(focusedSearchResult->end);
+            _renderer->TriggerSelection();
+        }
+
         _terminal->SetSearchHighlights({});
         _terminal->SetSearchHighlightFocused(0);
         _renderer->TriggerSearchHighlight(_searcher.Results());
