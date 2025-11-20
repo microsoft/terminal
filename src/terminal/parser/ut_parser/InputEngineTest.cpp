@@ -679,11 +679,9 @@ void InputEngineTest::CursorPositioningTest()
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
-    VERIFY_IS_NOT_NULL(dispatch.get());
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), true);
-    VERIFY_IS_NOT_NULL(inputEngine.get());
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    inputEngine->CaptureNextCursorPositionReport();
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
-    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(NoThrowString().Format(

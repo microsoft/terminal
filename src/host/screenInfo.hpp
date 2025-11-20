@@ -70,7 +70,7 @@ public:
                                                  const UINT uiCursorSize,
                                                  _Outptr_ SCREEN_INFORMATION** const ppScreen);
 
-    ~SCREEN_INFORMATION();
+    ~SCREEN_INFORMATION() override;
 
     void GetScreenBufferInformation(_Out_ til::size* pcoordSize,
                                     _Out_ til::point* pcoordCursorPosition,
@@ -166,8 +166,6 @@ public:
     InputBuffer* const GetActiveInputBuffer() const override;
 #pragma endregion
 
-    bool CursorIsDoubleWidth() const;
-
     DWORD OutputMode;
 
     short WheelDelta;
@@ -194,7 +192,7 @@ public:
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
-    [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
+    [[nodiscard]] NTSTATUS SetCursorPosition(til::point Position);
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
@@ -223,6 +221,11 @@ public:
 
     [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
     [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
+
+    bool ConptyCursorPositionMayBeWrong() const noexcept;
+    void SetConptyCursorPositionMayBeWrong() noexcept;
+    void ResetConptyCursorPositionMayBeWrong() noexcept;
+    void WaitForConptyCursorPositionToBeSynchronized() noexcept;
 
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
@@ -282,6 +285,7 @@ private:
     til::CoordType _virtualBottom;
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
+    std::atomic<bool> _conptyCursorPositionMayBeWrong = false;
 
     static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 
