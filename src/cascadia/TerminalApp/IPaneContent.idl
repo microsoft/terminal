@@ -8,8 +8,7 @@ namespace TerminalApp
         None,
         Content,
         MovePane,
-        PersistLayout,
-        PersistAll
+        Persist,
     };
 
     runtimeclass BellEventArgs
