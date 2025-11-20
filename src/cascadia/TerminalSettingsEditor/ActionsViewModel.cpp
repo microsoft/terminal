@@ -862,51 +862,51 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // The event handler when the flag is nullable is different because we have to update nullEntry
                     // i.e. if another flag gets turned on, nullEntry needs to be turned off and vice-versa
                     entry.PropertyChanged([this, flagValue, nullEntry](const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
-                            if (args.PropertyName() == L"IsSet")
+                        if (args.PropertyName() == L"IsSet")
+                        {
+                            EnumType local{ 0 };
+                            if (auto ref = winrt::unbox_value<winrt::Windows::Foundation::IReference<EnumType>>(_Value))
                             {
-                                EnumType local{ 0 };
-                                if (auto ref = winrt::unbox_value<winrt::Windows::Foundation::IReference<EnumType>>(_Value))
-                                {
-                                    local = ref.Value();
-                                }
-
-                                auto flagWrapper = sender.as<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>();
-                                if (flagWrapper.IsSet())
-                                {
-                                    nullEntry.IsSet(false);
-                                    WI_SetAllFlags(local, flagValue);
-                                }
-                                else
-                                {
-                                    WI_ClearAllFlags(local, flagValue);
-                                }
-
-                                Value(winrt::box_value(winrt::Windows::Foundation::IReference<EnumType>(local)));
+                                local = ref.Value();
                             }
-                        });
+
+                            auto flagWrapper = sender.as<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>();
+                            if (flagWrapper.IsSet())
+                            {
+                                nullEntry.IsSet(false);
+                                WI_SetAllFlags(local, flagValue);
+                            }
+                            else
+                            {
+                                WI_ClearAllFlags(local, flagValue);
+                            }
+
+                            Value(winrt::box_value(winrt::Windows::Foundation::IReference<EnumType>(local)));
+                        }
+                    });
                 }
                 else
                 {
                     // Non-nullable version
                     entry.PropertyChanged([this, flagValue](const winrt::Windows::Foundation::IInspectable& sender,
                                                             const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
-                            if (args.PropertyName() == L"IsSet")
+                        if (args.PropertyName() == L"IsSet")
+                        {
+                            auto flagWrapper = sender.as<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>();
+                            auto local = winrt::unbox_value<EnumType>(_Value);
+
+                            if (flagWrapper.IsSet())
                             {
-                                auto flagWrapper = sender.as<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>();
-                                auto local = winrt::unbox_value<EnumType>(_Value);
-
-                                if (flagWrapper.IsSet())
-                                {
-                                    WI_SetAllFlags(local, flagValue);
-                                }
-                                else
-                                {
-                                    WI_ClearAllFlags(local, flagValue);
-                                }
-
-                                Value(winrt::box_value(local));
+                                WI_SetAllFlags(local, flagValue);
                             }
-                        });
+                            else
+                            {
+                                WI_ClearAllFlags(local, flagValue);
+                            }
+
+                            Value(winrt::box_value(local));
+                        }
+                    });
                 }
                 flagList.emplace_back(entry);
             }
@@ -918,26 +918,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             nullEntry.PropertyChanged([this](const winrt::Windows::Foundation::IInspectable& sender,
                                              const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
-                    if (args.PropertyName() == L"IsSet")
+                if (args.PropertyName() == L"IsSet")
+                {
+                    auto wrapper = sender.as<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>();
+                    if (wrapper.IsSet())
                     {
-                        auto wrapper = sender.as<winrt::Microsoft::Terminal::Settings::Editor::FlagEntry>();
-                        if (wrapper.IsSet())
+                        for (const auto& flagEntry : _FlagList)
                         {
-                            for (const auto& flagEntry : _FlagList)
+                            if (flagEntry.FlagName() != RS_(L"Actions_NullEnumValue"))
                             {
-                                if (flagEntry.FlagName() != RS_(L"Actions_NullEnumValue"))
-                                {
-                                    flagEntry.IsSet(false);
-                                }
+                                flagEntry.IsSet(false);
                             }
-                            Value(winrt::box_value(winrt::Windows::Foundation::IReference<EnumType>(nullptr)));
                         }
-                        else
-                        {
-                            Value(winrt::box_value(winrt::Windows::Foundation::IReference<EnumType>(EnumType{ 0 })));
-                        }
+                        Value(winrt::box_value(winrt::Windows::Foundation::IReference<EnumType>(nullptr)));
                     }
-                });
+                    else
+                    {
+                        Value(winrt::box_value(winrt::Windows::Foundation::IReference<EnumType>(EnumType{ 0 })));
+                    }
+                }
+            });
             flagList.emplace_back(nullEntry);
         }
 
