@@ -65,7 +65,7 @@ private:
     void _unregisterHotKey(int index) noexcept;
     void _setupGlobalHotkeys();
     void _setupSessionPersistence(bool enabled);
-    void _persistState(const winrt::Microsoft::Terminal::Settings::Model::ApplicationState& state, bool serializeBuffer) const;
+    void _persistState(const winrt::Microsoft::Terminal::Settings::Model::ApplicationState& state) const;
     void _finalizeSessionPersistence() const;
     void _checkWindowsForNotificationIcon();
 

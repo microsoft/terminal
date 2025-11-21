@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
-    Windows::Foundation::Collections::IVector<IInspectable> ProfileViewModel::_BuiltInIcons{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> ProfileViewModel::_BuiltInIcons{ nullptr };
 
     static constexpr std::wstring_view HideIconValue{ L"none" };
 
@@ -114,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"CurrentBuiltInIcon")
             {
-                IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.EnumValue()));
             }
             else if (viewModelProperty == L"CurrentEmojiIcon")
             {
@@ -193,12 +193,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::_UpdateBuiltInIcons()
     {
-        std::vector<IInspectable> builtInIcons;
+        std::vector<Editor::EnumEntry> builtInIcons;
         for (auto& [val, name] : s_SegoeFluentIcons)
         {
             builtInIcons.emplace_back(make<EnumEntry>(hstring{ name }, box_value(val)));
         }
-        _BuiltInIcons = single_threaded_vector<IInspectable>(std::move(builtInIcons));
+        _BuiltInIcons = single_threaded_observable_vector<Editor::EnumEntry>(std::move(builtInIcons));
     }
 
     void ProfileViewModel::_DeduceCurrentIconType()
@@ -236,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (uint32_t i = 0; i < _BuiltInIcons.Size(); i++)
         {
             const auto& builtIn = _BuiltInIcons.GetAt(i);
-            if (profileIcon == unbox_value<hstring>(builtIn.as<Editor::EnumEntry>().EnumValue()))
+            if (profileIcon == unbox_value<hstring>(builtIn.EnumValue()))
             {
                 _CurrentBuiltInIcon = builtIn;
                 return;
@@ -695,7 +695,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (_CurrentBuiltInIcon)
                 {
-                    IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                    IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.EnumValue()));
                 }
                 break;
             }

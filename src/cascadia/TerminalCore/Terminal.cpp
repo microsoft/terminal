@@ -1523,9 +1523,9 @@ std::wstring Terminal::CurrentCommand() const
     return _activeBuffer().CurrentCommand();
 }
 
-void Terminal::SerializeMainBuffer(const wchar_t* destination) const
+void Terminal::SerializeMainBuffer(HANDLE handle) const
 {
-    _mainBuffer->SerializeToPath(destination);
+    _mainBuffer->SerializeTo(handle);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
