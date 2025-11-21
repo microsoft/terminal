@@ -783,14 +783,14 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
 // Return Value:
 // - none
 TerminalInput::OutputType Terminal::FocusChanged(const bool focused)
-   {
-       if (_isFocused != focused)
-       {
-           _isFocused = focused;
-           return _getTerminalInput().HandleFocus(focused);
-       }
-       return {};
-   }
+{
+    if (_isFocused != focused)
+    {
+        _isFocused = focused;
+        return _getTerminalInput().HandleFocus(focused);
+    }
+    return {};
+}
 
 // Method Description:
 // - Invalidates the regions described in the given pattern tree for the rendering purposes

@@ -283,7 +283,7 @@ unsigned int ConhostInternalGetSet::GetInputCodePage() const
 void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    
+
     // Only allow VT clipboard writes when the console has focus
     if (WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
