@@ -624,7 +624,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             const auto scale = GetCurrentDpiScale();
             const winrt::Windows::Foundation::Point real{ relative.x / scale, relative.y / scale };
 
-            winrt::Microsoft::Terminal::Core::Point wheelDelta{ 0, static_cast<int32_t>(HIWORD(wparam)) };
+            winrt::Microsoft::Terminal::Core::Point wheelDelta{ 0, static_cast<int16_t>(HIWORD(wparam)) };
             if (message == WM_MOUSEHWHEEL)
             {
                 std::swap(wheelDelta.X, wheelDelta.Y);
