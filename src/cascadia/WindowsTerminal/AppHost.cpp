@@ -65,6 +65,15 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
+    // Load the persisted quake window size from ApplicationState
+    const auto state = ApplicationState::SharedInstance();
+    const auto savedPercent = static_cast<float>(state.QuakeWindowSizePercent());
+    _window->SetQuakeWindowSizePercent(savedPercent);
+
+    #ifdef _DEBUG
+        OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] Loaded size percent from state: %.1f%%\n", savedPercent * 100.0f).c_str());
+    #endif
+
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
@@ -75,6 +84,7 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     _windowCallbacks.WindowActivated = _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _windowCallbacks.WindowMoved = _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
+    _windowCallbacks.QuakeWindowSizeChanged = _window->QuakeWindowSizeChanged({ this, &AppHost::_QuakeWindowSizeChanged });
 
     _window->MakeWindow();
 
@@ -391,6 +401,7 @@ void AppHost::_revokeWindowCallbacks()
     _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
     _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
     _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
+    _window->QuakeWindowSizeChanged(_windowCallbacks.QuakeWindowSizeChanged);
 }
 
 // Method Description:
@@ -1028,6 +1039,16 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
                                     const winrt::Windows::Foundation::IInspectable&)
 {
     _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
+}
+
+void AppHost::_QuakeWindowSizeChanged(float sizePercent)
+{
+    // Persist the new quake window size to ApplicationState
+    ApplicationState::SharedInstance().QuakeWindowSizePercent(static_cast<double>(sizePercent));
+
+#ifdef _DEBUG
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] Persisting size percent to state: %.1f%%\n", sizePercent * 100.0f).c_str());
+#endif
 }
 
 // Raised from TerminalWindow. We handle by bubbling the request to the window manager.
