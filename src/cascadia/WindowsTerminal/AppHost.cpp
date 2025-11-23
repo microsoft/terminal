@@ -70,9 +70,9 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     const auto savedPercent = static_cast<float>(state.QuakeWindowSizePercent());
     _window->SetQuakeWindowSizePercent(savedPercent);
 
-    #ifdef _DEBUG
-        OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] Loaded size percent from state: %.1f%%\n", savedPercent * 100.0f).c_str());
-    #endif
+#ifdef _DEBUG
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] Loaded size percent from state: %.1f%%\n", savedPercent * 100.0f).c_str());
+#endif
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
 

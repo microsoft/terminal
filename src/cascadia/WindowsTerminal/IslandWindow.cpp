@@ -593,7 +593,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         // the new height percentage
         if (IsQuakeWindow())
         {
-            const auto windowRect = GetWindowRect();
+            const til::rect windowRect{ GetWindowRect() };
             const auto hmon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
 
             MONITORINFO monitorInfo{};
