@@ -569,17 +569,36 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
 
     if (_windowLogic.IsQuakeWindow())
     {
-        // If we just use rcWork by itself, we'll fail to account for the invisible
-        // space reserved for the resize handles. So retrieve that size here.
-        const auto availableSpace = desktopDimensions + nonClientSize;
+        // Get cursor monitor for quake windows - the window should appear
+        // on the monitor where the cursor is, not the proposed window location
+        POINT cursorPos{};
+        GetCursorPos(&cursorPos);
+        auto hmon = MonitorFromPoint(cursorPos, MONITOR_DEFAULTTONEAREST);
+
+        MONITORINFO mi{};
+        mi.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfo(hmon, &mi);
+
+        // Get DPI for the cursor's monitor
+        UINT dpiX = USER_DEFAULT_SCREEN_DPI;
+        UINT dpiY = USER_DEFAULT_SCREEN_DPI;
+        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
+
+        // Calculate available space accounting for non-client area
+        const til::rect workArea{ mi.rcWork };
+        const auto ncSize = _window->GetTotalNonClientExclusiveSize(dpiX);
+        const auto availableSpace = til::size{ workArea.width(), workArea.height() } + ncSize;
+
+        // Use persisted size percentage from ApplicationState
+        const auto savedPercent = ApplicationState::SharedInstance().QuakeWindowSizePercent();
 
         origin = {
-            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
-            (nearestMonitorInfo.rcWork.top)
+            (mi.rcWork.left - (ncSize.width / 2)) + 1,
+            mi.rcWork.top
         };
         dimensions = {
-            availableSpace.width,
-            availableSpace.height / 2
+            availableSpace.width - 2,
+            static_cast<til::CoordType>(availableSpace.height * savedPercent)
         };
         launchMode = LaunchMode::FocusMode;
     }
