@@ -1297,9 +1297,15 @@ void Terminal::ScrollToSearchHighlight(til::CoordType searchScrollOffset)
     if (_searchHighlightFocused < _searchHighlights.size())
     {
         const auto focused = til::at(_searchHighlights, _searchHighlightFocused);
-        const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
-        const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
-        _ScrollToPoints(adjustedStart, adjustedEnd);
+
+        // Only adjust the y coordinates if "start" is in a row that would be covered by the search box
+        auto adjustedStart = focused.start;
+        const auto firstVisibleRow = _VisibleStartIndex();
+        if (focused.start.y > firstVisibleRow && focused.start.y < firstVisibleRow + searchScrollOffset)
+        {
+            adjustedStart.y = std::max(0, focused.start.y - searchScrollOffset);
+        }
+        _ScrollToPoints(adjustedStart, focused.end);
     }
 }
 
