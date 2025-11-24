@@ -1160,6 +1160,8 @@ nfe
 NLSMODE
 nnn
 NOACTIVATE
+NOACTIVATEKEYBOARDLAYOUT
+NOACTIVATETIP
 NOAPPLYNOW
 NOCLIP
 NOCOMM
@@ -1599,7 +1601,6 @@ scrolllock
 scrolloffset
 SCROLLSCALE
 SCROLLSCREENBUFFER
-scursor
 sddl
 SDKDDK
 securityappcontainer
@@ -1816,10 +1817,12 @@ TEXTMETRICW
 textmode
 texttests
 TFunction
+TFCAT
 THUMBPOSITION
 THUMBTRACK
 TIcon
 tilunittests
+TIPCAP
 titlebars
 TITLEISLINKNAME
 TJson
@@ -1882,6 +1885,8 @@ UIACCESS
 uiacore
 uiautomationcore
 uielem
+UIELEMENTENABLED
+UIELEMENTENABLEDONLY
 UINTs
 ul
 uld
