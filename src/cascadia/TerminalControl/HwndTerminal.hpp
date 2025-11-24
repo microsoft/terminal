@@ -41,6 +41,7 @@ typedef struct _TerminalTheme
 } TerminalTheme, *LPTerminalTheme;
 
 extern "C" {
+__declspec(dllexport) void _stdcall AvoidBuggyTSFConsoleFlags();
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 __declspec(dllexport) void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data);
 __declspec(dllexport) void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
