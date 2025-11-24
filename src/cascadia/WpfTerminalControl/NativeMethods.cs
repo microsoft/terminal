@@ -171,6 +171,9 @@ namespace Microsoft.Terminal.Wpf
             SWP_SHOWWINDOW = 0x0040,
         }
 
+        [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, ExactSpelling = true)]
+        public static extern void AvoidBuggyTSFConsoleFlags();
+
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]
         public static extern void CreateTerminal(IntPtr parent, out IntPtr hwnd, out IntPtr terminal);
 

@@ -27,9 +27,45 @@ static void TfPropertyvalClose(TF_PROPERTYVAL* val)
 }
 using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPropertyvalClose), &TfPropertyvalClose>;
 
+// The flags passed to ActivateEx don't replace the flags during previous calls.
+// Instead, they're additive. So, if we pass flags that some concurrently running
+// TSF clients don't expect we may blow them up accidentally.
+//
+// Such is the case with WPF (and TSF, which is actually at fault there).
+// If you pass TF_TMAE_CONSOLE it'll instantly crash on Windows 10 on first text input.
+// On Windows 11 it'll at least not crash but still make emoji input completely non-functional.
+//
+// --------
+//
+// In any case, we pass the same flags as conhost v1:
+// - TF_TMAE_UIELEMENTENABLEDONLY: TSF activates only text services that are
+//   categorized in GUID_TFCAT_TIPCAP_UIELEMENTENABLED.
+// - TF_TMAE_NOACTIVATEKEYBOARDLAYOUT: TSF does not sync the current keyboard layout
+//   while this method is called. The keyboard layout will be adjusted when the
+//   calling thread gets focus. This flag must be used with TF_TMAE_NOACTIVATETIP.
+// - TF_TMAE_CONSOLE: A text service is activated for console usage.
+//   Some IMEs are known to use this as a hint. Particularly a Korean IME can benefit
+//   from this, because Korean relies on "recomposing" previously finished compositions.
+//   That can't work in a terminal, since we submit composed text to the shell immediately.
+//
+// I'm not sure what TF_TMAE_UIELEMENTENABLEDONLY does. I tried to figure it out but failed.
+//
+// For TF_TMAE_NOACTIVATEKEYBOARDLAYOUT, I'm 99% sure it doesn't do anything, including in
+// conhost v1. This is because IMM will be initialized on WM_ACTIVATE, which calls ActivateEx(0).
+// Any subsequent ActivateEx() calls will update the flags, _except_ for this one and
+// TF_TMAE_NOACTIVATETIP which are explicitly filtered out.
+//
+// TF_TMAE_NOACTIVATETIP however is important. Without it, TIPs are immediately initialized.
+static std::atomic<DWORD> s_activationFlags{ TF_TMAE_NOACTIVATETIP | TF_TMAE_UIELEMENTENABLEDONLY | TF_TMAE_NOACTIVATEKEYBOARDLAYOUT | TF_TMAE_CONSOLE };
+void Implementation::AvoidBuggyTSFConsoleFlags() noexcept
+{
+    s_activationFlags.fetch_and(~static_cast<DWORD>(TF_TMAE_CONSOLE), std::memory_order_relaxed);
+}
+
+static std::atomic<bool> s_wantsAnsiInputScope{ false };
 void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
 {
-    _wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
+    s_wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
 }
 
 void Implementation::Initialize()
@@ -40,7 +76,7 @@ void Implementation::Initialize()
     // There's no point in calling TF_GetThreadMgr. ITfThreadMgr is a per-thread singleton.
     _threadMgrEx = wil::CoCreateInstance<ITfThreadMgrEx>(CLSID_TF_ThreadMgr, CLSCTX_INPROC_SERVER);
 
-    THROW_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, TF_TMAE_CONSOLE));
+    THROW_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, s_activationFlags.load(std::memory_order_relaxed)));
     THROW_IF_FAILED(_threadMgrEx->CreateDocumentMgr(_documentMgr.addressof()));
 
     TfEditCookie ecTextStore;
@@ -319,7 +355,7 @@ STDMETHODIMP Implementation::GetWnd(HWND* phwnd) noexcept
 
 STDMETHODIMP Implementation::GetAttribute(REFGUID rguidAttribute, VARIANT* pvarValue) noexcept
 {
-    if (_wantsAnsiInputScope.load(std::memory_order_relaxed) && IsEqualGUID(rguidAttribute, GUID_PROP_INPUTSCOPE))
+    if (s_wantsAnsiInputScope.load(std::memory_order_relaxed) && IsEqualGUID(rguidAttribute, GUID_PROP_INPUTSCOPE))
     {
         _ansiInputScope.AddRef();
         pvarValue->vt = VT_UNKNOWN;
