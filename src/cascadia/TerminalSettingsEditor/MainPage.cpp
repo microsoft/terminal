@@ -1329,7 +1329,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     safe_void_coroutine MainPage::SettingsSearchBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
     {
-        // TODO CARLOS: debug this function. May still need debounce?
         if (args.Reason() != AutoSuggestionBoxTextChangeReason::UserInput)
         {
             // Only respond to user input, not programmatic text changes
@@ -1366,8 +1365,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (searchGeneration != _filteredSearchIndex.generation())
         {
-            // TODO CARLOS: look into til::throttled_func (winrt version and non-winrt version) for debounce (used in BellSound and TaskbarProgressUpdates)
-            // search index was updated while we were searching, discard results
             co_return;
         }
 
