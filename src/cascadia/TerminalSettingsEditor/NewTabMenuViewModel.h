@@ -47,6 +47,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool CurrentFolderAllowEmpty() const;
         void CurrentFolderAllowEmpty(bool value);
 
+        Windows::UI::Xaml::Controls::IconElement CurrentFolderIconPreview() const;
+        winrt::hstring CurrentFolderLocalizedIcon() const;
+        winrt::hstring CurrentFolderIconPath() const;
+        void CurrentFolderIconPath(const winrt::hstring& path);
+        bool CurrentFolderUsingNoIcon() const noexcept;
+
         Windows::Foundation::Collections::IObservableVector<Model::Profile> AvailableProfiles() const { return _Settings.AllProfiles(); }
         Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> FolderTree() const;
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> CurrentView() const;
@@ -134,6 +140,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Inlining(bool value);
 
         hstring Icon() const { return _FolderEntry.Icon().Path(); }
+        void Icon(const hstring& value)
+        {
+            _FolderEntry.Icon(Model::MediaResourceHelper::FromString(value));
+            _NotifyChanges(L"Icon");
+        }
 
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, Name);
         GETSET_OBSERVABLE_PROJECTED_SETTING(_FolderEntry, AllowEmpty);

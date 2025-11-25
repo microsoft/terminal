@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         NewTabMenu();
         NewTabMenuViewModel ViewModel { get; };
+        IHostedInWindow WindowRoot { get; };
     }
 
     [default_interface] runtimeclass NewTabMenuEntryTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
