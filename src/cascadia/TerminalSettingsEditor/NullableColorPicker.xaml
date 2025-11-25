@@ -97,25 +97,6 @@
     <StackPanel x:Name="ContentStackPanel"
                 Orientation="Horizontal"
                 Spacing="5">
-        <ContentDialog x:Name="ColorPickerDialog"
-                       x:Uid="NullableColorPicker_ColorPickerContentDialog"
-                       DefaultButton="Primary"
-                       Opened="ColorPickerDialog_Opened"
-                       PrimaryButtonClick="ColorPickerDialog_PrimaryButtonClick"
-                       TabFocusNavigation="Cycle">
-            <muxc:ColorPicker x:Name="ColorPickerControl"
-                              Margin="0,0,0,-40"
-                              ColorSpectrumShape="Box"
-                              IsAlphaEnabled="False"
-                              IsAlphaSliderVisible="True"
-                              IsAlphaTextInputVisible="True"
-                              IsColorChannelTextInputVisible="False"
-                              IsColorSliderVisible="False"
-                              IsHexInputVisible="False"
-                              IsMoreButtonVisible="False"
-                              Orientation="Horizontal" />
-        </ContentDialog>
-
         <ContentPresenter Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
                           ContentTemplate="{StaticResource ColorSchemeTemplate}" />
 
@@ -146,8 +127,14 @@
                 </ToggleButton>
 
                 <Button x:Uid="NullableColorPicker_MoreColorsButton"
-                        HorizontalAlignment="Stretch"
-                        Click="MoreColors_Clicked" />
+                        HorizontalAlignment="Stretch">
+                    <Button.Flyout>
+                        <Flyout Closing="Flyout_Closing"
+                                Opening="Flyout_Opening">
+                            <muxc:ColorPicker x:Name="ColorPickerControl" />
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
         </Grid>
 
