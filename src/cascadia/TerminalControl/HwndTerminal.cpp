@@ -462,6 +462,11 @@ void HwndTerminal::SendOutput(std::wstring_view data)
     _terminal->Write(data);
 }
 
+void _stdcall AvoidBuggyTSFConsoleFlags()
+{
+    Microsoft::Console::TSF::Handle::AvoidBuggyTSFConsoleFlags();
+}
+
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
     auto publicTerminal = std::make_unique<HwndTerminal>(parentHwnd);

@@ -11,7 +11,6 @@ namespace Microsoft.Terminal.Wpf
     using System.Windows.Automation.Peers;
     using System.Windows.Interop;
     using System.Windows.Media;
-    using System.Windows.Threading;
 
     /// <summary>
     /// The container class that hosts the native hwnd terminal.
@@ -32,6 +31,11 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         public TerminalContainer()
         {
+            // WPF & TSF can't deal with us setting TF_TMAE_CONSOLE on the UI thread.
+            // It simply crashes on Windows 10 if you use the Emoji picker.
+            // (On later versions of Windows it just doesn't work.)
+            NativeMethods.AvoidBuggyTSFConsoleFlags();
+
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;

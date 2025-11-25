@@ -152,29 +152,14 @@ const til::point_span* Terminal::GetSearchHighlightFocused() const noexcept
 // - The updated scroll offset
 til::CoordType Terminal::_ScrollToPoints(const til::point coordStart, const til::point coordEnd)
 {
-    auto notifyScrollChange = false;
     if (coordStart.y < _VisibleStartIndex())
     {
-        // recalculate the scrollOffset
-        _scrollOffset = ViewStartIndex() - coordStart.y;
-        notifyScrollChange = true;
+        _ScrollToPoint(coordStart);
     }
     else if (coordEnd.y > _VisibleEndIndex())
     {
-        // recalculate the scrollOffset, note that if the found text is
-        // beneath the current visible viewport, it may be within the
-        // current mutableViewport and the scrollOffset will be smaller
-        // than 0
-        _scrollOffset = std::max(0, ViewStartIndex() - coordStart.y);
-        notifyScrollChange = true;
+        _ScrollToPoint(coordEnd);
     }
-
-    if (notifyScrollChange)
-    {
-        _activeBuffer().TriggerScroll();
-        _NotifyScrollEvent();
-    }
-
     return _VisibleStartIndex();
 }
 

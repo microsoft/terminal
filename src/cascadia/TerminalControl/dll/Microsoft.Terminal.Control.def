@@ -4,6 +4,7 @@ EXPORTS
   DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
 
   ; Flat C ABI
+  AvoidBuggyTSFConsoleFlags
   CreateTerminal
   DestroyTerminal
   TerminalCalculateResize
