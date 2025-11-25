@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
                     _breadcrumbs.Append(crumb);
                 }
-                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this));
             }
         });
 
@@ -502,7 +502,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else
             {
                 // Navigate to the NewTabMenu page
-                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this));
                 const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
                 _breadcrumbs.Append(crumb);
             }
@@ -623,7 +623,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _PreNavigateHelper();
 
-        contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), _newTabMenuPageVM);
+        contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this));
         const auto crumb = winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None);
         _breadcrumbs.Append(crumb);
 

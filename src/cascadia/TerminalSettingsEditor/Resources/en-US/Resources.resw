@@ -2220,6 +2220,10 @@
     <value>Folder Name</value>
     <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
   </data>
+  <data name="NewTabMenu_CurrentFolderIcon.Header" xml:space="preserve">
+    <value>Folder Icon</value>
+    <comment>Header for a control that allows the user to modify the icon of the current folder entry.</comment>
+  </data>
   <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
     <value>Allow inlining</value>
     <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>

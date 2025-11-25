@@ -5,6 +5,7 @@
 
 #include "MainPage.g.h"
 #include "Breadcrumb.g.h"
+#include "NavigateToPageArgs.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -21,6 +22,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(IInspectable, Tag);
         WINRT_PROPERTY(winrt::hstring, Label);
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
+    };
+
+    struct NavigateToPageArgs : NavigateToPageArgsT<NavigateToPageArgs>
+    {
+    public:
+        NavigateToPageArgs(Windows::Foundation::IInspectable viewModel, Editor::IHostedInWindow windowRoot) :
+            _ViewModel(viewModel),
+            _WindowRoot(windowRoot) {}
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Windows::Foundation::IInspectable ViewModel() const noexcept { return _ViewModel; }
+
+    private:
+        Editor::IHostedInWindow _WindowRoot{ nullptr };
+        Windows::Foundation::IInspectable _ViewModel{ nullptr };
     };
 
     struct MainPage : MainPageT<MainPage>
