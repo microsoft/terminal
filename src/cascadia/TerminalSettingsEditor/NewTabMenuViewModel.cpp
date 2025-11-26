@@ -452,6 +452,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _folderTreeCache;
     }
 
+    Collections::IObservableVector<Editor::FolderEntryViewModel> NewTabMenuViewModel::FolderTreeFlatList() const
+    {
+        std::vector<Editor::FolderEntryViewModel> flatList;
+        _FolderTreeFlatListImpl(_rootEntries, flatList);
+        return single_threaded_observable_vector<Editor::FolderEntryViewModel>(std::move(flatList));
+    }
+
+    void NewTabMenuViewModel::_FolderTreeFlatListImpl(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entriesToAdd, std::vector<Editor::FolderEntryViewModel>& flatList)
+    {
+        for (const auto& entry : entriesToAdd)
+        {
+            if (const auto& folderVM = entry.try_as<Editor::FolderEntryViewModel>())
+            {
+                flatList.push_back(folderVM);
+                _FolderTreeFlatListImpl(folderVM.Entries(), flatList);
+            }
+        }
+    }
+
     // This recursively constructs the FolderTree
     FolderTreeViewEntry::FolderTreeViewEntry(Editor::FolderEntryViewModel folderEntry) :
         _folderEntry{ folderEntry },

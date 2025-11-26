@@ -4,7 +4,6 @@
 #pragma once
 
 #include "DeleteProfileEventArgs.g.h"
-#include "NavigateToProfileArgs.g.h"
 #include "BellSoundViewModel.g.h"
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
@@ -12,21 +11,6 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct NavigateToProfileArgs : NavigateToProfileArgsT<NavigateToProfileArgs>
-    {
-    public:
-        NavigateToProfileArgs(ProfileViewModel profile, Editor::IHostedInWindow windowRoot) :
-            _Profile(profile),
-            _WindowRoot(windowRoot) {}
-
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
-        Editor::ProfileViewModel Profile() const noexcept { return _Profile; }
-
-    private:
-        Editor::IHostedInWindow _WindowRoot;
-        Editor::ProfileViewModel _Profile{ nullptr };
-    };
-
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:
@@ -56,6 +40,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
+        void ForceRefreshCurrentPage()
+        {
+            // Used to trigger the PropertyChanged handler in MainPage.cpp
+            // This forces the page to refresh
+            _NotifyChanges(L"CurrentPage");
+        }
 
         // bell style bits
         hstring BellStylePreview() const;
@@ -174,6 +164,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
+        WINRT_PROPERTY(hstring, ElementToFocus);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>, IconTypes);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
