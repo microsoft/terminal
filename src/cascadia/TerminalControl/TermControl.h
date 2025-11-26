@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
         void RestoreFromPath(winrt::hstring path);
-        void PersistToPath(const winrt::hstring& path) const;
+        void PersistTo(int64_t handle) const;
         void OpenCWD();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;

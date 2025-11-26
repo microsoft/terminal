@@ -2578,7 +2578,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _restorePath = std::move(path);
     }
 
-    void TermControl::PersistToPath(const winrt::hstring& path) const
+    void TermControl::PersistTo(int64_t handle) const
     {
         // Don't persist us if we weren't ever initialized. In that case, we
         // never got an initial size, never instantiated a buffer, and didn't
@@ -2590,7 +2590,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // file then.
         if (_initializedTerminal)
         {
-            winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+            winrt::get_self<ControlCore>(_core)->PersistTo(reinterpret_cast<HANDLE>(handle));
         }
     }
 

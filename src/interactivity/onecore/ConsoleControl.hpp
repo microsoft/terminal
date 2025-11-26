@@ -24,6 +24,7 @@ namespace Microsoft::Console::Interactivity::OneCore
     {
     public:
         // IConsoleControl Members
+        void Control(ControlType command, PVOID ptr, DWORD len) noexcept override;
         void NotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG idChild) noexcept override;
         void NotifyConsoleApplication(_In_ DWORD dwProcessId) noexcept override;
         void SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground) noexcept override;
