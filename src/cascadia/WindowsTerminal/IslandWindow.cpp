@@ -589,8 +589,6 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     }
     case WM_EXITSIZEMOVE:
     {
-        // When the user finishes resizing the quake window, calculate and persist
-        // the new height percentage
         if (IsQuakeWindow())
         {
             const til::rect windowRect{ GetWindowRect() };
@@ -600,7 +598,6 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
             monitorInfo.cbSize = sizeof(MONITORINFO);
             GetMonitorInfo(hmon, &monitorInfo);
 
-            // Get DPI for accurate non-client size calculation
             UINT dpix = USER_DEFAULT_SCREEN_DPI;
             UINT dpiy = USER_DEFAULT_SCREEN_DPI;
             GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
@@ -611,19 +608,16 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
                 (monitorInfo.rcWork.bottom - monitorInfo.rcWork.top)
             };
             const auto availableHeight = desktopDimensions.height + ncSize.height;
-
-            // Calculate the current height percentage
             const auto currentHeight = windowRect.height();
             const auto newPercent = static_cast<float>(currentHeight) / static_cast<float>(availableHeight);
-
-            // Clamp to reasonable bounds and update
             const auto clampedPercent = std::clamp(newPercent, 0.1f, 1.0f);
+
             if (clampedPercent != _quakeWindowSizePercent)
             {
                 _quakeWindowSizePercent = clampedPercent;
 
 #ifdef _DEBUG
-                OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] WM_EXITSIZEMOVE: New size percent: %.1f%% (height: %d, available: %d)\n",
+                OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] WM_EXITSIZEMOVE: New size percent: %.1f%% (height: %d, available: %d)\n",
                     clampedPercent * 100.0f, currentHeight, availableHeight).c_str());
 #endif
 
@@ -1693,11 +1687,10 @@ void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
 
 void IslandWindow::SetQuakeWindowSizePercent(float percent) noexcept
 {
-    // Clamp to reasonable bounds (10% to 100%)
     _quakeWindowSizePercent = std::clamp(percent, 0.1f, 1.0f);
 
 #ifdef _DEBUG
-    OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] Size percent set to: %.1f%%\n", _quakeWindowSizePercent * 100.0f).c_str());
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] Size percent set to: %.1f%%\n", _quakeWindowSizePercent * 100.0f).c_str());
 #endif
 }
 

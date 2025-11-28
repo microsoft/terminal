@@ -65,13 +65,12 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
-    // Load the persisted quake window size from ApplicationState
     const auto state = ApplicationState::SharedInstance();
     const auto savedPercent = static_cast<float>(state.QuakeWindowSizePercent());
     _window->SetQuakeWindowSizePercent(savedPercent);
 
 #ifdef _DEBUG
-    OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] Loaded size percent from state: %.1f%%\n", savedPercent * 100.0f).c_str());
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] Loaded size percent from state: %.1f%%\n", savedPercent * 100.0f).c_str());
 #endif
 
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
@@ -579,21 +578,17 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
         mi.cbSize = sizeof(MONITORINFO);
         GetMonitorInfo(hmon, &mi);
 
-        // Get DPI for the cursor's monitor
         UINT dpiX = USER_DEFAULT_SCREEN_DPI;
         UINT dpiY = USER_DEFAULT_SCREEN_DPI;
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
 
-        // Calculate available space accounting for non-client area
         const til::rect workArea{ mi.rcWork };
-        const auto ncSize = _window->GetTotalNonClientExclusiveSize(dpiX);
-        const auto availableSpace = til::size{ workArea.width(), workArea.height() } + ncSize;
-
-        // Use persisted size percentage from ApplicationState
+        const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpiX);
+        const auto availableSpace = til::size{ workArea.width(), workArea.height() } + nonClientSize;
         const auto savedPercent = ApplicationState::SharedInstance().QuakeWindowSizePercent();
 
         origin = {
-            (mi.rcWork.left - (ncSize.width / 2)) + 1,
+            (mi.rcWork.left - (nonClientSize.width / 2)) + 1,
             mi.rcWork.top
         };
         dimensions = {
@@ -1066,7 +1061,7 @@ void AppHost::_QuakeWindowSizeChanged(float sizePercent)
     ApplicationState::SharedInstance().QuakeWindowSizePercent(static_cast<double>(sizePercent));
 
 #ifdef _DEBUG
-    OutputDebugStringW(wil::str_printf<std::wstring>(L"[QuakeWindow] Persisting size percent to state: %.1f%%\n", sizePercent * 100.0f).c_str());
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] Persisting size percent to state: %.1f%%\n", sizePercent * 100.0f).c_str());
 #endif
 }
 
