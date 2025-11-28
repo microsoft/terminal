@@ -574,22 +574,22 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
         GetCursorPos(&cursorPos);
         auto hmon = MonitorFromPoint(cursorPos, MONITOR_DEFAULTTONEAREST);
 
-        MONITORINFO mi{};
-        mi.cbSize = sizeof(MONITORINFO);
-        GetMonitorInfo(hmon, &mi);
+        MONITORINFO cursorMonitorInfo{};
+        cursorMonitorInfo.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfo(hmon, &cursorMonitorInfo);
 
         UINT dpiX = USER_DEFAULT_SCREEN_DPI;
         UINT dpiY = USER_DEFAULT_SCREEN_DPI;
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
 
-        const til::rect workArea{ mi.rcWork };
+        const til::rect workArea{ cursorMonitorInfo.rcWork };
         const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpiX);
         const auto availableSpace = til::size{ workArea.width(), workArea.height() } + nonClientSize;
         const auto savedPercent = ApplicationState::SharedInstance().QuakeWindowSizePercent();
 
         origin = {
-            (mi.rcWork.left - (nonClientSize.width / 2)) + 1,
-            mi.rcWork.top
+            (cursorMonitorInfo.rcWork.left - (nonClientSize.width / 2)) + 1,
+            cursorMonitorInfo.rcWork.top
         };
         dimensions = {
             availableSpace.width - 2,
