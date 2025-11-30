@@ -417,6 +417,11 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabStripDragOver({ this, &TerminalPage::_onTabStripDragOver });
         _tabView.TabStripDrop({ this, &TerminalPage::_onTabStripDrop });
         _tabView.TabDroppedOutside({ this, &TerminalPage::_onTabDroppedOutside });
+        _tabView.DragLeave({ this, &TerminalPage::_onTabStripDragLeave });
+
+        _tabReorderAnimator = std::make_unique<TabReorderAnimator>(
+            _tabView,
+            !_settings.GlobalSettings().DisableAnimations());
 
         _CreateNewTabFlyout();
 
@@ -3822,7 +3827,12 @@ namespace winrt::TerminalApp::implementation
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
-        WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
+        const auto animationsEnabled = !_settings.GlobalSettings().DisableAnimations();
+        WUX::Media::Animation::Timeline::AllowDependentAnimations(animationsEnabled);
+        if (_tabReorderAnimator)
+        {
+            _tabReorderAnimator->SetAnimationsEnabled(animationsEnabled);
+        }
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
 
@@ -5473,6 +5483,16 @@ namespace winrt::TerminalApp::implementation
             // We're going to be asked for this.
             _stashed.draggedTab = tabImpl;
 
+            // Start smooth reorder animation for same-window drags
+            if (_tabReorderAnimator)
+            {
+                uint32_t draggedIndex;
+                if (_tabs.IndexOf(tabBase, draggedIndex))
+                {
+                    _tabReorderAnimator->OnDragStarting(draggedIndex);
+                }
+            }
+
             // Stash the offset from where we started the drag to the
             // tab's origin. We'll use that offset in the future to help
             // position the dropped window.
@@ -5516,12 +5536,29 @@ namespace winrt::TerminalApp::implementation
             (winrt::unbox_value_or<uint32_t>(props.TryLookup(L"pid"), 0u) == GetCurrentProcessId()))
         {
             e.AcceptedOperation(DataPackageOperation::Move);
+
+            // Animate tabs to show where the dragged tab will be inserted
+            if (_tabReorderAnimator)
+            {
+                _tabReorderAnimator->OnDragOver(e);
+            }
         }
 
         // You may think to yourself, this is a great place to increase the
         // width of the TabView artificially, to make room for the new tab item.
-        // However, we'll never get a message that the tab left the tab view
-        // (without being dropped). So there's no good way to resize back down.
+        // However, TabView doesn't have a TabStripDragLeave event, so there's
+        // no good way to resize back down. Instead, we use TabReorderAnimator
+        // to shift existing tabs via transforms, reset via the generic DragLeave.
+    }
+
+    void TerminalPage::_onTabStripDragLeave(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                            const winrt::Windows::UI::Xaml::DragEventArgs& /*e*/)
+    {
+        // When the drag leaves the tab strip, reset the gap animation
+        if (_tabReorderAnimator)
+        {
+            _tabReorderAnimator->OnDragLeave();
+        }
     }
 
     // Method Description:

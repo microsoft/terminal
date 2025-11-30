@@ -1096,6 +1096,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
                                          const IInspectable& /*eventArgs*/)
     {
+        // Complete smooth reorder animation
+        if (_tabReorderAnimator)
+        {
+            _tabReorderAnimator->OnDragCompleted();
+        }
+
         auto& from{ _rearrangeFrom };
         auto& to{ _rearrangeTo };
 
