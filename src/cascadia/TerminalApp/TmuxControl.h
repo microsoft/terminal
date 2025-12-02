@@ -28,51 +28,20 @@ namespace winrt::TerminalApp::implementation
         void SplitPane(const winrt::com_ptr<Tab>& tab, SplitDirection direction);
 
     private:
-        static const std::wregex REG_BEGIN;
-        static const std::wregex REG_END;
-        static const std::wregex REG_ERROR;
-
-        static const std::wregex REG_CLIENT_SESSION_CHANGED;
-        static const std::wregex REG_CLIENT_DETACHED;
-        static const std::wregex REG_CONFIG_ERROR;
-        static const std::wregex REG_CONTINUE;
-        static const std::wregex REG_DETACH;
-        static const std::wregex REG_EXIT;
-        static const std::wregex REG_EXTENDED_OUTPUT;
-        static const std::wregex REG_LAYOUT_CHANGED;
-        static const std::wregex REG_MESSAGE;
-        static const std::wregex REG_OUTPUT;
-        static const std::wregex REG_PANE_MODE_CHANGED;
-        static const std::wregex REG_PASTE_BUFFER_CHANGED;
-        static const std::wregex REG_PASTE_BUFFER_DELETED;
-        static const std::wregex REG_PAUSE;
-        static const std::wregex REG_SESSION_CHANGED;
-        static const std::wregex REG_SESSION_RENAMED;
-        static const std::wregex REG_SESSION_WINDOW_CHANGED;
-        static const std::wregex REG_SESSIONS_CHANGED;
-        static const std::wregex REG_SUBSCRIPTION_CHANGED;
-        static const std::wregex REG_UNLINKED_WINDOW_ADD;
-        static const std::wregex REG_UNLINKED_WINDOW_CLOSE;
-        static const std::wregex REG_UNLINKED_WINDOW_RENAMED;
-        static const std::wregex REG_WINDOW_ADD;
-        static const std::wregex REG_WINDOW_CLOSE;
-        static const std::wregex REG_WINDOW_PANE_CHANGED;
-        static const std::wregex REG_WINDOW_RENAMED;
-
-        enum State : int
+        enum class State : int
         {
             INIT,
             ATTACHING,
             ATTACHED,
-        } _state{ INIT };
+        };
 
-        enum CommandState : int
+        enum class CommandState : int
         {
             READY,
             WAITING,
-        } _cmdState{ READY };
+        };
 
-        enum EventType : int
+        enum class EventType : int
         {
             BEGIN,
             END,
@@ -80,29 +49,12 @@ namespace winrt::TerminalApp::implementation
 
             ATTACH,
             DETACH,
-            CLIENT_SESSION_CHANGED,
-            CLIENT_DETACHED,
-            CONFIG_ERROR,
-            CONTINUE,
-            EXIT,
-            EXTENDED_OUTPUT,
             LAYOUT_CHANGED,
             NOTHING,
-            MESSAGE,
             OUTPUT,
-            PANE_MODE_CHANGED,
-            PASTE_BUFFER_CHANGED,
-            PASTE_BUFFER_DELETED,
-            PAUSE,
             RESPONSE,
             SESSION_CHANGED,
-            SESSION_RENAMED,
-            SESSION_WINDOW_CHANGED,
-            SESSIONS_CHANGED,
-            SUBSCRIPTION_CHANGED,
-            UNLINKED_WINDOW_ADD,
             UNLINKED_WINDOW_CLOSE,
-            UNLINKED_WINDOW_RENAMED,
             WINDOW_ADD,
             WINDOW_CLOSE,
             WINDOW_PANE_CHANGED,
@@ -111,13 +63,13 @@ namespace winrt::TerminalApp::implementation
 
         struct Event
         {
-            EventType type{ NOTHING };
+            EventType type{ EventType::NOTHING };
             int sessionId{ -1 };
             int windowId{ -1 };
             int paneId{ -1 };
 
             std::wstring response;
-        } _event;
+        };
 
         // Command structs
         struct Command
@@ -321,6 +273,7 @@ namespace winrt::TerminalApp::implementation
             int windowId;
             int paneId;
             winrt::Microsoft::Terminal::Control::TermControl control;
+            winrt::Microsoft::Terminal::TerminalConnection::TmuxConnection connection;
             bool initialized{ false };
         };
 
@@ -373,8 +326,11 @@ namespace winrt::TerminalApp::implementation
         void _ScheduleCommand();
 
         // Private variables
+        State _state{ State::INIT };
+        CommandState _cmdState{ CommandState::READY };
+        Event _event;
         TerminalPage& _page;
-        winrt::Microsoft::Terminal::Settings::Model::Profile _profile;
+        winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         TerminalApp::Tab _controlTab{ nullptr };
         winrt::Windows::System::DispatcherQueue _dispatcherQueue{ nullptr };
@@ -383,7 +339,7 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token _windowSizeChangedRevoker;
         winrt::event_token _newTabClickRevoker;
 
-        ::winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _newTabMenu{};
+        ::winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _newTabMenu;
 
         std::vector<wchar_t> _dcsBuffer;
         std::deque<std::unique_ptr<TmuxControl::Command>> _cmdQueue;

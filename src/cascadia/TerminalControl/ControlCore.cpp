@@ -495,17 +495,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SendOutput(const std::wstring_view wstr)
-    {
-        if (wstr.empty())
-        {
-            return;
-        }
-
-        auto lock = _terminal->LockForWriting();
-        _terminal->Write(wstr);
-    }
-
     bool ControlCore::SendCharEvent(const wchar_t ch,
                                     const WORD scanCode,
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
@@ -2238,13 +2227,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         RaiseNotice.raise(*this, std::move(noticeArgs));
     }
-    void ControlCore::_connectionOutputHandler(const hstring& hstr)
+    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)
     {
         try
         {
             {
                 const auto lock = _terminal->LockForWriting();
-                _terminal->Write(hstr);
+                _terminal->Write(winrt_array_to_wstring_view(str));
             }
 
             if (!_pendingResponses.empty())

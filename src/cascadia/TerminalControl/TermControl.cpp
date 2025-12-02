@@ -903,10 +903,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         RawWriteString(wstr);
     }
-    void TermControl::SendOutput(const winrt::hstring& wstr)
-    {
-        _core.SendOutput(wstr);
-    }
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
     {
         _core.ClearBuffer(clearType);

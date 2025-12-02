@@ -7,25 +7,30 @@
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    struct TmuxConnection : DummyConnectionT<TmuxConnection>
+    struct TmuxConnection : TmuxConnectionT<TmuxConnection>
     {
         TmuxConnection() noexcept;
+
+        // ---- ITerminalConnection methods ----
+
+        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) const noexcept;
 
         void Start() noexcept;
         void WriteInput(const winrt::array_view<const char16_t> buffer);
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
 
-        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) const noexcept {};
-
-        winrt::guid SessionId() const noexcept { return {}; }
-        ConnectionState State() const noexcept { return ConnectionState::Connected; }
-
         til::event<TerminalOutputHandler> TerminalOutput;
-        til::event<TerminalOutputHandler> TerminalInput;
         til::typed_event<ITerminalConnection, IInspectable> StateChanged;
 
-        bool _rawMode{ false };
+        winrt::guid SessionId() const noexcept;
+        ConnectionState State() const noexcept;
+
+        // ---- TmuxConnection methods ----
+
+        void WriteOutput(const winrt::array_view<const char16_t> wstr);
+
+        til::event<TerminalOutputHandler> TerminalInput;
     };
 }
 

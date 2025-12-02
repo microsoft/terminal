@@ -120,9 +120,9 @@ namespace winrt::Microsoft::TerminalApp::implementation
         return ConnectionState::Failed;
     }
 
-    void DebugTapConnection::_OutputHandler(const std::wstring_view str)
+    void DebugTapConnection::_OutputHandler(const winrt::array_view<const char16_t> str)
     {
-        auto output = til::visualize_control_codes(str);
+        auto output = til::visualize_control_codes(winrt_array_to_wstring_view(str));
         // To make the output easier to read, we introduce a line break whenever
         // an LF control is encountered. But at this point, the LF would have
         // been converted to U+240A (␊), so that's what we need to search for.
@@ -130,7 +130,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         {
             output.insert(++lfPos, L"\r\n");
         }
-        TerminalOutput.raise(output);
+        TerminalOutput.raise(winrt_wstring_to_array_view(output));
     }
 
     // Called by the DebugInputTapConnection to print user input
@@ -138,7 +138,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     {
         auto clean{ til::visualize_control_codes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
-        TerminalOutput.raise(formatted);
+        TerminalOutput.raise(winrt_wstring_to_array_view(formatted));
     }
 
     // Wire us up so that we can forward input through

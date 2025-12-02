@@ -131,7 +131,6 @@ namespace Microsoft.Terminal.Control
                               Int16 scanCode,
                               Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void SendInput(String text);
-        void SendOutput(String text);
         void PasteText(String text);
         void SelectAll();
         void ClearSelection();
