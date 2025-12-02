@@ -56,7 +56,11 @@ Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme an der 
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-Weitere Einzelheiten finden Sie auf der Seite der GitHub-Veröffentlichungen.
+– Wir haben der Benutzeroberfläche Dutzende von Einstellungen hinzugefügt, die nur einmal in der JSON-Datei vorhanden waren, einschließlich einer neuen Seite zum Anpassen des Layouts Ihres Menüs „Neue Registerkarte“!
+– Wir haben die Fensterverwaltung umgestaltet, um die Zuverlässigkeit zu verbessern. Melden Sie alle Fehler, die beim alias „wt.exe“ auftreten
+– Profile zeigen jetzt ein Symbol an, wenn sie ausgeblendet wurden oder auf Programme verweisen, die deinstalliert wurden.
+
+Weitere Informationen finden Sie auf unserer GitHub-Releaseseite.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

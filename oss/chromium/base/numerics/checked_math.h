@@ -110,7 +110,7 @@ class CheckedNumeric {
   }
 
   // This friend method is available solely for providing more detailed logging
-  // in the the tests. Do not implement it in production code, because the
+  // in the tests. Do not implement it in production code, because the
   // underlying values may change at any time.
   template <typename U>
   friend U GetNumericValueForTest(const CheckedNumeric<U>& src);

@@ -8,7 +8,7 @@ where:
 configuration:
   resourceManagementConfiguration:
     scheduledSearches:
-    - description: 
+    - description: '"Needs-Author-Feedback" and "No-Recent-Activity" issues are closed after 3 days of inactivity'
       frequencies:
       - hourly:
           hour: 3
@@ -23,7 +23,7 @@ configuration:
           days: 3
       actions:
       - closeIssue
-    - description: 
+    - description: '"Needs-Author-Feedback" issues are labelled "No-Recent-Activity" after 4 days of inactivity'
       frequencies:
       - hourly:
           hour: 3
@@ -41,7 +41,7 @@ configuration:
           label: No-Recent-Activity
       - addReply:
           reply: This issue has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **4 days**. It will be closed if no further activity occurs **within 3 days of this comment**.
-    - description: 
+    - description: '"Resolution-Duplicate" issues are closed after 1 day of inactivity'
       frequencies:
       - hourly:
           hour: 3
@@ -56,7 +56,7 @@ configuration:
       - addReply:
           reply: This issue has been marked as duplicate and has not had any activity for **1 day**. It will be closed for housekeeping purposes.
       - closeIssue
-    - description: 
+    - description: '"Needs-Author-Feedback" and "No-Recent-Activity" PRs are closed after 7 days of inactivity'
       frequencies:
       - hourly:
           hour: 3
@@ -71,7 +71,7 @@ configuration:
           days: 7
       actions:
       - closeIssue
-    - description: 
+    - description: Add "No-Recent-Activity" label to PRs with "Needs-Author-Feedback" label after 7 days of inactivity
       frequencies:
       - hourly:
           hour: 3
@@ -90,7 +90,8 @@ configuration:
       - addReply:
           reply: This pull request has been automatically marked as stale because it has been marked as requiring author feedback but has not had any activity for **7 days**. It will be closed if no further activity occurs **within 7 days of this comment**.
     eventResponderTasks:
-    - if:
+    - description: Add "Needs-Triage" to new issues
+      if:
       - payloadType: Issues
       - or:
         - and:
@@ -102,8 +103,8 @@ configuration:
       then:
       - addLabel:
           label: Needs-Triage
-      description: 
-    - if:
+    - description: Replace "Needs-Author-Feedback" with "Needs-Attention" when author comments
+      if:
       - payloadType: Issue_Comment
       - isAction:
           action: Created
@@ -116,8 +117,8 @@ configuration:
           label: Needs-Attention
       - removeLabel:
           label: Needs-Author-Feedback
-      description: 
-    - if:
+    - description: Remove "No-Recent-Activity" when closing an issue
+      if:
       - payloadType: Issues
       - not:
           isAction:
@@ -127,16 +128,16 @@ configuration:
       then:
       - removeLabel:
           label: No-Recent-Activity
-      description: 
-    - if:
+    - description: Remove "No-Recent-Activity" when someone comments on an issue
+      if:
       - payloadType: Issue_Comment
       - hasLabel:
           label: No-Recent-Activity
       then:
       - removeLabel:
           label: No-Recent-Activity
-      description: 
-    - if:
+    - description: Add "Needs-Author-Feedback" when changes are requested on a PR
+      if:
       - payloadType: Pull_Request_Review
       - isAction:
           action: Submitted
@@ -145,8 +146,8 @@ configuration:
       then:
       - addLabel:
           label: Needs-Author-Feedback
-      description: 
-    - if:
+    - description: Remove "Needs-Author-Feedback" when author performs activity on their PR
+      if:
       - payloadType: Pull_Request
       - isActivitySender:
           issueAuthor: True
@@ -158,8 +159,8 @@ configuration:
       then:
       - removeLabel:
           label: Needs-Author-Feedback
-      description: 
-    - if:
+    - description: Remove "Needs-Author-Feedback" when author comments on their issue
+      if:
       - payloadType: Issue_Comment
       - isActivitySender:
           issueAuthor: True
@@ -168,8 +169,8 @@ configuration:
       then:
       - removeLabel:
           label: Needs-Author-Feedback
-      description: 
-    - if:
+    - description: Remove "Needs-Author-Feedback" when the author reviews the PR
+      if:
       - payloadType: Pull_Request_Review
       - isActivitySender:
           issueAuthor: True
@@ -178,8 +179,8 @@ configuration:
       then:
       - removeLabel:
           label: Needs-Author-Feedback
-      description: 
-    - if:
+    - description: Remove "No-Recent-Activity"" when activity occurs on the PR (aside from closing it)
+      if:
       - payloadType: Pull_Request
       - not:
           isAction:
@@ -189,39 +190,39 @@ configuration:
       then:
       - removeLabel:
           label: No-Recent-Activity
-      description: 
-    - if:
+    - description: Remove "No-Recent-Activity" when someone comments on the PR
+      if:
       - payloadType: Issue_Comment
       - hasLabel:
           label: No-Recent-Activity
       then:
       - removeLabel:
           label: No-Recent-Activity
-      description: 
-    - if:
+    - description: Remove "No-Recent-Activity" when someone reviews the PR
+      if:
       - payloadType: Pull_Request_Review
       - hasLabel:
           label: No-Recent-Activity
       then:
       - removeLabel:
           label: No-Recent-Activity
-      description: 
-    - if:
+    - description: Enable auto-merge on PRs with the "AutoMerge" label
+      if:
       - payloadType: Pull_Request
       - hasLabel:
           label: AutoMerge
       then:
       - enableAutoMerge:
           mergeMethod: Squash
-      description: 
-    - if:
+    - description: Disable auto-merge on PRs when the "AutoMerge" label is removed
+      if:
       - payloadType: Pull_Request
       - labelRemoved:
           label: AutoMerge
       then:
       - disableAutoMerge
-      description: 
-    - if:
+    - description: Add "Needs-Tag-Fix" label to issues without an Area, Issue, or Product label
+      if:
       - payloadType: Issues
       - or:
         - and:
@@ -240,13 +241,43 @@ configuration:
                 label: Area-Accessibility
           - not:
               hasLabel:
+                label: Area-AtlasEngine
+          - not:
+              hasLabel:
+                label: Area-AzureShell
+          - not:
+              hasLabel:
                 label: Area-Build
+          - not:
+              hasLabel:
+                label: Area-Chat
+          - not:
+              hasLabel:
+                label: Area-CmdPal
+          - not:
+              hasLabel:
+                label: Area-CodeHealth
+          - not:
+              hasLabel:
+                label: Area-Commandline
+          - not:
+              hasLabel:
+                label: Area-CookedRead
+          - not:
+              hasLabel:
+                label: Area-DefApp
           - not:
               hasLabel:
                 label: Area-Extensibility
           - not:
               hasLabel:
                 label: Area-Fonts
+          - not:
+              hasLabel:
+                label: Area-GroupPolicy
+          - not:
+              hasLabel:
+                label: Area-i18n
           - not:
               hasLabel:
                 label: Area-Input
@@ -258,13 +289,28 @@ configuration:
                 label: Area-Interop
           - not:
               hasLabel:
+                label: Area-Localization
+          - not:
+              hasLabel:
                 label: Area-Output
           - not:
               hasLabel:
                 label: Area-Performance
           - not:
               hasLabel:
+                label: Area-Portable
+          - not:
+              hasLabel:
+                label: Area-Quality
+          - not:
+              hasLabel:
+                label: Area-Remoting
+          - not:
+              hasLabel:
                 label: Area-Rendering
+          - not:
+              hasLabel:
+                label: Area-Schema
           - not:
               hasLabel:
                 label: Area-Server
@@ -273,55 +319,34 @@ configuration:
                 label: Area-Settings
           - not:
               hasLabel:
+                label: Area-SettingsUI
+          - not:
+              hasLabel:
+                label: Area-ShellExtension
+          - not:
+              hasLabel:
+                label: Area-Suggestions
+          - not:
+              hasLabel:
                 label: Area-TerminalConnection
           - not:
               hasLabel:
                 label: Area-TerminalControl
           - not:
               hasLabel:
-                label: Area-User Interface
+                label: Area-Theming
+          - not:
+              hasLabel:
+                label: Area-UserInterface
           - not:
               hasLabel:
                 label: Area-VT
           - not:
               hasLabel:
-                label: Area-CodeHealth
-          - not:
-              hasLabel:
-                label: Area-Quality
-          - not:
-              hasLabel:
-                label: Area-AzureShell
-          - not:
-              hasLabel:
-                label: Area-Schema
-          - not:
-              hasLabel:
-                label: Area-Commandline
-          - not:
-              hasLabel:
-                label: Area-ShellExtension
-          - not:
-              hasLabel:
-                label: Area-WPFControl
-          - not:
-              hasLabel:
-                label: Area-Settings UI
-          - not:
-              hasLabel:
-                label: Area-DefApp
-          - not:
-              hasLabel:
-                label: Area-Remoting
-          - not:
-              hasLabel:
                 label: Area-Windowing
           - not:
               hasLabel:
-                label: Area-Theming
-          - not:
-              hasLabel:
-                label: Area-Localization
+                label: Area-WPFControl
         - and:
           - not:
               hasLabel:
@@ -408,8 +433,8 @@ configuration:
       then:
       - addLabel:
           label: Needs-Tag-Fix
-      description: 
-    - if:
+    - description: Remove "Needs-Tag-Fix" label when an issue is tagged with an Area, Issue, and Product label
+      if:
       - payloadType: Issues
       - and:
         - isLabeled
@@ -417,66 +442,117 @@ configuration:
             label: Needs-Tag-Fix
       - and:
         - or:
-          - hasLabel:
-              label: Area-Accessibility
-          - hasLabel:
-              label: Area-Build
-          - hasLabel:
-              label: Area-Extensibility
-          - hasLabel:
-              label: Area-Fonts
-          - hasLabel:
-              label: Area-Input
-          - hasLabel:
-              label: Area-Interaction
-          - hasLabel:
-              label: Area-Interop
-          - hasLabel:
-              label: Area-Output
-          - hasLabel:
-              label: Area-Performance
-          - hasLabel:
-              label: Area-Rendering
-          - hasLabel:
-              label: Area-Server
-          - hasLabel:
-              label: Area-Settings
-          - hasLabel:
-              label: Area-TerminalConnection
-          - hasLabel:
-              label: Area-TerminalControl
-          - hasLabel:
-              label: Area-User Interface
-          - hasLabel:
-              label: Area-VT
-          - hasLabel:
-              label: Area-CodeHealth
-          - hasLabel:
-              label: Area-Quality
-          - hasLabel:
-              label: Area-Schema
-          - hasLabel:
-              label: Area-AzureShell
-          - hasLabel:
-              label: Area-Commandline
-          - hasLabel:
-              label: Area-ShellExtension
-          - hasLabel:
-              label: Area-WPFControl
-          - hasLabel:
-              label: Area-Settings UI
-          - hasLabel:
-              label: Area-DefApp
-          - hasLabel:
-              label: Area-Localization
-          - hasLabel:
-              label: Area-Windowing
-          - hasLabel:
-              label: Area-Theming
-          - hasLabel:
-              label: Area-AtlasEngine
-          - hasLabel:
-              label: Area-CmdPal
+          - not:
+              hasLabel:
+                label: Area-Accessibility
+          - not:
+              hasLabel:
+                label: Area-AtlasEngine
+          - not:
+              hasLabel:
+                label: Area-AzureShell
+          - not:
+              hasLabel:
+                label: Area-Build
+          - not:
+              hasLabel:
+                label: Area-Chat
+          - not:
+              hasLabel:
+                label: Area-CmdPal
+          - not:
+              hasLabel:
+                label: Area-CodeHealth
+          - not:
+              hasLabel:
+                label: Area-Commandline
+          - not:
+              hasLabel:
+                label: Area-CookedRead
+          - not:
+              hasLabel:
+                label: Area-DefApp
+          - not:
+              hasLabel:
+                label: Area-Extensibility
+          - not:
+              hasLabel:
+                label: Area-Fonts
+          - not:
+              hasLabel:
+                label: Area-GroupPolicy
+          - not:
+              hasLabel:
+                label: Area-i18n
+          - not:
+              hasLabel:
+                label: Area-Input
+          - not:
+              hasLabel:
+                label: Area-Interaction
+          - not:
+              hasLabel:
+                label: Area-Interop
+          - not:
+              hasLabel:
+                label: Area-Localization
+          - not:
+              hasLabel:
+                label: Area-Output
+          - not:
+              hasLabel:
+                label: Area-Performance
+          - not:
+              hasLabel:
+                label: Area-Portable
+          - not:
+              hasLabel:
+                label: Area-Quality
+          - not:
+              hasLabel:
+                label: Area-Remoting
+          - not:
+              hasLabel:
+                label: Area-Rendering
+          - not:
+              hasLabel:
+                label: Area-Schema
+          - not:
+              hasLabel:
+                label: Area-Server
+          - not:
+              hasLabel:
+                label: Area-Settings
+          - not:
+              hasLabel:
+                label: Area-SettingsUI
+          - not:
+              hasLabel:
+                label: Area-ShellExtension
+          - not:
+              hasLabel:
+                label: Area-Suggestions
+          - not:
+              hasLabel:
+                label: Area-TerminalConnection
+          - not:
+              hasLabel:
+                label: Area-TerminalControl
+          - not:
+              hasLabel:
+                label: Area-Theming
+          - not:
+              hasLabel:
+                label: Area-UserInterface
+          - not:
+              hasLabel:
+                label: Area-VT
+          - not:
+              hasLabel:
+                label: Area-Windowing
+          - not:
+              hasLabel:
+                label: Area-WPFControl
         - or:
           - hasLabel:
               label: Issue-Bug
@@ -533,14 +609,14 @@ configuration:
       then:
       - removeLabel:
           label: Needs-Tag-Fix
-      description: 
-    - if:
+    - description: Add "In-PR" label to issues that are referenced in a PR
+      if:
       - payloadType: Pull_Request
       then:
       - inPrLabel:
           label: In-PR
-      description: 
-    - if:
+    - description: Remove "Needs-Tag-Fix" label when an issue also has the "Resolution-Duplicate" label
+      if:
       - payloadType: Issues
       - hasLabel:
           label: Needs-Tag-Fix
@@ -549,8 +625,8 @@ configuration:
       then:
       - removeLabel:
           label: Needs-Tag-Fix
-      description: 
-    - if:
+    - description: Close issues that are opened and have the template title
+      if:
       - payloadType: Issues
       - or:
         - titleContains:
@@ -576,8 +652,8 @@ configuration:
           label: Needs-Author-Feedback
       - addReply:
           reply: Hi! Thanks for attempting to open an issue. Unfortunately, your title wasn't changed from the original template which makes it very hard for us to track and triage. You are welcome to fix up the title and try again with a new issue.
-      description: 
-    - if:
+    - description: Close issues that are opened and have no body
+      if:
       - payloadType: Issues
       - or:
         - isAction:
@@ -595,8 +671,8 @@ configuration:
           label: Needs-Author-Feedback
       - addReply:
           reply: "Hi! Thanks for attempting to open an issue. Unfortunately, you didn't write anything in the body which makes it impossible to understand your concern. You are welcome to fix up the issue and try again by opening another issue with the body filled out. "
-      description: 
-    - if:
+    - description: Request a review from the team when a PR is labeled "Needs-Second"
+      if:
       - payloadType: Pull_Request
       - isLabeled
       - hasLabel:
@@ -613,8 +689,8 @@ configuration:
           reviewer: dhowett
       - requestReview:
           reviewer: lhecker
-      description: 
-    - if:
+    - description: Remove "Needs-Second" label when a PR is reviewed
+      if:
       - payloadType: Pull_Request_Review
       - not: isOpen
       - hasLabel:
@@ -622,8 +698,8 @@ configuration:
       then:
       - removeLabel:
           label: Needs-Second
-      description: 
-    - if:
+    - description: Remove "Help-Wanted" label from issues that are in a PR
+      if:
       - payloadType: Issues
       - hasLabel:
           label: In-PR
@@ -633,8 +709,8 @@ configuration:
       then:
       - removeLabel:
           label: Help-Wanted
-      description: 
-    - if:
+    - description: Comments with "/dup", "/dupe", or "/duplicate" will close the issue as a duplicate and remove "Needs-" labels
+      if:
       - payloadType: Issue_Comment
       - commentContains:
           pattern: '\/dup(licate|e)?(\s+of)?\s+\#[\d]+'
@@ -662,8 +738,8 @@ configuration:
           label: Needs-Repro
       - removeLabel:
           label: Needs-Second
-      description: 
-    - if:
+    - description: Comments with "/feedback" will direct people to Feedback Hub
+      if:
       - payloadType: Issue_Comment
       - commentContains:
           pattern: '\/feedback'
@@ -680,13 +756,13 @@ configuration:
             Hi there!<br><br>Can you please send us feedback with the [Feedback Hub](https://support.microsoft.com/en-us/windows/send-feedback-to-microsoft-with-the-feedback-hub-app-f59187f8-8739-22d6-ba93-f66612949332) with this issue? Make sure to click the "Start recording" button, then reproduce the issue before submitting the feedback. Once it's submitted, paste the link here so we can more easily find your crash information on the back end?<br><br>Thanks!<br><br>![image](https://user-images.githubusercontent.com/18356694/140811502-a068f78b-89d2-4587-925a-73e19652b830.png)<br><br>![image](https://user-images.githubusercontent.com/18356694/140811557-cdc22a0f-fa6a-4f6a-953e-73b51f5548a3.png)<br><br>![image](https://user-images.githubusercontent.com/18221333/62478649-6de55400-b760-11e9-806e-5aab7e085a9f.png)
       - addLabel:
           label: Needs-Author-Feedback
-      description: 
-    - if:
+    - description: Comments clean the email reply
+      if:
       - payloadType: Issue_Comment
       then:
       - cleanEmailReply
-      description: 
-    - if:
+    - description: Sync labels when a PR event occurs
+      if:
       - payloadType: Pull_Request
       then:
       - labelSync:
@@ -701,8 +777,8 @@ configuration:
           pattern: Severity-
       - labelSync:
           pattern: Impact-
-      description: 
-    - if:
+    - description: Comments with "/dup", "/dupe", or "/duplicate" targeting another repo will close the issue as a duplicate and remove "Needs-" labels
+      if:
       - payloadType: Issue_Comment
       - commentContains:
           pattern: '\/dup(licate|e)?(\s+of)?\s+https'
@@ -730,8 +806,8 @@ configuration:
           label: Needs-Repro
       - removeLabel:
           label: Needs-Second
-      description: 
-    - if:
+    - description: Comments with "/?" will replace the "Needs-Attention" label with "Needs-Author-Feedback"
+      if:
       - payloadType: Issue_Comment
       - commentContains:
           pattern: /?
@@ -746,6 +822,5 @@ configuration:
           label: Needs-Attention
       - addLabel:
           label: Needs-Author-Feedback
-      description: 
 onFailure: 
 onSuccess: 

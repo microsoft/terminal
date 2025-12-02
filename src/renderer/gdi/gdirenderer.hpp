@@ -27,13 +27,12 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
 
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept override;
         [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const til::rect* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
@@ -103,8 +102,25 @@ namespace Microsoft::Console::Render
         HDC _hdcMemoryContext;
         bool _isTrueTypeFont;
         UINT _fontCodepage;
-        HFONT _hfont;
-        HFONT _hfontItalic;
+
+        enum class FontType : uint8_t
+        {
+            // Indices for _hfonts array below
+            Default,
+            Bold,
+            Italic,
+            BoldItalic,
+
+            // The number of fonts in _hfonts array below
+            FontCount,
+
+            // Other
+            Undefined = FontCount,
+            Soft
+        };
+
+        std::array<HFONT, static_cast<size_t>(FontType::FontCount)> _hfonts{};
+
         TEXTMETRICW _tmFontMetrics;
         FontResource _softFont;
 
@@ -148,13 +164,6 @@ namespace Microsoft::Console::Render
         COLORREF _lastFg;
         COLORREF _lastBg;
 
-        enum class FontType : uint8_t
-        {
-            Undefined,
-            Default,
-            Italic,
-            Soft
-        };
         FontType _lastFontType;
         bool _fontHasWesternScript = false;
 
@@ -166,7 +175,7 @@ namespace Microsoft::Console::Render
         // It's important the pool is first so it can be given to the others on construction.
         std::pmr::unsynchronized_pool_resource _pool;
         std::pmr::vector<std::pmr::wstring> _polyStrings;
-        std::pmr::vector<std::pmr::basic_string<int>> _polyWidths;
+        std::pmr::vector<std::pmr::vector<int>> _polyWidths;
 
         std::vector<DWORD> _imageMask;
 
@@ -195,8 +204,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
                                                _Out_ FontInfo& Font,
                                                const int iDpi,
-                                               _Inout_ wil::unique_hfont& hFont,
-                                               _Inout_ wil::unique_hfont& hFontItalic) noexcept;
+                                               _Inout_ std::array<wil::unique_hfont, static_cast<size_t>(FontType::FontCount)>& hFonts) noexcept;
 
         til::size _GetFontSize() const;
         bool _IsMinimized() const;

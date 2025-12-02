@@ -5,23 +5,17 @@
 
 #include "IoDispatchers.h"
 
-#include "ApiSorter.h"
+#include <telemetry/ProjectTelemetry.h>
 
-#include "../host/conserv.h"
-#include "../host/conwinuserrefs.h"
+#include "ApiSorter.h"
+#include "IConsoleHandoff.h"
 #include "../host/directio.h"
 #include "../host/handle.h"
 #include "../host/srvinit.h"
-
 #include "../interactivity/base/HostSignalInputThread.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
-#include "../types/inc/utils.hpp"
-
-#include "IConsoleHandoff.h"
-
 using namespace Microsoft::Console::Interactivity;
-using namespace Microsoft::Console::Utils;
 
 // From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
 //
@@ -462,14 +456,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     // ConsoleApp will be false in the AttachConsole case.
     if (Cac.ConsoleApp)
     {
-        LOG_IF_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(dwProcessId));
+        ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(dwProcessId);
     }
 
-    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    if (pNotifier)
-    {
-        pNotifier->NotifyConsoleStartApplicationEvent(dwProcessId);
-    }
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.ApplicationStart(dwProcessId);
 
     if (WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED))
     {
@@ -492,7 +483,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         return pReceiveMsg;
     }
 
-    // For future code archeologists: GH#2988
+    // For future code archaeologists: GH#2988
     //
     // Here, the console calls ConsoleControl(ConsoleSetForeground,...) with a
     // flag depending on if the console is focused or not. This is surprisingly
@@ -562,11 +553,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
 {
     const auto pProcessData = pMessage->GetProcessHandle();
 
-    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    if (pNotifier)
-    {
-        pNotifier->NotifyConsoleEndApplicationEvent(pProcessData->dwProcessId);
-    }
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.ApplicationEnd(pProcessData->dwProcessId);
 
     Tracing::s_TraceConsoleAttachDetach(pProcessData, false);
 

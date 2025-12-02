@@ -5,6 +5,7 @@
 
 #include "gdirenderer.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../buffer/out/textBuffer.hpp"
 
 #pragma hdrstop
 
@@ -46,13 +47,12 @@ HRESULT GdiEngine::InvalidateScroll(const til::point* const pcoordDelta) noexcep
 // - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(const std::vector<til::rect>& rectangles) noexcept
+HRESULT GdiEngine::InvalidateSelection(std::span<const til::rect> selections) noexcept
 {
-    for (const auto& rect : rectangles)
+    for (auto&& rect : selections)
     {
         RETURN_IF_FAILED(Invalidate(&rect));
     }
-
     return S_OK;
 }
 
@@ -98,21 +98,6 @@ HRESULT GdiEngine::InvalidateAll() noexcept
     til::rect rc;
     RETURN_HR_IF(E_FAIL, !(GetClientRect(_hwndTargetWindow, rc.as_win32_rect())));
     RETURN_HR(InvalidateSystem(&rc));
-}
-
-// Method Description:
-// - Notifies us that we're about to be torn down. This gives us a last chance
-//      to force a repaint before the buffer contents are lost. The GDI renderer
-//      doesn't care if we lose text - we're only painting visible text anyways,
-//      so we return false.
-// Arguments:
-// - Receives a bool indicating if we should force the repaint.
-// Return Value:
-// - S_FALSE - we succeeded, but the result was false.
-HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
-{
-    *pForcePaint = false;
-    return S_FALSE;
 }
 
 // Routine Description:

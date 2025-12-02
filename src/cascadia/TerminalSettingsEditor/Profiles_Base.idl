@@ -9,5 +9,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Profiles_Base();
         ProfileViewModel Profile { get; };
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> FilteredBuiltInIconList { get; };
+
+        static Windows.UI.Xaml.Controls.IconSource BuiltInIconConverter(IInspectable iconVal);
     }
 }

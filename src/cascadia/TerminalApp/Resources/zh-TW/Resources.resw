@@ -189,6 +189,9 @@
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>關閉</value>
   </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>移動索引標籤</value>
+  </data>
   <data name="TabCloseAfter" xml:space="preserve">
     <value>關閉右側的索引標籤</value>
   </data>
@@ -206,6 +209,45 @@
   </data>
   <data name="SplitPaneText" xml:space="preserve">
     <value>分割窗格</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>以滑鼠右鍵按一下以選擇分割方向 - 右/下/上/左</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>向下分割窗格</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>向右分割窗格</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>向上分割窗格</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>向左分割窗格</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>複製</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>交換窗格</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>向下交換窗格</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>向右交換窗格</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>向上交換窗格</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>向左交換窗格</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>切換窗格縮放</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>關閉其他窗格</value>
   </data>
   <data name="SearchWebText" xml:space="preserve">
     <value>網頁搜尋</value>
@@ -225,13 +267,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>複製索引標籤</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>找到具有無效 "backgroundImage" 的設定檔。將該設定檔的預設值設為沒有背景影像。請確定設定 "backgroundImage" 時，該值是影像的有效檔案路徑。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>已發現具有無效 "icon" 的設定檔。將該設定檔預設為無圖示。設定 "icon" 時，請確認值是有效的影像檔案路徑。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>找不到一或多個資源 (，例如在您的設定中指定的 icon 或 backgroundImage)。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>剖析金鑰繫結時發現警告:</value>
@@ -722,12 +760,6 @@
   <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="RenameFailedToast.Title" xml:space="preserve">
-    <value>無法重新命名視窗</value>
-  </data>
-  <data name="RenameFailedToast.Subtitle" xml:space="preserve">
-    <value>已存在另一個具有該名稱的視窗</value>
-  </data>
   <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
     <value>最大化</value>
   </data>
@@ -932,5 +964,14 @@
   </data>
   <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>關閉窗格</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>左移</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>右移</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>發現無效的規則運算式。</value>
   </data>
 </root>

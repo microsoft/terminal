@@ -162,6 +162,8 @@ jobs:
       .\build\scripts\Generate-ThirdPartyNotices.ps1 -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
     displayName: Generate NOTICE.html from NOTICE.md
 
+  - template: .\steps-install-vcpkg.yml
+
   - template: .\steps-restore-nuget.yml
 
   - pwsh: |-
@@ -171,9 +173,9 @@ jobs:
   - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
-    displayName: Build OpenConsole.sln
+    displayName: Build OpenConsole.slnx
     inputs:
-      solution: 'OpenConsole.sln'
+      solution: 'OpenConsole.slnx'
       msbuildArgs: >-
         /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }}
         ${{ parameters.additionalBuildOptions }}

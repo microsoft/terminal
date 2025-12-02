@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
 
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _SendFeedbackOnClick(const IInspectable& sender, const Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs& eventArgs);
-        winrt::fire_and_forget _queueUpdateCheck();
+        safe_void_coroutine _queueUpdateCheck();
     };
 }
 

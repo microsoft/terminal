@@ -27,7 +27,6 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view HiddenKey{ "hidden" };
-static constexpr std::string_view IconKey{ "icon" };
 
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view PaddingKey{ "padding" };
@@ -36,6 +35,7 @@ static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" 
 
 static constexpr std::string_view LegacyAutoMarkPromptsKey{ "experimental.autoMarkPrompts" };
 static constexpr std::string_view LegacyShowMarksKey{ "experimental.showMarksOnScrollbar" };
+static constexpr std::string_view LegacyRightClickContextMenuKey{ "experimental.rightClickContextMenu" };
 
 Profile::Profile(guid guid) noexcept :
     _Guid(guid)
@@ -103,6 +103,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     const auto defaultAppearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(_DefaultAppearance), weakProfile);
 
     profile->_Deleted = _Deleted;
+    profile->_Orphaned = _Orphaned;
     profile->_Updates = _Updates;
     profile->_Guid = _Guid;
     profile->_Name = _Name;
@@ -110,7 +111,6 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
-    profile->_Icon = _Icon;
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -120,6 +120,12 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_##name = _##name;
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
+
+    if (_BellSound)
+    {
+        // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
+        profile->_BellSound = winrt::single_threaded_vector(wil::to_vector(*_BellSound));
+    }
 
     if (_UnfocusedAppearance)
     {
@@ -175,23 +181,29 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
-    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+
+    // Make sure Source is before Hidden! We use that to exclude false positives from the settings logger!
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
-    JsonUtils::GetValueForKey(json, IconKey, _Icon);
+    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    _logSettingIfSet(HiddenKey, _Hidden.has_value());
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
+    _logSettingIfSet(PaddingKey, _Padding.has_value());
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+    _logSettingIfSet(TabColorKey, _TabColor.has_value());
 
     // Try to load some legacy keys, to migrate them.
     // Done _before_ the MTSM_PROFILE_SETTINGS, which have the updated keys.
     JsonUtils::GetValueForKey(json, LegacyShowMarksKey, _ShowMarks);
     JsonUtils::GetValueForKey(json, LegacyAutoMarkPromptsKey, _AutoMarkPrompts);
+    JsonUtils::GetValueForKey(json, LegacyRightClickContextMenuKey, _RightClickContextMenu);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, _##name);
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);        \
+    _logSettingIfSet(jsonKey, _##name.has_value());
 
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
@@ -208,6 +220,8 @@ void Profile::LayerJson(const Json::Value& json)
 
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
+
+        _logSettingSet(UnfocusedAppearanceKey);
     }
 }
 
@@ -285,7 +299,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 }
 
 // Function Description:
-// - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
+// - Generates a unique guid for a profile, given the name. For a given name, will always return the same GUID.
 // Arguments:
 // - name: The name to generate a unique GUID from
 // Return Value:
@@ -326,11 +340,6 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
-    // Recall: Icon isn't actually a setting in the MTSM_PROFILE_SETTINGS. We
-    // defined it manually in Profile, so make sure we only serialize the Icon
-    // if the user actually changed it here.
-    JsonUtils::SetValueForKey(json, IconKey, (writeBasicSettings && HasIcon()) ? Icon() : _Icon);
-
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
 
@@ -353,47 +362,6 @@ Json::Value Profile::ToJson() const
     }
 
     return json;
-}
-
-// This is the implementation for and INHERITABLE_SETTING, but with one addition
-// in the setter. We want to make sure to clear out our cached icon, so that we
-// can re-evaluate it as it changes in the SUI.
-void Profile::Icon(const winrt::hstring& value)
-{
-    _evaluatedIcon = std::nullopt;
-    _Icon = value;
-}
-winrt::hstring Profile::Icon() const
-{
-    const auto val{ _getIconImpl() };
-    return val ? *val : hstring{ L"\uE756" };
-}
-
-winrt::hstring Profile::EvaluatedIcon()
-{
-    // We cache the result here, so we don't search the path for the exe every time.
-    if (!_evaluatedIcon.has_value())
-    {
-        _evaluatedIcon = _evaluateIcon();
-    }
-    return *_evaluatedIcon;
-}
-
-winrt::hstring Profile::_evaluateIcon() const
-{
-    // If the profile has an icon, return it.
-    if (!Icon().empty())
-    {
-        return Icon();
-    }
-
-    // Otherwise, use NormalizeCommandLine to find the actual exe name. This
-    // will actually search for the exe, including spaces, in the same way that
-    // CreateProcess does.
-    std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
-    // NormalizeCommandLine will return a string with embedded nulls after each
-    // arg. We just want the first one.
-    return winrt::hstring{ cmdline.c_str() };
 }
 
 // Given a commandLine like the following:
@@ -517,4 +485,104 @@ std::wstring Profile::NormalizeCommandLine(LPCWSTR commandLine)
     }
 
     return normalized;
+}
+
+void Profile::_logSettingSet(const std::string_view& setting)
+{
+    _changeLog.emplace(setting);
+}
+
+void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet)
+{
+    if (isSet)
+    {
+        // make sure this matches defaults.json.
+        static constexpr winrt::guid DEFAULT_WINDOWS_POWERSHELL_GUID{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } };
+        static constexpr winrt::guid DEFAULT_COMMAND_PROMPT_GUID{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } };
+
+        // Exclude some false positives from userDefaults.json
+        // NOTE: we can't use the OriginTag here because it hasn't been set yet!
+        const bool isWinPow = _Guid.has_value() && *_Guid == DEFAULT_WINDOWS_POWERSHELL_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Windows PowerShell");
+        const bool isCmd = _Guid.has_value() && *_Guid == DEFAULT_COMMAND_PROMPT_GUID; //_Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Command Prompt");
+        const bool isACS = _Name.has_value() && til::equals_insensitive_ascii(*_Name, L"Azure Cloud Shell");
+        const bool isWTDynamicProfile = _Source.has_value() && til::starts_with(*_Source, L"Windows.Terminal");
+        const bool settingHiddenToFalse = til::equals_insensitive_ascii(setting, HiddenKey) && _Hidden.has_value() && _Hidden == false;
+        const bool settingCommandlineToWinPow = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+        const bool settingCommandlineToCmd = til::equals_insensitive_ascii(setting, "commandline") && _Commandline.has_value() && til::equals_insensitive_ascii(*_Commandline, L"%SystemRoot%\\System32\\cmd.exe");
+        // clang-format off
+        if (!(isWinPow && (settingHiddenToFalse || settingCommandlineToWinPow))
+            && !(isCmd && (settingHiddenToFalse || settingCommandlineToCmd))
+            && !(isACS && settingHiddenToFalse)
+            && !(isWTDynamicProfile && settingHiddenToFalse))
+        {
+            // clang-format on
+            _logSettingSet(setting);
+        }
+    }
+}
+
+void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    if (const auto icon{ _getIconImpl() }; icon && *icon)
+    {
+        const auto iconSource{ _getIconOverrideSourceImpl() };
+        ResolveIconMediaResource(iconSource->_Origin, iconSource->SourceBasePath, *icon, resolver);
+
+        // If the icon was specified at any layer, but fails resolution *or* contains the empty string,
+        // fall back to the normalized command line at or above this layer.
+        if (!icon->Ok() || icon->Resolved().empty() && !iconSource->Commandline().empty())
+        {
+            // We want to resolve the icon to the commandline, but we risk that the icon was already
+            // resolved. We don't want to do that (as MediaResource asserts that it was only resolved
+            // one time). However, we can't just make a new empty resource and resolve it -- that
+            // might replace the value in the user's settings when we serialize it again...
+            // So instead, make a new one derived from the icon we started with, then resolve it
+            // ourselves.
+            auto newIcon{ MediaResource::FromString(icon->Path()) };
+            const std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
+            newIcon.Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
+            iconSource->_Icon = std::move(newIcon);
+        }
+    }
+
+    if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto container{ UnfocusedAppearance().try_as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto [bellSoundSource, bellSounds]{ _getBellSoundOverrideSourceAndValueImpl() };
+        bellSoundSource && bellSounds && *bellSounds && bellSounds->Size() > 0)
+    {
+        for (const auto& bellSound : *bellSounds)
+        {
+            ResolveMediaResource(bellSoundSource->_Origin, bellSoundSource->SourceBasePath, bellSound, resolver);
+        }
+        // It's important that we keep the invalid bell sounds in the list, because we may want to write it back out to disk
+    }
+}
+
+void Profile::LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const
+{
+    for (const auto& setting : _changeLog)
+    {
+        changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
+    }
+
+    std::string fontContext{ fmt::format(FMT_COMPILE("{}.{}"), context, FontInfoKey) };
+    winrt::get_self<implementation::FontConfig>(_FontInfo)->LogSettingChanges(changes, fontContext);
+
+    // We don't want to distinguish between "profile.defaultAppearance.*" and "profile.unfocusedAppearance.*" settings,
+    //   but we still want to aggregate all of the appearance settings from both appearances.
+    // Log them as "profile.appearance.*"
+    std::string appContext{ fmt::format(FMT_COMPILE("{}.{}"), context, "appearance") };
+    winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->LogSettingChanges(changes, appContext);
+    if (_UnfocusedAppearance)
+    {
+        winrt::get_self<implementation::AppearanceConfig>(*_UnfocusedAppearance)->LogSettingChanges(changes, appContext);
+    }
 }

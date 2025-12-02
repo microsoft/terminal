@@ -56,7 +56,11 @@
   <ReleaseNotes>
     バージョン __VERSION_NUMBER__
 
-詳細については、GitHub リリースのページをご覧ください。
+- ターミナルに何がインストールされているかを表示する新しい [拡張機能] ページ
+- コマンド パレットがネイティブ言語と英語で表示されるようになりました
+- 同期レンダリング、新しい配色、ズームなどのクイック マウス操作の構成などの、新しい VT 機能
+
+詳細については、GitHub リリース ページをご覧ください。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

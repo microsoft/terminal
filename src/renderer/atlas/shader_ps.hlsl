@@ -174,10 +174,11 @@ Output main(PSData data) : SV_Target
         // The curly line has the same thickness as a double underline.
         // We halve it to make the math a bit easier.
         float strokeWidthHalf = doubleUnderlineWidth * data.renditionScale.y * 0.5f;
-        float amplitude = (curlyLineHalfHeight - strokeWidthHalf) * data.renditionScale.y;
+        float center = curlyLineHalfHeight * data.renditionScale.y;
+        float amplitude = center - strokeWidthHalf;
         // We multiply the frequency by pi/2 to get a sine wave which has an integer period.
         // This makes every period of the wave look exactly the same.
-        float frequency = data.renditionScale.x / curlyLineHalfHeight * 1.57079632679489661923f;
+        float frequency = 1.57079632679489661923f / (curlyLineHalfHeight * data.renditionScale.x);
         // At very small sizes, like when the wave is just 3px tall and 1px wide, it'll look too fat and/or blurry.
         // Because we multiplied our frequency with pi, the extrema of the curve and its intersections with the
         // centerline always occur right between two pixels. This causes both to be lit with the same color.
@@ -199,7 +200,7 @@ Output main(PSData data) : SV_Target
         //
         // The expanded sine form of cos(atan(cos(x))) is 1 / sqrt(2 - sin(x)^2), which results in:
         //   abs(pixel.y - sin(pixel.x)) * rsqrt(2 - sin(pixel.x)^2)
-        float distance = abs(curlyLineHalfHeight - data.texcoord.y - sine * amplitude) * rsqrt(2 - sine * sine);
+        float distance = abs(center - data.texcoord.y - sine * amplitude) * rsqrt(2 - sine * sine);
         // Since pixel coordinates are always offset by half a pixel (i.e. data.texcoord is 1.5f, 2.5f, 3.5f, ...)
         // the distance is also off by half a pixel. We undo that by adding half a pixel to the distance.
         // This gives the line its proper thickness appearance.

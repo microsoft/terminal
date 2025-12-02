@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render
     class RenderEngineBase : public IRenderEngine
     {
     public:
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept override;
         [[nodiscard]] HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept override;
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
 
@@ -47,8 +48,6 @@ namespace Microsoft::Console::Render
                                               const til::CoordType viewportLeft) noexcept override;
 
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
-
-        [[nodiscard]] HRESULT InvalidateFlush(_In_ const bool circled, _Out_ bool* const pForcePaint) noexcept override;
 
         void WaitUntilCanRender() noexcept override;
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept override;

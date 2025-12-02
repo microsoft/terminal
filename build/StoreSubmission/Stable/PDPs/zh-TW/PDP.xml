@@ -54,9 +54,13 @@
     
   </DevStudio>
   <ReleaseNotes>
-    版本 __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-如需詳細資訊，請參閱我們的 GitHub 版本頁面。
+- 我們已在使用者介面中新增數十個曾經僅存在於 JSON 檔案中的設定，包括一個可自訂新索引標籤選單版面配置的新頁面!
+- 我們已重新架構視窗管理以提升可靠性; 如果您在使用 wt.exe 別名時遇到任何錯誤，請提交錯誤回報
+- 如果設定檔已隱藏或參照已解除安裝的程式，現在會顯示圖示。
+
+如需更多詳細資料，請參閱我們的 GitHub 發行版本頁面。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

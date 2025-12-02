@@ -54,7 +54,11 @@
     
   </DevStudio>
   <ReleaseNotes>
-    版本 __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
+
+- 我们向用户界面添加了许多之前仅存在于 JSON 文件中的设置，包括用于自定义“新建标签页”菜单布局的新页面!
+- 我们已重新架构窗口管理以提高可靠性; 请使用 wt.exe 别名提交您遇到的任何错误
+- 配置文件如果已被隐藏或引用了已卸载的程序，现在会显示一个图标。
 
 有关其他详细信息，请参阅我们的 GitHub 发布页面。
   </ReleaseNotes>

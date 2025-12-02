@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>Vous pouvez maintenant fermer ce terminal avec Ctrl+D, ou appuyez sur Entrée pour redémarrer.</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[erreur {0} lors du lancement de `{1}']</value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>Le démarrage du répertoire n’est pas accessible «{0}»</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>L’opération demandée nécessite une élévation.</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>Le fichier spécifié est introuvable.</value>
   </data>
 </root>

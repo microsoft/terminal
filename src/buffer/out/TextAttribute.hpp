@@ -93,7 +93,6 @@ public:
     }
 
     static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
-    static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
     bool IsTopHorizontalDisplayed() const noexcept;
@@ -116,6 +115,7 @@ public:
         return memcmp(this, &other, sizeof(TextAttribute)) != 0;
     }
 
+    bool IsBold(const bool intenseIsBold) const noexcept;
     bool IsLegacy() const noexcept;
     bool IsIntense() const noexcept;
     bool IsFaint() const noexcept;

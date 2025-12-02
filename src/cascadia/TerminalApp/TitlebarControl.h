@@ -13,7 +13,7 @@ namespace winrt::TerminalApp::implementation
 
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
-        winrt::fire_and_forget ClickButton(CaptionButton button);
+        safe_void_coroutine ClickButton(CaptionButton button);
         void ReleaseButtons();
         float CaptionButtonWidth();
 
@@ -22,6 +22,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetWindowVisualState(WindowVisualState visualState);
         void Root_SizeChanged(const IInspectable& sender, const Windows::UI::Xaml::SizeChangedEventArgs& e);
+        void FullscreenChanged(const bool fullscreen);
 
         void Minimize_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void Maximize_Click(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::RoutedEventArgs& e);

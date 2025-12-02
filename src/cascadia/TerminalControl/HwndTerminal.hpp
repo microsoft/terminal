@@ -6,6 +6,7 @@
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
 #include "../../types/IControlAccessibilityInfo.h"
+#include "../../tsf/Handle.h"
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -35,12 +36,12 @@ typedef struct _TerminalTheme
     COLORREF DefaultBackground;
     COLORREF DefaultForeground;
     COLORREF DefaultSelectionBackground;
-    float SelectionBackgroundAlpha;
     uint32_t CursorStyle; // This will be converted to DispatchTypes::CursorStyle (size_t), but C# cannot marshal an enum type and have it fit in a size_t.
     COLORREF ColorTable[16];
 } TerminalTheme, *LPTerminalTheme;
 
 extern "C" {
+__declspec(dllexport) void _stdcall AvoidBuggyTSFConsoleFlags();
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 __declspec(dllexport) void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data);
 __declspec(dllexport) void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
@@ -49,7 +50,6 @@ __declspec(dllexport) HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ v
 __declspec(dllexport) HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-__declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
 __declspec(dllexport) const wchar_t* _stdcall TerminalGetSelection(void* terminal);
 __declspec(dllexport) bool _stdcall TerminalIsSelectionActive(void* terminal);
 __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
@@ -57,10 +57,7 @@ __declspec(dllexport) void _stdcall TerminalSetTheme(void* terminal, TerminalThe
 __declspec(dllexport) void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
 __declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
 __declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD flags, WORD scanCode);
-__declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
-__declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
-__declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
-__declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
+__declspec(dllexport) void _stdcall TerminalSetFocused(void* terminal, bool focused);
 };
 
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
@@ -86,6 +83,21 @@ public:
     static LRESULT CALLBACK HwndTerminalWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
 private:
+    struct TsfDataProvider : public Microsoft::Console::TSF::IDataProvider
+    {
+        TsfDataProvider(HwndTerminal* t) :
+            _terminal(t) {}
+        virtual ~TsfDataProvider() = default;
+        STDMETHODIMP QueryInterface(REFIID, void**) noexcept override;
+        ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+        ULONG STDMETHODCALLTYPE Release() noexcept override;
+        HWND GetHwnd() override;
+        RECT GetViewport() override;
+        RECT GetCursorPosition() override;
+        void HandleOutput(std::wstring_view text) override;
+        Microsoft::Console::Render::Renderer* GetRenderer() override;
+        HwndTerminal* _terminal;
+    };
     wil::unique_hwnd _hwnd;
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
@@ -107,28 +119,30 @@ private:
     std::optional<til::point> _lastMouseClickPos;
     std::optional<til::point> _singleClickTouchdownPos;
 
+    // _tsfHandle uses _tsfDataProvider. Destructors run from bottom to top; this maintains correct destruction order.
+    TsfDataProvider _tsfDataProvider{ this };
+    Microsoft::Console::TSF::Handle _tsfHandle;
+
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
     friend HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions);
     friend HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ til::size dimensions, _Out_ til::size* dimensionsInPixels);
     friend HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ til::CoordType width, _In_ til::CoordType height, _Out_ til::size* dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
     friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
-    friend void _stdcall TerminalClearSelection(void* terminal);
     friend const wchar_t* _stdcall TerminalGetSelection(void* terminal);
     friend bool _stdcall TerminalIsSelectionActive(void* terminal);
     friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
     friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags);
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, til::CoordType fontSize, int newDpi);
-    friend void _stdcall TerminalBlinkCursor(void* terminal);
-    friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
-    friend void _stdcall TerminalSetFocus(void* terminal);
-    friend void _stdcall TerminalKillFocus(void* terminal);
+    friend void _stdcall TerminalSetFocused(void* terminal, bool focused);
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring_view text) noexcept;
-    HRESULT _CopyTextToSystemClipboard(const std::wstring& text, const std::string& htmlData, const std::string& rtfData) const;
-    HRESULT _CopyToSystemClipboard(const std::string& stringToCopy, LPCWSTR lpszFormat) const;
+    HRESULT _CopyTextToSystemClipboard(wil::zwstring_view text, wil::zstring_view htmlData, wil::zstring_view rtfData) const;
+    HRESULT _CopyToSystemClipboard(wil::zstring_view stringToCopy, LPCWSTR lpszFormat) const;
     void _PasteTextFromClipboard() noexcept;
+
+    void _setFocused(bool focused) noexcept;
 
     const unsigned int _NumberOfClicks(til::point clickPos, std::chrono::steady_clock::time_point clickTime) noexcept;
     HRESULT _StartSelection(LPARAM lParam) noexcept;
@@ -146,7 +160,6 @@ private:
     // Inherited via IControlAccessibilityInfo
     til::size GetFontSize() const noexcept override;
     til::rect GetBounds() const noexcept override;
-    float GetScaleFactor() const noexcept override;
     void ChangeViewport(const til::inclusive_rect& NewWindow) override;
     HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) noexcept override;
     til::rect GetPadding() const noexcept override;

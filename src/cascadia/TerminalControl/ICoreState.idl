@@ -50,8 +50,6 @@ namespace Microsoft.Terminal.Control
 
         Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
 
-        Microsoft.Terminal.Core.Scheme ColorScheme { get; set; };
-
         UInt64 OwningHwnd;
 
         void AddMark(ScrollMark mark);
@@ -61,6 +59,8 @@ namespace Microsoft.Terminal.Control
         void SelectCommand(Boolean goUp);
         void SelectOutput(Boolean goUp);
         IVector<ScrollMark> ScrollMarks { get; };
+
+        String CurrentWorkingDirectory { get; };
 
     };
 }

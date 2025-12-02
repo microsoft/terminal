@@ -82,8 +82,6 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
 
-        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
-
         void SetOwner();
         BOOL GetCursorPosition(_Out_ til::point* lpPoint);
         BOOL GetClientRectangle(_Out_ til::rect* lpRect);
@@ -135,6 +133,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void _HandleDrop(const WPARAM wParam) const;
         [[nodiscard]] HRESULT _HandlePaint() const;
         void _HandleWindowPosChanged(const LPARAM lParam);
+        LRESULT _HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) const;
 
         // Accessibility/UI Automation
         [[nodiscard]] LRESULT _HandleGetObject(const HWND hwnd,
@@ -173,6 +172,9 @@ namespace Microsoft::Console::Interactivity::Win32
                                           const til::size coordBufferSize,
                                           _In_opt_ HWND const hWnd,
                                           _Inout_ til::rect* const prectWindow);
+        static void s_ExpandRectByNonClientSize(HWND const hWnd,
+                                                UINT dpi,
+                                                _Inout_ til::rect* const prectWindow);
 
         static void s_ReinitializeFontsForDPIChange();
 

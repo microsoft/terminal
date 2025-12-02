@@ -72,7 +72,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_IsInEditMode)
         {
             // if we're in edit mode,
-            // - pre-populate the text box with the current keys
+            // - prepopulate the text box with the current keys
             // - reset the combo box with the current action
             ProposedKeys(_CurrentKeys);
             ProposedAction(box_value(_CurrentAction));
@@ -278,23 +278,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Check for this special case:
         //  we're changing the key chord,
         //  but the new key chord is already in use
+        bool conflictFound{ false };
         if (isNewAction || args.OldKeys().Modifiers() != args.NewKeys().Modifiers() || args.OldKeys().Vkey() != args.NewKeys().Vkey())
         {
             const auto& conflictingCmd{ _Settings.ActionMap().GetActionByKeyChord(args.NewKeys()) };
             if (conflictingCmd)
             {
+                conflictFound = true;
                 // We're about to overwrite another key chord.
                 // Display a confirmation dialog.
                 TextBlock errorMessageTB{};
                 errorMessageTB.Text(RS_(L"Actions_RenameConflictConfirmationMessage"));
+                errorMessageTB.TextWrapping(TextWrapping::Wrap);
 
                 const auto conflictingCmdName{ conflictingCmd.Name() };
                 TextBlock conflictingCommandNameTB{};
                 conflictingCommandNameTB.Text(fmt::format(L"\"{}\"", conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
                 conflictingCommandNameTB.FontStyle(Windows::UI::Text::FontStyle::Italic);
+                conflictingCommandNameTB.TextWrapping(TextWrapping::Wrap);
 
                 TextBlock confirmationQuestionTB{};
                 confirmationQuestionTB.Text(RS_(L"Actions_RenameConflictConfirmationQuestion"));
+                confirmationQuestionTB.TextWrapping(TextWrapping::Wrap);
 
                 Button acceptBTN{};
                 acceptBTN.Content(box_value(RS_(L"Actions_RenameConflictConfirmationAcceptButton")));
@@ -318,19 +323,34 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 flyoutStack.Children().Append(confirmationQuestionTB);
                 flyoutStack.Children().Append(acceptBTN);
 
+                // This should match CustomFlyoutPresenterStyle in CommonResources.xaml!
+                // We don't have access to those resources here, so it's easier to just copy them over.
+                // This allows the flyout text to wrap
+                Style acceptChangesFlyoutStyle{ winrt::xaml_typename<FlyoutPresenter>() };
+                Setter horizontalScrollModeStyleSetter{ ScrollViewer::HorizontalScrollModeProperty(), box_value(ScrollMode::Disabled) };
+                Setter horizontalScrollBarVisibilityStyleSetter{ ScrollViewer::HorizontalScrollBarVisibilityProperty(), box_value(ScrollBarVisibility::Disabled) };
+                acceptChangesFlyoutStyle.Setters().Append(horizontalScrollModeStyleSetter);
+                acceptChangesFlyoutStyle.Setters().Append(horizontalScrollBarVisibilityStyleSetter);
+
                 Flyout acceptChangesFlyout{};
+                acceptChangesFlyout.FlyoutPresenterStyle(acceptChangesFlyoutStyle);
                 acceptChangesFlyout.Content(flyoutStack);
                 senderVM.AcceptChangesFlyout(acceptChangesFlyout);
             }
         }
 
-        // update settings model and view model
-        applyChangesToSettingsModel();
+        // if there was a conflict, the flyout we created will handle whether changes need to be propagated
+        // otherwise, go ahead and apply the changes
+        if (!conflictFound)
+        {
+            // update settings model and view model
+            applyChangesToSettingsModel();
 
-        // We NEED to toggle the edit mode here,
-        // so that if nothing changed, we still exit
-        // edit mode.
-        senderVM.ToggleEditMode();
+            // We NEED to toggle the edit mode here,
+            // so that if nothing changed, we still exit
+            // edit mode.
+            senderVM.ToggleEditMode();
+        }
     }
 
     void ActionsViewModel::_KeyBindingViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& /*args*/)

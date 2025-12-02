@@ -54,9 +54,13 @@ Este é um projeto de código aberto e a participação da comunidade é bem-vin
     
   </DevStudio>
   <ReleaseNotes>
-    Versão __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-Consulte nossa página de lançamentos do GitHub para obter detalhes adicionais.
+– Adicionamos várias configurações à interface do usuário que antes só existiam no arquivo JSON, incluindo uma nova página para personalizar o layout do seu menu Nova Guia!
+– Reestruturamos o gerenciamento de janelas para melhorar a confiabilidade; registre os bugs que você encontrar com o alias wt.exe
+– Os perfis agora exibem um ícone se estiverem ocultos ou se referirem a programas que foram desinstalados.
+
+Confira nossa página de lançamentos no GitHub para obter mais detalhes.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

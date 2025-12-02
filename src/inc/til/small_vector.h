@@ -869,9 +869,10 @@ namespace til
             const auto new_size = _ensure_fits(count);
             const auto moveable = old_size - offset;
 
-            // An optimization for the most common vector type which is trivially constructible, destructible and copyable.
-            // This allows us to drop exception handlers (= no need to push onto the stack) and replace two moves with just one.
-            if constexpr (noexcept(func(begin())) && std::is_trivial_v<T>)
+            // An optimization for the most common vector type which is trivially and copyable and noexcept constructible.
+            // Compared to the complex form below, we don't need the 2 moves and 1 destroy, because is_trivially_copyable_v implies
+            // that we can just memmove() the items all at once. We don't need a try/catch either because func() is noexcept.
+            if constexpr (noexcept(func(begin())) && std::is_trivially_copyable_v<T>)
             {
                 _size = new_size;
 
@@ -935,6 +936,17 @@ namespace til
             T _buffer[N];
         };
     };
+}
+
+namespace std
+{
+    template<typename T, size_t N, typename F>
+    void erase_if(til::small_vector<T, N>& vec, F&& pred)
+    {
+        const auto beg = vec.begin();
+        const auto end = vec.end();
+        vec.erase(std::remove_if(beg, end, std::forward<F>(pred)), end);
+    }
 }
 
 #pragma warning(pop)

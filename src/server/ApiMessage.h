@@ -42,7 +42,7 @@ typedef struct _CONSOLE_API_MSG
     [[nodiscard]] HRESULT GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
     [[nodiscard]] HRESULT GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
 
-    [[nodiscard]] HRESULT ReleaseMessageBuffers();
+    void ReleaseMessageBuffers();
 
     void SetReplyStatus(const NTSTATUS Status);
     void SetReplyInformation(const ULONG_PTR pInformation);

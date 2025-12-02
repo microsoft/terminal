@@ -26,9 +26,6 @@
     <ProjectReference Include="..\..\..\renderer\atlas\atlas.vcxproj">
       <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\renderer\vt\lib\vt.vcxproj">
-      <Project>{990f2657-8580-4828-943f-5dd657d11842}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
@@ -71,7 +68,7 @@
       <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;$(Solutiondir)src\inc\test;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>WinMM.Lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

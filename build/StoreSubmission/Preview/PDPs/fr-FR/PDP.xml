@@ -56,7 +56,11 @@ Il s’agit d’un projet open source et nous vous invitons à participer dans l
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-Consultez la page des versions de GitHub pour plus d’informations.
+- Une toute nouvelle page Extensions qui montre ce qui a été installé dans votre terminal
+- La palette de commandes s’affiche désormais dans votre langue native, ainsi qu’en anglais
+- Nouvelles fonctionnalités VT telles que le rendu synchronisé, de nouveaux schémas de couleurs, la configuration pour des actions rapides de la souris comme le zoom, et plus encore
+
+Veuillez consulter notre page des versions GitHub pour découvrir d’autres détails.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

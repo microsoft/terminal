@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Editor::ColorSchemeViewModel ColorSchemesPageViewModel::RequestAddNew()
     {
-        const hstring schemeName{ fmt::format(L"Color Scheme {}", _settings.GlobalSettings().ColorSchemes().Size() + 1) };
+        const auto schemeName{ fmt::format(FMT_COMPILE(L"Color Scheme {}"), _settings.GlobalSettings().ColorSchemes().Size() + 1) };
         Model::ColorScheme scheme{ schemeName };
 
         // Add the new color scheme

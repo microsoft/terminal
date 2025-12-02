@@ -209,4 +209,16 @@ COLORREF ColorFix::GetPerceivableColor(COLORREF color, COLORREF reference, float
     return linearToColorref(oklab::oklab_to_linear_srgb(colorOklab)) | (color & 0xff000000);
 }
 
+COLORREF ColorFix::AdjustLightness(COLORREF color, float delta) noexcept
+{
+    auto lab = oklab::linear_srgb_to_oklab(colorrefToLinear(color));
+    lab.l = saturate(lab.l + delta);
+    return linearToColorref(oklab::oklab_to_linear_srgb(lab)) | (color & 0xff000000);
+}
+
+float ColorFix::GetLightness(COLORREF color) noexcept
+{
+    return oklab::linear_srgb_to_oklab(colorrefToLinear(color)).l;
+}
+
 TIL_FAST_MATH_END

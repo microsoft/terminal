@@ -54,9 +54,13 @@ Si tratta di un progetto open source e la partecipazione della community è molt
     
   </DevStudio>
   <ReleaseNotes>
-    Versione __VERSION_NUMBER__
+    Versione __VERSION_NUMBER__ 
 
-Per ulteriori dettagli, consulta la nostra pagina delle versioni di GitHub.
+- Una pagina Estensioni completamente nuova che mostra ciò che è stato installato nel terminale
+- Il riquadro comandi ora viene visualizzato nella tua lingua di origine oltre che in inglese
+- Nuove funzionalità VT come il rendering sincronizzato, le nuove combinazioni di colori, la configurazione per azioni rapide del mouse come lo zoom e altro ancora
+
+Per altri dettagli, vedi la pagina delle release di GitHub.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

@@ -21,7 +21,8 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SnippetsPaneContent::SnippetsPaneContent()
+    SnippetsPaneContent::SnippetsPaneContent() :
+        _allTasks{ winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>() }
     {
         InitializeComponent();
 
@@ -31,6 +32,7 @@ namespace winrt::TerminalApp::implementation
     void SnippetsPaneContent::_updateFilteredCommands()
     {
         const auto& queryString = _filterBox().Text();
+        auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(queryString));
 
         // DON'T replace the itemSource here. If you do, it'll un-expand all the
         // nested items the user has expanded. Instead, just update the filter.
@@ -38,11 +40,11 @@ namespace winrt::TerminalApp::implementation
         for (const auto& t : _allTasks)
         {
             auto impl = winrt::get_self<implementation::FilteredTask>(t);
-            impl->UpdateFilter(queryString);
+            impl->UpdateFilter(pattern);
         }
     }
 
-    void SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
         _settings = settings;
 
@@ -51,8 +53,10 @@ namespace winrt::TerminalApp::implementation
         // has typed, then relies on the suggestions UI to _also_ filter with that
         // string.
 
-        const auto tasks = _settings.GlobalSettings().ActionMap().FilterToSendInput(winrt::hstring{}); // IVector<Model::Command>
-        _allTasks = winrt::single_threaded_observable_vector<TerminalApp::FilteredTask>();
+        const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(winrt::hstring{}, winrt::hstring{}); // IVector<Model::Command>
+        co_await wil::resume_foreground(Dispatcher());
+
+        _allTasks.Clear();
         for (const auto& t : tasks)
         {
             const auto& filtered{ winrt::make<FilteredTask>(t) };

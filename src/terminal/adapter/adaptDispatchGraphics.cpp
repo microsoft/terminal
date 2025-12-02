@@ -418,15 +418,12 @@ void AdaptDispatch::_ApplyGraphicsOptions(const VTParameters options,
 // Arguments:
 // - options - An array of options that will be applied from 0 to N, in order,
 //   one at a time by setting or removing flags in the font style properties.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
+void AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
     const auto page = _pages.ActivePage();
     auto attr = page.Attributes();
     _ApplyGraphicsOptions(options, attr);
-    page.SetAttributes(attr, &_api);
-    return true;
+    page.SetAttributes(attr);
 }
 
 // Routine Description:
@@ -435,9 +432,7 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 //   but the protected attribute was the only one ever implemented.
 // Arguments:
 // - options - An array of options that will be applied in order.
-// Return Value:
-// - True.
-bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
+void AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 {
     const auto page = _pages.ActivePage();
     auto attr = page.Attributes();
@@ -458,7 +453,6 @@ bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
         }
     }
     page.SetAttributes(attr);
-    return true;
 }
 
 // Method Description:
@@ -467,13 +461,10 @@ bool AdaptDispatch::SetCharacterProtectionAttribute(const VTParameters options)
 // - options: if not empty, specify which portions of the current text attributes should
 //   be saved. Options that are not supported are ignored. If no options are specified,
 //   all attributes are stored.
-// Return Value:
-// - True.
-bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
+void AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 {
     const auto& currentAttributes = _pages.ActivePage().Attributes();
     _sgrStack.Push(currentAttributes, options);
-    return true;
 }
 
 // Method Description:
@@ -481,12 +472,9 @@ bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
 //   were saved, combines those with the current attributes.
 // Arguments:
 // - <none>
-// Return Value:
-// - True.
-bool AdaptDispatch::PopGraphicsRendition()
+void AdaptDispatch::PopGraphicsRendition()
 {
     const auto page = _pages.ActivePage();
     const auto& currentAttributes = page.Attributes();
-    page.SetAttributes(_sgrStack.Pop(currentAttributes), &_api);
-    return true;
+    page.SetAttributes(_sgrStack.Pop(currentAttributes));
 }

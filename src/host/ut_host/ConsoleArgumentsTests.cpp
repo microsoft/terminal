@@ -812,7 +812,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                    true); // successful parse?
 
     commandline = L"conhost.exe --width foo";
-    ArgTestsRunner(L"#6 look for an ivalid commandline passing a string",
+    ArgTestsRunner(L"#6 look for an invalid commandline passing a string",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
@@ -833,7 +833,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                    false); // successful parse?
 
     commandline = L"conhost.exe --width 2foo";
-    ArgTestsRunner(L"#7 look for an ivalid commandline passing a string with a number at the start",
+    ArgTestsRunner(L"#7 look for an invalid commandline passing a string with a number at the start",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
@@ -854,7 +854,7 @@ void ConsoleArgumentsTests::InitialSizeTests()
                    false); // successful parse?
 
     commandline = L"conhost.exe --width 65535";
-    ArgTestsRunner(L"#7 look for an ivalid commandline passing a value that's too big",
+    ArgTestsRunner(L"#7 look for an invalid commandline passing a value that's too big",
                    commandline,
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,

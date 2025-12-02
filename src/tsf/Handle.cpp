@@ -16,6 +16,16 @@ Handle Handle::Create()
     return handle;
 }
 
+void Handle::AvoidBuggyTSFConsoleFlags()
+{
+    Implementation::AvoidBuggyTSFConsoleFlags();
+}
+
+void Handle::SetDefaultScopeAlphanumericHalfWidth(bool enable)
+{
+    Implementation::SetDefaultScopeAlphanumericHalfWidth(enable);
+}
+
 Handle::~Handle()
 {
     if (_impl)

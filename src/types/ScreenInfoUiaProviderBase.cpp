@@ -43,29 +43,6 @@ try
 }
 CATCH_RETURN();
 
-[[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID eventId)
-{
-    auto hr = S_OK;
-    // check to see if we're already firing this particular event
-    if (_signalFiringMapping.find(eventId) != _signalFiringMapping.end() &&
-        _signalFiringMapping[eventId] == true)
-    {
-        return hr;
-    }
-
-    try
-    {
-        _signalFiringMapping[eventId] = true;
-    }
-    CATCH_RETURN();
-
-    IRawElementProviderSimple* pProvider = this;
-    hr = UiaRaiseAutomationEvent(pProvider, eventId);
-    _signalFiringMapping[eventId] = false;
-
-    return hr;
-}
-
 #pragma region IRawElementProviderSimple
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
@@ -208,10 +185,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_resul
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
+IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus() noexcept
 {
     UiaTracing::TextProvider::SetFocus(*this);
-    return Signal(UIA_AutomationFocusChangedEventId);
+    return S_OK;
 }
 
 #pragma endregion

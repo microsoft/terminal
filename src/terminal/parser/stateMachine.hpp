@@ -37,6 +37,24 @@ namespace Microsoft::Console::VirtualTerminal
     // the their indexes.
     static_assert(MAX_PARAMETER_COUNT * MAX_SUBPARAMETER_COUNT <= 256);
 
+    // When we encounter something like a RIS (hard reset), ConPTY must re-enable
+    // modes that it relies on (like the Win32 Input Mode). To do this, the VT
+    // parser tells it the positions of any such relevant VT sequences.
+    enum class InjectionType : size_t
+    {
+        RIS, // All of the below
+        DECSET_FOCUS, // CSI ? 1004 h
+        W32IM, // CSI ? 9001 h
+
+        Count,
+    };
+
+    struct Injection
+    {
+        InjectionType type;
+        size_t offset;
+    };
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -46,16 +64,15 @@ namespace Microsoft::Console::VirtualTerminal
 
     public:
         template<typename T>
-        StateMachine(std::unique_ptr<T> engine) :
+        StateMachine(std::unique_ptr<T> engine) noexcept :
             StateMachine(std::move(engine), std::is_same_v<T, class InputStateMachineEngine>)
         {
         }
-        StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput);
+        StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) noexcept;
 
         enum class Mode : size_t
         {
             AcceptC1,
-            AlwaysAcceptC1,
             Ansi,
         };
 
@@ -66,21 +83,15 @@ namespace Microsoft::Console::VirtualTerminal
         void ProcessString(const std::wstring_view string);
         bool IsProcessingLastCharacter() const noexcept;
 
+        void InjectSequence(InjectionType type);
+        const til::small_vector<Injection, 8>& GetInjections() const noexcept;
+
         void OnCsiComplete(const std::function<void()> callback);
-
         void ResetState() noexcept;
-
         bool FlushToTerminal();
 
         const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
-
-        class ShutdownException : public wil::ResultException
-        {
-        public:
-            ShutdownException() noexcept :
-                ResultException(E_ABORT) {}
-        };
 
     private:
         void _ActionExecute(const wchar_t wch);
@@ -99,14 +110,14 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionSs3Dispatch(const wchar_t wch);
         void _ActionDcsDispatch(const wchar_t wch);
 
-        void _ActionClear();
+        void _ActionClear() noexcept;
         void _ActionIgnore() noexcept;
         void _ActionInterrupt();
 
         void _EnterGround() noexcept;
-        void _EnterEscape();
+        void _EnterEscape() noexcept;
         void _EnterEscapeIntermediate() noexcept;
-        void _EnterCsiEntry();
+        void _EnterCsiEntry() noexcept;
         void _EnterCsiParam() noexcept;
         void _EnterCsiSubParam() noexcept;
         void _EnterCsiIgnore() noexcept;
@@ -114,10 +125,10 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterOscParam() noexcept;
         void _EnterOscString() noexcept;
         void _EnterOscTermination() noexcept;
-        void _EnterSs3Entry();
+        void _EnterSs3Entry() noexcept;
         void _EnterSs3Param() noexcept;
         void _EnterVt52Param() noexcept;
-        void _EnterDcsEntry();
+        void _EnterDcsEntry() noexcept;
         void _EnterDcsParam() noexcept;
         void _EnterDcsIgnore() noexcept;
         void _EnterDcsIntermediate() noexcept;
@@ -212,6 +223,7 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
+        til::small_vector<Injection, 8> _injections;
 
         // This is tracked per state machine instance so that separate calls to Process*
         //   can start and finish a sequence.

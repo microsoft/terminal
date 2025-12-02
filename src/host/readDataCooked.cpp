@@ -61,9 +61,6 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     THROW_IF_FAILED(_screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
 #endif
 
-    const auto cursorPos = _getViewportCursorPosition();
-    _originInViewport = cursorPos;
-
     if (!initialData.empty())
     {
         // The console API around `nInitialChars` in `CONSOLE_READCONSOLE_CONTROL` is pretty weird.
@@ -94,6 +91,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
         // It replicates part of the _redisplay() logic to layout the text at various
         // starting positions until it finds one that matches the current cursor position.
 
+        const auto cursorPos = _getViewportCursorPosition();
         const auto size = _screenInfo.GetVtPageArea().Dimensions();
 
         // Guess the initial cursor position based on the string length, assuming that 1 char = 1 column.
@@ -178,6 +176,11 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     }
 }
 
+const SCREEN_INFORMATION* COOKED_READ_DATA::GetScreenBuffer() const noexcept
+{
+    return &_screenInfo;
+}
+
 // Routine Description:
 // - This routine is called to complete a cooked read that blocked in ReadInputBuffer.
 // - The context of the read was saved in the CookedReadData structure.
@@ -186,7 +189,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // - It may be called more than once.
 // Arguments:
 // - TerminationReason - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
-//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise 0.
+//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise, 0.
 // - fIsUnicode - Whether to convert the final data to A (using Console Input CP) at the end or treat everything as Unicode (UCS-2)
 // - pReplyStatus - The status code to return to the client application that originally called the API (before it was queued to wait)
 // - pNumBytes - The number of bytes of data that the server/driver will need to transmit back to the client process
@@ -285,20 +288,31 @@ bool COOKED_READ_DATA::Read(const bool isUnicode, size_t& numBytes, ULONG& contr
 
 // Printing wide glyphs at the end of a row results in a forced line wrap and a padding whitespace to be inserted.
 // When the text buffer resizes these padding spaces may vanish and the _distanceCursor and _distanceEnd measurements become inaccurate.
-// To fix this, this function is called before a resize and will clear the input line. Afterwards, RedrawAfterResize() will restore it.
+// To fix this, this function is called before a resize and will clear the input line. Afterward, RedrawAfterResize() will restore it.
 void COOKED_READ_DATA::EraseBeforeResize()
 {
+    // If we've already erased the buffer, we don't need to do it again.
     if (_redrawPending)
+    {
+        return;
+    }
+
+    // If we don't have an origin, we've never had user input, and consequently there's nothing to erase.
+    if (!_originInViewport)
     {
         return;
     }
 
     _redrawPending = true;
 
-    std::wstring output;
-    _appendCUP(output, _originInViewport);
-    output.append(L"\x1b[J");
-    WriteCharsVT(_screenInfo, output);
+    // Position the cursor the start of the prompt before reflow.
+    // Then, after reflow, we'll be able to ask the buffer where it went (the new origin).
+    // This uses the buffer APIs directly, so that we don't emit unnecessary VT into ConPTY's output.
+    auto& textBuffer = _screenInfo.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto cursorPos = *_originInViewport;
+    _screenInfo.GetVtPageArea().ConvertFromOrigin(&cursorPos);
+    cursor.SetPosition(cursorPos);
 }
 
 // The counter-part to EraseBeforeResize().
@@ -312,7 +326,10 @@ void COOKED_READ_DATA::RedrawAfterResize()
     _redrawPending = false;
 
     // Get the new cursor position after the reflow, since it may have changed.
-    _originInViewport = _getViewportCursorPosition();
+    if (_originInViewport)
+    {
+        _originInViewport = _getViewportCursorPosition();
+    }
 
     // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
     // They have all been erased with the CSI J above.
@@ -321,6 +338,10 @@ void COOKED_READ_DATA::RedrawAfterResize()
     // Ensure that the entire buffer content is rewritten after the above CSI J.
     _bufferDirtyBeg = 0;
     _dirty = !_buffer.empty();
+
+    // Let _redisplay() know to inject a CSI J at the start of the output.
+    // This ensures we fully erase the previous contents, that are now in disarray.
+    _clearPending = true;
 
     _redisplay();
 }
@@ -340,7 +361,7 @@ bool COOKED_READ_DATA::PresentingPopup() const noexcept
     return !_popups.empty();
 }
 
-til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
+til::point_span COOKED_READ_DATA::GetBoundaries() noexcept
 {
     const auto viewport = _screenInfo.GetViewport();
     const auto virtualViewport = _screenInfo.GetVtPageArea();
@@ -349,7 +370,7 @@ til::point_span COOKED_READ_DATA::GetBoundaries() const noexcept
     const til::point max{ viewport.RightInclusive(), viewport.BottomInclusive() };
 
     // Convert from VT-viewport-relative coordinate space back to the console one.
-    auto beg = _originInViewport;
+    auto beg = _getOriginInViewport();
     virtualViewport.ConvertFromOrigin(&beg);
 
     // Since the pager may be longer than the viewport is tall, we need to clamp the coordinates to still remain within
@@ -823,6 +844,20 @@ til::point COOKED_READ_DATA::_getViewportCursorPosition() const noexcept
     return cursorPos;
 }
 
+// Some applications initiate a read on stdin and _then_ print the prompt prefix to stdout.
+// While that's not correct (because it's a race condition), we can make it significantly
+// less bad by delaying the calculation of the origin until we actually need it.
+// This turns it from a race between application and terminal into a race between
+// application and user, which is much less likely to hit.
+til::point COOKED_READ_DATA::_getOriginInViewport() noexcept
+{
+    if (!_originInViewport)
+    {
+        _originInViewport.emplace(_getViewportCursorPosition());
+    }
+    return *_originInViewport;
+}
+
 void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* input, size_t count)
 {
     const auto size = _buffer.size();
@@ -877,7 +912,8 @@ void COOKED_READ_DATA::_redisplay()
     }
 
     const auto size = _screenInfo.GetVtPageArea().Dimensions();
-    auto originInViewportFinal = _originInViewport;
+    auto originInViewport = _getOriginInViewport();
+    auto originInViewportFinal = originInViewport;
     til::point cursorPositionFinal;
     til::point pagerPromptEnd;
     std::vector<Line> lines;
@@ -886,7 +922,7 @@ void COOKED_READ_DATA::_redisplay()
     // and if MSVC says that then that must be true.
     for (;;)
     {
-        cursorPositionFinal = { _originInViewport.x, 0 };
+        cursorPositionFinal = { originInViewport.x, 0 };
 
         // Construct the first line manually so that it starts at the correct horizontal position.
         LayoutResult res{ .column = cursorPositionFinal.x };
@@ -1049,8 +1085,8 @@ void COOKED_READ_DATA::_redisplay()
         if (gsl::narrow_cast<til::CoordType>(lines.size()) > size.height && originInViewportFinal.x != 0)
         {
             lines.clear();
-            _originInViewport.x = 0;
             _bufferDirtyBeg = 0;
+            originInViewport.x = 0;
             originInViewportFinal = {};
             continue;
         }
@@ -1081,12 +1117,40 @@ void COOKED_READ_DATA::_redisplay()
 
     std::wstring output;
 
-    // Disable the cursor when opening a popup, reenable it when closing them.
+    if (_clearPending)
+    {
+        _clearPending = false;
+        _appendCUP(output, originInViewport);
+        output.append(L"\x1b[J");
+    }
+
+    // Backup the attributes (DECSC) and disable the cursor when opening a popup (DECTCEM).
+    // Restore the attributes (DECRC) reenable the cursor when closing them (DECTCEM).
     if (const auto popupOpened = !_popups.empty(); _popupOpened != popupOpened)
     {
-        wchar_t buf[] = L"\x1b[?25l";
-        buf[5] = popupOpened ? 'l' : 'h';
-        output.append(&buf[0], 6);
+        wchar_t buf[] =
+            // Back/restore cursor position & attributes (commonly supported)
+            L"\u001b7"
+            // Show/hide cursor (commonly supported)
+            "\u001b[?25l"
+            // The popup code uses XTPUSHSGR (CSI # {) / XTPOPSGR (CSI # }) to draw the popups in the popup-colors,
+            // while properly restoring the previous VT attributes. On terminals that support them, the following
+            // won't do anything. On other terminals however, it'll reset the attributes to default.
+            // This is important as the first thing the popup drawing code uses CSI K to erase the previous contents
+            // and CSI m to reset the attributes on terminals that don't support XTPUSHSGR/XTPOPSGR. In order for
+            // the first CSI K to behave as if there had a previous CSI m, we must emit an initial CSI m here.
+            // (rarely supported)
+            "\x1b[#{\x1b[m\x1b[#}";
+
+        buf[1] = popupOpened ? '7' : '8';
+        buf[7] = popupOpened ? 'l' : 'h';
+
+        // When the popup closes we skip the XTPUSHSGR/XTPOPSGR sequence. This is crucial because we
+        // use DECRC to restore the cursor position and attributes with a widely supported sequence.
+        // If we emitted that XTPUSHSGR/XTPOPSGR sequence it would reset the attributes again.
+        const size_t len = popupOpened ? 19 : 8;
+
+        output.append(buf, len);
         _popupOpened = popupOpened;
     }
 
@@ -1096,7 +1160,7 @@ void COOKED_READ_DATA::_redisplay()
     // The check for origin == {0,0} is important because it ensures that we "own" the entire viewport and
     // that scrolling our contents doesn't scroll away the user's output that may still be in the viewport.
     // (Anything below the origin is assumed to belong to us.)
-    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && _originInViewport == til::point{})
+    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && originInViewport == til::point{})
     {
         const auto deltaAbs = abs(delta);
         til::CoordType beg = 0;
@@ -1164,7 +1228,7 @@ void COOKED_READ_DATA::_redisplay()
 
         for (til::CoordType i = 0; i < pagerHeight; i++)
         {
-            const auto row = std::min(_originInViewport.y + i, size.height - 1);
+            const auto row = std::min(originInViewport.y + i, size.height - 1);
 
             // If the last write left the cursor at the end of a line, the next write will start at the beginning of the next line.
             // This avoids needless calls to _appendCUP. The reason it's here and not at the end of the loop is similar to how
@@ -1208,7 +1272,7 @@ void COOKED_READ_DATA::_redisplay()
 
         if (pagerHeight < pagerHeightPrevious)
         {
-            const auto row = std::min(_originInViewport.y + pagerHeight, size.height - 1);
+            const auto row = std::min(originInViewport.y + pagerHeight, size.height - 1);
             _appendCUP(output, { 0, row });
             output.append(L"\x1b[K");
 
@@ -1252,17 +1316,30 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
             output.append(text, 0, len);
             column += cols;
             it += len;
+
+            if (it != nextControlChar)
+            {
+                // The only reason that not all text could be fit into the line is if the last character was a wide glyph.
+                // In that case we want to return the columnLimit, to indicate that the row is full and a line wrap is required,
+                // BUT DON'T want to pad the line with a whitespace to actually fill the line to the columnLimit.
+                // This is because copying the prompt contents (Ctrl-A, Ctrl-C) should not copy any trailing padding whitespace.
+                //
+                // Thanks to this lie, the _redisplay() code will not use a CRLF sequence or similar to move to the next line,
+                // as it thinks that this row has naturally wrapped. This causes it to print the wide glyph on the preceding line
+                // which causes the terminal to insert the padding whitespace for us.
+                column = columnLimit;
+                break;
+            }
+
+            if (column >= columnLimit)
+            {
+                break;
+            }
         }
 
         const auto nextPlainChar = std::find_if(it, end, [](const auto& wch) { return wch >= L' '; });
         for (; it != nextPlainChar; ++it)
         {
-            if (column >= columnLimit)
-            {
-                column = columnLimit;
-                goto outerLoopExit;
-            }
-
             const auto wch = *it;
             wchar_t buf[8];
             til::CoordType len = 0;
@@ -1282,11 +1359,20 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
 
             if (column + len > columnLimit)
             {
+                // Unlike above with regular text we can't avoid padding the line with whitespace, because a string
+                // like "^A" is not a wide glyph, and so we cannot trick the terminal to insert the padding for us.
+                output.append(columnLimit - column, L' ');
+                column = columnLimit;
                 goto outerLoopExit;
             }
 
             output.append(buf, len);
             column += len;
+
+            if (column >= columnLimit)
+            {
+                goto outerLoopExit;
+            }
         }
     }
 
@@ -1535,10 +1621,10 @@ void COOKED_READ_DATA::_popupDrawPrompt(std::vector<Line>& lines, const til::Coo
     str.append(suffix);
 
     std::wstring line;
-    line.append(L"\x1b[K");
+    line.append(L"\x1b[#{\x1b[K");
     _appendPopupAttr(line);
     const auto res = _layoutLine(line, str, 0, 0, width);
-    line.append(L"\x1b[m");
+    line.append(L"\x1b[m\x1b[#}");
 
     lines.emplace_back(std::move(line), 0, 0, res.column);
 }
@@ -1594,7 +1680,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         const auto selected = index == cl.selected && !stackedCommandNumberPopup;
 
         std::wstring line;
-        line.append(L"\x1b[K");
+        line.append(L"\x1b[#{\x1b[K");
         _appendPopupAttr(line);
 
         wchar_t scrollbarChar = L' ';
@@ -1621,7 +1707,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
         }
         else
         {
-            line.append(L"\x1b[m ");
+            line.append(L"\x1b[m\x1b[#} ");
         }
 
         fmt::format_to(std::back_inserter(line), FMT_COMPILE(L"{:{}}: "), index, indexWidth);
@@ -1630,7 +1716,7 @@ void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til
 
         if (selected)
         {
-            line.append(L"\x1b[m");
+            line.append(L"\x1b[m\x1b[#}");
         }
 
         line.append(L"\r\n");

@@ -471,9 +471,9 @@ void AtlasEngine::_present()
         params.DirtyRectsCount = 1;
         params.pDirtyRects = &dirtyRect;
 
-        if (_p.scrollOffset)
+        if (_p.scrollDeltaY)
         {
-            const auto offsetInPx = _p.scrollOffset * _p.s->font->cellSize.y;
+            const auto offsetInPx = _p.scrollDeltaY * _p.s->font->cellSize.y;
             const auto width = _p.s->targetSize.x;
             // We don't use targetSize.y here, because "height" refers to the bottom coordinate of the last text row
             // in the buffer. We then add the "offsetInPx" (which is negative when scrolling text upwards) and thus

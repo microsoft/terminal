@@ -28,15 +28,14 @@ public:
     ~AppCommandlineArgs() = default;
 
     int ParseCommand(const Commandline& command);
-    int ParseArgs(winrt::array_view<const winrt::hstring>& args);
+    int ParseArgs(winrt::array_view<const winrt::hstring> args);
 
     static std::vector<Commandline> BuildCommands(const std::vector<const wchar_t*>& args);
-    static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
+    static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring> args);
 
     void ValidateStartupCommands();
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
-    bool IsHandoffListener() const noexcept;
-    const std::string& GetExitMessage();
+    const std::string& GetExitMessage() const noexcept;
     bool ShouldExitEarly() const noexcept;
 
     std::optional<uint32_t> GetPersistedLayoutIdx() const noexcept;
@@ -132,7 +131,6 @@ private:
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> _position{ std::nullopt };
     std::optional<til::size> _size{ std::nullopt };
-    bool _isHandoffListener{ false };
     std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };

@@ -97,7 +97,7 @@ public:                                                                     \
         {                                                                   \
             if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
             {                                                               \
-                return source;                                              \
+                return *source;                                             \
             }                                                               \
         }                                                                   \
                                                                             \
@@ -136,12 +136,12 @@ private:                                                                    \
         return std::nullopt;                                                \
     }                                                                       \
                                                                             \
-    projectedType _get##name##OverrideSourceImpl() const                    \
+    auto _get##name##OverrideSourceImpl()->decltype(get_strong())           \
     {                                                                       \
         /*we have a value*/                                                 \
         if (_##name)                                                        \
         {                                                                   \
-            return *this;                                                   \
+            return get_strong();                                            \
         }                                                                   \
                                                                             \
         /*user set value was not set*/                                      \
@@ -156,6 +156,29 @@ private:                                                                    \
                                                                             \
         /*no value was found*/                                              \
         return nullptr;                                                     \
+    }                                                                       \
+                                                                            \
+    auto _get##name##OverrideSourceAndValueImpl()                           \
+        ->std::pair<decltype(get_strong()), storageType>                    \
+    {                                                                       \
+        /*we have a value*/                                                 \
+        if (_##name)                                                        \
+        {                                                                   \
+            return { get_strong(), _##name };                               \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find one with a value*/                \
+        for (const auto& parent : _parents)                                 \
+        {                                                                   \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })    \
+            {                                                               \
+                return { source, source->_##name };                         \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return { nullptr, std::nullopt };                                   \
     }
 
 // Use INHERITABLE_SETTING and INHERITABLE_NULLABLE_SETTING to implement
@@ -183,6 +206,27 @@ public:                                                                      \
     void name(const type& value)                                             \
     {                                                                        \
         _##name = value;                                                     \
+    }
+
+#define INHERITABLE_SETTING_WITH_LOGGING(projectedType, type, name, jsonKey, ...) \
+    _BASE_INHERITABLE_SETTING(projectedType, std::optional<type>, name, ...)      \
+public:                                                                           \
+    /* Returns the resolved value for this setting */                             \
+    /* fallback: user set value --> inherited value --> system set value */       \
+    type name() const                                                             \
+    {                                                                             \
+        const auto val{ _get##name##Impl() };                                     \
+        return val ? *val : type{ __VA_ARGS__ };                                  \
+    }                                                                             \
+                                                                                  \
+    /* Overwrite the user set value */                                            \
+    void name(const type& value)                                                  \
+    {                                                                             \
+        if (!_##name.has_value() || _##name.value() != value)                     \
+        {                                                                         \
+            _logSettingSet(jsonKey);                                              \
+        }                                                                         \
+        _##name = value;                                                          \
     }
 
 // This macro is similar to the one above, but is reserved for optional settings

@@ -56,7 +56,11 @@ Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Pa
   <ReleaseNotes>
     Versión __VERSION_NUMBER__
 
-Para más información, consulte nuestra página de versiones de GitHub.
+- Página Extensiones completamente nueva que muestra lo que se ha instalado en tu terminal
+- La paleta de comandos ahora se muestra en tu idioma nativo, así como en inglés
+- Nuevas características de VT, como la representación sincronizada, nuevos esquemas de color, configuración para acciones rápidas del ratón, como el zoom, y más
+
+Consulta la página de versiones de GitHub para más información.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

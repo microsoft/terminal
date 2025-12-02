@@ -1,6 +1,7 @@
 name: "Bug report 🐛"
 description: Report errors or unexpected behavior
 labels: [Issue-Bug, Needs-Triage]
+type: Bug
 body:
 - type: markdown
   attributes:
@@ -12,7 +13,7 @@ body:
 - type: input
   attributes:
     label: Windows Terminal version
-    placeholder: "1.7.3651.0"
+    placeholder: "1.21.2701.0"
     description: |
       You can copy the version number from the About dialog. Open the About dialog by opening the menu with the "V" button (to the right of the "+" button that opens a new tab) and choosing About from the end of the list.
   validations:
@@ -21,7 +22,7 @@ body:
 - type: input
   attributes:
     label: Windows build number
-    placeholder: "10.0.19042.0"
+    placeholder: "10.0.22621.0"
     description: |
       Please run `ver` or `[Environment]::OSVersion`.
   validations:
@@ -32,9 +33,9 @@ body:
     label: Other Software
     description: If you're reporting a bug about our interaction with other software, what software? What versions?
     placeholder: |
-      vim 8.2 (inside WSL)
-      OpenSSH_for_Windows_8.1p1
-      My Cool Application v0.3 (include a code snippet if it would help!)
+      vim 9.1 (inside WSL)
+      OpenSSH_for_Windows_9.5p1
+      My Cool Application v0.4 (include a code snippet if it would help!)
   validations:
     required: false
 

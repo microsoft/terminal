@@ -219,16 +219,44 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // into the path TextBox, we properly update the checkbox and stored
                 // _lastBgImagePath. Without this, then we'll permanently hide the text
                 // box, prevent it from ever being changed again.
-                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible", L"CurrentBackgroundImagePath");
+            }
+            else if (viewModelProperty == L"BackgroundImageAlignment")
+            {
+                _NotifyChanges(L"BackgroundImageAlignmentCurrentValue");
+            }
+            else if (viewModelProperty == L"Foreground")
+            {
+                _NotifyChanges(L"ForegroundPreview");
+            }
+            else if (viewModelProperty == L"Background")
+            {
+                _NotifyChanges(L"BackgroundPreview");
+            }
+            else if (viewModelProperty == L"SelectionBackground")
+            {
+                _NotifyChanges(L"SelectionBackgroundPreview");
+            }
+            else if (viewModelProperty == L"CursorColor")
+            {
+                _NotifyChanges(L"CursorColorPreview");
+            }
+            else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
+            {
+                _NotifyChanges(L"CurrentColorScheme");
+            }
+            else if (viewModelProperty == L"CurrentColorScheme")
+            {
+                _NotifyChanges(L"ForegroundPreview", L"BackgroundPreview", L"SelectionBackgroundPreview", L"CursorColorPreview");
             }
         });
 
         // Cache the original BG image path. If the user clicks "Use desktop
         // wallpaper", then un-checks it, this is the string we'll restore to
         // them.
-        if (BackgroundImagePath() != L"desktopWallpaper")
+        if (BackgroundImagePath().Path() != L"desktopWallpaper")
         {
-            _lastBgImagePath = BackgroundImagePath();
+            _lastBgImagePath = BackgroundImagePath().Path();
         }
     }
 
@@ -573,11 +601,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    double AppearanceViewModel::LineHeight() const
+    double AppearanceViewModel::_parseCellSizeValue(const hstring& val) const
     {
-        const auto fontInfo = _appearance.SourceProfile().FontInfo();
-        const auto cellHeight = fontInfo.CellHeight();
-        const auto str = cellHeight.c_str();
+        const auto str = val.c_str();
 
         auto& errnoRef = errno; // Nonzero cost, pay it once.
         errnoRef = 0;
@@ -588,29 +614,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return str == end || errnoRef == ERANGE ? NAN : value;
     }
 
+    double AppearanceViewModel::LineHeight() const
+    {
+        const auto cellHeight = _appearance.SourceProfile().FontInfo().CellHeight();
+        return _parseCellSizeValue(cellHeight);
+    }
+
+    double AppearanceViewModel::CellWidth() const
+    {
+        const auto cellWidth = _appearance.SourceProfile().FontInfo().CellWidth();
+        return _parseCellSizeValue(cellWidth);
+    }
+
+#define CELL_SIZE_SETTER(modelName, viewModelName)                 \
+    std::wstring str;                                              \
+                                                                   \
+    if (value >= 0.1 && value <= 10.0)                             \
+    {                                                              \
+        str = fmt::format(FMT_COMPILE(L"{:.6g}"), value);          \
+    }                                                              \
+                                                                   \
+    const auto fontInfo = _appearance.SourceProfile().FontInfo();  \
+                                                                   \
+    if (fontInfo.modelName() != str)                               \
+    {                                                              \
+        if (str.empty())                                           \
+        {                                                          \
+            fontInfo.Clear##modelName();                           \
+        }                                                          \
+        else                                                       \
+        {                                                          \
+            fontInfo.modelName(str);                               \
+        }                                                          \
+        _NotifyChanges(L"Has" #viewModelName, L## #viewModelName); \
+    }
+
     void AppearanceViewModel::LineHeight(const double value)
     {
-        std::wstring str;
+        CELL_SIZE_SETTER(CellHeight, LineHeight);
+    }
 
-        if (value >= 0.1 && value <= 10.0)
-        {
-            str = fmt::format(FMT_STRING(L"{:.6g}"), value);
-        }
-
-        const auto fontInfo = _appearance.SourceProfile().FontInfo();
-
-        if (fontInfo.CellHeight() != str)
-        {
-            if (str.empty())
-            {
-                fontInfo.ClearCellHeight();
-            }
-            else
-            {
-                fontInfo.CellHeight(str);
-            }
-            _NotifyChanges(L"HasLineHeight", L"LineHeight");
-        }
+    void AppearanceViewModel::CellWidth(const double value)
+    {
+        CELL_SIZE_SETTER(CellWidth, CellWidth);
     }
 
     bool AppearanceViewModel::HasLineHeight() const
@@ -619,15 +665,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return fontInfo.HasCellHeight();
     }
 
+    bool AppearanceViewModel::HasCellWidth() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.HasCellWidth();
+    }
+
     void AppearanceViewModel::ClearLineHeight()
     {
         LineHeight(NAN);
+    }
+
+    void AppearanceViewModel::ClearCellWidth()
+    {
+        CellWidth(NAN);
     }
 
     Model::FontConfig AppearanceViewModel::LineHeightOverrideSource() const
     {
         const auto fontInfo = _appearance.SourceProfile().FontInfo();
         return fontInfo.CellHeightOverrideSource();
+    }
+
+    Model::FontConfig AppearanceViewModel::CellWidthOverrideSource() const
+    {
+        const auto fontInfo = _appearance.SourceProfile().FontInfo();
+        return fontInfo.CellWidthOverrideSource();
     }
 
     void AppearanceViewModel::SetFontWeightFromDouble(double fontWeight)
@@ -850,12 +913,65 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
     {
-        BackgroundImagePath(path);
+        _appearance.BackgroundImagePath(Model::MediaResourceHelper::FromString(path));
+        _NotifyChanges(L"BackgroundImagePath");
     }
 
-    bool AppearanceViewModel::UseDesktopBGImage()
+    hstring AppearanceViewModel::BackgroundImageAlignmentCurrentValue() const
     {
-        return BackgroundImagePath() == L"desktopWallpaper";
+        const auto alignment = BackgroundImageAlignment();
+        hstring alignmentResourceKey = L"Profile_BackgroundImageAlignment";
+        if (alignment == (ConvergedAlignment::Vertical_Center | ConvergedAlignment::Horizontal_Center))
+        {
+            alignmentResourceKey = alignmentResourceKey + L"Center";
+        }
+        else
+        {
+            // Append vertical alignment to the resource key
+            switch (alignment & static_cast<ConvergedAlignment>(0xF0))
+            {
+            case ConvergedAlignment::Vertical_Bottom:
+                alignmentResourceKey = alignmentResourceKey + L"Bottom";
+                break;
+            case ConvergedAlignment::Vertical_Top:
+                alignmentResourceKey = alignmentResourceKey + L"Top";
+                break;
+            }
+
+            // Append horizontal alignment to the resource key
+            switch (alignment & static_cast<ConvergedAlignment>(0x0F))
+            {
+            case ConvergedAlignment::Horizontal_Left:
+                alignmentResourceKey = alignmentResourceKey + L"Left";
+                break;
+            case ConvergedAlignment::Horizontal_Right:
+                alignmentResourceKey = alignmentResourceKey + L"Right";
+                break;
+            }
+        }
+        alignmentResourceKey = alignmentResourceKey + L"/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip";
+
+        // We can't use the RS_ macro here because the resource key is dynamic
+        return GetLibraryResourceString(alignmentResourceKey);
+    }
+
+    hstring AppearanceViewModel::CurrentBackgroundImagePath() const
+    {
+        const auto bgImagePath = BackgroundImagePath().Path();
+        if (bgImagePath.empty())
+        {
+            return RS_(L"Appearance_BackgroundImageNone");
+        }
+        else if (bgImagePath == L"desktopWallpaper")
+        {
+            return RS_(L"Profile_UseDesktopImage/Content");
+        }
+        return bgImagePath;
+    }
+
+    bool AppearanceViewModel::UseDesktopBGImage() const
+    {
+        return BackgroundImagePath().Path() == L"desktopWallpaper";
     }
 
     void AppearanceViewModel::UseDesktopBGImage(const bool useDesktop)
@@ -868,23 +984,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             //
             // Only stash this value if it's not the special "desktopWallpaper"
             // value.
-            if (BackgroundImagePath() != L"desktopWallpaper")
+            if (BackgroundImagePath().Path() != L"desktopWallpaper")
             {
-                _lastBgImagePath = BackgroundImagePath();
+                _lastBgImagePath = BackgroundImagePath().Path();
             }
-            BackgroundImagePath(L"desktopWallpaper");
+            SetBackgroundImagePath(L"desktopWallpaper");
         }
         else
         {
             // Restore the path we had previously cached. This might be the
             // empty string.
-            BackgroundImagePath(_lastBgImagePath);
+            SetBackgroundImagePath(_lastBgImagePath);
         }
     }
 
-    bool AppearanceViewModel::BackgroundImageSettingsVisible()
+    bool AppearanceViewModel::BackgroundImageSettingsVisible() const
     {
-        return BackgroundImagePath() != L"";
+        return !BackgroundImagePath().Path().empty();
     }
 
     void AppearanceViewModel::ClearColorScheme()
@@ -893,7 +1009,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"CurrentColorScheme");
     }
 
-    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme()
+    Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
     {
         const auto schemeName{ DarkColorSchemeName() };
         const auto allSchemes{ SchemesList() };
@@ -913,6 +1029,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         DarkColorSchemeName(val.Name());
         LightColorSchemeName(val.Name());
+    }
+
+    static inline Windows::UI::Color _getColorPreview(const IReference<Microsoft::Terminal::Core::Color>& modelVal, Windows::UI::Color deducedVal)
+    {
+        if (modelVal)
+        {
+            // user defined an override value
+            return Windows::UI::Color{
+                .A = 255,
+                .R = modelVal.Value().R,
+                .G = modelVal.Value().G,
+                .B = modelVal.Value().B
+            };
+        }
+        // set to null --> deduce value from color scheme
+        return deducedVal;
+    }
+
+    Windows::UI::Color AppearanceViewModel::ForegroundPreview() const
+    {
+        return _getColorPreview(_appearance.Foreground(), CurrentColorScheme().ForegroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::BackgroundPreview() const
+    {
+        return _getColorPreview(_appearance.Background(), CurrentColorScheme().BackgroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::SelectionBackgroundPreview() const
+    {
+        return _getColorPreview(_appearance.SelectionBackground(), CurrentColorScheme().SelectionBackgroundColor().Color());
+    }
+
+    Windows::UI::Color AppearanceViewModel::CursorColorPreview() const
+    {
+        return _getColorPreview(_appearance.CursorColor(), CurrentColorScheme().CursorColor().Color());
     }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
@@ -1017,22 +1169,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::FontFaceBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
     {
-        const auto appearance = Appearance();
-        const auto fontSpec = sender.as<AutoSuggestBox>().Text();
-
-        if (fontSpec.empty())
-        {
-            appearance.ClearFontFace();
-        }
-        else
-        {
-            appearance.FontFace(fontSpec);
-        }
+        _updateFontName(sender.as<AutoSuggestBox>().Text());
     }
 
-    void Appearances::FontFaceBox_SuggestionChosen(const AutoSuggestBox& sender, const AutoSuggestBoxSuggestionChosenEventArgs& args)
+    void Appearances::FontFaceBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
     {
-        const auto font = unbox_value<Editor::Font>(args.SelectedItem());
+        // When pressing Enter within the input line, this callback will be invoked with no suggestion.
+        const auto font = unbox_value_or<Editor::Font>(args.ChosenSuggestion(), nullptr);
+        if (!font)
+        {
+            return;
+        }
+
         const auto fontName = font.Name();
         auto fontSpec = sender.Text();
 
@@ -1049,6 +1197,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         sender.Text(fontSpec);
+
+        // Normally we'd just update the model property in LostFocus above, but because WinUI is the Ralph Wiggum
+        // among the UI frameworks, it raises the LostFocus event _before_ the QuerySubmitted event.
+        // So, when you press Save, the model will have the wrong font face string, because LostFocus was raised too early.
+        // Also, this causes the first tab in the application to be focused, so when you press Enter it'll switch tabs.
+        //
+        // You can't just assign focus back to the AutoSuggestBox, because the FocusState() within the GotFocus event handler
+        // contains random values. This prevents us from avoiding the IsSuggestionListOpen(true) in our GotFocus event handler.
+        // You can't just do IsSuggestionListOpen(false) either, because you can show the list with that property but not hide it.
+        // So, we update the model manually and assign focus to the parent container.
+        //
+        // BUT you can't just focus the parent container, because of a weird interaction with AutoSuggestBox where it'll refuse to lose
+        // focus if you picked a suggestion that matches the current fontSpec. So, we unfocus it first and then focus the parent container.
+        _updateFontName(fontSpec);
+        sender.Focus(FocusState::Unfocused);
+        FontFaceContainer().Focus(FocusState::Programmatic);
     }
 
     void Appearances::FontFaceBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
@@ -1069,6 +1233,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         filter = til::trim(filter, L' ');
         _updateFontNameFilter(filter);
+    }
+
+    void Appearances::_updateFontName(hstring fontSpec)
+    {
+        const auto appearance = Appearance();
+        if (fontSpec.empty())
+        {
+            appearance.ClearFontFace();
+        }
+        else
+        {
+            appearance.FontFace(std::move(fontSpec));
+        }
     }
 
     void Appearances::_updateFontNameFilter(std::wstring_view filter)
@@ -1240,7 +1417,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    fire_and_forget Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
+    safe_void_coroutine Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
 
@@ -1248,7 +1425,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
-            Appearance().BackgroundImagePath(file);
+            Appearance().SetBackgroundImagePath(file);
         }
     }
 
