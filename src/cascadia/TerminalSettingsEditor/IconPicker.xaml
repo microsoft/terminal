@@ -29,7 +29,7 @@
         </Grid.ColumnDefinitions>
 
         <!--  Icon Type  -->
-        <ComboBox x:Uid="Profile_IconType"
+        <ComboBox x:Uid="IconPicker_IconType"
                   Grid.Column="0"
                   ItemsSource="{x:Bind IconTypes}"
                   SelectedItem="{x:Bind CurrentIconType, Mode=TwoWay}">
@@ -41,7 +41,7 @@
         </ComboBox>
 
         <!--  Built-In Icon  -->
-        <AutoSuggestBox x:Uid="Profile_BuiltInIcon"
+        <AutoSuggestBox x:Uid="IconPicker_BuiltInIcon"
                         Grid.Column="1"
                         GotFocus="BuiltInIconPicker_GotFocus"
                         ItemsSource="{x:Bind FilteredBuiltInIconList, Mode=OneWay}"
@@ -70,7 +70,7 @@
         </AutoSuggestBox>
 
         <!--  Image (File) Icon  -->
-        <TextBox x:Uid="Profile_IconBox"
+        <TextBox x:Uid="IconPicker_ImagePathBox"
                  Grid.Column="1"
                  MaxWidth="Infinity"
                  HorizontalAlignment="Stretch"
@@ -79,7 +79,7 @@
                  Style="{StaticResource TextBoxSettingStyle}"
                  Text="{x:Bind CurrentIconPath, Mode=TwoWay}"
                  Visibility="{x:Bind UsingImageIcon, Mode=OneWay}" />
-        <Button x:Uid="Profile_IconBrowse"
+        <Button x:Uid="IconPicker_IconBrowse"
                 Grid.Column="2"
                 Margin="0"
                 VerticalAlignment="Top"
@@ -88,7 +88,7 @@
                 Visibility="{x:Bind UsingImageIcon, Mode=OneWay}" />
 
         <!--  Emoji Icon  -->
-        <TextBox x:Uid="Profile_IconEmojiBox"
+        <TextBox x:Uid="IconPicker_EmojiBox"
                  Grid.Column="1"
                  MaxWidth="Infinity"
                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"

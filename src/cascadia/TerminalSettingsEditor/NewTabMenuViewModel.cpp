@@ -23,6 +23,8 @@ using namespace winrt::Windows::UI::Xaml::Data;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view HideIconValue{ L"none" };
+
     static IObservableVector<Editor::NewTabMenuEntryViewModel> _ConvertToViewModelEntries(const IVector<Model::NewTabMenuEntry>& settingsModelEntries, const Model::CascadiaSettings& settings)
     {
         std::vector<Editor::NewTabMenuEntryViewModel> result{};
@@ -240,12 +242,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return {};
         }
-        const auto iconPath = _CurrentFolder.Icon();
-        if (iconPath.empty())
+        if (CurrentFolderUsingNoIcon())
         {
-            return RS_(L"Profile_IconTypeNone");
+            return RS_(L"IconPicker_IconTypeNone");
         }
-        return iconPath; // For display as a string
+        return _CurrentFolder.Icon(); // For display as a string
     }
 
     winrt::hstring NewTabMenuViewModel::CurrentFolderIconPath() const
@@ -257,9 +258,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _CurrentFolder.Icon();
     }
 
-    // TODO CARLOS: polish the experience by playing around with it
-    // - Current issue is that the default icon is "" which is treated differently from "none"
-    // - There's also some weirdness when switching between a file icon, anything else, then back (it's not saving the path)
     void NewTabMenuViewModel::CurrentFolderIconPath(const winrt::hstring& path)
     {
         if (_CurrentFolder && _CurrentFolder.Icon() != path)
@@ -271,8 +269,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool NewTabMenuViewModel::CurrentFolderUsingNoIcon() const noexcept
     {
-        static constexpr std::wstring_view HideIconValue{ L"none" };
-        return _CurrentFolder && _CurrentFolder.Icon() == HideIconValue;
+        if (!_CurrentFolder)
+        {
+            return false;
+        }
+        const auto icon { _CurrentFolder.Icon() };
+        return icon.empty() || icon == HideIconValue;
     }
 
     Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> NewTabMenuViewModel::CurrentView() const

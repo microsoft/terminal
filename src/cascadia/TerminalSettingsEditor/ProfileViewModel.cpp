@@ -22,6 +22,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static constexpr std::wstring_view HideIconValue{ L"none" };
     static Editor::Font fontObjectForDWriteFont(IDWriteFontFamily* family, const wchar_t* locale);
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
@@ -548,12 +549,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring ProfileViewModel::LocalizedIcon() const
     {
-        const auto iconPath = IconPath();
-        if (iconPath.empty())
+        if (UsingNoIcon())
         {
-            return RS_(L"Profile_IconTypeNone");
+            return RS_(L"IconPicker_IconTypeNone");
         }
-        return iconPath; // For display as a string
+        return IconPath(); // For display as a string
     }
 
     Windows::UI::Xaml::Controls::IconElement ProfileViewModel::IconPreview() const
@@ -567,8 +567,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ProfileViewModel::UsingNoIcon() const noexcept
     {
-        static constexpr std::wstring_view HideIconValue{ L"none" };
-        return IconPath() == HideIconValue;
+        const auto iconPath{ IconPath() };
+        return iconPath.empty() || iconPath == HideIconValue;
     }
 
     hstring ProfileViewModel::BellStylePreview() const

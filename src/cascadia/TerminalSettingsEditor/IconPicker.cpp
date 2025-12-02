@@ -57,10 +57,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // lazy load the icon types
             std::vector<Editor::EnumEntry> iconTypes;
             iconTypes.reserve(4);
-            iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeNone"), box_value(IconType::None)));
-            iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeFontIcon"), box_value(IconType::FontIcon)));
-            iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeEmoji"), box_value(IconType::Emoji)));
-            iconTypes.emplace_back(make<EnumEntry>(RS_(L"Profile_IconTypeImage"), box_value(IconType::Image)));
+            iconTypes.emplace_back(make<EnumEntry>(RS_(L"IconPicker_IconTypeNone"), box_value(IconType::None)));
+            iconTypes.emplace_back(make<EnumEntry>(RS_(L"IconPicker_IconTypeFontIcon"), box_value(IconType::FontIcon)));
+            iconTypes.emplace_back(make<EnumEntry>(RS_(L"IconPicker_IconTypeEmoji"), box_value(IconType::Emoji)));
+            iconTypes.emplace_back(make<EnumEntry>(RS_(L"IconPicker_IconTypeImage"), box_value(IconType::Image)));
             _IconTypes = winrt::single_threaded_observable_vector<Editor::EnumEntry>(std::move(iconTypes));
         }
         return _IconTypes;
@@ -285,17 +285,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void IconPicker::_DeduceCurrentIconType()
     {
-        const auto profileIcon = CurrentIconPath();
-        if (profileIcon == HideIconValue)
+        const auto icon = CurrentIconPath();
+        if (icon.empty() || icon == HideIconValue)
         {
             _currentIconType = IconTypes().GetAt(0);
         }
-        else if (profileIcon.size() == 1 && (L'\uE700' <= til::at(profileIcon, 0) && til::at(profileIcon, 0) <= L'\uF8B3'))
+        else if (icon.size() == 1 && (L'\uE700' <= til::at(icon, 0) && til::at(icon, 0) <= L'\uF8B3'))
         {
             _currentIconType = IconTypes().GetAt(1);
             _DeduceCurrentBuiltInIcon();
         }
-        else if (::Microsoft::Console::Utils::IsLikelyToBeEmojiOrSymbolIcon(profileIcon))
+        else if (::Microsoft::Console::Utils::IsLikelyToBeEmojiOrSymbolIcon(icon))
         {
             // We already did a range check for MDL2 Assets in the previous one,
             // so if we're out of that range but still short, assume we're an emoji
@@ -310,11 +310,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void IconPicker::_DeduceCurrentBuiltInIcon()
     {
-        const auto profileIcon = CurrentIconPath();
+        const auto icon = CurrentIconPath();
         for (uint32_t i = 0; i < BuiltInIcons().Size(); i++)
         {
             const auto& builtIn = BuiltInIcons().GetAt(i);
-            if (profileIcon == unbox_value<hstring>(builtIn.EnumValue()))
+            if (icon == unbox_value<hstring>(builtIn.EnumValue()))
             {
                 CurrentBuiltInIcon(builtIn);
                 return;
