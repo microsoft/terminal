@@ -5,7 +5,6 @@
 #include "ActionsViewModel.h"
 #include "ActionsViewModel.g.cpp"
 #include "KeyBindingViewModel.g.cpp"
-#include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
 using namespace winrt::Windows::Foundation;

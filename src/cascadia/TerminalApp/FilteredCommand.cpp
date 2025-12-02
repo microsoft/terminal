@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
-#include <LibraryResources.h>
 #include "fzf/fzf.h"
 
 #include "FilteredCommand.g.cpp"
