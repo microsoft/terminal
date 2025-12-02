@@ -1791,8 +1791,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH #19358: select the focused search result before clearing search
         if (const auto focusedSearchResult = _terminal->GetSearchHighlightFocused())
         {
-            _terminal->SetSelectionAnchor(focusedSearchResult->start);
-            _terminal->SetSelectionEnd(focusedSearchResult->end);
+            _terminal->SetSelectionAnchor(focusedSearchResult->start, /*isBufferPos*/ true);
+            _terminal->SetSelectionEnd(focusedSearchResult->end, /*newExpansionMode*/ std::nullopt, /*isBufferPos*/ true);
             _renderer->TriggerSelection();
         }
 

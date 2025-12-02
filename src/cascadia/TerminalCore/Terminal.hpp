@@ -294,8 +294,8 @@ public:
     };
 
     void MultiClickSelection(const til::point viewportPos, SelectionExpansion expansionMode);
-    void SetSelectionAnchor(const til::point position);
-    void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
+    void SetSelectionAnchor(const til::point position, bool isBufferPos = false);
+    void SetSelectionEnd(const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt, bool isBufferPos = false);
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods);
     void SelectAll();
@@ -478,7 +478,6 @@ private:
     void _MoveByWord(SelectionDirection direction, til::point& pos);
     void _MoveByViewport(SelectionDirection direction, til::point& pos) noexcept;
     void _MoveByBuffer(SelectionDirection direction, til::point& pos) noexcept;
-    void _SetSelectionEnd(SelectionInfo* selection, const til::point position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
 #pragma endregion
 
 #ifdef UNIT_TESTING
