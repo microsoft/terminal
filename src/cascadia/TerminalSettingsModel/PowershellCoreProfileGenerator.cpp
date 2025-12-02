@@ -15,7 +15,6 @@
 #include <winrt/Windows.Management.Deployment.h>
 #include <appmodel.h>
 #include <shlobj.h>
-#include <LibraryResources.h>
 
 static constexpr std::wstring_view POWERSHELL_PFN{ L"Microsoft.PowerShell_8wekyb3d8bbwe" };
 static constexpr std::wstring_view POWERSHELL_PREVIEW_PFN{ L"Microsoft.PowerShellPreview_8wekyb3d8bbwe" };
