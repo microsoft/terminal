@@ -12,6 +12,7 @@
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
+#include "TmuxControl.h"
 #include "Toast.h"
 
 #include "WindowsPackageManagerFactory.h"
@@ -256,6 +257,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
+        std::unique_ptr<TmuxControl> _tmuxControl{ nullptr };
 
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
@@ -580,6 +582,7 @@ namespace winrt::TerminalApp::implementation
 
         friend class TerminalAppLocalTests::TabTests;
         friend class TerminalAppLocalTests::SettingsTests;
+        friend class TmuxControl;
     };
 }
 

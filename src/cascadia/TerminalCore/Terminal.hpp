@@ -14,6 +14,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
+#include "../../terminal/adapter/ITermDispatch.hpp"
 
 #include <til/generational.h>
 #include <til/ticket_lock.h>
@@ -128,6 +129,7 @@ public:
     std::wstring CurrentCommand() const;
 
     void SerializeMainBuffer(HANDLE handle) const;
+    void SetTmuxControlHandlerProducer(Microsoft::Console::VirtualTerminal::ITermDispatch::StringHandlerProducer producer) const noexcept;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp

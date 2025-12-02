@@ -10,6 +10,9 @@
 #include <Utils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 
+#include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "App.h"
 #include "DebugTapConnection.h"
 #include "MarkdownPaneContent.h"
@@ -19,9 +22,7 @@
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "TerminalSettingsCache.h"
-#include "../../types/inc/ColorFix.hpp"
-#include "../../types/inc/utils.hpp"
-#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
+#include "TmuxControl.h"
 
 #include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -261,6 +262,11 @@ namespace winrt::TerminalApp::implementation
         }
 
         _hostingHwnd = hwnd;
+
+        if constexpr (Feature_TmuxControl::IsEnabled())
+        {
+            _tmuxControl = std::make_unique<TmuxControl>(*this);
+        }
         return S_OK;
     }
 
@@ -404,6 +410,15 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+                if constexpr (Feature_TmuxControl::IsEnabled())
+                {
+                    //Tmux control takes over
+                    if (page->_tmuxControl && page->_tmuxControl->TabIsTmuxControl(page->_GetFocusedTabImpl()))
+                    {
+                        return;
+                    }
+                }
 
                 page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
@@ -1430,6 +1445,15 @@ namespace winrt::TerminalApp::implementation
             }
             if (altPressed && !debugTap)
             {
+                // tmux control panes don't share tab with other panes
+                if constexpr (Feature_TmuxControl::IsEnabled())
+                {
+                    if (_tmuxControl && _tmuxControl->TabIsTmuxControl(_GetFocusedTabImpl()))
+                    {
+                        return;
+                    }
+                }
+
                 this->_SplitPane(_GetFocusedTabImpl(),
                                  SplitDirection::Automatic,
                                  0.5f,
@@ -2526,6 +2550,15 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
+        if constexpr (Feature_TmuxControl::IsEnabled())
+        {
+            //Tmux control tab doesn't support to drag
+            if (_tmuxControl && _tmuxControl->TabIsTmuxControl(tab))
+            {
+                return false;
+            }
+        }
+
         // If there was a windowId in the action, try to move it to the
         // specified window instead of moving it in our tab row.
         const auto windowId{ args.Window() };
@@ -3412,7 +3445,7 @@ namespace winrt::TerminalApp::implementation
         const auto tabViewItem = eventArgs.Tab();
         if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
         {
-            _HandleCloseTabRequested(tab);
+            winrt::get_self<Tab>(tab)->CloseRequested.raise(nullptr, nullptr);
         }
     }
 
@@ -3580,6 +3613,16 @@ namespace winrt::TerminalApp::implementation
             // Set the non-debug pane as active
             resultPane->ClearActive();
             original->SetActive();
+        }
+
+        if constexpr (Feature_TmuxControl::IsEnabled())
+        {
+            if (profile.AllowTmuxControl() && _tmuxControl)
+            {
+                control.SetTmuxControlHandlerProducer([this, control](auto print) {
+                    return _tmuxControl->TmuxControlHandlerProducer(control, print);
+                });
+            }
         }
 
         return resultPane;
@@ -5469,6 +5512,14 @@ namespace winrt::TerminalApp::implementation
         tabImpl.copy_from(winrt::get_self<Tab>(tabBase));
         if (tabImpl)
         {
+            if constexpr (Feature_TmuxControl::IsEnabled())
+            {
+                //Tmux control tab doesn't support to drag
+                if (_tmuxControl && _tmuxControl->TabIsTmuxControl(tabImpl))
+                {
+                    return;
+                }
+            }
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
             _stashed.draggedTab = tabImpl;

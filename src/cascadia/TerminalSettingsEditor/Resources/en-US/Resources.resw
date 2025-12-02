@@ -568,6 +568,10 @@
     <value>Always on top</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
   </data>
+  <data name="Profile_AllowTmuxControl.Header" xml:space="preserve">
+    <value>Allow Tmux Control</value>
+    <comment>Header for a control to toggle tmux control.</comment>
+  </data>
   <data name="Profile_ForceVTInput.Header" xml:space="preserve">
     <value>Use the legacy input encoding</value>
     <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>

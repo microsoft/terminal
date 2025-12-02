@@ -189,6 +189,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _parsedPadding = StringToXamlThickness(_profile.Padding());
         _defaultAppearanceViewModel.IsDefault(true);
+
+        if constexpr (Feature_TmuxControl::IsEnabled())
+        {
+            TmuxControlEnabled(true);
+        }
     }
 
     void ProfileViewModel::_UpdateBuiltInIcons()

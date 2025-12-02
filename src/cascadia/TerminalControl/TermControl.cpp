@@ -903,6 +903,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         RawWriteString(wstr);
     }
+    void TermControl::SendOutput(const winrt::hstring& wstr)
+    {
+        _core.SendOutput(wstr);
+    }
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
     {
         _core.ClearBuffer(clearType);
@@ -1423,6 +1427,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
         Initialized.raise(*this, nullptr);
+
+        if (_tmuxDCSHandlerProducer)
+        {
+            _core.SetTmuxControlHandlerProducer(_tmuxDCSHandlerProducer);
+        }
         return true;
     }
 
@@ -2668,6 +2677,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ViewHeight();
     }
 
+    int TermControl::ViewWidth() const
+    {
+        return _core.ViewWidth();
+    }
+
     int TermControl::BufferHeight() const
     {
         return _core.BufferHeight();
@@ -2867,7 +2881,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             // Do we ever get here (= uninitialized terminal)? If so: How?
-            assert(false);
+            // Yes, we can get here, when do Pane._Split, it need to call _SetupEntranceAnimation^M
+            // which need the control's size, while this size can only be available when the control^M
+            // is initialized.^M
             return { 10, 10 };
         }
     }
@@ -4079,5 +4095,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _core.ForceCursorVisible(cursorVisibility == CursorDisplayState::Shown);
         }
+    }
+    void TermControl::SetTmuxControlHandlerProducer(winrt::Microsoft::Terminal::Control::TmuxDCSHandlerProducer producer)
+    {
+        _tmuxDCSHandlerProducer = producer;
     }
 }

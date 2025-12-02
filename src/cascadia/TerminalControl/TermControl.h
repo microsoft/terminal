@@ -97,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         int ScrollOffset() const;
         int ViewHeight() const;
+        int ViewWidth() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -119,6 +120,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SelectOutput(const bool goUp);
 
         winrt::hstring CurrentWorkingDirectory() const;
+        void SetTmuxControlHandlerProducer(winrt::Microsoft::Terminal::Control::TmuxDCSHandlerProducer producer);
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -128,6 +130,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::Foundation::Size GetFontSize() const;
 
         void SendInput(const winrt::hstring& input);
+        void SendOutput(const winrt::hstring& input);
         void ClearBuffer(Control::ClearBufferType clearType);
 
         void ToggleShaderEffects();
@@ -254,6 +257,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IKeyBindings _keyBindings{ nullptr };
         TsfDataProvider _tsfDataProvider{ this };
         winrt::com_ptr<SearchBoxControl> _searchBox;
+        winrt::Microsoft::Terminal::Control::TmuxDCSHandlerProducer _tmuxDCSHandlerProducer{ nullptr };
 
         enum class AltNumpadEncoding
         {

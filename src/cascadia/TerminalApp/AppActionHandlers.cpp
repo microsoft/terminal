@@ -284,6 +284,15 @@ namespace winrt::TerminalApp::implementation
 
             const auto& activeTab{ _senderOrFocusedTab(sender) };
 
+            if constexpr (Feature_TmuxControl::IsEnabled())
+            {
+                //Tmux control takes over
+                if (_tmuxControl && _tmuxControl->TabIsTmuxControl(activeTab))
+                {
+                    return _tmuxControl->SplitPane(activeTab, realArgs.SplitDirection());
+                }
+            }
+
             _SplitPane(activeTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)

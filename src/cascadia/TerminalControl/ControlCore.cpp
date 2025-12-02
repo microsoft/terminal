@@ -495,6 +495,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::SendOutput(const std::wstring_view wstr)
+    {
+        if (wstr.empty())
+        {
+            return;
+        }
+
+        auto lock = _terminal->LockForWriting();
+        _terminal->Write(wstr);
+    }
+
     bool ControlCore::SendCharEvent(const wchar_t ch,
                                     const WORD scanCode,
                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers)
@@ -1555,6 +1566,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal->GetViewport().Height();
     }
 
+    // Function Description:
+    // - Gets the width of the terminal in lines of text. This is just the
+    //   width of the viewport.
+    // Return Value:
+    // - The width of the terminal in lines of text
+    int ControlCore::ViewWidth() const
+    {
+        const auto lock = _terminal->LockForReading();
+        return _terminal->GetViewport().Width();
+    }
     // Function Description:
     // - Gets the height of the terminal in lines of text. This includes the
     //   history AND the viewport.
@@ -2917,5 +2938,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::PreviewInput(std::wstring_view input)
     {
         _terminal->PreviewText(input);
+    }
+
+    void ControlCore::SetTmuxControlHandlerProducer(ITermDispatch::StringHandlerProducer producer)
+    {
+        _terminal->SetTmuxControlHandlerProducer(producer);
     }
 }
