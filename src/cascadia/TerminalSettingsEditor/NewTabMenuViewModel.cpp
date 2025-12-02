@@ -273,7 +273,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return false;
         }
-        const auto icon { _CurrentFolder.Icon() };
+        const auto icon{ _CurrentFolder.Icon() };
         return icon.empty() || icon == HideIconValue;
     }
 
