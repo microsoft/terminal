@@ -185,22 +185,26 @@ void Terminal::MultiClickSelection(const til::point viewportPos, SelectionExpans
 // Method Description:
 // - Record the position of the beginning of a selection
 // Arguments:
-// - pos: the (x,y) coordinate on the buffer
-// - isBufferPos: if true, treat the position as a buffer coordinate. Otherwise, viewport coordinate.
-void Terminal::SetSelectionAnchor(const til::point pos, bool isBufferPos)
+// - position: the (x,y) coordinate on the visible viewport
+void Terminal::SetSelectionAnchor(const til::point viewportPos)
 {
     _assertLocked();
 
     auto selection{ _selection.write() };
     wil::hide_name _selection;
 
-    selection->pivot = isBufferPos ? pos : _ConvertToBufferCell(pos, true);
+    selection->pivot = _ConvertToBufferCell(viewportPos, true);
     selection->active = true;
 
     _multiClickSelectionMode = SelectionExpansion::Char;
-    SetSelectionEnd(pos, std::nullopt, isBufferPos);
+    SetSelectionEnd(viewportPos);
 
     selection->start = selection->pivot;
+}
+
+void Terminal::SetSelectionEnd(const til::point viewportPos, std::optional<SelectionExpansion> newExpansionMode)
+{
+    _SetSelectionEnd(_selection.write(), viewportPos, newExpansionMode);
 }
 
 // Method Description:
@@ -209,12 +213,9 @@ void Terminal::SetSelectionAnchor(const til::point pos, bool isBufferPos)
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for Shift+Click
-// - isBufferPos: if true, treat the position as a buffer coordinate. Otherwise, viewport coordinate.
-void Terminal::SetSelectionEnd(const til::point pos, std::optional<SelectionExpansion> newExpansionMode, bool isBufferPos)
+void Terminal::_SetSelectionEnd(SelectionInfo* selection, const til::point viewportPos, std::optional<SelectionExpansion> newExpansionMode)
 {
-    auto selection{ _selection.write() };
     wil::hide_name _selection;
-
     if (!selection->active)
     {
         // capture a log for spurious endpoint sets without an active selection
@@ -222,7 +223,7 @@ void Terminal::SetSelectionEnd(const til::point pos, std::optional<SelectionExpa
         return;
     }
 
-    auto textBufferPos = isBufferPos ? pos : _ConvertToBufferCell(pos, true);
+    auto textBufferPos = _ConvertToBufferCell(viewportPos, true);
     if (newExpansionMode && *newExpansionMode == SelectionExpansion::Char && textBufferPos >= selection->pivot)
     {
         // Shift+Click forwards should highlight the clicked space
