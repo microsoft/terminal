@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <ThrottledFunc.h>
+
 #include "TerminalPage.g.h"
 #include "Tab.h"
 #include "AppKeyBindings.h"
@@ -27,8 +29,15 @@ namespace Microsoft::Terminal::Core
     class ControlKeyStates;
 }
 
+namespace winrt::Microsoft::Terminal::Settings
+{
+    struct TerminalSettingsCreateResult;
+}
+
 namespace winrt::TerminalApp::implementation
 {
+    struct TerminalSettingsCache;
+
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
     inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 
@@ -113,7 +122,8 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine RequestQuit();
         safe_void_coroutine CloseWindow();
-        void PersistState(bool serializeBuffer);
+        void PersistState();
+        std::vector<IPaneContent> Panes() const;
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -149,7 +159,7 @@ namespace winrt::TerminalApp::implementation
         safe_void_coroutine ProcessStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
                                                   const winrt::hstring cwd = winrt::hstring{},
                                                   const winrt::hstring env = winrt::hstring{});
-        void CreateTabFromConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
+        safe_void_coroutine CreateTabFromConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
 
         TerminalApp::WindowProperties WindowProperties() const noexcept { return _WindowProperties; };
 
@@ -169,7 +179,7 @@ namespace winrt::TerminalApp::implementation
         til::property_changed_event PropertyChanged;
 
         // -------------------------------- WinRT Events ---------------------------------
-        til::typed_event<IInspectable, winrt::hstring> TitleChanged;
+        til::typed_event<IInspectable, IInspectable> TitleChanged;
         til::typed_event<IInspectable, IInspectable> CloseWindowRequested;
         til::typed_event<IInspectable, winrt::Windows::UI::Xaml::UIElement> SetTitleBarContent;
         til::typed_event<IInspectable, IInspectable> FocusModeChanged;
@@ -273,7 +283,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
-        TerminalApp::TerminalSettingsCache _terminalSettingsCache{ nullptr };
+        std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
 
         struct StashedDragData
         {
@@ -309,7 +319,7 @@ namespace winrt::TerminalApp::implementation
 
         std::wstring _evaluatePathForCwd(std::wstring_view path);
 
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings, const bool inheritCursor);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Control::IControlSettings settings, const bool inheritCursor);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
@@ -359,8 +369,11 @@ namespace winrt::TerminalApp::implementation
         bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
         bool _MoveTab(winrt::com_ptr<Tab> tab, const Microsoft::Terminal::Settings::Model::MoveTabArgs args);
 
+        std::shared_ptr<ThrottledFunc<>> _adjustProcessPriorityThrottled;
+        void _adjustProcessPriority() const;
+
         template<typename F>
-        bool _ApplyToActiveControls(F f)
+        bool _ApplyToActiveControls(F f) const
         {
             if (const auto tab{ _GetFocusedTabImpl() })
             {
@@ -379,12 +392,12 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
-        winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
+        winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl() const;
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         std::optional<uint32_t> _GetTabIndex(const TerminalApp::Tab& tab) const noexcept;
         TerminalApp::Tab _GetFocusedTab() const noexcept;
         winrt::com_ptr<Tab> _GetFocusedTabImpl() const noexcept;
-        TerminalApp::Tab _GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept;
+        TerminalApp::Tab _GetTabByTabViewItem(const IInspectable& tabViewItem) const noexcept;
 
         void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
         safe_void_coroutine _SetFocusedTab(const winrt::TerminalApp::Tab tab);
@@ -413,10 +426,11 @@ namespace winrt::TerminalApp::implementation
         bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
-        bool _CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const Windows::Foundation::IReference<Microsoft::Terminal::Control::CopyFormat>& formats);
+        bool _CopyText(bool dismissSelection, bool singleLine, bool withControlSequences, Microsoft::Terminal::Control::CopyFormat formats);
 
         safe_void_coroutine _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
+        void _copyToClipboard(IInspectable, Microsoft::Terminal::Control::WriteToClipboardEventArgs args) const;
         void _PasteText();
 
         safe_void_coroutine _ControlNoticeRaisedHandler(const IInspectable sender, const Microsoft::Terminal::Control::NoticeEventArgs eventArgs);
@@ -427,13 +441,18 @@ namespace winrt::TerminalApp::implementation
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
         void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
 
-        bool _tabPointerMiddleButtonPressed{ false };
-        bool _tabPointerMiddleButtonExited{ false };
+        // BODGY: WinUI's TabView has a broken close event handler:
+        // If the close button is disabled, middle-clicking the tab raises no close
+        // event. Because that's dumb, we implement our own middle-click handling.
+        // `_tabItemMiddleClickHookEnabled` is true whenever the close button is hidden,
+        // and that enables all of the rest of this machinery (and this workaround).
+        bool _tabItemMiddleClickHookEnabled = false;
+        bool _tabItemMiddleClickExited = false;
+        PointerEntered_revoker _tabItemMiddleClickPointerEntered;
+        PointerExited_revoker _tabItemMiddleClickPointerExited;
+        PointerCaptureLost_revoker _tabItemMiddleClickPointerCaptureLost;
         void _OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
-        void _OnTabPointerReleased(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
-        safe_void_coroutine _OnTabPointerReleasedCloseTab(winrt::Microsoft::UI::Xaml::Controls::TabViewItem sender);
-        void _OnTabPointerEntered(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
-        void _OnTabPointerExited(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        safe_void_coroutine _OnTabPointerReleasedCloseTab(IInspectable sender);
 
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
@@ -448,7 +467,7 @@ namespace winrt::TerminalApp::implementation
 
         void _Find(const Tab& tab);
 
-        winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
+        winrt::Microsoft::Terminal::Control::TermControl _CreateNewControlAndContent(const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& settings,
                                                                                      const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
         winrt::Microsoft::Terminal::Control::TermControl _SetupControl(const winrt::Microsoft::Terminal::Control::TermControl& term);
         winrt::Microsoft::Terminal::Control::TermControl _AttachControlToContent(const uint64_t& contentGuid);
@@ -463,7 +482,7 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshUIForSettingsReload();
 
-        void _SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor);
+        void _SetNewTabButtonColor(til::color color, til::color accentColor);
         void _ClearNewTabButtonColor();
 
         safe_void_coroutine _CompleteInitialization();
@@ -503,7 +522,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
 
         bool _maybeElevate(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
-                           const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,
+                           const winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult& controlSettings,
                            const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
         void _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 

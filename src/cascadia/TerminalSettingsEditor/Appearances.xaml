@@ -68,6 +68,7 @@
         <StackPanel Style="{StaticResource PivotStackStyle}">
             <!--  Grouping: Text  -->
             <TextBlock x:Uid="Profile_TextHeader"
+                       Margin="0,0,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <!--  Color Scheme  -->
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
@@ -542,7 +543,7 @@
                              IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Appearance.UseDesktopBGImage), Mode=OneWay}"
                              IsSpellCheckEnabled="False"
                              Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind mtu:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
+                             Text="{x:Bind mtu:Converters.StringOrEmptyIfPlaceholder('desktopWallpaper', Appearance.BackgroundImagePath.Path), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                     <StackPanel Orientation="Horizontal">
                         <Button x:Uid="Profile_BackgroundImageBrowse"
                                 Margin="0,10,10,0"

@@ -85,7 +85,7 @@ namespace Microsoft::Console::VirtualTerminal
         const wchar_t* _ss3 = L"\x1BO";
 
         void _initKeyboardMap() noexcept;
-        DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key);
+        DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept;
         std::array<byte, 256> _getKeyboardState(const WORD virtualKeyCode, const DWORD controlKeyState) const;
         [[nodiscard]] static wchar_t _makeCtrlChar(const wchar_t ch);
         [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
@@ -111,7 +111,7 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] OutputType _GenerateUtf8Sequence(til::point position, unsigned int button, bool isHover, short modifierKeyState, short delta);
         [[nodiscard]] OutputType _GenerateSGRSequence(til::point position, unsigned int button, bool isRelease, bool isHover, short modifierKeyState, short delta);
 
-        [[nodiscard]] OutputType _makeAlternateScrollOutput(short delta) const;
+        [[nodiscard]] OutputType _makeAlternateScrollOutput(unsigned int button, short delta) const;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion

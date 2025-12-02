@@ -11,7 +11,6 @@
 #include "../../tsf/Handle.h"
 
 #include "ControlInteractivity.h"
-#include "ControlSettings.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -50,17 +49,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TermControl(IControlSettings settings, Control::IControlAppearance unfocusedAppearance, TerminalConnection::ITerminalConnection connection);
 
-        static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content, const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        static Control::TermControl NewControlByAttachingContent(Control::ControlInteractivity content);
 
         void UpdateControlSettings(Control::IControlSettings settings);
         void UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
 
+        void KeyBindings(const Control::IKeyBindings& bindings) { _keyBindings = bindings; }
+
         uint64_t ContentId() const;
 
-        hstring GetProfileName() const;
+        hstring GetStartingTitle() const;
 
-        bool CopySelectionToClipboard(bool dismissSelection, bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats);
+        bool CopySelectionToClipboard(bool dismissSelection, bool singleLine, bool withControlSequences, const CopyFormat formats);
         void PasteTextFromClipboard();
         void SelectAll();
         bool ToggleBlockSelection();
@@ -68,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
         void RestoreFromPath(winrt::hstring path);
-        void PersistToPath(const winrt::hstring& path) const;
+        void PersistTo(int64_t handle) const;
         void OpenCWD();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -147,7 +148,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
+        bool OnMouseWheel(const Windows::Foundation::Point location, const winrt::Microsoft::Terminal::Core::Point delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
         ~TermControl();
 
@@ -176,9 +177,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::CommandHistoryContext CommandHistory() const;
         void UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions);
 
-        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
-        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
-
         void AdjustOpacity(const float opacity, const bool relative);
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
@@ -197,6 +195,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Control::CursorDisplayState CursorVisibility() const noexcept;
         void CursorVisibility(Control::CursorDisplayState cursorVisibility);
+
+        void ApplyPreviewColorScheme(const Core::ICoreScheme& scheme) { _core.ApplyPreviewColorScheme(scheme); }
+        void ResetPreviewColorScheme() { _core.ResetPreviewColorScheme(); }
+        void SetOverrideColorScheme(const Core::ICoreScheme& scheme) { _core.SetOverrideColorScheme(scheme); }
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -227,8 +229,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(CloseTerminalRequested,   IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,       IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
-
-        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(WriteToClipboard,         IInspectable, Control::WriteToClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard,       IInspectable, Control::PasteFromClipboardEventArgs);
 
         // clang-format on
 
@@ -249,6 +251,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::TermControlAutomationPeer _automationPeer{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
         Control::ControlCore _core{ nullptr };
+        Control::IKeyBindings _keyBindings{ nullptr };
         TsfDataProvider _tsfDataProvider{ this };
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
@@ -284,7 +287,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _quickFixesAvailable{ false };
         til::CoordType _quickFixBufferPos{};
 
-        std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
+        std::shared_ptr<ThrottledFunc<>> _playWarningBell;
 
         struct ScrollBarUpdate
         {
@@ -294,7 +297,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double newViewportSize;
         };
 
-        std::shared_ptr<ThrottledFuncTrailing<ScrollBarUpdate>> _updateScrollBar;
+        std::shared_ptr<ThrottledFunc<ScrollBarUpdate>> _updateScrollBar;
 
         bool _isInternalScrollBarUpdate;
 
@@ -309,9 +312,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         SafeDispatcherTimer _bellLightTimer;
-
-        SafeDispatcherTimer _cursorTimer;
-        SafeDispatcherTimer _blinkTimer;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::hstring _restorePath;
@@ -340,7 +340,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return _closing;
         }
 
-        void _initializeForAttach(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void _initializeForAttach();
 
         void _UpdateSettingsFromUIThread();
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
@@ -384,8 +384,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         safe_void_coroutine _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
 
-        void _CursorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
-        void _BlinkTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
         void _BellLightOff(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
         void _SetEndSelectionPointAtCursor(const Windows::Foundation::Point& cursorPosition);
@@ -447,7 +445,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
-        bool _displayCursorWhileBlurred() const noexcept;
 
         struct Revokers
         {
@@ -463,6 +460,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::UpdateSelectionMarkers_revoker UpdateSelectionMarkers;
             Control::ControlCore::OpenHyperlink_revoker coreOpenHyperlink;
             Control::ControlCore::TitleChanged_revoker TitleChanged;
+            Control::ControlCore::WriteToClipboard_revoker WriteToClipboard;
             Control::ControlCore::TabColorChanged_revoker TabColorChanged;
             Control::ControlCore::TaskbarProgressChanged_revoker TaskbarProgressChanged;
             Control::ControlCore::ConnectionStateChanged_revoker ConnectionStateChanged;

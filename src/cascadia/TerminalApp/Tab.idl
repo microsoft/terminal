@@ -21,8 +21,8 @@ namespace TerminalApp
         UInt32 TabViewIndex;
         UInt32 TabViewNumTabs;
 
-        overridable void Focus(Windows.UI.Xaml.FocusState focusState);
-        overridable void Shutdown();
+        void Focus(Windows.UI.Xaml.FocusState focusState);
+        void Shutdown();
 
         void SetDispatch(ShortcutActionDispatch dispatch);
     }

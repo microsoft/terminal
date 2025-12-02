@@ -307,14 +307,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // fall back to title if profile name is empty
         if (auto control{ _termControl.get() })
         {
-            const auto profileName = control->GetProfileName();
-            if (profileName.empty())
+            const auto originalName = control->GetStartingTitle();
+            if (originalName.empty())
             {
                 return control->Title();
             }
             else
             {
-                return profileName;
+                return originalName;
             }
         }
 

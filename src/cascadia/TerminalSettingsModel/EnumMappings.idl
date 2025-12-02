@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.MatchMode> MatchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.GraphicsAPI> GraphicsAPI { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.TextMeasurement> TextMeasurement { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.WarnAboutMultiLinePaste> WarnAboutMultiLinePaste { get; };
 
         // Profile Settings
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
@@ -31,5 +32,21 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.IntenseStyle> IntenseTextStyle { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.PathTranslationStyle> PathTranslationStyle { get; };
+
+        // Actions
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.ResizeDirection> ResizeDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FocusDirection> FocusDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SplitDirection> SplitDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SplitType> SplitType { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SettingsTarget> SettingsTarget { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.MoveTabDirection> MoveTabDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.ScrollToMarkDirection> ScrollToMarkDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CommandPaletteLaunchMode> CommandPaletteLaunchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SuggestionsSource> SuggestionsSource { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FindMatchDirection> FindMatchDirection { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.DesktopBehavior> DesktopBehavior { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.MonitorBehavior> MonitorBehavior { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.ClearBufferType> ClearBufferType { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.SelectOutputDirection> SelectOutputDirection { get; };
     }
 }

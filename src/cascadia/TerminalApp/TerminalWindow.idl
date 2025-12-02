@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IPaneContent.idl";
 import "TerminalPage.idl";
 import "ShortcutActionDispatch.idl";
 
@@ -59,9 +60,10 @@ namespace TerminalApp
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
-        void PersistState(Boolean serializeBuffer);
+        void PersistState();
 
         Windows.UI.Xaml.UIElement GetRoot();
+        IVector<IPaneContent> Panes { get; };
 
         String Title { get; };
         Boolean FocusMode { get; };
@@ -112,7 +114,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> Initialized;
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Theme> RequestedThemeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;

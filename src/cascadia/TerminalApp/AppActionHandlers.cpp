@@ -8,6 +8,7 @@
 #include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -548,7 +549,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), realArgs.CopyFormatting());
+            const auto copyFormatting = realArgs.CopyFormatting();
+            const auto format = copyFormatting ? copyFormatting.Value() : _settings.GlobalSettings().CopyFormatting();
+            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), format);
             args.Handled(handled);
         }
     }
@@ -666,8 +669,10 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
+                auto temporarySettings{ winrt::make_self<Settings::TerminalSettings>() };
+                temporarySettings->ApplyColorScheme(scheme);
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    control.ColorScheme(scheme.ToCoreScheme());
+                    control.SetOverrideColorScheme(temporarySettings.try_as<winrt::Microsoft::Terminal::Core::ICoreScheme>());
                 });
                 args.Handled(res);
             }

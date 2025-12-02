@@ -679,11 +679,9 @@ void InputEngineTest::CursorPositioningTest()
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
-    VERIFY_IS_NOT_NULL(dispatch.get());
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), true);
-    VERIFY_IS_NOT_NULL(inputEngine.get());
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    inputEngine->CaptureNextCursorPositionReport();
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
-    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(NoThrowString().Format(
@@ -1194,8 +1192,10 @@ void InputEngineTest::SGRMouseTest_Scroll()
     // NOTE: scrolling events do NOT send a mouse up event
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
         //  TEST INPUT                                                                             EXPECTED OUTPUT
-        {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED } },
-        {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED } },
+        {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED  } },
+        {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED  } },
+        {   { CsiMouseButtonCodes::ScrollLeft,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_HWHEELED } },
+        {   { CsiMouseButtonCodes::ScrollRight,   0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_HWHEELED } },
     };
     // clang-format on
     VerifySGRMouseData(testData);

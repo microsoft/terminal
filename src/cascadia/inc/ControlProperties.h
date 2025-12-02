@@ -55,12 +55,11 @@
     X(bool, RepositionCursorWithMouse, false)                                                                     \
     X(bool, RainbowSuggestions)                                                                                   \
     X(bool, AllowVtChecksumReport)                                                                                \
-    X(bool, AllowVtClipboardWrite)
+    X(bool, AllowVtClipboardWrite, true)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
 #define CONTROL_SETTINGS(X)                                                                                                                              \
-    X(winrt::hstring, ProfileName)                                                                                                                       \
     X(winrt::guid, SessionId)                                                                                                                            \
     X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
@@ -73,7 +72,6 @@
     X(bool, EnableColorGlyphs, true)                                                                                                                     \
     X(winrt::hstring, CellWidth)                                                                                                                         \
     X(winrt::hstring, CellHeight)                                                                                                                        \
-    X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
     X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \

@@ -45,6 +45,7 @@
     <ClCompile Include="VsSetupConfiguration.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="TestHooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -108,7 +109,6 @@
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="EnumMappings.idl" />
-    <Midl Include="TerminalSettings.idl" />
     <Midl Include="AppearanceConfig.idl" />
     <Midl Include="IAppearanceConfig.idl" />
     <Midl Include="FontConfig.idl" />

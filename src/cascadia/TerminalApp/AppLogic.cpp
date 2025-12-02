@@ -134,12 +134,19 @@ namespace winrt::TerminalApp::implementation
         _isElevated = ::Microsoft::Console::Utils::IsRunningElevated();
         _canDragDrop = ::Microsoft::Console::Utils::CanUwpDragDrop();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
-            if (auto self{ weakSelf.get() })
-            {
-                self->ReloadSettings();
-            }
-        });
+        _reloadSettings = std::make_shared<ThrottledFunc<>>(
+            DispatcherQueue::GetForCurrentThread(),
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [weakSelf = get_weak()]() {
+                if (auto self{ weakSelf.get() })
+                {
+                    self->ReloadSettings();
+                }
+            });
 
         _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
             _reloadSettings->Run();

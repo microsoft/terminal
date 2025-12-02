@@ -51,6 +51,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
 
         Command();
+        static Model::Command NewUserCommand();
+        static Model::Command CopyAsUserCommand(const Model::Command& originalCmd);
         com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
@@ -80,11 +82,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring LanguageNeutralName() const noexcept;
 
         hstring ID() const noexcept;
+        void ID(const hstring& ID) noexcept;
         void GenerateID();
         bool IDWasGenerated();
 
-        hstring IconPath() const noexcept;
-        void IconPath(const hstring& val);
+        IMediaResource Icon() const noexcept;
+        void Icon(const IMediaResource& val);
+
+        void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver);
 
         static Windows::Foundation::Collections::IVector<Model::Command> ParsePowerShellMenuComplete(winrt::hstring json, int32_t replaceLength);
         static Windows::Foundation::Collections::IVector<Model::Command> HistoryToCommands(Windows::Foundation::Collections::IVector<winrt::hstring> history,
@@ -92,8 +97,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                                            bool directories,
                                                                                            hstring iconPath);
 
+        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs, Model::ActionAndArgs{});
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
-        WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
         WINRT_PROPERTY(OriginTag, Origin);
         WINRT_PROPERTY(winrt::hstring, Description, L"");
 
@@ -103,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<CommandNameOrResource> _name;
         std::wstring _ID;
         bool _IDWasGenerated{ false };
-        std::optional<std::wstring> _iconPath;
+        std::optional<IMediaResource> _icon;
         bool _nestedCommand{ false };
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,

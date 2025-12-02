@@ -54,6 +54,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _Profile.FocusDeleteButton(false);
             }
         });
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue("profile", "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
+            TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to. Set to {3ad42e7b-e073-5f3e-ac57-1c259ffa86a8} if the profiles.defaults object is being modified."),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void Profiles_Base::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
@@ -78,6 +89,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "DeleteProfile",
+            TraceLoggingDescription("Event emitted when the user deletes a profile"),
+            TraceLoggingValue(to_hstring(_Profile.Guid()).c_str(), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingValue(false, "Orphaned", "Tracks if the profile is orphaned"),
+            TraceLoggingValue(_Profile.Hidden(), "Hidden", "Tracks if the profile is hidden"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         winrt::get_self<ProfileViewModel>(_Profile)->DeleteProfile();
     }
 
@@ -119,7 +141,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
-            _Profile.Icon(file);
+            _Profile.IconPath(file);
         }
     }
 
@@ -148,8 +170,76 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    Windows::UI::Xaml::Controls::IconSource Profiles_Base::BuiltInIconConverter(const IInspectable& iconVal)
+    IconSource Profiles_Base::BuiltInIconConverter(const IInspectable& iconVal)
     {
         return Microsoft::Terminal::UI::IconPathConverter::IconSourceWUX(unbox_value<hstring>(iconVal));
+    }
+
+    void Profiles_Base::BuiltInIconPicker_GotFocus(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    {
+        _updateIconFilter({});
+        sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
+    }
+
+    void Profiles_Base::BuiltInIconPicker_QuerySubmitted(const AutoSuggestBox& /*sender*/, const AutoSuggestBoxQuerySubmittedEventArgs& e)
+    {
+        const auto iconEntry = unbox_value_or<EnumEntry>(e.ChosenSuggestion(), nullptr);
+        if (!iconEntry)
+        {
+            return;
+        }
+        _Profile.CurrentBuiltInIcon(iconEntry);
+    }
+
+    void Profiles_Base::BuiltInIconPicker_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& e)
+    {
+        if (e.Reason() != AutoSuggestionBoxTextChangeReason::UserInput)
+        {
+            return;
+        }
+        std::wstring_view filter{ sender.Text() };
+        filter = til::trim(filter, L' ');
+        _updateIconFilter(filter);
+    }
+
+    void Profiles_Base::_updateIconFilter(std::wstring_view filter)
+    {
+        if (_iconFilter != filter)
+        {
+            _filteredBuiltInIcons = nullptr;
+            _iconFilter = filter;
+            _updateFilteredIconList();
+            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"FilteredBuiltInIconList" });
+        }
+    }
+
+    Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> Profiles_Base::FilteredBuiltInIconList()
+    {
+        if (!_filteredBuiltInIcons)
+        {
+            _updateFilteredIconList();
+        }
+        return _filteredBuiltInIcons;
+    }
+
+    void Profiles_Base::_updateFilteredIconList()
+    {
+        _filteredBuiltInIcons = ProfileViewModel::BuiltInIcons();
+        if (_iconFilter.empty())
+        {
+            return;
+        }
+
+        // Find matching icons and populate the filtered list
+        std::vector<Editor::EnumEntry> filtered;
+        filtered.reserve(_filteredBuiltInIcons.Size());
+        for (const auto& icon : _filteredBuiltInIcons)
+        {
+            if (til::contains_linguistic_insensitive(icon.EnumName(), _iconFilter))
+            {
+                filtered.emplace_back(icon);
+            }
+        }
+        _filteredBuiltInIcons = winrt::single_threaded_observable_vector(std::move(filtered));
     }
 }

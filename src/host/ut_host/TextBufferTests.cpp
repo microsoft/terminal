@@ -363,30 +363,18 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_NOT_NULL(testTextBuffer.get());
 
     // set initial mapping values
-    testTextBuffer->GetCursor().SetHasMoved(false);
-    otherTbi.GetCursor().SetHasMoved(true);
-
     testTextBuffer->GetCursor().SetIsVisible(false);
     otherTbi.GetCursor().SetIsVisible(true);
 
-    testTextBuffer->GetCursor().SetIsOn(false);
-    otherTbi.GetCursor().SetIsOn(true);
-
     testTextBuffer->GetCursor().SetIsDouble(false);
     otherTbi.GetCursor().SetIsDouble(true);
-
-    testTextBuffer->GetCursor().SetDelay(false);
-    otherTbi.GetCursor().SetDelay(true);
 
     // run copy
     testTextBuffer->CopyProperties(otherTbi);
 
     // test that new now contains values from other
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor().HasMoved());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsVisible());
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsDouble());
-    VERIFY_IS_TRUE(testTextBuffer->GetCursor().GetDelay());
 }
 
 void TextBufferTests::TestLastNonSpace(const til::CoordType cursorPosY)

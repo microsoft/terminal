@@ -5,24 +5,27 @@
 #include "pch.h"
 #include "TerminalPage.h"
 
-#include <TerminalCore/ControlKeyStates.hpp>
+#include <TerminalThemeHelpers.h>
 #include <Utils.h>
+#include <TerminalCore/ControlKeyStates.hpp>
 
-#include "../../types/inc/utils.hpp"
 #include "App.h"
-#include "ColorHelper.h"
 #include "DebugTapConnection.h"
-#include "SettingsPaneContent.h"
-#include "ScratchpadContent.h"
-#include "SnippetsPaneContent.h"
 #include "MarkdownPaneContent.h"
-#include "TabRowControl.h"
 #include "Remoting.h"
+#include "ScratchpadContent.h"
+#include "SettingsPaneContent.h"
+#include "SnippetsPaneContent.h"
+#include "TabRowControl.h"
+#include "TerminalSettingsCache.h"
+#include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
-#include "TerminalPage.g.cpp"
+#include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
-#include "LaunchPositionRequest.g.cpp"
+#include "TerminalPage.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Microsoft::Management::Deployment;
@@ -54,6 +57,160 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
     using VirtualKeyModifiers = Windows::System::VirtualKeyModifiers;
 }
+
+namespace clipboard
+{
+    static SRWLOCK lock = SRWLOCK_INIT;
+
+    struct ClipboardHandle
+    {
+        explicit ClipboardHandle(bool open) :
+            _open{ open }
+        {
+        }
+
+        ~ClipboardHandle()
+        {
+            if (_open)
+            {
+                ReleaseSRWLockExclusive(&lock);
+                CloseClipboard();
+            }
+        }
+
+        explicit operator bool() const noexcept
+        {
+            return _open;
+        }
+
+    private:
+        bool _open = false;
+    };
+
+    ClipboardHandle open(HWND hwnd)
+    {
+        // Turns out, OpenClipboard/CloseClipboard are not thread-safe whatsoever,
+        // and on CloseClipboard, the GetClipboardData handle may get freed.
+        // The problem is that WinUI also uses OpenClipboard (through WinRT which uses OLE),
+        // and so even with this mutex we can still crash randomly if you copy something via WinUI.
+        // Makes you wonder how many Windows apps are subtly broken, huh.
+        AcquireSRWLockExclusive(&lock);
+
+        bool success = false;
+
+        // OpenClipboard may fail to acquire the internal lock --> retry.
+        for (DWORD sleep = 10;; sleep *= 2)
+        {
+            if (OpenClipboard(hwnd))
+            {
+                success = true;
+                break;
+            }
+            // 10 iterations
+            if (sleep > 10000)
+            {
+                break;
+            }
+            Sleep(sleep);
+        }
+
+        if (!success)
+        {
+            ReleaseSRWLockExclusive(&lock);
+        }
+
+        return ClipboardHandle{ success };
+    }
+
+    void write(wil::zwstring_view text, std::string_view html, std::string_view rtf)
+    {
+        static const auto regular = [](const UINT format, const void* src, const size_t bytes) {
+            wil::unique_hglobal handle{ THROW_LAST_ERROR_IF_NULL(GlobalAlloc(GMEM_MOVEABLE, bytes)) };
+
+            const auto locked = GlobalLock(handle.get());
+            memcpy(locked, src, bytes);
+            GlobalUnlock(handle.get());
+
+            THROW_LAST_ERROR_IF_NULL(SetClipboardData(format, handle.get()));
+            handle.release();
+        };
+        static const auto registered = [](const wchar_t* format, const void* src, size_t bytes) {
+            const auto id = RegisterClipboardFormatW(format);
+            if (!id)
+            {
+                LOG_LAST_ERROR();
+                return;
+            }
+            regular(id, src, bytes);
+        };
+
+        EmptyClipboard();
+
+        if (!text.empty())
+        {
+            // As per: https://learn.microsoft.com/en-us/windows/win32/dataxchg/standard-clipboard-formats
+            //   CF_UNICODETEXT: [...] A null character signals the end of the data.
+            // --> We add +1 to the length. This works because .c_str() is null-terminated.
+            regular(CF_UNICODETEXT, text.c_str(), (text.size() + 1) * sizeof(wchar_t));
+        }
+
+        if (!html.empty())
+        {
+            registered(L"HTML Format", html.data(), html.size());
+        }
+
+        if (!rtf.empty())
+        {
+            registered(L"Rich Text Format", rtf.data(), rtf.size());
+        }
+    }
+
+    winrt::hstring read()
+    {
+        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
+        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto str = static_cast<const wchar_t*>(lock.get());
+            if (!str)
+            {
+                return {};
+            }
+
+            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
+            const auto len = wcsnlen(str, maxLen);
+            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
+        }
+
+        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
+        if (const auto handle = GetClipboardData(CF_HDROP))
+        {
+            const wil::unique_hglobal_locked lock{ handle };
+            const auto drop = static_cast<HDROP>(lock.get());
+            if (!drop)
+            {
+                return {};
+            }
+
+            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
+            if (cap == 0)
+            {
+                return {};
+            }
+
+            auto buffer = winrt::impl::hstring_builder{ cap };
+            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
+            if (len == 0)
+            {
+                return {};
+            }
+
+            return buffer.to_hstring();
+        }
+
+        return {};
+    }
+} // namespace clipboard
 
 namespace winrt::TerminalApp::implementation
 {
@@ -101,6 +258,7 @@ namespace winrt::TerminalApp::implementation
                 // before restoring previous tabs in that scenario.
             }
         }
+
         _hostingHwnd = hwnd;
         return S_OK;
     }
@@ -112,7 +270,7 @@ namespace winrt::TerminalApp::implementation
         if (_settings == nullptr)
         {
             // Create this only on the first time we load the settings.
-            _terminalSettingsCache = TerminalApp::TerminalSettingsCache{ settings, *_bindings };
+            _terminalSettingsCache = std::make_shared<TerminalSettingsCache>(settings);
         }
         _settings = settings;
 
@@ -215,6 +373,8 @@ namespace winrt::TerminalApp::implementation
         {
             const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
 
+            _tabItemMiddleClickHookEnabled = visibility == Settings::Model::TabCloseButtonVisibility::Never;
+
             switch (visibility)
             {
             case Settings::Model::TabCloseButtonVisibility::Never:
@@ -281,6 +441,17 @@ namespace winrt::TerminalApp::implementation
         // them.
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
+
+        _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
+            DispatcherQueue::GetForCurrentThread(),
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 100 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [=]() {
+                _adjustProcessPriority();
+            });
     }
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TerminalPage::OnCreateAutomationPeer()
@@ -544,22 +715,32 @@ namespace winrt::TerminalApp::implementation
             _WindowProperties.VirtualEnvVars(env);
         }
 
+        // The current TerminalWindow & TerminalPage architecture is rather instable
+        // and fails to start up if the first tab isn't created synchronously.
+        //
+        // While that's a fair assumption in on itself, simultaneously WinUI will
+        // not assign tab contents a size if they're not shown at least once,
+        // which we need however in order to initialize ControlCore with a size.
+        //
+        // So, we do two things here:
+        // * DO NOT suspend if this is the first tab.
+        // * DO suspend between the creation of panes (or tabs) in order to allow
+        //   WinUI to layout the new controls and for ControlCore to get a size.
+        //
+        // This same logic is also applied to CreateTabFromConnection.
+        //
+        // See GH#13136.
+        auto suspend = _tabs.Size() > 0;
+
         for (size_t i = 0; i < actions.size(); ++i)
         {
-            if (i != 0)
+            if (suspend)
             {
-                // Each action may rely on the XAML layout of a preceding action.
-                // Most importantly, this is the case for the combination of NewTab + SplitPane,
-                // as the former appears to only have a layout size after at least 1 resume_foreground,
-                // while the latter relies on that information. This is also why it uses Low priority.
-                //
-                // Curiously, this does not seem to be required when using startupActions, but only when
-                // tearing out a tab (this currently creates a new window with injected startup actions).
-                // This indicates that this is really more of an architectural issue and not a fundamental one.
                 co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
             }
 
             _actionDispatch->DoAction(actions[i]);
+            suspend = true;
         }
 
         // GH#6586: now that we're done processing all startup commands,
@@ -574,8 +755,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::CreateTabFromConnection(ITerminalConnection connection)
+    safe_void_coroutine TerminalPage::CreateTabFromConnection(ITerminalConnection connection)
     {
+        const auto strong = get_strong();
+
+        // This is the exact same logic as in ProcessStartupActions.
+        if (_tabs.Size() > 0)
+        {
+            co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
+        }
+
         NewTerminalArgs newTerminalArgs;
 
         if (const auto conpty = connection.try_as<ConptyConnection>())
@@ -590,6 +779,7 @@ namespace winrt::TerminalApp::implementation
         // elevated version of the Terminal with that profile... that's a
         // recipe for disaster. We won't ever open up a tab in this window.
         newTerminalArgs.Elevate(false);
+
         const auto newPane = _MakePane(newTerminalArgs, nullptr, std::move(connection));
         newPane->WalkTree([](const auto& pane) {
             pane->FinalizeConfigurationGivenDefault();
@@ -922,7 +1112,7 @@ namespace winrt::TerminalApp::implementation
                 auto folderEntryItems = _CreateNewTabFlyoutItems(folderEntries);
 
                 // If the folder should auto-inline and there is only one item, do so.
-                if (folderEntry.Inlining() == FolderEntryInlining::Auto && folderEntries.Size() == 1)
+                if (folderEntry.Inlining() == FolderEntryInlining::Auto && folderEntryItems.size() == 1)
                 {
                     for (auto const& folderEntryItem : folderEntryItems)
                     {
@@ -936,7 +1126,7 @@ namespace winrt::TerminalApp::implementation
                 auto folderItem = WUX::Controls::MenuFlyoutSubItem{};
                 folderItem.Text(folderEntry.Name());
 
-                auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon());
+                auto icon = _CreateNewTabFlyoutIcon(folderEntry.Icon().Resolved());
                 folderItem.Icon(icon);
 
                 for (const auto& folderEntryItem : folderEntryItems)
@@ -986,7 +1176,7 @@ namespace winrt::TerminalApp::implementation
                     break;
                 }
 
-                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.Icon());
+                auto profileItem = _CreateNewTabFlyoutProfile(profileEntry.Profile(), profileEntry.ProfileIndex(), profileEntry.Icon().Resolved());
                 items.push_back(profileItem);
                 break;
             }
@@ -996,7 +1186,7 @@ namespace winrt::TerminalApp::implementation
                 const auto actionId = actionEntry.ActionId();
                 if (_settings.ActionMap().GetActionByID(actionId))
                 {
-                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon());
+                    auto actionItem = _CreateNewTabFlyoutAction(actionId, actionEntry.Icon().Resolved());
                     items.push_back(actionItem);
                 }
 
@@ -1035,7 +1225,7 @@ namespace winrt::TerminalApp::implementation
         // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this profile, set that icon
         // for this flyout item.
-        const auto& iconPath = iconPathOverride.empty() ? profile.EvaluatedIcon() : iconPathOverride;
+        const auto& iconPath = iconPathOverride.empty() ? profile.Icon().Resolved() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -1121,7 +1311,7 @@ namespace winrt::TerminalApp::implementation
         // If a custom icon path has been specified, set it as the icon for
         // this flyout item. Otherwise, if an icon is set for this action, set that icon
         // for this flyout item.
-        const auto& iconPath = iconPathOverride.empty() ? action.IconPath() : iconPathOverride;
+        const auto& iconPath = iconPathOverride.empty() ? action.Icon().Resolved() : iconPathOverride;
         if (!iconPath.empty())
         {
             const auto icon = _CreateNewTabFlyoutIcon(iconPath);
@@ -1275,7 +1465,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
-                                                                                        TerminalSettings settings,
+                                                                                        IControlSettings settings,
                                                                                         const bool inheritCursor)
     {
         static const auto textMeasurement = [&]() -> std::wstring_view {
@@ -1300,18 +1490,8 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
-            {
-                connection = TerminalConnection::AzureConnection{};
-            }
-            else
-            {
-                connection = TerminalConnection::ConptyConnection{};
-            }
-
-            valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
+            connection = TerminalConnection::AzureConnection{};
+            valueSet = TerminalConnection::ConptyConnection::CreateSettings(winrt::hstring{},
                                                                             L".",
                                                                             L"Azure",
                                                                             false,
@@ -1325,9 +1505,8 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            const auto environment = settings.EnvironmentVariables() != nullptr ?
-                                         settings.EnvironmentVariables().GetView() :
-                                         nullptr;
+            auto settingsInternal{ winrt::get_self<Settings::TerminalSettings>(settings) };
+            const auto environment = settingsInternal->EnvironmentVariables();
 
             // Update the path to be relative to whatever our CWD is.
             //
@@ -1349,7 +1528,7 @@ namespace winrt::TerminalApp::implementation
             valueSet = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
                                                                             newWorkingDirectory,
                                                                             settings.StartingTitle(),
-                                                                            settings.ReloadEnvironmentVariables(),
+                                                                            settingsInternal->ReloadEnvironmentVariables(),
                                                                             _WindowProperties.VirtualEnvVars(),
                                                                             environment,
                                                                             settings.InitialRows(),
@@ -1403,20 +1582,20 @@ namespace winrt::TerminalApp::implementation
         const auto& connection = control.Connection();
         auto profile{ paneContent.GetProfile() };
 
-        TerminalSettingsCreateResult controlSettings{ nullptr };
+        Settings::TerminalSettingsCreateResult controlSettings{ nullptr };
 
         if (profile)
         {
             // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
             profile = GetClosestProfileForDuplicationOfProfile(profile);
-            controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+            controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
 
             // Replace the Starting directory with the CWD, if given
             const auto workingDirectory = control.WorkingDirectory();
             const auto validWorkingDirectory = !workingDirectory.empty();
             if (validWorkingDirectory)
             {
-                controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
             }
 
             // To facilitate restarting defterm connections: grab the original
@@ -1424,11 +1603,11 @@ namespace winrt::TerminalApp::implementation
             // settings.
             if (const auto& conpty{ connection.try_as<TerminalConnection::ConptyConnection>() })
             {
-                controlSettings.DefaultSettings().Commandline(conpty.Commandline());
+                controlSettings.DefaultSettings()->Commandline(conpty.Commandline());
             }
         }
 
-        return _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), true);
+        return _CreateConnectionFromSettings(profile, *controlSettings.DefaultSettings(), true);
     }
 
     // Method Description:
@@ -1756,11 +1935,9 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(const Tab& tab)
     {
-        auto newTabTitle = tab.Title();
-
         if (tab == _GetFocusedTab())
         {
-            TitleChanged.raise(*this, newTabTitle);
+            TitleChanged.raise(*this, nullptr);
         }
     }
 
@@ -1775,7 +1952,7 @@ namespace winrt::TerminalApp::implementation
     {
         term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
 
-        // Add an event handler when the terminal wants to paste data from the Clipboard.
+        term.WriteToClipboard({ get_weak(), &TerminalPage::_copyToClipboard });
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
@@ -1797,9 +1974,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         term.ShowWindowChanged({ get_weak(), &TerminalPage::_ShowWindowChangedHandler });
-
         term.SearchMissingCommand({ get_weak(), &TerminalPage::_SearchMissingCommandHandler });
-
         term.WindowSizeChanged({ get_weak(), &TerminalPage::_WindowSizeChanged });
 
         // Don't even register for the event if the feature is compiled off.
@@ -1945,7 +2120,7 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
-    TermControl TerminalPage::_GetActiveControl()
+    TermControl TerminalPage::_GetActiveControl() const
     {
         if (const auto tabImpl{ _GetFocusedTabImpl() })
         {
@@ -2042,7 +2217,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::PersistState(bool serializeBuffer)
+    void TerminalPage::PersistState()
     {
         // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
         // We shouldn't persist such windows.
@@ -2057,7 +2232,7 @@ namespace winrt::TerminalApp::implementation
         for (auto tab : _tabs)
         {
             auto t = winrt::get_self<implementation::Tab>(tab);
-            auto tabActions = t->BuildStartupActions(serializeBuffer ? BuildStartupKind::PersistAll : BuildStartupKind::PersistLayout);
+            auto tabActions = t->BuildStartupActions(BuildStartupKind::Persist);
             actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 
@@ -2141,6 +2316,29 @@ namespace winrt::TerminalApp::implementation
         }
 
         CloseWindowRequested.raise(*this, nullptr);
+    }
+
+    std::vector<IPaneContent> TerminalPage::Panes() const
+    {
+        std::vector<IPaneContent> panes;
+
+        for (const auto tab : _tabs)
+        {
+            const auto impl = _GetTabImpl(tab);
+            if (!impl)
+            {
+                continue;
+            }
+
+            impl->GetRootPane()->WalkTree([&](auto&& pane) {
+                if (auto content = pane->GetContent())
+                {
+                    panes.push_back(std::move(content));
+                }
+            });
+        }
+
+        return panes;
     }
 
     // Method Description:
@@ -2406,6 +2604,8 @@ namespace winrt::TerminalApp::implementation
             auto profile = tab->GetFocusedProfile();
             _UpdateBackground(profile);
         }
+
+        _adjustProcessPriorityThrottled->Run();
     }
 
     uint32_t TerminalPage::NumberOfTabs() const
@@ -2624,17 +2824,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings.GlobalSettings().ShowTitleInTitlebar())
         {
-            auto selectedIndex = _tabView.SelectedIndex();
-            if (selectedIndex >= 0)
+            if (const auto tab{ _GetFocusedTab() })
             {
-                try
-                {
-                    if (auto focusedControl{ _GetActiveControl() })
-                    {
-                        return focusedControl.Title();
-                    }
-                }
-                CATCH_LOG();
+                return tab.Title();
             }
         }
         return { L"Terminal" };
@@ -2729,75 +2921,6 @@ namespace winrt::TerminalApp::implementation
         return dimension;
     }
 
-    static wil::unique_close_clipboard_call _openClipboard(HWND hwnd)
-    {
-        bool success = false;
-
-        // OpenClipboard may fail to acquire the internal lock --> retry.
-        for (DWORD sleep = 10;; sleep *= 2)
-        {
-            if (OpenClipboard(hwnd))
-            {
-                success = true;
-                break;
-            }
-            // 10 iterations
-            if (sleep > 10000)
-            {
-                break;
-            }
-            Sleep(sleep);
-        }
-
-        return wil::unique_close_clipboard_call{ success };
-    }
-
-    static winrt::hstring _extractClipboard()
-    {
-        // This handles most cases of pasting text as the OS converts most formats to CF_UNICODETEXT automatically.
-        if (const auto handle = GetClipboardData(CF_UNICODETEXT))
-        {
-            const wil::unique_hglobal_locked lock{ handle };
-            const auto str = static_cast<const wchar_t*>(lock.get());
-            if (!str)
-            {
-                return {};
-            }
-
-            const auto maxLen = GlobalSize(handle) / sizeof(wchar_t);
-            const auto len = wcsnlen(str, maxLen);
-            return winrt::hstring{ str, gsl::narrow_cast<uint32_t>(len) };
-        }
-
-        // We get CF_HDROP when a user copied a file with Ctrl+C in Explorer and pastes that into the terminal (among others).
-        if (const auto handle = GetClipboardData(CF_HDROP))
-        {
-            const wil::unique_hglobal_locked lock{ handle };
-            const auto drop = static_cast<HDROP>(lock.get());
-            if (!drop)
-            {
-                return {};
-            }
-
-            const auto cap = DragQueryFileW(drop, 0, nullptr, 0);
-            if (cap == 0)
-            {
-                return {};
-            }
-
-            auto buffer = winrt::impl::hstring_builder{ cap };
-            const auto len = DragQueryFileW(drop, 0, buffer.data(), cap + 1);
-            if (len == 0)
-            {
-                return {};
-            }
-
-            return buffer.to_hstring();
-        }
-
-        return {};
-    }
-
     // Function Description:
     // - This function is called when the `TermControl` requests that we send
     //   it the clipboard's content.
@@ -2817,36 +2940,51 @@ namespace winrt::TerminalApp::implementation
         const auto weakThis = get_weak();
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
+        const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
         winrt::hstring text;
-        if (const auto clipboard = _openClipboard(nullptr))
+        if (const auto clipboard = clipboard::open(nullptr))
         {
-            text = _extractClipboard();
+            text = clipboard::read();
         }
 
-        if (globalSettings.TrimPaste())
+        if (!bracketedPaste && globalSettings.TrimPaste())
         {
-            text = { Utils::TrimPaste(text) };
-            if (text.empty())
-            {
-                // Text is all white space, nothing to paste
-                co_return;
-            }
+            text = winrt::hstring{ Utils::TrimPaste(text) };
         }
 
-        // If the requesting terminal is in bracketed paste mode, then we don't need to warn about a multi-line paste.
-        auto warnMultiLine = globalSettings.WarnAboutMultiLinePaste() && !eventArgs.BracketedPasteEnabled();
+        if (text.empty())
+        {
+            co_return;
+        }
+
+        bool warnMultiLine = false;
+        switch (globalSettings.WarnAboutMultiLinePaste())
+        {
+        case WarnAboutMultiLinePaste::Automatic:
+            // NOTE that this is unsafe, because a shell that doesn't support bracketed paste
+            // will allow an attacker to enable the mode, not realize that, and then accept
+            // the paste as if it was a series of legitimate commands. See GH#13014.
+            warnMultiLine = !bracketedPaste;
+            break;
+        case WarnAboutMultiLinePaste::Always:
+            warnMultiLine = true;
+            break;
+        default:
+            warnMultiLine = false;
+            break;
+        }
+
         if (warnMultiLine)
         {
-            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
-            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
-            warnMultiLine = hasNewLine;
+            const std::wstring_view view{ text };
+            warnMultiLine = view.find_first_of(L"\r\n") != std::wstring_view::npos;
         }
 
-        constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
+        constexpr std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
         const auto warnLargeText = text.size() > minimumSizeForWarning && globalSettings.WarnAboutLargePaste();
 
         if (warnMultiLine || warnLargeText)
@@ -2856,7 +2994,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto strongThis = weakThis.get())
             {
                 // We have to initialize the dialog here to be able to change the text of the text block within it
-                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
+                std::ignore = FindName(L"MultiLinePasteDialog");
                 ClipboardText().Text(text);
 
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
@@ -3037,7 +3175,7 @@ namespace winrt::TerminalApp::implementation
     // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats)
+    bool TerminalPage::_CopyText(const bool dismissSelection, const bool singleLine, const bool withControlSequences, const CopyFormat formats)
     {
         if (const auto& control{ _GetActiveControl() })
         {
@@ -3091,33 +3229,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         PackageCatalog catalog = connectResult.PackageCatalog();
-        // clang-format off
-        static constexpr std::array<WinGetSearchParams, 3> searches{ {
-            { .Field = PackageMatchField::Command, .MatchOption = PackageFieldMatchOption::StartsWithCaseInsensitive },
-            { .Field = PackageMatchField::Name, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive },
-            { .Field = PackageMatchField::Moniker, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive } } };
-        // clang-format on
-
         PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
         filter.Value(query);
+        filter.Field(PackageMatchField::Command);
+        filter.Option(PackageFieldMatchOption::Equals);
 
         FindPackagesOptions options = WindowsPackageManagerFactory::CreateFindPackagesOptions();
         options.Filters().Append(filter);
         options.ResultLimit(20);
 
-        IVectorView<MatchResult> pkgList;
-        for (const auto& search : searches)
-        {
-            filter.Field(search.Field);
-            filter.Option(search.MatchOption);
-
-            const auto result = co_await catalog.FindPackagesAsync(options);
-            pkgList = result.Matches();
-            if (pkgList.Size() > 0)
-            {
-                break;
-            }
-        }
+        const auto result = co_await catalog.FindPackagesAsync(options);
+        const IVectorView<MatchResult> pkgList = result.Matches();
         co_return pkgList;
     }
 
@@ -3177,6 +3299,21 @@ namespace winrt::TerminalApp::implementation
             {
                 conpty.ResetSize();
             }
+        }
+    }
+
+    void TerminalPage::_copyToClipboard(const IInspectable, const WriteToClipboardEventArgs args) const
+    {
+        if (const auto clipboard = clipboard::open(_hostingHwnd.value_or(nullptr)))
+        {
+            const auto plain = args.Plain();
+            const auto html = args.Html();
+            const auto rtf = args.Rtf();
+
+            clipboard::write(
+                { plain.data(), plain.size() },
+                { reinterpret_cast<const char*>(html.data()), html.size() },
+                { reinterpret_cast<const char*>(rtf.data()), rtf.size() });
         }
     }
 
@@ -3278,13 +3415,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    TermControl TerminalPage::_CreateNewControlAndContent(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
+    TermControl TerminalPage::_CreateNewControlAndContent(const Settings::TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
         // Do any initialization that needs to apply to _every_ TermControl we
         // create here.
-        // TermControl will copy the settings out of the settings passed to it.
-
-        const auto content = _manager.CreateCore(settings.DefaultSettings(), settings.UnfocusedSettings(), connection);
+        const auto content = _manager.CreateCore(*settings.DefaultSettings(), settings.UnfocusedSettings().try_as<IControlAppearance>(), connection);
         const TermControl control{ content };
         return _SetupControl(control);
     }
@@ -3298,7 +3433,7 @@ namespace winrt::TerminalApp::implementation
             // don't, then when we move the content to another thread, and it
             // tries to handle a key, it'll callback on the original page's
             // stack, inevitably resulting in a wrong_thread
-            return _SetupControl(TermControl::NewControlByAttachingContent(content, *_bindings));
+            return _SetupControl(TermControl::NewControlByAttachingContent(content));
         }
         return nullptr;
     }
@@ -3317,6 +3452,8 @@ namespace winrt::TerminalApp::implementation
         {
             term.OwningHwnd(reinterpret_cast<uint64_t>(*_hostingHwnd));
         }
+
+        term.KeyBindings(*_bindings);
 
         _RegisterTerminalEvents(term);
         return term;
@@ -3354,7 +3491,7 @@ namespace winrt::TerminalApp::implementation
             return std::make_shared<Pane>(paneContent);
         }
 
-        TerminalSettingsCreateResult controlSettings{ nullptr };
+        Settings::TerminalSettingsCreateResult controlSettings{ nullptr };
         Profile profile{ nullptr };
 
         if (const auto& tabImpl{ _GetTabImpl(sourceTab) })
@@ -3364,19 +3501,19 @@ namespace winrt::TerminalApp::implementation
             {
                 // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
-                controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+                controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();
                 if (validWorkingDirectory)
                 {
-                    controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                    controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
                 }
             }
         }
         if (!profile)
         {
             profile = _settings.GetProfileForArgs(newTerminalArgs);
-            controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+            controlSettings = Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs);
         }
 
         // Try to handle auto-elevation
@@ -3385,13 +3522,13 @@ namespace winrt::TerminalApp::implementation
             return nullptr;
         }
 
-        const auto sessionId = controlSettings.DefaultSettings().SessionId();
+        const auto sessionId = controlSettings.DefaultSettings()->SessionId();
         const auto hasSessionId = sessionId != winrt::guid{};
 
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings(), hasSessionId);
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, *controlSettings.DefaultSettings(), hasSessionId);
         if (existingConnection)
         {
-            connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
+            connection.Resize(controlSettings.DefaultSettings()->InitialRows(), controlSettings.DefaultSettings()->InitialCols());
         }
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
@@ -3412,9 +3549,12 @@ namespace winrt::TerminalApp::implementation
 
         if (hasSessionId)
         {
+            using namespace std::string_view_literals;
+
             const auto settingsDir = CascadiaSettings::SettingsDirectory();
-            const auto idStr = Utils::GuidToPlainString(sessionId);
-            const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
+            const auto admin = IsRunningElevated();
+            const auto filenamePrefix = admin ? L"elevated_"sv : L"buffer_"sv;
+            const auto path = fmt::format(FMT_COMPILE(L"{}\\{}{}.txt"), settingsDir, filenamePrefix, sessionId);
             control.RestoreFromPath(path);
         }
 
@@ -3570,7 +3710,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto path = newAppearance.ExpandedBackgroundImagePath();
+        const auto path = newAppearance.BackgroundImagePath().Resolved();
         if (path.empty())
         {
             _tabContent.Background(nullptr);
@@ -3635,7 +3775,7 @@ namespace winrt::TerminalApp::implementation
         // updating terminal panes, so that we don't have to build a _new_
         // TerminalSettings for every profile we update - we can just look them
         // up the previous ones we built.
-        _terminalSettingsCache.Reset(_settings, *_bindings);
+        _terminalSettingsCache->Reset(_settings);
 
         for (const auto& tab : _tabs)
         {
@@ -3693,6 +3833,9 @@ namespace winrt::TerminalApp::implementation
         _updateThemeColors();
 
         _updateAllTabCloseButtons();
+
+        // The user may have changed the "show title in titlebar" setting.
+        TitleChanged.raise(*this, nullptr);
     }
 
     void TerminalPage::_updateAllTabCloseButtons()
@@ -3705,6 +3848,8 @@ namespace winrt::TerminalApp::implementation
         const auto visibility = (theme && theme.Tab()) ?
                                     theme.Tab().ShowCloseButton() :
                                     Settings::Model::TabCloseButtonVisibility::Always;
+
+        _tabItemMiddleClickHookEnabled = visibility == Settings::Model::TabCloseButtonVisibility::Never;
 
         for (const auto& tab : _tabs)
         {
@@ -3903,36 +4048,18 @@ namespace winrt::TerminalApp::implementation
     //                and the non-client are behind it
     // Return Value:
     // - <none>
-    void TerminalPage::_SetNewTabButtonColor(const Windows::UI::Color& color, const Windows::UI::Color& accentColor)
+    void TerminalPage::_SetNewTabButtonColor(const til::color color, const til::color accentColor)
     {
+        constexpr auto lightnessThreshold = 0.6f;
         // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
-        auto IsBrightColor = ColorHelper::IsBrightColor(color);
-        auto isLightAccentColor = ColorHelper::IsBrightColor(accentColor);
-        winrt::Windows::UI::Color pressedColor{};
-        winrt::Windows::UI::Color hoverColor{};
-        winrt::Windows::UI::Color foregroundColor{};
-        const auto hoverColorAdjustment = 5.f;
-        const auto pressedColorAdjustment = 7.f;
+        const auto IsBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
+        const auto isLightAccentColor = ColorFix::GetLightness(accentColor) >= lightnessThreshold;
+        const auto hoverColorAdjustment = isLightAccentColor ? -0.05f : 0.05f;
+        const auto pressedColorAdjustment = isLightAccentColor ? -0.1f : 0.1f;
 
-        if (IsBrightColor)
-        {
-            foregroundColor = winrt::Windows::UI::Colors::Black();
-        }
-        else
-        {
-            foregroundColor = winrt::Windows::UI::Colors::White();
-        }
-
-        if (isLightAccentColor)
-        {
-            hoverColor = ColorHelper::Darken(accentColor, hoverColorAdjustment);
-            pressedColor = ColorHelper::Darken(accentColor, pressedColorAdjustment);
-        }
-        else
-        {
-            hoverColor = ColorHelper::Lighten(accentColor, hoverColorAdjustment);
-            pressedColor = ColorHelper::Lighten(accentColor, pressedColorAdjustment);
-        }
+        const auto foregroundColor = IsBrightColor ? Colors::Black() : Colors::White();
+        const auto hoverColor = til::color{ ColorFix::AdjustLightness(accentColor, hoverColorAdjustment) };
+        const auto pressedColor = til::color{ ColorFix::AdjustLightness(accentColor, pressedColorAdjustment) };
 
         Media::SolidColorBrush backgroundBrush{ accentColor };
         Media::SolidColorBrush backgroundHoverBrush{ hoverColor };
@@ -4559,7 +4686,7 @@ namespace winrt::TerminalApp::implementation
     // - true iff we tossed this request to an elevated window. Callers can use
     //   this result to early-return if needed.
     bool TerminalPage::_maybeElevate(const NewTerminalArgs& newTerminalArgs,
-                                     const TerminalSettingsCreateResult& controlSettings,
+                                     const Settings::TerminalSettingsCreateResult& controlSettings,
                                      const Profile& profile)
     {
         // When duplicating a tab there aren't any newTerminalArgs.
@@ -4572,7 +4699,7 @@ namespace winrt::TerminalApp::implementation
 
         // If we don't even want to elevate we can return early.
         // If we're already elevated we can also return, because it doesn't get any more elevated than that.
-        if (!defaultSettings.Elevate() || IsRunningElevated())
+        if (!defaultSettings->Elevate() || IsRunningElevated())
         {
             return false;
         }
@@ -4582,7 +4709,7 @@ namespace winrt::TerminalApp::implementation
         // will be that profile's GUID. If there wasn't, then we'll use
         // whatever the default profile's GUID is.
         newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings.StartingDirectory()));
+        newTerminalArgs.StartingDirectory(_evaluatePathForCwd(defaultSettings->StartingDirectory()));
         _OpenElevatedWT(newTerminalArgs);
         return true;
     }
@@ -4600,9 +4727,12 @@ namespace winrt::TerminalApp::implementation
         if (const auto coreState{ sender.try_as<winrt::Microsoft::Terminal::Control::ICoreState>() })
         {
             const auto newConnectionState = coreState.ConnectionState();
+            co_await wil::resume_foreground(Dispatcher());
+
+            _adjustProcessPriorityThrottled->Run();
+
             if (newConnectionState == ConnectionState::Failed && !_IsMessageDismissed(InfoBarMessage::CloseOnExitInfo))
             {
-                co_await wil::resume_foreground(Dispatcher());
                 if (const auto infoBar = FindName(L"CloseOnExitInfoBar").try_as<MUX::Controls::InfoBar>())
                 {
                     infoBar.IsOpen(true);
@@ -4867,12 +4997,102 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_adjustProcessPriority() const
+    {
+        // Windowing is single-threaded, so this will not cause a race condition.
+        static bool supported{ true };
+
+        if (!supported || !_hostingHwnd.has_value())
+        {
+            return;
+        }
+
+        std::array<HANDLE, 32> processes;
+        auto it = processes.begin();
+        const auto end = processes.end();
+
+        auto&& appendFromControl = [&](auto&& control) {
+            if (it == end)
+            {
+                return;
+            }
+            if (control)
+            {
+                if (const auto conn{ control.Connection() })
+                {
+                    if (const auto pty{ conn.try_as<winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection>() })
+                    {
+                        if (const uint64_t process{ pty.RootProcessHandle() }; process != 0)
+                        {
+                            *it++ = reinterpret_cast<HANDLE>(process);
+                        }
+                    }
+                }
+            }
+        };
+
+        auto&& appendFromTab = [&](auto&& tabImpl) {
+            if (const auto pane{ tabImpl->GetRootPane() })
+            {
+                pane->WalkTree([&](auto&& child) {
+                    if (const auto& control{ child->GetTerminalControl() })
+                    {
+                        appendFromControl(control);
+                    }
+                });
+            }
+        };
+
+        if (!_activated)
+        {
+            // When a window is out of focus, we want to attach all of the processes
+            // under it to the window so they all go into the background at the same time.
+            for (auto&& tab : _tabs)
+            {
+                if (auto tabImpl{ _GetTabImpl(tab) })
+                {
+                    appendFromTab(tabImpl);
+                }
+            }
+        }
+        else
+        {
+            // When a window is in focus, propagate our foreground boost (if we have one)
+            // to current all panes in the current tab.
+            if (auto tabImpl{ _GetFocusedTabImpl() })
+            {
+                appendFromTab(tabImpl);
+            }
+        }
+
+        const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
+        const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+        if (S_FALSE == hr)
+        {
+            // Don't bother trying again or logging. The wrapper tells us it's unsupported.
+            supported = false;
+            return;
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "CalledNewQoSAPI",
+            TraceLoggingValue(reinterpret_cast<uintptr_t>(_hostingHwnd.value()), "hwnd"),
+            TraceLoggingValue(count),
+            TraceLoggingHResult(hr));
+#ifdef _DEBUG
+        OutputDebugStringW(fmt::format(FMT_COMPILE(L"Submitted {} processes to TerminalTrySetWindowAssociatedProcesses; return=0x{:08x}\n"), count, hr).c_str());
+#endif
+    }
+
     void TerminalPage::WindowActivated(const bool activated)
     {
         // Stash if we're activated. Use that when we reload
         // the settings, change active panes, etc.
         _activated = activated;
         _updateThemeColors();
+
+        _adjustProcessPriorityThrottled->Run();
 
         if (const auto& tab{ _GetFocusedTabImpl() })
         {
@@ -4893,8 +5113,6 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_ControlCompletionsChangedHandler(const IInspectable sender,
                                                                         const CompletionsChangedEventArgs args)
     {
-        // This will come in on a background (not-UI, not output) thread.
-
         // This won't even get hit if the velocity flag is disabled - we gate
         // registering for the event based off of
         // Feature_ShellCompletions::IsEnabled back in _RegisterTerminalEvents
@@ -5068,7 +5286,7 @@ namespace winrt::TerminalApp::implementation
         makeItem(RS_(L"DuplicateTabText"), L"\xF5ED", ActionAndArgs{ ShortcutAction::DuplicateTab, nullptr }, menu);
 
         const auto focusedProfileName = focusedProfile.Name();
-        const auto focusedProfileIcon = focusedProfile.Icon();
+        const auto focusedProfileIcon = focusedProfile.Icon().Resolved();
         const auto splitPaneDuplicateText = RS_(L"SplitPaneDuplicateText") + L" " + focusedProfileName; // SplitPaneDuplicateText
 
         const auto splitPaneRightText = RS_(L"SplitPaneRightText");
@@ -5094,7 +5312,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto profile = activeProfiles.GetAt(profileIndex);
             const auto profileName = profile.Name();
-            const auto profileIcon = profile.Icon();
+            const auto profileIcon = profile.Icon().Resolved();
 
             NewTerminalArgs args{};
             args.Profile(profileName);
@@ -5129,22 +5347,22 @@ namespace winrt::TerminalApp::implementation
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Down, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneDownText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneDownText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Down } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Right, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneRightText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneRightText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Right } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Up, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneUpText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneUpText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Up } }, swapPaneMenu);
             }
 
             if (auto neighbor = rootPane->NavigateDirection(activePane, FocusDirection::Left, mruPanes))
             {
-                makeItem(RS_(L"SwapPaneLeftText"), neighbor->GetProfile().Icon(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
+                makeItem(RS_(L"SwapPaneLeftText"), neighbor->GetProfile().Icon().Resolved(), ActionAndArgs{ ShortcutAction::SwapPane, SwapPaneArgs{ FocusDirection::Left } }, swapPaneMenu);
             }
 
             makeMenuItem(RS_(L"SwapPaneText"), L"\xF1CB", swapPaneMenu, menu);

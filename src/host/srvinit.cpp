@@ -11,6 +11,7 @@
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/ConDrvDeviceComm.h"
 #include "../server/DeviceHandle.h"
 #include "../server/IoSorter.h"
 #include "../types/inc/CodepointWidthDetector.hpp"
@@ -71,17 +72,6 @@ try
     {
         Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
         Globals.defaultTerminalMarkerCheckRequired = true;
-    }
-
-    // Create the accessibility notifier early in the startup process.
-    // Only create if we're not in PTY mode.
-    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
-    // for the terminal user interface, so we should set ourselves up to skip all
-    // those notifications and the mathematical calculations required to send those events
-    // for performance reasons.
-    if (!args->InConptyMode())
-    {
-        RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier());
     }
 
     // Removed allocation of scroll buffer here.
@@ -463,7 +453,7 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_SET_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,

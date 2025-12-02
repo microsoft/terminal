@@ -16,9 +16,9 @@
 #include <til/io.h>
 
 #include "TabRowControl.h"
-#include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 #include <shlobj.h>
 
@@ -73,7 +73,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return S_FALSE;
             }
-            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs) };
 
             // Try to handle auto-elevation
             if (_maybeElevate(newTerminalArgs, settings, profile))
@@ -156,12 +156,7 @@ namespace winrt::TerminalApp::implementation
         // Set this tab's icon to the icon from the content
         _UpdateTabIcon(*newTabImpl);
 
-        // This is necessary, because WinUI does not have support for middle clicks.
-        // Its Tapped event doesn't provide the information what button was used either.
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabPointerPressed });
-        tabViewItem.PointerReleased({ this, &TerminalPage::_OnTabPointerReleased });
-        tabViewItem.PointerExited({ this, &TerminalPage::_OnTabPointerExited });
-        tabViewItem.PointerEntered({ this, &TerminalPage::_OnTabPointerEntered });
 
         // When the tab requests close, try to close it (prompt for approval, if required)
         newTabImpl->CloseRequested([weakTab, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
@@ -663,7 +658,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns a tab corresponding to a view item. This might return null,
     //   so make sure to check the result!
-    winrt::TerminalApp::Tab TerminalPage::_GetTabByTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem) const noexcept
+    winrt::TerminalApp::Tab TerminalPage::_GetTabByTabViewItem(const IInspectable& tabViewItem) const noexcept
     {
         uint32_t tabIndexFromControl{};
         const auto items{ _tabView.TabItems() };
@@ -875,92 +870,68 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabView();
     }
 
-    // Method Description:
-    // - Additional responses to clicking on a TabView's item. Currently, just remove tab with middle click
-    // Arguments:
-    // - sender: the control that originated this event (TabViewItem)
-    // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    void TerminalPage::_OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
-        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+        if (!_tabItemMiddleClickHookEnabled || !e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
-            if (const auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
-            {
-                _tabPointerMiddleButtonPressed = tabViewItem.CapturePointer(eventArgs.Pointer());
-                _tabPointerMiddleButtonExited = false;
-            }
-            eventArgs.Handled(true);
+            return;
         }
+
+        const auto tabViewItem = sender.try_as<MUX::Controls::TabViewItem>();
+        if (!tabViewItem || !tabViewItem.CapturePointer(e.Pointer()))
+        {
+            return;
+        }
+
+        _tabItemMiddleClickExited = false;
+
+        _tabItemMiddleClickPointerEntered = tabViewItem.PointerEntered(winrt::auto_revoke, [this](auto&&, auto&& e) {
+            _tabItemMiddleClickExited = false;
+            e.Handled(true);
+        });
+        _tabItemMiddleClickPointerExited = tabViewItem.PointerExited(winrt::auto_revoke, [this](auto&&, auto&& e) {
+            _tabItemMiddleClickExited = true;
+            e.Handled(true);
+        });
+        _tabItemMiddleClickPointerCaptureLost = tabViewItem.PointerCaptureLost(winrt::auto_revoke, [this](auto&& sender, auto&& e) {
+            // The WinUI TabView calls CapturePointer() internally and it's not reference counted,
+            // so when it calls ReleasePointerCapture() in its PointerReleased handler,
+            // we get a PointerCaptureLost before we receive the PointerReleased event.
+            // This makes typical handling of PointerReleased events on our side difficult.
+            // Well, whatever, now we just hook PointerCaptureLost because we know WinUI will trigger it.
+
+            _tabItemMiddleClickPointerEntered.revoke();
+            _tabItemMiddleClickPointerExited.revoke();
+            _tabItemMiddleClickPointerCaptureLost.revoke();
+
+            if (!_tabItemMiddleClickExited && !e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
+            {
+                _OnTabPointerReleasedCloseTab(std::move(sender));
+            }
+
+            e.Handled(true);
+        });
+        e.Handled(true);
     }
 
-    // Method Description:
-    // - Tracking pointer state for tab remove
-    // Arguments:
-    // - sender: the control that originated this event (TabViewItem)
-    // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabPointerReleased(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
+    safe_void_coroutine TerminalPage::_OnTabPointerReleasedCloseTab(IInspectable sender)
     {
-        if (_tabPointerMiddleButtonPressed && !eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
-        {
-            _tabPointerMiddleButtonPressed = false;
-            if (auto tabViewItem{ sender.try_as<MUX::Controls::TabViewItem>() })
-            {
-                tabViewItem.ReleasePointerCapture(eventArgs.Pointer());
-                if (!_tabPointerMiddleButtonExited)
-                {
-                    _OnTabPointerReleasedCloseTab(std::move(tabViewItem));
-                }
-            }
-            eventArgs.Handled(true);
-        }
-    }
-
-    safe_void_coroutine TerminalPage::_OnTabPointerReleasedCloseTab(winrt::Microsoft::UI::Xaml::Controls::TabViewItem sender)
-    {
-        const auto tab = _GetTabByTabViewItem(sender);
-        if (!tab)
-        {
-            co_return;
-        }
-
         // WinUI asynchronously updates its tab view items, so it may happen that we're given a
         // `TabViewItem` that still contains a `Tab` which has actually already been removed.
         // First we must yield once, to flush out whatever TabView is currently doing.
         const auto strong = get_strong();
         co_await wil::resume_foreground(Dispatcher());
 
+        const auto tab = _GetTabByTabViewItem(sender);
+        if (!tab)
+        {
+            co_return;
+        }
+
         // `tab.Shutdown()` in `_RemoveTab()` sets the content to null = This checks if the tab is closed.
         if (tab.Content())
         {
             _HandleCloseTabRequested(tab);
-        }
-    }
-
-    // Method Description:
-    // - Tracking pointer state for tab remove
-    // Arguments:
-    // - sender: the control that originated this event (TabViewItem)
-    // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabPointerEntered(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
-    {
-        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
-        {
-            _tabPointerMiddleButtonExited = false;
-            eventArgs.Handled(true);
-        }
-    }
-
-    // Method Description:
-    // - Tracking pointer state for tab remove
-    // Arguments:
-    // - sender: the control that originated this event (TabViewItem)
-    // - eventArgs: the event's constituent arguments
-    void TerminalPage::_OnTabPointerExited(const IInspectable& /*sender*/, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs)
-    {
-        if (eventArgs.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
-        {
-            _tabPointerMiddleButtonExited = true;
-            eventArgs.Handled(true);
         }
     }
 
@@ -998,10 +969,7 @@ namespace winrt::TerminalApp::implementation
             tab.TabViewItem().StartBringIntoView();
 
             // Raise an event that our title changed
-            if (_settings.GlobalSettings().ShowTitleInTitlebar())
-            {
-                TitleChanged.raise(*this, tab.Title());
-            }
+            TitleChanged.raise(*this, nullptr);
 
             _updateThemeColors();
 
@@ -1011,6 +979,8 @@ namespace winrt::TerminalApp::implementation
                 auto profile = tabImpl->GetFocusedProfile();
                 _UpdateBackground(profile);
             }
+
+            _adjustProcessPriorityThrottled->Run();
         }
         CATCH_LOG();
     }

@@ -90,9 +90,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ApplyRuntimeInitialSettings();
         void MergeInboxIntoUserSettings();
         void FindFragmentsAndMergeIntoUserSettings(bool generateExtensionPackages);
-        void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
+        void MergeFragmentIntoUserSettings(const winrt::hstring& source, const winrt::hstring& basePath, const std::string_view& content);
         void FinalizeLayering();
         bool DisableDeletedProfiles();
+        bool AddDynamicProfileFolders();
         bool RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile);
         bool FixupUserSettings();
 
@@ -100,6 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ParsedSettings userSettings;
         std::unordered_map<hstring, winrt::com_ptr<implementation::ExtensionPackage>> extensionPackageMap;
         bool duplicateProfile = false;
+        bool sshProfilesGenerated = false;
 
     private:
         struct JsonSettings
@@ -123,7 +125,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         std::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
-        void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta);
+        void _parseFragment(const winrt::hstring& source, const winrt::hstring& sourceBasePath, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta);
         static JsonSettings _parseJson(const std::string_view& content);
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
@@ -191,6 +193,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
         void ExpandCommands();
+        void UpdateCommandID(const Model::Command& cmd, winrt::hstring newID);
+        void ResolveMediaResources() { _validateMediaResources(); }
 
         void LogSettingChanges(bool isJsonLoad) const;
 
@@ -210,6 +214,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _validateSettings();
         void _validateAllSchemesExist();
+        void _resolveSingleMediaResource(OriginTag origin, std::wstring_view basePath, const Model::IMediaResource& resource);
         void _validateMediaResources();
         void _validateProfileEnvironmentVariables();
         void _validateKeybindings() const;
@@ -233,6 +238,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
         winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> _loadError;
         winrt::hstring _deserializationErrorMessage;
+        bool _foundInvalidUserResources{ false };
 
         // defterm
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };

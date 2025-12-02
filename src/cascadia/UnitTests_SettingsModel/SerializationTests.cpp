@@ -58,6 +58,8 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RoundtripActionsSameNameDifferentCommandsAreRetained);
         TEST_METHOD(MultipleActionsAreCollapsed);
 
+        TEST_METHOD(ProfileWithInvalidIcon);
+
     private:
         // Method Description:
         // - deserializes and reserializes a json string representing a settings object model of type T
@@ -126,7 +128,7 @@ namespace SettingsModelUnitTests
                 "warning.confirmCloseAllTabs" : true,
                 "warning.inputService" : true,
                 "warning.largePaste" : true,
-                "warning.multiLinePaste" : true,
+                "warning.multiLinePaste" : "automatic",
 
                 "actions": [],
                 "keybindings": []
@@ -1294,5 +1296,33 @@ namespace SettingsModelUnitTests
         const auto newResult{ newSettings->ToJson() };
 
         VERIFY_ARE_EQUAL(toString(newResult), toString(oldResult));
+    }
+
+    void SerializationTests::ProfileWithInvalidIcon()
+    {
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe",
+                    "icon": "c:\\this_icon_had_better_not_exist.tiff"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ settingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader.MergeInboxIntoUserSettings();
+        loader.FinalizeLayering();
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+        const auto newResult{ settings->ToJson() };
+
+        // A profile that specifies an invalid icon will fall back to the commandline on load, but that should
+        // not be reflected back in settings.json as null *or* as the commandline. The value should be exactly
+        // what was written in the settings file.
+        VERIFY_ARE_EQUAL(R"(c:\this_icon_had_better_not_exist.tiff)", newResult["profiles"]["list"][0]["icon"].asString());
     }
 }

@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ActionEntry.h"
 #include "JsonUtils.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 #include "ActionEntry.g.cpp"
 
@@ -16,7 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
 
     ActionEntry::ActionEntry() noexcept :
-        ActionEntryT<ActionEntry, NewTabMenuEntry>(NewTabMenuEntryType::Action)
+        ActionEntryT<ActionEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>(NewTabMenuEntryType::Action)
     {
     }
 
@@ -25,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto json = NewTabMenuEntry::ToJson();
 
         JsonUtils::SetValueForKey(json, ActionIdKey, _ActionId);
-        JsonUtils::SetValueForKey(json, IconKey, _Icon);
+        JsonUtils::SetValueForKey(json, IconKey, _icon);
 
         return json;
     }
@@ -35,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         auto entry = winrt::make_self<ActionEntry>();
 
         JsonUtils::GetValueForKey(json, ActionIdKey, entry->_ActionId);
-        JsonUtils::GetValueForKey(json, IconKey, entry->_Icon);
+        JsonUtils::GetValueForKey(json, IconKey, entry->_icon);
 
         return entry;
     }
@@ -44,7 +45,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto entry = winrt::make_self<ActionEntry>();
         entry->_ActionId = _ActionId;
-        entry->_Icon = _Icon;
+        entry->_icon = _icon;
         return *entry;
+    }
+
+    void ActionEntry::ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver)
+    {
+        if (_icon)
+        {
+            // TODO GH#19191 (Hardcoded Origin, since that's the only place it could have come from)
+            ResolveIconMediaResource(OriginTag::User, basePath, _icon, resolver);
+        }
     }
 }

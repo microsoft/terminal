@@ -64,6 +64,7 @@
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Control Preview  -->
             <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="0,0,0,32"
                     CornerRadius="{StaticResource ControlCornerRadius}">
                 <Border x:Name="ControlPreview"
                         Width="400"
@@ -205,9 +206,10 @@
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                     <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
-                               Style="{StaticResource TitleTextBlockStyle}" />
+                               Style="{StaticResource TextBlockSubtitleStyle}" />
                     <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
                             Margin="8,0,0,0"
+                            VerticalAlignment="Bottom"
                             Click="CreateUnfocusedAppearance_Click"
                             Style="{StaticResource BaseButtonStyle}"
                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
@@ -224,6 +226,7 @@
                     </Button>
                     <Button x:Uid="Profile_DeleteUnfocusedAppearanceButton"
                             Margin="8,0,0,0"
+                            VerticalAlignment="Bottom"
                             Click="DeleteUnfocusedAppearance_Click"
                             Style="{StaticResource DeleteButtonStyle}"
                             Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">

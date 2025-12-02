@@ -83,9 +83,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->Detach();
     }
 
-    void ControlInteractivity::AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings)
+    void ControlInteractivity::AttachToNewControl()
     {
-        _core->AttachToNewControl(keyBindings);
+        _core->AttachToNewControl();
     }
 
     // Method Description:
@@ -198,7 +198,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //             if we should defer which formats are copied to the global setting
     bool ControlInteractivity::CopySelectionToClipboard(bool singleLine,
                                                         bool withControlSequences,
-                                                        const Windows::Foundation::IReference<CopyFormat>& formats)
+                                                        const CopyFormat formats)
     {
         if (_core)
         {
@@ -315,7 +315,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else
             {
                 // Try to copy the text and clear the selection
-                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, nullptr);
+                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, _core->Settings().CopyFormatting());
                 _core->ClearSelection();
                 if (_core->CopyOnSelect() || !successfulCopy)
                 {
@@ -460,7 +460,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // IMPORTANT!
             // DO NOT clear the selection here!
             // Otherwise, the selection will be cleared immediately after you make it.
-            CopySelectionToClipboard(false, false, nullptr);
+            CopySelectionToClipboard(false, false, _core->Settings().CopyFormatting());
         }
 
         _singleClickTouchdownPos = std::nullopt;
@@ -484,7 +484,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The modifiers pressed during this event, in the form of a VirtualKeyModifiers
     // - delta: the mouse wheel delta that triggered this event.
     bool ControlInteractivity::MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                          const int32_t delta,
+                                          const Core::Point delta,
                                           const Core::Point pixelPosition,
                                           const Control::MouseButtonState buttonState)
     {
@@ -505,9 +505,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
             return _sendMouseEventHelper(terminalPosition,
-                                         WM_MOUSEWHEEL,
+                                         delta.Y != 0 ? WM_MOUSEWHEEL : WM_MOUSEHWHEEL,
                                          modifiers,
-                                         ::base::saturated_cast<short>(delta),
+                                         ::base::saturated_cast<short>(delta.Y != 0 ? delta.Y : delta.X),
                                          buttonState);
         }
 
@@ -516,15 +516,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (ctrlPressed && shiftPressed && _core->Settings().ScrollToChangeOpacity())
         {
-            _mouseTransparencyHandler(delta);
+            _mouseTransparencyHandler(delta.Y);
         }
         else if (ctrlPressed && !shiftPressed && _core->Settings().ScrollToZoom())
         {
-            _mouseZoomHandler(delta);
+            _mouseZoomHandler(delta.Y);
         }
         else
         {
-            _mouseScrollHandler(delta, pixelPosition, WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown));
+            _mouseScrollHandler(delta.Y, pixelPosition, WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown));
         }
         return false;
     }
@@ -658,7 +658,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->IsVtMouseModeEnabled();
     }
 
-    bool ControlInteractivity::_shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta)
+    bool ControlInteractivity::_shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta)
     {
         // If the user is holding down Shift, suppress mouse events
         // TODO GH#4875: disable/customize this functionality
@@ -666,7 +666,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return false;
         }
-        return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta);
+        if (delta.Y != 0)
+        {
+            return _core->ShouldSendAlternateScroll(WM_MOUSEWHEEL, delta.Y);
+        }
+        else
+        {
+            return _core->ShouldSendAlternateScroll(WM_MOUSEHWHEEL, delta.X);
+        }
     }
 
     // Method Description:

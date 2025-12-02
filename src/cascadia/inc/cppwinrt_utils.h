@@ -74,6 +74,28 @@ struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_vie
     }
 };
 
+template<>
+struct fmt::formatter<winrt::guid, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::guid& value, auto& ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(),
+            L"{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
+            value.Data1,
+            value.Data2,
+            value.Data3,
+            value.Data4[0],
+            value.Data4[1],
+            value.Data4[2],
+            value.Data4[3],
+            value.Data4[4],
+            value.Data4[5],
+            value.Data4[6],
+            value.Data4[7]);
+    }
+};
+
 // This is a helper macro for both declaring the signature of an event, and
 // defining the body. Winrt events need a method for adding a callback to the
 // event and removing the callback. This macro will both declare the method

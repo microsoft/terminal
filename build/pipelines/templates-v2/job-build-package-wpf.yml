@@ -75,9 +75,9 @@ jobs:
   - template: .\steps-restore-nuget.yml
 
   - task: VSBuild@1
-    displayName: Build solution OpenConsole.sln for WPF Control (Pack)
+    displayName: Build solution OpenConsole.slnx for WPF Control (Pack)
     inputs:
-      solution: 'OpenConsole.sln'
+      solution: 'OpenConsole.slnx'
       msbuildArgs: >-
         /p:WindowsTerminalReleaseBuild=true;Version=$(XES_PACKAGEVERSIONNUMBER)
         /p:NoBuild=true

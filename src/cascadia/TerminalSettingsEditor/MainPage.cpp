@@ -373,6 +373,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
                     const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+
+                    TraceLoggingWrite(
+                        g_hTerminalSettingsEditorProvider,
+                        "OpenJson",
+                        TraceLoggingDescription("Event emitted when the user clicks the Open JSON button in the settings UI"),
+                        TraceLoggingValue(target == SettingsTarget::DefaultsFile ? "DefaultsFile" : "SettingsFile", "SettingsTarget", "The target settings file"),
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
                     OpenJson.raise(nullptr, target);
                     return;
                 }
@@ -839,7 +848,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon" || args.PropertyName() == L"EvaluatedIcon")
+                if (args.PropertyName() == L"Icon")
                 {
                     menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
                 }

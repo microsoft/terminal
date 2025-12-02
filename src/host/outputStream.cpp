@@ -409,41 +409,18 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 }
 
 // Routine Description:
-// - Lets accessibility apps know when an area of the screen has changed.
-// Arguments:
-// - changedRect - the area that has changed.
-// Return value:
-// - <none>
-void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.HasAccessibilityEventing() && changedRect)
-    {
-        screenInfo.NotifyAccessibilityEventing(
-            changedRect.left,
-            changedRect.top,
-            changedRect.right - 1,
-            changedRect.bottom - 1);
-    }
-}
-
-// Routine Description:
 // - Implements conhost-specific behavior when the buffer is rotated.
 // Arguments:
 // - delta - the number of cycles that the buffer has rotated.
 // Return value:
 // - <none>
-void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
+void ConhostInternalGetSet::NotifyBufferRotation(const int)
 {
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(0, -delta);
-        }
-    }
+}
+
+void ConhostInternalGetSet::NotifyShellIntegrationMark()
+{
+    // Not implemented for conhost - shell integration marks are a Terminal app feature.
 }
 
 void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)

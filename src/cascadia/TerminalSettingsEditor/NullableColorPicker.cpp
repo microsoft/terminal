@@ -157,12 +157,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentColor(nullptr);
     }
 
-    safe_void_coroutine NullableColorPicker::MoreColors_Clicked(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
-    {
-        co_await ColorPickerDialog().ShowAsync();
-    }
-
-    void NullableColorPicker::ColorPickerDialog_Opened(const IInspectable& /*sender*/, const ContentDialogOpenedEventArgs& /*args*/)
+    void NullableColorPicker::Flyout_Opening(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         // Initialize color picker with current color
         if (CurrentColor())
@@ -183,7 +178,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void NullableColorPicker::ColorPickerDialog_PrimaryButtonClick(const IInspectable& /*sender*/, const ContentDialogButtonClickEventArgs& /*args*/)
+    void NullableColorPicker::Flyout_Closing(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::Controls::Primitives::FlyoutBaseClosingEventArgs& /*args*/)
     {
         const auto& selectedColor = ColorPickerControl().Color();
         const Microsoft::Terminal::Core::Color terminalColor{ selectedColor.R, selectedColor.G, selectedColor.B, selectedColor.A };

@@ -7,8 +7,8 @@
 #include "SettingsPaneContent.h"
 #include "Tab.g.cpp"
 #include "Utils.h"
-#include "ColorHelper.h"
 #include "AppLogic.h"
+#include "../../types/inc/ColorFix.hpp"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -1034,25 +1034,46 @@ namespace winrt::TerminalApp::implementation
     void Tab::_AttachEventHandlersToContent(const uint32_t paneId, const TerminalApp::IPaneContent& content)
     {
         auto weakThis{ get_weak() };
-        auto dispatcher = TabViewItem().Dispatcher();
+        auto dispatcher = DispatcherQueue::GetForCurrentThread();
         ContentEventTokens events{};
+
+        auto throttledTitleChanged = std::make_shared<ThrottledFunc<>>(
+            dispatcher,
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 200 },
+                .leading = true,
+                .trailing = true,
+            },
+            [weakThis]() {
+                if (const auto tab = weakThis.get())
+                {
+                    tab->UpdateTitle();
+                }
+            });
 
         events.TitleChanged = content.TitleChanged(
             winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
-                // The lambda lives in the `std::function`-style container owned by `control`. That is, when the
-                // `control` gets destroyed the lambda struct also gets destroyed. In other words, we need to
-                // copy `weakThis` onto the stack, because that's the only thing that gets captured in coroutines.
-                // See: https://devblogs.microsoft.com/oldnewthing/20211103-00/?p=105870
-                const auto weakThisCopy = weakThis;
-                co_await wil::resume_foreground(dispatcher);
-                // Check if Tab's lifetime has expired
-                if (auto tab{ weakThisCopy.get() })
+            [func = std::move(throttledTitleChanged)](auto&&, auto&&) {
+                func->Run();
+            });
+
+        auto throttledTaskbarProgressChanged = std::make_shared<ThrottledFunc<>>(
+            dispatcher,
+            til::throttled_func_options{
+                .delay = std::chrono::milliseconds{ 200 },
+                .trailing = true,
+            },
+            [weakThis]() {
+                if (const auto tab = weakThis.get())
                 {
-                    // The title of the control changed, but not necessarily the title of the tab.
-                    // Set the tab's text to the active panes' text.
-                    tab->UpdateTitle();
+                    tab->_UpdateProgressState();
                 }
+            });
+
+        events.TaskbarProgressChanged = content.TaskbarProgressChanged(
+            winrt::auto_revoke,
+            [func = std::move(throttledTaskbarProgressChanged)](auto&&, auto&&) {
+                func->Run();
             });
 
         events.TabColorChanged = content.TabColorChanged(
@@ -1067,18 +1088,6 @@ namespace winrt::TerminalApp::implementation
                     // current color anyways.
                     tab->_RecalculateAndApplyTabColor();
                     tab->_tabStatus.TabColorIndicator(tab->GetTabColor().value_or(Windows::UI::Colors::Transparent()));
-                }
-            });
-
-        events.TaskbarProgressChanged = content.TaskbarProgressChanged(
-            winrt::auto_revoke,
-            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
-                const auto weakThisCopy = weakThis;
-                co_await wil::resume_foreground(dispatcher);
-                // Check if Tab's lifetime has expired
-                if (auto tab{ weakThisCopy.get() })
-                {
-                    tab->_UpdateProgressState();
                 }
             });
 
@@ -2116,9 +2125,9 @@ namespace winrt::TerminalApp::implementation
     // - The value to populate in the title run of the tool tip
     winrt::hstring Tab::_CreateToolTipTitle()
     {
-        if (const auto& control{ GetActiveTerminalControl() })
+        if (const auto profile{ GetFocusedProfile() })
         {
-            const auto profileName{ control.Settings().ProfileName() };
+            const auto profileName{ profile.Name() };
             if (profileName != Title())
             {
                 return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), profileName, Title()) };
@@ -2274,11 +2283,13 @@ namespace winrt::TerminalApp::implementation
     // the background color
     // - This method should only be called on the UI thread.
     // Arguments:
-    // - color: the color the user picked for their tab
+    // - uiColor: the color the user picked for their tab
     // Return Value:
     // - <none>
-    void Tab::_ApplyTabColorOnUIThread(const winrt::Windows::UI::Color& color)
+    void Tab::_ApplyTabColorOnUIThread(const winrt::Windows::UI::Color& uiColor)
     {
+        constexpr auto lightnessThreshold = 0.6f;
+        const til::color color{ uiColor };
         Media::SolidColorBrush selectedTabBrush{};
         Media::SolidColorBrush deselectedTabBrush{};
         Media::SolidColorBrush fontBrush{};
@@ -2291,7 +2302,7 @@ namespace winrt::TerminalApp::implementation
         // calculate the luminance of the current color and select a font
         // color based on that
         // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
-        if (TerminalApp::ColorHelper::IsBrightColor(color))
+        if (ColorFix::GetLightness(color) >= lightnessThreshold)
         {
             auto subtleFillColorSecondary = winrt::Windows::UI::Colors::Black();
             subtleFillColorSecondary.A = 0x09;
@@ -2311,8 +2322,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         // The tab font should be based on the evaluated appearance of the tab color layered on tab row.
-        const auto layeredTabColor = til::color{ color }.layer_over(_tabRowColor);
-        if (TerminalApp::ColorHelper::IsBrightColor(layeredTabColor))
+        const auto layeredTabColor = color.layer_over(_tabRowColor);
+        if (ColorFix::GetLightness(layeredTabColor) >= lightnessThreshold)
         {
             fontBrush.Color(winrt::Windows::UI::Colors::Black());
             auto secondaryFontColor = winrt::Windows::UI::Colors::Black();
@@ -2332,8 +2343,7 @@ namespace winrt::TerminalApp::implementation
         selectedTabBrush.Color(color);
 
         // Start with the current tab color, set to Opacity=.3
-        til::color deselectedTabColor{ color };
-        deselectedTabColor = deselectedTabColor.with_alpha(77); // 255 * .3 = 77
+        auto deselectedTabColor = color.with_alpha(77); // 255 * .3 = 77
 
         // If we DON'T have a color set from the color picker, or the profile's
         // tabColor, but we do have a unfocused color in the theme, use the
@@ -2375,7 +2385,7 @@ namespace winrt::TerminalApp::implementation
         // We don't want that to result in white text on a white tab row for
         // inactive tabs.
         const auto deselectedActualColor = deselectedTabColor.layer_over(_tabRowColor);
-        if (TerminalApp::ColorHelper::IsBrightColor(deselectedActualColor))
+        if (ColorFix::GetLightness(deselectedActualColor) >= lightnessThreshold)
         {
             deselectedFontBrush.Color(winrt::Windows::UI::Colors::Black());
         }
@@ -2406,7 +2416,7 @@ namespace winrt::TerminalApp::implementation
             const auto& currentDictionary = v.as<ResourceDictionary>();
 
             // TabViewItem.Background
-            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackground"), selectedTabBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), isHighContrast ? fontBrush : hoverTabBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);

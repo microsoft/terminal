@@ -12,6 +12,8 @@
 #include "SettingsLoadEventArgs.g.cpp"
 #include "WindowProperties.g.cpp"
 
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
+
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Graphics::Display;
@@ -39,8 +41,7 @@ static const std::array settingsLoadWarningsLabels{
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
-    USES_RESOURCE(L"InvalidBackgroundImage"),
-    USES_RESOURCE(L"InvalidIcon"),
+    USES_RESOURCE(L"InvalidMediaResource"),
     USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
     USES_RESOURCE(L"TooManyKeysForChord"),
     USES_RESOURCE(L"MissingRequiredParameter"),
@@ -251,11 +252,11 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::PersistState(bool serializeBuffer)
+    void TerminalWindow::PersistState()
     {
         if (_root)
         {
-            _root->PersistState(serializeBuffer);
+            _root->PersistState();
         }
     }
 
@@ -613,11 +614,11 @@ namespace winrt::TerminalApp::implementation
         if ((_appArgs && _appArgs->ParsedArgs().GetSize().has_value()) || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
-            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr) };
 
             const til::size emptySize{};
             const auto commandlineSize = _appArgs ? _appArgs->ParsedArgs().GetSize().value_or(emptySize) : til::size{};
-            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(),
+            proposedSize = TermControl::GetProposedDimensions(*settings.DefaultSettings(),
                                                               dpi,
                                                               commandlineSize.width,
                                                               commandlineSize.height);
@@ -826,6 +827,11 @@ namespace winrt::TerminalApp::implementation
     UIElement TerminalWindow::GetRoot() noexcept
     {
         return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
+    }
+
+    winrt::Windows::Foundation::Collections::IVector<IPaneContent> TerminalWindow::Panes() const
+    {
+        return winrt::single_threaded_vector(_root->Panes());
     }
 
     // Method Description:
@@ -1048,6 +1054,11 @@ namespace winrt::TerminalApp::implementation
         // (or called TerminalWindow::Initialize)
         if (_appArgs->ExitCode() == 0)
         {
+            // The existing logic (before this commit) strictly relied on
+            // ValidateStartupCommands() only to be called for new windows.
+            // It modifies the actions it stores.
+            parsedArgs.ValidateStartupCommands();
+
             // If the size of the arguments list is 1,
             // then it contains only the executable name and no other arguments.
             _hasCommandLineArguments = _appArgs->CommandlineRef().size() > 1;

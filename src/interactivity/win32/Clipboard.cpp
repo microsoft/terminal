@@ -178,6 +178,11 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
         const auto bracketedPasteMode = gci.GetBracketedPasteMode();
         auto inEvents = TextToKeyEvents(pData, cchData, vtInputMode && bracketedPasteMode);
         gci.pInputBuffer->Write(inEvents);
+
+        if (gci.HasActiveOutputBuffer())
+        {
+            gci.GetActiveOutputBuffer().SnapOnInput(0);
+        }
     }
     catch (...)
     {
@@ -305,7 +310,7 @@ InputEventQueue Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* co
             currentChar = UNICODE_CARRIAGERETURN;
         }
 
-        const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
+        const auto codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
         CharToKeyEvents(currentChar, codepage, keyEvents);
     }
 

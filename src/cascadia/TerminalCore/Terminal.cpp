@@ -167,20 +167,6 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
         break;
     }
 
-    const til::color newBackgroundColor{ appearance.DefaultBackground() };
-    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
-    const til::color newForegroundColor{ appearance.DefaultForeground() };
-    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
-    const til::color newCursorColor{ appearance.CursorColor() };
-    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
-    const til::color newSelectionColor{ appearance.SelectionBackground() };
-    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
-
-    for (auto i = 0; i < 16; i++)
-    {
-        renderSettings.SetColorTableEntry(i, til::color{ appearance.GetColorTableEntry(i) });
-    }
-
     auto cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
     {
@@ -214,6 +200,32 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     _defaultCursorShape = cursorShape;
+
+    UpdateColorScheme(appearance);
+}
+
+void Terminal::UpdateColorScheme(const ICoreScheme& scheme)
+{
+    auto& renderSettings = GetRenderSettings();
+
+    const til::color newBackgroundColor{ scheme.DefaultBackground() };
+    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
+    const til::color newForegroundColor{ scheme.DefaultForeground() };
+    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
+    const til::color newCursorColor{ scheme.CursorColor() };
+    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
+    const til::color newSelectionColor{ scheme.SelectionBackground() };
+    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, newSelectionColor);
+
+    winrt::com_array<Color> colors;
+    scheme.GetColorTable(colors);
+
+    assert(colors.size() == 16);
+
+    for (auto i = 0; i < 16; i++)
+    {
+        renderSettings.SetColorTableEntry(i, til::color{ til::at(colors, i) });
+    }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color
@@ -772,6 +784,19 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
 // - none
 TerminalInput::OutputType Terminal::FocusChanged(const bool focused)
 {
+    if (_focused == focused)
+    {
+        return {};
+    }
+
+    _focused = focused;
+
+    // Recalculate the IRenderData::GetBlinkInterval() on the next call.
+    if (focused)
+    {
+        _cursorBlinkInterval.reset();
+    }
+
     return _getTerminalInput().HandleFocus(focused);
 }
 
@@ -1009,6 +1034,11 @@ int Terminal::ViewEndIndex() const noexcept
     return _inAltBuffer() ? _altBufferSize.height - 1 : _mutableViewport.BottomInclusive();
 }
 
+bool Terminal::IsFocused() const noexcept
+{
+    return _focused;
+}
+
 RenderSettings& Terminal::GetRenderSettings() noexcept
 {
     _assertLocked();
@@ -1170,31 +1200,6 @@ void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, 
     _pfnPlayMidiNote.swap(pfn);
 }
 
-void Terminal::BlinkCursor() noexcept
-{
-    if (_selectionMode != SelectionInteractionMode::Mark)
-    {
-        auto& cursor = _activeBuffer().GetCursor();
-        if (cursor.IsBlinkingAllowed() && cursor.IsVisible())
-        {
-            cursor.SetIsOn(!cursor.IsOn());
-        }
-    }
-}
-
-// Method Description:
-// - Sets the cursor to be currently on. On/Off is tracked independently of
-//   cursor visibility (hidden/visible). On/off is controlled by the cursor
-//   blinker. Visibility is usually controlled by the client application. If the
-//   cursor is hidden, then the cursor will remain hidden. If the cursor is
-//   Visible, then it will immediately become visible.
-// Arguments:
-// - isVisible: whether the cursor should be visible
-void Terminal::SetCursorOn(const bool isOn) noexcept
-{
-    _activeBuffer().GetCursor().SetIsOn(isOn);
-}
-
 // Method Description:
 // - Update our internal knowledge about where regex patterns are on the screen
 // - This is called by TerminalControl (through a throttled function) when the visible
@@ -1292,73 +1297,16 @@ void Terminal::ScrollToSearchHighlight(til::CoordType searchScrollOffset)
     if (_searchHighlightFocused < _searchHighlights.size())
     {
         const auto focused = til::at(_searchHighlights, _searchHighlightFocused);
-        const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
-        const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
-        _ScrollToPoints(adjustedStart, adjustedEnd);
+
+        // Only adjust the y coordinates if "start" is in a row that would be covered by the search box
+        auto adjustedStart = focused.start;
+        const auto firstVisibleRow = _VisibleStartIndex();
+        if (focused.start.y > firstVisibleRow && focused.start.y < firstVisibleRow + searchScrollOffset)
+        {
+            adjustedStart.y = std::max(0, focused.start.y - searchScrollOffset);
+        }
+        _ScrollToPoints(adjustedStart, focused.end);
     }
-}
-
-Scheme Terminal::GetColorScheme() const
-{
-    const auto& renderSettings = GetRenderSettings();
-
-    Scheme s;
-    s.Foreground = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultForeground) };
-    s.Background = til::color{ renderSettings.GetColorAlias(ColorAlias::DefaultBackground) };
-
-    s.CursorColor = til::color{ renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR) };
-    s.SelectionBackground = til::color{ renderSettings.GetColorTableEntry(TextColor::SELECTION_BACKGROUND) };
-
-    s.Black = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_BLACK) };
-    s.Red = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_RED) };
-    s.Green = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_GREEN) };
-    s.Yellow = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_YELLOW) };
-    s.Blue = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_BLUE) };
-    s.Purple = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_MAGENTA) };
-    s.Cyan = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_CYAN) };
-    s.White = til::color{ renderSettings.GetColorTableEntry(TextColor::DARK_WHITE) };
-    s.BrightBlack = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLACK) };
-    s.BrightRed = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_RED) };
-    s.BrightGreen = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_GREEN) };
-    s.BrightYellow = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_YELLOW) };
-    s.BrightBlue = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_BLUE) };
-    s.BrightPurple = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_MAGENTA) };
-    s.BrightCyan = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_CYAN) };
-    s.BrightWhite = til::color{ renderSettings.GetColorTableEntry(TextColor::BRIGHT_WHITE) };
-    return s;
-}
-
-void Terminal::ApplyScheme(const Scheme& colorScheme)
-{
-    auto& renderSettings = GetRenderSettings();
-
-    renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, til::color{ colorScheme.Foreground });
-    renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, til::color{ colorScheme.Background });
-
-    renderSettings.SetColorTableEntry(TextColor::DARK_BLACK, til::color{ colorScheme.Black });
-    renderSettings.SetColorTableEntry(TextColor::DARK_RED, til::color{ colorScheme.Red });
-    renderSettings.SetColorTableEntry(TextColor::DARK_GREEN, til::color{ colorScheme.Green });
-    renderSettings.SetColorTableEntry(TextColor::DARK_YELLOW, til::color{ colorScheme.Yellow });
-    renderSettings.SetColorTableEntry(TextColor::DARK_BLUE, til::color{ colorScheme.Blue });
-    renderSettings.SetColorTableEntry(TextColor::DARK_MAGENTA, til::color{ colorScheme.Purple });
-    renderSettings.SetColorTableEntry(TextColor::DARK_CYAN, til::color{ colorScheme.Cyan });
-    renderSettings.SetColorTableEntry(TextColor::DARK_WHITE, til::color{ colorScheme.White });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLACK, til::color{ colorScheme.BrightBlack });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_RED, til::color{ colorScheme.BrightRed });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_GREEN, til::color{ colorScheme.BrightGreen });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_YELLOW, til::color{ colorScheme.BrightYellow });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_BLUE, til::color{ colorScheme.BrightBlue });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_MAGENTA, til::color{ colorScheme.BrightPurple });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_CYAN, til::color{ colorScheme.BrightCyan });
-    renderSettings.SetColorTableEntry(TextColor::BRIGHT_WHITE, til::color{ colorScheme.BrightWhite });
-
-    renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, til::color{ colorScheme.CursorColor });
-    renderSettings.SetColorTableEntry(TextColor::SELECTION_BACKGROUND, til::color{ colorScheme.SelectionBackground });
-
-    // Tell the control that the scrollbar has somehow changed. Used as a
-    // workaround to force the control to redraw any scrollbar marks whose color
-    // may have changed.
-    _NotifyScrollEvent();
 }
 
 bool Terminal::_inAltBuffer() const noexcept
@@ -1581,9 +1529,9 @@ std::wstring Terminal::CurrentCommand() const
     return _activeBuffer().CurrentCommand();
 }
 
-void Terminal::SerializeMainBuffer(const wchar_t* destination) const
+void Terminal::SerializeMainBuffer(HANDLE handle) const
 {
-    _mainBuffer->SerializeToPath(destination);
+    _mainBuffer->SerializeTo(handle);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
@@ -1631,7 +1579,7 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 // - Returns the position of the cursor relative to the visible viewport
 til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 {
-    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto absoluteCursorPosition{ _activeBuffer().GetCursor().GetPosition() };
     const auto mutableViewport{ _GetMutableViewport() };
     const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
     return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };

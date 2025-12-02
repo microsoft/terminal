@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void ShowHide(const bool show);
 
         void ReparentWindow(const uint64_t newParent);
+        uint64_t RootProcessHandle() noexcept;
 
         winrt::hstring Commandline() const;
         winrt::hstring StartingTitle() const;
@@ -58,7 +59,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static HRESULT NewHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) noexcept;
         static winrt::hstring _commandlineFromProcess(HANDLE process);
 
-        HRESULT _LaunchAttachedClient() noexcept;
+        void _LaunchAttachedClient();
         void _indicateExitWithStatus(unsigned int status) noexcept;
         static std::wstring _formatStatus(uint32_t status);
         void _LastConPtyClientDisconnected() noexcept;

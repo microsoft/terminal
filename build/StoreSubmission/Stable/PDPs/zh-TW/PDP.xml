@@ -54,16 +54,13 @@
     
   </DevStudio>
   <ReleaseNotes>
-    版本 __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-- 我們已重寫主機應用程式在終端機內託管的方式!請報告您遇到的錯誤。
-- 終端機現在支援 Sixels!
-- 現在，您可以開啟包含已儲存命令程式碼片段的固定面板，以供稍後使用
-- 最新 Windows 11 版本中的 [命令提示] 使用者可能會看到「快速提示」圖示，建議可自 WinGet 安裝的軟體
-- 選取的文字現在會更明顯 (且可自訂!)
-- 已修正一些可靠性錯誤、便利性問題和令人困擾的問題。
+- 我們已在使用者介面中新增數十個曾經僅存在於 JSON 檔案中的設定，包括一個可自訂新索引標籤選單版面配置的新頁面!
+- 我們已重新架構視窗管理以提升可靠性; 如果您在使用 wt.exe 別名時遇到任何錯誤，請提交錯誤回報
+- 如果設定檔已隱藏或參照已解除安裝的程式，現在會顯示圖示。
 
-如需更多詳細資訊，請參閱我們的 GitHub 發行頁面。
+如需更多詳細資料，請參閱我們的 GitHub 發行版本頁面。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
