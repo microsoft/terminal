@@ -16,32 +16,29 @@ namespace winrt::TerminalApp::implementation
 
     class TmuxControl
     {
-        using StringHandler = std::function<bool(const wchar_t)>;
-        using PrintHandler = std::function<void(const std::wstring_view)>;
-        using StringHandlerProducer = std::function<StringHandler(PrintHandler)>;
-        using SplitDirection = winrt::Microsoft::Terminal::Settings::Model::SplitDirection;
-
     public:
         TmuxControl(TerminalPage& page);
-        StringHandler TmuxControlHandlerProducer(const winrt::Microsoft::Terminal::Control::TermControl control, const PrintHandler print);
+
+        bool AcquireSingleUseLock() noexcept;
+        void FeedInput(std::wstring_view str);
         bool TabIsTmuxControl(const winrt::com_ptr<Tab>& tab);
-        void SplitPane(const winrt::com_ptr<Tab>& tab, SplitDirection direction);
+        void SplitPane(const winrt::com_ptr<Tab>& tab, winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction);
 
     private:
-        enum class State : int
+        enum class State
         {
             INIT,
             ATTACHING,
             ATTACHED,
         };
 
-        enum class CommandState : int
+        enum class CommandState
         {
             READY,
             WAITING,
         };
 
-        enum class EventType : int
+        enum class EventType
         {
             BEGIN,
             END,
@@ -64,9 +61,9 @@ namespace winrt::TerminalApp::implementation
         struct Event
         {
             EventType type{ EventType::NOTHING };
-            int sessionId{ -1 };
-            int windowId{ -1 };
-            int paneId{ -1 };
+            int64_t sessionId{ -1 };
+            int64_t windowId{ -1 };
+            int64_t paneId{ -1 };
 
             std::wstring response;
         };
@@ -92,10 +89,10 @@ namespace winrt::TerminalApp::implementation
             std::wstring GetCommand() override;
             bool ResultHandler(const std::wstring& result, TmuxControl& tmux) override;
 
-            int paneId{ -1 };
-            int cursorX{ 0 };
-            int cursorY{ 0 };
-            int history{ 0 };
+            int64_t paneId{ -1 };
+            til::CoordType cursorX{ 0 };
+            til::CoordType cursorY{ 0 };
+            til::CoordType history{ 0 };
         };
 
         struct DiscoverPanes : public Command
@@ -104,8 +101,8 @@ namespace winrt::TerminalApp::implementation
             std::wstring GetCommand() override;
             bool ResultHandler(const std::wstring& result, TmuxControl& tmux) override;
 
-            int sessionId{ -1 };
-            int windowId{ -1 };
+            int64_t sessionId{ -1 };
+            int64_t windowId{ -1 };
             bool newWindow{ false };
         };
 
@@ -115,7 +112,7 @@ namespace winrt::TerminalApp::implementation
             std::wstring GetCommand() override;
             bool ResultHandler(const std::wstring& result, TmuxControl& tmux) override;
 
-            int sessionId{ -1 };
+            int64_t sessionId{ -1 };
         };
 
         struct KillPane : public Command
@@ -123,7 +120,7 @@ namespace winrt::TerminalApp::implementation
         public:
             std::wstring GetCommand() override;
 
-            int paneId{ -1 };
+            int64_t paneId{ -1 };
         };
 
         struct KillWindow : public Command
@@ -131,7 +128,7 @@ namespace winrt::TerminalApp::implementation
         public:
             std::wstring GetCommand() override;
 
-            int windowId{ -1 };
+            int64_t windowId{ -1 };
         };
 
         struct ListPanes : public Command
@@ -140,8 +137,8 @@ namespace winrt::TerminalApp::implementation
             std::wstring GetCommand() override;
             bool ResultHandler(const std::wstring& result, TmuxControl& tmux) override;
 
-            int windowId{ -1 };
-            int history{ 2000 };
+            int64_t windowId{ -1 };
+            til::CoordType history{ 2000 };
         };
 
         struct ListWindow : public Command
@@ -150,8 +147,8 @@ namespace winrt::TerminalApp::implementation
             std::wstring GetCommand() override;
             bool ResultHandler(const std::wstring& result, TmuxControl& tmux) override;
 
-            int windowId{ -1 };
-            int sessionId{ -1 };
+            int64_t windowId{ -1 };
+            int64_t sessionId{ -1 };
         };
 
         struct NewWindow : public Command
@@ -165,18 +162,18 @@ namespace winrt::TerminalApp::implementation
         public:
             std::wstring GetCommand() override;
 
-            int width{ 0 };
-            int height{ 0 };
-            int paneId{ -1 };
+            til::CoordType width{ 0 };
+            til::CoordType height{ 0 };
+            int64_t paneId{ -1 };
         };
 
         struct ResizeWindow : public Command
         {
         public:
             std::wstring GetCommand() override;
-            int width{ 0 };
-            int height{ 0 };
-            int windowId{ -1 };
+            til::CoordType width{ 0 };
+            til::CoordType height{ 0 };
+            int64_t windowId{ -1 };
         };
 
         struct SelectWindow : public Command
@@ -184,7 +181,7 @@ namespace winrt::TerminalApp::implementation
         public:
             std::wstring GetCommand() override;
 
-            int windowId{ -1 };
+            int64_t windowId{ -1 };
         };
 
         struct SelectPane : public Command
@@ -192,7 +189,7 @@ namespace winrt::TerminalApp::implementation
         public:
             std::wstring GetCommand() override;
 
-            int paneId{ -1 };
+            int64_t paneId{ -1 };
         };
 
         struct SendKey : public Command
@@ -200,7 +197,7 @@ namespace winrt::TerminalApp::implementation
         public:
             std::wstring GetCommand() override;
 
-            int paneId{ -1 };
+            int64_t paneId{ -1 };
             std::wstring keys;
             wchar_t key{ '\0' };
         };
@@ -218,12 +215,12 @@ namespace winrt::TerminalApp::implementation
         public:
             std::wstring GetCommand() override;
 
-            int paneId{ -1 };
-            SplitDirection direction{ SplitDirection::Left };
+            int64_t paneId{ -1 };
+            winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction{ winrt::Microsoft::Terminal::Settings::Model::SplitDirection::Left };
         };
 
         // Layout structs
-        enum TmuxLayoutType : int
+        enum class TmuxLayoutType
         {
             SINGLE_PANE,
             SPLIT_HORIZONTAL,
@@ -232,27 +229,27 @@ namespace winrt::TerminalApp::implementation
 
         struct TmuxPaneLayout
         {
-            int width;
-            int height;
-            int left;
-            int top;
-            int id;
+            til::CoordType width;
+            til::CoordType height;
+            til::CoordType left;
+            til::CoordType top;
+            int64_t id;
         };
 
         struct TmuxWindowLayout
         {
-            TmuxLayoutType type{ SINGLE_PANE };
+            TmuxLayoutType type = TmuxLayoutType::SINGLE_PANE;
             std::vector<TmuxPaneLayout> panes;
         };
 
         struct TmuxWindow
         {
-            int sessionId{ -1 };
-            int windowId{ -1 };
-            int width{ 0 };
-            int height{ 0 };
-            int history{ 2000 };
-            bool active{ false };
+            int64_t sessionId = 0;
+            int64_t windowId = 0;
+            til::CoordType width = 0;
+            til::CoordType height = 0;
+            til::CoordType history = 0;
+            bool active = false;
             std::wstring name;
             std::wstring layoutChecksum;
             std::vector<TmuxWindowLayout> layout;
@@ -260,21 +257,21 @@ namespace winrt::TerminalApp::implementation
 
         struct TmuxPane
         {
-            int sessionId;
-            int windowId;
-            int paneId;
-            int cursorX;
-            int cursorY;
-            bool active;
+            int64_t sessionId = 0;
+            int64_t windowId = 0;
+            int64_t paneId = 0;
+            til::CoordType cursorX = 0;
+            til::CoordType cursorY = 0;
+            bool active = false;
         };
 
         struct AttachedPane
         {
-            int windowId;
-            int paneId;
+            int64_t windowId = 0;
+            int64_t paneId = 0;
             winrt::Microsoft::Terminal::Control::TermControl control;
             winrt::Microsoft::Terminal::TerminalConnection::TmuxConnection connection;
-            bool initialized{ false };
+            bool initialized = false;
         };
 
         // Private methods
@@ -283,20 +280,19 @@ namespace winrt::TerminalApp::implementation
         void _SetupProfile();
         void _CreateNewTabMenu();
 
-        float _ComputeSplitSize(int newSize, int originSize, SplitDirection direction) const;
-        TerminalApp::Tab _GetTab(int windowId) const;
+        float _ComputeSplitSize(til::CoordType newSize, til::CoordType originSize, winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction) const;
+        winrt::com_ptr<Tab> _GetTab(int64_t windowId) const;
 
-        void _SendOutput(int paneId, const std::wstring& text);
-        void _Output(int paneId, const std::wstring& result);
-        void _CloseWindow(int windowId);
-        void _RenameWindow(int windowId, const std::wstring& name);
-        void _NewWindowFinalize(int windowId, int paneId, const std::wstring& windowName);
-        void _SplitPaneFinalize(int windowId, int paneId);
-        std::shared_ptr<Pane> _NewPane(int windowId, int paneId);
+        void _SendOutput(int64_t paneId, const std::wstring& text);
+        void _Output(int64_t paneId, const std::wstring& result);
+        void _CloseWindow(int64_t windowId);
+        void _RenameWindow(int64_t windowId, const std::wstring& name);
+        void _NewWindowFinalize(int64_t windowId, int64_t paneId, const std::wstring& windowName);
+        void _SplitPaneFinalize(int64_t windowId, int64_t paneId);
+        std::shared_ptr<Pane> _NewPane(int64_t windowId, int64_t paneId);
 
-        bool _SyncPaneState(std::vector<TmuxPane> panes, int history);
+        bool _SyncPaneState(std::vector<TmuxPane> panes, til::CoordType history);
         bool _SyncWindowState(std::vector<TmuxWindow> windows);
-        std::vector<TmuxWindowLayout> _ParseTmuxWindowLayout(std::wstring& layout);
 
         void _EventHandler(const Event& e);
         void _Parse(const std::wstring& buffer);
@@ -304,32 +300,32 @@ namespace winrt::TerminalApp::implementation
 
         // Tmux command methods
         void _AttachDone();
-        void _CapturePane(int paneId, int cursorX, int cursorY, int history);
-        void _DiscoverPanes(int sessionId, int windowId, bool newWindow);
-        void _DiscoverWindows(int sessionId);
-        void _KillPane(int paneId);
-        void _KillWindow(int windowId);
-        void _ListWindow(int sessionId, int windowId);
-        void _ListPanes(int windowId, int history);
+        void _CapturePane(int64_t paneId, til::CoordType cursorX, til::CoordType cursorY, til::CoordType history);
+        void _DiscoverPanes(int64_t sessionId, int64_t windowId, bool newWindow);
+        void _DiscoverWindows(int64_t sessionId);
+        void _KillPane(int64_t paneId);
+        void _KillWindow(int64_t windowId);
+        void _ListWindow(int64_t sessionId, int64_t windowId);
+        void _ListPanes(int64_t windowId, til::CoordType history);
         void _NewWindow();
         void _OpenNewTerminalViaDropdown();
-        void _ResizePane(int paneId, int width, int height);
-        void _ResizeWindow(int windowId, int width, int height);
-        void _SelectPane(int paneId);
-        void _SelectWindow(int windowId);
-        void _SendKey(int paneId, const std::wstring keys);
+        void _ResizePane(int64_t paneId, til::CoordType width, til::CoordType height);
+        void _ResizeWindow(int64_t windowId, til::CoordType width, til::CoordType height);
+        void _SelectPane(int64_t paneId);
+        void _SelectWindow(int64_t windowId);
+        void _SendKey(int64_t paneId, const std::wstring keys);
         void _SetOption(const std::wstring& option);
-        void _SplitPane(std::shared_ptr<Pane> pane, SplitDirection direction);
+        void _SplitPane(std::shared_ptr<Pane> pane, winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction);
 
         void _CommandHandler(const std::wstring& result);
         void _SendCommand(std::unique_ptr<Command> cmd);
         void _ScheduleCommand();
 
         // Private variables
+        TerminalPage& _page; // Non-owning, because TerminalPage owns us
         State _state{ State::INIT };
         CommandState _cmdState{ CommandState::READY };
         Event _event;
-        TerminalPage& _page;
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         TerminalApp::Tab _controlTab{ nullptr };
@@ -343,27 +339,26 @@ namespace winrt::TerminalApp::implementation
 
         std::vector<wchar_t> _dcsBuffer;
         std::deque<std::unique_ptr<TmuxControl::Command>> _cmdQueue;
-        std::unordered_map<int, AttachedPane> _attachedPanes;
-        std::unordered_map<int, TerminalApp::Tab> _attachedWindows;
-        std::unordered_map<int, std::wstring> _outputBacklog;
+        std::unordered_map<int64_t, AttachedPane> _attachedPanes;
+        std::unordered_map<int64_t, winrt::com_ptr<Tab>> _attachedWindows;
+        std::unordered_map<int64_t, std::wstring> _outputBacklog;
 
-        int _sessionId{ -1 };
+        int64_t _sessionId{ -1 };
 
-        int _terminalWidth{ 0 };
-        int _terminalHeight{ 0 };
+        til::CoordType _terminalWidth{ 0 };
+        til::CoordType _terminalHeight{ 0 };
 
         float _fontWidth{ 0 };
         float _fontHeight{ 0 };
 
         ::winrt::Windows::UI::Xaml::Thickness _thickness{ 0, 0, 0, 0 };
 
-        std::pair<std::shared_ptr<Pane>, SplitDirection> _splittingPane{ nullptr, SplitDirection::Right };
+        std::pair<std::shared_ptr<Pane>, winrt::Microsoft::Terminal::Settings::Model::SplitDirection> _splittingPane{ nullptr, winrt::Microsoft::Terminal::Settings::Model::SplitDirection::Right };
 
-        int _activePaneId{ -1 };
-        int _activeWindowId{ -1 };
+        int64_t _activePaneId{ -1 };
+        int64_t _activeWindowId{ -1 };
 
         std::function<void(const std::wstring_view string)> _Print;
-        bool _inUse{ false };
-        std::mutex _inUseMutex;
+        std::atomic<bool> _inUse{ false };
     };
 }

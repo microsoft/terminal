@@ -187,7 +187,6 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectOutput();
 
         void OpenCWD();
-        void SetTmuxControlHandlerProducer(TmuxDCSHandlerProducer producer);
 
         void ClearQuickFix();
 
@@ -203,6 +202,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
         event Windows.Foundation.TypedEventHandler<Object, Object> RefreshQuickFixUI;
         event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, EnterTmuxControlEventArgs> EnterTmuxControl;
 
         // These events are always called from the UI thread (bugs aside)
         event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;

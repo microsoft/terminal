@@ -253,12 +253,6 @@ void Terminal::SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettin
     engine.Dispatch().SetOptionalFeatures(features);
 }
 
-void Terminal::SetTmuxControlHandlerProducer(ITermDispatch::StringHandlerProducer producer) const noexcept
-{
-    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().SetTmuxControlHandlerProducer(producer);
-}
-
 bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
     return _systemMode.test(Mode::BracketedPaste);
@@ -1274,6 +1268,11 @@ void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::functi
 void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept
 {
     _pfnSearchMissingCommand.swap(pfn);
+}
+
+void Terminal::SetEnterTmuxControlCallback(std::function<std::function<bool(wchar_t)>()> pfn) noexcept
+{
+    _pfnEnterTmuxControl = std::move(pfn);
 }
 
 void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept

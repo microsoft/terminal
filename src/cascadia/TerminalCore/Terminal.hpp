@@ -14,7 +14,6 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
-#include "../../terminal/adapter/ITermDispatch.hpp"
 
 #include <til/generational.h>
 #include <til/ticket_lock.h>
@@ -129,7 +128,6 @@ public:
     std::wstring CurrentCommand() const;
 
     void SerializeMainBuffer(HANDLE handle) const;
-    void SetTmuxControlHandlerProducer(Microsoft::Console::VirtualTerminal::ITermDispatch::StringHandlerProducer producer) const noexcept;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -155,14 +153,12 @@ public:
     void ShowWindow(bool showOrHide) override;
     void UseAlternateScreenBuffer(const TextAttribute& attrs) override;
     void UseMainScreenBuffer() override;
-
     bool IsVtInputEnabled() const noexcept override;
     void NotifyBufferRotation(const int delta) override;
     void NotifyShellIntegrationMark() override;
-
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
-
     void SearchMissingCommand(const std::wstring_view command) override;
+    std::function<bool(wchar_t)> EnterTmuxControl() override;
 
 #pragma endregion
 
@@ -232,6 +228,7 @@ public:
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
+    void SetEnterTmuxControlCallback(std::function<std::function<bool(wchar_t)>()> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
@@ -340,6 +337,7 @@ private:
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
+    std::function<std::function<bool(wchar_t)>()> _pfnEnterTmuxControl;
     std::function<void()> _pfnClearQuickFix;
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 

@@ -142,6 +142,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnWindowSizeChanged = [this](auto&& PH1, auto&& PH2) { _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
         _terminal->SetWindowSizeChangedCallback(pfnWindowSizeChanged);
 
+        _terminal->SetEnterTmuxControlCallback([this]() -> std::function<bool(wchar_t)> {
+            const auto args = winrt::make_self<EnterTmuxControlEventArgs>();
+            EnterTmuxControl.raise(*this, *args);
+            if (auto inputCallback = args->InputCallback())
+            {
+                return [inputCallback = std::move(inputCallback)](wchar_t ch) -> bool {
+                    const auto c16 = static_cast<char16_t>(ch);
+                    inputCallback({ &c16, 1 });
+                    return true;
+                };
+            }
+            return nullptr;
+        });
+
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
         // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
@@ -1565,6 +1579,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto lock = _terminal->LockForReading();
         return _terminal->GetViewport().Width();
     }
+
     // Function Description:
     // - Gets the height of the terminal in lines of text. This includes the
     //   history AND the viewport.
@@ -2927,10 +2942,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::PreviewInput(std::wstring_view input)
     {
         _terminal->PreviewText(input);
-    }
-
-    void ControlCore::SetTmuxControlHandlerProducer(ITermDispatch::StringHandlerProducer producer)
-    {
-        _terminal->SetTmuxControlHandlerProducer(producer);
     }
 }

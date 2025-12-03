@@ -41,8 +41,6 @@ namespace ControlUnitTests
     class ControlInteractivityTests;
 };
 
-using Microsoft::Console::VirtualTerminal::ITermDispatch;
-
 #define RUNTIME_SETTING(type, name, setting)                 \
 private:                                                     \
     std::optional<type> _runtime##name{ std::nullopt };      \
@@ -268,7 +266,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         void PreviewInput(std::wstring_view input);
-        void SetTmuxControlHandlerProducer(ITermDispatch::StringHandlerProducer producer);
 
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
@@ -300,10 +297,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
         til::typed_event<> RefreshQuickFixUI;
         til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
-
+        til::typed_event<IInspectable, Control::EnterTmuxControlEventArgs> EnterTmuxControl;
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
-
         til::typed_event<> Attached;
         // clang-format on
 
@@ -466,7 +462,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend class ControlUnitTests::ControlInteractivityTests;
         bool _inUnitTests{ false };
     };
-
 }
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation

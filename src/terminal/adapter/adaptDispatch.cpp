@@ -4767,20 +4767,5 @@ ITermDispatch::StringHandler AdaptDispatch::EnterTmuxControl(const VTParameters 
     {
         return nullptr;
     }
-
-    if (_tmuxControlHandlerProducer)
-    {
-        const auto page = _pages.ActivePage();
-        return _tmuxControlHandlerProducer([this, page](auto s) {
-            PrintString(s);
-            _DoLineFeed(page, true, true);
-        });
-    }
-
-    return nullptr;
-}
-
-void AdaptDispatch::SetTmuxControlHandlerProducer(StringHandlerProducer producer)
-{
-    _tmuxControlHandlerProducer = producer;
+    return _api.EnterTmuxControl();
 }

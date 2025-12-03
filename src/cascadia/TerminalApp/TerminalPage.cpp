@@ -262,11 +262,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         _hostingHwnd = hwnd;
-
-        if constexpr (Feature_TmuxControl::IsEnabled())
-        {
-            _tmuxControl = std::make_unique<TmuxControl>(*this);
-        }
         return S_OK;
     }
 
@@ -413,7 +408,7 @@ namespace winrt::TerminalApp::implementation
 
                 if constexpr (Feature_TmuxControl::IsEnabled())
                 {
-                    //Tmux control takes over
+                    // tmux control takes over
                     if (page->_tmuxControl && page->_tmuxControl->TabIsTmuxControl(page->_GetFocusedTabImpl()))
                     {
                         return;
@@ -3445,7 +3440,7 @@ namespace winrt::TerminalApp::implementation
         const auto tabViewItem = eventArgs.Tab();
         if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
         {
-            winrt::get_self<Tab>(tab)->CloseRequested.raise(nullptr, nullptr);
+            _HandleCloseTabRequested(tab);
         }
     }
 
@@ -3617,12 +3612,19 @@ namespace winrt::TerminalApp::implementation
 
         if constexpr (Feature_TmuxControl::IsEnabled())
         {
-            if (profile.AllowTmuxControl() && _tmuxControl)
-            {
-                control.SetTmuxControlHandlerProducer([this, control](auto print) {
-                    return _tmuxControl->TmuxControlHandlerProducer(control, print);
-                });
-            }
+            control.EnterTmuxControl([this](auto&&, auto&& args) {
+                if (!_tmuxControl)
+                {
+                    _tmuxControl = std::make_unique<TmuxControl>(*this);
+                }
+
+                if (_tmuxControl->AcquireSingleUseLock())
+                {
+                    args.InputCallback([this](auto&& str) {
+                        _tmuxControl->FeedInput(winrt_array_to_wstring_view(str));
+                    });
+                }
+            });
         }
 
         return resultPane;
@@ -5520,6 +5522,7 @@ namespace winrt::TerminalApp::implementation
                     return;
                 }
             }
+
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
             _stashed.draggedTab = tabImpl;

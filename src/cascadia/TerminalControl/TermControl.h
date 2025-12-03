@@ -120,7 +120,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SelectOutput(const bool goUp);
 
         winrt::hstring CurrentWorkingDirectory() const;
-        void SetTmuxControlHandlerProducer(winrt::Microsoft::Terminal::Control::TmuxDCSHandlerProducer producer);
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -233,6 +232,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(WriteToClipboard,         IInspectable, Control::WriteToClipboardEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard,       IInspectable, Control::PasteFromClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(EnterTmuxControl,              IInspectable, Control::EnterTmuxControlEventArgs);
 
         // clang-format on
 
@@ -256,7 +256,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IKeyBindings _keyBindings{ nullptr };
         TsfDataProvider _tsfDataProvider{ this };
         winrt::com_ptr<SearchBoxControl> _searchBox;
-        winrt::Microsoft::Terminal::Control::TmuxDCSHandlerProducer _tmuxDCSHandlerProducer{ nullptr };
 
         enum class AltNumpadEncoding
         {

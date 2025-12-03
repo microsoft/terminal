@@ -74,6 +74,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
         event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, EnterTmuxControlEventArgs> EnterTmuxControl;
 
         event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
 
@@ -166,6 +167,5 @@ namespace Microsoft.Terminal.Control
         void ClearQuickFix();
 
         void Detach();
-        void SetTmuxControlHandlerProducer(TmuxDCSHandlerProducer producer);
     }
 }
