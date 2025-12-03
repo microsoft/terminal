@@ -347,6 +347,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadTab()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+	    TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
         // * Try calling _DuplicateFocusedTab on tab 1
@@ -434,6 +438,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadPane()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+	    TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
         // * Try calling _SplitPane(Duplicate) on tab 1
