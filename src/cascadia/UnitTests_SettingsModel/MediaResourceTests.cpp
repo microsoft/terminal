@@ -103,6 +103,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RealResolverFilePaths);
         TEST_METHOD(RealResolverSpecialKeywords);
         TEST_METHOD(RealResolverUrlCases);
+        TEST_METHOD(RealResolverUNCCases);
 
         static constexpr std::wstring_view pingCommandline{ LR"(C:\Windows\System32\PING.EXE)" }; // Normalized by Profile (this is the casing that Windows stores on disk)
         static constexpr std::wstring_view overrideCommandline{ LR"(C:\Windows\System32\cscript.exe)" };
@@ -1341,6 +1342,96 @@ namespace SettingsModelUnitTests
             VERIFY_ARE_EQUAL(L"", image.Resolved());
             VERIFY_ARE_NOT_EQUAL(image.Resolved(), image.Path());
         }
+    }
+
+    void MediaResourceTests::RealResolverUNCCases()
+    {
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        g_mediaResolverHook = nullptr; // Use the real resolver
+
+        // For profile, we test images instead of icon because Icon has a fallback behavior.
+        auto settings = createSettingsWithFragments(R"({})", { Fragment{ L"fragment", fragmentBasePath1, R"(
+{
+    "profiles": {
+        "list": [
+            {
+                "backgroundImage": "\\\\server",
+                "name": "ProfileUNCServerOnly"
+            },
+            {
+                "backgroundImage": "\\\\server\\share",
+                "name": "ProfileUNCServerShare"
+            },
+            {
+                "backgroundImage": "\\\\server\\share\\file",
+                "name": "ProfileUNCFullPath"
+            },
+            {
+                "backgroundImage": "\\\\?\\UNC\\server",
+                "name": "ProfileWin32NamespaceUNCServerOnly"
+            },
+            {
+                "backgroundImage": "\\\\?\\UNC\\server\\share",
+                "name": "ProfileWin32NamespaceUNCServerShare"
+            },
+            {
+                "backgroundImage": "\\\\?\\UNC\\server\\share\\file",
+                "name": "ProfileWin32NamespaceUNCFullPath"
+            },
+            {
+                "backgroundImage": "\\\\?\\C:\\Windows\\System32\\cmd.exe",
+                "name": "ProfileWin32NamespaceDrivePath"
+            },
+        ]
+    }
+})" } });
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileUNCServerOnly") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileUNCServerShare") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileUNCFullPath") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileWin32NamespaceUNCServerOnly") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileWin32NamespaceUNCServerShare") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+        }
+
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileWin32NamespaceUNCFullPath") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_FALSE(image.Ok());
+        }
+
+        // The only one of these paths which is OK is the one to \\?\C:\Windows
+        {
+            auto profile{ settings->GetProfileByName(L"ProfileWin32NamespaceDrivePath") };
+            auto image{ profile.DefaultAppearance().BackgroundImagePath() };
+            VERIFY_IS_TRUE(image.Ok());
+        }
+
+        // We cannot test that user-originated UNC paths resolve properly because we cannot guarantee
+        // the existence of a network share on any test machine, be it in a lab or owned by a user.
     }
 #pragma endregion
 }
