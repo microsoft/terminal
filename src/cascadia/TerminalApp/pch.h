@@ -100,3 +100,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
 
 #include <til/winrt.h>
+
+#include <LibraryResources.h>

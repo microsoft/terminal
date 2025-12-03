@@ -5,7 +5,6 @@
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
 #include "Command.h"
-#include <LibraryResources.h>
 #include <til/io.h>
 
 #include "ActionMap.g.cpp"

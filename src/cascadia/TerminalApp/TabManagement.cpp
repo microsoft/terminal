@@ -14,8 +14,6 @@
 #include "../../types/inc/utils.hpp"
 #include "../../inc/til/string.h"
 
-#include <LibraryResources.h>
-
 #include "TabRowControl.h"
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"

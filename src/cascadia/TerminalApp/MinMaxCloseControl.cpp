@@ -5,7 +5,6 @@
 
 #include "MinMaxCloseControl.h"
 #include "MinMaxCloseControl.g.cpp"
-#include <LibraryResources.h>
 
 using namespace winrt::Windows::UI::Xaml;
 

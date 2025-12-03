@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 
-#include <LibraryResources.h>
 #include <fmt/chrono.h>
 #include <shlobj.h>
 #include <til/latch.h>
@@ -16,9 +15,7 @@
 #include "PowershellCoreProfileGenerator.h"
 #include "VisualStudioGenerator.h"
 #include "WslDistroGenerator.h"
-#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
 #include "SshHostGenerator.h"
-#endif
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -226,9 +223,10 @@ void SettingsLoader::GenerateProfiles()
     generateProfiles(WslDistroGenerator{});
     generateProfiles(AzureCloudShellGenerator{});
     generateProfiles(VisualStudioGenerator{});
-#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    sshProfilesGenerated = generateProfiles(SshHostGenerator{});
-#endif
+    if constexpr (Feature_DynamicSSHProfiles::IsEnabled())
+    {
+        sshProfilesGenerated = generateProfiles(SshHostGenerator{});
+    }
 }
 
 // Generate ExtensionPackage objects from the profile generators.
@@ -267,9 +265,10 @@ void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
     generateExtensionPackages(WslDistroGenerator{});
     generateExtensionPackages(AzureCloudShellGenerator{});
     generateExtensionPackages(VisualStudioGenerator{});
-#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateExtensionPackages(SshHostGenerator{});
-#endif
+    if constexpr (Feature_DynamicSSHProfiles::IsEnabled())
+    {
+        generateExtensionPackages(SshHostGenerator{});
+    }
 }
 
 // A new settings.json gets a special treatment:

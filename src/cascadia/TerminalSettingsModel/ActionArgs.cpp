@@ -52,7 +52,6 @@
 #include "ColorSelectionArgs.g.cpp"
 #include "HandleUriArgs.g.cpp"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 #include <ScopedResourceLoader.h>
 

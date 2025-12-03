@@ -5,7 +5,6 @@
 #include "AppCommandlineArgs.h"
 #include "../types/inc/utils.hpp"
 #include "TerminalSettingsModel/ModelSerializationHelpers.h"
-#include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;

@@ -9,7 +9,6 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
-#include <LibraryResources.h>
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>
@@ -1791,8 +1790,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH #19358: select the focused search result before clearing search
         if (const auto focusedSearchResult = _terminal->GetSearchHighlightFocused())
         {
-            _terminal->SetSelectionAnchor(focusedSearchResult->start);
-            _terminal->SetSelectionEnd(focusedSearchResult->end);
+            // search results are buffer-relative, whereas the selection functions expect viewport-relative coordinates
+            const auto scrollOffset{ _terminal->GetScrollOffset() };
+            const auto startPos = til::point{ focusedSearchResult->start.x, focusedSearchResult->start.y - scrollOffset };
+            const auto endPos = til::point{ focusedSearchResult->end.x, focusedSearchResult->end.y - scrollOffset };
+
+            _terminal->SetSelectionAnchor(startPos);
+            _terminal->SetSelectionEnd(endPos);
             _renderer->TriggerSelection();
         }
 

@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Actions.h"
 #include "Actions.g.cpp"
-#include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
 using namespace winrt::Windows::UI::Xaml;
