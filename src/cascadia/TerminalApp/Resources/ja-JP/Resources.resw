@@ -282,7 +282,7 @@
     <value>同じ名前ですが大文字と小文字が異なる環境変数が複数見つかりました。使用される値は 1 つだけです。</value>
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
-    <value>新しいタブまたはウィンドウで生成されるオプションのコマンドと引数</value>
+    <value>新しいタブまたはペインで生成されるオプションのコマンドと引数</value>
   </data>
   <data name="SaveSnippetDesc" xml:space="preserve">
     <value>コマンド ラインを入力アクションとして保存する</value>
@@ -377,7 +377,7 @@
     <comment>{Locked="\"tabTitle\""}</comment>
   </data>
   <data name="CmdInheritEnvDesc" xml:space="preserve">
-    <value>新しい環境ブロックを作成するのではなく、新しいタブまたはウィンドウを作成するときに、ターミナル独自の環境変数を継承します。これは、"command" が渡されたときに既定で設定されます。 </value>
+    <value>新しい環境ブロックを作成するのではなく、新しいタブまたはペインを作成するときに、ターミナル独自の環境変数を継承します。これは、"command" が渡されたときに既定で設定されます。 </value>
     <comment>{Locked="\"command\""}</comment>
   </data>
   <data name="CmdColorSchemeArgDesc" xml:space="preserve">
@@ -394,7 +394,7 @@
     <value>ウィンドウを全画面表示モードで起動する</value>
   </data>
   <data name="CmdMoveFocusDesc" xml:space="preserve">
-    <value>指定した方向にある隣のウィンドウにフォーカスを移動する</value>
+    <value>指定した方向にある隣のペインにフォーカスを移動する</value>
   </data>
   <data name="CmdMFDesc" xml:space="preserve">
     <value>"move-focus" サブコマンドのエイリアス。</value>
@@ -822,7 +822,7 @@
     <value>設定ページを開きます</value>
   </data>
   <data name="SplitTabToolTip" xml:space="preserve">
-    <value>現在のディレクトリのアクティブなプロファイルを使用して新しいウィンドウを開きます</value>
+    <value>現在のディレクトリのアクティブなプロファイルを使用して新しいペインを開きます</value>
   </data>
   <data name="TabCloseAfterToolTip" xml:space="preserve">
     <value>このタブの右側にあるすべてのタブを閉じます</value>
@@ -895,7 +895,7 @@
     <value>接続の再起動</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
-    <value>アクティブウィンドウ接続を再起動します</value>
+    <value>アクティブ ペイン接続を再起動します</value>
   </data>
   <data name="SnippetPaneTitle.Text" xml:space="preserve">
     <value>抜粋</value>
