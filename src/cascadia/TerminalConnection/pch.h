@@ -29,6 +29,7 @@
 #include "winrt/Windows.Data.Json.h"
 #include <Windows.h>
 
+#include <wrl.h>
 #include <winhttp.h>
 #include <wil/resource.h>
 

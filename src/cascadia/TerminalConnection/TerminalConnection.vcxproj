@@ -78,6 +78,7 @@
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+	    <Private>true</Private>
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

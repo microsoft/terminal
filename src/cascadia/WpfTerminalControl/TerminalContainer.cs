@@ -37,7 +37,6 @@ namespace Microsoft.Terminal.Wpf
             NativeMethods.AvoidBuggyTSFConsoleFlags();
 
             this.MessageHook += this.TerminalContainer_MessageHook;
-            this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
         }
 
@@ -324,24 +323,12 @@ namespace Microsoft.Terminal.Wpf
             character = (char)vKey;
         }
 
-        private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
-        {
-            e.Handled = true;
-            NativeMethods.SetFocus(this.hwnd);
-        }
-
         private IntPtr TerminalContainer_MessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             if (hwnd == this.hwnd)
             {
                 switch ((NativeMethods.WindowMessage)msg)
                 {
-                    case NativeMethods.WindowMessage.WM_SETFOCUS:
-                        NativeMethods.TerminalSetFocused(this.terminal, true);
-                        break;
-                    case NativeMethods.WindowMessage.WM_KILLFOCUS:
-                        NativeMethods.TerminalSetFocused(this.terminal, false);
-                        break;
                     case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
@@ -349,6 +336,7 @@ namespace Microsoft.Terminal.Wpf
                     case NativeMethods.WindowMessage.WM_SYSKEYDOWN: // fallthrough
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         {
+                            // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
                             UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
                             NativeMethods.TerminalSendKeyEvent(this.terminal, vkey, scanCode, flags, true);
                             break;
@@ -403,10 +391,10 @@ namespace Microsoft.Terminal.Wpf
                         this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
                         break;
 
-                    case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
-                        var delta = (short)(((long)wParam) >> 16);
-                        this.UserScrolled?.Invoke(this, delta);
-                        break;
+                    //case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
+                        //var delta = (short)(((long)wParam) >> 16);
+                        //this.UserScrolled?.Invoke(this, delta);
+                        //break;
                 }
             }
 
