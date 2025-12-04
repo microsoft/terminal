@@ -3612,17 +3612,20 @@ namespace winrt::TerminalApp::implementation
 
         if constexpr (Feature_TmuxControl::IsEnabled())
         {
-            control.EnterTmuxControl([this](auto&&, auto&& args) {
-                if (!_tmuxControl)
-                {
-                    _tmuxControl = std::make_unique<TmuxControl>(*this);
-                }
+            if (!_tmuxControl)
+            {
+                _tmuxControl = std::make_unique<TmuxControl>(*this);
+            }
 
-                if (_tmuxControl->AcquireSingleUseLock())
+            control.EnterTmuxControl([tmuxControl = _tmuxControl.get()](auto&& sender, auto&& args) {
+                if (auto control = sender.try_as<TermControl>())
                 {
-                    args.InputCallback([this](auto&& str) {
-                        _tmuxControl->FeedInput(winrt_array_to_wstring_view(str));
-                    });
+                    if (tmuxControl->AcquireSingleUseLock(std::move(control)))
+                    {
+                        args.InputCallback([tmuxControl](auto&& str) {
+                            tmuxControl->FeedInput(winrt_array_to_wstring_view(str));
+                        });
+                    }
                 }
             });
         }
