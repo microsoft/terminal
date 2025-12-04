@@ -85,18 +85,30 @@ try
 #endif
     return loader;
 }
-CATCH_FAIL_FAST()
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return winrt::hstring{};
+}
 
 winrt::hstring GetLibraryResourceString(const std::wstring_view key)
 try
 {
     return GetLibraryResourceLoader().GetLocalizedString(key);
 }
-CATCH_FAIL_FAST()
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return winrt::hstring{};
+}
 
 bool HasLibraryResourceWithName(const std::wstring_view key)
 try
 {
     return GetLibraryResourceLoader().HasResourceWithName(key);
 }
-CATCH_FAIL_FAST()
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return false;
+}
