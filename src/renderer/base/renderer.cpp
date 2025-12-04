@@ -172,17 +172,17 @@ TimerDuration Renderer::GetTimerInterval(TimerHandle handle) const
     return TimerDuration{ timer.interval };
 }
 
-void Renderer::StarTimer(TimerHandle handle, TimerDuration delay)
+void Renderer::StartTimer(TimerHandle handle, TimerDuration delay)
 {
-    _starTimer(handle, delay.count(), TimerReprMax);
+    _startTimer(handle, delay.count(), TimerReprMax);
 }
 
 void Renderer::StartRepeatingTimer(TimerHandle handle, TimerDuration interval)
 {
-    _starTimer(handle, interval.count(), interval.count());
+    _startTimer(handle, interval.count(), interval.count());
 }
 
-void Renderer::_starTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval)
+void Renderer::_startTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval)
 {
     // Nothing breaks if these assertions are violated, but you should still violate them.
     // A timer with a 1-hour delay is weird and indicative of a bug. It should have been
