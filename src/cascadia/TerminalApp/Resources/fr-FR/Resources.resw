@@ -887,7 +887,7 @@
     <value>Déplacer l'onglet vers une nouvelle fenêtre </value>
   </data>
   <data name="RunAsAdminFlyout.Text" xml:space="preserve">
-    <value>Exécuter en temps qu'administrateur (restreint)</value>
+    <value>Exécuter en tant qu'administrateur (restreint)</value>
     <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
