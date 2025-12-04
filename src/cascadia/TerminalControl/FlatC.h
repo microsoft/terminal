@@ -17,6 +17,14 @@ using PTERM = void*;
 using PSCROLLCB = void(_stdcall*)(int, int, int);
 using PWRITECB = void(_stdcall*)(const wchar_t*);
 
+typedef struct _TerminalDispatcherCallouts
+{
+    bool(__stdcall* pDispatcherTryEnqueueWork)(void*, int, void*);
+    bool(__stdcall* pDispatcherHasThreadAccess)(void*);
+    // Context which will be passed back to the above function pointers.
+    void* context;
+} TerminalDispatcherCallouts;
+
 #define TERMINAL_API_TABLE(XX)                                                                                 \
     XX(SendOutput, LPCWSTR, data)                                                                              \
     XX(RegisterScrollCallback, PSCROLLCB, callback)                                                            \
@@ -58,6 +66,6 @@ TERMINAL_API_TABLE(GENERATOR)
 #undef GENERATOR_N
 #undef API_NAME
 
-__declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ PTERM* terminal);
+__declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, TerminalDispatcherCallouts dispatcherCallouts, _Out_ void** hwnd, _Out_ PTERM* terminal);
 __declspec(dllexport) void _stdcall DestroyTerminal(PTERM terminal);
 };

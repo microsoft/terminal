@@ -11,6 +11,7 @@
 #include "ControlCore.h"
 #include "ControlInteractivity.h"
 
+#include <windows.system.h>
 #include <windowsx.h>
 
 #pragma warning(disable : 4100)
@@ -386,7 +387,7 @@ struct HwndTerminal
 
     wil::unique_hwnd _hwnd;
 
-    HwndTerminal(HWND parentHwnd)
+    HwndTerminal(HWND parentHwnd, winrt::Windows::System::DispatcherQueue dispatcher)
     {
         HINSTANCE hInstance = wil::GetModuleInstanceHandle();
 
@@ -412,7 +413,7 @@ struct HwndTerminal
 
         _settingsBridge = winrt::make_self<CsBridgeTerminalSettings>();
         _connection = winrt::make_self<CsBridgeConnection>();
-        _interactivity = winrt::make_self<implementation::ControlInteractivity>(*_settingsBridge, nullptr, *_connection);
+        _interactivity = winrt::make_self<implementation::ControlInteractivity>(*_settingsBridge, nullptr, *_connection, dispatcher);
         _core.copy_from(winrt::get_self<implementation::ControlCore>(_interactivity->Core()));
 
         _core->ScrollPositionChanged({ this, &HwndTerminal::_scrollPositionChanged });
@@ -575,9 +576,87 @@ extern "C" void _stdcall AvoidBuggyTSFConsoleFlags()
     Microsoft::Console::TSF::Handle::AvoidBuggyTSFConsoleFlags();
 }
 
-__declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ PTERM* terminal)
+#pragma region Implementation of IDispatcherQueue
+struct CsDispatcherQueue : public winrt::implements<CsDispatcherQueue, ::ABI::Windows::System::IDispatcherQueue, ::ABI::Windows::System::IDispatcherQueue2>
 {
-    auto inner = new HwndTerminal{ parentHwnd };
+    CsDispatcherQueue(TerminalDispatcherCallouts callouts) : _callouts{ std::move(callouts) } {}
+
+    IFACEMETHODIMP CreateTimer(::ABI::Windows::System::IDispatcherQueueTimer** result)
+    {
+        return E_FAIL;
+    }
+
+    IFACEMETHODIMP TryEnqueue(::ABI::Windows::System::IDispatcherQueueHandler* callback, boolean* result)
+    {
+        return TryEnqueueWithPriority(::ABI::Windows::System::DispatcherQueuePriority::DispatcherQueuePriority_Normal, callback, result);
+    }
+
+    IFACEMETHODIMP TryEnqueueWithPriority(
+        ::ABI::Windows::System::DispatcherQueuePriority priority,
+        ::ABI::Windows::System::IDispatcherQueueHandler* callback,
+        boolean* result)
+    {
+        RETURN_HR_IF(E_INVALIDARG, !result || !callback);
+        callback->AddRef(); // Retain on transition to managed
+        *result = _callouts.pDispatcherTryEnqueueWork(_callouts.context, static_cast<int>(priority), callback);
+        return S_OK;
+    }
+
+    IFACEMETHODIMP add_ShutdownStarting(
+        __FITypedEventHandler_2_Windows__CSystem__CDispatcherQueue_Windows__CSystem__CDispatcherQueueShutdownStartingEventArgs*,
+        EventRegistrationToken*)
+    {
+        return E_FAIL;
+    }
+
+    IFACEMETHODIMP remove_ShutdownStarting(
+        EventRegistrationToken)
+    {
+        return E_FAIL;
+    }
+
+    IFACEMETHODIMP add_ShutdownCompleted(
+        __FITypedEventHandler_2_Windows__CSystem__CDispatcherQueue_IInspectable*,
+        EventRegistrationToken*)
+    {
+        return E_FAIL;
+    }
+
+    IFACEMETHODIMP remove_ShutdownCompleted(
+        EventRegistrationToken)
+    {
+        return E_FAIL;
+    }
+
+    IFACEMETHODIMP get_HasThreadAccess(boolean* result)
+    {
+        RETURN_HR_IF(E_INVALIDARG, !result);
+        *result = _callouts.pDispatcherHasThreadAccess(_callouts.context);
+        return S_OK;
+    }
+
+private:
+    TerminalDispatcherCallouts _callouts;
+};
+
+__declspec(dllexport) HRESULT _stdcall InteropQueueHandlerInvoke(void* ptr)
+{
+    auto handler = static_cast<::ABI::Windows::System::IDispatcherQueueHandler*>(ptr);
+    const auto hr = handler->Invoke();
+    handler->Release();
+    return hr;
+}
+#pragma endregion
+
+__declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _In_ TerminalDispatcherCallouts dispatcherCallouts, _Out_ void** hwnd, _Out_ PTERM* terminal)
+{
+    winrt::Windows::System::DispatcherQueue localDispatcherQueue{ nullptr };
+    if (dispatcherCallouts.pDispatcherTryEnqueueWork != nullptr)
+    {
+        auto dispatcher = winrt::make<CsDispatcherQueue>(dispatcherCallouts);
+        winrt::copy_from_abi(localDispatcherQueue, winrt::get_abi(dispatcher));
+    }
+    auto inner = new HwndTerminal{ parentHwnd, localDispatcherQueue };
     *terminal = inner;
     *hwnd = inner->_hwnd.get();
     inner->Initialize();

@@ -11,6 +11,7 @@ namespace Microsoft.Terminal.Wpf
     using System.Windows.Automation.Peers;
     using System.Windows.Interop;
     using System.Windows.Media;
+    using System.Windows.Threading;
 
     /// <summary>
     /// The container class that hosts the native hwnd terminal.
@@ -26,6 +27,40 @@ namespace Microsoft.Terminal.Wpf
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
 
+        private DispatcherWrapper dispatcherWrapper;
+
+        // These callbacks are provided to CreateTerminal so that the terminal
+        // core can schedule workitems on the same dispatcher queue as WPF.
+        // They must be pinned with GC handles so that they do not get garbage collected.
+        private NativeMethods.DispatcherCallouts dispatcherCallouts;
+        private GCHandle dispatcherTryEnqueueCalloutGCHandle;
+        private GCHandle dispatcherHasThreadAccessCalloutGCHandle;
+
+        private class DispatcherWrapper
+        {
+            private readonly Dispatcher dispatcher;
+
+            public DispatcherWrapper(Dispatcher dispatcher)
+            {
+                this.dispatcher = dispatcher;
+            }
+
+#pragma warning disable IDE0060
+            public bool TryEnqueue(IntPtr context, int priority, IntPtr obj)
+            {
+                var actualPrio = priority switch {
+                    < 0 => DispatcherPriority.Inactive,
+                    0 => DispatcherPriority.Normal,
+                    > 0 => DispatcherPriority.Send,
+                };
+                var task = this.dispatcher.InvokeAsync(() => NativeMethods.InteropQueueHandlerInvoke(obj), actualPrio);
+                return task != null;
+            }
+
+#pragma warning disable IDE0060
+            public bool HasThreadAccess(IntPtr context) => this.dispatcher.CheckAccess();
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
         /// </summary>
@@ -35,6 +70,11 @@ namespace Microsoft.Terminal.Wpf
             // It simply crashes on Windows 10 if you use the Emoji picker.
             // (On later versions of Windows it just doesn't work.)
             NativeMethods.AvoidBuggyTSFConsoleFlags();
+
+            this.dispatcherWrapper = new DispatcherWrapper(this.Dispatcher);
+            this.dispatcherCallouts = new NativeMethods.DispatcherCallouts { tryEnqueue = this.dispatcherWrapper.TryEnqueue, hasThreadAccess = this.dispatcherWrapper.HasThreadAccess, context = (IntPtr)0 /* unused */ };
+            this.dispatcherTryEnqueueCalloutGCHandle = GCHandle.Alloc(this.dispatcherCallouts.tryEnqueue);
+            this.dispatcherHasThreadAccessCalloutGCHandle = GCHandle.Alloc(this.dispatcherCallouts.hasThreadAccess);
 
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.Focusable = true;
@@ -285,7 +325,7 @@ namespace Microsoft.Terminal.Wpf
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
-            NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
+            NativeMethods.CreateTerminal(hwndParent.Handle, this.dispatcherCallouts, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;
             this.writeCallback = this.OnWrite;
@@ -306,6 +346,8 @@ namespace Microsoft.Terminal.Wpf
         protected override void DestroyWindowCore(HandleRef hwnd)
         {
             NativeMethods.DestroyTerminal(this.terminal);
+            this.dispatcherTryEnqueueCalloutGCHandle.Free();
+            this.dispatcherHasThreadAccessCalloutGCHandle.Free();
             this.terminal = IntPtr.Zero;
         }
 
