@@ -20,3 +20,5 @@ EXPORTS
   TerminalRegisterWriteCallback
   TerminalSendKeyEvent
   TerminalSendCharEvent
+
+  InteropQueueHandlerInvoke

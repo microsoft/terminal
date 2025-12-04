@@ -7,6 +7,7 @@ namespace Microsoft.Terminal.Wpf
 {
     using System;
     using System.Runtime.InteropServices;
+    using System.Windows.Threading;
 
 #pragma warning disable SA1600 // Elements should be documented
     internal static class NativeMethods
@@ -18,6 +19,33 @@ namespace Microsoft.Terminal.Wpf
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void WriteCallback([In, MarshalAs(UnmanagedType.LPWStr)] string data);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate bool DispatcherTryEnqueue(int priority, IntPtr obj);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        public delegate bool DispatcherHasThreadAccess();
+
+
+        public class DispatcherWrapper {
+            private readonly Dispatcher dispatcher;
+
+            public DispatcherWrapper(Dispatcher dispatcher) {
+                this.dispatcher = dispatcher;
+            }
+
+            public bool TryEnqueue(int priority, IntPtr obj) {
+                var actualPrio = priority switch {
+                    < 0 => DispatcherPriority.Inactive,
+                    0 => DispatcherPriority.Normal,
+                    > 0 => DispatcherPriority.Send,
+                };
+                var task = this.dispatcher.InvokeAsync(() => InteropQueueHandlerInvoke(obj), actualPrio);
+                return task != null;
+            }
+
+            public bool HasThreadAccess() => this.dispatcher.CheckAccess();
+        }
 
         public enum WindowMessage : int
         {
@@ -175,7 +203,7 @@ namespace Microsoft.Terminal.Wpf
         public static extern void AvoidBuggyTSFConsoleFlags();
 
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]
-        public static extern void CreateTerminal(IntPtr parent, out IntPtr hwnd, out IntPtr terminal);
+        public static extern void CreateTerminal(IntPtr parent, [MarshalAs(UnmanagedType.FunctionPtr)] DispatcherTryEnqueue tryEnq, [MarshalAs(UnmanagedType.FunctionPtr)] DispatcherHasThreadAccess hasA, out IntPtr hwnd, out IntPtr terminal);
 
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void DestroyTerminal(IntPtr terminal);
@@ -220,6 +248,9 @@ namespace Microsoft.Terminal.Wpf
 
         [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]
         public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);
+
+        [DllImport("Microsoft.Terminal.Control.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall, PreserveSig = false)]
+        public static extern void InteropQueueHandlerInvoke(IntPtr handler);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);

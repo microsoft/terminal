@@ -26,6 +26,12 @@ namespace Microsoft.Terminal.Wpf
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
 
+        private NativeMethods.DispatcherWrapper wrapper;
+        private NativeMethods.DispatcherTryEnqueue dte;
+        private NativeMethods.DispatcherHasThreadAccess dhta;
+        private GCHandle wrapperGcHandle1;
+        private GCHandle wrapperGcHandle2;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
         /// </summary>
@@ -36,6 +42,12 @@ namespace Microsoft.Terminal.Wpf
             // (On later versions of Windows it just doesn't work.)
             NativeMethods.AvoidBuggyTSFConsoleFlags();
 
+            this.wrapper = new NativeMethods.DispatcherWrapper(System.Windows.Threading.Dispatcher.CurrentDispatcher);
+            this.dte = new (wrapper.TryEnqueue);
+            this.dhta = new (wrapper.HasThreadAccess);
+            this.wrapperGcHandle1 = GCHandle.Alloc(this.dte);
+            this.wrapperGcHandle2 = GCHandle.Alloc(this.dhta);
+            
             this.MessageHook += this.TerminalContainer_MessageHook;
             this.Focusable = true;
         }
@@ -285,7 +297,7 @@ namespace Microsoft.Terminal.Wpf
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
-            NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
+            NativeMethods.CreateTerminal(hwndParent.Handle, this.dte, this.dhta, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;
             this.writeCallback = this.OnWrite;
@@ -306,6 +318,8 @@ namespace Microsoft.Terminal.Wpf
         protected override void DestroyWindowCore(HandleRef hwnd)
         {
             NativeMethods.DestroyTerminal(this.terminal);
+            this.wrapperGcHandle2.Free();
+            this.wrapperGcHandle1.Free();
             this.terminal = IntPtr.Zero;
         }
 

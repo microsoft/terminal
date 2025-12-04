@@ -465,6 +465,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                          const float compositionScale,
                                          const uint64_t hwnd)
     {
+        _owningHwnd = hwnd;
+
         auto i = Initialize(actualWidth, actualHeight, compositionScale);
         if (i)
         {
