@@ -78,6 +78,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     struct ControlCore : ControlCoreT<ControlCore>
     {
+    private:
+        enum class HookupMode
+        {
+            ForHwnd = 0x0,
+            ForComposition = 0x1,
+        };
     public:
         ControlCore(Control::IControlSettings settings,
                     Control::IControlAppearance unfocusedAppearance,
@@ -382,7 +388,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 //
                 // Though, the unit tests don't actually run in TAEF's main
                 // thread, so we don't care when we're running in tests.
-                assert(_inUnitTests || _dispatcher.HasThreadAccess());
+                assert(_hookup == HookupMode::ForHwnd || _inUnitTests || _dispatcher.HasThreadAccess());
             }
 #endif
             return _closing;
@@ -427,6 +433,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
+        HookupMode _hookup{ HookupMode::ForComposition };
 
         struct StashedColorScheme
         {

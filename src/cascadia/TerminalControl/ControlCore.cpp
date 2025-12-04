@@ -160,6 +160,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_setupDispatcherAndCallbacks()
     {
+        ///* TODO(DH) */ return;
         // Get our dispatcher. If we're hosted in-proc with XAML, this will get
         // us the same dispatcher as TermControl::Dispatcher(). If we're out of
         // proc, this'll return null. We'll need to instead make a new
@@ -408,12 +409,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->Create(viewportSize, Utils::ClampToShortMax(_settings.HistorySize(), 0), *_renderer);
             _terminal->UpdateSettings(_settings);
 
-            // Tell the render engine to notify us when the swap chain changes.
-            // We do this after we initially set the swapchain so as to avoid
-            // unnecessary callbacks (and locking problems)
-            _renderEngine->SetCallback([this](HANDLE handle) {
-                _renderEngineSwapChainChanged(handle);
-            });
+            if (_hookup == HookupMode::ForComposition)
+            {
+                // Tell the render engine to notify us when the swap chain changes.
+                // We do this after we initially set the swapchain so as to avoid
+                // unnecessary callbacks (and locking problems)
+                _renderEngine->SetCallback([this](HANDLE handle) {
+                    _renderEngineSwapChainChanged(handle);
+                });
+            }
 
             _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
@@ -439,6 +443,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                          const float compositionScale,
                                          const uint64_t hwnd)
     {
+        _owningHwnd = hwnd;
+        _hookup = HookupMode::ForHwnd;
+
         auto i = Initialize(actualWidth, actualHeight, compositionScale);
         if (i)
         {
