@@ -2641,7 +2641,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
-        const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
+        auto scrollbarSize = GetSystemMetrics(SM_CXVSCROLL);
+        scrollbarSize = gsl::narrow_cast<decltype(scrollbarSize)>(scrollbarSize * (dpi / 96));
 
         float width = cols * static_cast<float>(actualFontSize.width);
 

@@ -92,6 +92,9 @@ namespace Microsoft.Terminal.Control
         Boolean Initialize(Single actualWidth,
                            Single actualHeight,
                            Single compositionScale);
+        Boolean InitializeWithHwnd(Single actualWidth,
+                           Single actualHeight,
+                           Single compositionScale, UInt64 hwnd);
 
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
@@ -181,6 +184,9 @@ namespace Microsoft.Terminal.Control
         void ContextMenuSelectOutput();
         Boolean ShouldShowSelectCommand();
         Boolean ShouldShowSelectOutput();
+
+        Windows.Foundation.Size RenderedSize { get; };
+        void ResizeToDimensions(UInt32 width, UInt32 height, out Windows.Foundation.Size newSizeInPixels);
 
         void OpenCWD();
 

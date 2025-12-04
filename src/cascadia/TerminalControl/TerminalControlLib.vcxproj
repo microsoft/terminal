@@ -30,6 +30,7 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="FlatC.h" />
     <ClInclude Include="ControlCore.h">
       <DependentUpon>ControlCore.idl</DependentUpon>
     </ClInclude>
@@ -61,14 +62,13 @@
       <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="XamlUiaTextRange.h" />
-    <ClInclude Include="HwndTerminal.hpp" />
-    <ClInclude Include="HwndTerminalAutomationPeer.hpp" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="FlatC.cpp" />
     <ClCompile Include="ControlCore.cpp">
       <DependentUpon>ControlCore.idl</DependentUpon>
     </ClCompile>
@@ -102,8 +102,6 @@
       <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="XamlUiaTextRange.cpp" />
-    <ClCompile Include="HwndTerminal.cpp" />
-    <ClCompile Include="HwndTerminalAutomationPeer.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -160,6 +158,7 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
+	    <Private>true</Private>
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

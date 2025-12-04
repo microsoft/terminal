@@ -87,6 +87,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool Initialize(const float actualWidth,
                         const float actualHeight,
                         const float compositionScale);
+        bool InitializeWithHwnd(const float actualWidth,
+                                const float actualHeight,
+                                const float compositionScale,
+                                const uint64_t hwnd);
         void EnablePainting();
 
         void Detach();
@@ -263,6 +267,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectCommand();
         bool ShouldShowSelectOutput();
 
+        winrt::Windows::Foundation::Size RenderedSize();
+        void ResizeToDimensions(uint32_t width, uint32_t height, winrt::Windows::Foundation::Size& newSizeInPixels);
+
         void PreviewInput(std::wstring_view input);
 
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
@@ -341,7 +348,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region RendererCallbacks
         void _rendererWarning(const HRESULT hr, wil::zwstring_view parameter);
-        safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
+        /* TODO(DH) */ void _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
 #pragma endregion

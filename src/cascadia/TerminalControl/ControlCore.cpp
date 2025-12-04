@@ -434,6 +434,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
+    bool ControlCore::InitializeWithHwnd(const float actualWidth,
+                                         const float actualHeight,
+                                         const float compositionScale,
+                                         const uint64_t hwnd)
+    {
+        auto i = Initialize(actualWidth, actualHeight, compositionScale);
+        if (i)
+        {
+            auto lock = _terminal->LockForWriting();
+            (void)_renderEngine->SetHwnd(reinterpret_cast<HWND>(hwnd));
+        }
+        return i;
+    }
+
     // Method Description:
     // - Tell the renderer to start painting.
     // - !! IMPORTANT !! Make sure that we've attached our swap chain to an
@@ -1939,7 +1953,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         RendererWarning.raise(*this, winrt::make<RendererWarningArgs>(hr, winrt::hstring{ parameter }));
     }
 
-    safe_void_coroutine ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
+    /* TODO(DH) */ void ControlCore::_renderEngineSwapChainChanged(const HANDLE sourceHandle)
     {
         // `sourceHandle` is a weak ref to a HANDLE that's ultimately owned by the
         // render engine's own unique_handle. We'll add another ref to it here.
@@ -1957,7 +1971,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Concurrent read of _dispatcher is safe, because Detach() calls TriggerTeardown()
         // which blocks until this call returns. _dispatcher will only be changed afterwards.
-        co_await wil::resume_foreground(_dispatcher);
+        // TODO(DH) co_await wil::resume_foreground(_dispatcher);
 
         if (auto core{ weakThis.get() })
         {
@@ -2921,5 +2935,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::PreviewInput(std::wstring_view input)
     {
         _terminal->PreviewText(input);
+    }
+
+    winrt::Windows::Foundation::Size ControlCore::RenderedSize()
+    {
+        return { _panelWidth, _panelHeight };
+    }
+
+    void ControlCore::ResizeToDimensions(uint32_t width, uint32_t height, winrt::Windows::Foundation::Size& newSizeInPixels)
+    {
+        if (!_renderEngine)
+        {
+            throw winrt::hresult_error(E_INVALIDARG);
+        }
+        auto pixelSize = _renderEngine->GetViewportInPixels(Viewport::FromDimensions({ 0, 0 }, til::size{ static_cast<til::CoordType>(width), static_cast<til::CoordType>(height) }));
+        SizeOrScaleChanged(static_cast<float>(pixelSize.Width()), static_cast<float>(pixelSize.Height()), _compositionScale);
+        newSizeInPixels = RenderedSize();
     }
 }

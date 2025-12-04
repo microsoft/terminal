@@ -378,8 +378,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _BellLightOff(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
-        void _SetEndSelectionPointAtCursor(const Windows::Foundation::Point& cursorPosition);
-
         void _SwapChainSizeChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::SizeChangedEventArgs& e);
         void _SwapChainScaleChanged(const Windows::UI::Xaml::Controls::SwapChainPanel& sender, const Windows::Foundation::IInspectable& args);
 
