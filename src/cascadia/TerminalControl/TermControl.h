@@ -301,14 +301,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool _isInternalScrollBarUpdate;
 
-        // Auto scroll occurs when user, while selecting, drags cursor outside
-        // viewport. View is then scrolled to 'follow' the cursor.
-        double _autoScrollVelocity;
-        std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
-        SafeDispatcherTimer _autoScrollTimer;
-        std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
-        bool _pointerPressedInBounds{ false };
-
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellLightAnimation{ nullptr };
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         SafeDispatcherTimer _bellLightTimer;
@@ -396,10 +388,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _CapturePointer(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
         bool _ReleasePointerCapture(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
 
-        void _TryStartAutoScroll(const Windows::UI::Input::PointerPoint& pointerPoint, const double scrollVelocity);
-        void _TryStopAutoScroll(const uint32_t pointerId);
-        void _UpdateAutoScroll(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
-
         void _KeyHandler(const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e, const bool keyDown);
         bool _KeyHandler(WORD vkey, WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, bool keyDown);
         static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
@@ -409,8 +397,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::Foundation::Point _toControlOrigin(const til::point terminalPosition);
         Core::Point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);
-
-        double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive, const bool regularExpression);
