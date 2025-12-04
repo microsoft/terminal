@@ -1951,12 +1951,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // NB: I don't think this is correct because the touch should be in the center of the rect.
             //     I suspect the point.Position() would be correct.
             const auto contactRect = point.Properties().ContactRect();
-            _interactivity.TouchPressed({ contactRect.X, contactRect.Y });
+            til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
+            _interactivity.TouchPressed(newTouchPoint.to_core_point());
         }
         else
         {
             const auto cursorPosition = point.Position();
-            _interactivity.PointerPressed(TermControl::GetPressedMouseButtons(point),
+            _interactivity.PointerPressed(point.PointerId(),
+                                          TermControl::GetPressedMouseButtons(point),
                                           TermControl::GetPointerUpdateKind(point),
                                           point.Timestamp(),
                                           ControlKeyStates{ args.KeyModifiers() },
@@ -1995,12 +1997,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            auto suppressFurtherHandling = _interactivity.PointerMoved(TermControl::GetPressedMouseButtons(point),
+            auto suppressFurtherHandling = _interactivity.PointerMoved(point.PointerId(),
+                                                                       TermControl::GetPressedMouseButtons(point),
                                                                        TermControl::GetPointerUpdateKind(point),
                                                                        ControlKeyStates(args.KeyModifiers()),
-                                                                       _focused,
-                                                                       pixelPosition,
-                                                                       _pointerPressedInBounds);
+                                                                       pixelPosition);
 
             // GH#9109 - Only start an auto-scroll when the drag actually
             // started within our bounds. Otherwise, someone could start a drag
@@ -2039,7 +2040,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
-            _interactivity.TouchMoved({ contactRect.X, contactRect.Y }, _focused);
+            til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
+
+            _interactivity.TouchMoved(newTouchPoint.to_core_point());
         }
 
         args.Handled(true);
@@ -2072,7 +2075,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity.PointerReleased(TermControl::GetPressedMouseButtons(point),
+            _interactivity.PointerReleased(point.PointerId(),
+                                           TermControl::GetPressedMouseButtons(point),
                                            TermControl::GetPointerUpdateKind(point),
                                            ControlKeyStates(args.KeyModifiers()),
                                            pixelPosition);

@@ -36,24 +36,24 @@ namespace Microsoft.Terminal.Control
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(Microsoft.Terminal.Core.Point point);
 
-        void PointerPressed(MouseButtonState buttonState,
+        void PointerPressed(UInt32 pointerId,
+                            MouseButtonState buttonState,
                             UInt32 pointerUpdateKind,
                             UInt64 timestamp,
                             Microsoft.Terminal.Core.ControlKeyStates modifiers,
                             Microsoft.Terminal.Core.Point pixelPosition);
-        void TouchPressed(Windows.Foundation.Point contactPoint);
+        void TouchPressed(Microsoft.Terminal.Core.Point contactPoint);
 
-        Boolean PointerMoved(MouseButtonState buttonState,
+        Boolean PointerMoved(UInt32 pointerId,
+                             MouseButtonState buttonState,
                              UInt32 pointerUpdateKind,
                              Microsoft.Terminal.Core.ControlKeyStates modifiers,
-                             Boolean focused,
-                             Microsoft.Terminal.Core.Point pixelPosition,
-                             Boolean pointerPressedInBounds);
+                             Microsoft.Terminal.Core.Point pixelPosition);
 
-        void TouchMoved(Windows.Foundation.Point newTouchPoint,
-                        Boolean focused);
+        void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint);
 
-        void PointerReleased(MouseButtonState buttonState,
+        void PointerReleased(UInt32 pointerId,
+                             MouseButtonState buttonState,
                              UInt32 pointerUpdateKind,
                              Microsoft.Terminal.Core.ControlKeyStates modifiers,
                              Microsoft.Terminal.Core.Point pixelPosition);
