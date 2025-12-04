@@ -7,17 +7,16 @@ EXPORTS
   AvoidBuggyTSFConsoleFlags
   CreateTerminal
   DestroyTerminal
-  TerminalCalculateResize
-  TerminalDpiChanged
-  TerminalGetSelection
-  TerminalIsSelectionActive
-  TerminalRegisterScrollCallback
-  TerminalRegisterWriteCallback
-  TerminalSendCharEvent
-  TerminalSendKeyEvent
   TerminalSendOutput
-  TerminalSetFocused
-  TerminalSetTheme
+  TerminalRegisterScrollCallback
   TerminalTriggerResize
   TerminalTriggerResizeWithDimension
+  TerminalCalculateResize
+  TerminalDpiChanged
   TerminalUserScroll
+  TerminalGetSelection
+  TerminalIsSelectionActive
+  TerminalSetTheme
+  TerminalRegisterWriteCallback
+  TerminalSendKeyEvent
+  TerminalSendCharEvent
