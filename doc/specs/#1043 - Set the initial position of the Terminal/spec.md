@@ -27,6 +27,7 @@ Two new properties should be added in the json settings file:
 
 2. Both X value and Y values are optional. If any one of them is missing, or the value is invalid, system default value will be used. Examples:
 
+       "1000" equals (1000, 1000)
        ", 1000" equals (default, 1000)
        "1000, " equals (1000, default)
        "," equals (default, default)
