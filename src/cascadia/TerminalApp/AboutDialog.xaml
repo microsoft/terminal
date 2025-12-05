@@ -58,11 +58,11 @@
             <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
                              NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
             <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
-                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
-            <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
+                    Click="_ReleaseNotesOnClick" />            <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
                              NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
             <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
                              Click="_ThirdPartyNoticesOnClick" />
         </StackPanel>
     </StackPanel>
 </ContentDialog>
+
