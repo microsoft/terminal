@@ -18,32 +18,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         safe_void_coroutine StartingDirectory_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        safe_void_coroutine Icon_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         safe_void_coroutine Commandline_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void Appearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void Terminal_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void Advanced_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void DeleteConfirmation_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
-        Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> FilteredBuiltInIconList();
-        void BuiltInIconPicker_GotFocus(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void BuiltInIconPicker_TextChanged(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs& e);
-        void BuiltInIconPicker_QuerySubmitted(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& sender, const Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs& e);
-
-        static Windows::UI::Xaml::Controls::IconSource BuiltInIconConverter(const Windows::Foundation::IInspectable& iconVal);
-
         til::property_changed_event PropertyChanged;
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _windowRoot; }
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         Editor::IHostedInWindow _windowRoot;
-        Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> _filteredBuiltInIcons;
-        std::wstring _iconFilter;
-
-        void _updateIconFilter(std::wstring_view filter);
-        void _updateFilteredIconList();
     };
 };
 
