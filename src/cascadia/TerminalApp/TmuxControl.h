@@ -35,6 +35,7 @@ namespace winrt::TerminalApp::implementation
         enum class ResponseInfoType
         {
             Ignore,
+            DiscoverNewWindow,
             DiscoverWindows,
             DiscoverPanes,
             ListWindow,
@@ -49,18 +50,13 @@ namespace winrt::TerminalApp::implementation
             {
                 struct
                 {
-                } discoverWindows;
-                struct
-                {
-                } discoverPanes;
-                struct
-                {
-                } listWindow;
-                struct
-                {
+                    til::CoordType history;
                 } listPanes;
                 struct
                 {
+                    int64_t paneId;
+                    til::CoordType cursorX;
+                    til::CoordType cursorY;
                 } capturePane;
             } data;
         };
@@ -120,7 +116,8 @@ namespace winrt::TerminalApp::implementation
             bool initialized = false;
         };
 
-        // Private methods
+        static std::vector<TmuxControl::TmuxWindowLayout> _parseLayout(std::wstring_view remaining);
+
         void _parseLine(std::wstring_view str);
 
         void _handleAttach();
@@ -134,14 +131,16 @@ namespace winrt::TerminalApp::implementation
         void _sendSetOption(std::wstring_view option);
         void _sendDiscoverWindows(int64_t sessionId);
         void _handleResponseDiscoverWindows(std::wstring_view response);
-        void _sendDiscoverPanes(int64_t sessionId, int64_t windowId, bool newWindow);
+        void _sendDiscoverNewWindow(int64_t windowId);
+        void _handleResponseDiscoverNewWindow(std::wstring_view response);
+        void _sendDiscoverPanes(int64_t sessionId);
         void _handleResponseDiscoverPanes(std::wstring_view response);
-        void _sendListWindow(int64_t sessionId, int64_t windowId);
+        void _sendListWindow(int64_t sessionId);
         void _handleResponseListWindow(std::wstring_view response);
         void _sendListPanes(int64_t windowId, til::CoordType history);
-        void _handleResponseListPanes(std::wstring_view response);
+        void _handleResponseListPanes(const ResponseInfo& info, std::wstring_view response);
         void _sendCapturePane(int64_t paneId, til::CoordType cursorX, til::CoordType cursorY, til::CoordType history);
-        void _handleResponseCapturePane(std::wstring_view response);
+        void _handleResponseCapturePane(const ResponseInfo& info, std::wstring response);
         void _sendNewWindow();
         void _sendKillWindow(int64_t windowId);
         void _sendKillPane(int64_t paneId);
@@ -155,7 +154,7 @@ namespace winrt::TerminalApp::implementation
         float _ComputeSplitSize(til::CoordType newSize, til::CoordType originSize, winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction) const;
         winrt::com_ptr<Tab> _getTab(int64_t windowId) const;
 
-void _deliverOutputToPane(int64_t paneId, const std::wstring_view text);
+        void _deliverOutputToPane(int64_t paneId, const std::wstring_view text);
         void _newWindowFinalize(int64_t windowId, int64_t paneId, const std::wstring_view windowName);
         std::shared_ptr<Pane> _newPane(int64_t windowId, int64_t paneId);
 
