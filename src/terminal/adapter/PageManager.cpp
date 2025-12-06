@@ -108,6 +108,7 @@ void PageManager::Reset()
     _activePageNumber = 1;
     _visiblePageNumber = 1;
     _buffers = {};
+    _scrollMargins = {};
 }
 
 Page PageManager::Get(const til::CoordType pageNumber) const
@@ -255,4 +256,16 @@ TextBuffer& PageManager::_getBuffer(const til::CoordType pageNumber, const til::
         buffer->ResizeTraditional(pageSize);
     }
     return *buffer;
+}
+
+til::inclusive_rect PageManager::GetScrollMargins(const til::CoordType pageNumber) const
+{
+    const auto index = std::min(std::max(pageNumber, 1), MAX_PAGES) - 1;
+    return til::at(_scrollMargins, index);
+}
+
+void PageManager::SetScrollMargins(const til::CoordType pageNumber, const til::inclusive_rect& margins)
+{
+    const auto index = std::min(std::max(pageNumber, 1), MAX_PAGES) - 1;
+    til::at(_scrollMargins, index) = margins;
 }

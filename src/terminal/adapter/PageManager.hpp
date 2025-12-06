@@ -55,6 +55,8 @@ namespace Microsoft::Console::VirtualTerminal
         void MoveTo(const til::CoordType pageNumber, const bool makeVisible);
         void MoveRelative(const til::CoordType pageCount, const bool makeVisible);
         void MakeActivePageVisible();
+        til::inclusive_rect GetScrollMargins(const til::CoordType pageNumber) const;
+        void SetScrollMargins(const til::CoordType pageNumber, const til::inclusive_rect& margins);
 
     private:
         TextBuffer& _getBuffer(const til::CoordType pageNumber, const til::size pageSize) const;
@@ -65,5 +67,7 @@ namespace Microsoft::Console::VirtualTerminal
         til::CoordType _visiblePageNumber = 1;
         static constexpr til::CoordType MAX_PAGES = 6;
         mutable std::array<std::unique_ptr<TextBuffer>, MAX_PAGES> _buffers;
+        std::array<til::inclusive_rect, MAX_PAGES> _scrollMargins{};
     };
+}
 }

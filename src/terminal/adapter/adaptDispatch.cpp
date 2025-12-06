@@ -2218,8 +2218,10 @@ void AdaptDispatch::_DoSetTopBottomScrollingMargins(const VTInt topMargin,
             actualTop -= 1;
             actualBottom -= 1;
         }
-        _scrollMargins.top = actualTop;
-        _scrollMargins.bottom = actualBottom;
+        auto scrollMargins = _pages.GetScrollMargins(page.Number());
+        scrollMargins.top = actualTop;
+        scrollMargins.bottom = actualBottom;
+        _pages.SetScrollMargins(page.Number(), scrollMargins);
         // If requested, we may also need to move the cursor to the home
         // position, but only if the requested margins were valid.
         if (homeCursor)
@@ -2290,8 +2292,10 @@ void AdaptDispatch::_DoSetLeftRightScrollingMargins(const VTInt leftMargin,
             actualLeft -= 1;
             actualRight -= 1;
         }
-        _scrollMargins.left = actualLeft;
-        _scrollMargins.right = actualRight;
+        auto scrollMargins = _pages.GetScrollMargins(page.Number());
+        scrollMargins.left = actualLeft;
+        scrollMargins.right = actualRight;
+        _pages.SetScrollMargins(page.Number(), scrollMargins);
         // If requested, we may also need to move the cursor to the home
         // position, but only if the requested margins were valid.
         if (homeCursor)

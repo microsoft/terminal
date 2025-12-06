@@ -2916,65 +2916,158 @@ public:
         _testGetSet->_viewport.bottom = 8;
         auto sScreenHeight = _testGetSet->_viewport.bottom - _testGetSet->_viewport.top;
 
+        // Helper lambda to get current scroll margins
+        auto getMargins = [&]() {
+            const auto page = _pDispatch->_pages.ActivePage();
+            return _pDispatch->_pages.GetScrollMargins(page.Number());
+        };
+        
+        // Helper lambda to set scroll margins directly (for testing)
+        auto setMargins = [&](const til::inclusive_rect& margins) {
+            const auto page = _pDispatch->_pages.ActivePage();
+            _pDispatch->_pages.SetScrollMargins(page.Number(), margins);
+        };
+
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
-        VERIFY_ARE_EQUAL(2, _pDispatch->_scrollMargins.top + 1);
-        VERIFY_ARE_EQUAL(6, _pDispatch->_scrollMargins.bottom + 1);
+        VERIFY_ARE_EQUAL(2, getMargins().top + 1);
+        VERIFY_ARE_EQUAL(6, getMargins().bottom + 1);
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
         _pDispatch->SetTopBottomScrollingMargins(7, 0);
-        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.top + 1);
-        VERIFY_ARE_EQUAL(sScreenHeight, _pDispatch->_scrollMargins.bottom + 1);
+        VERIFY_ARE_EQUAL(7, getMargins().top + 1);
+        VERIFY_ARE_EQUAL(sScreenHeight, getMargins().bottom + 1);
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
         _pDispatch->SetTopBottomScrollingMargins(0, 7);
-        VERIFY_ARE_EQUAL(1, _pDispatch->_scrollMargins.top + 1);
-        VERIFY_ARE_EQUAL(7, _pDispatch->_scrollMargins.bottom + 1);
+        VERIFY_ARE_EQUAL(1, getMargins().top + 1);
+        VERIFY_ARE_EQUAL(7, getMargins().bottom + 1);
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
         _pDispatch->SetTopBottomScrollingMargins(0, 0);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds has no effect.");
-        _pDispatch->_scrollMargins = {};
+        setMargins({});
         _pDispatch->SetTopBottomScrollingMargins(7, 3);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 6: Verify setting margins to (0, height) clears them");
         // First set,
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
         // Then clear
         _pDispatch->SetTopBottomScrollingMargins(0, sScreenHeight);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 7: Verify setting margins to (1, height) clears them");
         // First set,
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
         // Then clear
         _pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
         // First set,
         _pDispatch->SetTopBottomScrollingMargins(2, 6);
         // Then clear
         _pDispatch->SetTopBottomScrollingMargins(1, 0);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 9: Verify having top and bottom margin the same has no effect.");
-        _pDispatch->_scrollMargins = {};
+        setMargins({});
         _pDispatch->SetTopBottomScrollingMargins(4, 4);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 10: Verify having top margin out of bounds has no effect.");
-        _pDispatch->_scrollMargins = {};
+        setMargins({});
         _pDispatch->SetTopBottomScrollingMargins(sScreenHeight + 1, sScreenHeight + 10);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
 
         Log::Comment(L"Test 11: Verify having bottom margin out of bounds has no effect.");
-        _pDispatch->_scrollMargins = {};
+        setMargins({});
         _pDispatch->SetTopBottomScrollingMargins(1, sScreenHeight + 1);
-        VERIFY_ARE_EQUAL(til::inclusive_rect{}, _pDispatch->_scrollMargins);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, getMargins());
+    }
+
+    TEST_METHOD(PerPageScrollMarginsTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->_textBuffer = std::make_unique<TextBuffer>(til::size{ 100, 600 }, TextAttribute{}, 0, false, &_testGetSet->_renderer);
+        _testGetSet->_viewport.right = 80;
+        _testGetSet->_viewport.bottom = 24;
+
+        // Helper lambda to get scroll margins for a specific page
+        auto getMargins = [&](const til::CoordType pageNumber) {
+            return _pDispatch->_pages.GetScrollMargins(pageNumber);
+        };
+
+        Log::Comment(L"Test 1: Set margins on page 1, verify they don't affect page 2.");
+        _pDispatch->PagePositionAbsolute(1);
+        _pDispatch->SetTopBottomScrollingMargins(5, 20);
+        _pDispatch->SetLeftRightScrollingMargins(10, 70);
+        
+        // Verify margins are set on page 1
+        auto page1Margins = getMargins(1);
+        VERIFY_ARE_EQUAL(4, page1Margins.top);     // VT is 1-based, internal is 0-based
+        VERIFY_ARE_EQUAL(19, page1Margins.bottom); // VT is 1-based, internal is 0-based
+        VERIFY_ARE_EQUAL(9, page1Margins.left);    // VT is 1-based, internal is 0-based
+        VERIFY_ARE_EQUAL(69, page1Margins.right);  // VT is 1-based, internal is 0-based
+        
+        // Verify page 2 has no margins set
+        auto page2Margins = getMargins(2);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, page2Margins);
+
+        Log::Comment(L"Test 2: Switch to page 2, set different margins.");
+        _pDispatch->PagePositionAbsolute(2);
+        _pDispatch->SetTopBottomScrollingMargins(9, 15);
+        
+        // Verify margins are set on page 2
+        page2Margins = getMargins(2);
+        VERIFY_ARE_EQUAL(8, page2Margins.top);
+        VERIFY_ARE_EQUAL(14, page2Margins.bottom);
+        
+        // Verify page 1 margins are unchanged
+        page1Margins = getMargins(1);
+        VERIFY_ARE_EQUAL(4, page1Margins.top);
+        VERIFY_ARE_EQUAL(19, page1Margins.bottom);
+        VERIFY_ARE_EQUAL(9, page1Margins.left);
+        VERIFY_ARE_EQUAL(69, page1Margins.right);
+
+        Log::Comment(L"Test 3: Switch back to page 1, verify margins are still set.");
+        _pDispatch->PagePositionAbsolute(1);
+        page1Margins = getMargins(1);
+        VERIFY_ARE_EQUAL(4, page1Margins.top);
+        VERIFY_ARE_EQUAL(19, page1Margins.bottom);
+
+        Log::Comment(L"Test 4: Clear margins on page 1, verify page 2 is unaffected.");
+        _pDispatch->SetTopBottomScrollingMargins(0, 0);
+        _pDispatch->SetLeftRightScrollingMargins(0, 0);
+        page1Margins = getMargins(1);
+        VERIFY_ARE_EQUAL(til::inclusive_rect{}, page1Margins);
+        
+        // Page 2 margins should still be set
+        page2Margins = getMargins(2);
+        VERIFY_ARE_EQUAL(8, page2Margins.top);
+        VERIFY_ARE_EQUAL(14, page2Margins.bottom);
+
+        Log::Comment(L"Test 5: Verify the bug scenario from issue - margins on page 2 don't affect scrolling on page 1.");
+        // Set up page 1 with no margins
+        _pDispatch->PagePositionAbsolute(1);
+        _pDispatch->SetTopBottomScrollingMargins(0, 0);
+        
+        // Set up page 2 with margins 9-15
+        _pDispatch->PagePositionAbsolute(2);
+        _pDispatch->SetTopBottomScrollingMargins(9, 15);
+        
+        // Switch back to page 1
+        _pDispatch->PagePositionAbsolute(1);
+        
+        // Verify page 1 has no margins (margins should be independent per page)
+        const auto activePage = _pDispatch->_pages.ActivePage();
+        const auto [topMargin, bottomMargin] = _pDispatch->_GetVerticalMargins(activePage, false);
+        VERIFY_ARE_EQUAL(0, topMargin);
+        VERIFY_ARE_EQUAL(23, bottomMargin); // Full page height - 1 (0-based)
     }
 
     TEST_METHOD(LineFeedTest)

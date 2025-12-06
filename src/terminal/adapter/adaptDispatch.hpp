@@ -322,8 +322,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::array<CursorState, 2> _savedCursorState;
         bool _usingAltBuffer;
 
-        til::inclusive_rect _scrollMargins;
-
         til::enumset<Mode> _modes{ Mode::PageCursorCoupling };
 
         SgrStack _sgrStack;
