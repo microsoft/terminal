@@ -20,7 +20,7 @@ static constexpr std::u8string_view PreviewText{
     u8"\x1b[36m@@ -1 +1 @@\x1b[m\r\n"
     u8"\x1b[31m-    Windows Console\x1b[m\r\n"
     u8"\x1b[32m+    Windows Terminal!\x1b[m\r\n"
-    u8"{0}\x1b[93mWrite-Host \x1b[36m\"\xd83c\xdf2f!\"\x1b[1D\x1b[m"
+    u8"{0}\x1b[93mWrite-Host \x1b[36m\"\xd83c\xdf2f!\"\x1b[1D\x1b[m" // this is broken due to u8string - you cannot use surrogate pairs there (!)
 };
 // clang-format on
 
