@@ -71,16 +71,16 @@ namespace winrt::TerminalApp::implementation
 
         struct TmuxPaneLayout
         {
+            int64_t id;
             til::CoordType width;
             til::CoordType height;
-            til::CoordType left;
-            til::CoordType top;
-            int64_t id;
         };
 
         struct TmuxWindowLayout
         {
             TmuxLayoutType type = TmuxLayoutType::SINGLE_PANE;
+            til::CoordType width;
+            til::CoordType height;
             std::vector<TmuxPaneLayout> panes;
         };
 
@@ -93,7 +93,6 @@ namespace winrt::TerminalApp::implementation
             til::CoordType history = 0;
             bool active = false;
             std::wstring name;
-            std::wstring layoutChecksum;
             std::vector<TmuxWindowLayout> layout;
         };
 
@@ -117,8 +116,9 @@ namespace winrt::TerminalApp::implementation
         };
 
         static std::vector<TmuxControl::TmuxWindowLayout> _parseLayout(std::wstring_view remaining);
+        static std::vector<TmuxControl::TmuxWindowLayout> _ParseTmuxWindowLayout(std::wstring layout);
 
-        void _parseLine(std::wstring_view str);
+        safe_void_coroutine _parseLine(std::wstring str);
 
         void _handleAttach();
         void _handleDetach();
@@ -166,14 +166,14 @@ namespace winrt::TerminalApp::implementation
 
         // Private variables
         TerminalPage& _page; // Non-owning, because TerminalPage owns us
+        winrt::Windows::System::DispatcherQueue _dispatcherQueue{ nullptr };
+        winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
+        winrt::com_ptr<Tab> _controlTab{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
         State _state{ State::INIT };
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _newTabMenu;
-        winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
-        winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
-        TerminalApp::Tab _controlTab{ nullptr };
-        winrt::Windows::System::DispatcherQueue _dispatcherQueue{ nullptr };
 
-        std::vector<wchar_t> _lineBuffer;
+        std::wstring _lineBuffer;
         std::wstring _responseBuffer;
 
         winrt::event_token _detachKeyDownRevoker;
