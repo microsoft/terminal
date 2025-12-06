@@ -833,7 +833,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                 TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+            // Prepare the buffers for the next loop
             std::swap(thisBuffer, lastBuffer);
+            std::swap(read, lastRead);
         }
 
         return 0;

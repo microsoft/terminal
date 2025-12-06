@@ -120,7 +120,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         return ConnectionState::Failed;
     }
 
-    void DebugTapConnection::_OutputHandler(const std::string_view str)
+    void DebugTapConnection::_OutputHandler(const winrt::array_view<const uint8_t>& str)
     {
         (void)str;
         //auto output = til::visualize_control_codes(str);
