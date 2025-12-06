@@ -2221,13 +2221,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         RaiseNotice.raise(*this, std::move(noticeArgs));
     }
-    void ControlCore::_connectionOutputHandler(const hstring& hstr)
+    void ControlCore::_connectionOutputHandler(const winrt::array_view<const uint8_t>& data)
     {
         try
         {
+            std::wstring u16out;
+            (void)til::u8u16(std::string_view{reinterpret_cast<const char*>(data.data()), data.size()}, u16out, _u8State);
+
             {
                 const auto lock = _terminal->LockForWriting();
-                _terminal->Write(hstr);
+                _terminal->Write(u16out);
             }
 
             if (!_pendingResponses.empty())

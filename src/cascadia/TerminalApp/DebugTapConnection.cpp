@@ -120,17 +120,18 @@ namespace winrt::Microsoft::TerminalApp::implementation
         return ConnectionState::Failed;
     }
 
-    void DebugTapConnection::_OutputHandler(const std::wstring_view str)
+    void DebugTapConnection::_OutputHandler(const std::string_view str)
     {
-        auto output = til::visualize_control_codes(str);
+        (void)str;
+        //auto output = til::visualize_control_codes(str);
         // To make the output easier to read, we introduce a line break whenever
         // an LF control is encountered. But at this point, the LF would have
         // been converted to U+240A (␊), so that's what we need to search for.
-        for (size_t lfPos = 0; (lfPos = output.find(L'\u240A', lfPos)) != std::wstring::npos;)
-        {
-            output.insert(++lfPos, L"\r\n");
-        }
-        TerminalOutput.raise(output);
+        //for (size_t lfPos = 0; (lfPos = output.find(L'\x0A', lfPos)) != std::wstring::npos;)
+        //{
+            //output.insert(++lfPos, L"\r\n");
+        //}
+        //TerminalOutput.raise(output);
     }
 
     // Called by the DebugInputTapConnection to print user input
@@ -138,7 +139,8 @@ namespace winrt::Microsoft::TerminalApp::implementation
     {
         auto clean{ til::visualize_control_codes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
-        TerminalOutput.raise(formatted);
+        (void)formatted;
+        //TerminalOutput.raise(formatted);
     }
 
     // Wire us up so that we can forward input through

@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - str: the string to write.
     void AzureConnection::_WriteStringWithNewline(const std::wstring_view str)
     {
-        TerminalOutput.raise(str + L"\r\n");
+        _dhSend16(str + L"\r\n");
     }
 
     // Method description:
@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         catch (const std::exception& runtimeException)
         {
             // This also catches the AzureException, which has a .what()
-            TerminalOutput.raise(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
+            _dhSend16(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
         }
         catch (...)
         {
@@ -162,13 +162,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _currentInputMode = mode;
 
-        TerminalOutput.raise(L"> \x1b[92m"); // Make prompted user input green
+        _dhSend16(L"> \x1b[92m"); // Make prompted user input green
 
         _inputEvent.wait(inputLock, [this, mode]() {
             return _currentInputMode != mode || _isStateAtOrBeyond(ConnectionState::Closing);
         });
 
-        TerminalOutput.raise(L"\x1b[m");
+        _dhSend16(L"\x1b[m");
 
         if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
@@ -211,19 +211,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_userInput.size() > 0)
             {
                 _userInput.pop_back();
-                TerminalOutput.raise(L"\x08 \x08"); // overstrike the character with a space
+                _dhSend16(L"\x08 \x08"); // overstrike the character with a space
             }
         }
         else
         {
-            TerminalOutput.raise(data); // echo back
+            _dhSend16(data); // echo back
 
             switch (_currentInputMode)
             {
             case InputMode::Line:
                 if (data.size() > 0 && gsl::at(data, 0) == UNICODE_CARRIAGERETURN)
                 {
-                    TerminalOutput.raise(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
+                    _dhSend16(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
                     _currentInputMode = InputMode::None; // toggling the mode indicates completion
                     _inputEvent.notify_one();
                     break;
@@ -415,21 +415,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                         case WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE:
                         case WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE:
                         {
-                            const auto result{ til::u8u16(std::string_view{ _buffer.data(), read }, _u16Str, _u8State) };
-                            if (FAILED(result))
-                            {
-                                // EXIT POINT
-                                _transitionToState(ConnectionState::Failed);
-                                return gsl::narrow<DWORD>(result);
-                            }
-
-                            if (_u16Str.empty())
+                            if (read == 0)
                             {
                                 continue;
                             }
 
                             // Pass the output to our registered event handlers
-                            TerminalOutput.raise(_u16Str);
+                            TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(_buffer.data()), read });
                             break;
                         }
                         case WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE:
@@ -772,7 +764,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto shellType = _ParsePreferredShellType(settingsResponse);
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
-        TerminalOutput.raise(L"\r\n");
+        _dhSend16(L"\r\n");
 
         //// Step 8: connecting to said terminal
         {

@@ -103,6 +103,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::array<char, 4096> _buffer{};
 
         static winrt::hstring _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
+
+        template<typename B>
+        void _dhSend16(B&& b)
+        {
+            auto eight = til::u16u8(b);
+            TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(eight.c_str()), static_cast<uint32_t>(eight.size()) });
+        }
     };
 }
 

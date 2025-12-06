@@ -348,7 +348,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode();
-        void _connectionOutputHandler(const hstring& hstr);
+        void _connectionOutputHandler(const winrt::array_view<const uint8_t>& data);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
         void _setOpacity(const float opacity, const bool focused = true);
@@ -456,6 +456,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputEventRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
         TerminalConnection::ITerminalConnection _connection{ nullptr };
+
+	til::u8state _u8State;
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

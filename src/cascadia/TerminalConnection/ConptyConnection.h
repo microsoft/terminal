@@ -103,6 +103,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         } _startupInfo{};
 
         DWORD _OutputThread();
+        template<typename B>
+        void _dhSend16(B&& b)
+        {
+            auto eight = til::u16u8(b);
+            TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(eight.c_str()), static_cast<uint32_t>(eight.size()) });
+        }
     };
 }
 

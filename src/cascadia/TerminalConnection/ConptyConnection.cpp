@@ -478,28 +478,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
         const auto failureText = RS_fmt(L"ProcessFailedToLaunch", _formatStatus(hr), _commandline);
-        TerminalOutput.raise(failureText);
+        _dhSend16(failureText);
 
         // If the path was invalid, let's present an informative message to the user
         if (hr == HRESULT_FROM_WIN32(ERROR_DIRECTORY))
         {
             const auto badPathText = RS_fmt(L"BadPathText", _startingDirectory);
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(badPathText);
+            _dhSend16(L"\r\n");
+            _dhSend16(badPathText);
         }
         // If the requested action requires elevation, display appropriate message
         else if (hr == HRESULT_FROM_WIN32(ERROR_ELEVATION_REQUIRED))
         {
             const auto elevationText = RS_(L"ElevationRequired");
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(elevationText);
+            _dhSend16(L"\r\n");
+            _dhSend16(elevationText);
         }
         // If the requested executable was not found, display appropriate message
         else if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
         {
             const auto fileNotFoundText = RS_(L"FileNotFound");
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(fileNotFoundText);
+            _dhSend16(L"\r\n");
+            _dhSend16(fileNotFoundText);
         }
 
         _transitionToState(ConnectionState::Failed);
@@ -520,7 +520,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto msg1 = RS_fmt(L"ProcessExited", _formatStatus(status));
             const auto msg2 = RS_(L"CtrlDToClose");
             const auto msg = fmt::format(FMT_COMPILE(L"\r\n{}\r\n{}\r\n"), msg1, msg2);
-            TerminalOutput.raise(msg);
+            _dhSend16(msg);
         }
         CATCH_LOG();
     }
@@ -745,11 +745,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const wil::unique_event overlappedEvent{ CreateEventExW(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS) };
         OVERLAPPED overlapped{ .hEvent = overlappedEvent.get() };
         bool overlappedPending = false;
-        char buffer[128 * 1024];
-        DWORD read = 0;
 
-        til::u8state u8State;
-        std::wstring wstr;
+        char buffer[128 * 1024], buffer2[128*1024];
+        char* thisBuffer = buffer;
+        DWORD read = 0;
+        char* lastBuffer = buffer2;
+        DWORD lastRead = 0;
 
         // If we use overlapped IO We want to queue ReadFile() calls before processing the
         // string, because TerminalOutput.raise() may take a while (relatively speaking).
@@ -760,7 +761,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // When we have a `wstr` that's ready for processing we must do so without blocking.
             // Otherwise, whatever the user typed will be delayed until the next IO operation.
             // With overlapped IO that's not a problem because the ReadFile() calls won't block.
-            if (!ReadFile(_pipe.get(), &buffer[0], sizeof(buffer), &read, &overlapped))
+            if (!ReadFile(_pipe.get(), thisBuffer, sizeof(buffer), &read, &overlapped))
             {
                 if (GetLastError() != ERROR_IO_PENDING)
                 {
@@ -772,7 +773,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             // wstr can be empty in two situations:
             // * The previous call to til::u8u16 failed.
             // * We're using overlapped IO, and it's the first iteration.
-            if (!wstr.empty())
+            if (lastBuffer && lastRead)
             {
                 if (!_receivedFirstByte)
                 {
@@ -792,7 +793,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
                 try
                 {
-                    TerminalOutput.raise(wstr);
+                    TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(lastBuffer), lastRead });
                 }
                 CATCH_LOG();
             }
@@ -832,8 +833,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                 TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-            // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-            FAILED_LOG(til::u8u16({ &buffer[0], gsl::narrow_cast<size_t>(read) }, wstr, u8State));
+            std::swap(thisBuffer, lastBuffer);
         }
 
         return 0;

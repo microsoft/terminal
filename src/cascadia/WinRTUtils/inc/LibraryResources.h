@@ -81,3 +81,13 @@ std::wstring RS_fmt_impl(std::wstring_view key, Args&&... args)
     const auto format = GetLibraryResourceString(key);
     return fmt::format(fmt::runtime(std::wstring_view{ format }), std::forward<Args>(args)...);
 }
+
+#define RS_A_fmt(x, ...) RS_A_fmt_impl(USES_RESOURCE(x), __VA_ARGS__)
+
+template<typename... Args>
+std::string RS_A_fmt_impl(std::wstring_view key, Args&&... args)
+{
+    const auto format = GetLibraryResourceString(key);
+    auto format8 = til::u16u8(std::wstring_view{ format });
+    return fmt::format(fmt::runtime(std::string_view{ format8 }), std::forward<Args>(args)...);
+}
