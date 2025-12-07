@@ -24,6 +24,9 @@ using namespace winrt::Windows::UI::Core;
 static const til::CoordType PaneBorderSize = 2;
 static const til::CoordType StaticMenuCount = 4; // "Separator" "Settings" "Command Palette" "About"
 
+#define print_debug(s, ...) \
+    OutputDebugStringW(fmt::format(FMT_COMPILE(s) __VA_OPT__(,) __VA_ARGS__).c_str());
+
 static std::wstring_view split_line(std::wstring_view& remaining)
 {
     auto lf = remaining.find(L'\n');
@@ -262,9 +265,7 @@ namespace winrt::TerminalApp::implementation
 
         co_await wil::resume_foreground(_dispatcherQueue);
 
-        OutputDebugStringW(L"<<< ");
-        OutputDebugStringW(line.c_str());
-        OutputDebugStringW(L"\n");
+        print_debug(L"<<< {}\n", line);
 
         std::wstring_view remaining{ line };
         const auto type = tokenize_field(remaining);
@@ -299,15 +300,15 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
+                // Note that at this point `remaining` will not be the whole `line` anymore.
                 if (_responseBuffer.empty())
                 {
-                    // Note that at this point `remaining` will not be the whole `line` anymore.
                     _responseBuffer = std::move(line);
                 }
                 else
                 {
                     _responseBuffer.append(L"\r\n");
-                    _responseBuffer.append(remaining);
+                    _responseBuffer.append(line);
                 }
             }
         }
@@ -345,10 +346,14 @@ namespace winrt::TerminalApp::implementation
         }
         else if (til::equals(type, L"%window-add"))
         {
-            const auto id = tokenize_identifier(remaining);
-            if (id.type == IdentifierType::Window)
+            // We'll handle the initial window discovery ourselves during %session-changed.
+            if (_sessionId != -1)
             {
-                _sendDiscoverNewWindow(id.value);
+                const auto id = tokenize_identifier(remaining);
+                if (id.type == IdentifierType::Window)
+                {
+                    _sendDiscoverNewWindow(id.value);
+                }
             }
         }
         else if (til::equals(type, L"%window-close") || til::equals(type, L"%unlinked-window-close"))
@@ -619,9 +624,6 @@ namespace winrt::TerminalApp::implementation
         case ResponseInfoType::DiscoverPanes:
             _handleResponseDiscoverPanes(response);
             break;
-        case ResponseInfoType::ListWindow:
-            _handleResponseListWindow(response);
-            break;
         case ResponseInfoType::ListPanes:
             _handleResponseListPanes(info, response);
             break;
@@ -636,9 +638,25 @@ namespace winrt::TerminalApp::implementation
         _sendIgnoreResponse(fmt::format(FMT_COMPILE(L"set-option {}\n"), option));
     }
 
+    // When we join a brand new session, tmux will output:
+    //   %begin 1765124793 272 0
+    //   %end 1765124793 272 0
+    //   %window-add @0
+    //   %sessions-changed
+    //   %session-changed $0 0
+    //   %window-renamed @0 tmux
+    //   %output %0 ...
+    // whereas if we join an existing session, we get:
+    //   %begin 1765125530 285 0
+    //   %end 1765125530 285 0
+    //   %session-changed $0 0
+    //
+    // Because of this, we have to send a `list-windows` command ourselves.
+    // We do this after the `session-changed` notification, because at that point we
+    // received any potential `window-add` notifications that would indicate a new session.
     void TmuxControl::_sendDiscoverWindows(int64_t sessionId)
     {
-        const auto cmd = fmt::format(FMT_COMPILE(L"list-windows -F '#{{window_id}}' -t ${}\n"), sessionId);
+        const auto cmd = fmt::format(FMT_COMPILE(L"list-windows -F '#{{session_id}} #{{window_id}} #{{window_width}} #{{window_height}} #{{history_limit}} #{{window_active}} #{{window_layout}} #{{window_name}}' -t ${}\n"), sessionId);
         const auto info = ResponseInfo{
             .type = ResponseInfoType::DiscoverWindows,
         };
@@ -647,26 +665,220 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_handleResponseDiscoverWindows(std::wstring_view response)
     {
-        OutputDebugStringW(L"_handleResponseDiscoverWindows\n");
+        print_debug(L"_handleResponseDiscoverWindows\n");
 
         while (!response.empty())
         {
             auto line = split_line(response);
-            const auto id = tokenize_identifier(line);
-            if (id.type == IdentifierType::Window)
-            {
-                _sendResizeWindow(id.value, _terminalWidth, _terminalHeight);
-            }
-            else
+            const auto sessionId = tokenize_identifier(line);
+            const auto windowId = tokenize_identifier(line);
+            const auto windowWidth = tokenize_number(line);
+            const auto windowHeight = tokenize_number(line);
+            const auto historyLimit = tokenize_number(line);
+            const auto windowActive = tokenize_number(line);
+            const auto windowLayout = tokenize_field(line);
+            const auto windowName = line;
+
+            if (sessionId.type != IdentifierType::Session ||
+                windowId.type != IdentifierType::Window ||
+                !windowWidth ||
+                !windowHeight ||
+                !historyLimit ||
+                !windowActive)
             {
                 assert(false);
+                continue;
+            }
+
+            auto remaining = _handleResponseDiscoverWindows_stripLayoutHash(windowLayout);
+            const auto firstPane = _handleResponseDiscoverWindows_createLayoutRecursive(windowId.value, remaining, TmuxLayoutType2::Pane);
+
+            const auto tab = _page._GetTabImpl(_page._CreateNewTabFromPane(firstPane));
+            _attachedWindows.emplace(windowId.value, tab);
+            tab->SetTabText(winrt::hstring{ windowName });
+            tab->CloseRequested([this, id = windowId.value](auto&&, auto&&) {
+                _sendKillWindow(id);
+            });
+
+            _sendResizeWindow(windowId.value, _terminalWidth, _terminalHeight);
+            _sendListPanes(windowId.value, (til::CoordType)*historyLimit);
+        }
+
+        _state = State::ATTACHED;
+    }
+
+    std::shared_ptr<Pane> TmuxControl::_handleResponseDiscoverWindows_createLayoutRecursive(int64_t windowId, std::wstring_view& remaining, TmuxLayoutType2 layout)
+    {
+        std::shared_ptr<Pane> firstPane;
+        std::shared_ptr<Pane> lastPane;
+
+        while (!remaining.empty())
+        {
+            const auto token = _handleResponseDiscoverWindows_parseNextLayoutToken(remaining);
+            switch (token.type)
+            {
+            case TmuxLayoutType2::Pane:
+            {
+                float splitSize = 1;
+                auto direction = SplitDirection::Right;
+                switch (layout)
+                {
+                case TmuxLayoutType2::PushHorizontal:
+                    direction = SplitDirection::Right;
+                    //splitSize = _ComputeSplitSize(p.width, rootSize, direction);
+                    //rootSize -= (p.width + 1);
+                    break;
+                case TmuxLayoutType2::PushVertical:
+                    direction = SplitDirection::Down;
+                    //splitSize = _ComputeSplitSize(p.height, rootSize, direction);
+                    //rootSize -= (p.height + 1);
+                    break;
+                default:
+                    splitSize = 1;
+                    break;
+                }
+
+                auto pane = _newPane(windowId, token.id);
+                pane->Closed([this, id = token.id](auto&&, auto&&) {
+                    _sendKillPane(id);
+                });
+                if (!firstPane)
+                {
+                    firstPane = pane;
+                }
+                if (lastPane)
+                {
+                    lastPane->AttachPane(pane, direction, splitSize);
+                }
+                lastPane = std::move(pane);
+                break;
+            }
+            case TmuxLayoutType2::PushHorizontal:
+            case TmuxLayoutType2::PushVertical:
+                assert(false); // TODO
+                //_handleResponseDiscoverWindows_createLayoutRecursive(remaining, token.type);
+                break;
+            case TmuxLayoutType2::Pop:
+                return firstPane;
             }
         }
 
-        // _sendDiscoverWindows() gets called with _sessionId as its parameter.
-        // We should not be in a state where it's still unset.
-        assert(_sessionId != -1);
-        _sendListWindow(_sessionId);
+        return firstPane;
+    }
+
+    std::wstring_view TmuxControl::_handleResponseDiscoverWindows_stripLayoutHash(std::wstring_view str)
+    {
+        const auto comma = str.find(L',');
+        if (comma != std::wstring_view::npos)
+        {
+            return str.substr(comma + 1);
+        }
+        else
+        {
+            assert(false);
+            return {};
+        }
+    }
+
+    // Example layouts:
+    // * single pane:
+    //     cafd,120x29,0,0,0
+    // * single horizontal split:
+    //     813e,120x29,0,0{60x29,0,0,0,59x29,61,0,1}
+    // * double horizontal split:
+    //     04d9,120x29,0,0{60x29,0,0,0,29x29,61,0,1,29x29,91,0,2}
+    // * double horizontal split + single vertical split in the middle pane:
+    //     773d,120x29,0,0{60x29,0,0,0,29x29,61,0[29x14,61,0,1,29x14,61,15,3],29x29,91,0,2}
+    TmuxControl::TmuxPaneLayout2 TmuxControl::_handleResponseDiscoverWindows_parseNextLayoutToken(std::wstring_view& remaining)
+    {
+        TmuxPaneLayout2 layout{ .type = TmuxLayoutType2::Pop };
+
+        if (remaining.empty())
+        {
+            assert(false);
+            return layout;
+        }
+
+        int64_t args[5];
+        size_t arg_count = 0;
+        wchar_t sep = L'\0';
+
+        // Collect up to 5 arguments and the final separator
+        //   120x29,0,0,2, --> 120, 29, 0, 0, 2  + ','
+        //   120x29,0,0{   --> 120, 29, 0, 0     + '{'
+        for (int i = 0; i < 5; ++i)
+        {
+            if (remaining.empty())
+            {
+                // Failed to collect enough args? Error.
+                assert(false);
+                return layout;
+            }
+
+            // If we're looking at a push/pop operation, break out. This is important
+            // for the latter, because nested layouts may end in `]]]`, etc.
+            sep = remaining[0];
+            if (sep == L'[' || sep == L']' || sep == L'{' || sep == L'}')
+            {
+                remaining = remaining.substr(1);
+                break;
+            }
+
+            // Skip 1 separator. Technically we should validate their correct position here, but meh.
+            if (sep == L',' || sep == L'x')
+            {
+                remaining = remaining.substr(1);
+                // We don't need to revalidate `remaining.empty()`,
+                // because parse_signed will return nullopt for empty strings.
+            }
+
+            const auto end = std::min(remaining.size(), remaining.find_first_of(L",x[]{}"));
+            const auto val = til::parse_signed<int64_t>(remaining.substr(0, end), 10);
+            if (!val)
+            {
+                // Not an integer? Error.
+                assert(false);
+                return layout;
+            }
+
+            args[arg_count++] = *val;
+            remaining = remaining.substr(end);
+        }
+
+        switch (sep)
+        {
+        case L'[':
+        case L'{':
+            if (arg_count != 4)
+            {
+                assert(false);
+                return layout;
+            }
+            layout.type = sep == L'[' ? TmuxLayoutType2::PushVertical : TmuxLayoutType2::PushHorizontal;
+            layout.width = (til::CoordType)args[0];
+            layout.height = (til::CoordType)args[1];
+            return layout;
+        case L']':
+        case L'}':
+            if (arg_count != 0)
+            {
+                assert(false);
+                return layout;
+            }
+            // layout.type is already set to Pop.
+            return layout;
+        default:
+            if (arg_count != 5)
+            {
+                assert(false);
+                return layout;
+            }
+            layout.type = TmuxLayoutType2::Pane;
+            layout.width = (til::CoordType)args[0];
+            layout.height = (til::CoordType)args[1];
+            layout.id = args[4];
+            return layout;
+        }
     }
 
     void TmuxControl::_sendDiscoverNewWindow(int64_t windowId)
@@ -680,7 +892,7 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_handleResponseDiscoverNewWindow(std::wstring_view response)
     {
-        OutputDebugStringW(L"_handleResponseDiscoverNewWindow\n");
+        print_debug(L"_handleResponseDiscoverNewWindow\n");
 
         const auto windowId = tokenize_identifier(response);
         const auto paneId = tokenize_identifier(response);
@@ -707,7 +919,7 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_handleResponseDiscoverPanes(std::wstring_view response)
     {
-        OutputDebugStringW(L"_handleResponseDiscoverPanes\n");
+        print_debug(L"_handleResponseDiscoverPanes\n");
 
         std::unordered_set<int64_t> panes;
         while (!response.empty())
@@ -739,248 +951,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TmuxControl::_sendListWindow(int64_t sessionId)
-    {
-        const auto cmd = fmt::format(FMT_COMPILE(L"list-windows -F '#{{session_id}} #{{window_id}} #{{window_width}} #{{window_height}} #{{history_limit}} #{{window_active}} #{{window_layout}} #{{window_name}}' -t ${}\n"), sessionId);
-        const auto info = ResponseInfo{
-            .type = ResponseInfoType::ListWindow,
-        };
-        _sendWithResponseInfo(cmd, info);
-    }
-
-    std::vector<TmuxControl::TmuxWindowLayout> TmuxControl::_parseLayout(std::wstring_view remaining)
-    {
-        std::vector<TmuxWindowLayout> result;
-        std::vector<size_t> stack;
-
-        stack.push_back(0);
-
-        // Example layouts:
-        // * single pane:
-        //     cafd,120x29,0,0,0
-        // * single horizontal split:
-        //     813e,120x29,0,0{60x29,0,0,0,59x29,61,0,1}
-        // * double horizontal split:
-        //     04d9,120x29,0,0{60x29,0,0,0,29x29,61,0,1,29x29,91,0,2}
-        // * double horizontal split + single vertical split in the middle pane:
-        //     773d,120x29,0,0{60x29,0,0,0,29x29,61,0[29x14,61,0,1,29x14,61,15,3],29x29,91,0,2}
-        remaining = L"773d,120x29,0,0{60x29,0,0,0,29x29,61,0[29x14,61,0,1,29x14,61,15,3],29x29,91,0,2}";
-
-        // Strip off the layout hash
-        const auto comma = remaining.find(L',');
-        if (comma == std::wstring_view::npos)
-        {
-            assert(false);
-            return {};
-        }
-        remaining = remaining.substr(comma + 1);
-
-        while (!remaining.empty())
-        {
-            int64_t args[5];
-            size_t arg_count = 0;
-            wchar_t sep = L'\0';
-
-            // Collect up to 5 arguments and the final separator
-            //   120x29,0,0,2, --> 120, 29, 0, 0, 2  + ','
-            //   120x29,0,0{   --> 120, 29, 0, 0     + '{'
-            for (int i = 0; i < 5; ++i)
-            {
-                if (remaining.empty())
-                {
-                    // Failed to collect enough args? Error.
-                    assert(false);
-                    return {};
-                }
-
-                // If we're looking at a push/pop operation, break out. This is important
-                // for the latter, because nested layouts may end in `]]]`, etc.
-                sep = remaining[0];
-                if (sep == L'[' || sep == L']' || sep == L'{' || sep == L'}')
-                {
-                    remaining = remaining.substr(1);
-                    break;
-                }
-
-                // Skip 1 separator. Technically we should validate their correct position here, but meh.
-                if (sep == L',' || sep == L'x')
-                {
-                    remaining = remaining.substr(1);
-                    // We don't need to revalidate `remaining.empty()`,
-                    // because parse_signed will return nullopt for empty strings.
-                }
-
-                const auto end = std::min(remaining.size(), remaining.find_first_of(L",x[]{}"));
-                const auto val = til::parse_signed<int64_t>(remaining.substr(0, end), 10);
-                if (!val)
-                {
-                    // Not an integer? Error.
-                    assert(false);
-                    return {};
-                }
-
-                args[arg_count++] = *val;
-                remaining = remaining.substr(end);
-            }
-
-            switch (sep)
-            {
-            case L'[':
-            case L'{':
-                if (arg_count != 4)
-                {
-                    assert(false);
-                    return {};
-                }
-
-                stack.push_back(result.size());
-                result.push_back(TmuxWindowLayout{
-                    .type = sep == L'[' ? TmuxLayoutType::SPLIT_VERTICAL : TmuxLayoutType::SPLIT_HORIZONTAL,
-                    .width = (til::CoordType)args[0],
-                    .height = (til::CoordType)args[1],
-                });
-                break;
-            case L']':
-            case L'}':
-                stack.pop_back();
-                break;
-            default:
-                if (arg_count != 5)
-                {
-                    assert(false);
-                    return {};
-                }
-
-                if (result.empty())
-                {
-                    result.push_back(TmuxWindowLayout{
-                        .type = TmuxLayoutType::SINGLE_PANE,
-                    });
-                }
-
-                result[stack.back()].panes.push_back(TmuxPaneLayout{
-                    .id = args[4],
-                    .width = (til::CoordType)args[0],
-                    .height = (til::CoordType)args[1],
-                });
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    void TmuxControl::_handleResponseListWindow(std::wstring_view response)
-    {
-        OutputDebugStringW(L"_handleResponseListWindow\n");
-
-        while (!response.empty())
-        {
-            auto line = split_line(response);
-            const auto sessionId = tokenize_identifier(line);
-            const auto windowId = tokenize_identifier(line);
-            const auto windowWidth = tokenize_number(line);
-            const auto windowHeight = tokenize_number(line);
-            const auto historyLimit = tokenize_number(line);
-            const auto windowActive = tokenize_number(line);
-            const auto windowLayout = tokenize_field(line);
-            const auto windowName = line;
-
-            if (sessionId.type != IdentifierType::Session ||
-                windowId.type != IdentifierType::Window ||
-                !windowWidth ||
-                !windowHeight ||
-                !historyLimit ||
-                !windowActive)
-            {
-                assert(false);
-                continue;
-            }
-
-            const auto layout = _parseLayout(windowLayout);
-            std::shared_ptr<Pane> rootPane{ nullptr };
-            std::unordered_map<int64_t, std::shared_ptr<Pane>> attachedPanes;
-
-            for (auto& l : layout)
-            {
-                til::CoordType rootSize;
-                const auto& rootPaneLayout = l.panes.at(0);
-                auto direction = SplitDirection::Right;
-
-                switch (l.type)
-                {
-                case TmuxLayoutType::SINGLE_PANE:
-                    rootPane = _newPane(windowId.value, rootPaneLayout.id);
-                    continue;
-                case TmuxLayoutType::SPLIT_HORIZONTAL:
-                    direction = SplitDirection::Right;
-                    rootSize = rootPaneLayout.width;
-                    break;
-                case TmuxLayoutType::SPLIT_VERTICAL:
-                    direction = SplitDirection::Down;
-                    rootSize = rootPaneLayout.height;
-                    break;
-                }
-
-                std::shared_ptr<Pane> targetPane{ nullptr };
-
-                if (const auto search = attachedPanes.find(rootPaneLayout.id); search == attachedPanes.end())
-                {
-                    targetPane = _newPane(windowId.value, rootPaneLayout.id);
-                    if (!rootPane)
-                    {
-                        rootPane = targetPane;
-                    }
-                    attachedPanes.insert({ rootPaneLayout.id, targetPane });
-                }
-                else
-                {
-                    targetPane = search->second;
-                }
-
-                for (size_t i = 1; i < l.panes.size(); i++)
-                {
-                    // Create and attach
-                    auto& p = l.panes.at(i);
-
-                    auto pane = _newPane(windowId.value, p.id);
-                    attachedPanes.insert({ p.id, pane });
-
-                    float splitSize;
-                    if (direction == SplitDirection::Left)
-                    {
-                        splitSize = _ComputeSplitSize(p.width, rootSize, direction);
-                        rootSize -= (p.width + 1);
-                    }
-                    else
-                    {
-                        splitSize = _ComputeSplitSize(p.height, rootSize, direction);
-                        rootSize -= (p.height + 1);
-                    }
-
-                    targetPane = targetPane->AttachPane(pane, direction, splitSize);
-                    attachedPanes.erase(p.id);
-                    attachedPanes.insert({ p.id, targetPane });
-                    targetPane->Closed([this, id = p.id](auto&&, auto&&) {
-                        _sendKillPane(id);
-                    });
-                }
-            }
-
-            auto tab = _page._GetTabImpl(_page._CreateNewTabFromPane(rootPane));
-            _attachedWindows.emplace(windowId.value, tab);
-
-            tab->CloseRequested([this, id = windowId.value](auto&&, auto&&) {
-                _sendKillWindow(id);
-            });
-
-            tab->SetTabText(winrt::hstring{ windowName });
-            _sendListPanes(windowId.value, *historyLimit);
-        }
-
-        _state = State::ATTACHED;
-    }
-
     void TmuxControl::_sendListPanes(int64_t windowId, til::CoordType history)
     {
         const auto cmd = fmt::format(FMT_COMPILE(L"list-panes -F '#{{pane_id}} #{{cursor_x}} #{{cursor_y}}' -t @{}\n"), windowId);
@@ -997,7 +967,7 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_handleResponseListPanes(const ResponseInfo& info, std::wstring_view response)
     {
-        OutputDebugStringW(L"_handleResponseListPanes\n");
+        print_debug(L"_handleResponseListPanes\n");
 
         std::vector<TmuxPane> panes;
 
@@ -1050,7 +1020,7 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_handleResponseCapturePane(const ResponseInfo& info, std::wstring response)
     {
-        OutputDebugStringW(L"_handleResponseCapturePane\n");
+        print_debug(L"_handleResponseCapturePane\n");
 
         fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"\033[{};{}H"), info.data.capturePane.cursorY + 1, info.data.capturePane.cursorX + 1);
         _deliverOutputToPane(info.data.capturePane.paneId, response);
@@ -1213,24 +1183,18 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_deliverOutputToPane(int64_t paneId, const std::wstring_view text)
     {
-        auto search = _attachedPanes.find(paneId);
-
-        // The pane is not ready it, put in backlog for now
+        const auto search = _attachedPanes.find(paneId);
         if (search == _attachedPanes.end())
         {
-            _outputBacklog.insert_or_assign(paneId, text);
             return;
         }
 
         if (!search->second.initialized)
         {
-            search->second.control.Initialized([this, paneId, text](auto& /*i*/, auto& /*e*/) {
-                _deliverOutputToPane(paneId, text);
-            });
+            print_debug(L"--> outputBacklog {}\n", paneId);
+            search->second.outputBacklog.append(text);
             return;
         }
-
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"_deliverOutputToPane({}, {})\n"), paneId, text).c_str());
 
         std::wstring out;
         auto it = text.begin();
@@ -1269,6 +1233,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        print_debug(L"--> _deliverOutputToPane {}\n", paneId);
         search->second.connection.WriteOutput(winrt_wstring_to_array_view(out));
     }
 
@@ -1283,16 +1248,6 @@ namespace winrt::TerminalApp::implementation
         });
 
         tab->SetTabText(winrt::hstring{ windowName });
-
-        // Check if we have output before we are ready
-        auto search = _outputBacklog.find(paneId);
-        if (search == _outputBacklog.end())
-        {
-            return;
-        }
-
-        _deliverOutputToPane(paneId, search->second);
-        _outputBacklog.erase(search);
     }
 
     std::shared_ptr<Pane> TmuxControl::_newPane(int64_t windowId, int64_t paneId)
@@ -1305,12 +1260,17 @@ namespace winrt::TerminalApp::implementation
         auto pane = std::make_shared<Pane>(paneContent);
 
         control.Initialized([this, paneId](auto, auto) {
-            auto search = _attachedPanes.find(paneId);
+            const auto search = _attachedPanes.find(paneId);
             if (search == _attachedPanes.end())
             {
                 return;
             }
             search->second.initialized = true;
+            if (!search->second.outputBacklog.empty())
+            {
+                _deliverOutputToPane(paneId, std::move(search->second.outputBacklog));
+                search->second.outputBacklog.clear();
+            }
         });
 
         connection.TerminalInput([this, paneId](const winrt::array_view<const char16_t> keys) {
@@ -1361,8 +1321,7 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_sendIgnoreResponse(wil::zwstring_view cmd)
     {
-        OutputDebugStringW(L">>> ");
-        OutputDebugStringW(cmd.c_str());
+        print_debug(L">>> {}", cmd);
 
         _control.RawWriteString(cmd);
         _commandQueue.push_back(ResponseInfo{
@@ -1372,8 +1331,7 @@ namespace winrt::TerminalApp::implementation
 
     void TmuxControl::_sendWithResponseInfo(wil::zwstring_view cmd, ResponseInfo info)
     {
-        OutputDebugStringW(L">>> ");
-        OutputDebugStringW(cmd.c_str());
+        print_debug(L">>> {}", cmd);
 
         _control.RawWriteString(cmd);
         _commandQueue.push_back(info);

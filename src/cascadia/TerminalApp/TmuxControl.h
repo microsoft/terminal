@@ -38,7 +38,6 @@ namespace winrt::TerminalApp::implementation
             DiscoverNewWindow,
             DiscoverWindows,
             DiscoverPanes,
-            ListWindow,
             ListPanes,
             CapturePane,
         };
@@ -71,29 +70,48 @@ namespace winrt::TerminalApp::implementation
 
         struct TmuxPaneLayout
         {
-            int64_t id;
-            til::CoordType width;
-            til::CoordType height;
+            TmuxLayoutType type = TmuxLayoutType::SINGLE_PANE;
+            til::CoordType width = 0;
+            til::CoordType height = 0;
+            // Individual panes (= SINGLE_PANE) have an ID,
+            // otherwise it's unset (-1).
+            int64_t id = -1;
+            // Individual panes imply `panes.empty()`.
+            std::vector<TmuxPaneLayout> panes;
         };
 
-        struct TmuxWindowLayout
+        enum class TmuxLayoutType2
         {
-            TmuxLayoutType type = TmuxLayoutType::SINGLE_PANE;
-            til::CoordType width;
-            til::CoordType height;
-            std::vector<TmuxPaneLayout> panes;
+            // A single leaf pane
+            Pane,
+            // Indicates the start of a horizontal split layout
+            PushHorizontal,
+            // Indicates the start of a vertical split layout
+            PushVertical,
+            // Indicates the end of the most recent split layout
+            Pop,
+        };
+
+        struct TmuxPaneLayout2
+        {
+            TmuxLayoutType2 type = TmuxLayoutType2::Pane;
+
+            // Only set for: Pane, PushHorizontal, PushVertical
+            til::CoordType width = 0;
+            // Only set for: Pane, PushHorizontal, PushVertical
+            til::CoordType height = 0;
+            // Only set for: Pane
+            int64_t id = -1;
         };
 
         struct TmuxWindow
         {
             int64_t sessionId = 0;
             int64_t windowId = 0;
-            til::CoordType width = 0;
-            til::CoordType height = 0;
             til::CoordType history = 0;
             bool active = false;
             std::wstring name;
-            std::vector<TmuxWindowLayout> layout;
+            TmuxPaneLayout layout;
         };
 
         struct TmuxPane
@@ -112,11 +130,10 @@ namespace winrt::TerminalApp::implementation
             int64_t paneId = 0;
             winrt::Microsoft::Terminal::Control::TermControl control;
             winrt::Microsoft::Terminal::TerminalConnection::TmuxConnection connection;
+            std::wstring outputBacklog;
             bool initialized = false;
         };
 
-        static std::vector<TmuxControl::TmuxWindowLayout> _parseLayout(std::wstring_view remaining);
-        static std::vector<TmuxControl::TmuxWindowLayout> _ParseTmuxWindowLayout(std::wstring layout);
 
         safe_void_coroutine _parseLine(std::wstring str);
 
@@ -131,12 +148,13 @@ namespace winrt::TerminalApp::implementation
         void _sendSetOption(std::wstring_view option);
         void _sendDiscoverWindows(int64_t sessionId);
         void _handleResponseDiscoverWindows(std::wstring_view response);
+        std::shared_ptr<Pane> _handleResponseDiscoverWindows_createLayoutRecursive(int64_t windowId, std::wstring_view& remaining, TmuxLayoutType2 layout);
+        std::wstring_view _handleResponseDiscoverWindows_stripLayoutHash(std::wstring_view str);
+        TmuxPaneLayout2 _handleResponseDiscoverWindows_parseNextLayoutToken(std::wstring_view& remaining);
         void _sendDiscoverNewWindow(int64_t windowId);
         void _handleResponseDiscoverNewWindow(std::wstring_view response);
         void _sendDiscoverPanes(int64_t sessionId);
         void _handleResponseDiscoverPanes(std::wstring_view response);
-        void _sendListWindow(int64_t sessionId);
-        void _handleResponseListWindow(std::wstring_view response);
         void _sendListPanes(int64_t windowId, til::CoordType history);
         void _handleResponseListPanes(const ResponseInfo& info, std::wstring_view response);
         void _sendCapturePane(int64_t paneId, til::CoordType cursorX, til::CoordType cursorY, til::CoordType history);
@@ -183,7 +201,6 @@ namespace winrt::TerminalApp::implementation
         std::deque<ResponseInfo> _commandQueue;
         std::unordered_map<int64_t, AttachedPane> _attachedPanes;
         std::unordered_map<int64_t, winrt::com_ptr<Tab>> _attachedWindows;
-        std::unordered_map<int64_t, std::wstring> _outputBacklog;
 
         int64_t _sessionId = -1;
         int64_t _activePaneId = -1;
