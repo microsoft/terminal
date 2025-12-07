@@ -12,3 +12,4 @@
 - [ ] Documentation updated
    - If checked, please file a pull request on [our docs repo](https://github.com/MicrosoftDocs/terminal) and link it here: #xxx
 - [ ] Schema updated (if necessary)
+- [ ] I confirm I just blindly checked all the boxes without reading them
