@@ -129,7 +129,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         // been converted to U+240A (␊), so that's what we need to search for.
         //for (size_t lfPos = 0; (lfPos = output.find(L'\x0A', lfPos)) != std::wstring::npos;)
         //{
-            //output.insert(++lfPos, L"\r\n");
+        //output.insert(++lfPos, L"\r\n");
         //}
         //TerminalOutput.raise(output);
     }

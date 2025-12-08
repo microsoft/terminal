@@ -2225,12 +2225,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         try
         {
-            std::wstring u16out;
-            (void)til::u8u16(std::string_view{reinterpret_cast<const char*>(data.data()), data.size()}, u16out, _u8State);
+            FAILED_LOG(til::u8u16(std::string_view{ reinterpret_cast<const char*>(data.data()), data.size() }, _u16ConversionBuffer, _u8State));
 
+            if (!_u16ConversionBuffer.empty()) [[likely]]
             {
                 const auto lock = _terminal->LockForWriting();
-                _terminal->Write(u16out);
+                _terminal->Write(_u16ConversionBuffer);
             }
 
             if (!_pendingResponses.empty())

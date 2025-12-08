@@ -457,7 +457,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
         TerminalConnection::ITerminalConnection _connection{ nullptr };
 
-	til::u8state _u8State;
+        std::wstring _u16ConversionBuffer;
+        til::u8state _u8State;
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

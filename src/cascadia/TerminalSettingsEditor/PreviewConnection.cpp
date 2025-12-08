@@ -20,7 +20,7 @@ static constexpr std::u8string_view PreviewText{
     u8"\x1b[36m@@ -1 +1 @@\x1b[m\r\n"
     u8"\x1b[31m-    Windows Console\x1b[m\r\n"
     u8"\x1b[32m+    Windows Terminal!\x1b[m\r\n"
-    u8"{0}\x1b[93mWrite-Host \x1b[36m\"\xd83c\xdf2f!\"\x1b[1D\x1b[m" // this is broken due to u8string - you cannot use surrogate pairs there (!)
+    u8"{0}\x1b[93mWrite-Host \x1b[36m\"🌯!\"\x1b[1D\x1b[m"
 };
 // clang-format on
 
@@ -32,8 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // Send the preview text
         auto e = fmt::format(PreviewText, _displayPowerlineGlyphs ? PromptTextPowerline : PromptTextPlain);
-        //auto e = til::u16u8(s);
-        TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(e.c_str()), static_cast<uint32_t>(e.size()) });
+        TerminalOutput.raise(winrt_u8string_to_array_view(e));
     }
 
     void PreviewConnection::Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) noexcept

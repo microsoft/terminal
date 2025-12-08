@@ -746,7 +746,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         OVERLAPPED overlapped{ .hEvent = overlappedEvent.get() };
         bool overlappedPending = false;
 
-        char buffer[128 * 1024], buffer2[128*1024];
+        char buffer[128 * 1024], buffer2[128 * 1024];
         char* thisBuffer = buffer;
         DWORD read = 0;
         char* lastBuffer = buffer2;

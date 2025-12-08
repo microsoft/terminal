@@ -298,6 +298,28 @@ inline std::wstring_view winrt_array_to_wstring_view(const winrt::array_view<con
     return { reinterpret_cast<const wchar_t*>(str.data()), str.size() };
 }
 
+template<typename T, typename CharTraits>
+    requires(sizeof(T) == 1)
+inline winrt::array_view<const uint8_t> winrt_u8string_to_array_view(const std::basic_string_view<T, CharTraits>& str)
+{
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+    return winrt::array_view<const uint8_t>{ reinterpret_cast<const uint8_t*>(str.data()), gsl::narrow<uint32_t>(str.size()) };
+}
+
+template<typename T, typename CharTraits, typename Allocator>
+    requires(sizeof(T) == 1)
+inline winrt::array_view<const uint8_t> winrt_u8string_to_array_view(const std::basic_string<T, CharTraits, Allocator>& str)
+{
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+    return winrt_u8string_to_array_view(std::basic_string_view<T, CharTraits>{ str });
+}
+
+inline std::string_view winrt_array_to_string_view(const winrt::array_view<const uint8_t>& str) noexcept
+{
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+    return { reinterpret_cast<const char*>(str.data()), str.size() };
+}
+
 // This is a helper method for deserializing a SAFEARRAY of
 // COM objects and converting it to a vector that
 // owns the extracted COM objects
