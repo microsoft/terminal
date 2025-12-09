@@ -11,7 +11,7 @@
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 #include "EnumEntry.h"
 #include "ColorSchemeViewModel.h"
-#include "..\WinRTUtils\inc\Utils.h"
+#include "../WinRTUtils/inc/Utils.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
