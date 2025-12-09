@@ -68,9 +68,14 @@ void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
     s_wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
 }
 
-void Implementation::Initialize()
+bool Implementation::Initialize()
 {
-    _categoryMgr = wil::CoCreateInstance<ITfCategoryMgr>(CLSID_TF_CategoryMgr, CLSCTX_INPROC_SERVER);
+    _categoryMgr = wil::CoCreateInstanceNoThrow<ITfCategoryMgr>(CLSID_TF_CategoryMgr);
+    if (!_categoryMgr)
+    {
+        return false;
+    }
+
     _displayAttributeMgr = wil::CoCreateInstance<ITfDisplayAttributeMgr>(CLSID_TF_DisplayAttributeMgr);
 
     // There's no point in calling TF_GetThreadMgr. ITfThreadMgr is a per-thread singleton.
@@ -89,6 +94,7 @@ void Implementation::Initialize()
     THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
 
     THROW_IF_FAILED(_documentMgr->Push(_context.get()));
+    return true;
 }
 
 void Implementation::Uninitialize() noexcept
