@@ -72,7 +72,7 @@
         <name>Feature_AtlasEngineLoudErrors</name>
         <description>Atlas Engine can optionally support signaling every presentation failure to its consumer. For now, we only want that to happen in non-Release builds.</description>
         <stage>AlwaysEnabled</stage>
-	<alwaysDisabledReleaseTokens/>
+        <alwaysDisabledReleaseTokens/>
     </feature>
 
     <feature>
