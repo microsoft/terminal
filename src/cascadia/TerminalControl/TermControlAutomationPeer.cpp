@@ -121,6 +121,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#13978: If the TermControl has already been removed from the UI tree, XAML might run into weird bugs.
         // This will prevent the `dispatcher.RunAsync` calls below from raising UIA events on the main thread.
         _termControl = {};
+
+        // Solve the circular reference between us and the content automation peer.
+        _contentAutomationPeer.ParentProvider(nullptr);
     }
 
     // Method Description:
@@ -338,27 +341,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma region ITextProvider
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
-        return _contentAutomationPeer.GetSelection();
+        auto ret = _contentAutomationPeer.GetSelection();
+        for (const auto& r : ret)
+        {
+            assert(((XamlUiaTextRange*)winrt::get_abi(r))->_refCount.load(std::memory_order_relaxed) == 1);
+        }
+        return ret;
     }
 
     com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
-        return _contentAutomationPeer.GetVisibleRanges();
+        auto ret = _contentAutomationPeer.GetVisibleRanges();
+        for (const auto& r : ret)
+        {
+            assert(((XamlUiaTextRange*)winrt::get_abi(r))->_refCount.load(std::memory_order_relaxed) == 1);
+        }
+        return ret;
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
     {
-        return _contentAutomationPeer.RangeFromChild(childElement);
+        auto r = _contentAutomationPeer.RangeFromChild(childElement);
+        assert(((XamlUiaTextRange*)winrt::get_abi(r))->_refCount.load(std::memory_order_relaxed) == 1);
+        return r;
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
     {
-        return _contentAutomationPeer.RangeFromPoint(screenLocation);
+        auto r = _contentAutomationPeer.RangeFromPoint(screenLocation);
+        assert(((XamlUiaTextRange*)winrt::get_abi(r))->_refCount.load(std::memory_order_relaxed) == 1);
+        return r;
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
     {
-        return _contentAutomationPeer.DocumentRange();
+        auto r = _contentAutomationPeer.DocumentRange();
+        assert(((XamlUiaTextRange*)winrt::get_abi(r))->_refCount.load(std::memory_order_relaxed) == 1);
+        return r;
     }
 
     XamlAutomation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()

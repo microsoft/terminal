@@ -49,7 +49,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
     {
-        _parentProvider = parentProvider;
+        // LOAD-BEARING: use _parentProvider->ProviderFromPeer(_parentProvider) instead of this->ProviderFromPeer(*this).
+        // Since we split the automation peer into TermControlAutomationPeer and InteractivityAutomationPeer,
+        // using "this" returns null. This can cause issues with some UIA Client scenarios like any navigation in Narrator.
+        _parentProvider = parentProvider ? parentProvider.as<IAutomationPeerProtected>().ProviderFromPeer(parentProvider) : nullptr;
     }
 
     // Method Description:
@@ -181,15 +184,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::_CreateXamlUiaTextRange(UIA::ITextRangeProvider* returnVal) const
     {
-        // LOAD-BEARING: use _parentProvider->ProviderFromPeer(_parentProvider) instead of this->ProviderFromPeer(*this).
-        // Since we split the automation peer into TermControlAutomationPeer and InteractivityAutomationPeer,
-        // using "this" returns null. This can cause issues with some UIA Client scenarios like any navigation in Narrator.
-        const auto parent{ _parentProvider.get() };
-        if (!parent)
+        if (!_parentProvider)
         {
             return nullptr;
         }
-        return winrt::make<XamlUiaTextRange>(returnVal, parent.as<IAutomationPeerProtected>().ProviderFromPeer(parent));
+        return XamlUiaTextRange::Create(returnVal, _parentProvider);
     };
 
     // Method Description:
@@ -200,21 +199,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - com_array of Xaml Wrapped UiaTextRange (ITextRangeProviders)
     com_array<XamlAutomation::ITextRangeProvider> InteractivityAutomationPeer::WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges)
     {
-        // transfer ownership of UiaTextRanges to this new vector
-        auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
-        auto count = gsl::narrow<int>(providers.size());
-
-        std::vector<XamlAutomation::ITextRangeProvider> vec;
-        vec.reserve(count);
-        for (auto i = 0; i < count; i++)
+        if (!_parentProvider)
         {
-            if (auto xutr = _CreateXamlUiaTextRange(providers[i].detach()))
-            {
-                vec.emplace_back(std::move(xutr));
-            }
+            return {};
         }
 
-        com_array<XamlAutomation::ITextRangeProvider> result{ vec };
+        // transfer ownership of UiaTextRanges to this new vector
+        auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
+        const auto len = gsl::narrow<uint32_t>(providers.size());
+        com_array<XamlAutomation::ITextRangeProvider> result{ len };
+
+        for (uint32_t i = 0; i < len; ++i)
+        {
+            result[i] = XamlUiaTextRange::Create(providers[i].detach(), _parentProvider);
+        }
 
         return result;
     }

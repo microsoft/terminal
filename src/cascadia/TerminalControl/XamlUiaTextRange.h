@@ -23,50 +23,68 @@ Author(s):
 #include "TermControlAutomationPeer.h"
 #include <UIAutomationCore.h>
 #include "../types/TermControlUiaTextRange.hpp"
+#include <windows.ui.xaml.automation.provider.h>
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    class XamlUiaTextRange :
-        public winrt::implements<XamlUiaTextRange, Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>
+    class XamlUiaTextRange : public ABI::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider
     {
     public:
+        static winrt::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider Create(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider);
+
         XamlUiaTextRange(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider);
         ~XamlUiaTextRange();
 
+        // IUnknown
+        IFACEMETHODIMP_(ULONG) AddRef() noexcept override;
+        IFACEMETHODIMP_(ULONG) Release() noexcept override;
+        IFACEMETHODIMP QueryInterface(REFIID riid, void** ppvObject) noexcept override;
+
+        // IInspectable
+        IFACEMETHODIMP GetIids(ULONG* iidCount, IID** iids) noexcept override;
+        IFACEMETHODIMP GetRuntimeClassName(HSTRING* className) noexcept override;
+        IFACEMETHODIMP GetTrustLevel(TrustLevel* trustLevel) noexcept override;
+
 #pragma region ITextRangeProvider
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider Clone() const;
-        bool Compare(Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pRange) const;
-        int32_t CompareEndpoints(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
-                                 Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pTargetRange,
-                                 Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint targetEndpoint);
-        void ExpandToEnclosingUnit(Windows::UI::Xaml::Automation::Text::TextUnit unit) const;
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider FindAttribute(int32_t textAttributeId,
-                                                                                  winrt::Windows::Foundation::IInspectable val,
-                                                                                  bool searchBackward);
-        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider FindText(winrt::hstring text,
-                                                                             bool searchBackward,
-                                                                             bool ignoreCase);
-        winrt::Windows::Foundation::IInspectable GetAttributeValue(int32_t textAttributeId) const;
-        void GetBoundingRectangles(winrt::com_array<double>& returnValue) const;
-        Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple GetEnclosingElement();
-        winrt::hstring GetText(int32_t maxLength) const;
-        int32_t Move(Windows::UI::Xaml::Automation::Text::TextUnit unit,
-                     int32_t count);
-        int32_t MoveEndpointByUnit(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
-                                   Windows::UI::Xaml::Automation::Text::TextUnit unit,
-                                   int32_t count) const;
-        void MoveEndpointByRange(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
-                                 Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pTargetRange,
-                                 Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint targetEndpoint) const;
-        void Select() const;
-        void AddToSelection() const;
-        void RemoveFromSelection() const;
-        void ScrollIntoView(bool alignToTop) const;
-        winrt::com_array<Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple> GetChildren() const;
+        IFACEMETHODIMP Clone(ABI::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider** result) noexcept override;
+        IFACEMETHODIMP Compare(ABI::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider* textRangeProvider, boolean* result) noexcept override;
+        IFACEMETHODIMP CompareEndpoints(ABI::Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
+                                       ABI::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider* textRangeProvider,
+                                       ABI::Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint targetEndpoint,
+                                       INT32* result) noexcept override;
+        IFACEMETHODIMP ExpandToEnclosingUnit(ABI::Windows::UI::Xaml::Automation::Text::TextUnit unit) noexcept override;
+        IFACEMETHODIMP FindAttribute(INT32 attributeId,
+                                    IInspectable* value,
+                                    boolean backward,
+                                    ABI::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider** result) noexcept override;
+        IFACEMETHODIMP FindText(HSTRING text,
+                               boolean backward,
+                               boolean ignoreCase,
+                               ABI::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider** result) noexcept override;
+        IFACEMETHODIMP GetAttributeValue(INT32 attributeId, IInspectable** result) noexcept override;
+        IFACEMETHODIMP GetBoundingRectangles(UINT32* returnValueLength, DOUBLE** returnValue) noexcept override;
+        IFACEMETHODIMP GetEnclosingElement(ABI::Windows::UI::Xaml::Automation::Provider::IIRawElementProviderSimple** result) noexcept override;
+        IFACEMETHODIMP GetText(INT32 maxLength, HSTRING* result) noexcept override;
+        IFACEMETHODIMP Move(ABI::Windows::UI::Xaml::Automation::Text::TextUnit unit,
+                           INT32 count,
+                           INT32* result) noexcept override;
+        IFACEMETHODIMP MoveEndpointByUnit(ABI::Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
+                                         ABI::Windows::UI::Xaml::Automation::Text::TextUnit unit,
+                                         INT32 count,
+                                         INT32* result) noexcept override;
+        IFACEMETHODIMP MoveEndpointByRange(ABI::Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
+                                          ABI::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider* textRangeProvider,
+                                          ABI::Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint targetEndpoint) noexcept override;
+        IFACEMETHODIMP Select() noexcept override;
+        IFACEMETHODIMP AddToSelection() noexcept override;
+        IFACEMETHODIMP RemoveFromSelection() noexcept override;
+        IFACEMETHODIMP ScrollIntoView(boolean alignToTop) noexcept override;
+        IFACEMETHODIMP GetChildren(UINT32* resultLength,
+                                   ABI::Windows::UI::Xaml::Automation::Provider::IIRawElementProviderSimple*** result) noexcept override;
 #pragma endregion ITextRangeProvider
 
-    private:
         wil::com_ptr<::ITextRangeProvider> _uiaProvider;
         Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple _parentProvider;
+        std::atomic<ULONG> _refCount{ 1 };
     };
 }
