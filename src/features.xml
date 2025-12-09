@@ -69,6 +69,13 @@
     </feature>
 
     <feature>
+        <name>Feature_AtlasEngineLoudErrors</name>
+        <description>Atlas Engine can optionally support signaling every presentation failure to its consumer. For now, we only want that to happen in non-Release builds.</description>
+        <stage>AlwaysEnabled</stage>
+	<alwaysDisabledReleaseTokens/>
+    </feature>
+
+    <feature>
         <name>Feature_NearbyFontLoading</name>
         <description>Controls whether fonts in the same directory as the binary are used during rendering. Disabled for conhost so that it doesn't iterate the entire system32 directory.</description>
         <stage>AlwaysEnabled</stage>
