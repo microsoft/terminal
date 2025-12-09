@@ -2225,7 +2225,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         try
         {
-            FAILED_LOG(til::u8u16(std::string_view{ reinterpret_cast<const char*>(data.data()), data.size() }, _u16ConversionBuffer, _u8State));
+            FAILED_LOG(til::u8u16(winrt_array_to_string_view(data), _u16ConversionBuffer, _u8State));
 
             if (!_u16ConversionBuffer.empty()) [[likely]]
             {
