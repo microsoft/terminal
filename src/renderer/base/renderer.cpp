@@ -13,7 +13,7 @@ using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
 static constexpr TimerRepr TimerReprMax = std::numeric_limits<TimerRepr>::max();
 // We want there to be five retry periods; after the last one, we will mark the render as failed.
-static constexpr DWORD maxRetriesForRenderEngine = 5;
+static constexpr unsigned int maxRetriesForRenderEngine = 5;
 // The renderer will wait this number of milliseconds * 2^tries before trying again.
 static constexpr DWORD renderBackoffBaseTimeMilliseconds = 100;
 
@@ -328,12 +328,13 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
     HRESULT hr{ S_FALSE };
-    for (auto attempt = 0; attempt < maxRetriesForRenderEngine; ++attempt)
+    // Attempt zero doesn't count as a retry. We should try maxRetries + 1 times.
+    for (unsigned int attempt = 0u; attempt <= maxRetriesForRenderEngine; ++attempt)
     {
         if (attempt > 0) [[unlikely]]
         {
             // Add a bit of backoff.
-            // Sleep 100, 200, 400, 600, 800ms before failing out and disabling the renderer.
+            // Sleep 100, 200, 400, 600, 800ms, 1600ms before failing out and disabling the renderer.
             Sleep(renderBackoffBaseTimeMilliseconds * (1 << (attempt - 1)));
         }
 
