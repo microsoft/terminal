@@ -70,7 +70,7 @@ void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
 
 bool Implementation::Initialize()
 {
-    _categoryMgr = wil::CoCreateInstance<ITfCategoryMgr, wil::err_returncode_policy>(CLSID_TF_CategoryMgr, CLSCTX_INPROC_SERVER);
+    _categoryMgr = wil::CoCreateInstanceNoThrow<ITfCategoryMgr>(CLSID_TF_CategoryMgr);
     if (!_categoryMgr)
     {
         return false;
@@ -809,3 +809,4 @@ COLORREF Implementation::_colorFromDisplayAttribute(TF_DA_COLOR color)
         return 0;
     }
 }
+
