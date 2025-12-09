@@ -12,9 +12,10 @@ using namespace Microsoft::Console::Types;
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
 static constexpr TimerRepr TimerReprMax = std::numeric_limits<TimerRepr>::max();
-static constexpr DWORD maxRetriesForRenderEngine = 3;
-// The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
-static constexpr DWORD renderBackoffBaseTimeMilliseconds = 150;
+// We want there to be five retry periods; on the last one, we will mark the render as failed.
+static constexpr DWORD maxRetriesForRenderEngine = 6;
+// The renderer will wait this number of milliseconds * 2^tries before trying again.
+static constexpr DWORD renderBackoffBaseTimeMilliseconds = 100;
 
 // Routine Description:
 // - Creates a new renderer controller for a console.
@@ -355,8 +356,8 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
         }
 
         // Add a bit of backoff.
-        // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
-        Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
+        // Sleep 100, 200, 400, 600, 800, 1600ms before failing out and disabling the renderer.
+        Sleep(renderBackoffBaseTimeMilliseconds * (1 << (maxRetriesForRenderEngine - tries - 1)));
     }
 
     return S_OK;

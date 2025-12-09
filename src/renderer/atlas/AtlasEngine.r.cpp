@@ -61,6 +61,9 @@ catch (const wil::ResultException& exception)
         return E_PENDING;
     }
 
+#ifndef NDEBUG
+    // We may fail to present repeatedly, e.g. if there's a short-term device failure.
+    // We should not bombard the consumer with repeated warning callbacks (where they may present a dialog to the user).
     if (_p.warningCallback)
     {
         try
@@ -69,6 +72,7 @@ catch (const wil::ResultException& exception)
         }
         CATCH_LOG()
     }
+#endif
 
     _b.reset();
     return hr;
