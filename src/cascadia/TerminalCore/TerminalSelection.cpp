@@ -362,10 +362,32 @@ void Terminal::ToggleMarkMode()
     {
         // Enter Mark Mode
         // NOTE: directly set cursor state. We already should have locked before calling this function.
-        if (!IsSelectionActive())
+        if (IsSelectionActive())
         {
-            // No selection --> start one at the cursor
-            const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+            // Selection already existed --> just target "end"
+            if (WI_AreAllFlagsClear(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End))
+            {
+                WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+            }
+        }
+        else if (const auto focusedSearchResult = GetSearchHighlightFocused())
+        {
+            // We have a focused search result --> treat it as selection
+            *_selection.write() = SelectionInfo{
+                .start = focusedSearchResult->start,
+                .end = focusedSearchResult->end,
+                .pivot = focusedSearchResult->start,
+                .blockSelection = false,
+                .active = true,
+            };
+            WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+        }
+        else
+        {
+            // If we're scrolled up, use the viewport origin as the selection start.
+            // Otherwise, just use the cursor position.
+            const auto cursorPos = _scrollOffset != 0 ? _GetVisibleViewport().Origin() :
+                                                        _activeBuffer().GetCursor().GetPosition();
             *_selection.write() = SelectionInfo{
                 .start = cursorPos,
                 .end = cursorPos,
@@ -374,11 +396,6 @@ void Terminal::ToggleMarkMode()
                 .active = true,
             };
             WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
-        }
-        else if (WI_AreAllFlagsClear(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End))
-        {
-            // Selection already existed
-            WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
         }
         _ScrollToPoint(_selection->start);
         _selectionMode = SelectionInteractionMode::Mark;

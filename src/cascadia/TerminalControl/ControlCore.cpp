@@ -9,7 +9,6 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
-#include <LibraryResources.h>
 #include <unicode.hpp>
 #include <utils.hpp>
 #include <WinUser.h>
@@ -1787,6 +1786,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ClearSearch()
     {
         const auto lock = _terminal->LockForWriting();
+
+        // GH #19358: select the focused search result before clearing search
+        if (const auto focusedSearchResult = _terminal->GetSearchHighlightFocused())
+        {
+            // search results are buffer-relative, whereas the selection functions expect viewport-relative coordinates
+            const auto scrollOffset{ _terminal->GetScrollOffset() };
+            const auto startPos = til::point{ focusedSearchResult->start.x, focusedSearchResult->start.y - scrollOffset };
+            const auto endPos = til::point{ focusedSearchResult->end.x, focusedSearchResult->end.y - scrollOffset };
+
+            _terminal->SetSelectionAnchor(startPos);
+            _terminal->SetSelectionEnd(endPos);
+            _renderer->TriggerSelection();
+        }
+
         _terminal->SetSearchHighlights({});
         _terminal->SetSearchHighlightFocused(0);
         _renderer->TriggerSearchHighlight(_searcher.Results());
@@ -1806,15 +1819,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _closeConnection();
     }
 
-    void ControlCore::PersistToPath(const wchar_t* path) const
+    void ControlCore::PersistTo(HANDLE handle) const
     {
         const auto lock = _terminal->LockForReading();
-        _terminal->SerializeMainBuffer(path);
+        _terminal->SerializeMainBuffer(handle);
     }
 
     void ControlCore::RestoreFromPath(const wchar_t* path) const
     {
-        const wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+
+        // This block of code exists temporarily to fix buffer dumps that were
+        // previously persisted as "buffer_" but really should be named "elevated_".
+        // If loading the properly named file fails, retry with the old name.
+        if (!file)
+        {
+            static constexpr std::wstring_view needle{ L"\\elevated_" };
+
+            // Check if the path contains "\elevated_", indicating that we're in an elevated session.
+            const std::wstring_view pathView{ path };
+            const auto idx = pathView.find(needle);
+
+            if (idx != std::wstring_view::npos)
+            {
+                // If so, try to open the file with "\buffer_" instead, which is what we previously used.
+                std::wstring altPath{ pathView };
+                altPath.replace(idx, needle.size(), L"\\buffer_");
+
+                file.reset(CreateFileW(altPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr));
+
+                // If the alternate file is found, move it to the correct location.
+                if (file)
+                {
+                    LOG_IF_WIN32_BOOL_FALSE(MoveFileW(altPath.c_str(), path));
+                }
+            }
+        }
+
         if (!file)
         {
             return;

@@ -737,7 +737,7 @@
     <comment>A description for what the "antialiasing mode" setting does. Presented near "Profile_AntialiasingMode.Header".</comment>
   </data>
   <data name="Profile_AntialiasingModeAliased.Content" xml:space="preserve">
-    <value>별칭</value>
+    <value>앨리어싱</value>
     <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer does not use antialiasing techniques.</comment>
   </data>
   <data name="Profile_AntialiasingModeClearType.Content" xml:space="preserve">

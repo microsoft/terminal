@@ -124,10 +124,10 @@
     <value>新しいタブ...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>ウィンドウの分割...</value>
+    <value>ペインの分割...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
-    <value>スニペット ウィンドウを開く</value>
+    <value>スニペット ペインを開く</value>
     <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
@@ -153,7 +153,7 @@
     <value>他のすべてのタブを閉じる</value>
   </data>
   <data name="ClosePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウを閉じる</value>
+    <value>ペインを閉じる</value>
   </data>
   <data name="CloseTabAtIndexCommandKey" xml:space="preserve">
     <value>インデックス {0}のタブを閉じる</value>
@@ -229,7 +229,7 @@
     <value>以前</value>
   </data>
   <data name="DuplicatePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウの複製する</value>
+    <value>ペインの複製する</value>
   </data>
   <data name="DuplicateTabCommandKey" xml:space="preserve">
     <value>タブを複製する</value>
@@ -262,41 +262,41 @@
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
   <data name="MoveFocusToLastUsedPane" xml:space="preserve">
-    <value>前回使用したウィンドウにフォーカスを移動する</value>
+    <value>前回使用したペインにフォーカスを移動する</value>
   </data>
   <data name="MoveFocusNextInOrder" xml:space="preserve">
-    <value>次のウィンドウに順番にフォーカスを移動する</value>
+    <value>次のペインに順番にフォーカスを移動する</value>
   </data>
   <data name="MoveFocusPreviousInOrder" xml:space="preserve">
-    <value>前のウィンドウに順番にフォーカスを移動する</value>
+    <value>前のペインに順番にフォーカスを移動する</value>
   </data>
   <data name="MoveFocusFirstPane" xml:space="preserve">
-    <value>最初のウィンドウにフォーカスを移動する</value>
+    <value>最初のペインにフォーカスを移動する</value>
   </data>
   <data name="MoveFocusParentPane" xml:space="preserve">
-    <value>親ウィンドウにフォーカスを移動する</value>
+    <value>親ペインにフォーカスを移動する</value>
   </data>
   <data name="MoveFocusChildPane" xml:space="preserve">
-    <value>子ウィンドウにフォーカスを移動する</value>
+    <value>子ペインにフォーカスを移動する</value>
   </data>
   <data name="SwapPaneCommandKey" xml:space="preserve">
-    <value>ウィンドウを入れ替える</value>
+    <value>ペインを入れ替える</value>
   </data>
   <data name="SwapPaneWithArgCommandKey" xml:space="preserve">
-    <value>ウィンドウを入れ替える {0}</value>
+    <value>ペインを入れ替える {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
   <data name="SwapPaneToLastUsedPane" xml:space="preserve">
-    <value>ウィンドウを最後に使用したウィンドウと入れ替える</value>
+    <value>ペインを最後に使用したペインと入れ替える</value>
   </data>
   <data name="SwapPaneNextInOrder" xml:space="preserve">
-    <value>ウィンドウを次のウィンドウと順番に入れ替える</value>
+    <value>ペインを次のペインと順番に入れ替える</value>
   </data>
   <data name="SwapPanePreviousInOrder" xml:space="preserve">
-    <value>ウィンドウを前のウィンドウと順番に入れ替える</value>
+    <value>ペインを前のペインと順番に入れ替える</value>
   </data>
   <data name="SwapPaneFirstPane" xml:space="preserve">
-    <value>最初のウィンドウとウィンドウを入れ替える</value>
+    <value>最初のペインとペインを入れ替える</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>新しいタブ</value>
@@ -357,10 +357,10 @@
     <value>タブ名を変更</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウのサイズの変更する</value>
+    <value>ペインのサイズの変更する</value>
   </data>
   <data name="ResizePaneWithArgCommandKey" xml:space="preserve">
-    <value>ウィンドウのサイズを変更する {0}</value>
+    <value>ペインのサイズを変更する {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
   </data>
   <data name="ScrollDownCommandKey" xml:space="preserve">
@@ -427,19 +427,19 @@
     <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>
   </data>
   <data name="SplitHorizontalCommandKey" xml:space="preserve">
-    <value>ウィンドウを左右に分割</value>
+    <value>ペインを左右に分割</value>
   </data>
   <data name="MovePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウの移動</value>
+    <value>ペインの移動</value>
   </data>
   <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
-    <value>ウィンドウを新しいウィンドウに移動</value>
+    <value>ペインを新しいウィンドウに移動</value>
   </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
-    <value>ウィンドウを分割する</value>
+    <value>ペインを分割する</value>
   </data>
   <data name="SplitVerticalCommandKey" xml:space="preserve">
-    <value>ウィンドウを上下に分割</value>
+    <value>ペインを上下に分割</value>
   </data>
   <data name="SwitchToTabCommandKey" xml:space="preserve">
     <value>タブに切り替え</value>
@@ -488,19 +488,19 @@
     <value>最大化ウィンドウを復元する</value>
   </data>
   <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
-    <value>ウィンドウ分割の方向の切り替え</value>
+    <value>ペイン分割の方向の切り替え</value>
   </data>
   <data name="TogglePaneZoomCommandKey" xml:space="preserve">
-    <value>ウィンドウのズームの切り替え</value>
+    <value>ペインのズームの切り替え</value>
   </data>
   <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
-    <value>ウィンドウを読み取り専用モードに切り替える</value>
+    <value>ペインを読み取り専用モードに切り替える</value>
   </data>
   <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
-    <value>ウィンドウの読み取り専用モードを有効にする</value>
+    <value>ペインの読み取り専用モードを有効にする</value>
   </data>
   <data name="DisablePaneReadOnlyCommandKey" xml:space="preserve">
-    <value>ウィンドウの読み取り専用モードを無効にする</value>
+    <value>ペインの読み取り専用モードを無効にする</value>
   </data>
   <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
     <value>ターミナルの視覚効果の切り替え</value>
@@ -532,7 +532,7 @@
     <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
   </data>
   <data name="FocusPaneCommandKey" xml:space="preserve">
-    <value>ウィンドウ {0} をフォーカスする</value>
+    <value>ペイン {0} をフォーカスする</value>
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
   <data name="ExportBufferToPathCommandKey" xml:space="preserve">
@@ -585,7 +585,7 @@
     <comment>A command to change how transparent the background of the window is</comment>
   </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
-    <value>最後に閉じたウィンドウまたはタブを復元する</value>
+    <value>最後に閉じたペインまたはタブを復元する</value>
   </data>
   <data name="SelectAllCommandKey" xml:space="preserve">
     <value>すべてのテキストを選択</value>
@@ -695,10 +695,10 @@
     <value>コンテキスト メニューの表示</value>
   </data>
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
-    <value>他のすべてのウィンドウを閉じる</value>
+    <value>他のすべてのペインを閉じる</value>
   </data>
   <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
-    <value>ブロードキャスト入力をすべてのウィンドウに切り替える</value>
+    <value>ブロードキャスト入力をすべてのペインに切り替える</value>
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
@@ -774,7 +774,7 @@
     <value>テキストを検索する</value>
   </data>
   <data name="FocusPane" xml:space="preserve">
-    <value>ウィンドウをフォーカスする</value>
+    <value>ペインをフォーカスする</value>
   </data>
   <data name="ExportBuffer" xml:space="preserve">
     <value>バッファのエクスポート</value>

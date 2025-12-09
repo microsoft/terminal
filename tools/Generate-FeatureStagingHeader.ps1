@@ -89,11 +89,11 @@ Function Resolve-FinalFeatureStage {
         [string]$Branding
     )
 
-    # RELEASE=DISABLED wins all checks
+    # RELEASE=DISABLED wins all checks (WindowsInbox counts as a type of Release)
     # Then, branch match by most-specific branch
     # Then, branding type (if no overriding branch match)
 
-    If ($Branding -Eq "Release" -And $Feature.DisabledReleaseToken) {
+    If ($Branding -In @("Release", "WindowsInbox") -And $Feature.DisabledReleaseToken) {
         [Stage]::AlwaysDisabled
         Return
     }

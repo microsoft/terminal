@@ -21,13 +21,13 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - hPipe - a handle to the file representing the read end of the VT pipe.
 // - inheritCursor - a bool indicating if the state machine should expect a
 //      cursor positioning sequence. See MSFT:15681311.
-VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor) :
+VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
     auto dispatch = std::make_unique<InteractDispatch>();
-    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), inheritCursor);
+    auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(engine));
 }
 
@@ -185,8 +185,14 @@ void VtInputThread::_InputThread()
     return S_OK;
 }
 
+void VtInputThread::CaptureNextCursorPositionReport() const noexcept
+{
+    auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
+    engine.CaptureNextCursorPositionReport();
+}
+
 til::enumset<DeviceAttribute, uint64_t> VtInputThread::WaitUntilDA1(DWORD timeout) const noexcept
 {
-    const auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
+    auto& engine = static_cast<InputStateMachineEngine&>(_pInputStateMachine->Engine());
     return engine.WaitUntilDA1(timeout);
 }

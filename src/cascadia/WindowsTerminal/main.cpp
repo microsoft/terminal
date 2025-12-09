@@ -28,7 +28,6 @@ TRACELOGGING_DEFINE_PROVIDER(
 // we still need to be able to localize strings for the notification icon menu. Anything
 // you want localized for WindowsTerminal.exe should be stuck in
 // ...\TerminalApp\Resources\en-US\Resources.resw
-#include <LibraryResources.h>
 UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources");
 
 // Routine Description:

@@ -12,6 +12,10 @@ using namespace Microsoft::Console::Interactivity::OneCore;
 
 #pragma region IConsoleControl Members
 
+void ConsoleControl::Control(ControlType /*command*/, PVOID /*ptr*/, DWORD /*len*/) noexcept
+{
+}
+
 void ConsoleControl::NotifyWinEvent(DWORD /*event*/, HWND /*hwnd*/, LONG /*idObject*/, LONG /*idChild*/) noexcept
 {
 }

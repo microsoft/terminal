@@ -5,11 +5,12 @@
 #include "WindowEmperor.h"
 
 #include <CoreWindow.h>
-#include <LibraryResources.h>
 #include <ScopedResourceLoader.h>
 #include <WtExeUtils.h>
 #include <til/hash.h>
 #include <wil/token_helpers.h>
+#include <winrt/TerminalApp.h>
+#include <sddl.h>
 
 #include "AppHost.h"
 #include "resource.h"
@@ -1038,12 +1039,12 @@ void WindowEmperor::_setupSessionPersistence(bool enabled)
     }
     _persistStateTimer.Interval(std::chrono::minutes(5));
     _persistStateTimer.Tick([&](auto&&, auto&&) {
-        _persistState(ApplicationState::SharedInstance(), false);
+        _persistState(ApplicationState::SharedInstance());
     });
     _persistStateTimer.Start();
 }
 
-void WindowEmperor::_persistState(const ApplicationState& state, bool serializeBuffer) const
+void WindowEmperor::_persistState(const ApplicationState& state) const
 {
     // Calling an `ApplicationState` setter triggers a write to state.json.
     // With this if condition we avoid an unnecessary write when persistence is disabled.
@@ -1052,11 +1053,11 @@ void WindowEmperor::_persistState(const ApplicationState& state, bool serializeB
         state.PersistedWindowLayouts(nullptr);
     }
 
-    if (_app.Logic().Settings().GlobalSettings().ShouldUsePersistedLayout())
+    if (_app.Logic().Settings().GlobalSettings().FirstWindowPreference() != FirstWindowPreference::DefaultProfile)
     {
         for (const auto& w : _windows)
         {
-            w->Logic().PersistState(serializeBuffer);
+            w->Logic().PersistState();
         }
     }
 
@@ -1066,6 +1067,8 @@ void WindowEmperor::_persistState(const ApplicationState& state, bool serializeB
 
 void WindowEmperor::_finalizeSessionPersistence() const
 {
+    using namespace std::string_view_literals;
+
     if (_skipPersistence)
     {
         // We received WM_ENDSESSION and persisted the state.
@@ -1075,78 +1078,106 @@ void WindowEmperor::_finalizeSessionPersistence() const
 
     const auto state = ApplicationState::SharedInstance();
 
-    _persistState(state, _app.Logic().Settings().GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedLayoutAndContent);
+    _persistState(state);
 
+    const auto firstWindowPreference = _app.Logic().Settings().GlobalSettings().FirstWindowPreference();
+    const auto wantsPersistence = firstWindowPreference != FirstWindowPreference::DefaultProfile;
+
+    // If we neither need a cleanup nor want to persist, we can exit early.
+    if (!_needsPersistenceCleanup && !wantsPersistence)
+    {
+        return;
+    }
+
+    const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
+    const auto admin = _app.Logic().IsRunningElevated();
+    const auto filenamePrefix = admin ? L"elevated_"sv : L"buffer_"sv;
+    const auto persistBuffers = firstWindowPreference == FirstWindowPreference::PersistedLayoutAndContent;
+    std::unordered_set<std::wstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> bufferFilenames;
+
+    if (persistBuffers)
+    {
+        // If the app is running elevated, we create files with a mandatory
+        // integrity label (ML) of "High" (HI) for reading and writing (NR, NW).
+        wil::unique_hlocal_security_descriptor sd;
+        SECURITY_ATTRIBUTES sa{};
+        if (admin)
+        {
+            unsigned long cb;
+            THROW_IF_WIN32_BOOL_FALSE(ConvertStringSecurityDescriptorToSecurityDescriptorW(L"S:(ML;;NRNW;;;HI)", SDDL_REVISION_1, wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd), &cb));
+            sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+            sa.lpSecurityDescriptor = sd.get();
+        }
+
+        // Persist all terminal buffers to "buffer_{guid}.txt" files.
+        // We remember the filenames so that we can clean up old ones later.
+        for (const auto& w : _windows)
+        {
+            const auto panes = w->Logic().Panes();
+            for (const auto pane : panes)
+            {
+                try
+                {
+                    const auto term = pane.try_as<winrt::TerminalApp::ITerminalPaneContent>();
+                    if (!term)
+                    {
+                        continue;
+                    }
+                    const auto control = term.GetTermControl();
+                    if (!control)
+                    {
+                        continue;
+                    }
+                    const auto connection = control.Connection();
+                    if (!connection)
+                    {
+                        continue;
+                    }
+                    const auto sessionId = connection.SessionId();
+                    if (sessionId == winrt::guid{})
+                    {
+                        continue;
+                    }
+
+                    auto filename = fmt::format(FMT_COMPILE(L"{}{}.txt"), filenamePrefix, sessionId);
+                    const auto path = settingsDirectory / filename;
+
+                    if (wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) })
+                    {
+                        control.PersistTo(reinterpret_cast<int64_t>(file.get()));
+                        bufferFilenames.emplace(std::move(filename));
+                    }
+                }
+                CATCH_LOG();
+            }
+        }
+    }
+
+    // Now remove the "buffer_{guid}.txt" files that shouldn't be there.
     if (_needsPersistenceCleanup)
     {
-        // Get the "buffer_{guid}.txt" files that we expect to be there
-        std::unordered_set<winrt::guid> sessionIds;
-        if (const auto layouts = state.PersistedWindowLayouts())
+        const auto filter = fmt::format(FMT_COMPILE(L"{}\\{}*"), settingsDirectory.native(), filenamePrefix);
+
+        // This could also use std::filesystem::directory_iterator.
+        // I was just slightly bothered by how it doesn't have a O(1) .filename()
+        // function, even though the underlying Win32 APIs provide it for free.
+        // Both work fine.
+        WIN32_FIND_DATAW ffd;
+        const wil::unique_hfind handle{ FindFirstFileExW(filter.c_str(), FindExInfoBasic, &ffd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
+        if (!handle)
         {
-            for (const auto& windowLayout : layouts)
-            {
-                for (const auto& actionAndArgs : windowLayout.TabLayout())
-                {
-                    const auto args = actionAndArgs.Args();
-                    NewTerminalArgs terminalArgs{ nullptr };
-
-                    if (const auto tabArgs = args.try_as<NewTabArgs>())
-                    {
-                        terminalArgs = tabArgs.ContentArgs().try_as<NewTerminalArgs>();
-                    }
-                    else if (const auto paneArgs = args.try_as<SplitPaneArgs>())
-                    {
-                        terminalArgs = paneArgs.ContentArgs().try_as<NewTerminalArgs>();
-                    }
-
-                    if (terminalArgs)
-                    {
-                        sessionIds.emplace(terminalArgs.SessionId());
-                    }
-                }
-            }
+            return;
         }
 
-        // Remove the "buffer_{guid}.txt" files that shouldn't be there
-        // e.g. "buffer_FD40D746-163E-444C-B9B2-6A3EA2B26722.txt"
+        do
         {
-            const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
-            const auto filter = settingsDirectory / L"buffer_*";
-            WIN32_FIND_DATAW ffd;
-
-            // This could also use std::filesystem::directory_iterator.
-            // I was just slightly bothered by how it doesn't have a O(1) .filename()
-            // function, even though the underlying Win32 APIs provide it for free.
-            // Both work fine.
-            const wil::unique_hfind handle{ FindFirstFileExW(filter.c_str(), FindExInfoBasic, &ffd, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
-            if (!handle)
+            const auto nameLen = wcsnlen_s(&ffd.cFileName[0], ARRAYSIZE(ffd.cFileName));
+            const std::wstring_view filename{ &ffd.cFileName[0], nameLen };
+            if (!bufferFilenames.contains(filename))
             {
-                return;
+                std::filesystem::remove(settingsDirectory / filename);
             }
-
-            do
-            {
-                const auto nameLen = wcsnlen_s(&ffd.cFileName[0], ARRAYSIZE(ffd.cFileName));
-                const std::wstring_view name{ &ffd.cFileName[0], nameLen };
-
-                if (nameLen != 47)
-                {
-                    continue;
-                }
-
-                wchar_t guidStr[39];
-                guidStr[0] = L'{';
-                memcpy(&guidStr[1], name.data() + 7, 36 * sizeof(wchar_t));
-                guidStr[37] = L'}';
-                guidStr[38] = L'\0';
-
-                const auto id = Utils::GuidFromString(&guidStr[0]);
-                if (!sessionIds.contains(id))
-                {
-                    std::filesystem::remove(settingsDirectory / name);
-                }
-            } while (FindNextFileW(handle.get(), &ffd));
-        }
+        } while (FindNextFileW(handle.get(), &ffd));
     }
 }
 

@@ -532,7 +532,7 @@ try
 }
 CATCH_LOG()
 
-DWORD TerminalInput::_trackControlKeyState(const KEY_EVENT_RECORD& key)
+DWORD TerminalInput::_trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept
 {
     // First record which key state bits were previously off but are now on.
     const auto pressedKeyState = ~_lastControlKeyState & key.dwControlKeyState;

@@ -8,7 +8,6 @@
 #include "ArgWrapper.g.cpp"
 #include "ActionArgsViewModel.g.cpp"
 #include "KeyChordViewModel.g.cpp"
-#include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 #include "EnumEntry.h"
 #include "ColorSchemeViewModel.h"
