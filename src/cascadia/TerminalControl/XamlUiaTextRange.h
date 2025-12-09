@@ -30,11 +30,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         public winrt::implements<XamlUiaTextRange, Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>
     {
     public:
-        XamlUiaTextRange(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider) :
-            _parentProvider{ parentProvider }
-        {
-            _uiaProvider.attach(uiaProvider);
-        }
+        XamlUiaTextRange(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider);
+        ~XamlUiaTextRange();
 
 #pragma region ITextRangeProvider
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider Clone() const;

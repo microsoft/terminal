@@ -134,6 +134,16 @@ try
 }
 CATCH_RETURN();
 
+static std::atomic<int64_t> refCount_UiaTextRangeBase;
+
+Microsoft::Console::Types::UiaTextRangeBase::UiaTextRangeBase() {
+    refCount_UiaTextRangeBase.fetch_add(1, std::memory_order_relaxed);
+}
+
+Microsoft::Console::Types::UiaTextRangeBase::~UiaTextRangeBase() {
+    refCount_UiaTextRangeBase.fetch_sub(1, std::memory_order_relaxed);
+}
+
 til::point UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept
 {
     switch (endpoint)

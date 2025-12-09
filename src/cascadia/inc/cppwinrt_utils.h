@@ -322,9 +322,11 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     std::vector<wil::com_ptr<T>> result{ gsl::narrow<std::size_t>(count) };
     for (int i = 0; i < count; i++)
     {
-        result[i].attach(pVals[i]);
+        result[i] = pVals[i];
     }
 
+    THROW_IF_FAILED(SafeArrayUnaccessData(safeArray));
+    THROW_IF_FAILED(SafeArrayDestroy(safeArray));
     return result;
 }
 

@@ -189,8 +189,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return nullptr;
         }
-        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.as<IAutomationPeerProtected>().ProviderFromPeer(parent));
-        return xutr.as<XamlAutomation::ITextRangeProvider>();
+        return winrt::make<XamlUiaTextRange>(returnVal, parent.as<IAutomationPeerProtected>().ProviderFromPeer(parent));
     };
 
     // Method Description:

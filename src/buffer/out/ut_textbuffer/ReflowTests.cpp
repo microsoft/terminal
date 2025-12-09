@@ -616,7 +616,7 @@ namespace
             auto safeArray{ SafeArrayCreateVector(VT_BSTR, 0, 1) };
             LONG index{ 0 };
             auto indexBstr{ wil::make_bstr(indexString.c_str()) };
-            (void)SafeArrayPutElement(safeArray, &index, indexBstr.release());
+            (void)SafeArrayPutElement(safeArray, &index, indexBstr.get());
             *ppData = safeArray;
             return S_OK;
         }
@@ -669,7 +669,7 @@ namespace
             auto safeArray{ SafeArrayCreateVector(VT_BSTR, 0, 1) };
             LONG index{ 0 };
             auto dataNameBstr{ wil::make_bstr(L"index") };
-            (void)SafeArrayPutElement(safeArray, &index, dataNameBstr.release());
+            (void)SafeArrayPutElement(safeArray, &index, dataNameBstr.get());
             *names = safeArray;
             return S_OK;
         }

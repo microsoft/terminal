@@ -1,3 +1,38 @@
+# LMAO
+
+`NonDelegatingAddRef` in `base.h` line 7576.
+
+```cpp
+{
+    std::string trace;
+
+    const auto process = GetCurrentProcess();
+    SymInitialize(process, NULL, TRUE);
+
+    void* stack[100];
+    const auto frames = CaptureStackBackTrace(0, 100, stack, NULL);
+
+    const auto symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+    for (int i = 0; i < frames; i++)
+    {
+        SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
+        trace.append(symbol->Name);
+        trace.append("\n");
+    }
+
+    free(symbol);
+
+    if (trace.find("XamlUiaTextRange") != std::string::npos)
+    {
+        trace.append("\n");
+        OutputDebugStringA(trace.c_str());
+    }
+}
+```
+
 ![terminal-logos](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
 
 [![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)

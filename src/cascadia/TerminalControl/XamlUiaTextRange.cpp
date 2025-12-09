@@ -29,14 +29,28 @@ namespace XamlAutomation
     using winrt::Windows::UI::Xaml::Automation::Text::TextUnit;
 }
 
+static std::atomic<int64_t> refCount_XamlUiaTextRange;
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    XamlUiaTextRange::XamlUiaTextRange(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider) :
+        _parentProvider{ std::move(parentProvider) }
+    {
+        _uiaProvider.attach(uiaProvider);
+        refCount_XamlUiaTextRange.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    XamlUiaTextRange::~XamlUiaTextRange()
+    {
+        _uiaProvider.reset();
+        refCount_XamlUiaTextRange.fetch_sub(1, std::memory_order_relaxed);
+    }
+
     XamlAutomation::ITextRangeProvider XamlUiaTextRange::Clone() const
     {
         UIA::ITextRangeProvider* pReturn;
         THROW_IF_FAILED(_uiaProvider->Clone(&pReturn));
-        auto xutr = winrt::make_self<XamlUiaTextRange>(pReturn, _parentProvider);
-        return xutr.as<XamlAutomation::ITextRangeProvider>();
+        return winrt::make<XamlUiaTextRange>(pReturn, _parentProvider);
     }
 
     bool XamlUiaTextRange::Compare(XamlAutomation::ITextRangeProvider pRange) const
@@ -85,8 +99,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         THROW_IF_FAILED(_uiaProvider->FindText(queryText.get(), searchBackward, ignoreCase, &pReturn));
 
-        auto xutr = winrt::make_self<XamlUiaTextRange>(pReturn, _parentProvider);
-        return *xutr;
+        return winrt::make<XamlUiaTextRange>(pReturn, _parentProvider);
     }
 
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
@@ -175,10 +188,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             winrt::com_array<double> result{ vec };
             returnValue = std::move(result);
+
+            THROW_IF_FAILED(SafeArrayUnaccessData(pReturnVal));
+            THROW_IF_FAILED(SafeArrayDestroy(pReturnVal));
         }
-        catch (...)
-        {
-        }
+        CATCH_LOG();
     }
 
     XamlAutomation::IRawElementProviderSimple XamlUiaTextRange::GetEnclosingElement()

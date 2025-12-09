@@ -70,7 +70,31 @@ namespace Microsoft::Console::Types
         UiaTextRangeBase(UiaTextRangeBase&&) = delete;
         UiaTextRangeBase& operator=(const UiaTextRangeBase&) = delete;
         UiaTextRangeBase& operator=(UiaTextRangeBase&&) = delete;
-        ~UiaTextRangeBase() = default;
+
+        UiaTextRangeBase();
+        ~UiaTextRangeBase();
+
+        STDMETHOD_(ULONG, AddRef)()
+        {
+            return InternalAddRef();
+        }
+
+        STDMETHOD_(ULONG, Release)()
+        {
+            ULONG ref = InternalRelease();
+            if (ref == 0)
+            {
+                delete this;
+
+                auto modulePtr = ::Microsoft::WRL::GetModuleBase();
+                if (modulePtr != nullptr)
+                {
+                    modulePtr->DecrementObjectCount();
+                }
+            }
+
+            return ref;
+        }
 
         til::point GetEndpoint(TextPatternRangeEndpoint endpoint) const noexcept;
         bool SetEndpoint(TextPatternRangeEndpoint endpoint, const til::point val) noexcept;
@@ -115,7 +139,6 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept override;
 
     protected:
-        UiaTextRangeBase() = default;
         Render::IRenderData* _pData{ nullptr };
 
         IRawElementProviderSimple* _pProvider{ nullptr };

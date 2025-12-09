@@ -234,7 +234,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     UiaTracing::TextProvider::GetSelection(*this, *range.Get());
 
     LONG currentIndex = 0;
-    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
+    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Get());
     if (FAILED(hr))
     {
         SafeArrayDestroy(*ppRetVal);
@@ -278,7 +278,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     UiaTracing::TextProvider::GetVisibleRanges(*this, *range.Get());
 
     LONG currentIndex = 0;
-    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Detach());
+    hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.Get());
     if (FAILED(hr))
     {
         SafeArrayDestroy(*ppRetVal);
@@ -328,6 +328,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     RETURN_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Document));
     RETURN_IF_FAILED(utr.CopyTo(ppRetVal));
     UiaTracing::TextProvider::get_DocumentRange(*this, *utr.Get());
+
+    utr.Reset();
+
+    assert((*ppRetVal)->AddRef() == 2);
+    assert((*ppRetVal)->Release() == 1);
     return S_OK;
 }
 
