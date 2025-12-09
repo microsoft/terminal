@@ -809,4 +809,3 @@ COLORREF Implementation::_colorFromDisplayAttribute(TF_DA_COLOR color)
         return 0;
     }
 }
-
