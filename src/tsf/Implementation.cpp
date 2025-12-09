@@ -72,7 +72,10 @@ bool Implementation::Initialize()
 {
     _categoryMgr = wil::CoCreateInstance<ITfCategoryMgr, wil::err_returncode_policy>(CLSID_TF_CategoryMgr, CLSCTX_INPROC_SERVER);
     if (!_categoryMgr)
+    {
         return false;
+    }
+
     _displayAttributeMgr = wil::CoCreateInstance<ITfDisplayAttributeMgr>(CLSID_TF_DisplayAttributeMgr);
 
     // There's no point in calling TF_GetThreadMgr. ITfThreadMgr is a per-thread singleton.
