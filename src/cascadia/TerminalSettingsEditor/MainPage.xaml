@@ -167,10 +167,6 @@
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xEA86;" />
                 </muxc:NavigationViewItem.Icon>
-                <muxc:NavigationViewItem.InfoBadge>
-                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
-                                    Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}" />
-                </muxc:NavigationViewItem.InfoBadge>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
