@@ -113,92 +113,96 @@ bool MacroBuffer::InitParser(const size_t macroId, const DispatchTypes::MacroDel
     return false;
 }
 
-bool MacroBuffer::ParseDefinition(const wchar_t ch)
+bool MacroBuffer::ParseDefinition(const std::wstring_view str)
 {
-    // Once we receive an ESC, that marks the end of the definition, but if
-    // an unterminated repeat is still pending, we should apply that now.
-    if (ch == AsciiChars::ESC)
+    for (const auto ch : str)
     {
-        if (_repeatPending && !_applyPendingRepeat())
+        // Once we receive an ESC, that marks the end of the definition, but if
+        // an unterminated repeat is still pending, we should apply that now.
+        if (ch == AsciiChars::ESC)
+        {
+            if (_repeatPending && !_applyPendingRepeat())
+            {
+                _deleteMacro(_activeMacro());
+            }
+            return false;
+        }
+
+        // Any other control characters are just ignored.
+        if (ch < L' ')
+        {
+            return true;
+        }
+
+        // For "text encoded" macros, we'll always be in the ExpectingText state.
+        // For "hex encoded" macros, we'll typically be alternating between the
+        // ExpectingHexDigit and ExpectingSecondHexDigit states as we parse the two
+        // digits of each hex pair. But we also need to deal with repeat sequences,
+        // which start with `!`, followed by a numeric repeat count, and then a
+        // range of hex pairs between two `;` characters. When parsing the repeat
+        // count, we use the ExpectingRepeatCount state, but when parsing the hex
+        // pairs of the repeat, we just use the regular ExpectingHexDigit states.
+
+        auto success = true;
+        switch (_parseState)
+        {
+        case State::ExpectingText:
+            success = _appendToActiveMacro(ch);
+            break;
+        case State::ExpectingHexDigit:
+            if (_decodeHexDigit(ch))
+            {
+                _parseState = State::ExpectingSecondHexDigit;
+            }
+            else if (ch == L'!' && !_repeatPending)
+            {
+                _parseState = State::ExpectingRepeatCount;
+                _repeatCount = 0;
+            }
+            else if (ch == L';' && _repeatPending)
+            {
+                success = _applyPendingRepeat();
+            }
+            else
+            {
+                success = false;
+            }
+            break;
+        case State::ExpectingSecondHexDigit:
+            success = _decodeHexDigit(ch) && _appendToActiveMacro(_decodedChar);
+            _decodedChar = 0;
+            _parseState = State::ExpectingHexDigit;
+            break;
+        case State::ExpectingRepeatCount:
+            if (ch >= L'0' && ch <= L'9')
+            {
+                _repeatCount = _repeatCount * 10 + (ch - L'0');
+                _repeatCount = std::min<size_t>(_repeatCount, MAX_PARAMETER_VALUE);
+            }
+            else if (ch == L';')
+            {
+                _repeatPending = true;
+                _repeatStart = _activeMacro().length();
+                _parseState = State::ExpectingHexDigit;
+            }
+            else
+            {
+                success = false;
+            }
+            break;
+        default:
+            success = false;
+            break;
+        }
+
+        // If there is an error in the definition, clear everything received so far.
+        if (!success)
         {
             _deleteMacro(_activeMacro());
+            return false;
         }
-        return false;
     }
-
-    // Any other control characters are just ignored.
-    if (ch < L' ')
-    {
-        return true;
-    }
-
-    // For "text encoded" macros, we'll always be in the ExpectingText state.
-    // For "hex encoded" macros, we'll typically be alternating between the
-    // ExpectingHexDigit and ExpectingSecondHexDigit states as we parse the two
-    // digits of each hex pair. But we also need to deal with repeat sequences,
-    // which start with `!`, followed by a numeric repeat count, and then a
-    // range of hex pairs between two `;` characters. When parsing the repeat
-    // count, we use the ExpectingRepeatCount state, but when parsing the hex
-    // pairs of the repeat, we just use the regular ExpectingHexDigit states.
-
-    auto success = true;
-    switch (_parseState)
-    {
-    case State::ExpectingText:
-        success = _appendToActiveMacro(ch);
-        break;
-    case State::ExpectingHexDigit:
-        if (_decodeHexDigit(ch))
-        {
-            _parseState = State::ExpectingSecondHexDigit;
-        }
-        else if (ch == L'!' && !_repeatPending)
-        {
-            _parseState = State::ExpectingRepeatCount;
-            _repeatCount = 0;
-        }
-        else if (ch == L';' && _repeatPending)
-        {
-            success = _applyPendingRepeat();
-        }
-        else
-        {
-            success = false;
-        }
-        break;
-    case State::ExpectingSecondHexDigit:
-        success = _decodeHexDigit(ch) && _appendToActiveMacro(_decodedChar);
-        _decodedChar = 0;
-        _parseState = State::ExpectingHexDigit;
-        break;
-    case State::ExpectingRepeatCount:
-        if (ch >= L'0' && ch <= L'9')
-        {
-            _repeatCount = _repeatCount * 10 + (ch - L'0');
-            _repeatCount = std::min<size_t>(_repeatCount, MAX_PARAMETER_VALUE);
-        }
-        else if (ch == L';')
-        {
-            _repeatPending = true;
-            _repeatStart = _activeMacro().length();
-            _parseState = State::ExpectingHexDigit;
-        }
-        else
-        {
-            success = false;
-        }
-        break;
-    default:
-        success = false;
-        break;
-    }
-
-    // If there is an error in the definition, clear everything received so far.
-    if (!success)
-    {
-        _deleteMacro(_activeMacro());
-    }
-    return success;
+    return true;
 }
 
 bool MacroBuffer::_decodeHexDigit(const wchar_t ch) noexcept

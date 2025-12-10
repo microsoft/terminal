@@ -23,7 +23,7 @@ namespace Microsoft::Console::VirtualTerminal
 class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
-    using StringHandler = std::function<bool(const wchar_t)>;
+    using StringHandler = std::function<bool(std::wstring_view)>;
 
     enum class OptionalFeature
     {

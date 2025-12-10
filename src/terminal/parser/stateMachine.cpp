@@ -655,7 +655,7 @@ void StateMachine::_ActionInterrupt()
     if (_state == VTStates::DcsPassThrough)
     {
         // The ESC signals the end of the data string.
-        _dcsStringHandler(AsciiChars::ESC);
+        _dcsStringHandler(L"\x1b");
         _dcsStringHandler = nullptr;
     }
 }
@@ -1799,20 +1799,81 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsPassThrough(const wchar_t wch)
+void StateMachine::_EventDcsPassThrough(const wchar_t)
 {
     _trace.TraceOnEvent(L"DcsPassThrough");
-    if (_isC0Code(wch) || _isDcsPassThroughValid(wch))
+
+    assert(_runEnd != 0);
+
+    auto beg = _runEnd - 1;
+    auto end = beg;
+
+    for (;;)
     {
-        if (!_dcsStringHandler(wch))
+        // Find the end of a run of valid DCS characters.
+        for (;;)
+        {
+            const auto ch = _currentString[end];
+            if (_isEscape(ch) || (!_isC0Code(ch) && !_isDcsPassThroughValid(ch)))
+            {
+                break;
+            }
+
+            ++end;
+            if (end >= _currentString.size())
+            {
+                break;
+            }
+        }
+
+        // If we found a run, pass it to the handler.
+        if (beg != end && !_dcsStringHandler(_currentString.substr(beg, end)))
         {
             _EnterDcsIgnore();
+            break;
+        }
+
+        // Out of input? Done.
+        if (end >= _currentString.size())
+        {
+            break;
+        }
+
+        // Escape character? We treat it as the ST terminator for DCS passthrough.
+        // Let StateMachine::ProcessCharacter take care of that.
+        if (_isEscape(_currentString[end]))
+        {
+            break;
+        }
+
+        // Skip all invalid characters. This mirrors the search loop above,
+        // including the same post-loop exit conditions.
+        for (;;)
+        {
+            const auto ch = _currentString[end];
+            if (!_isEscape(ch) && (_isC0Code(ch) || _isDcsPassThroughValid(ch)))
+            {
+                break;
+            }
+
+            ++end;
+            if (end >= _currentString.size())
+            {
+                break;
+            }
+        }
+        if (end >= _currentString.size())
+        {
+            break;
+        }
+        if (_isEscape(_currentString[end]))
+        {
+            break;
         }
     }
-    else
-    {
-        _ActionIgnore();
-    }
+
+    // Mark all of the parsed text as processed.
+    _runEnd = std::max(_runEnd, end);
 }
 
 // Routine Description:
@@ -1973,125 +2034,161 @@ bool StateMachine::FlushToTerminal()
 // - string - Characters to operate upon
 // Return Value:
 // - <none>
+#pragma warning(suppress : 26438) // Avoid 'goto'(es .76).
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).)
 void StateMachine::ProcessString(const std::wstring_view string)
 {
-    size_t i = 0;
     _currentString = string;
-    _runOffset = 0;
-    _runSize = 0;
+    _runBeg = 0;
+    _runEnd = 0;
     _injections.clear();
 
     if (_state != VTStates::Ground)
     {
         // Jump straight to where we need to.
-#pragma warning(suppress : 26438) // Avoid 'goto'(es .76).
         goto processStringLoopVtStart;
     }
 
-    while (i < string.size())
+    for (;;)
     {
+        // Process as much plain text as possible.
         {
-            // Pointer arithmetic is perfectly fine for our hot path.
-#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).)
-            const auto beg = string.data() + i;
-            const auto len = string.size() - i;
+            // We're starting a new "chunk".
+            // --> Reset beg(in).
+            _runBeg = _runEnd;
+
+            // Ran out of text. Return.
+            if (_runBeg >= _currentString.size())
+            {
+                return;
+            }
+
+            const auto beg = _currentString.data() + _runBeg;
+            const auto len = _currentString.size() - _runBeg;
             const auto it = Microsoft::Console::Utils::FindActionableControlCharacter(beg, len);
 
-            _runOffset = i;
-            _runSize = it - beg;
-
-            if (_runSize)
+            if (it != beg)
             {
+                _runEnd = it - _currentString.data();
                 _ActionPrintString(_CurrentRun());
-
-                i += _runSize;
-                _runOffset = i;
-                _runSize = 0;
+                _runBeg = _runEnd;
             }
         }
 
+        // Next, process VT sequences (plural!).
     processStringLoopVtStart:
-        if (i >= string.size())
+        // Ran out of text. Return.
+        if (_runBeg >= _currentString.size())
         {
-            break;
+            return;
         }
-
-        do
+        for (;;)
         {
-            _runSize++;
-            _processingLastCharacter = i + 1 >= string.size();
-            // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(til::at(string, i));
-            ++i;
-        } while (i < string.size() && _state != VTStates::Ground);
-    }
-
-    // If we're at the end of the string and have remaining un-printed characters,
-    if (_state != VTStates::Ground)
-    {
-        const auto run = _CurrentRun();
-        auto cacheUnusedRun = true;
-
-        // One of the "weird things" in VT input is the case of something like
-        // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
-        // also the start of a CSI, and could be the start of a longer sequence,
-        // there's no way to know for sure. For an <kbd>alt+[</kbd> keypress,
-        // the parser originally would just sit in the `CsiEntry` state after
-        // processing it, which would pollute the following keypress (e.g.
-        // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
-        // which is _wrong_).
-        //
-        // At the same time, input may be broken up arbitrarily, depending on the pipe's
-        // buffer size, our read-buffer size, the sender's write-buffer size, and more.
-        // In fact, with the current WSL, input is broken up in 16 byte chunks (Why? :(),
-        // which breaks up many of our longer sequences, like our Win32InputMode ones.
-        //
-        // As a heuristic, this code specifically checks for a trailing Esc or Alt+key.
-        // If we encountered a win32-input-mode sequence before, we know that our \x1b[?9001h
-        // request to enable them was successful. While a client may still send \x1b{some char}
-        // intentionally, it's far more likely now that we're looking at a broken up sequence.
-        // The most common win32-input-mode is ConPTY itself after all, and we never emit
-        // \x1b{some char} once it's enabled.
-        if (_isEngineForInput)
-        {
-            const auto win32 = _engine->EncounteredWin32InputModeSequence();
-            if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
+            // The inner loop deals with 1 VT sequence at a time.
+            for (;;)
             {
-                _EnterGround();
-                if (run.size() == 1)
+                const auto ch = til::at(_currentString, _runEnd);
+                ++_runEnd;
+                ProcessCharacter(ch);
+
+                if (_state == VTStates::Ground)
                 {
-                    _ActionExecute(L'\x1b');
+                    break;
                 }
-                else
+
+                // We're not back in ground state, but ran out of text.
+                // --> Incomplete sequence. Clean up at the end.
+                if (_runEnd >= _currentString.size())
                 {
-                    _EnterEscape();
-                    _ActionEscDispatch(run.back());
+                    _processStringIncompleteSequence();
+                    return;
                 }
-                _EnterGround();
-                // No need to cache the run, since we've dealt with it now.
-                cacheUnusedRun = false;
+            }
+
+            // The only way we get here is if the above loop ran into the ground state.
+            // This means we're starting a new "chunk".
+            // --> Reset beg(in).
+            _runBeg = _runEnd;
+
+            // Ran out of text. Return.
+            if (_runBeg >= _currentString.size())
+            {
+                return;
+            }
+
+            // Plain text? Go back to the start, where we process plain text.
+            if (!Utils::IsActionableFromGround(til::at(_currentString, _runEnd)))
+            {
+                break;
             }
         }
-        else if (_state == VTStates::SosPmApcString || _state == VTStates::DcsPassThrough || _state == VTStates::DcsIgnore)
+    }
+}
+
+void Microsoft::Console::VirtualTerminal::StateMachine::_processStringIncompleteSequence()
+{
+    const auto run = _CurrentRun();
+    auto cacheUnusedRun = true;
+
+    // One of the "weird things" in VT input is the case of something like
+    // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
+    // also the start of a CSI, and could be the start of a longer sequence,
+    // there's no way to know for sure. For an <kbd>alt+[</kbd> keypress,
+    // the parser originally would just sit in the `CsiEntry` state after
+    // processing it, which would pollute the following keypress (e.g.
+    // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
+    // which is _wrong_).
+    //
+    // At the same time, input may be broken up arbitrarily, depending on the pipe's
+    // buffer size, our read-buffer size, the sender's write-buffer size, and more.
+    // In fact, with the current WSL, input is broken up in 16 byte chunks (Why? :(),
+    // which breaks up many of our longer sequences, like our Win32InputMode ones.
+    //
+    // As a heuristic, this code specifically checks for a trailing Esc or Alt+key.
+    // If we encountered a win32-input-mode sequence before, we know that our \x1b[?9001h
+    // request to enable them was successful. While a client may still send \x1b{some char}
+    // intentionally, it's far more likely now that we're looking at a broken up sequence.
+    // The most common win32-input-mode is ConPTY itself after all, and we never emit
+    // \x1b{some char} once it's enabled.
+    if (_isEngineForInput)
+    {
+        const auto win32 = _engine->EncounteredWin32InputModeSequence();
+        if (!win32 && run.size() <= 2 && run.front() == L'\x1b')
         {
-            // There is no need to cache the run if we've reached one of the
-            // string processing states in the output engine, since that data
-            // will be dealt with as soon as it is received.
+            _EnterGround();
+            if (run.size() == 1)
+            {
+                _ActionExecute(L'\x1b');
+            }
+            else
+            {
+                _EnterEscape();
+                _ActionEscDispatch(run.back());
+            }
+            _EnterGround();
+            // No need to cache the run, since we've dealt with it now.
             cacheUnusedRun = false;
         }
+    }
+    else if (_state == VTStates::SosPmApcString || _state == VTStates::DcsPassThrough || _state == VTStates::DcsIgnore)
+    {
+        // There is no need to cache the run if we've reached one of the
+        // string processing states in the output engine, since that data
+        // will be dealt with as soon as it is received.
+        cacheUnusedRun = false;
+    }
 
-        // If the run hasn't been dealt with in one of the cases above, we cache
-        // the partial sequence in case we have to flush the whole thing later.
-        if (cacheUnusedRun)
+    // If the run hasn't been dealt with in one of the cases above, we cache
+    // the partial sequence in case we have to flush the whole thing later.
+    if (cacheUnusedRun)
+    {
+        if (!_cachedSequence)
         {
-            if (!_cachedSequence)
-            {
-                _cachedSequence.emplace(std::wstring{});
-            }
-
-            auto& cachedSequence = *_cachedSequence;
-            cachedSequence.append(run);
+            _cachedSequence.emplace(std::wstring{});
         }
+
+        auto& cachedSequence = *_cachedSequence;
+        cachedSequence.append(run);
     }
 }
 
@@ -2105,12 +2202,12 @@ void StateMachine::ProcessString(const std::wstring_view string)
 // - True if we're processing the last character. False if not.
 bool StateMachine::IsProcessingLastCharacter() const noexcept
 {
-    return _processingLastCharacter;
+    return _runEnd == _currentString.size();
 }
 
 void StateMachine::InjectSequence(const InjectionType type)
 {
-    _injections.emplace_back(type, _runOffset + _runSize);
+    _injections.emplace_back(type, _runEnd);
 }
 
 const til::small_vector<Injection, 8>& StateMachine::GetInjections() const noexcept
@@ -2191,8 +2288,8 @@ void StateMachine::_ExecuteCsiCompleteCallback()
         // We need to save the state of the string that we're currently
         // processing in case the callback injects another string.
         const auto savedCurrentString = _currentString;
-        const auto savedRunOffset = _runOffset;
-        const auto savedRunSize = _runSize;
+        const auto savedRunBeg = _runBeg;
+        const auto savedRunEnd = _runEnd;
         // We also need to take ownership of the callback function before
         // executing it so there's no risk of it being run more than once.
         const auto callback = std::move(_onCsiCompleteCallback);
@@ -2200,7 +2297,16 @@ void StateMachine::_ExecuteCsiCompleteCallback()
         // Once the callback has returned, we can restore the original state
         // and continue where we left off.
         _currentString = savedCurrentString;
-        _runOffset = savedRunOffset;
-        _runSize = savedRunSize;
+        _runBeg = savedRunBeg;
+        _runEnd = savedRunEnd;
     }
+}
+
+// Construct current run.
+//
+// Note: We intentionally use this method to create the run lazily for better performance.
+//       You may find the usage of offset & size unsafe, but under heavy load it shows noticeable performance benefit.
+std::wstring_view Microsoft::Console::VirtualTerminal::StateMachine::_CurrentRun() const
+{
+    return _currentString.substr(_runBeg, _runEnd - _runBeg);
 }

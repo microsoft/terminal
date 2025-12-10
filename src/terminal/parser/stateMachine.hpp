@@ -94,6 +94,8 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine& Engine() noexcept;
 
     private:
+        void _processStringIncompleteSequence();
+
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
@@ -162,6 +164,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _SafeExecute(TLambda&& lambda);
 
         void _ExecuteCsiCompleteCallback();
+        std::wstring_view _CurrentRun() const;
 
         enum class VTStates
         {
@@ -197,17 +200,8 @@ namespace Microsoft::Console::VirtualTerminal
         til::enumset<Mode> _parserMode{ Mode::Ansi };
 
         std::wstring_view _currentString;
-        size_t _runOffset;
-        size_t _runSize;
-
-        // Construct current run.
-        //
-        // Note: We intentionally use this method to create the run lazily for better performance.
-        //       You may find the usage of offset & size unsafe, but under heavy load it shows noticeable performance benefit.
-        std::wstring_view _CurrentRun() const
-        {
-            return _currentString.substr(_runOffset, _runSize);
-        }
+        size_t _runBeg;
+        size_t _runEnd;
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
@@ -224,10 +218,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::optional<std::wstring> _cachedSequence;
         til::small_vector<Injection, 8> _injections;
-
-        // This is tracked per state machine instance so that separate calls to Process*
-        //   can start and finish a sequence.
-        bool _processingLastCharacter;
 
         std::function<void()> _onCsiCompleteCallback;
     };

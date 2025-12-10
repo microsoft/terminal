@@ -80,7 +80,7 @@ void SixelParser::SetDisplayMode(const bool enabled) noexcept
     }
 }
 
-std::function<bool(wchar_t)> SixelParser::DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor)
+std::function<bool(std::wstring_view)> SixelParser::DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor)
 {
     if (_initTextBufferBoundaries())
     {
@@ -89,8 +89,11 @@ std::function<bool(wchar_t)> SixelParser::DefineImage(const VTInt macroParameter
         _initImageBuffer();
         _state = States::Normal;
         _parameters.clear();
-        return [&](const auto ch) {
+        return [&](const std::wstring_view str) {
+            for (const auto ch : str)
+            {
             _parseCommandChar(ch);
+            }
             return true;
         };
     }

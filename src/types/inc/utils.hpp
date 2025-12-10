@@ -126,6 +126,7 @@ namespace Microsoft::Console::Utils
     // testing easier.
     std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
 
+    bool IsActionableFromGround(const wchar_t wch) noexcept;
     const wchar_t* FindActionableControlCharacter(const wchar_t* beg, const size_t len) noexcept;
 
     // Same deal, but in TerminalPage::_evaluatePathForCwd
