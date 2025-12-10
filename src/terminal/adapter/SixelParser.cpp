@@ -729,6 +729,11 @@ void SixelParser::_decreaseFilledBackgroundHeight(const int decreasedHeight) noe
     }
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'imageBufferPtr' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+
 void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
 {
     // On terminals that support the raster attributes command (which sets the
@@ -736,31 +741,74 @@ void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
     // is received. So if we haven't filled it yet, we need to do so now.
     _fillImageBackground();
 
+    // This allows us to unsafely cast _imageBuffer to uint16_t
+    // and benefit from compiler/STL optimizations.
+    static_assert(sizeof(IndexedPixel) == 2);
+
     // Then we need to render the 6 vertical pixels that are represented by the
     // bits in the sixel value. Although note that each of these sixel pixels
     // may cover more than one device pixel, depending on the aspect ratio.
     const auto targetOffset = _imageCursor.y * _imageMaxWidth + _imageCursor.x;
-    auto imageBufferPtr = std::next(_imageBuffer.data(), targetOffset);
+    const auto foreground = std::bit_cast<uint16_t>(_foregroundPixel);
+    auto imageBufferPtr = reinterpret_cast<uint16_t*>(_imageBuffer.data() + targetOffset);
+
     repeatCount = std::min(repeatCount, _imageMaxWidth - _imageCursor.x);
-    for (auto i = 0; i < 6; i++)
+
+    if (repeatCount <= 0)
     {
-        if (sixelValue & 1)
-        {
-            auto repeatAspectRatio = _pixelAspectRatio;
-            do
-            {
-                std::fill_n(imageBufferPtr, repeatCount, _foregroundPixel);
-                std::advance(imageBufferPtr, _imageMaxWidth);
-            } while (--repeatAspectRatio > 0);
-        }
-        else
-        {
-            std::advance(imageBufferPtr, _imageMaxWidth * _pixelAspectRatio);
-        }
-        sixelValue >>= 1;
+        return;
     }
-    _imageCursor.x += repeatCount;
+    if (sixelValue == 0)
+    {
+        _imageCursor.x += repeatCount;
+        return;
+    }
+
+    // A aspect ratio of 1:1 is the most common and worth optimizing.
+    if (_pixelAspectRatio == 1)
+    {
+        do
+        {
+            // Gets unrolled by MSVC. It's written this way to use CMOV instructions.
+            // Modern CPUs have fat caches and deep pipelines. Better to do pointless reads
+            // from memory than causing branch mispredicts, because sixelValue is highly random.
+            for (int i = 0; i < 6; i++)
+            {
+                const auto test = sixelValue & (1 << i);
+                const auto before = imageBufferPtr[i * _imageMaxWidth];
+                const auto after = test ? foreground : before;
+                imageBufferPtr[i * _imageMaxWidth] = after;
+            }
+
+            _imageCursor.x += 1;
+            imageBufferPtr += 1;
+            repeatCount -= 1;
+        } while (repeatCount > 0);
+    }
+    else
+    {
+        for (auto i = 0; i < 6; i++)
+        {
+            if (sixelValue & 1)
+            {
+                auto repeatAspectRatio = _pixelAspectRatio;
+                do
+                {
+                    std::fill_n(imageBufferPtr, repeatCount, foreground);
+                    std::advance(imageBufferPtr, _imageMaxWidth);
+                } while (--repeatAspectRatio > 0);
+            }
+            else
+            {
+                std::advance(imageBufferPtr, _imageMaxWidth * _pixelAspectRatio);
+            }
+            sixelValue >>= 1;
+        }
+        _imageCursor.x += repeatCount;
+    }
 }
+
+#pragma warning(pop)
 
 void SixelParser::_eraseImageBufferRows(const int rowCount, const til::CoordType rowOffset) noexcept
 {

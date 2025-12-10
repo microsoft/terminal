@@ -1017,6 +1017,7 @@ minkernel
 MINMAXINFO
 minwin
 minwindef
+mispredicts
 MMBB
 mmcc
 MMCPL
