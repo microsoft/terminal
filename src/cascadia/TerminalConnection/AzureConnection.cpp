@@ -162,13 +162,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _currentInputMode = mode;
 
-        WriteUtf16Output(L"> \x1b[92m"); // Make prompted user input green
+        WriteUtf8Output("> \x1b[92m"); // Make prompted user input green
 
         _inputEvent.wait(inputLock, [this, mode]() {
             return _currentInputMode != mode || _isStateAtOrBeyond(ConnectionState::Closing);
         });
 
-        WriteUtf16Output(L"\x1b[m");
+        WriteUtf8Output("\x1b[m");
 
         if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
@@ -211,19 +211,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_userInput.size() > 0)
             {
                 _userInput.pop_back();
-                WriteUtf16Output(L"\x08 \x08"); // overstrike the character with a space
+                WriteUtf8Output("\x08 \x08"); // overstrike the character with a space
             }
         }
         else
         {
-            WriteUtf16Output(data); // echo back
+            WriteUtf8Output(data); // echo back
 
             switch (_currentInputMode)
             {
             case InputMode::Line:
                 if (data.size() > 0 && gsl::at(data, 0) == UNICODE_CARRIAGERETURN)
                 {
-                    WriteUtf16Output(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
+                    WriteUtf8Output("\r\n"); // we probably got a \r, so we need to advance to the next line.
                     _currentInputMode = InputMode::None; // toggling the mode indicates completion
                     _inputEvent.notify_one();
                     break;
