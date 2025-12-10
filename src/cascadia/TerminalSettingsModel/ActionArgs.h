@@ -307,7 +307,7 @@ protected:                                                                  \
 #define SPLIT_PANE_ARGS(X)                                                                                 \
     X(Model::SplitDirection, SplitDirection, "split", false, ArgTypeHint::None, SplitDirection::Automatic) \
     X(SplitType, SplitMode, "splitMode", false, ArgTypeHint::None, SplitType::Manual)                      \
-    X(float, SplitSize, "size", false, ArgTypeHint::None, 0.5f)
+    X(float, SplitSize, "size", false, ArgTypeHint::SplitSize, 0.5f)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define HANDLE_URI_ARGS(X) \
