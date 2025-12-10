@@ -741,41 +741,44 @@ void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
     // is received. So if we haven't filled it yet, we need to do so now.
     _fillImageBackground();
 
-    // This allows us to unsafely cast _imageBuffer to uint16_t
-    // and benefit from compiler/STL optimizations.
-    static_assert(sizeof(IndexedPixel) == 2);
-
-    // Then we need to render the 6 vertical pixels that are represented by the
-    // bits in the sixel value. Although note that each of these sixel pixels
-    // may cover more than one device pixel, depending on the aspect ratio.
-    const auto targetOffset = _imageCursor.y * _imageMaxWidth + _imageCursor.x;
-    const auto foreground = std::bit_cast<uint16_t>(_foregroundPixel);
-    auto imageBufferPtr = reinterpret_cast<uint16_t*>(_imageBuffer.data() + targetOffset);
-
     repeatCount = std::min(repeatCount, _imageMaxWidth - _imageCursor.x);
-
     if (repeatCount <= 0)
     {
         return;
     }
+
     if (sixelValue == 0)
     {
         _imageCursor.x += repeatCount;
         return;
     }
 
+    // This allows us to unsafely cast _imageBuffer to uint16_t
+    // and benefit from compiler/STL optimizations.
+    static_assert(sizeof(IndexedPixel) == sizeof(int16_t));
+    static_assert(alignof(IndexedPixel) == alignof(int16_t));
+
+    // Then we need to render the 6 vertical pixels that are represented by the
+    // bits in the sixel value. Although note that each of these sixel pixels
+    // may cover more than one device pixel, depending on the aspect ratio.
+    const auto targetOffset = _imageCursor.y * _imageMaxWidth + _imageCursor.x;
+    const auto foreground = std::bit_cast<int16_t>(_foregroundPixel);
+    auto imageBufferPtr = reinterpret_cast<int16_t*>(_imageBuffer.data() + targetOffset);
+
     // A aspect ratio of 1:1 is the most common and worth optimizing.
     if (_pixelAspectRatio == 1)
     {
         do
         {
-            // Gets unrolled by MSVC. It's written this way to use CMOV instructions.
-            // Modern CPUs have fat caches and deep pipelines. Better to do pointless reads
-            // from memory than causing branch mispredicts, because sixelValue is highly random.
+            // This gets unrolled by MSVC. It's written this way to use CMOV instructions.
+            // Modern CPUs have fat caches and deep pipelines. It's better to do pointless reads
+            // from memory than causing branch misprediction, as sixelValue is highly random.
             for (int i = 0; i < 6; i++)
             {
                 const auto test = sixelValue & (1 << i);
+                // Possibly pointless read from memory, but...
                 const auto before = imageBufferPtr[i * _imageMaxWidth];
+                // ...it allows the compiler to turn this into a CMOV (= no branch misprediction).
                 const auto after = test ? foreground : before;
                 imageBufferPtr[i * _imageMaxWidth] = after;
             }
@@ -794,8 +797,18 @@ void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
                 auto repeatAspectRatio = _pixelAspectRatio;
                 do
                 {
-                    std::fill_n(imageBufferPtr, repeatCount, foreground);
-                    std::advance(imageBufferPtr, _imageMaxWidth);
+                    // If this used std::fill_n or just a primitive loop, MSVC would compile
+                    // it to a `rep stosw` instruction, which has a high startup cost.
+                    // This is not ideal when our repeatCount is almost always small.
+                    // The way this does ptr++ and len-- is also ideal for optimization.
+                    auto ptr = imageBufferPtr;
+                    auto remaining = repeatCount;
+                    do
+                    {
+                        __iso_volatile_store16(ptr++, foreground);
+                    } while (--remaining != 0);
+
+                    imageBufferPtr += _imageMaxWidth;
                 } while (--repeatAspectRatio > 0);
             }
             else
