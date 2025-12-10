@@ -16,7 +16,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
-        void WriteInput(const winrt::array_view<const char16_t> data);
+        void WriteInput(const winrt::array_view<const uint8_t> data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
@@ -30,7 +30,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         til::typed_event<winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection, winrt::Windows::Foundation::IInspectable> StateChanged;
 
     private:
-        void _PrintInput(const std::wstring_view data);
+        void _PrintInput(const std::string_view data);
         void _OutputHandler(const winrt::array_view<const uint8_t>& str);
 
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;

@@ -463,7 +463,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_connection)
         {
-            _connection.WriteInput(winrt_wstring_to_array_view(wstr));
+            const auto utf8String{ til::u16u8(wstr) };
+            _connection.WriteInput(winrt_u8string_to_array_view(utf8String));
         }
     }
 

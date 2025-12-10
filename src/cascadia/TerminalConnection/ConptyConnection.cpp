@@ -548,10 +548,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
-    void ConptyConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
+    void ConptyConnection::WriteInput(const winrt::array_view<const uint8_t> data)
     {
-        const auto data = winrt_array_to_wstring_view(buffer);
-
         if (!_isConnected())
         {
             return;
@@ -575,10 +573,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
         }
 
-        if (FAILED_LOG(til::u16u8(data, _writeBuffer)))
-        {
-            return;
-        }
+        // Since we are using overlapped I/O, we have to store the send buffer until the work is done.
+        _writeBuffer.assign(winrt_array_to_string_view(data));
 
         if (!WriteFile(_pipe.get(), _writeBuffer.data(), gsl::narrow_cast<DWORD>(_writeBuffer.length()), nullptr, &_writeOverlapped))
         {

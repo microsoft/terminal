@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _transitionToState(ConnectionState::Connecting);
     }
 
-    std::optional<std::wstring> AzureConnection::_ReadUserInput(InputMode mode)
+    std::optional<std::string> AzureConnection::_ReadUserInput(InputMode mode)
     {
         std::unique_lock<std::mutex> inputLock{ _inputMutex };
 
@@ -175,7 +175,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return std::nullopt;
         }
 
-        std::wstring readInput{};
+        std::string readInput{};
         _userInput.swap(readInput);
         return readInput;
     }
@@ -185,12 +185,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - handles the different possible inputs in the different states
     // Arguments:
     // the user's input
-    void AzureConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
+    void AzureConnection::WriteInput(const winrt::array_view<const uint8_t> buffer)
     {
-        _writeInput(winrt_array_to_wstring_view(buffer));
+        _writeInput(winrt_array_to_string_view(buffer));
     }
 
-    void AzureConnection::_writeInput(const std::wstring_view data)
+    void AzureConnection::_writeInput(const std::string_view data)
     {
         // We read input while connected AND connecting.
         if (!_isStateOneOf(ConnectionState::Connected, ConnectionState::Connecting))
@@ -200,8 +200,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         if (_state == AzureState::TermConnected)
         {
-            auto buff{ winrt::to_string(data) };
-            WinHttpWebSocketSend(_webSocket.get(), WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, buff.data(), gsl::narrow<DWORD>(buff.size()));
+            WinHttpWebSocketSend(_webSocket.get(), WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE, const_cast<char*>(data.data()), gsl::narrow<DWORD>(data.size()));
             return;
         }
 
@@ -518,14 +517,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             const auto& tenantSelection = maybeTenantSelection.value();
-            if (tenantSelection == RS_(L"AzureUserEntry_RemoveStored"))
+            if (tenantSelection == RS_A(L"AzureUserEntry_RemoveStored"))
             {
                 // User wants to remove the stored settings
                 _RemoveCredentials();
                 _state = AzureState::DeviceFlow;
                 return;
             }
-            else if (tenantSelection == RS_(L"AzureUserEntry_NewLogin"))
+            else if (tenantSelection == RS_A(L"AzureUserEntry_NewLogin"))
             {
                 // User wants to login with a different account
                 _state = AzureState::DeviceFlow;
@@ -706,13 +705,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             const auto& storeCredentials = maybeStoreCredentials.value();
-            if (storeCredentials == RS_(L"AzureUserEntry_Yes"))
+            if (storeCredentials == RS_A(L"AzureUserEntry_Yes"))
             {
                 _StoreCredential();
                 _WriteStringWithNewline(RS_(L"AzureTokensStored"));
                 break;
             }
-            else if (storeCredentials == RS_(L"AzureUserEntry_No"))
+            else if (storeCredentials == RS_A(L"AzureUserEntry_No"))
             {
                 break; // we're done, but the user wants nothing.
             }
@@ -796,7 +795,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _state = AzureState::TermConnected;
 
-        std::wstring queuedUserInput{};
+        std::string queuedUserInput{};
         std::swap(_userInput, queuedUserInput);
         if (queuedUserInput.size() > 0)
         {

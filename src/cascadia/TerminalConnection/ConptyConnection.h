@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static safe_void_coroutine final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
-        void WriteInput(const winrt::array_view<const char16_t> buffer);
+        void WriteInput(const winrt::array_view<const uint8_t> buffer);
         void Resize(uint32_t rows, uint32_t columns);
         void ResetSize();
         void Close() noexcept;

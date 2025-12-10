@@ -39,9 +39,9 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
             _wrappedConnection.Start();
         }
-        void WriteInput(const winrt::array_view<const char16_t> buffer)
+        void WriteInput(const winrt::array_view<const uint8_t> buffer)
         {
-            _pairedTap->_PrintInput(winrt_array_to_wstring_view(buffer));
+            _pairedTap->_PrintInput(winrt_array_to_string_view(buffer));
             _wrappedConnection.WriteInput(buffer);
         }
         void Resize(uint32_t rows, uint32_t columns) { _wrappedConnection.Resize(rows, columns); }
@@ -80,7 +80,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         _start.count_down();
     }
 
-    void DebugTapConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
+    void DebugTapConnection::WriteInput(const winrt::array_view<const uint8_t> buffer)
     {
         // If the user types into the tap side, forward it to the input side
         if (auto strongInput{ _inputSide.get() })
@@ -152,12 +152,12 @@ namespace winrt::Microsoft::TerminalApp::implementation
     }
 
     // Called by the DebugInputTapConnection to print user input
-    void DebugTapConnection::_PrintInput(const std::wstring_view str)
+    void DebugTapConnection::_PrintInput(const std::string_view str)
     {
-        auto clean{ til::visualize_control_codes(str) };
-        auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
-        (void)formatted;
-        //TerminalOutput.raise(formatted);
+        static constexpr std::string_view buffer{ "\x1b[91m\x1b[m" }; // two escape sequences we need to write, back to back
+        TerminalOutput.raise(winrt_u8string_to_array_view(buffer.substr(0,5)));
+        _OutputHandler(winrt_u8string_to_array_view(str));
+        TerminalOutput.raise(winrt_u8string_to_array_view(buffer.substr(5)));
     }
 
     // Wire us up so that we can forward input through
