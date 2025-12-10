@@ -1488,6 +1488,9 @@ namespace winrt::TerminalApp::implementation
         auto connectionType = profile.ConnectionType();
         Windows::Foundation::Collections::ValueSet valueSet;
 
+        // 36d045b3-13bf-4ac0-9947-e2fd8562baa1
+        static constexpr winrt::guid sg{ std::string_view{ "36d045b3-13bf-4ac0-9947-e2fd8562baa1" } };
+
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
@@ -1502,6 +1505,17 @@ namespace winrt::TerminalApp::implementation
                                                                             settings.InitialCols(),
                                                                             winrt::guid(),
                                                                             profile.Guid());
+        }
+
+        else if (connectionType == sg)
+        {
+            connection = TerminalConnection::SerialConnection{};
+            valueSet = TerminalConnection::SerialConnection::CreateSettings(
+                settings.Commandline(),
+                settings.InitialRows(),
+                settings.InitialCols(),
+                winrt::guid{},
+                profile.Guid());
         }
 
         else

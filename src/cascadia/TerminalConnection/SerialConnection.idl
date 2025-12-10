@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ITerminalConnection.idl";
+
+namespace Microsoft.Terminal.TerminalConnection
+{
+    runtimeclass SerialConnection : [default] ITerminalConnection
+    {
+        SerialConnection();
+        static Windows.Foundation.Collections.ValueSet CreateSettings(String deviceDescription,
+                                                                      UInt32 rows,
+                                                                      UInt32 columns,
+                                                                      Guid guid,
+                                                                      Guid profileGuid);
+    };
+}
