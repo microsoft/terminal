@@ -52,8 +52,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                                                          const winrt::guid& guid,
                                                                          const winrt::guid& profileGuid);
 
-        til::event<TerminalOutputHandler> TerminalOutput;
-
     private:
         static void closePseudoConsoleAsync(HPCON hPC) noexcept;
         static HRESULT NewHandoff(HANDLE* in, HANDLE* out, HANDLE signal, HANDLE reference, HANDLE server, HANDLE client, const TERMINAL_STARTUP_INFO* startupInfo) noexcept;
@@ -103,12 +101,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         } _startupInfo{};
 
         DWORD _OutputThread();
-        template<typename B>
-        void _dhSend16(B&& b)
-        {
-            auto eight = til::u16u8(b);
-            TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(eight.c_str()), static_cast<uint32_t>(eight.size()) });
-        }
     };
 }
 

@@ -478,28 +478,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
         const auto failureText = RS_fmt(L"ProcessFailedToLaunch", _formatStatus(hr), _commandline);
-        _dhSend16(failureText);
+        WriteUtf16Output(failureText);
 
         // If the path was invalid, let's present an informative message to the user
         if (hr == HRESULT_FROM_WIN32(ERROR_DIRECTORY))
         {
             const auto badPathText = RS_fmt(L"BadPathText", _startingDirectory);
-            _dhSend16(L"\r\n");
-            _dhSend16(badPathText);
+            WriteUtf16Output(L"\r\n");
+            WriteUtf16Output(badPathText);
         }
         // If the requested action requires elevation, display appropriate message
         else if (hr == HRESULT_FROM_WIN32(ERROR_ELEVATION_REQUIRED))
         {
             const auto elevationText = RS_(L"ElevationRequired");
-            _dhSend16(L"\r\n");
-            _dhSend16(elevationText);
+            WriteUtf16Output(L"\r\n");
+            WriteUtf16Output(elevationText);
         }
         // If the requested executable was not found, display appropriate message
         else if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
         {
             const auto fileNotFoundText = RS_(L"FileNotFound");
-            _dhSend16(L"\r\n");
-            _dhSend16(fileNotFoundText);
+            WriteUtf16Output(L"\r\n");
+            WriteUtf16Output(fileNotFoundText);
         }
 
         _transitionToState(ConnectionState::Failed);
@@ -520,7 +520,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto msg1 = RS_fmt(L"ProcessExited", _formatStatus(status));
             const auto msg2 = RS_(L"CtrlDToClose");
             const auto msg = fmt::format(FMT_COMPILE(L"\r\n{}\r\n{}\r\n"), msg1, msg2);
-            _dhSend16(msg);
+            WriteUtf16Output(msg);
         }
         CATCH_LOG();
     }

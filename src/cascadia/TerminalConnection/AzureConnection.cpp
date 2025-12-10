@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - str: the string to write.
     void AzureConnection::_WriteStringWithNewline(const std::wstring_view str)
     {
-        _dhSend16(str + L"\r\n");
+        WriteUtf16Output(str + L"\r\n");
     }
 
     // Method description:
@@ -112,7 +112,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         catch (const std::exception& runtimeException)
         {
             // This also catches the AzureException, which has a .what()
-            _dhSend16(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
+            WriteUtf16Output(_colorize(91, til::u8u16(std::string{ runtimeException.what() })));
         }
         catch (...)
         {
@@ -162,13 +162,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _currentInputMode = mode;
 
-        _dhSend16(L"> \x1b[92m"); // Make prompted user input green
+        WriteUtf16Output(L"> \x1b[92m"); // Make prompted user input green
 
         _inputEvent.wait(inputLock, [this, mode]() {
             return _currentInputMode != mode || _isStateAtOrBeyond(ConnectionState::Closing);
         });
 
-        _dhSend16(L"\x1b[m");
+        WriteUtf16Output(L"\x1b[m");
 
         if (_isStateAtOrBeyond(ConnectionState::Closing))
         {
@@ -211,19 +211,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (_userInput.size() > 0)
             {
                 _userInput.pop_back();
-                _dhSend16(L"\x08 \x08"); // overstrike the character with a space
+                WriteUtf16Output(L"\x08 \x08"); // overstrike the character with a space
             }
         }
         else
         {
-            _dhSend16(data); // echo back
+            WriteUtf16Output(data); // echo back
 
             switch (_currentInputMode)
             {
             case InputMode::Line:
                 if (data.size() > 0 && gsl::at(data, 0) == UNICODE_CARRIAGERETURN)
                 {
-                    _dhSend16(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
+                    WriteUtf16Output(L"\r\n"); // we probably got a \r, so we need to advance to the next line.
                     _currentInputMode = InputMode::None; // toggling the mode indicates completion
                     _inputEvent.notify_one();
                     break;
@@ -764,7 +764,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto shellType = _ParsePreferredShellType(settingsResponse);
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType);
-        _dhSend16(L"\r\n");
+        WriteUtf16Output(L"\r\n");
 
         //// Step 8: connecting to said terminal
         {

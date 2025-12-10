@@ -18,6 +18,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         til::typed_event<ITerminalConnection, winrt::Windows::Foundation::IInspectable> StateChanged;
+        til::event<TerminalOutputHandler> TerminalOutput;
 
     protected:
         template<typename U>
@@ -99,6 +100,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool _isConnected() const noexcept
         {
             return _isStateOneOf(ConnectionState::Connected);
+        }
+
+        void WriteUtf16Output(std::wstring_view str)
+        {
+            auto converted{ til::u16u8(str) };
+            TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(converted.data()), static_cast<uint32_t>(converted.size()) });
+        }
+
+        void WriteUtf8Output(std::string_view str)
+        {
+            TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(str.data()), static_cast<uint32_t>(str.size()) });
         }
 
         winrt::guid _sessionId{};

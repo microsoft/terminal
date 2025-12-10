@@ -26,8 +26,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        til::event<TerminalOutputHandler> TerminalOutput;
-
     private:
         til::CoordType _initialRows{};
         til::CoordType _initialCols{};
@@ -103,13 +101,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::array<char, 4096> _buffer{};
 
         static winrt::hstring _ParsePreferredShellType(const winrt::Windows::Data::Json::JsonObject& settingsResponse);
-
-        template<typename B>
-        void _dhSend16(B&& b)
-        {
-            auto eight = til::u16u8(b);
-            TerminalOutput.raise(winrt::array_view{ reinterpret_cast<const uint8_t*>(eight.c_str()), static_cast<uint32_t>(eight.size()) });
-        }
     };
 }
 
