@@ -679,8 +679,9 @@ void StateMachine::_ActionOscParam(const wchar_t wch) noexcept
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionOscPut(const wchar_t wch)
+void StateMachine::_ActionOscPut(const wchar_t /*wch*/)
 {
+#if 0
     _trace.TraceOnAction(L"OscPut");
 
     if (_oscString.spoiled)
@@ -696,12 +697,14 @@ void StateMachine::_ActionOscPut(const wchar_t wch)
     }
 
     _oscString.data.push_back(wch);
+#endif
 }
 
 // Routine Description:
 // - Stores this substring as part of the OSC string
-void StateMachine::_ActionOscPutRun(const std::wstring_view str)
+void StateMachine::_ActionOscPutRun(const std::wstring_view /*str*/)
 {
+#if 0
     _trace.TraceOnAction(L"OscPutRun");
 
     if (_oscString.spoiled)
@@ -717,6 +720,7 @@ void StateMachine::_ActionOscPutRun(const std::wstring_view str)
     }
 
     _oscString.data.append(str);
+#endif
 }
 
 // Routine Description:
@@ -729,15 +733,22 @@ void StateMachine::_ActionOscPutRun(const std::wstring_view str)
 void StateMachine::_ActionOscDispatch()
 {
     _trace.TraceOnAction(L"OscDispatch");
-    _trace.DispatchSequenceTrace(_SafeExecute([=]() {
-        bool success = true;
-        if (!_oscString.spoiled)
+    if (!_oscString.spoiled)
+    {
+        std::wstring live{};
+        std::wstring_view data{ _currentString.substr(_oscStart, _oscEnd - _oscStart) };
+        if (!_oscString.data.empty()) [[unlikely]]
         {
-            success = _engine->ActionOscDispatch(_oscParameter, _oscString.data);
+            live = std::move(_oscString.data);
+            live.append(data);
+            data = live;
         }
-        _oscString.clear();
-        return success;
-    }));
+        _trace.DispatchSequenceTrace(_SafeExecute([=]() {
+            bool success = _engine->ActionOscDispatch(_oscParameter, data);
+            return success;
+        }));
+    }
+    _oscString.clear();
 }
 
 // Routine Description:
@@ -932,6 +943,7 @@ void StateMachine::_EnterOscString() noexcept
 {
     _state = VTStates::OscString;
     _trace.TraceStateChange(L"OscString");
+    _oscStart = _runOffset + _runSize;
 }
 
 // Routine Description:
@@ -945,6 +957,7 @@ void StateMachine::_EnterOscString() noexcept
 // - <none>
 void StateMachine::_EnterOscTermination() noexcept
 {
+    _oscEnd = _runOffset + _runSize - 1;
     _state = VTStates::OscTermination;
     _trace.TraceStateChange(L"OscTermination");
 }
@@ -1490,6 +1503,7 @@ void StateMachine::_EventOscParam(const wchar_t wch)
     _trace.TraceOnEvent(L"OscParam");
     if (_isOscTerminator(wch))
     {
+        _oscEnd = _runOffset + _runSize - 1;
         _ActionOscDispatch();
         _EnterGround();
     }
@@ -1528,6 +1542,7 @@ void StateMachine::_EventOscString(const wchar_t wch)
     _trace.TraceOnEvent(L"OscString");
     if (_isOscTerminator(wch))
     {
+        _oscEnd = _runOffset + _runSize - 1;
         _ActionOscDispatch();
         _EnterGround();
     }
@@ -2003,6 +2018,21 @@ bool StateMachine::FlushToTerminal()
     return success;
 }
 
+void StateMachine::_HandleEndOfStreamMidState()
+{
+    switch (_state)
+    {
+    case VTStates::OscString:
+        _oscString.data.append(_currentString.substr(_oscStart));
+        _oscStart = 0;
+        _oscEnd = 0;
+        break;
+    default:
+        // nothing
+        break;
+    }
+}
+
 // Routine Description:
 // - Helper for entry to the state machine. Will take an array of characters
 //     and print as many as it can without encountering a character indicating
@@ -2020,7 +2050,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     _runSize = 0;
     _injections.clear();
 
-    if (_state != VTStates::Ground && _state != VTStates::OscString)
+    if (_state != VTStates::Ground)
     {
         // Jump straight to where we need to.
 #pragma warning(suppress : 26438) // Avoid 'goto'(es .76).
@@ -2041,15 +2071,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
 
             if (_runSize)
             {
-                if (_state == VTStates::Ground) [[likely]]
-                {
-                    _ActionPrintString(_CurrentRun());
-                }
-                else if (_state == VTStates::OscString)
-                    [[unlikely]]
-                {
-                    _ActionOscPutRun(_CurrentRun());
-                }
+                _ActionPrintString(_CurrentRun());
 
                 i += _runSize;
                 _runOffset = i;
@@ -2070,10 +2092,15 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // If we're processing characters individually, send it to the state machine.
             ProcessCharacter(til::at(string, i));
             ++i;
-        } while (i < string.size() && (_state != VTStates::Ground && _state != VTStates::OscString));
+        } while (i < string.size() && _state != VTStates::Ground);
     }
 
     // If we're at the end of the string and have remaining un-printed characters,
+    if (_state != VTStates::Ground)
+    {
+        _HandleEndOfStreamMidState();
+    }
+
     if (_state != VTStates::Ground && _isEngineForInput)
     {
         const auto run = _CurrentRun();

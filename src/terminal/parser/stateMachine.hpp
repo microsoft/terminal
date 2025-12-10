@@ -168,6 +168,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _AccumulateTo(const wchar_t wch, VTInt& value) noexcept;
 
+        void _HandleEndOfStreamMidState();
+
         template<typename TLambda>
         bool _SafeExecute(TLambda&& lambda);
 
@@ -237,6 +239,7 @@ namespace Microsoft::Console::VirtualTerminal
                 *this = { {}, true };
             }
         };
+        size_t _oscStart{ 0 }, _oscEnd{ 0 }; // in the current run
         InFlightVtSequence _oscString;
         VTInt _oscParameter;
 
