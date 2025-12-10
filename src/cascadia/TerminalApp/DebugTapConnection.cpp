@@ -122,16 +122,33 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
     void DebugTapConnection::_OutputHandler(const winrt::array_view<const uint8_t>& str)
     {
-        (void)str;
-        //auto output = til::visualize_control_codes(str);
-        // To make the output easier to read, we introduce a line break whenever
-        // an LF control is encountered. But at this point, the LF would have
-        // been converted to U+240A (␊), so that's what we need to search for.
-        //for (size_t lfPos = 0; (lfPos = output.find(L'\x0A', lfPos)) != std::wstring::npos;)
-        //{
-        //output.insert(++lfPos, L"\r\n");
-        //}
-        //TerminalOutput.raise(output);
+        uint8_t buffer[5] = { 0xe2, 0x90, 0x00, '\r', '\n' };
+        uint32_t i = 0, s = 0;
+        while (i < str.size())
+        {
+            while (i < str.size() && str[i] > 0x20 && str[i] != 0x7f)
+            {
+                ++i;
+            }
+            if (i > s)
+            {
+                TerminalOutput.raise(winrt::array_view{ str.data() + s, (i - s) });
+                s = i;
+            }
+            if (i >= str.size())
+                break;
+            auto ch = str[i];
+            if (ch == '\x20')
+                buffer[2] = 0xA3;
+            else if (ch == '\x7f')
+                buffer[2] = 0xA1;
+            else
+                buffer[2] = 0x80 | ch;
+            // If we encountered a LF, emit the extra \r\n from the buffer to pretty print it.
+            TerminalOutput.raise(winrt::array_view{ buffer, ch == '\x0a' ? 5u : 3u });
+            ++i;
+            ++s;
+        }
     }
 
     // Called by the DebugInputTapConnection to print user input
