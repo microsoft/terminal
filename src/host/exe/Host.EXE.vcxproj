@@ -88,6 +88,8 @@
     <Link>
       <AllowIsolation>true</AllowIsolation>
       <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Release'">fmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Debug'">fmtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>icu.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
