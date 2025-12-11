@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"qps-PLOCM",
         L"ru",
         L"sr-Cyrl-RS",
+        L"uk-UA",
         L"zh-Hans",
         L"zh-Hant",
     };
