@@ -7,7 +7,6 @@
 #include "../../inc/DefaultSettings.h"
 
 #include "DynamicProfileUtils.h"
-#include <LibraryResources.h>
 
 static constexpr std::wstring_view SshHostGeneratorNamespace{ L"Windows.Terminal.SSH" };
 

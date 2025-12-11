@@ -21,7 +21,7 @@ namespace Microsoft::Console::TSF
 
         virtual ~Implementation() = default;
 
-        void Initialize();
+        bool Initialize();
         void Uninitialize() noexcept;
         HWND FindWindowOfActiveTSF() noexcept;
         void AssociateFocus(IDataProvider* provider);

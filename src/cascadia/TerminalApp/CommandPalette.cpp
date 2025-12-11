@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "CommandPalette.h"
 #include "CommandPaletteItems.h"
-#include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
 

@@ -11,8 +11,6 @@
 
 #include "MediaResourceSupport.h"
 
-#include <LibraryResources.h>
-
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI::Xaml;

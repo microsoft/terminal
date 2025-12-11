@@ -6,7 +6,6 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utils.h>
-#include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
