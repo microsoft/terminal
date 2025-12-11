@@ -74,6 +74,28 @@ struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_vie
     }
 };
 
+template<>
+struct fmt::formatter<winrt::guid, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::guid& value, auto& ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(),
+            L"{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
+            value.Data1,
+            value.Data2,
+            value.Data3,
+            value.Data4[0],
+            value.Data4[1],
+            value.Data4[2],
+            value.Data4[3],
+            value.Data4[4],
+            value.Data4[5],
+            value.Data4[6],
+            value.Data4[7]);
+    }
+};
+
 // This is a helper macro for both declaring the signature of an event, and
 // defining the body. Winrt events need a method for adding a callback to the
 // event and removing the callback. This macro will both declare the method
@@ -212,6 +234,46 @@ protected:                                                                      
     {                                                                                     \
         _##name = value;                                                                  \
     };
+
+// This macro defines a dependency property for a WinRT class.
+// Use this in your class' header file after declaring it in the idl.
+// Remember to register your dependency property in the respective cpp file.
+#ifndef DEPENDENCY_PROPERTY
+#define DEPENDENCY_PROPERTY(type, name)                                                       \
+public:                                                                                       \
+    static winrt::Windows::UI::Xaml::DependencyProperty name##Property()                      \
+    {                                                                                         \
+        return _##name##Property;                                                             \
+    }                                                                                         \
+    type name() const                                                                         \
+    {                                                                                         \
+        auto&& temp{ GetValue(_##name##Property) };                                           \
+        if (temp)                                                                             \
+        {                                                                                     \
+            return winrt::unbox_value<type>(temp);                                            \
+        }                                                                                     \
+                                                                                              \
+        if constexpr (std::is_same_v<type, winrt::hstring>)                                   \
+        {                                                                                     \
+            return winrt::hstring{};                                                          \
+        }                                                                                     \
+        else if constexpr (std::is_base_of_v<winrt::Windows::Foundation::IInspectable, type>) \
+        {                                                                                     \
+            return { nullptr };                                                               \
+        }                                                                                     \
+        else                                                                                  \
+        {                                                                                     \
+            return {};                                                                        \
+        }                                                                                     \
+    }                                                                                         \
+    void name(const type& value)                                                              \
+    {                                                                                         \
+        SetValue(_##name##Property, winrt::box_value(value));                                 \
+    }                                                                                         \
+                                                                                              \
+private:                                                                                      \
+    static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
+#endif
 
 // Use this macro for quickly defining the factory_implementation part of a
 // class. CppWinrt requires these for the compiler, but more often than not,

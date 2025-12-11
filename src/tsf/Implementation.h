@@ -16,11 +16,12 @@ namespace Microsoft::Console::TSF
 
     struct Implementation : ITfContextOwner, ITfContextOwnerCompositionSink, ITfTextEditSink
     {
+        static void AvoidBuggyTSFConsoleFlags() noexcept;
         static void SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept;
 
         virtual ~Implementation() = default;
 
-        void Initialize();
+        bool Initialize();
         void Uninitialize() noexcept;
         HWND FindWindowOfActiveTSF() noexcept;
         void AssociateFocus(IDataProvider* provider);
@@ -129,6 +130,5 @@ namespace Microsoft::Console::TSF
         int _compositions = 0;
 
         AnsiInputScope _ansiInputScope{ this };
-        inline static std::atomic<bool> _wantsAnsiInputScope{ false };
     };
 }

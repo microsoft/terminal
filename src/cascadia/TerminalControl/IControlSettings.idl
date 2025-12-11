@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "IKeyBindings.idl";
 import "IControlAppearance.idl";
 import "EventArgs.idl";
 
@@ -38,8 +37,6 @@ namespace Microsoft.Terminal.Control
     interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings,
                                Microsoft.Terminal.Control.IControlAppearance
     {
-        String ProfileName;
-
         Boolean EnableUnfocusedAcrylic { get; };
         Guid SessionId { get; };
         ScrollbarState ScrollState { get; };
@@ -55,11 +52,11 @@ namespace Microsoft.Terminal.Control
         String CellWidth { get; };
         String CellHeight { get; };
 
-        Microsoft.Terminal.Control.IKeyBindings KeyBindings { get; };
-
         Boolean CopyOnSelect { get; };
         Microsoft.Terminal.Control.CopyFormat CopyFormatting { get; };
         Boolean FocusFollowMouse { get; };
+        Boolean ScrollToZoom { get; };
+        Boolean ScrollToChangeOpacity { get; };
 
         String Commandline { get; };
         String StartingDirectory { get; };

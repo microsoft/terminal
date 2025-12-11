@@ -69,10 +69,3 @@ jobs:
       artifact: $(JobOutputArtifactName)
       displayName: 'Publish VPack Manifest to Drop'
 
-  - task: PkgESFCIBGit@12
-    displayName: 'Submit VPack Manifest to Windows'
-    inputs:
-      configPath: '$(Build.SourcesDirectory)\build\config\GitCheckin.json'
-      artifactsDirectory: $(XES_VPACKMANIFESTDIRECTORY)
-      prTimeOut: 5
-

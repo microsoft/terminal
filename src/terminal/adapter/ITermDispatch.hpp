@@ -25,6 +25,12 @@ class Microsoft::Console::VirtualTerminal::ITermDispatch
 public:
     using StringHandler = std::function<bool(const wchar_t)>;
 
+    enum class OptionalFeature
+    {
+        ChecksumReport,
+        ClipboardWrite,
+    };
+
 #pragma warning(push)
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
@@ -133,7 +139,6 @@ public:
     virtual void ScreenAlignmentPattern() = 0; // DECALN
 
     virtual void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
-    virtual void SetVtChecksumReportSupport(const bool enabled) = 0;
 
     virtual void SetClipboard(wil::zwstring_view content) = 0; // OSCSetClipboard
 
@@ -185,6 +190,8 @@ public:
     virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
 
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
+
+    virtual void SetOptionalFeatures(const til::enumset<OptionalFeature> features) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

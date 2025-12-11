@@ -27,6 +27,7 @@
 #include <wil/registry.h>
 
 #include <winrt/Windows.ApplicationModel.AppExtensions.h>
+#include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
@@ -63,3 +64,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
+
+#include <LibraryResources.h>

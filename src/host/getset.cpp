@@ -749,7 +749,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             writer.Submit();
         }
 
-        RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
+        RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position));
 
         // Attempt to "snap" the viewport to the cursor position. If the cursor
         // is not in the current viewport, we'll try and move the viewport so
@@ -796,6 +796,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // how the cmd shell's CLS command resets the buffer.
         buffer.UpdateBottom();
 
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.CursorChanged(buffer.GetTextBuffer().GetCursor().GetPosition(), false);
         return S_OK;
     }
     CATCH_RETURN();

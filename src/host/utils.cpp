@@ -124,7 +124,7 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
                 lpsz += cch; // Step to start if next string
             }
 
-            // chhBufferMax == 0 means return a pointer to the read-only resource buffer.
+            // cchBufferMax == 0 means return a pointer to the read-only resource buffer.
             if (cchBufferMax == 0)
             {
                 *(LPTSTR*)lpBuffer = lpsz;

@@ -202,14 +202,14 @@ public:
         Log::Comment(L"PlayMidiNote MOCK called...");
     }
 
-    void NotifyAccessibilityChange(const til::rect& /*changedRect*/) override
-    {
-        Log::Comment(L"NotifyAccessibilityChange MOCK called...");
-    }
-
     void NotifyBufferRotation(const int /*delta*/) override
     {
         Log::Comment(L"NotifyBufferRotation MOCK called...");
+    }
+
+    void NotifyShellIntegrationMark() override
+    {
+        Log::Comment(L"NotifyShellIntegrationMark MOCK called...");
     }
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override
@@ -415,7 +415,6 @@ public:
             auto& renderer = _testGetSet->_renderer;
             auto& renderSettings = renderer._renderSettings;
             auto adapter = std::make_unique<AdaptDispatch>(*_testGetSet, &renderer, renderSettings, _terminalInput);
-            adapter->SetVtChecksumReportSupport(true);
 
             fSuccess = adapter.get() != nullptr;
             if (fSuccess)
@@ -1737,11 +1736,15 @@ public:
         Log::Comment(L"Test 1: Verify normal response.");
         _testGetSet->PrepData();
         _pDispatch->DeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42;52c");
 
-        auto pwszExpectedResponse = L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42c";
-        _testGetSet->ValidateInputEvent(pwszExpectedResponse);
+        Log::Comment(L"Test 2: Verify response with clipboard disabled.");
+        _testGetSet->PrepData();
+        _pDispatch->SetOptionalFeatures({});
+        _pDispatch->DeviceAttributes();
+        _testGetSet->ValidateInputEvent(L"\x1b[?61;4;6;7;14;21;22;23;24;28;32;42c");
 
-        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
+        Log::Comment(L"Test 3: Verify failure when ReturnResponse doesn't work.");
         _testGetSet->PrepData();
         _testGetSet->_returnResponseResult = FALSE;
 
@@ -1974,49 +1977,49 @@ public:
 
         Log::Comment(L"Requesting DECSCUSR style (blinking block).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::FullBox);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r1 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (steady block).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::FullBox);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r2 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (blinking underline).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Underscore);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r3 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (steady underline).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Underscore);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r4 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (blinking bar).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::VerticalBar);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r5 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (steady bar).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::VerticalBar);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r6 q\033\\");
 
         Log::Comment(L"Requesting DECSCUSR style (non-standard).");
         _testGetSet->PrepData();
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
         _testGetSet->_textBuffer->GetCursor().SetType(CursorType::Legacy);
         requestSetting(L" q");
         _testGetSet->ValidateInputEvent(L"\033P1$r0 q\033\\");
@@ -2186,6 +2189,8 @@ public:
         };
 
         using namespace std::string_view_literals;
+
+        _pDispatch->SetOptionalFeatures(ITermDispatch::OptionalFeature::ChecksumReport);
 
         Log::Comment(L"Test 1: ASCII characters");
         outputText(L"A"sv);
@@ -2809,12 +2814,12 @@ public:
         VERIFY_IS_TRUE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
         VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(2));
         VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(3));
-        VERIFY_IS_FALSE(textBuffer.GetCursor().IsDelayedEOLWrap());
+        VERIFY_IS_FALSE(textBuffer.GetCursor().GetDelayEOLWrap().has_value());
         stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;J;0;2;@;BBBB\033\\");
         VERIFY_IS_FALSE(_pDispatch->_modes.test(AdaptDispatch::Mode::Origin));
         VERIFY_IS_TRUE(termOutput.IsSingleShiftPending(2));
         VERIFY_IS_FALSE(termOutput.IsSingleShiftPending(3));
-        VERIFY_IS_TRUE(textBuffer.GetCursor().IsDelayedEOLWrap());
+        VERIFY_IS_TRUE(textBuffer.GetCursor().GetDelayEOLWrap().has_value());
 
         Log::Comment(L"Restore charset configuration");
         stateMachine.ProcessString(L"\033P1$t1;1;1;@;@;@;3;1;H;ABCF\033\\");
@@ -2890,15 +2895,15 @@ public:
         // success cases
         // set blinking mode = true
         Log::Comment(L"Test 1: enable blinking = true");
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(false);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(false);
         _pDispatch->SetMode(DispatchTypes::ATT610_StartCursorBlink);
-        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
+        VERIFY_IS_TRUE(_testGetSet->_textBuffer->GetCursor().IsBlinking());
 
         // set blinking mode = false
         Log::Comment(L"Test 2: enable blinking = false");
-        _testGetSet->_textBuffer->GetCursor().SetBlinkingAllowed(true);
+        _testGetSet->_textBuffer->GetCursor().SetIsBlinking(true);
         _pDispatch->ResetMode(DispatchTypes::ATT610_StartCursorBlink);
-        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCursor().IsBlinkingAllowed());
+        VERIFY_IS_FALSE(_testGetSet->_textBuffer->GetCursor().IsBlinking());
     }
 
     TEST_METHOD(ScrollMarginsTest)

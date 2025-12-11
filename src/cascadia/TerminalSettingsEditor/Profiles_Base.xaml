@@ -22,14 +22,13 @@
     </Page.Resources>
 
     <!--  Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.  -->
-    <Grid>
+    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
-                   Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
@@ -64,7 +63,7 @@
                              Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
                     <Button x:Uid="Profile_CommandlineBrowse"
-                            Margin="0,10,0,0"
+                            Margin="0,8,0,0"
                             Click="Commandline_Click"
                             Style="{StaticResource BrowseButtonStyle}" />
                 </StackPanel>
@@ -87,13 +86,13 @@
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="StartingDirectoryBrowse"
                                 x:Uid="Profile_StartingDirectoryBrowse"
-                                Margin="0,10,10,0"
+                                Margin="0,12,12,0"
                                 Click="StartingDirectory_Click"
                                 IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                         <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
                                   x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                  Margin="0,5,0,0"
+                                  Margin="0,4,0,0"
                                   IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                     </StackPanel>
                 </StackPanel>
@@ -102,7 +101,7 @@
             <!--  Icon  -->
             <local:SettingContainer x:Uid="Profile_Icon"
                                     ClearSettingValue="{x:Bind Profile.ClearIcon}"
-                                    CurrentValueAccessibleName="{x:Bind Profile.Icon, Mode=OneWay}"
+                                    CurrentValueAccessibleName="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
@@ -123,7 +122,7 @@
                     </Grid>
                 </local:SettingContainer.CurrentValue>
                 <local:SettingContainer.Content>
-                    <Grid ColumnSpacing="10">
+                    <Grid ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="auto" />
                             <ColumnDefinition Width="*" />
@@ -143,14 +142,18 @@
                         </ComboBox>
 
                         <!--  Built-In Icon  -->
-                        <ComboBox x:Uid="Profile_BuiltInIcon"
-                                  Grid.Column="1"
-                                  ItemsSource="{x:Bind Profile.BuiltInIcons}"
-                                  SelectedItem="{x:Bind Profile.CurrentBuiltInIcon, Mode=TwoWay}"
-                                  Visibility="{x:Bind Profile.UsingBuiltInIcon, Mode=OneWay}">
-                            <ComboBox.ItemTemplate>
+                        <AutoSuggestBox x:Uid="Profile_BuiltInIcon"
+                                        Grid.Column="1"
+                                        GotFocus="BuiltInIconPicker_GotFocus"
+                                        ItemsSource="{x:Bind FilteredBuiltInIconList, Mode=OneWay}"
+                                        QuerySubmitted="BuiltInIconPicker_QuerySubmitted"
+                                        Text="{x:Bind Profile.CurrentBuiltInIcon.EnumName, Mode=OneWay}"
+                                        TextBoxStyle="{StaticResource TextBoxSettingStyle}"
+                                        TextChanged="BuiltInIconPicker_TextChanged"
+                                        Visibility="{x:Bind Profile.UsingBuiltInIcon, Mode=OneWay}">
+                            <AutoSuggestBox.ItemTemplate>
                                 <DataTemplate x:DataType="local:EnumEntry">
-                                    <Grid ColumnSpacing="10">
+                                    <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="16" />
                                             <ColumnDefinition Width="*" />
@@ -164,8 +167,8 @@
                                                    Text="{x:Bind EnumName}" />
                                     </Grid>
                                 </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                            </AutoSuggestBox.ItemTemplate>
+                        </AutoSuggestBox>
 
                         <!--  Image (File) Icon  -->
                         <TextBox x:Uid="Profile_IconBox"
@@ -175,7 +178,7 @@
                                  FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                                  IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind Profile.Icon, Mode=TwoWay}"
+                                 Text="{x:Bind Profile.IconPath, Mode=TwoWay}"
                                  Visibility="{x:Bind Profile.UsingImageIcon, Mode=OneWay}" />
                         <Button x:Uid="Profile_IconBrowse"
                                 Grid.Column="2"
@@ -209,6 +212,22 @@
                          Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Tab Color  -->
+            <local:SettingContainer x:Name="TabColor"
+                                    x:Uid="Profile_TabColor"
+                                    ClearSettingValue="{x:Bind Profile.ClearTabColor}"
+                                    CurrentValue="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
+                                    CurrentValueAccessibleName="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
+                                    CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
+                                    HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <local:NullableColorPicker x:Uid="Profile_TabColor_NullableColorPicker"
+                                           ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"
+                                           CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
+                                           NullColorPreview="{x:Bind Profile.TabThemeColorPreview, Mode=OneWay}" />
+            </local:SettingContainer>
+
             <!--  Elevate  -->
             <local:SettingContainer x:Uid="Profile_Elevate"
                                     ClearSettingValue="{x:Bind Profile.ClearElevate}"
@@ -226,7 +245,7 @@
             </local:SettingContainer>
 
             <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
-                       Margin="0,48,0,0"
+                       Margin="0,32,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <Button x:Name="AppearanceNavigator"
@@ -249,7 +268,7 @@
                             <FontIcon FontSize="{StaticResource StandardIconSize}"
                                       Glyph="&#xE74D;" />
                             <TextBlock x:Uid="Profile_DeleteButton"
-                                       Margin="10,0,0,0" />
+                                       Margin="8,0,0,0" />
                         </StackPanel>
                     </Button.Content>
                     <Button.Flyout>

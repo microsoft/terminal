@@ -40,7 +40,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum FirstWindowPreference
     {
         DefaultProfile,
-        PersistedWindowLayout,
+        PersistedLayout,
+        PersistedLayoutAndContent,
     };
 
     enum NewTabPosition
@@ -70,7 +71,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, InputServiceWarning);
         INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
-        INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         INHERITABLE_SETTING(Boolean, TrimPaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
@@ -90,6 +91,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
+        INHERITABLE_SETTING(Boolean, ScrollToZoom);
+        INHERITABLE_SETTING(Boolean, ScrollToChangeOpacity);
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);

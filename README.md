@@ -169,10 +169,10 @@ The Portable ZIP distribution is a portable application. It will not automatical
 
 | Distribution  | Architecture    | Link                                                 |
 |---------------|:---------------:|------------------------------------------------------|
-| App Installer | x64, arm64, x86 | [download](https://aka.ms/terminal-canary-installer) |
-| Portable ZIP  | x64             | [download](https://aka.ms/terminal-canary-zip-x64)   |
-| Portable ZIP  | ARM64           | [download](https://aka.ms/terminal-canary-zip-arm64) |
-| Portable ZIP  | x86             | [download](https://aka.ms/terminal-canary-zip-x86)   |
+| App Installer | x64, arm64, x86 | [Download](https://aka.ms/terminal-canary-installer) |
+| Portable ZIP  | x64             | [Download](https://aka.ms/terminal-canary-zip-x64)   |
+| Portable ZIP  | ARM64           | [Download](https://aka.ms/terminal-canary-zip-arm64) |
+| Portable ZIP  | x86             | [Download](https://aka.ms/terminal-canary-zip-x86)   |
 
 _Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
 
@@ -375,7 +375,7 @@ winget configure .config\configuration.winget
 
 ## Building the Code
 
-OpenConsole.sln may be built from within Visual Studio or from the command-line
+OpenConsole.slnx may be built from within Visual Studio or from the command-line
 using a set of convenience scripts & tools in the **/tools** directory:
 
 ### Building in PowerShell

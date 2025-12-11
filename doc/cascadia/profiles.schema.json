@@ -32,13 +32,21 @@
       ]
     },
     "DynamicProfileSource": {
-      "enum": [
-        "Windows.Terminal.Wsl",
-        "Windows.Terminal.Azure",
-        "Windows.Terminal.PowershellCore",
-        "Windows.Terminal.VisualStudio"
-      ],
-      "type": "string"
+      "type": "string",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "enum": [
+            "Microsoft.WSL",
+            "Windows.Terminal.Wsl",
+            "Windows.Terminal.Azure",
+            "Windows.Terminal.PowershellCore",
+            "Windows.Terminal.VisualStudio"
+          ]
+        }
+      ]
     },
     "BellStyle": {
       "oneOf": [
@@ -2294,8 +2302,15 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "The ID of the command this keybinding should execute.",
-          "type": "string"
+          "description": "The ID of the command this keybinding should execute (or null to disable a default).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
@@ -2366,6 +2381,16 @@
         "focusFollowMouse": {
           "default": false,
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
+          "type": "boolean"
+        },
+        "experimental.scrollToZoom": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl key while scrolling will increase or decrease the terminal font size.",
+          "type": "boolean"
+        },
+        "experimental.scrollToChangeOpacity": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl and Shift keys while scrolling will change the window opacity.",
           "type": "boolean"
         },
         "compatibility.allowHeadless": {
@@ -2441,6 +2466,7 @@
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
           "enum": [
+            "automatic",
             "direct2d",
             "direct3d11"
           ]
@@ -2454,8 +2480,9 @@
           "type": "boolean"
         },
         "experimental.input.forceVT": {
-          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"compatibility.input.forceVT\" profile setting.",
+          "deprecated": true
         },
         "experimental.useBackgroundImageForWindow": {
           "default": false,
@@ -2502,14 +2529,14 @@
           "type": "string"
         },
         "rowsToScroll": {
-          "default": "system",
-          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so. However, you can customize the number of lines to scroll in \"scrollUp\" and \"scrollDown\" bindings.",
-          "maximum": 999,
-          "minimum": 0,
           "type": [
             "integer",
             "string"
           ],
+          "description": "[Deprecated] This setting no longer has any effect. However, you can customize the number of lines to scroll using the \"rowsToScroll\" argument on the \"scrollUp\" and \"scrollDown\" actions.",
+          "default": "system",
+          "minimum": 0,
+          "maximum": 999,
           "deprecated": true
         },
         "minimizeToNotificationArea": {
@@ -2555,9 +2582,12 @@
           "$ref": "#/$defs/NewTabMenu"
         },
         "language": {
-          "default": "",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
-          "type": "string"
+          "default": null
         },
         "theme": {
           "default": "dark",
@@ -2621,19 +2651,19 @@
           "type": "boolean"
         },
         "useTabSwitcher": {
+          "description": "[Deprecated] Replaced with the \"tabSwitcherMode\" setting.",
           "default": true,
-          "description": "Deprecated. Please use \"tabSwitcherMode\" instead.",
           "oneOf": [
             {
               "type": "boolean"
             },
             {
+              "type": "string",
               "enum": [
                 "mru",
                 "inOrder",
                 "disabled"
-              ],
-              "type": "string"
+              ]
             }
           ],
           "deprecated": true
@@ -2690,12 +2720,12 @@
       "type": "object",
       "properties": {
         "acrylicOpacity": {
+          "type": "number",
+          "description": "[Deprecated] Replaced with the \"opacity\" setting.",
           "default": 0.5,
-          "description": "[deprecated] Please use `opacity` instead.",
-          "deprecated": true,
-          "maximum": 1,
           "minimum": 0,
-          "type": "number"
+          "maximum": 1,
+          "deprecated": true
         },
         "antialiasingMode": {
           "default": "grayscale",
@@ -2719,6 +2749,11 @@
         "compatibility.reloadEnvironmentVariables": {
           "default": true,
           "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
+          "type": "boolean"
+        },
+        "compatibility.input.forceVT": {
+          "default": false,
+          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
           "type": "boolean"
         },
         "compatibility.allowDECRQCRA": {
@@ -2892,23 +2927,28 @@
           "type": "boolean"
         },
         "experimental.autoMarkPrompts": {
-          "deprecated": true,
-          "description": "This has been replaced by autoMarkPrompts in 1.21",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"autoMarkPrompts\" setting.",
+          "deprecated": true
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
         "experimental.showMarksOnScrollbar": {
-          "deprecated": true,
-          "description": "This has been replaced by showMarksOnScrollbar in 1.21",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"showMarksOnScrollbar\" setting.",
+          "deprecated": true
         },
         "showMarksOnScrollbar": {
           "default": false,
           "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
+        },
+        "experimental.rainbowSuggestions": {
+          "type": "boolean",
+          "description": "Enables displaying command suggestions in the terminal in RGB (all the colors of the rainbow!).",
+          "default": false
         },
         "experimental.rightClickContextMenu": {
           "default": false,
@@ -2925,23 +2965,29 @@
           "type": "string"
         },
         "fontFace": {
-          "default": "Cascadia Mono",
-          "description": "[deprecated] Define 'face' within the 'font' object instead.",
           "type": "string",
+          "description": "[Deprecated] Replaced with the \"face\" setting within the \"font\" object.",
+          "default": "Cascadia Mono",
           "deprecated": true
         },
         "fontSize": {
-          "default": 12,
-          "description": "[deprecated] Define 'size' within the 'font' object instead.",
-          "minimum": 1,
           "type": "number",
+          "description": "[Deprecated] Replaced with the \"size\" setting within the \"font\" object.",
+          "default": 12,
+          "minimum": 1,
           "deprecated": true
         },
         "fontWeight": {
+          "description": "[Deprecated] Replaced with the \"weight\" setting within the \"font\" object.",
           "default": "normal",
-          "description": "[deprecated] Define 'weight' within the 'font' object instead.",
           "oneOf": [
             {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 990
+            },
+            {
+              "type": "string",
               "enum": [
                 "thin",
                 "extra-light",
@@ -2954,13 +3000,7 @@
                 "extra-bold",
                 "black",
                 "extra-black"
-              ],
-              "type": "string"
-            },
-            {
-              "maximum": 990,
-              "minimum": 100,
-              "type": "integer"
+              ]
             }
           ],
           "deprecated": true
@@ -3071,7 +3111,10 @@
         },
         "answerbackMessage": {
           "description": "The response that is sent when an ENQ control character is received.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",

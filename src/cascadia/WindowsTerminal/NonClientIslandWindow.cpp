@@ -692,7 +692,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
             //
-            // Note to future code archeologists:
+            // Note to future code archaeologists:
             // This doesn't seem to work for fullscreen on the primary display.
             // However, testing a bunch of other apps with fullscreen modes
             // and an auto-hiding taskbar has shown that _none_ of them

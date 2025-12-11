@@ -12,6 +12,7 @@
     <AppContainerApplication>false</AppContainerApplication>
     <!-- If we do not set this, it will be derived as UAP by our common build rules; this will really blow up the packaging project -->
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
+    <VersionInfoFileDescription>Windows Terminal Host</VersionInfoFileDescription>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
 

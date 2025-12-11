@@ -452,6 +452,14 @@
     <value>Орéŋ ẅϊηďóωš ƒřōm ă φяèνιôùś şęŝśîőň !!! !!! !!! !</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayoutAndContent.Content" xml:space="preserve">
+    <value>Ѓëśтσяέ ẁïπďόẅ łäγǿũτ åήð ¢ǿлтęпт !!! !!! !!! </value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session and preserve the content.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
+    <value>Ґзšţоřэ ẃĭńðőω ŀăýøϋτ !!! !!!</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
+  </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>₤дΰⁿçћ mοďè !!!</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
@@ -945,6 +953,10 @@
   <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
     <value>Åļωάỳš !</value>
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsAutomatic.Content" xml:space="preserve">
+    <value>Дüтôмαťί¢ !!!</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table if and only if high contrast mode is enabled.</comment>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
     <value>Ъâг ( ┃ ) !!!</value>
@@ -1732,6 +1744,14 @@
     <value>Áϋτомàţīćąłłý ƒόćŭś рåπę öń мõùšě ђöνëŗ !!! !!! !!! !!!</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Аδĵŭŝт ţєŗмιņăℓ ƒøпť ѕįżε вỳ şċѓοℓℓíńğ ẃħïĺє ĥöľδīйģ τђе €ŧřŀ ќëÿ !!! !!! !!! !!! !!! !!! !</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ąδĵüšţ ŧęřмìńąĺ ôрǻčĩτў ьγ šćřοļĺįήĝ ẅђϊłę ħōļδîŉğ ťђз Çťгł àиδ Śђĭƒт ķęÿŝ !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Ρǻйě ǻйϊмäţіőηş !!! !</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
@@ -1912,10 +1932,26 @@
     <value>Ẃǻґņ ώћĕπ "Ŧõũčђ Κзγьοдгď ąŉð Нáлđẅŕīťίńģ Ρàňεℓ Śεŕνîçé" íš đìşāъŀêδ !!! !!! !!! !!! !!! !!! !!</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Ẃăґи ẅнěπ тґўіήĝ τø рáŝťё mοřé ţħäή 5 ΚĩВ òƒ ĉħāґąćτєґѕ !!! !!! !!! !!! !!! !</value>
+    <value>Ẃăґи ẅнěπ рǻѕтĭиġ mσŗë ťћåń 5 Κìß !!! !!! !!! </value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Щāřπ ẃĥєи ťгýīлğ ţõ ρäşŧè ª "пėщ ľїл℮" ςћářǻ¢ţēř !!! !!! !!! !!! !!</value>
+    <value>Щāřπ ẃĥєи ρаśŧîήĝ ⁿěώŀīиèŝ !!! !!! !</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>Ìƒ уοΰґ ѕħęļĺ ðøέş ńőт ŝűрρŏяŧ "ьřäċќéŧéď ρаѕτę" мōðέ, ẅέ ѓ℮¢ōмmзñδ śěτŧìñģ ťћĭś ŧó "Дĺẁαỳş" ƒóґ šέсµгітў ѓêąŝøñŝ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>Óйŀў íƒ "ьґαςќєťēð рãŝţê" îś δíšªвļèδ !!! !!! !!! !!</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>Äℓщãỳš !</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>Иёνзŗ !</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Ẅїηðσшѕ Ţеřmíńăľ īѕ ґϋййïŉģ ĭņ рόѓťáъℓė mōďе. !!! !!! !!! !!! !</value>
@@ -2051,6 +2087,10 @@
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>Ůŝë śĉћ℮mĕ çòĺőг !!! !</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Ůşĕ τђемė сθľøѓ !!! !</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
     <value>Ибйě !</value>

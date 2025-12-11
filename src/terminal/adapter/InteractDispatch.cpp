@@ -62,15 +62,38 @@ void InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
     {
-        const auto codepage = _api.GetOutputCodePage();
-        InputEventQueue keyEvents;
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+#pragma warning(suppress : 26429) // Symbol 'inputBuffer' is never tested for nullness, it can be marked as not_null (f.23).
+        const auto inputBuffer = gci.GetActiveInputBuffer();
 
-        for (const auto& wch : string)
+        // The input *may* be keyboard input in which case we must call CharToKeyEvents.
+        //
+        // However, it could also be legitimate VT sequences (e.g. a bracketed paste sequence).
+        // If we called `InputBuffer::Write` with those, we would end up indirectly
+        // calling `TerminalInput::HandleKey` and "double encode" the sequence.
+        // The effect of this is noticeable with the German keyboard layout, for instance,
+        // where the [ key maps to AltGr+8, and we fail to map it back to [ later.
+        //
+        // It's worth noting that all of this is bad design in either case.
+        // The way it should work is that we write INPUT_RECORDs and Strings as-is into the
+        // InputBuffer, and only during retrieval they're converted into one or the other.
+        // This prevents any kinds of double-encoding issues.
+        if (inputBuffer->IsInVirtualTerminalInputMode())
         {
-            CharToKeyEvents(wch, codepage, keyEvents);
+            inputBuffer->WriteString(string);
         }
+        else
+        {
+            const auto codepage = _api.GetOutputCodePage();
+            InputEventQueue keyEvents;
 
-        WriteInput(keyEvents);
+            for (const auto& wch : string)
+            {
+                CharToKeyEvents(wch, codepage, keyEvents);
+            }
+
+            inputBuffer->Write(keyEvents);
+        }
     }
 }
 
@@ -126,6 +149,9 @@ void InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // - col: The column to move the cursor to.
 void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
+    const auto& api = ServiceLocator::LocateGlobals().api;
+    auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
+
     // First retrieve some information about the buffer
     const auto viewport = _api.GetBufferAndViewport().viewport;
 
@@ -136,9 +162,11 @@ void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     coordCursor.x = std::clamp(coordCursor.x, viewport.left, viewport.right);
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
-    auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
     LOG_IF_FAILED(api->SetConsoleCursorPositionImpl(info, coordCursor));
+
+    // Unblock any callers inside SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized().
+    // The cursor position has now been updated to the terminal's.
+    info.ResetConptyCursorPositionMayBeWrong();
 }
 
 // Routine Description:

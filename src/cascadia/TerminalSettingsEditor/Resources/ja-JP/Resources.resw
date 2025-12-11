@@ -371,7 +371,7 @@
     <value>入力したテキストをセルにグループ化する方法を変更します。"Grapheme clusters" オプションは最も新しく Unicode で正しい方法ですが、UNIX では "wcswidth" は一般的な方法であり、"Windows コンソール" は Windows での動作方法をレプリケートします。この設定を変更するには、Windows ターミナルの再起動が必要です。この設定は、その中から起動されたアプリケーションにのみ適用されます。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
-    <value>Grapheme クラスター</value>
+    <value>書記素クラスター</value>
     <comment>The default choice between multiple graphics APIs.</comment>
   </data>
   <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
@@ -451,6 +451,14 @@
   <data name="Globals_FirstWindowPreferencePersistedWindowLayout.Content" xml:space="preserve">
     <value>前のセッションからウィンドウを開く</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayoutAndContent.Content" xml:space="preserve">
+    <value>ウィンドウのレイアウトとコンテンツを復元</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session and preserve the content.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
+    <value>ウィンドウのレイアウトを復元</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
   </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>起動モード</value>
@@ -946,6 +954,10 @@
     <value>常時</value>
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
   </data>
+  <data name="Profile_AdjustIndistinguishableColorsAutomatic.Content" xml:space="preserve">
+    <value>自動</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table if and only if high contrast mode is enabled.</comment>
+  </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
     <value>バー ( ┃ )</value>
     <comment>{Locked="┃"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a vertical bar. The character in the parentheses is used to show what it looks like.</comment>
@@ -1334,7 +1346,7 @@
     <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
   </data>
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
-    <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはウィンドウを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
+    <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはペインを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
@@ -1378,7 +1390,7 @@
     <comment>An option to choose from for the "bell style" setting. When selected, notifications are silenced.</comment>
   </data>
   <data name="Globals_DisableAnimations.Header" xml:space="preserve">
-    <value>ウィンドウのアニメーションを無効にする</value>
+    <value>ペインのアニメーションを無効にする</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value disables the animations.</comment>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
@@ -1729,11 +1741,19 @@
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
-    <value>マウスをポイントしたときにフォーカス ウィンドウを自動的に表示する</value>
+    <value>マウスをポイントしたときにフォーカス ペインを自動的に表示する</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Ctrl キーを押しながらスクロールして、ターミナルのフォント サイズを調整します</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ctrl キーと Shift キーを押しながらスクロールして、ターミナルの不透明度を調整します</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
-    <value>ウィンドウのアニメーション</value>
+    <value>ペインのアニメーション</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
   <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
@@ -1912,10 +1932,26 @@
     <value>[タッチ キーボードと手書きパネル サービス] が無効になっている場合に警告する</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>5 KiB を超える文字を貼り付けようとしたときに警告する</value>
+    <value>5 KiB を超える貼り付け時に警告する</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>"改行" 文字を貼り付けようとしたときに警告する</value>
+    <value>改行を貼り付ける際に警告する</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>シェルが ”角かっこで囲まれた貼り付け” モードをサポートしていない場合は、セキュリティ上の理由からこれを [常に] に設定することをお勧めします。</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>"角かっこで囲まれた貼り付け" が無効になっている場合のみ</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>常時</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows ターミナルはポータブル モードで実行されています。</value>
@@ -2047,6 +2083,10 @@
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>配色を使用</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>テーマの色を使用します</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
     <value>なし</value>

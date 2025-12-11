@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="init.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
@@ -49,6 +50,7 @@
     <Page Include="Appearances.xaml" />
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
+    <Page Include="EditAction.xaml" />
     <Page Include="SettingContainerStyle.xaml" />
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />

@@ -4,22 +4,19 @@ EXPORTS
   DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
 
   ; Flat C ABI
+  AvoidBuggyTSFConsoleFlags
   CreateTerminal
   DestroyTerminal
-  TerminalBlinkCursor
   TerminalCalculateResize
-  TerminalClearSelection
   TerminalDpiChanged
   TerminalGetSelection
   TerminalIsSelectionActive
-  TerminalKillFocus
   TerminalRegisterScrollCallback
   TerminalRegisterWriteCallback
   TerminalSendCharEvent
   TerminalSendKeyEvent
   TerminalSendOutput
-  TerminalSetCursorVisible
-  TerminalSetFocus
+  TerminalSetFocused
   TerminalSetTheme
   TerminalTriggerResize
   TerminalTriggerResizeWithDimension

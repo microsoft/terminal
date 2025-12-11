@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "Extensions.idl";
+import "ActionsViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -22,6 +23,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Profile_Terminal,
         Profile_Advanced,
         ColorSchemes_Edit,
+        Actions_Edit,
         NewTabMenu_Folder,
         Extensions_Extension
     };
@@ -39,6 +41,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.Foundation.Collections.IVectorView<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> > ShowLoadWarningsDialog;
 
         // Due to the aforementioned bug, we can't use IInitializeWithWindow _here_ either.
         // Let's just smuggle the HWND in as a UInt64 :|
@@ -46,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
         ExtensionsViewModel ExtensionsVM { get; };
+        ActionsViewModel ActionsVM { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }

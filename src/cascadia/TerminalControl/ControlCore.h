@@ -19,7 +19,6 @@
 #include "SelectionColor.g.h"
 #include "CommandHistoryContext.g.h"
 
-#include "ControlSettings.h"
 #include "../../audio/midi/MidiAudio.hpp"
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
@@ -100,12 +99,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::IControlAppearance UnfocusedAppearance() const;
         bool HasUnfocusedAppearance() const;
 
-        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
-        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
+        void ApplyPreviewColorScheme(const Core::ICoreScheme&);
+        void ResetPreviewColorScheme();
+        void SetOverrideColorScheme(const Core::ICoreScheme&);
 
         ::Microsoft::Console::Render::Renderer* GetRenderer() const noexcept;
         uint64_t SwapChainHandle() const;
-        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void AttachToNewControl();
 
         void SizeChanged(const float width, const float height);
         void ScaleChanged(const float scale);
@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SendInput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
-        bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const Windows::Foundation::IReference<CopyFormat>& formats);
+        bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const CopyFormat formats);
         void SelectAll();
         void ClearSelection();
         bool ToggleBlockSelection();
@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
-        void PersistToPath(const wchar_t* path) const;
+        void PersistTo(HANDLE handle) const;
         void RestoreFromPath(const wchar_t* path) const;
 
         void ClearQuickFix();
@@ -214,14 +214,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma endregion
 
-        void BlinkAttributeTick();
-        void BlinkCursor();
-        bool CursorOn() const;
-        void CursorOn(const bool isCursorOn);
-
         bool IsVtMouseModeEnabled() const;
         bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
+        bool ForceCursorVisible() const noexcept;
+        void ForceCursorVisible(bool force);
 
         bool CopyOnSelect() const;
         Control::SelectionData SelectionInfo() const;
@@ -268,15 +265,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void PreviewInput(std::wstring_view input);
 
-        RUNTIME_SETTING(float, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
-        RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
+        RUNTIME_SETTING(bool, UseAcrylic, _settings.UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         til::typed_event<IInspectable, Control::FontSizeChangedArgs> FontSizeChanged;
 
         til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
+        til::typed_event<IInspectable, Control::WriteToClipboardEventArgs> WriteToClipboard;
         til::typed_event<> WarningBell;
         til::typed_event<> TabColorChanged;
         til::typed_event<> BackgroundColorChanged;
@@ -307,9 +305,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         struct SharedState
         {
-            std::unique_ptr<til::debounced_func_trailing<>> outputIdle;
-            std::unique_ptr<til::debounced_func_trailing<bool>> focusChanged;
-            std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> updateScrollBar;
+            std::unique_ptr<til::throttled_func<>> outputIdle;
+            std::unique_ptr<til::throttled_func<bool>> focusChanged;
+            std::shared_ptr<ThrottledFunc<Control::ScrollPositionChangedArgs>> updateScrollBar;
         };
 
         void _setupDispatcherAndCallbacks();
@@ -325,7 +323,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _sendInputToConnection(std::wstring_view wstr);
 
 #pragma region TerminalCoreCallbacks
-        void _terminalCopyToClipboard(wil::zwstring_view wstr);
         void _terminalWarningBell();
         void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalScrollPositionChanged(const int viewTop,
@@ -339,7 +336,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow);
         void _terminalWindowSizeChanged(int32_t width, int32_t height);
 
-        safe_void_coroutine _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
+        void _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
 #pragma endregion
 
 #pragma region RendererCallbacks
@@ -347,6 +344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
+        void _rendererEnteredErrorState();
 #pragma endregion
 
         void _raiseReadOnlyWarning();
@@ -401,6 +399,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float _panelWidth{ 0 };
         float _panelHeight{ 0 };
         float _compositionScale{ 0 };
+        uint8_t _renderFailures{ 0 };
+        bool _forceCursorVisible = false;
 
         // Audio stuff.
         MidiAudio _midiAudio;
@@ -408,7 +408,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Other stuff.
         winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
-        winrt::com_ptr<ControlSettings> _settings{ nullptr };
+        IControlSettings _settings{ nullptr };
+        bool _hasUnfocusedAppearance{ false };
+        IControlAppearance _unfocusedAppearance{ nullptr };
+        Core::ICoreScheme _focusedColorSchemeOverride{ nullptr };
         til::point _contextMenuBufferPosition{ 0, 0 };
         Windows::Foundation::Collections::IVector<hstring> _cachedQuickFixes{ nullptr };
         ::Search _searcher;
@@ -419,6 +422,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
+
+        struct StashedColorScheme
+        {
+            std::array<COLORREF, TextColor::TABLE_SIZE> scheme;
+            size_t foregroundAlias;
+            size_t backgroundAlias;
+        };
+        std::unique_ptr<StashedColorScheme> _stashedColorScheme;
 
         // ----------------------------------------------------------------------------------------
         // These are ordered last to ensure they're destroyed first.
