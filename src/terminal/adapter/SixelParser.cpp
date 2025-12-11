@@ -92,7 +92,7 @@ std::function<bool(std::wstring_view)> SixelParser::DefineImage(const VTInt macr
         return [&](const std::wstring_view str) {
             for (const auto ch : str)
             {
-            _parseCommandChar(ch);
+                _parseCommandChar(ch);
             }
             return true;
         };

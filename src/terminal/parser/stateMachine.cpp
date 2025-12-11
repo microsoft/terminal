@@ -1804,17 +1804,17 @@ void StateMachine::_EventDcsPassThrough(const wchar_t)
     _trace.TraceOnEvent(L"DcsPassThrough");
 
     assert(_runEnd != 0);
-
-    auto beg = _runEnd - 1;
-    auto end = beg;
+    auto end = _runEnd - 1;
 
     for (;;)
     {
+        const auto beg = end;
+
         // Find the end of a run of valid DCS characters.
         for (;;)
         {
             const auto ch = _currentString[end];
-            if (_isEscape(ch) || (!_isC0Code(ch) && !_isDcsPassThroughValid(ch)))
+            if (_isEscape(ch) || _isC0Code(ch) || !_isDcsPassThroughValid(ch))
             {
                 break;
             }
@@ -1827,7 +1827,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t)
         }
 
         // If we found a run, pass it to the handler.
-        if (beg != end && !_dcsStringHandler(_currentString.substr(beg, end)))
+        if (beg != end && !_dcsStringHandler(_currentString.substr(beg, end - beg)))
         {
             _EnterDcsIgnore();
             break;
@@ -1851,7 +1851,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t)
         for (;;)
         {
             const auto ch = _currentString[end];
-            if (!_isEscape(ch) && (_isC0Code(ch) || _isDcsPassThroughValid(ch)))
+            if (!_isEscape(ch) && !_isC0Code(ch) && _isDcsPassThroughValid(ch))
             {
                 break;
             }
