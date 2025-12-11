@@ -83,7 +83,7 @@ ScopedArena::~ScopedArena()
     arena.pop_to(m_pos_backup);
 }
 
-static [[msvc::noinline]] std::array<Arena, 2> thread_arenas_init()
+[[msvc::noinline]] static std::array<Arena, 2> thread_arenas_init()
 {
     return {
         Arena{ 1024 * 1024 * 1024 },
