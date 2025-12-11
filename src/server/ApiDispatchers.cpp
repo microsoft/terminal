@@ -481,8 +481,6 @@ constexpr T saturate(auto val)
 [[nodiscard]] HRESULT ApiDispatchers::ServerSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MSG* const m,
                                                                          _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    TraceConsoleAPICallWithOrigin("SetConsoleActiveScreenBuffer");
-
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
@@ -496,8 +494,6 @@ constexpr T saturate(auto val)
 [[nodiscard]] HRESULT ApiDispatchers::ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG* const m,
                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    TraceConsoleAPICallWithOrigin("ServerFlushConsoleInputBuffer");
-
     const auto pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
