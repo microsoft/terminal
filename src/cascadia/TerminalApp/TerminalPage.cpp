@@ -4209,6 +4209,20 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
+    bool TerminalPage::IsTabRowVisible() const
+    {
+        if (!_settings)
+        {
+            return false;
+        }
+
+        return !_isInFocusMode &&
+               (!_isFullscreen || _showTabsFullscreen) &&
+               (_settings.GlobalSettings().ShowTabsInTitlebar() ||
+                NumberOfTabs() > 1 ||
+                _settings.GlobalSettings().AlwaysShowTabs());
+    }
+
     // Method Description:
     // - Returns true if the tab row should be visible when we're in full screen
     //   state.
