@@ -60,32 +60,42 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename ArgsT>
     struct event
     {
-        event<ArgsT>() = default;
         winrt::event_token operator()(const ArgsT& handler) { return _handlers.add(handler); }
-        void operator()(const winrt::event_token& token) { _handlers.remove(token); }
-        operator bool() const noexcept { return bool(_handlers); }
-        template<typename... Arg>
+        void operator()(winrt::event_token token) { _handlers.remove(token); }
+        explicit operator bool() const noexcept { return _handlers; }
+
         void raise(auto&&... args)
         {
             _handlers(std::forward<decltype(args)>(args)...);
         }
+
+    private:
         winrt::event<ArgsT> _handlers;
     };
 
     template<typename SenderT = winrt::Windows::Foundation::IInspectable, typename ArgsT = winrt::Windows::Foundation::IInspectable>
-    struct typed_event
+    using typed_event = til::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>>;
+
+    template<typename ArgsT>
+    struct fused_event
     {
-        typed_event<SenderT, ArgsT>() = default;
-        winrt::event_token operator()(const winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>& handler) { return _handlers.add(handler); }
-        void operator()(const winrt::event_token& token) { _handlers.remove(token); }
-        operator bool() const noexcept { return bool(_handlers); }
-        template<typename... Arg>
-        void raise(Arg const&... args)
+        winrt::event_token operator()(const ArgsT& handler) { return _handlers.add(handler); }
+        void operator()(winrt::event_token token) { _handlers.remove(token); }
+        explicit operator bool() const noexcept { return _handlers; }
+
+        void raise(auto&&... args)
         {
-            _handlers(std::forward<decltype(args)>(args)...);
+            if (!_fired.exchange(true, std::memory_order_relaxed))
+            {
+                _handlers(std::forward<decltype(args)>(args)...);
+            }
         }
-        winrt::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>> _handlers;
+
+    private:
+        winrt::event<ArgsT> _handlers;
+        std::atomic<bool> _fired{ false };
     };
+
 #endif
 #ifdef WINRT_Windows_UI_Xaml_Data_H
 

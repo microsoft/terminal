@@ -161,7 +161,7 @@ namespace Microsoft::Console::Render
         TimerHandle _cursorBlinker;
         uint64_t _cursorBufferMutationId = 0;
         uint64_t _cursorCursorMutationId = 0; // Stupid name, but it's _cursor related and stores the cursor mutation id.
-        til::enumset<InhibitionSource, uint8_t> _cursorVisibilityInhibitors;
+        til::enumset<InhibitionSource, uint8_t> _cursorVisibilityInhibitors{ InhibitionSource::Host };
         til::enumset<InhibitionSource, uint8_t> _cursorBlinkingInhibitors;
         bool _cursorBlinkerOn = false;
 

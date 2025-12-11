@@ -934,6 +934,13 @@ namespace winrt::TerminalApp::implementation
         return res;
     }
 
+    void Tab::Close()
+    {
+        ASSERT_UI_THREAD();
+
+        Closed.raise(nullptr, nullptr);
+    }
+
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void Tab::Shutdown()

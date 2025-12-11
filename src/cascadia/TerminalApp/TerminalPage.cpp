@@ -6,9 +6,10 @@
 #include "TerminalPage.h"
 
 #include <LibraryResources.h>
-#include <TerminalThemeHelpers.h>
-#include <Utils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
+#include <TerminalThemeHelpers.h>
+#include <til/hash.h>
+#include <Utils.h>
 
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/utils.hpp"
@@ -2571,7 +2572,7 @@ namespace winrt::TerminalApp::implementation
                 auto startupActions = tab->BuildStartupActions(BuildStartupKind::Content);
                 _DetachTabFromWindow(tab);
                 _MoveContent(std::move(startupActions), windowId, 0);
-                _RemoveTab(*tab);
+                tab.Close();
                 if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
                 {
                     const auto tabTitle = tab->Title();
@@ -3614,7 +3615,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (!_tmuxControl)
             {
-                _tmuxControl = std::make_unique<TmuxControl>(*this);
+                _tmuxControl = std::make_shared<TmuxControl>(*this);
             }
 
             control.EnterTmuxControl([tmuxControl = _tmuxControl.get()](auto&& sender, auto&& args) {
@@ -5049,9 +5050,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_adjustProcessPriority() const
     {
         // Windowing is single-threaded, so this will not cause a race condition.
-        static bool supported{ true };
+        static uint64_t s_lastUpdateHash{ 0 };
+        static bool s_supported{ true };
 
-        if (!supported || !_hostingHwnd.has_value())
+        if (!s_supported || !_hostingHwnd.has_value())
         {
             return;
         }
@@ -5115,11 +5117,20 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
+        const auto hash = til::hash((void*)processes.data(), count * sizeof(HANDLE));
+
+        if (hash == s_lastUpdateHash)
+        {
+            return;
+        }
+
+        s_lastUpdateHash = hash;
         const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+
         if (S_FALSE == hr)
         {
             // Don't bother trying again or logging. The wrapper tells us it's unsupported.
-            supported = false;
+            s_supported = false;
             return;
         }
 
@@ -5705,7 +5716,7 @@ namespace winrt::TerminalApp::implementation
 
         _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
         // _RemoveTab will make sure to null out the _stashed.draggedTab
-        _RemoveTab(*_stashed.draggedTab);
+        _stashed.draggedTab.Close();
     }
 
     /// <summary>
