@@ -5,7 +5,6 @@
 #include "Command.h"
 #include "Command.g.cpp"
 
-#include <LibraryResources.h>
 #include <til/replace.h>
 #include <ScopedResourceLoader.h>
 
@@ -239,7 +238,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_name.has_value() || _name->name != value)
         {
-            _name = CommandNameOrResource{ .name = std::wstring{ value } };
+            if (value.empty())
+            {
+                _name.reset();
+            }
+            else
+            {
+                _name = CommandNameOrResource{ .name = std::wstring{ value } };
+            }
         }
     }
 

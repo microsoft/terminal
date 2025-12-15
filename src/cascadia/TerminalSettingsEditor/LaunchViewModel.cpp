@@ -6,7 +6,6 @@
 #include "LaunchViewModel.g.cpp"
 #include "EnumEntry.h"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
@@ -37,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"qps-PLOCM",
         L"ru",
         L"sr-Cyrl-RS",
+        L"uk-UA",
         L"zh-Hans",
         L"zh-Hant",
     };

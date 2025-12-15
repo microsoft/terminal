@@ -391,19 +391,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     //
     // Focus events in conpty are special, so don't flush those through either.
     // See GH#12799, GH#12900 for details
-    if (_pDispatch->IsVtInputEnabled() &&
-        id != CsiActionCodes::Win32KeyboardInput &&
-        id != CsiActionCodes::FocusIn &&
-        id != CsiActionCodes::FocusOut)
-    {
-        return false;
-    }
+    const auto vtInputEnabled = _pDispatch->IsVtInputEnabled();
 
     switch (id)
     {
     case CsiActionCodes::MouseDown:
     case CsiActionCodes::MouseUp:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
+
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
         const auto firstParameter = parameters.at(0).value_or(0);
@@ -432,6 +431,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         {
             return false;
         }
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         [[fallthrough]];
     case CsiActionCodes::ArrowUp:
     case CsiActionCodes::ArrowDown:
@@ -443,6 +446,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         short vkey = 0;
         if (_GetCursorKeysVkey(id, vkey))
         {
@@ -453,6 +460,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     }
     case CsiActionCodes::Generic:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         short vkey = 0;
         if (_GetGenericVkey(parameters.at(0), vkey))
         {
@@ -462,6 +473,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         return true;
     }
     case CsiActionCodes::CursorBackTab:
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
         return true;
     case CsiActionCodes::FocusIn:

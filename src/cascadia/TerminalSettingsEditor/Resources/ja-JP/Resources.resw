@@ -371,7 +371,7 @@
     <value>入力したテキストをセルにグループ化する方法を変更します。"Grapheme clusters" オプションは最も新しく Unicode で正しい方法ですが、UNIX では "wcswidth" は一般的な方法であり、"Windows コンソール" は Windows での動作方法をレプリケートします。この設定を変更するには、Windows ターミナルの再起動が必要です。この設定は、その中から起動されたアプリケーションにのみ適用されます。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
-    <value>Grapheme クラスター</value>
+    <value>書記素クラスター</value>
     <comment>The default choice between multiple graphics APIs.</comment>
   </data>
   <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
@@ -1346,7 +1346,7 @@
     <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
   </data>
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
-    <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはウィンドウを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
+    <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはペインを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
@@ -1390,7 +1390,7 @@
     <comment>An option to choose from for the "bell style" setting. When selected, notifications are silenced.</comment>
   </data>
   <data name="Globals_DisableAnimations.Header" xml:space="preserve">
-    <value>ウィンドウのアニメーションを無効にする</value>
+    <value>ペインのアニメーションを無効にする</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value disables the animations.</comment>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
@@ -1741,7 +1741,7 @@
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
-    <value>マウスをポイントしたときにフォーカス ウィンドウを自動的に表示する</value>
+    <value>マウスをポイントしたときにフォーカス ペインを自動的に表示する</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
   <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
@@ -1753,7 +1753,7 @@
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
-    <value>ウィンドウのアニメーション</value>
+    <value>ペインのアニメーション</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
   <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">

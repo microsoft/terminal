@@ -23,7 +23,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean NoProfilesModified { get; };
         Boolean NoProfilesAdded { get; };
         Boolean NoSchemesAdded { get; };
-        Boolean DisplayBadge { get; };
 
         // Views
         IVector<ExtensionPackageViewModel> ExtensionPackages { get; };

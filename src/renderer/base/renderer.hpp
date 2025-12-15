@@ -27,7 +27,7 @@ namespace Microsoft::Console::Render
         TimerHandle RegisterTimer(const char* description, TimerCallback routine);
         bool IsTimerRunning(TimerHandle handle) const;
         TimerDuration GetTimerInterval(TimerHandle handle) const;
-        void StarTimer(TimerHandle handle, TimerDuration delay);
+        void StartTimer(TimerHandle handle, TimerDuration delay);
         void StartRepeatingTimer(TimerHandle handle, TimerDuration interval);
         void StopTimer(TimerHandle handle);
 
@@ -102,7 +102,7 @@ namespace Microsoft::Console::Render
         void _waitUntilCanRender() noexcept;
 
         // Timer handling
-        void _starTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval);
+        void _startTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval);
         DWORD _calculateTimerMaxWait() noexcept;
         void _waitUntilTimerOrRedraw() noexcept;
         void _tickTimers() noexcept;
