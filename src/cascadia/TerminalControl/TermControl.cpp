@@ -1508,6 +1508,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.SendInput(text);
     }
 
+    void TermControl::InjectTextAtCursor(const winrt::hstring& text)
+    {
+        _core.InjectTextAtCursor(text);
+    }
+
     // Method Description:
     // - Manually handles key events for certain keys that can't be passed to us
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.

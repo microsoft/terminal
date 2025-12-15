@@ -30,6 +30,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void TmuxConnection::Close() noexcept
     {
+        StateChanged.raise(*this, nullptr);
     }
 
     winrt::guid TmuxConnection::SessionId() const noexcept

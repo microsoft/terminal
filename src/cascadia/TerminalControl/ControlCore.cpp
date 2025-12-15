@@ -11,13 +11,12 @@
 #include <DefaultSettings.h>
 #include <LibraryResources.h>
 #include <unicode.hpp>
-#include <utils.hpp>
-#include <WinUser.h>
 
 #include "EventArgs.h"
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
+#include "../../terminal/adapter/adaptDispatch.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../../types/inc/utils.hpp"
 
@@ -1458,6 +1457,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->ClearSelection();
         _updateSelectionUI();
         _terminal->TrySnapOnInput();
+    }
+
+    void ControlCore::InjectTextAtCursor(const winrt::hstring& text)
+    {
+        if (text.empty())
+        {
+            return;
+        }
+
+        const auto lock = _terminal->LockForWriting();
+        std::wstring_view remaining{ text };
+
+        // Process one line at a time
+        for (;;)
+        {
+            // Get the (CR)LF position
+            const auto lf = std::min(remaining.size(), remaining.find(L'\n'));
+
+            // Strip off the CR
+            auto lineEnd = lf;
+            if (lineEnd != 0 && remaining[lineEnd - 1] == L'\r')
+            {
+                lineEnd -= 1;
+            }
+
+            // Split into line and whatever comes after
+            const auto line = remaining.substr(0, lineEnd);
+            remaining = remaining.substr(std::min(remaining.size(), lf + 1));
+
+            // This will not just print the line but also handle delay wrap, etc.
+            _terminal->GetAdaptDispatch().PrintString(line);
+
+            if (remaining.empty())
+            {
+                break;
+            }
+
+            _terminal->GetAdaptDispatch().LineFeed(DispatchTypes::LineFeedType::DependsOnMode);
+        }
     }
 
     FontInfo ControlCore::GetFont() const

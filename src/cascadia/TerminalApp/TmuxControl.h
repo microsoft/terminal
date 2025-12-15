@@ -34,8 +34,8 @@ namespace winrt::TerminalApp::implementation
             Ignore,
             DiscoverNewWindow,
             DiscoverWindows,
-            ListPanes,
             CapturePane,
+            DiscoverPanes,
         };
 
         struct ResponseInfo
@@ -45,13 +45,7 @@ namespace winrt::TerminalApp::implementation
             {
                 struct
                 {
-                    til::CoordType history;
-                } listPanes;
-                struct
-                {
                     int64_t paneId;
-                    til::CoordType cursorX;
-                    til::CoordType cursorY;
                 } capturePane;
             } data;
         };
@@ -80,14 +74,29 @@ namespace winrt::TerminalApp::implementation
             int64_t id = -1;
         };
 
+        // AttachedPane should not need to be copied. Anything else would be a mistake.
+        // But if we added a constructor to it, we could not use designated initializers anymore.
+        // This marker makes it possible.
+        struct MoveOnlyMarker
+        {
+            MoveOnlyMarker() = default;
+            MoveOnlyMarker(MoveOnlyMarker&&) = default;
+            MoveOnlyMarker& operator=(MoveOnlyMarker&&) = default;
+            MoveOnlyMarker(const MoveOnlyMarker&) = delete;
+            MoveOnlyMarker& operator=(const MoveOnlyMarker&) = delete;
+        };
+
         struct AttachedPane
         {
             int64_t windowId = -1;
             int64_t paneId = -1;
-            winrt::Microsoft::Terminal::Control::TermControl control{ nullptr };
             winrt::Microsoft::Terminal::TerminalConnection::TmuxConnection connection{ nullptr };
+            winrt::Microsoft::Terminal::Control::TermControl control{ nullptr };
             std::wstring outputBacklog;
             bool initialized = false;
+            bool ignoreOutput = false;
+
+            [[msvc::no_unique_address]] MoveOnlyMarker moveOnlyMarker;
         };
 
         safe_void_coroutine _parseLine(std::wstring line);
@@ -99,6 +108,7 @@ namespace winrt::TerminalApp::implementation
         void _handleWindowRenamed(int64_t windowId, winrt::hstring name);
         void _handleWindowClose(int64_t windowId);
         void _handleWindowPaneChanged(int64_t windowId, int64_t paneId);
+        void _handleLayoutChange(int64_t windowId, std::wstring_view layout);
         void _handleResponse(std::wstring_view result);
 
         void _sendSetOption(std::wstring_view option);
@@ -106,10 +116,10 @@ namespace winrt::TerminalApp::implementation
         void _handleResponseDiscoverWindows(std::wstring_view response);
         void _sendDiscoverNewWindow(int64_t windowId);
         void _handleResponseDiscoverNewWindow(std::wstring_view response);
-        void _sendListPanes(int64_t windowId, til::CoordType history);
-        void _handleResponseListPanes(const ResponseInfo& info, std::wstring_view response);
-        void _sendCapturePane(int64_t paneId, til::CoordType cursorX, til::CoordType cursorY, til::CoordType history);
-        void _handleResponseCapturePane(const ResponseInfo& info, std::wstring response);
+        void _sendCapturePane(int64_t paneId, til::CoordType history);
+        void _handleResponseCapturePane(const ResponseInfo& info, std::wstring_view response);
+        void _sendDiscoverPanes(int64_t windowId);
+        void _handleResponseDiscoverPanes(std::wstring_view response);
         void _sendNewWindow();
         void _sendKillWindow(int64_t windowId);
         void _sendKillPane(int64_t paneId);
@@ -126,13 +136,12 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _layoutCreateRecursive(int64_t windowId, std::wstring_view& remaining, TmuxLayout parent);
         std::wstring_view _layoutStripHash(std::wstring_view str);
         TmuxLayout _layoutParseNextToken(std::wstring_view& remaining);
-        float _layoutComputeSplitSize(til::CoordType newSize, til::CoordType originSize, winrt::Microsoft::Terminal::Settings::Model::SplitDirection direction) const;
 
         void _deliverOutputToPane(int64_t paneId, const std::wstring_view text);
         winrt::com_ptr<Tab> _getTab(int64_t windowId) const;
-        std::shared_ptr<Pane> _newPane(int64_t windowId, int64_t paneId);
         void _newTab(int64_t windowId, winrt::hstring name, std::shared_ptr<Pane> pane);
-        void _OpenNewTerminalViaDropdown();
+        std::pair<AttachedPane&, std::shared_ptr<Pane>> _newPane(int64_t windowId, int64_t paneId);
+        void _openNewTerminalViaDropdown();
 
         TerminalPage& _page; // Non-owning, because TerminalPage owns us
         winrt::Windows::System::DispatcherQueue _dispatcherQueue{ nullptr };
@@ -153,8 +162,8 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token _newTabClickRevoker;
 
         std::deque<ResponseInfo> _commandQueue;
-        std::unordered_map<int64_t, winrt::com_ptr<Tab>> _attachedWindows;
         std::unordered_map<int64_t, AttachedPane> _attachedPanes;
+        std::unordered_map<int64_t, winrt::com_ptr<Tab>> _attachedWindows;
 
         int64_t _sessionId = -1;
         int64_t _activePaneId = -1;

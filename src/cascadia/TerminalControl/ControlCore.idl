@@ -132,6 +132,7 @@ namespace Microsoft.Terminal.Control
                               Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void SendInput(String text);
         void PasteText(String text);
+        void InjectTextAtCursor(String text);
         void SelectAll();
         void ClearSelection();
         Boolean ToggleBlockSelection();

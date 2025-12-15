@@ -116,6 +116,7 @@ public:
     int ViewEndIndex() const noexcept;
     bool IsFocused() const noexcept;
 
+    ::Microsoft::Console::VirtualTerminal::AdaptDispatch& GetAdaptDispatch() noexcept;
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
 
@@ -342,6 +343,7 @@ private:
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 
     RenderSettings _renderSettings;
+    ::Microsoft::Console::VirtualTerminal::AdaptDispatch* _adaptDispatch;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     ::Microsoft::Console::VirtualTerminal::TerminalInput _terminalInput;
 

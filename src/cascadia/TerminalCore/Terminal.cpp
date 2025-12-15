@@ -51,6 +51,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
 
     auto dispatch = std::make_unique<AdaptDispatch>(*this, &renderer, _renderSettings, _terminalInput);
+    _adaptDispatch = dispatch.get();
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 }
@@ -1037,6 +1038,12 @@ int Terminal::ViewEndIndex() const noexcept
 bool Terminal::IsFocused() const noexcept
 {
     return _focused;
+}
+
+AdaptDispatch& Microsoft::Terminal::Core::Terminal::GetAdaptDispatch() noexcept
+{
+    _assertLocked();
+    return *_adaptDispatch;
 }
 
 RenderSettings& Terminal::GetRenderSettings() noexcept

@@ -2572,7 +2572,7 @@ namespace winrt::TerminalApp::implementation
                 auto startupActions = tab->BuildStartupActions(BuildStartupKind::Content);
                 _DetachTabFromWindow(tab);
                 _MoveContent(std::move(startupActions), windowId, 0);
-                tab.Close();
+                _RemoveTab(*tab);
                 if (auto autoPeer = Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this))
                 {
                     const auto tabTitle = tab->Title();
@@ -5716,7 +5716,7 @@ namespace winrt::TerminalApp::implementation
 
         _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
         // _RemoveTab will make sure to null out the _stashed.draggedTab
-        _stashed.draggedTab.Close();
+        _RemoveTab(*_stashed.draggedTab);
     }
 
     /// <summary>

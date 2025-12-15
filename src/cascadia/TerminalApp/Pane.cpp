@@ -2298,8 +2298,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _firstChild->Closed(_firstClosedToken);
         _secondChild->Closed(_secondClosedToken);
         // If we are not a leaf we should create a new pane that contains our children
-        auto first = std::make_shared<Pane>(_firstChild, _secondChild, _splitState, _desiredSplitPosition);
-        _firstChild = first;
+        _firstChild = std::make_shared<Pane>(_firstChild, _secondChild, _splitState, _desiredSplitPosition);
     }
     else
     {

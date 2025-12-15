@@ -131,6 +131,7 @@ namespace Microsoft.Terminal.Control
         Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
         Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void RawWriteString(String text);
+        void InjectTextAtCursor(String text);
 
         void BellLightOn();
 
