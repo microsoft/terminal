@@ -67,8 +67,9 @@ Abstract:
 #include <winrt/Windows.UI.Composition.h>
 
 #include <winrt/TerminalApp.h>
-#include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.Control.h>
+#include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.UI.h>
 
 #include <wil/cppwinrt.h>
@@ -94,3 +95,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
+
+#include <LibraryResources.h>

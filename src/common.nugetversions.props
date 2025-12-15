@@ -4,11 +4,11 @@
   <Import Condition="'$(PgoTarget)' == 'true' And ('$(Platform)'=='x64' or '$(Platform)'=='arm64') And '$(PGOBuildMode)'!='' And Exists('$(SolutionDir)\build\PGO\Terminal.PGO.props')" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
 
   <!-- CppWinrt -->
-  <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.230207.1\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="'$(TerminalCppWinrt)' == 'true' and Exists('$(MSBuildThisFileDirectory)..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <!-- TAEF -->
   <PropertyGroup>
-    <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.93.240607003</TAEFPackagePathRoot>
+    <TAEFPackagePathRoot>$(MSBuildThisFileDirectory)..\packages\Microsoft.Taef.10.100.251104001</TAEFPackagePathRoot>
   </PropertyGroup>
 
   <!-- AppiumWebDriver -->

@@ -31,7 +31,7 @@ stages:
         - template: ./templates-v2/job-build-project.yml
           parameters:
             pool: # This only runs in CI
-                name: SHINE-OSS-L
+              name: SHINE-OSS-L
             buildPlatforms: [x64]
             buildConfigurations: [Release]
             buildEverything: true

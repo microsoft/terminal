@@ -50,6 +50,7 @@ extends:
           parameters:
             pool: { type: windows }
             variables:
+              ob_sdl_prefast_enabled: false # This is a collection of powershell scripts
               ob_git_checkout: false # This job checks itself out
               ob_git_skip_checkout_none: true
               ob_outputDirectory: "$(Build.SourcesDirectory)/_none"

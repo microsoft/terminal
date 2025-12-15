@@ -30,13 +30,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:
-        BellSoundViewModel(hstring path);
+        BellSoundViewModel(const Model::IMediaResource& resource);
 
+        hstring Path() const { return _resource.Path(); }
+        bool FileExists() const { return _resource.Ok(); }
         hstring DisplayPath() const;
         hstring SubText() const;
-        VIEW_MODEL_OBSERVABLE_PROPERTY(bool, FileExists, true);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, Path);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, ShowDirectory);
+
+    private:
+        Model::IMediaResource _resource;
     };
 
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
@@ -46,10 +49,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
-        static Windows::Foundation::Collections::IVector<IInspectable> BuiltInIcons() noexcept { return _BuiltInIcons; };
+        static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> BuiltInIcons() noexcept { return _BuiltInIcons; };
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
-        Model::TerminalSettings TermSettings() const;
+        Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
@@ -81,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::hstring EvaluatedIcon() const
         {
-            return _profile.EvaluatedIcon();
+            return _profile.Icon().Resolved();
         }
         Windows::Foundation::IInspectable CurrentIconType() const noexcept
         {
@@ -94,6 +97,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool UsingBuiltInIcon() const;
         bool UsingEmojiIcon() const;
         bool UsingImageIcon() const;
+        winrt::hstring IconPath() const { return _profile.Icon().Path(); }
+        void IconPath(const winrt::hstring& path)
+        {
+            Icon(Model::MediaResourceHelper::FromString(path));
+            _NotifyChanges(L"Icon", L"IconPath");
+        }
 
         // starting directory
         hstring CurrentStartingDirectoryPreview() const;
@@ -103,8 +112,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
-        Editor::AppearanceViewModel DefaultAppearance();
-        Editor::AppearanceViewModel UnfocusedAppearance();
+        Editor::AppearanceViewModel DefaultAppearance() const;
+        Editor::AppearanceViewModel UnfocusedAppearance() const;
         bool HasUnfocusedAppearance();
         bool EditableUnfocusedAppearance() const noexcept;
         bool ShowUnfocusedAppearance();
@@ -118,12 +127,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool Orphaned() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
+        Windows::UI::Color TabColorPreview() const;
+        Windows::UI::Color TabThemeColorPreview() const;
 
         til::typed_event<Editor::ProfileViewModel, Editor::DeleteProfileEventArgs> DeleteProfileRequested;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::BellSoundViewModel>, CurrentBellSounds);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, CurrentBuiltInIcon);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::EnumEntry, CurrentBuiltInIcon, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentEmojiIcon);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
@@ -186,10 +197,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();
         void _MarkDuplicateBellSoundDirectories();
-        safe_void_coroutine _CheckBellSoundsExistence();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-        static Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable> _BuiltInIcons;
+        static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> _BuiltInIcons;
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;

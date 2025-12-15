@@ -452,6 +452,14 @@
     <value>Open windows from a previous session</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayoutAndContent.Content" xml:space="preserve">
+    <value>Restore window layout and content</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session and preserve the content.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
+    <value>Restore window layout</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
+  </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
@@ -686,7 +694,11 @@
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
-    <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
+    <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
+  </data>
+  <data name="Nav_EditAction.Content" xml:space="preserve">
+    <value>Edit Action...</value>
+    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>Extensions</value>
@@ -1740,6 +1752,14 @@
     <value>Automatically focus pane on mouse hover</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Adjust terminal font size by scrolling while holding the Ctrl key</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Adjust terminal opacity by scrolling while holding the Ctrl and Shift keys</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
@@ -1796,6 +1816,42 @@
     <value>Delete the unfocused appearance for this profile.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
+  <data name="Actions_Disclaimer.Content" xml:space="preserve">
+    <value>Learn more about actions</value>
+    <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
+  </data>
+  <data name="Actions_DeleteButton2.Text" xml:space="preserve">
+    <value>Delete action</value>
+    <comment>Button label that deletes the selected action.</comment>
+  </data>
+  <data name="Actions_Name.Text" xml:space="preserve">
+    <value>Action name</value>
+    <comment>Label for the text box that edits the action name.</comment>
+  </data>
+  <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
+    <value>Action name</value>
+    <comment>Placeholder text for the text box where the user can edit the action name.</comment>
+  </data>
+  <data name="Actions_ShortcutAction.Text" xml:space="preserve">
+    <value>Action type</value>
+    <comment>Label for the combo box that edits the action type.</comment>
+  </data>
+  <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Keybindings</value>
+    <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_Arguments.Text" xml:space="preserve">
+    <value>Additional arguments</value>
+    <comment>Label for the list of editable arguments for the currently selected action.</comment>
+  </data>
+  <data name="Actions_Keybindings.Text" xml:space="preserve">
+    <value>Keybindings</value>
+    <comment>Label for the list of editable keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_AddKeyChord.Text" xml:space="preserve">
+    <value>Add keybinding</value>
+    <comment>Button label that adds a keybinding to the current action.</comment>
+  </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete key binding</value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>
@@ -1803,6 +1859,14 @@
   <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>Are you sure you want to delete this key binding?</value>
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Yes, delete action</value>
+    <comment>Button label that confirms deletion of an action.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Are you sure you want to delete this action?</value>
+    <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
     <value>Invalid key chord. Please enter a valid key chord.</value>
@@ -1847,6 +1911,278 @@
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Action</value>
     <comment>Label for a control that sets the action of a key binding.</comment>
+  </data>
+  <data name="Actions_NullEnumValue" xml:space="preserve">
+    <value>Use global setting</value>
+    <comment>An option to choose from for nullable enums. Clears the enum value.</comment>
+  </data>
+  <data name="Actions_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+    <comment>An option to choose from for the "copy format". Copies content in HTML format.</comment>
+  </data>
+  <data name="Actions_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+    <comment>An option to choose from for the "copy format". Copies content in Rich Text Format (RTF).</comment>
+  </data>
+  <data name="Actions_SplitDirectionAuto.Content" xml:space="preserve">
+    <value>Automatic</value>
+    <comment>An option to choose from for the "split direction". Automatically determines the split direction.</comment>
+  </data>
+  <data name="Actions_SplitDirectionUp.Content" xml:space="preserve">
+    <value>Up</value>
+    <comment>An option to choose from for the "split direction". Splits upward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionRight.Content" xml:space="preserve">
+    <value>Right</value>
+    <comment>An option to choose from for the "split direction". Splits to the right.</comment>
+  </data>
+  <data name="Actions_SplitDirectionDown.Content" xml:space="preserve">
+    <value>Down</value>
+    <comment>An option to choose from for the "split direction". Splits downward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionLeft.Content" xml:space="preserve">
+    <value>Left</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitDirectionVertical.Content" xml:space="preserve">
+    <value>Vertical</value>
+    <comment>An option to choose from for the "split direction". Splits vertically.</comment>
+  </data>
+  <data name="Actions_SplitDirectionHorizontal.Content" xml:space="preserve">
+    <value>Horizontal</value>
+    <comment>An option to choose from for the "split direction". Splits horizontally.</comment>
+  </data>
+  <data name="Actions_SplitTypeManual.Content" xml:space="preserve">
+    <value>Manual</value>
+    <comment>An option to choose from for the "split type". Creates a manual split.</comment>
+  </data>
+  <data name="Actions_SplitTypeDuplicate.Content" xml:space="preserve">
+    <value>Duplicate</value>
+    <comment>An option to choose from for the "split type". Creates a split by duplicating the current session.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "resize direction". None option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionLeft.Content" xml:space="preserve">
+    <value>Left</value>
+    <comment>An option to choose from for the "resize direction". Left option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionRight.Content" xml:space="preserve">
+    <value>Right</value>
+    <comment>An option to choose from for the "resize direction". Right option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionUp.Content" xml:space="preserve">
+    <value>Up</value>
+    <comment>An option to choose from for the "resize direction". Up option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionDown.Content" xml:space="preserve">
+    <value>Down</value>
+    <comment>An option to choose from for the "resize direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "focus direction". None option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionLeft.Content" xml:space="preserve">
+    <value>Left</value>
+    <comment>An option to choose from for the "focus direction". Left option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionRight.Content" xml:space="preserve">
+    <value>Right</value>
+    <comment>An option to choose from for the "focus direction". Right option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionUp.Content" xml:space="preserve">
+    <value>Up</value>
+    <comment>An option to choose from for the "focus direction". Up option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionDown.Content" xml:space="preserve">
+    <value>Down</value>
+    <comment>An option to choose from for the "focus direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPrevious.Content" xml:space="preserve">
+    <value>Previous</value>
+    <comment>An option to choose from for the "focus direction". Previous option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPreviousInOrder.Content" xml:space="preserve">
+    <value>Previous In Order</value>
+    <comment>An option to choose from for the "focus direction". Previous in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNextInOrder.Content" xml:space="preserve">
+    <value>Next In Order</value>
+    <comment>An option to choose from for the "focus direction". Next in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionFirst.Content" xml:space="preserve">
+    <value>First</value>
+    <comment>An option to choose from for the "focus direction". First option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionParent.Content" xml:space="preserve">
+    <value>Parent</value>
+    <comment>An option to choose from for the "focus direction". Parent option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionChild.Content" xml:space="preserve">
+    <value>Child</value>
+    <comment>An option to choose from for the "focus direction". Child option.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsFile.Content" xml:space="preserve">
+    <value>Settings File</value>
+    <comment>An option to choose from for the "settings target". Targets the settings file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDefaultsFile.Content" xml:space="preserve">
+    <value>Defaults File</value>
+    <comment>An option to choose from for the "settings target". Targets the defaults file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetAllFiles.Content" xml:space="preserve">
+    <value>All Files</value>
+    <comment>An option to choose from for the "settings target". Targets all files.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsUI.Content" xml:space="preserve">
+    <value>Settings UI</value>
+    <comment>An option to choose from for the "settings target". Targets the settings UI.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDirectory.Content" xml:space="preserve">
+    <value>Directory</value>
+    <comment>An option to choose from for the "settings target". Targets the directory.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "move tab direction". No movement.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>Forward</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>Backward</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
+    <value>Previous</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionNext.Content" xml:space="preserve">
+    <value>Next</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the next mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionFirst.Content" xml:space="preserve">
+    <value>First</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the first mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionLast.Content" xml:space="preserve">
+    <value>Last</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the last mark.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeAction.Content" xml:space="preserve">
+    <value>Action</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in action mode.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeCommandLine.Content" xml:space="preserve">
+    <value>Command Line</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in command line mode.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "suggestions source". No suggestions source.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceTasks.Content" xml:space="preserve">
+    <value>Tasks</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from tasks.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceSnippets.Content" xml:space="preserve">
+    <value>Snippets</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from snippets.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceCommandHistory.Content" xml:space="preserve">
+    <value>Command History</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from command history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceDirectoryHistory.Content" xml:space="preserve">
+    <value>Directory History</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from directory history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceQuickFix.Content" xml:space="preserve">
+    <value>Quick Fixes</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from quick fixes.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceAll.Content" xml:space="preserve">
+    <value>All</value>
+    <comment>An option to choose from for the "suggestions source". Includes all suggestion sources.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "find match direction". No direction selected.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNext.Content" xml:space="preserve">
+    <value>Next</value>
+    <comment>An option to choose from for the "find match direction". Finds the next match.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionPrev.Content" xml:space="preserve">
+    <value>Previous</value>
+    <comment>An option to choose from for the "find match direction". Finds the previous match.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorAny.Content" xml:space="preserve">
+    <value>Any</value>
+    <comment>An option to choose from for the "desktop behavior". Applies to any desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorToCurrent.Content" xml:space="preserve">
+    <value>To Current</value>
+    <comment>An option to choose from for the "desktop behavior". Moves to the current desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorOnCurrent.Content" xml:space="preserve">
+    <value>On Current</value>
+    <comment>An option to choose from for the "desktop behavior". Stays on the current desktop.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorAny.Content" xml:space="preserve">
+    <value>Any</value>
+    <comment>An option to choose from for the "monitor behavior". Applies to any monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToCurrent.Content" xml:space="preserve">
+    <value>To Current</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the current monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToMouse.Content" xml:space="preserve">
+    <value>To Mouse</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the monitor where the mouse is located.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScreen.Content" xml:space="preserve">
+    <value>Screen</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the screen.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScrollback.Content" xml:space="preserve">
+    <value>Scrollback</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeAll.Content" xml:space="preserve">
+    <value>All</value>
+    <comment>An option to choose from for the "clear buffer type". Clears both the screen and the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionPrev.Content" xml:space="preserve">
+    <value>Previous</value>
+    <comment>An option to choose from for the "select output direction". Selects the previous output.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionNext.Content" xml:space="preserve">
+    <value>Next</value>
+    <comment>An option to choose from for the "select output direction". Selects the next output.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Most Recently Used</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs based on most recently used order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>In Order</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs in sequential order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>An option to choose from for the "tab switcher mode". Disables tab switching.</comment>
+  </data>
+  <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>No color</value>
+    <comment>Label for a button directing the user to opt out of choosing a color.</comment>
+  </data>
+  <data name="Actions_Browse.Content" xml:space="preserve">
+    <value>Browse...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Input your desired keyboard shortcut.</value>
@@ -1920,10 +2256,26 @@
     <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Warn when trying to paste more than 5 KiB of characters</value>
+    <value>Warn when pasting more than 5 KiB</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Warn when trying to paste a "new line" character</value>
+    <value>Warn when pasting newlines</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>If your shell does not support "bracketed paste" mode, we recommend setting this to "Always" for security reasons.</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>Only if "bracketed paste" is disabled</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>Always</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>Never</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows Terminal is running in portable mode.</value>
@@ -2059,6 +2411,10 @@
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>Use scheme color</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Use theme color</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
     <value>None</value>

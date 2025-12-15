@@ -253,12 +253,16 @@ static FillConsoleResult FillConsoleImpl(SCREEN_INFORMATION& screenInfo, FillCon
         ImageSlice::EraseCells(screenInfo.GetTextBuffer(), startingCoordinate, result.cellsModified);
     }
 
-    if (screenBuffer.HasAccessibilityEventing())
+    if (result.cellsModified > 0)
     {
-        // Notify accessibility
         auto endingCoordinate = startingCoordinate;
-        bufferSize.WalkInBounds(endingCoordinate, result.cellsModified);
-        screenBuffer.NotifyAccessibilityEventing(startingCoordinate.x, startingCoordinate.y, endingCoordinate.x, endingCoordinate.y);
+        if (result.cellsModified > 1)
+        {
+            bufferSize.WalkInBounds(endingCoordinate, result.cellsModified - 1);
+        }
+
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.RegionChanged(startingCoordinate, endingCoordinate);
     }
 
     return result;

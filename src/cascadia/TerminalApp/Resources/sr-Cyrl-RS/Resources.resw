@@ -1,0 +1,985 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
+    <value>Подешавања нису могла да се учитау из фајла. Проверите има ли синтаксних грешака, укључујући запете на крају реда.</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>У листи профила није могао да се пронађе ваш подразумевани профил - користи се први профил. Проверите да ли се "defaultProfile" подудара са GUID неког од ваших профила.</value>
+    <comment>{Locked="\"defaultProfile\""}</comment>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>У вашем фајлу подешавања је пронађено више профила са истим GUID - дупликати се игноришу. Обезбедите да је GUID сваког профила јединствен.</value>
+  </data>
+  <data name="UnknownColorSchemeText" xml:space="preserve">
+    <value>Пронађен је профил са неисправном вредности "colorScheme". Тај профил ће користити подразумеване боје. Када постављате "colorScheme", будите сигурни да се вредност подудара са вредности "name" профила боја у "schemes" листи.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>У вашим подешавањима није пронађен ниједан профил.</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>У вашим подешавањима су сви профили скривени. Морате да имате барем један профил који није сакривен.</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>Подешавања нису могла поново да се учитају из фајла. Проверите има ли синтаксних грешака, укључујући запете на крају реда.</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>Привремено се користе подразумевана подешавања Windows Терминала.</value>
+  </data>
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
+    <value>Није успело учитавање подешавања</value>
+  </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>Наишло се на грешке током учитавања корисничких подешавања</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>Упозорење:</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>„{0}” се не извршава на вашој машини. Због тога Терминал можда неће моћи да прима улаз са тастатуре.</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>Није успело поновно учитавање подешавања</value>
+  </data>
+  <data name="FeedbackUriValue" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2125419</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
+  <data name="AboutMenuItem" xml:space="preserve">
+    <value>О програму</value>
+  </data>
+  <data name="FeedbackMenuItem" xml:space="preserve">
+    <value>Повратне информације</value>
+  </data>
+  <data name="SettingsMenuItem" xml:space="preserve">
+    <value>Подешавања</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>Затвори све</value>
+  </data>
+  <data name="Quit" xml:space="preserve">
+    <value>Напусти</value>
+  </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>Више панела</value>
+  </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>Затвори</value>
+  </data>
+  <data name="TabMoveSubMenu" xml:space="preserve">
+    <value>Премести картицу</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>Затвори картице на десној страни</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>Затвори остале картице</value>
+  </data>
+  <data name="TabClose" xml:space="preserve">
+    <value>Затвори картицу</value>
+  </data>
+  <data name="PaneClose" xml:space="preserve">
+    <value>Затвори панел</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Подели картицу</value>
+  </data>
+  <data name="SplitPaneText" xml:space="preserve">
+    <value>Подели панел</value>
+  </data>
+  <data name="SplitPaneToolTipText" xml:space="preserve">
+    <value>Десни клик за смерове поделе - десно/доле/горе/лево</value>
+  </data>
+  <data name="SplitPaneDownText" xml:space="preserve">
+    <value>Подели панел наниже</value>
+  </data>
+  <data name="SplitPaneRightText" xml:space="preserve">
+    <value>Подели панел удесно</value>
+  </data>
+  <data name="SplitPaneUpText" xml:space="preserve">
+    <value>Подели панел навише</value>
+  </data>
+  <data name="SplitPaneLeftText" xml:space="preserve">
+    <value>Подели панел улево</value>
+  </data>
+  <data name="SplitPaneDuplicateText" xml:space="preserve">
+    <value>Дуплирај</value>
+  </data>
+  <data name="SwapPaneText" xml:space="preserve">
+    <value>Замени панел</value>
+  </data>
+  <data name="SwapPaneDownText" xml:space="preserve">
+    <value>Замени са панелом испод</value>
+  </data>
+  <data name="SwapPaneRightText" xml:space="preserve">
+    <value>Замени са панелом десно</value>
+  </data>
+  <data name="SwapPaneUpText" xml:space="preserve">
+    <value>Замени са панелом изнад</value>
+  </data>
+  <data name="SwapPaneLeftText" xml:space="preserve">
+    <value>Замени са панелом лево</value>
+  </data>
+  <data name="TogglePaneZoomText" xml:space="preserve">
+    <value>Укљ./искљ. зум у панел</value>
+  </data>
+  <data name="CloseOtherPanesText" xml:space="preserve">
+    <value>Затвори остале панеле</value>
+  </data>
+  <data name="SearchWebText" xml:space="preserve">
+    <value>Претрага веба</value>
+  </data>
+  <data name="TabColorChoose" xml:space="preserve">
+    <value>Промени боју картице</value>
+  </data>
+  <data name="TabColorCustomButton.Content" xml:space="preserve">
+    <value>Произвољна</value>
+  </data>
+  <data name="TabColorClearButton.Content" xml:space="preserve">
+    <value>Ресетуј</value>
+  </data>
+  <data name="RenameTabText" xml:space="preserve">
+    <value>Промени име картице</value>
+  </data>
+  <data name="DuplicateTabText" xml:space="preserve">
+    <value>Дуплирај картицу</value>
+  </data>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Не може да се пронађе један или више ресурса (као што је икона или backgroundImage) наведених у вашим подешавањима.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
+  </data>
+  <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
+    <value>Током парсирања ваших пречица пронађена су упозорења:</value>
+  </data>
+  <data name="TooManyKeysForChord" xml:space="preserve">
+    <value>• Пронађена је пречица са превише стрингова за "keys" низ. Требало би да постоји само једна стринг вредност у низу "keys".</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="FailedToParseSubCommands" xml:space="preserve">
+    <value>• Није успело парсирање свих поткоманди угнеждене команде.</value>
+  </data>
+  <data name="MissingRequiredParameter" xml:space="preserve">
+    <value>• Пронађена је пречица којој недостаје обавезна вредност параметра. Ова пречица ће се игнорисати.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="UnknownTheme" xml:space="preserve">
+    <value>• Наведена "theme" није пронађена у листи тема. Привремено се употребљава подразумевана вредност.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>Особина "globals" је застарела - ваша подешавања би требало да се ажурирају. </value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefUrl" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2128258</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>За више информација, погледајте следећу веб страницу.</value>
+  </data>
+  <data name="FailedToParseCommandJson" xml:space="preserve">
+    <value>Није успело развијање команде којој је постављено "iterateOn". Ова команда ће се игнорисати.</value>
+    <comment>{Locked="\"iterateOn\""} </comment>
+  </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>Пронађена је команда са неисправном вредности "colorScheme". Ова команда ће се игнорисати. Када постављате "colorScheme", обезбедите да се вредност подудара са "name" вредности шеме боја у "schemes" листи.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>Пронађена је "splitPane" команда са неисправном вредности "size". Ова команда ће се игнорисати. Обезбедите да је вредност између 0 и 1, искључиво.</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>Није успело парсирање "startupActions".</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
+  <data name="InvalidProfileEnvironmentVariables" xml:space="preserve">
+    <value>Пронађено је више променљивих окружења са истим именом исписаним различитом величином слова (мала/велика) - користиће се само једна вредност.</value>
+  </data>
+  <data name="CmdCommandArgDesc" xml:space="preserve">
+    <value>Необавезна команда, са аргументима, која ће да се покрене у новој картици или панелу</value>
+  </data>
+  <data name="SaveSnippetDesc" xml:space="preserve">
+    <value>Чува командну линију као акцију уноса</value>
+  </data>
+  <data name="SaveSnippetArgDesc" xml:space="preserve">
+    <value>Необавезни аргумент</value>
+  </data>
+  <data name="KeyChordArgDesc" xml:space="preserve">
+    <value>Необавезни аргумент</value>
+  </data>
+  <data name="CmdFocusTabDesc" xml:space="preserve">
+    <value>Премешта фокус на другу картицу</value>
+  </data>
+  <data name="CmdFocusTabNextArgDesc" xml:space="preserve">
+    <value>Премешта фокус на наредну картицу</value>
+  </data>
+  <data name="CmdFTDesc" xml:space="preserve">
+    <value>Алијас за "focus-tab" поткоманду.</value>
+    <comment>{Locked="\"focus-tab\""}</comment>
+  </data>
+  <data name="CmdFocusTabPrevArgDesc" xml:space="preserve">
+    <value>Премешта фокус на претходну картицу</value>
+  </data>
+  <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
+    <value>Премешта фокус на картицу са наведеним индексом</value>
+  </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>Премешта фокусирани панел у картицу са наведеним индексом</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>Премешта фокусирани панел у другу картицу</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>Алијас за "move-pane" поткоманду.</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>Наводи величину као проценат панела родитеља. Исправне вредности су између (0,1), искључиво.</value>
+  </data>
+  <data name="CmdNewTabDesc" xml:space="preserve">
+    <value>Креира нову картицу</value>
+  </data>
+  <data name="CmdNTDesc" xml:space="preserve">
+    <value>Алијас за "new-tab" поткоманду.</value>
+    <comment>{Locked="\"new-tab\""}</comment>
+  </data>
+  <data name="CmdFocusPaneDesc" xml:space="preserve">
+    <value>Премешта фокус на други панел</value>
+  </data>
+  <data name="CmdFPDesc" xml:space="preserve">
+    <value>Алијас за "focus-pane" поткоманду.</value>
+    <comment>{Locked="\"focus-pane\""}</comment>
+  </data>
+  <data name="CmdFocusPaneTargetArgDesc" xml:space="preserve">
+    <value>Фокусира панел са наведеним индексом</value>
+  </data>
+  <data name="CmdProfileArgDesc" xml:space="preserve">
+    <value>Отвара наведеним профилом. Прихвата или име или GUID профила</value>
+  </data>
+  <data name="CmdSessionIdArgDesc" xml:space="preserve">
+    <value>Поставља WT_SESSION променљиву; мора бити GUID</value>
+  </data>
+  <data name="CmdSplitPaneDesc" xml:space="preserve">
+    <value>Креира нови подељени панел</value>
+  </data>
+  <data name="CmdSPDesc" xml:space="preserve">
+    <value>Алијас за "split-pane" поткоманду.</value>
+    <comment>{Locked="\"split-pane\""}</comment>
+  </data>
+  <data name="CmdSplitPaneHorizontalArgDesc" xml:space="preserve">
+    <value>Креира нову панел као хоризонталну поделу (као [-])</value>
+  </data>
+  <data name="CmdSplitPaneVerticalArgDesc" xml:space="preserve">
+    <value>Креира нови панел као вертикалну поделу (као [|])</value>
+  </data>
+  <data name="CmdSplitPaneDuplicateArgDesc" xml:space="preserve">
+    <value>Креира нови панел дуплирањем профила фокусираног панела</value>
+  </data>
+  <data name="CmdStartingDirArgDesc" xml:space="preserve">
+    <value>Отвара у наведеном директоријуму, а не у оном постављеном у "startingDirectory" профила</value>
+    <comment>{Locked="\"startingDirectory\""}</comment>
+  </data>
+  <data name="CmdTitleArgDesc" xml:space="preserve">
+    <value>Отвара терминал са наведеним насловом, а не са оним постављеним у "title" профила</value>
+    <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>Отвара картицу са наведеном бојом, у #ццззпп формату</value>
+  </data>
+  <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
+    <value>Отвара картицу са tabTitle које преиначује подразумевани наслов и уз игнорисање поруке за промену наслова из апликације</value>
+    <comment>{Locked="\"tabTitle\""}</comment>
+  </data>
+  <data name="CmdInheritEnvDesc" xml:space="preserve">
+    <value>Уместо да се приликом креирања нове картице или панела креира нови свежи блок окружења, наслеђују се терминалове променљиве окружења. Када се прослеђује "command", подразумевана вредност за ово је постави.</value>
+    <comment>{Locked="\"command\""}</comment>
+  </data>
+  <data name="CmdColorSchemeArgDesc" xml:space="preserve">
+    <value>Уместо са "colorScheme" постављеном у профилу, отвара картицу са наведеном шемом боја</value>
+    <comment>{Locked="\"colorScheme\""}</comment>
+  </data>
+  <data name="CmdVersionDesc" xml:space="preserve">
+    <value>Приказује верзију апликације</value>
+  </data>
+  <data name="CmdMaximizedDesc" xml:space="preserve">
+    <value>Покреће прозор максимизован</value>
+  </data>
+  <data name="CmdFullscreenDesc" xml:space="preserve">
+    <value>Покреће прозор у режиму пуног екрана</value>
+  </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Премешта фокуса на суседни панел у наведеном смеру</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>Алијас за "move-focus" поткоманду.</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>Смер у којем се помера фокус</value>
+  </data>
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
+    <value>Замењује фокусирани панел са суседним панелом у наведеном смеру</value>
+  </data>
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
+    <value>Смер у којем се помера фокусирани панел</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>Покреће прозор у фокусираном режиму</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>Овај параметар је детаљ интерне имплементације и не би требало да се користи.</value>
+  </data>
+  <data name="CmdWindowTargetArgDesc" xml:space="preserve">
+    <value>Наводи прозор терминала у којем би требало да се покрене наведена командна линија. „0” се увек односи на текући прозор. </value>
+  </data>
+  <data name="CmdPositionDesc" xml:space="preserve">
+    <value>Наводи позицију терминала, у „x,y” формату.</value>
+  </data>
+  <data name="CmdSizeDesc" xml:space="preserve">
+    <value>Наводи број колона и редова за терминал, и "к,р" формату.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Притисните дугме да се отвори нова картица терминала са вашим подразумеваним профилом. Отвориће се потпалета у којој бирате профил који желите да се отвори.</value>
+  </data>
+  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Нова картица</value>
+  </data>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>Отвара нову картицу</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>Alt+Клик да поделите текући прозор</value>
+  </data>
+  <data name="NewWindowRun.Text" xml:space="preserve">
+    <value>Shift+Клик да отворите нови прозор</value>
+  </data>
+  <data name="ElevatedRun.Text" xml:space="preserve">
+    <value>Ctrl+Клик да отворите као администратор</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Затвори</value>
+  </data>
+  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Затвори</value>
+  </data>
+  <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
+    <value>Затвори</value>
+  </data>
+  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Увећај</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Умањи</value>
+  </data>
+  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Умањи</value>
+  </data>
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
+    <value>Умањи</value>
+  </data>
+  <data name="AboutDialog.Title" xml:space="preserve">
+    <value>О програму</value>
+  </data>
+  <data name="AboutDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Пошаљи информације</value>
+  </data>
+  <data name="AboutDialog.CloseButtonText" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
+    <value>Верзија:</value>
+    <comment>This is the heading for a version number label</comment>
+  </data>
+  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
+    <value>Брзи почетак</value>
+    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
+  </data>
+  <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
+    <value>Изворни кôд</value>
+    <comment>A hyperlink name for the Terminal's documentation</comment>
+  </data>
+  <data name="AboutDialog_DocumentationLink.Content" xml:space="preserve">
+    <value>Документација</value>
+    <comment>A hyperlink name for user documentation</comment>
+  </data>
+  <data name="AboutDialog_ReleaseNotesLink.Content" xml:space="preserve">
+    <value>Белешке о издању</value>
+    <comment>A hyperlink name for the Terminal's release notes</comment>
+  </data>
+  <data name="AboutDialog_PrivacyPolicyLink.Content" xml:space="preserve">
+    <value>Политика приватности</value>
+    <comment>A hyperlink name for the Terminal's privacy policy</comment>
+  </data>
+  <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
+    <value>Напомене треће стране</value>
+    <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Затвори све</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>Желите ли да затворите све прозоре?</value>
+  </data>
+  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Затвори све</value>
+  </data>
+  <data name="CloseAllDialog.Title" xml:space="preserve">
+    <value>Желите ли да затворите све картице?</value>
+  </data>
+  <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ипак затвори</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
+    <value>Упозорење</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>Управо ћете затворити терминал означен само за читање. Желите ли да наставите?</value>
+  </data>
+  <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="LargePasteDialog.Content" xml:space="preserve">
+    <value>Управо ћете да налепите текст дужи од 5 KiB. Желите ли да наставите?</value>
+  </data>
+  <data name="LargePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ипак налепи</value>
+  </data>
+  <data name="LargePasteDialog.Title" xml:space="preserve">
+    <value>Упозорење</value>
+  </data>
+  <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
+    <value>Управо ћете да налепите текст који се састоји из више линија. Ако га налепите у своју љуску, може доћи до неочекиваног извршавања команди. Желите ли да наставите?</value>
+  </data>
+  <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ипак налепи</value>
+  </data>
+  <data name="MultiLinePasteDialog.Title" xml:space="preserve">
+    <value>Упозорење</value>
+  </data>
+  <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Откуцајте име команде...</value>
+  </data>
+  <data name="CommandPalette_NoMatchesText.Text" xml:space="preserve">
+    <value>Нема команди које се подударају</value>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_ActionMode" xml:space="preserve">
+    <value>Акција режим претраге</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into action (command search) mode.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_TabSearchSwitchMode" xml:space="preserve">
+    <value>Режим име картице</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into a mode that filters tab names.</comment>
+  </data>
+  <data name="CommandPaletteModeAnnouncement_CommandlineMode" xml:space="preserve">
+    <value>Режим командна-линија</value>
+    <comment>This text will be read aloud using assistive technologies when the command palette switches into the raw commandline parsing mode.</comment>
+  </data>
+  <data name="CommandPalette_NestedCommandAnnouncement" xml:space="preserve">
+    <value>Више опција за "{}"</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="CommandPalette_ParsedCommandLine" xml:space="preserve">
+    <value>Извршавање командне линије ће да позове следеће команде:</value>
+    <comment>Will be followed by a list of strings describing parsed commands</comment>
+  </data>
+  <data name="CommandPalette_FailedParsingCommandLine" xml:space="preserve">
+    <value>Није успело парсирање командне линије:</value>
+  </data>
+  <data name="CommandPaletteControlName" xml:space="preserve">
+    <value>Палета команди</value>
+  </data>
+  <data name="TabSwitcherControlName" xml:space="preserve">
+    <value>Пребацивач картица</value>
+  </data>
+  <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
+    <value>Откуцајте име картице...</value>
+  </data>
+  <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
+    <value>Ниједна картица се не подудара</value>
+  </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>Унесите wt командну линију која треба да се изврши</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
+  <data name="SuggestionsControl_NestedCommandAnnouncement" xml:space="preserve">
+    <value>Више опција за "{}"</value>
+    <comment>This text will be read aloud using assistive technologies when the user selects a command that has additional options. The {} will be expanded to the name of the command containing more options.</comment>
+  </data>
+  <data name="SuggestionsControl_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Откуцајте име команде...</value>
+  </data>
+  <data name="SuggestionsControl_NoMatchesText.Text" xml:space="preserve">
+    <value>Ниједна команда се не подудара</value>
+  </data>
+  <data name="SuggestionsControlName" xml:space="preserve">
+    <value>Мени предлога</value>
+  </data>
+  <data name="SuggestionsControl_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Још опција</value>
+  </data>
+  <data name="SuggestionsControl_MatchesAvailable" xml:space="preserve">
+    <value>Пронађено предлога: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Гримизна</value>
+  </data>
+  <data name="SteelBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Челично-плава</value>
+  </data>
+  <data name="MediumSeaGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Средње морско-зелена</value>
+  </data>
+  <data name="DarkOrangeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Тамнонаранџаста</value>
+  </data>
+  <data name="MediumVioletRedColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Средње љубичастоцрвена</value>
+  </data>
+  <data name="DodgerBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Доџер-плава</value>
+  </data>
+  <data name="LimeGreenColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Лимета-зелена</value>
+  </data>
+  <data name="YellowColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Жута</value>
+  </data>
+  <data name="BlueVioletColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Плавољубичаста</value>
+  </data>
+  <data name="SlateBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Шкриљац-плава</value>
+  </data>
+  <data name="LimeColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Лимета</value>
+  </data>
+  <data name="TanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Жутомрка</value>
+  </data>
+  <data name="MagentaColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Пурпурноцрвена</value>
+  </data>
+  <data name="CyanColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Цијан</value>
+  </data>
+  <data name="SkyBlueColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Небеско-плава</value>
+  </data>
+  <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Тамносива</value>
+  </data>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>Овај линк није исправан:</value>
+  </data>
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>Тренутно се не подржава овај тип линка:</value>
+  </data>
+  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Подешавања</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>Нисмо могли да упишемо ваш фајл подешавања. Проверите дозволе за тај фајл и обезбедите да није постављена заставица само-за-читање и да је дозвољено уписивање.</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>Отклањање грешака</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>Грешка</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>Информација</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>Упозорење</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>Садржај системске оставе (преглед):</value>
+  </data>
+  <data name="CommandPalette_MoreOptions.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Још опција</value>
+  </data>
+  <data name="WindowIdLabel" xml:space="preserve">
+    <value>Прозор</value>
+    <comment>This is displayed as a label for a number, like "Window: 10"</comment>
+  </data>
+  <data name="UnnamedWindowName" xml:space="preserve">
+    <value>неименовани прозор</value>
+    <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
+  </data>
+  <data name="WindowRenamer.Subtitle" xml:space="preserve">
+    <value>Унесите ново име:</value>
+  </data>
+  <data name="WindowRenamer.ActionButtonContent" xml:space="preserve">
+    <value>ОК</value>
+  </data>
+  <data name="WindowRenamer.CloseButtonContent" xml:space="preserve">
+    <value>Откажи</value>
+  </data>
+  <data name="WindowMaximizeButtonToolTip" xml:space="preserve">
+    <value>Увећај</value>
+  </data>
+  <data name="WindowRestoreDownButtonToolTip" xml:space="preserve">
+    <value>Врати назад</value>
+  </data>
+  <data name="CommandPaletteMenuItem" xml:space="preserve">
+    <value>Палета команди</value>
+  </data>
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
+    <value>Фокусирај Терминал</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
+    <value>Прозори</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>Отвори нову картицу у наведеном почетном директоријуму</value>
+  </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>Отвори нови прозор са наведеним почетним директоријумом</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>Подели прозор и покрени у наведеном директоријуму</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>Извези текст</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>Није успео извоз садржаја терминала</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>Успешно је извезен садржај терминала</value>
+  </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Пронађи</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>Чисти текст</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>Понашање при прекиду извршавања може да се подеси у напредним подешавањима профила.</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Не приказуј поново</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Овај прозор Терминала се извршава као администратор</value>
+  </data>
+  <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
+    <value>Пронађено предлога: {0}</value>
+    <comment>{0} will be replaced with a number.</comment>
+  </data>
+  <data name="AboutDialog_CheckingForUpdatesLabel.Text" xml:space="preserve">
+    <value>Проверавају се ажурирања...</value>
+  </data>
+  <data name="AboutDialog_UpdateAvailableLabel.Text" xml:space="preserve">
+    <value>Доступно је ажурирање.</value>
+  </data>
+  <data name="AboutDialog_InstallUpdateButton.Content" xml:space="preserve">
+    <value>Инсталирај одмах</value>
+  </data>
+  <data name="DuplicateRemainingProfilesEntry" xml:space="preserve">
+    <value>Поље "newTabMenu" садржи више од једне ставке типа "remainingProfiles". Само прва ће се узети у обзир.</value>
+    <comment>{Locked="newTabMenu"} {Locked="remainingProfiles"}</comment>
+  </data>
+  <data name="InvalidUseOfContent" xml:space="preserve">
+    <value>Особина "__content" је резервисана за интерну употребу</value>
+    <comment>{Locked="__content"}</comment>
+  </data>
+  <data name="AboutToolTip" xml:space="preserve">
+    <value>Отвара дијалог који садржи информације о производу</value>
+  </data>
+  <data name="ChooseColorToolTip" xml:space="preserve">
+    <value>Отвара бирач боје којим се бира боја за ову картицу</value>
+  </data>
+  <data name="CommandPaletteToolTip" xml:space="preserve">
+    <value>Отвара палету команди</value>
+  </data>
+  <data name="DuplicateTabToolTip" xml:space="preserve">
+    <value>Отвара нову картицу у текућем директоријуму користећи активни профил</value>
+  </data>
+  <data name="ExportTabToolTip" xml:space="preserve">
+    <value>Извози садржај текст бафера у текст фајл</value>
+  </data>
+  <data name="FindToolTip" xml:space="preserve">
+    <value>Отвара дијалог претраге</value>
+  </data>
+  <data name="RenameTabToolTip" xml:space="preserve">
+    <value>Мења име ове картице</value>
+  </data>
+  <data name="SettingsToolTip" xml:space="preserve">
+    <value>Отвара страницу подешавања</value>
+  </data>
+  <data name="SplitTabToolTip" xml:space="preserve">
+    <value>Отвара нови панел користећи активни профил у текућем директоријуму</value>
+  </data>
+  <data name="TabCloseAfterToolTip" xml:space="preserve">
+    <value>Затвара се картице десно од ове картице</value>
+  </data>
+  <data name="TabCloseOtherToolTip" xml:space="preserve">
+    <value>Затвара све картице осим ове</value>
+  </data>
+  <data name="TabCloseToolTip" xml:space="preserve">
+    <value>Затвара ову картицу</value>
+  </data>
+  <data name="NewTabMenuFolderEmpty" xml:space="preserve">
+    <value>Празно</value>
+  </data>
+  <data name="ClosePaneText" xml:space="preserve">
+    <value>Затвори панел</value>
+  </data>
+  <data name="ClosePaneToolTip" xml:space="preserve">
+    <value>Затвара активан панел ако постоји више панела</value>
+  </data>
+  <data name="TabColorClearButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.FullDescription" xml:space="preserve">
+    <value>Ресетуј боју картице</value>
+    <comment>Text used to identify the reset button</comment>
+  </data>
+  <data name="MoveTabToNewWindowText" xml:space="preserve">
+    <value>Премести картицу у нови прозор</value>
+  </data>
+  <data name="MoveTabToNewWindowToolTip" xml:space="preserve">
+    <value>Премешта картицу у нови прозор</value>
+  </data>
+  <data name="RunAsAdminFlyout.Text" xml:space="preserve">
+    <value>Покрени као администратор</value>
+    <comment>This text is displayed on context menu for profile entries in add new tab button.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
+    <value>Активни панел је премештен у картицу "{0}"</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
+    <value>Картица "{0}" је премештена у прозор "{1}"</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>Картица "{0}" је премештена у нови прозор</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab.</comment>
+  </data>
+  <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
+    <value>Картица "{0}" је премештена на позицију "{1}"</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
+    <value>Активни панел је премештен у картицу "{0}" у прозору "{1}"</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
+    <value>Активни панел је премештен у прозор "{0}"</value>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
+    <value>Активни панел је премештен у нови прозор</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new window.</comment>
+  </data>
+  <data name="TerminalPage_PaneMovedAnnouncement_NewTab" xml:space="preserve">
+    <value>Активни панел је премештен у нову картицу</value>
+    <comment>This text is read out by screen readers upon a successful pane movement to a new tab within the existing window.</comment>
+  </data>
+  <data name="CmdAppendCommandLineDesc" xml:space="preserve">
+    <value>Ако је постављено, команда ће се надовезати на подразумевану команду профила, а неће је заменити.</value>
+  </data>
+  <data name="RestartConnectionText" xml:space="preserve">
+    <value>Поново покрени везу</value>
+  </data>
+  <data name="RestartConnectionToolTip" xml:space="preserve">
+    <value>Обнавља везу активног панела</value>
+  </data>
+  <data name="SnippetPaneTitle.Text" xml:space="preserve">
+    <value>Одломци</value>
+    <comment>Header for a page that includes small "snippets" of text for the user to enter</comment>
+  </data>
+  <data name="SnippetsFilterBox.PlaceholderText" xml:space="preserve">
+    <value>Филтрирај одломке...</value>
+    <comment>Placeholder text for a text box to filter snippets (on the same page as the 'SnippetPaneTitle')</comment>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Унеси ову команду</value>
+  </data>
+  <data name="SnippetPlayButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Унеси ову команду</value>
+  </data>
+  <data name="SnippetsPaneNoneFoundHeader.Text" xml:space="preserve">
+    <value>У вашим подешавањима није пронађен ниједан одломак.</value>
+    <comment>Text shown to user when no snippets are found in their settings</comment>
+  </data>
+  <data name="SnippetsPaneNoneFoundDetails.Text" xml:space="preserve">
+    <value>Додајте у своја подешавања неке "Send input" акције и оне ће се појавити овде.</value>
+    <comment>Additional information presented to the user to let them know they can add a "Send input" action in their setting to populate the snippets pane</comment>
+  </data>
+  <data name="ActionSavedToast.Title" xml:space="preserve">
+    <value>Акција је сачувана</value>
+  </data>
+  <data name="ActionSaveFailedToast.Title" xml:space="preserve">
+    <value>Није успело чување акције</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Затвори панел</value>
+  </data>
+  <data name="CloseSnippetsPaneButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Затвори панел</value>
+  </data>
+  <data name="TabMoveLeft" xml:space="preserve">
+    <value>Помери улево</value>
+  </data>
+  <data name="TabMoveRight" xml:space="preserve">
+    <value>Помери удесно</value>
+  </data>
+  <data name="InvalidRegex" xml:space="preserve">
+    <value>Пронађен је неисправан регуларни израз.</value>
+  </data>
+</root>

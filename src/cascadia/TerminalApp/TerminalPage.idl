@@ -82,7 +82,7 @@ namespace TerminalApp
         void WindowActivated(Boolean activated);
         void SendContentToOther(RequestReceiveContentArgs args);
 
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
@@ -97,6 +97,7 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.Foundation.Collections.IVectorView<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> > ShowLoadWarningsDialog;
 
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;

@@ -452,6 +452,14 @@
     <value>Abrir ventanas de una sesión anterior</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayoutAndContent.Content" xml:space="preserve">
+    <value>Restaurar el diseño y el contenido de la ventana</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session and preserve the content.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
+    <value>Restaurar diseño de ventana</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
+  </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Modo de inicio</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
@@ -1736,6 +1744,14 @@
     <value>Centrarse automáticamente en el panel al pasar el mouse</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Ajuste el tamaño de fuente del terminal desplazándose mientras mantiene presionada la tecla Ctrl</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ajuste la opacidad del terminal desplazándose mientras mantiene presionadas las teclas CTRL y Mayús</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Animaciones de panel</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
@@ -1916,10 +1932,26 @@
     <value>Advertir cuando el servicio "Panel de escritura a mano y teclado táctil" está deshabilitado</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>Advertir al intentar pegar más de 5 KiB de caracteres</value>
+    <value>Advertir al pegar más de 5 KiB</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>Advertir al intentar pegar un carácter de "nueva línea"</value>
+    <value>Advertir al pegar nuevas líneas</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>Si tu shell no admite el modo de "pegar entre corchetes", le recomendamos configurarlo en "Siempre" por motivos de seguridad.</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>Solo si "pegar entre corchetes" está deshabilitado</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>Siempre</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>Nunca</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Terminal Windows se ejecuta en modo portátil.</value>
@@ -2051,6 +2083,10 @@
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>Usar color de la combinación</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Usar color de tema</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
     <value>Ninguno</value>

@@ -1,0 +1,979 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SetColorSchemeParentCommandName" xml:space="preserve">
+    <value>Изаберите шему боја...</value>
+  </data>
+  <data name="NewTabParentCommandName" xml:space="preserve">
+    <value>Нова картица...</value>
+  </data>
+  <data name="SplitPaneParentCommandName" xml:space="preserve">
+    <value>Подели панел...</value>
+  </data>
+  <data name="SnippetsPaneCommandName" xml:space="preserve">
+    <value>Отвори панел са одломцима кода</value>
+    <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
+  </data>
+  <data name="ApplicationDisplayNamePortable" xml:space="preserve">
+    <value>Терминал (преносни)</value>
+    <comment>This display name is used when the Terminal application is running in a "portable" mode, where settings are not stored in a shared location.</comment>
+  </data>
+  <data name="ApplicationDisplayNameUnpackaged" xml:space="preserve">
+    <value>Терминал (незапаковани)</value>
+    <comment>This display name is used when the application's name cannot be determined</comment>
+  </data>
+  <data name="ApplicationVersionUnknown" xml:space="preserve">
+    <value>Непознато</value>
+    <comment>This is displayed when the version of the application cannot be determined</comment>
+  </data>
+  <data name="AdjustFontSizeCommandKey" xml:space="preserve">
+    <value>Подеси величину фонта</value>
+  </data>
+  <data name="CloseOtherTabsCommandKey" xml:space="preserve">
+    <value>Затвори све картице осим оне са индексом {0}</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseOtherTabsDefaultCommandKey" xml:space="preserve">
+    <value>Затвори све остале картице</value>
+  </data>
+  <data name="ClosePaneCommandKey" xml:space="preserve">
+    <value>Затвори панел</value>
+  </data>
+  <data name="CloseTabAtIndexCommandKey" xml:space="preserve">
+    <value>Затвори картицу са индексом {0}</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CloseTabCommandKey" xml:space="preserve">
+    <value>Затвори картицу</value>
+  </data>
+  <data name="CloseTabsAfterCommandKey" xml:space="preserve">
+    <value>Затвори све картице након индекса {0}</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
+  <data name="CopySuffix" xml:space="preserve">
+    <value>Копирај</value>
+    <comment>The suffix we add to the name of a duplicated profile.</comment>
+  </data>
+  <data name="MoveTabCommandKey" xml:space="preserve">
+    <value>Премести картицу {0}</value>
+    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+  </data>
+  <data name="MoveTabToWindowCommandKey" xml:space="preserve">
+    <value>Премести картицу у прозор „{0}”</value>
+    <comment>{0} will be replaced with a user-specified name of a window</comment>
+  </data>
+  <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
+    <value>Премести картицу у нови прозор</value>
+  </data>
+  <data name="MoveTabDirectionForward" xml:space="preserve">
+    <value>унапред</value>
+  </data>
+  <data name="MoveTabDirectionBackward" xml:space="preserve">
+    <value>уназад</value>
+  </data>
+  <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
+    <value>Затвори све картице након текуће картице</value>
+  </data>
+  <data name="CloseWindowCommandKey" xml:space="preserve">
+    <value>Затвори прозор</value>
+  </data>
+  <data name="OpenSystemMenuCommandKey" xml:space="preserve">
+    <value>Отвори системски мени</value>
+  </data>
+  <data name="CommandPromptDisplayName" xml:space="preserve">
+    <value>Командна линија</value>
+    <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
+  </data>
+  <data name="CopyTextAsSingleLineCommandKey" xml:space="preserve">
+    <value>Копирај текст као једну линију</value>
+  </data>
+  <data name="CopyTextCommandKey" xml:space="preserve">
+    <value>Копирај текст</value>
+  </data>
+  <data name="DecreaseFontSizeCommandKey" xml:space="preserve">
+    <value>Умањи величину фонта</value>
+  </data>
+  <data name="DecreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>Умањи величину фонта, износ: {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
+  </data>
+  <data name="DirectionDown" xml:space="preserve">
+    <value>доле</value>
+  </data>
+  <data name="DirectionLeft" xml:space="preserve">
+    <value>лево</value>
+  </data>
+  <data name="DirectionRight" xml:space="preserve">
+    <value>десно</value>
+  </data>
+  <data name="DirectionUp" xml:space="preserve">
+    <value>горе</value>
+  </data>
+  <data name="DirectionPrevious" xml:space="preserve">
+    <value>претходно</value>
+  </data>
+  <data name="DuplicatePaneCommandKey" xml:space="preserve">
+    <value>Дуплирај панел</value>
+  </data>
+  <data name="DuplicateTabCommandKey" xml:space="preserve">
+    <value>Дуплирај картицу</value>
+  </data>
+  <data name="ExecuteCommandlineCommandKey" xml:space="preserve">
+    <value>Покрени командну линију „{0}” у овом прозору</value>
+    <comment>{0} will be replaced with a user-defined commandline</comment>
+  </data>
+  <data name="FindCommandKey" xml:space="preserve">
+    <value>Пронађи</value>
+  </data>
+  <data name="FindNextCommandKey" xml:space="preserve">
+    <value>Пронађи наредно подударање</value>
+  </data>
+  <data name="FindPrevCommandKey" xml:space="preserve">
+    <value>Пронађи претходно подударање</value>
+  </data>
+  <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
+    <value>Увећај величину фонта</value>
+  </data>
+  <data name="IncreaseFontSizeWithAmountCommandKey" xml:space="preserve">
+    <value>Увећај величину фонта, износ: {0}</value>
+    <comment>{0} will be replaced with a positive number</comment>
+  </data>
+  <data name="MoveFocusCommandKey" xml:space="preserve">
+    <value>Помери фокус</value>
+  </data>
+  <data name="MoveFocusWithArgCommandKey" xml:space="preserve">
+    <value>Помери фокус {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="MoveFocusToLastUsedPane" xml:space="preserve">
+    <value>Помери фокус на последње коришћени панел</value>
+  </data>
+  <data name="MoveFocusNextInOrder" xml:space="preserve">
+    <value>Помери фокус на наредни панел у редоследу</value>
+  </data>
+  <data name="MoveFocusPreviousInOrder" xml:space="preserve">
+    <value>Помери фокус на претходни панел у редоследу</value>
+  </data>
+  <data name="MoveFocusFirstPane" xml:space="preserve">
+    <value>Помери фокус на први панел</value>
+  </data>
+  <data name="MoveFocusParentPane" xml:space="preserve">
+    <value>Помери фокус на родитељски панел</value>
+  </data>
+  <data name="MoveFocusChildPane" xml:space="preserve">
+    <value>Помери фокус на панел дете</value>
+  </data>
+  <data name="SwapPaneCommandKey" xml:space="preserve">
+    <value>Замени панел</value>
+  </data>
+  <data name="SwapPaneWithArgCommandKey" xml:space="preserve">
+    <value>Замени панел {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="SwapPaneToLastUsedPane" xml:space="preserve">
+    <value>Замени панел са последње коришћеним панелом</value>
+  </data>
+  <data name="SwapPaneNextInOrder" xml:space="preserve">
+    <value>Замени панел са наредним панелом у редоследу</value>
+  </data>
+  <data name="SwapPanePreviousInOrder" xml:space="preserve">
+    <value>Замени панел са претходним панелом у редоследу</value>
+  </data>
+  <data name="SwapPaneFirstPane" xml:space="preserve">
+    <value>Замени панел са првим панелом</value>
+  </data>
+  <data name="NewTabCommandKey" xml:space="preserve">
+    <value>Нова картица</value>
+  </data>
+  <data name="NewWindowCommandKey" xml:space="preserve">
+    <value>Нови прозор</value>
+  </data>
+  <data name="IdentifyWindowCommandKey" xml:space="preserve">
+    <value>Идентификуј прозор</value>
+  </data>
+  <data name="IdentifyWindowsCommandKey" xml:space="preserve">
+    <value>Идентификуј прозоре</value>
+  </data>
+  <data name="NextTabCommandKey" xml:space="preserve">
+    <value>Наредна картица</value>
+  </data>
+  <data name="OpenBothSettingsFilesCommandKey" xml:space="preserve">
+    <value>Отвара и settings и default (JSON) фајлове подешавања</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenDefaultSettingsCommandKey" xml:space="preserve">
+    <value>Отвара default (JSON) фајл подешавања</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="OpenNewTabDropdownCommandKey" xml:space="preserve">
+    <value>Отвори падајућу листу за нову картицу</value>
+  </data>
+  <data name="OpenSettingsCommandKey" xml:space="preserve">
+    <value>Отвори settings (JSON) фајл подешавања</value>
+    <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
+  </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>Отвори директоријум settings фајла</value>
+  </data>
+  <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
+    <value>Постави боју картице...</value>
+  </data>
+  <data name="PasteTextCommandKey" xml:space="preserve">
+    <value>Налепи</value>
+  </data>
+  <data name="PrevTabCommandKey" xml:space="preserve">
+    <value>Претходна картица</value>
+  </data>
+  <data name="RenameTabCommandKey" xml:space="preserve">
+    <value>Промени име картице на „{0}”</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetFontSizeCommandKey" xml:space="preserve">
+    <value>Ресетуј величину фонта</value>
+  </data>
+  <data name="ResetTabColorCommandKey" xml:space="preserve">
+    <value>Ресетуј боју картице</value>
+  </data>
+  <data name="ResetTabNameCommandKey" xml:space="preserve">
+    <value>Ресетуј наслов картице</value>
+  </data>
+  <data name="OpenTabRenamerCommandKey" xml:space="preserve">
+    <value>Промени име картице</value>
+  </data>
+  <data name="ResizePaneCommandKey" xml:space="preserve">
+    <value>Промени величину панела</value>
+  </data>
+  <data name="ResizePaneWithArgCommandKey" xml:space="preserve">
+    <value>Промени величину панела {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
+  </data>
+  <data name="ScrollDownCommandKey" xml:space="preserve">
+    <value>Скролуј наниже</value>
+  </data>
+  <data name="ScrollDownSeveralRowsCommandKey" xml:space="preserve">
+    <value>Скролуј наниже {0} линија</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
+  </data>
+  <data name="ScrollDownPageCommandKey" xml:space="preserve">
+    <value>Скролуј једну страницу наниже</value>
+  </data>
+  <data name="ScrollUpCommandKey" xml:space="preserve">
+    <value>Скролуј навише</value>
+  </data>
+  <data name="ScrollUpSeveralRowsCommandKey" xml:space="preserve">
+    <value> Скролуј навише {0} линија</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
+  </data>
+  <data name="ScrollUpPageCommandKey" xml:space="preserve">
+    <value>Скролуј једну страницу навише</value>
+  </data>
+  <data name="ScrollToTopCommandKey" xml:space="preserve">
+    <value>Скролуј на врх историје</value>
+  </data>
+  <data name="ScrollToBottomCommandKey" xml:space="preserve">
+    <value>Скролуј на дно историје</value>
+  </data>
+  <data name="ScrollToPreviousMarkCommandKey" xml:space="preserve">
+    <value>Скролуј на претходни маркер</value>
+  </data>
+  <data name="ScrollToNextMarkCommandKey" xml:space="preserve">
+    <value>Скролуј на наредни маркер</value>
+  </data>
+  <data name="ScrollToFirstMarkCommandKey" xml:space="preserve">
+    <value>Скролуј на први маркер</value>
+  </data>
+  <data name="ScrollToLastMarkCommandKey" xml:space="preserve">
+    <value>Скролуј на последњи маркер</value>
+  </data>
+  <data name="AddMarkCommandKey" xml:space="preserve">
+    <value>Додај скрол маркер</value>
+  </data>
+  <data name="AddMarkWithColorCommandKey" xml:space="preserve">
+    <value>Додај скрол маркер, color:{0}</value>
+    <comment>{Locked="color"}. "color" is a literal parameter name that shouldn't be translated. {0} will be replaced with a color in hexadecimal format, like `#123456`</comment>
+  </data>
+  <data name="ClearMarkCommandKey" xml:space="preserve">
+    <value>Обриши маркер</value>
+  </data>
+  <data name="ClearAllMarksCommandKey" xml:space="preserve">
+    <value>Обриши све маркере</value>
+  </data>
+  <data name="SendInputCommandKey" xml:space="preserve">
+    <value>Пошаљи унос: „{0}”</value>
+    <comment>{0} will be replaced with a string of input as defined by the user</comment>
+  </data>
+  <data name="SetColorSchemeCommandKey" xml:space="preserve">
+    <value>Постави шему боја на {0}</value>
+    <comment>{0} will be replaced with the name of a color scheme as defined by the user.</comment>
+  </data>
+  <data name="SetTabColorCommandKey" xml:space="preserve">
+    <value>Постави боју картице на {0}</value>
+    <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>
+  </data>
+  <data name="SplitHorizontalCommandKey" xml:space="preserve">
+    <value>Подели панел хоризонтално</value>
+  </data>
+  <data name="MovePaneCommandKey" xml:space="preserve">
+    <value>Премести панел</value>
+  </data>
+  <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
+    <value>Премести панел у нови прозор</value>
+  </data>
+  <data name="SplitPaneCommandKey" xml:space="preserve">
+    <value>Подели панел</value>
+  </data>
+  <data name="SplitVerticalCommandKey" xml:space="preserve">
+    <value>Подели панел вертикално</value>
+  </data>
+  <data name="SwitchToTabCommandKey" xml:space="preserve">
+    <value>Пређи на картицу</value>
+  </data>
+  <data name="SwitchToLastTabCommandKey" xml:space="preserve">
+    <value>Пређи на последњу картицу</value>
+  </data>
+  <data name="TabSearchCommandKey" xml:space="preserve">
+    <value>Претрага картица...</value>
+  </data>
+  <data name="ToggleAlwaysOnTopCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. режим увек на врху</value>
+  </data>
+  <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. палету команди</value>
+  </data>
+  <data name="SuggestionsCommandKey" xml:space="preserve">
+    <value>Отвори сугестије</value>
+  </data>
+  <data name="ToggleCommandPaletteCommandLineModeCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. палету команди у режиму командне линије</value>
+  </data>
+  <data name="ToggleFocusModeCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. режим фокуса</value>
+    <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
+  </data>
+  <data name="EnableFocusModeCommandKey" xml:space="preserve">
+    <value>Укључи режим фокуса</value>
+  </data>
+  <data name="DisableFocusModeCommandKey" xml:space="preserve">
+    <value>Искључи режим фокуса</value>
+  </data>
+  <data name="ToggleFullscreenCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. пун екран</value>
+  </data>
+  <data name="EnableFullScreenCommandKey" xml:space="preserve">
+    <value>Укључи пун екран</value>
+  </data>
+  <data name="DisableFullScreenCommandKey" xml:space="preserve">
+    <value>Искључи пун екран</value>
+  </data>
+  <data name="EnableMaximizedCommandKey" xml:space="preserve">
+    <value>Максимизуј прозор</value>
+  </data>
+  <data name="DisableMaximizedCommandKey" xml:space="preserve">
+    <value>Врати величину максимизованог прозор</value>
+  </data>
+  <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. оријентацију поделе панела</value>
+  </data>
+  <data name="TogglePaneZoomCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. зумирање панела</value>
+  </data>
+  <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. режим панела само-за-читање</value>
+  </data>
+  <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Укључи режим панела само-за-читање</value>
+  </data>
+  <data name="DisablePaneReadOnlyCommandKey" xml:space="preserve">
+    <value>Искључи режим панела само-за-читање</value>
+  </data>
+  <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. визуелне ефекте терминала</value>
+  </data>
+  <data name="BreakIntoDebuggerCommandKey" xml:space="preserve">
+    <value>Преломи у дибагер</value>
+  </data>
+  <data name="OpenSettingsUICommandKey" xml:space="preserve">
+    <value>Отвори подешавања</value>
+  </data>
+  <data name="RenameWindowCommandKey" xml:space="preserve">
+    <value>Да променим име прозора на „{0}”</value>
+    <comment>{0} will be replaced with a user-defined string</comment>
+  </data>
+  <data name="ResetWindowNameCommandKey" xml:space="preserve">
+    <value>Ресетуј име прозора</value>
+  </data>
+  <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
+    <value>Промена имена прозора...</value>
+  </data>
+  <data name="DisplayWorkingDirectoryCommandKey" xml:space="preserve">
+    <value>Прикажи текући радни директоријум Терминала</value>
+  </data>
+  <data name="GlobalSummonCommandKey" xml:space="preserve">
+    <value>Прикажи/Сакриј прозор Терминала</value>
+  </data>
+  <data name="QuakeModeCommandKey" xml:space="preserve">
+    <value>Прикажи/Сакриј Quake прозор</value>
+    <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
+  </data>
+  <data name="FocusPaneCommandKey" xml:space="preserve">
+    <value>Фокусирај панел {0}</value>
+    <comment>{0} will be replaced with a user-specified number</comment>
+  </data>
+  <data name="ExportBufferToPathCommandKey" xml:space="preserve">
+    <value>Извези текст у {0}</value>
+    <comment>{0} will be replaced with a user-specified file path</comment>
+  </data>
+  <data name="ExportBufferCommandKey" xml:space="preserve">
+    <value>Извоз текста</value>
+  </data>
+  <data name="ClearAllCommandKey" xml:space="preserve">
+    <value>Очисти бафер</value>
+    <comment>A command to clear the entirety of the Terminal output buffer</comment>
+  </data>
+  <data name="ClearViewportCommandKey" xml:space="preserve">
+    <value>Очисти поглед</value>
+    <comment>A command to clear the active viewport of the Terminal</comment>
+  </data>
+  <data name="ClearScrollbackCommandKey" xml:space="preserve">
+    <value>Очисти део бафера изнад погледа</value>
+    <comment>A command to clear the part of the buffer above the viewport</comment>
+  </data>
+  <data name="DefaultWindowsConsoleName" xml:space="preserve">
+    <value>Нека Windows одлучи</value>
+    <comment>This is the default option if a user doesn't choose to override Microsoft's choice of a Terminal.</comment>
+  </data>
+  <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
+    <value>Microsoft Corporation</value>
+    <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
+  </data>
+  <data name="InboxWindowsConsoleName" xml:space="preserve">
+    <value>Windows Console Host</value>
+    <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
+  </data>
+  <data name="QuitCommandKey" xml:space="preserve">
+    <value>Напусти Терминал</value>
+  </data>
+  <data name="SetOpacityParentCommandName" xml:space="preserve">
+    <value>Постављање непрозирности позадине...</value>
+  </data>
+  <data name="IncreaseOpacityCommandKey" xml:space="preserve">
+    <value>Увећај непрозирност позадине за {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="DecreaseOpacityCommandKey" xml:space="preserve">
+    <value>Умањи непрозирност позадине за {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="AdjustOpacityCommandKey" xml:space="preserve">
+    <value>Постави непрозирност позадине на {0}%</value>
+    <comment>A command to change how transparent the background of the window is</comment>
+  </data>
+  <data name="RestoreLastClosedCommandKey" xml:space="preserve">
+    <value>Опорави последње затворени панел или картицу</value>
+  </data>
+  <data name="SelectAllCommandKey" xml:space="preserve">
+    <value>Изабери сав текст</value>
+  </data>
+  <data name="MarkModeCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. режим маркирања</value>
+    <comment>A command that will toggle "mark mode". This is a mode in the application where the user can mark the text by selecting portions of the text.</comment>
+  </data>
+  <data name="ToggleBlockSelectionCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. избор блока</value>
+  </data>
+  <data name="SwitchSelectionEndpointCommandKey" xml:space="preserve">
+    <value>Пребаци крајњу тачку избора</value>
+  </data>
+  <data name="ColorSelection_allMatches" xml:space="preserve">
+    <value>сва подударања</value>
+    <comment>This is used in the description of an action which changes the color of selected text, to indicate that not only the selected text will be colored, but also all matching text.</comment>
+  </data>
+  <data name="ColorSelection_fg_action" xml:space="preserve">
+    <value>Избор боје, предњи план: {0}{1}</value>
+    <comment>This is the description of an action which changes the color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_bg_action" xml:space="preserve">
+    <value>Избор боје, позадина: {0}{1}</value>
+    <comment>This is the description of an action which changes the background color of selected text. {0}: the color. {1}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_fg_bg_action" xml:space="preserve">
+    <value>Избор боје, предњи план: {0}, позадина: {1}{2}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background. {0}: the foreground color. {1}: the background color. {2}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_default_action" xml:space="preserve">
+    <value>Избор боје, (подразумевани предњи план/позадина){0}</value>
+    <comment>This is the description of an action which changes the color of selected text and the background to the default colors. {0}: empty string OR a clause indicating that all matching text will be colored (ColorSelection_allMatches).</comment>
+  </data>
+  <data name="ColorSelection_defaultColor" xml:space="preserve">
+    <value>[подразумевано]</value>
+    <comment>This is used in the description of an action which changes the color of selected text, as a placeholder for a color, to indicate that the default (foreground or background) color will be used.</comment>
+  </data>
+  <data name="ColorSelection_Black" xml:space="preserve">
+    <value>црна</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Red" xml:space="preserve">
+    <value>црвена</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Green" xml:space="preserve">
+    <value>зелена</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Yellow" xml:space="preserve">
+    <value>жута</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Blue" xml:space="preserve">
+    <value>плава</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Purple" xml:space="preserve">
+    <value>пурпурна</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_Cyan" xml:space="preserve">
+    <value>цијан</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_White" xml:space="preserve">
+    <value>бела</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlack" xml:space="preserve">
+    <value>светлоцрна</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightRed" xml:space="preserve">
+    <value>светлоцрвена</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightGreen" xml:space="preserve">
+    <value>светлозелена</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightYellow" xml:space="preserve">
+    <value>светложута</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightBlue" xml:space="preserve">
+    <value>светлоплава</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightPurple" xml:space="preserve">
+    <value>светлопурпурна</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightCyan" xml:space="preserve">
+    <value>светлоцијан</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ColorSelection_BrightWhite" xml:space="preserve">
+    <value>светлобела</value>
+    <comment>A color used in the "ColorSelection" action.</comment>
+  </data>
+  <data name="ExpandSelectionToWordCommandKey" xml:space="preserve">
+    <value>Прошири избор на реч</value>
+  </data>
+  <data name="ShowContextMenuCommandKey" xml:space="preserve">
+    <value>Прикажи контекстни мени</value>
+  </data>
+  <data name="CloseOtherPanesCommandKey" xml:space="preserve">
+    <value>Затвори све остале панеле</value>
+  </data>
+  <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
+    <value>Укљ./искљ. емитовање уноса у све панеле</value>
+    <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
+  </data>
+  <data name="RestartConnectionKey" xml:space="preserve">
+    <value>Поново успостави везу</value>
+  </data>
+  <data name="OpenScratchpadKey" xml:space="preserve">
+    <value>Отвори простор за скицирање</value>
+  </data>
+  <data name="SelectOutputNextCommandKey" xml:space="preserve">
+    <value>Изабери излаз наредне команде</value>
+  </data>
+  <data name="SelectOutputPreviousCommandKey" xml:space="preserve">
+    <value>Изабери излаз претходне команде</value>
+  </data>
+  <data name="SelectCommandNextCommandKey" xml:space="preserve">
+    <value>Изабери наредну команду</value>
+  </data>
+  <data name="SelectCommandPreviousCommandKey" xml:space="preserve">
+    <value>Изабери претходну команду</value>
+  </data>
+  <data name="SearchForTextCommandKey" xml:space="preserve">
+    <value>Претражи {0}</value>
+    <comment>{0} will be replaced with a user-specified URL to a web page</comment>
+  </data>
+  <data name="SearchWebCommandKey" xml:space="preserve">
+    <value>Претражи веб на изабрани текст</value>
+    <comment>This will open a web browser to search for some user-selected text</comment>
+  </data>
+  <data name="OpenAboutCommandKey" xml:space="preserve">
+    <value>Отвори дијалог О програму</value>
+    <comment>This will open the "about" dialog, to display version info and other documentation</comment>
+  </data>
+  <data name="SaveSnippetNamePrefix" xml:space="preserve">
+    <value>Сачувај одломак</value>
+  </data>
+  <data name="QuickFixCommandKey" xml:space="preserve">
+    <value>Отвори quick fix мени</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>Отвори текући радни директоријум</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>Затвори картицу</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>Пошаљи унос</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>Постави режим фокуса</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>Постави пун екран</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>Постави увећано</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>Постави шему боја</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>Затвори остале картице</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>Затвори картице након</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>Премести картицу</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>Пронађи подударање</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>Претражи текст</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>Фокусирај панел</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>Извези бафер</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>Очисти бафер</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>Више акција</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>Подеси непрозирност</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>Изабери команду</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>Изабери излаз</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>Предлози</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>Избор боје</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор профила WSL дистрибуције</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор PowerShell профила</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор Azure Cloud Shell профила</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор Visual Studio профила</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>Генератор SSH хост профила</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
+  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
+    <value>Одбаци избор</value>
+  </data>
+  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
+    <value>Једна линија</value>
+  </data>
+  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
+    <value>Са контролним низовима</value>
+  </data>
+  <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
+    <value>Копирај форматирање</value>
+  </data>
+  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс картице</value>
+  </data>
+  <data name="WindowActionArgumentLocalized" xml:space="preserve">
+    <value>Прозор</value>
+  </data>
+  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер промене величине</value>
+  </data>
+  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер фокуса</value>
+  </data>
+  <data name="DirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер</value>
+  </data>
+  <data name="DeltaActionArgumentLocalized" xml:space="preserve">
+    <value>Делта</value>
+  </data>
+  <data name="InputActionArgumentLocalized" xml:space="preserve">
+    <value>Унос</value>
+  </data>
+  <data name="TargetActionArgumentLocalized" xml:space="preserve">
+    <value>Циљ</value>
+  </data>
+  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
+    <value>је Фокус режим</value>
+  </data>
+  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
+    <value>је Увећано</value>
+  </data>
+  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
+    <value>је Пун екран</value>
+  </data>
+  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
+    <value>Име шеме</value>
+  </data>
+  <data name="TabColorActionArgumentLocalized" xml:space="preserve">
+    <value>Боја картице</value>
+  </data>
+  <data name="TitleActionArgumentLocalized" xml:space="preserve">
+    <value>Наслов</value>
+  </data>
+  <data name="CommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Командна линија</value>
+  </data>
+  <data name="IndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс</value>
+  </data>
+  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
+    <value>Редова који се скролују</value>
+  </data>
+  <data name="ColorActionArgumentLocalized" xml:space="preserve">
+    <value>Боја</value>
+  </data>
+  <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим покретања</value>
+  </data>
+  <data name="NameActionArgumentLocalized" xml:space="preserve">
+    <value>Назив</value>
+  </data>
+  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
+    <value>Акорд тастера</value>
+  </data>
+  <data name="SourceActionArgumentLocalized" xml:space="preserve">
+    <value>Извор</value>
+  </data>
+  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Користи Командну линију</value>
+  </data>
+  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим пребацивачае</value>
+  </data>
+  <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
+    <value>URL за упит</value>
+  </data>
+  <data name="DesktopActionArgumentLocalized" xml:space="preserve">
+    <value>Десктоп</value>
+  </data>
+  <data name="MonitorActionArgumentLocalized" xml:space="preserve">
+    <value>Монитор</value>
+  </data>
+  <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
+    <value>Укљ./Искљ. видљивост</value>
+  </data>
+  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
+    <value>Трајање падајуће листе</value>
+  </data>
+  <data name="IdActionArgumentLocalized" xml:space="preserve">
+    <value>Ид</value>
+  </data>
+  <data name="PathActionArgumentLocalized" xml:space="preserve">
+    <value>Путања</value>
+  </data>
+  <data name="ClearActionArgumentLocalized" xml:space="preserve">
+    <value>Очисти</value>
+  </data>
+  <data name="OpacityActionArgumentLocalized" xml:space="preserve">
+    <value>Непрозирност</value>
+  </data>
+  <data name="RelativeActionArgumentLocalized" xml:space="preserve">
+    <value>Релативно</value>
+  </data>
+  <data name="ForegroundActionArgumentLocalized" xml:space="preserve">
+    <value>Предњи план</value>
+  </data>
+  <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
+    <value>Позадина</value>
+  </data>
+  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим упаривања</value>
+  </data>
+  <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
+    <value>Почетни директоријум</value>
+  </data>
+  <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Наслов картице</value>
+  </data>
+  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Индекс профила</value>
+  </data>
+  <data name="ProfileActionArgumentLocalized" xml:space="preserve">
+    <value>Профил</value>
+  </data>
+  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
+    <value>Потисни назив апликације</value>
+  </data>
+  <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
+    <value>Шема боја</value>
+  </data>
+  <data name="ElevateActionArgumentLocalized" xml:space="preserve">
+    <value>Подигни привилегије</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
+    <value>Поново учитај променљиве окружења</value>
+  </data>
+  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>Смер поделе</value>
+  </data>
+  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
+    <value>Режим поделе</value>
+  </data>
+  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
+    <value>Величина поделе</value>
+  </data>
+</root>

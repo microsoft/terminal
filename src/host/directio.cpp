@@ -281,7 +281,7 @@ CATCH_RETURN();
                 // If .AsciiChar and .UnicodeChar have the same offset (since they're a union),
                 // we can just write the latter with a byte-sized value to set the former
                 // _and_ simultaneously clear the upper byte of .UnicodeChar to 0. Nice!
-                static_assert(offsetof(CHAR_INFO, Char.AsciiChar) == offsetof(CHAR_INFO, Char.UnicodeChar));
+                static_assert(__builtin_offsetof(CHAR_INFO, Char.AsciiChar) == __builtin_offsetof(CHAR_INFO, Char.UnicodeChar));
 
                 // Any time we see the lead flag, we presume there will be a trailing one following it.
                 // Giving us two bytes of space (one per cell in the ascii part of the character union)

@@ -56,12 +56,9 @@ Si tratta di un progetto open source e la partecipazione della community è molt
   <ReleaseNotes>
     Versione __VERSION_NUMBER__
 
-- Abbiamo cambiato il modo in cui le applicazioni della console vengono ospitate all’interno di Terminale. Segnala eventuali bug riscontrati.
-- Ora Terminale supporta i Sixel.
-- Puoi aprire un pannello ancorato contenente frammenti di comandi salvati per usarli in seguito
-- Gli utenti che usano il prompt dei comandi nella versione più recente di Windows 11 potrebbero visualizzare un’icona di “suggerimento rapido” che consiglia il software installabile da WinGet
-- Il testo selezionato sarà ora molto più visibile, oltre che personalizzabile.
-- Sono stati risolti diversi bug di affidabilità e problemi di ordine pratico.
+- Abbiamo aggiunto decine di impostazioni all'interfaccia utente che in precedenza esistevano solo nel file JSON, inclusa una nuova pagina per personalizzare il layout del menu Nuova scheda.
+- Abbiamo riprogettato la gestione delle finestre per migliorarne l'affidabilità; segnala eventuali bug riscontrati con l'alias wt.exe
+- I profili ora mostrano un'icona se sono stati nascosti o se fanno riferimento a programmi disinstallati.
 
 Per altri dettagli, vedi la pagina delle release di GitHub.
   </ReleaseNotes>

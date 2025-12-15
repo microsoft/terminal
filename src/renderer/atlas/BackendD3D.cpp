@@ -2324,7 +2324,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
 
     {
         // Before we do anything else we have to unbound _renderTargetView from being
-        // a render target, otherwise we can't use it as a shader resource below.
+        // a render target; otherwise, we can't use it as a shader resource below.
         p.deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
 
         // IA: Input Assembler

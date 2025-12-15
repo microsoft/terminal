@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "PreviewConnection.h"
-#include <LibraryResources.h>
 
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;

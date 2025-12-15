@@ -69,7 +69,7 @@ std::vector<til::point_span> Terminal::_GetSelectionSpans() const noexcept
 // - None
 // Return Value:
 // - None
-const til::point Terminal::GetSelectionAnchor() const noexcept
+til::point Terminal::GetSelectionAnchor() const noexcept
 {
     _assertLocked();
     return _selection->start;
@@ -81,7 +81,7 @@ const til::point Terminal::GetSelectionAnchor() const noexcept
 // - None
 // Return Value:
 // - None
-const til::point Terminal::GetSelectionEnd() const noexcept
+til::point Terminal::GetSelectionEnd() const noexcept
 {
     _assertLocked();
     return _selection->end;
@@ -139,7 +139,7 @@ til::point Terminal::SelectionEndForRendering() const
     return til::point{ pos };
 }
 
-const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noexcept
+Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noexcept
 {
     return _selectionEndpoint;
 }
@@ -148,13 +148,13 @@ const Terminal::SelectionEndpoint Terminal::SelectionEndpointTarget() const noex
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
-const bool Terminal::IsSelectionActive() const noexcept
+bool Terminal::IsSelectionActive() const noexcept
 {
     _assertLocked();
     return _selection->active;
 }
 
-const bool Terminal::IsBlockSelection() const noexcept
+bool Terminal::IsBlockSelection() const noexcept
 {
     _assertLocked();
     return _selection->blockSelection;
@@ -362,11 +362,32 @@ void Terminal::ToggleMarkMode()
     {
         // Enter Mark Mode
         // NOTE: directly set cursor state. We already should have locked before calling this function.
-        _activeBuffer().GetCursor().SetIsOn(false);
-        if (!IsSelectionActive())
+        if (IsSelectionActive())
         {
-            // No selection --> start one at the cursor
-            const auto cursorPos{ _activeBuffer().GetCursor().GetPosition() };
+            // Selection already existed --> just target "end"
+            if (WI_AreAllFlagsClear(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End))
+            {
+                WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+            }
+        }
+        else if (const auto focusedSearchResult = GetSearchHighlightFocused())
+        {
+            // We have a focused search result --> treat it as selection
+            *_selection.write() = SelectionInfo{
+                .start = focusedSearchResult->start,
+                .end = focusedSearchResult->end,
+                .pivot = focusedSearchResult->start,
+                .blockSelection = false,
+                .active = true,
+            };
+            WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
+        }
+        else
+        {
+            // If we're scrolled up, use the viewport origin as the selection start.
+            // Otherwise, just use the cursor position.
+            const auto cursorPos = _scrollOffset != 0 ? _GetVisibleViewport().Origin() :
+                                                        _activeBuffer().GetCursor().GetPosition();
             *_selection.write() = SelectionInfo{
                 .start = cursorPos,
                 .end = cursorPos,
@@ -375,11 +396,6 @@ void Terminal::ToggleMarkMode()
                 .active = true,
             };
             WI_SetAllFlags(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End);
-        }
-        else if (WI_AreAllFlagsClear(_selectionEndpoint, SelectionEndpoint::Start | SelectionEndpoint::End))
-        {
-            // Selection already existed
-            WI_SetFlag(_selectionEndpoint, SelectionEndpoint::End);
         }
         _ScrollToPoint(_selection->start);
         _selectionMode = SelectionInteractionMode::Mark;
@@ -438,7 +454,7 @@ void Terminal::ExpandSelectionToWord()
 // Arguments:
 // - dir: the direction we're scanning the buffer in to find the hyperlink of interest
 // Return Value:
-// - true if we found a hyperlink to select (and selected it). False otherwise.
+// - true if we found a hyperlink to select (and selected it); otherwise, false.
 void Terminal::SelectHyperlink(const SearchDirection dir)
 {
     if (_selectionMode != SelectionInteractionMode::Mark)

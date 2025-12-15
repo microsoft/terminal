@@ -71,6 +71,9 @@ parameters:
   - name: enableCaching
     type: boolean
     default: false
+  - name: afterBuildSteps
+    type: stepList
+    default: []
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -170,9 +173,9 @@ jobs:
   - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
-    displayName: Build OpenConsole.sln
+    displayName: Build OpenConsole.slnx
     inputs:
-      solution: 'OpenConsole.sln'
+      solution: 'OpenConsole.slnx'
       msbuildArgs: >-
         /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }}
         ${{ parameters.additionalBuildOptions }}
@@ -209,6 +212,8 @@ jobs:
         inputs:
           contents: $(Build.SourcesDirectory)/MSBuildCacheLogs/**
           TargetFolder: $(Terminal.BinDir)/MSBuildCacheLogs
+
+  - ${{ parameters.afterBuildSteps }}
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:

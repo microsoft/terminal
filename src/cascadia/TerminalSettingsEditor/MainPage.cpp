@@ -22,7 +22,6 @@
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
 
-#include <LibraryResources.h>
 #include <dwmapi.h>
 
 namespace winrt
@@ -114,6 +113,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
+        _actionsVM = winrt::make<ActionsViewModel>(_settingsClone);
+        _actionsViewModelChangedRevoker = _actionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(_actionsVM.CurrentCommand(), *this));
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit);
+                    _breadcrumbs.Append(crumb);
+                }
+                else if (_actionsVM.CurrentPage() == ActionsSubPage::Base)
+                {
+                    _Navigate(winrt::hstring{ actionsTag }, BreadcrumbSubPage::None);
+                }
+            }
+        });
+
         auto extensionsVMImpl = winrt::make_self<ExtensionsViewModel>(_settingsClone, _colorSchemesPageVM);
         extensionsVMImpl->NavigateToProfileRequested({ this, &MainPage::_NavigateToProfileHandler });
         extensionsVMImpl->NavigateToColorSchemeRequested({ this, &MainPage::_NavigateToColorSchemeHandler });
@@ -190,6 +207,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
+        _actionsVM.UpdateSettings(_settingsClone);
         _newTabMenuPageVM.UpdateSettings(_settingsClone);
         _extensionsVM.UpdateSettings(_settingsClone, _colorSchemesPageVM);
 
@@ -258,7 +276,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // Couldn't find the selected item, fallback to first menu item
+        // Couldn't find the selected item, fall back to first menu item
         // This happens when the selected item was a profile which doesn't exist in the new configuration
         // We can use menuItemsSTL here because the only things they miss are profile entries.
         const auto& firstItem{ _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>() };
@@ -374,6 +392,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     const auto altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
                     const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+
+                    TraceLoggingWrite(
+                        g_hTerminalSettingsEditorProvider,
+                        "OpenJson",
+                        TraceLoggingDescription("Event emitted when the user clicks the Open JSON button in the settings UI"),
+                        TraceLoggingValue(target == SettingsTarget::DefaultsFile ? "DefaultsFile" : "SettingsFile", "SettingsTarget", "The target settings file"),
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
                     OpenJson.raise(nullptr, target);
                     return;
                 }
@@ -478,9 +505,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsViewModel>(_settingsClone));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), _actionsVM);
+
+            if (subPage == BreadcrumbSubPage::Actions_Edit && _actionsVM.CurrentCommand() != nullptr)
+            {
+                _actionsVM.CurrentPage(ActionsSubPage::Edit);
+            }
         }
         else if (clickedItemTag == newTabMenuTag)
         {
@@ -680,7 +712,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.LogSettingChanges(false);
-        _settingsClone.WriteSettingsToDisk();
+        if (!_settingsClone.WriteSettingsToDisk())
+        {
+            ShowLoadWarningsDialog.raise(*this, _settingsClone.Warnings());
+        }
     }
 
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
@@ -837,7 +872,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto menuItem{ weakMenuItem.get() })
             {
                 const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-                if (args.PropertyName() == L"Icon" || args.PropertyName() == L"EvaluatedIcon")
+                if (args.PropertyName() == L"Icon")
                 {
                     menuItem.Icon(UI::IconPathConverter::IconWUX(tag.EvaluatedIcon()));
                 }

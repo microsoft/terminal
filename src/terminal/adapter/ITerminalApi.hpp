@@ -84,8 +84,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ResizeWindow(const til::CoordType width, const til::CoordType height) = 0;
 
-        virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;
+        virtual void NotifyShellIntegrationMark() = 0;
 
         virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
 

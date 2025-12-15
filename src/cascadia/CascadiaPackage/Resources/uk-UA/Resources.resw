@@ -122,11 +122,11 @@
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppNameCan" xml:space="preserve">
-    <value>Terminal Canary</value>
+    <value>Термінал Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppNamePre" xml:space="preserve">
-    <value>Попередній перегляд Термінала</value>
+    <value>Попередній перегляд Терміналу</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppStoreName" xml:space="preserve">
@@ -134,7 +134,7 @@
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppStoreNameCan" xml:space="preserve">
-    <value>Windows Terminal Canary</value>
+    <value>Термінал Windows Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}. "Canary" in this context means an unstable or nightly build of a software product, not the bird.</comment>
   </data>
   <data name="AppStoreNamePre" xml:space="preserve">
@@ -146,11 +146,11 @@
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortNameCan" xml:space="preserve">
-    <value>Terminal Canary</value>
+    <value>Термінал Canary</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppShortNamePre" xml:space="preserve">
-    <value>Попередній перегляд Термінала</value>
+    <value>Попередній перегляд Терміналу</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
   <data name="AppDescription" xml:space="preserve">
@@ -164,11 +164,11 @@
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Canary version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Preview" xml:space="preserve">
-    <value>Відкрити в &amp;підготовчій версії Terminal</value>
+    <value>Відкрити в &amp;підготовчій версії Терміналу</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem" xml:space="preserve">
-    <value>Відкрити в &amp;Terminal</value>
+    <value>Відкрити в &amp;Терміналі</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
 </root>

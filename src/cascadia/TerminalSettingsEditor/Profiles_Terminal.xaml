@@ -26,8 +26,6 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
-                   Grid.Row="0"
-                   Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"

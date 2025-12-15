@@ -28,12 +28,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!_previewControl)
         {
-            const auto settings = _Profile.TermSettings();
+            const auto settings = winrt::get_self<implementation::ProfileViewModel>(_Profile)->TermSettings();
             _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
             _previewControl = Control::TermControl(settings, settings, *_previewConnection);
             _previewControl.IsEnabled(false);
             _previewControl.AllowFocusWhenDisabled(false);
-            _previewControl.CursorVisibility(Microsoft::Terminal::Control::CursorDisplayState::Shown);
             ControlPreview().Child(_previewControl);
         }
 
@@ -44,6 +43,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // The Appearances object handles updating the values in the settings UI, but
         // we still need to listen to the changes here just to update the preview control
         _AppearanceViewModelChangedRevoker = _Profile.DefaultAppearance().PropertyChanged(winrt::auto_revoke, { this, &Profiles_Appearance::_onProfilePropertyChanged });
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue("profile.appearance", "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
+            TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingValue(_Profile.DefaultAppearance().BackgroundImageSettingsVisible(), "HasBackgroundImage", "If the profile has a background image defined"),
+            TraceLoggingValue(_Profile.HasUnfocusedAppearance(), "HasUnfocusedAppearance", "If the profile has an unfocused appearance defined"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
     void Profiles_Appearance::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
@@ -54,6 +66,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::CreateUnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "CreateUnfocusedAppearance",
+            TraceLoggingDescription("Event emitted when the user creates an unfocused appearance for a profile"),
+            TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
+            TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
+            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
         _Profile.CreateUnfocusedAppearance();
     }
 
@@ -66,11 +88,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (!_updatePreviewControl)
         {
-            _updatePreviewControl = std::make_shared<ThrottledFuncTrailing<>>(
+            _updatePreviewControl = std::make_shared<ThrottledFunc<>>(
                 winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-                std::chrono::milliseconds{ 100 },
+                til::throttled_func_options{
+                    .delay = std::chrono::milliseconds{ 100 },
+                    .debounce = true,
+                    .trailing = true,
+                },
                 [this]() {
-                    const auto settings = _Profile.TermSettings();
+                    const auto settings = winrt::get_self<implementation::ProfileViewModel>(_Profile)->TermSettings();
                     _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
                     _previewControl.UpdateControlSettings(settings, settings);
                 });

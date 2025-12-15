@@ -22,13 +22,15 @@ namespace Microsoft.Terminal.Settings.Editor
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ScrollToZoom);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ScrollToChangeOpacity);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutLargePaste);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutMultiLinePaste);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, EnableColorSelection);
     }
 }

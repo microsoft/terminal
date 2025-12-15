@@ -31,6 +31,7 @@
     -->
     <CppWinRTNamespaceMergeDepth>4</CppWinRTNamespaceMergeDepth>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+    <VersionInfoFileDescription>Windows Terminal Settings UI Library</VersionInfoFileDescription>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -43,6 +44,13 @@
   <ItemGroup>
     <ClInclude Include="Actions.h">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ArgsTemplateSelectors.h">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="EditAction.h">
+      <DependentUpon>EditAction.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="AddProfile.h">
       <DependentUpon>AddProfile.xaml</DependentUpon>
@@ -167,6 +175,9 @@
     <Page Include="Actions.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="EditAction.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="AddProfile.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -233,8 +244,16 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="init.cpp" />
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ArgsTemplateSelectors.cpp">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="EditAction.cpp">
+      <DependentUpon>EditAction.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AddProfile.cpp">
       <DependentUpon>AddProfile.xaml</DependentUpon>
@@ -489,6 +508,10 @@
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsAppAdapterLib\TerminalSettingsAppAdapterLib.vcxproj">
+      <Project>{3c46e2b0-ae6c-4132-9122-6772fb411959}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

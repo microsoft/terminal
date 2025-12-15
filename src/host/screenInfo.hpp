@@ -19,8 +19,6 @@ Revision History:
 
 #pragma once
 
-#include "conapi.h"
-#include "settings.hpp"
 #include "outputStream.hpp"
 
 #include "../buffer/out/OutputCellRect.hpp"
@@ -30,15 +28,10 @@ Revision History:
 #include "../buffer/out/textBufferTextIterator.hpp"
 
 #include "IIoProvider.hpp"
-#include "outputStream.hpp"
-#include "../terminal/adapter/adaptDispatch.hpp"
 #include "../terminal/parser/stateMachine.hpp"
-#include "../terminal/parser/OutputStateMachineEngine.hpp"
 
 #include "../server/ObjectHeader.h"
 
-#include "../interactivity/inc/IAccessibilityNotifier.hpp"
-#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
 #include "../renderer/inc/FontInfo.hpp"
@@ -50,6 +43,25 @@ class ConversionAreaInfo; // forward decl window. circular reference
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
+    // This little helper works like wil::scope_exit but is slimmer
+    // (= easier to optimize) and has a concrete type (= can declare).
+    struct SnapOnScopeExit
+    {
+        ~SnapOnScopeExit()
+        {
+            if (self)
+            {
+                try
+                {
+                    self->_makeCursorVisible();
+                }
+                CATCH_LOG();
+            }
+        }
+
+        SCREEN_INFORMATION* self;
+    };
+
     [[nodiscard]] static NTSTATUS CreateInstance(_In_ til::size coordWindowSize,
                                                  const FontInfo fontInfo,
                                                  _In_ til::size coordScreenBufferSize,
@@ -58,7 +70,7 @@ public:
                                                  const UINT uiCursorSize,
                                                  _Outptr_ SCREEN_INFORMATION** const ppScreen);
 
-    ~SCREEN_INFORMATION();
+    ~SCREEN_INFORMATION() override;
 
     void GetScreenBufferInformation(_Out_ til::size* pcoordSize,
                                     _Out_ til::point* pcoordCursorPosition,
@@ -71,6 +83,9 @@ public:
     void GetRequiredConsoleSizeInPixels(_Out_ til::size* const pRequiredSize) const;
 
     void MakeCurrentCursorVisible();
+    void MakeCursorVisible(til::point position);
+    void SnapOnInput(WORD vkey);
+    SnapOnScopeExit SnapOnOutput() noexcept;
 
     void ClipToScreenBuffer(_Inout_ til::inclusive_rect* const psrClip) const;
 
@@ -87,9 +102,6 @@ public:
     void RefreshFontWithRenderer();
 
     [[nodiscard]] NTSTATUS ResizeScreenBuffer(const til::size coordNewScreenSize, const bool fDoScrollBarUpdate);
-
-    bool HasAccessibilityEventing() const noexcept;
-    void NotifyAccessibilityEventing(const til::CoordType sStartX, const til::CoordType sStartY, const til::CoordType sEndX, const til::CoordType sEndY);
 
     struct ScrollBarState
     {
@@ -154,8 +166,6 @@ public:
     InputBuffer* const GetActiveInputBuffer() const override;
 #pragma endregion
 
-    bool CursorIsDoubleWidth() const;
-
     DWORD OutputMode;
 
     short WheelDelta;
@@ -182,9 +192,7 @@ public:
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
-    [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
-
-    void MakeCursorVisible(const til::point CursorPosition);
+    [[nodiscard]] NTSTATUS SetCursorPosition(til::point Position);
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
@@ -214,14 +222,17 @@ public:
     [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
     [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
 
+    bool ConptyCursorPositionMayBeWrong() const noexcept;
+    void SetConptyCursorPositionMayBeWrong() noexcept;
+    void ResetConptyCursorPositionMayBeWrong() noexcept;
+    void WaitForConptyCursorPositionToBeSynchronized() noexcept;
+
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
-                       _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier* pNotifier,
                        const TextAttribute popupAttributes,
                        const FontInfo fontInfo);
 
     Microsoft::Console::Interactivity::IWindowMetrics* _pConsoleWindowMetrics;
-    Microsoft::Console::Interactivity::IAccessibilityNotifier* _pAccessibilityNotifier;
 
     [[nodiscard]] HRESULT _AdjustScreenBufferHelper(const til::rect* const prcClientNew,
                                                     const til::size coordBufferOld,
@@ -230,6 +241,7 @@ private:
     void _CalculateViewportSize(const til::rect* const prcClientArea, _Out_ til::size* const pcoordSize);
     void _AdjustViewportSize(const til::rect* const prcClientNew, const til::rect* const prcClientOld, const til::size* const pcoordSize);
     void _InternalSetViewportSize(const til::size* pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
+    void _makeCursorVisible();
 
     static void s_CalculateScrollbarVisibility(const til::rect* const prcClientArea,
                                                const til::size* const pcoordBufferSize,
@@ -273,6 +285,7 @@ private:
     til::CoordType _virtualBottom;
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
+    std::atomic<bool> _conptyCursorPositionMayBeWrong = false;
 
     static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 

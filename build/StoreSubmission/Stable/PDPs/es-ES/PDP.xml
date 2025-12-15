@@ -56,12 +56,9 @@ Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Pa
   <ReleaseNotes>
     Versión __VERSION_NUMBER__
 
-- Hemos reescrito cómo se hospedan las aplicaciones de consola en Terminal. Informe de los errores que encuentre.
-- Terminal ahora admite síxeles.
-- Ahora puede abrir un panel acoplado que contenga fragmentos de comandos que haya guardado para usarlos más adelante
-- Los usuarios del símbolo del sistema de la versión más reciente de Windows 11 pueden ver un icono de "sugerencia rápida" que sugiere software instalable de WinGet
-- El texto seleccionado ahora será mucho más visible (y personalizable)
-- Se han corregido varios errores de fiabilidad, problemas de comodidad y molestias.
+- Hemos añadido decenas de configuraciones a la interfaz de usuario que antes solo existían en el archivo JSON, incluida una nueva página para personalizar el diseño del menú Nueva pestaña.
+- Hemos reestructurado la gestión de ventanas para mejorar la fiabilidad; informe de cualquier error que encuentre con el alias wt.exe
+- Ahora, los perfiles muestran un icono si han sido ocultados o hacen referencia a programas que han sido desinstalados.
 
 Consulte la página de versiones de GitHub para más información.
   </ReleaseNotes>

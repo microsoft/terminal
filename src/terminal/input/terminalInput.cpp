@@ -171,7 +171,7 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     if (matchingLastKeyPress && !_inputMode.test(Mode::AutoRepeat))
     {
         // Note that we must return an empty string here to imply that we've handled
-        // the event, otherwise the key press can still end up being submitted.
+        // the event; otherwise, the key press can still end up being submitted.
         return _makeNoOutput();
     }
     _lastVirtualKeyCode = virtualKeyCode;
@@ -532,7 +532,7 @@ try
 }
 CATCH_LOG()
 
-DWORD TerminalInput::_trackControlKeyState(const KEY_EVENT_RECORD& key)
+DWORD TerminalInput::_trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept
 {
     // First record which key state bits were previously off but are now on.
     const auto pressedKeyState = ~_lastControlKeyState & key.dwControlKeyState;

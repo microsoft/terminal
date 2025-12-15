@@ -7,6 +7,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <VersionInfoFileDescription>Windows Terminal UI Support Library</VersionInfoFileDescription>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -85,4 +86,5 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
+  <Import Project="$(OpenConsoleDir)build\rules\CollectWildcardResources.targets" />
 </Project>

@@ -108,6 +108,11 @@ namespace Microsoft.Terminal.Control
         Boolean HasUnfocusedAppearance();
         void SetHighContrastMode(Boolean enabled);
 
+        void ApplyPreviewColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
+        void ResetPreviewColorScheme();
+
+        void SetOverrideColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
+
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
@@ -150,8 +155,8 @@ namespace Microsoft.Terminal.Control
         void SetReadOnlyMode(Boolean readOnlyState);
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
+        Boolean ForceCursorVisible;
         void ResumeRendering();
-        void BlinkAttributeTick();
 
         SearchResults Search(SearchRequest request);
         void ClearSearch();
@@ -165,9 +170,7 @@ namespace Microsoft.Terminal.Control
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
-        Boolean CursorOn;
         void EnablePainting();
 
         String ReadEntireBuffer();
@@ -191,6 +194,7 @@ namespace Microsoft.Terminal.Control
 
         // These events are called from some background thread
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, WriteToClipboardEventArgs> WriteToClipboard;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> BackgroundColorChanged;

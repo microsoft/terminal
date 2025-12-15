@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        void PersistState(bool serializeBuffer);
+        void PersistState();
 
         void UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
@@ -111,6 +111,7 @@ namespace winrt::TerminalApp::implementation
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        winrt::Windows::Foundation::Collections::IVector<IPaneContent> Panes() const;
 
         hstring Title();
         void TitlebarClicked();
@@ -169,6 +170,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         wil::com_ptr<CommandlineArgs> _appArgs{ nullptr };
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _startupConnection{ nullptr };
         bool _hasCommandLineArguments{ false };
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
@@ -189,7 +191,7 @@ namespace winrt::TerminalApp::implementation
                                    const winrt::hstring& contentKey,
                                    HRESULT settingsLoadedResult,
                                    const winrt::hstring& exceptionText);
-        void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+        void _ShowLoadWarningsDialog(const IInspectable& sender, const Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
 
         bool _IsKeyboardServiceEnabled();
 
@@ -209,7 +211,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, Initialized);
 
         FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement, _root, SetTitleBarContent);
-        FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
+        FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, TitleChanged);
         FORWARDED_TYPED_EVENT(CloseWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, CloseWindowRequested);
         FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
         FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
