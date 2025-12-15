@@ -131,8 +131,8 @@ namespace Microsoft.Terminal.Control
                               Int16 scanCode,
                               Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void SendInput(String text);
-        void SendOutput(String text);
         void PasteText(String text);
+        void InjectTextAtCursor(String text);
         void SelectAll();
         void ClearSelection();
         Boolean ToggleBlockSelection();
@@ -188,7 +188,6 @@ namespace Microsoft.Terminal.Control
         Boolean ShouldShowSelectOutput();
 
         void OpenCWD();
-        void SetTmuxControlHandlerProducer(TmuxDCSHandlerProducer producer);
 
         void ClearQuickFix();
 
@@ -204,6 +203,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
         event Windows.Foundation.TypedEventHandler<Object, Object> RefreshQuickFixUI;
         event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, EnterTmuxControlEventArgs> EnterTmuxControl;
 
         // These events are always called from the UI thread (bugs aside)
         event Windows.Foundation.TypedEventHandler<Object, FontSizeChangedArgs> FontSizeChanged;

@@ -257,7 +257,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
-        std::unique_ptr<TmuxControl> _tmuxControl{ nullptr };
+        std::shared_ptr<TmuxControl> _tmuxControl{ nullptr };
 
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;

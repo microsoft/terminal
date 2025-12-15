@@ -41,8 +41,6 @@ namespace ControlUnitTests
     class ControlInteractivityTests;
 };
 
-using Microsoft::Console::VirtualTerminal::ITermDispatch;
-
 #define RUNTIME_SETTING(type, name, setting)                 \
 private:                                                     \
     std::optional<type> _runtime##name{ std::nullopt };      \
@@ -126,8 +124,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::color BackgroundColor() const;
 
         void SendInput(std::wstring_view wstr);
-        void SendOutput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
+        void InjectTextAtCursor(const winrt::hstring& text);
         bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const CopyFormat formats);
         void SelectAll();
         void ClearSelection();
@@ -269,7 +267,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         void PreviewInput(std::wstring_view input);
-        void SetTmuxControlHandlerProducer(ITermDispatch::StringHandlerProducer producer);
 
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());
@@ -301,10 +298,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
         til::typed_event<> RefreshQuickFixUI;
         til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
-
+        til::typed_event<IInspectable, Control::EnterTmuxControlEventArgs> EnterTmuxControl;
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
-
         til::typed_event<> Attached;
         // clang-format on
 
@@ -355,7 +351,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode();
-        void _connectionOutputHandler(const hstring& hstr);
+        void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
         void _setOpacity(const float opacity, const bool focused = true);
@@ -469,7 +465,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         friend class ControlUnitTests::ControlInteractivityTests;
         bool _inUnitTests{ false };
     };
-
 }
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation

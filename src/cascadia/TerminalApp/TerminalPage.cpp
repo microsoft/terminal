@@ -5,24 +5,24 @@
 #include "pch.h"
 #include "TerminalPage.h"
 
-#include <TerminalThemeHelpers.h>
-#include <Utils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
+#include <TerminalThemeHelpers.h>
+#include <til/hash.h>
+#include <Utils.h>
 
+#include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "App.h"
 #include "DebugTapConnection.h"
 #include "MarkdownPaneContent.h"
-#include "TmuxControl.h"
-#include "TabRowControl.h"
 #include "Remoting.h"
 #include "ScratchpadContent.h"
 #include "SettingsPaneContent.h"
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "TerminalSettingsCache.h"
-#include "../../types/inc/ColorFix.hpp"
-#include "../../types/inc/utils.hpp"
-#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
+#include "TmuxControl.h"
 
 #include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -262,11 +262,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         _hostingHwnd = hwnd;
-
-        if constexpr (Feature_TmuxControl::IsEnabled())
-        {
-            _tmuxControl = std::make_unique<TmuxControl>(*this);
-        }
         return S_OK;
     }
 
@@ -403,15 +398,6 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                if constexpr (Feature_TmuxControl::IsEnabled())
-                {
-                    //Tmux control takes over
-                    if (page->_tmuxControl && page->_tmuxControl->TabIsTmuxControl(page->_GetFocusedTabImpl()))
-                    {
-                        return;
-                    }
-                }
-
                 TraceLoggingWrite(
                     g_hTerminalAppProvider,
                     "NewTabMenuDefaultButtonClicked",
@@ -419,6 +405,15 @@ namespace winrt::TerminalApp::implementation
                     TraceLoggingValue(page->NumberOfTabs(), "TabCount", "The count of tabs currently opened in this window"),
                     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+                if constexpr (Feature_TmuxControl::IsEnabled())
+                {
+                    // tmux control takes over
+                    if (page->_tmuxControl && page->_tmuxControl->TabIsTmuxControl(page->_GetFocusedTabImpl()))
+                    {
+                        return;
+                    }
+                }
 
                 page->_OpenNewTerminalViaDropdown(NewTerminalArgs());
             }
@@ -3445,7 +3440,7 @@ namespace winrt::TerminalApp::implementation
         const auto tabViewItem = eventArgs.Tab();
         if (auto tab{ _GetTabByTabViewItem(tabViewItem) })
         {
-            tab.try_as<TabBase>()->CloseRequested.raise(nullptr, nullptr);
+            _HandleCloseTabRequested(tab);
         }
     }
 
@@ -3617,12 +3612,22 @@ namespace winrt::TerminalApp::implementation
 
         if constexpr (Feature_TmuxControl::IsEnabled())
         {
-            if (profile.AllowTmuxControl() && _tmuxControl)
+            if (!_tmuxControl)
             {
-                control.SetTmuxControlHandlerProducer([this, control](auto print) {
-                    return _tmuxControl->TmuxControlHandlerProducer(control, print);
-                });
+                _tmuxControl = std::make_shared<TmuxControl>(*this);
             }
+
+            control.EnterTmuxControl([tmuxControl = _tmuxControl.get()](auto&& sender, auto&& args) {
+                if (auto control = sender.try_as<TermControl>())
+                {
+                    if (tmuxControl->AcquireSingleUseLock(std::move(control)))
+                    {
+                        args.InputCallback([tmuxControl](auto&& str) {
+                            tmuxControl->FeedInput(winrt_array_to_wstring_view(str));
+                        });
+                    }
+                }
+            });
         }
 
         return resultPane;
@@ -5044,9 +5049,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_adjustProcessPriority() const
     {
         // Windowing is single-threaded, so this will not cause a race condition.
-        static bool supported{ true };
+        static uint64_t s_lastUpdateHash{ 0 };
+        static bool s_supported{ true };
 
-        if (!supported || !_hostingHwnd.has_value())
+        if (!s_supported || !_hostingHwnd.has_value())
         {
             return;
         }
@@ -5110,11 +5116,20 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
+        const auto hash = til::hash((void*)processes.data(), count * sizeof(HANDLE));
+
+        if (hash == s_lastUpdateHash)
+        {
+            return;
+        }
+
+        s_lastUpdateHash = hash;
         const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+
         if (S_FALSE == hr)
         {
             // Don't bother trying again or logging. The wrapper tells us it's unsupported.
-            supported = false;
+            s_supported = false;
             return;
         }
 
@@ -5515,11 +5530,12 @@ namespace winrt::TerminalApp::implementation
             if constexpr (Feature_TmuxControl::IsEnabled())
             {
                 //Tmux control tab doesn't support to drag
-                if (_tmuxControl && _tmuxControl->TabIsTmuxControl(tabImpl.try_as<TerminalTab>()))
+                if (_tmuxControl && _tmuxControl->TabIsTmuxControl(tabImpl))
                 {
                     return;
                 }
             }
+
             // First: stash the tab we started dragging.
             // We're going to be asked for this.
             _stashed.draggedTab = tabImpl;

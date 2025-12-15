@@ -74,6 +74,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
         event Windows.Foundation.TypedEventHandler<Object, WindowSizeChangedEventArgs> WindowSizeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, EnterTmuxControlEventArgs> EnterTmuxControl;
 
         event Windows.Foundation.TypedEventHandler<Object, CompletionsChangedEventArgs> CompletionsChanged;
 
@@ -127,10 +128,10 @@ namespace Microsoft.Terminal.Control
 
         void ToggleShaderEffects();
         void SendInput(String input);
-        void SendOutput(String input);
         Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
         Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void RawWriteString(String text);
+        void InjectTextAtCursor(String text);
 
         void BellLightOn();
 
@@ -167,6 +168,5 @@ namespace Microsoft.Terminal.Control
         void ClearQuickFix();
 
         void Detach();
-        void SetTmuxControlHandlerProducer(TmuxDCSHandlerProducer producer);
     }
 }

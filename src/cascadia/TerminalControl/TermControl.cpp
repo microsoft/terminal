@@ -330,6 +330,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
         _revokers.WindowSizeChanged = _core.WindowSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWindowSizeChanged });
         _revokers.WriteToClipboard = _core.WriteToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWriteToClipboard });
+        _revokers.EnterTmuxControl = _core.EnterTmuxControl(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleEnterTmuxControl });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
@@ -902,10 +903,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         RawWriteString(wstr);
     }
-    void TermControl::SendOutput(const winrt::hstring& wstr)
-    {
-        _core.SendOutput(wstr);
-    }
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
     {
         _core.ClearBuffer(clearType);
@@ -1426,11 +1423,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
         Initialized.raise(*this, nullptr);
-
-        if (_tmuxDCSHandlerProducer)
-        {
-            _core.SetTmuxControlHandlerProducer(_tmuxDCSHandlerProducer);
-        }
         return true;
     }
 
@@ -1513,6 +1505,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::RawWriteString(const winrt::hstring& text)
     {
         _core.SendInput(text);
+    }
+
+    void TermControl::InjectTextAtCursor(const winrt::hstring& text)
+    {
+        _core.InjectTextAtCursor(text);
     }
 
     // Method Description:
@@ -4018,6 +4015,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void TermControl::_bubbleEnterTmuxControl(const IInspectable&, Control::EnterTmuxControlEventArgs args)
+    {
+        EnterTmuxControl.raise(*this, std::move(args));
+    }
+
     til::CoordType TermControl::_calculateSearchScrollOffset() const
     {
         auto result = 0;
@@ -4094,9 +4096,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _core.ForceCursorVisible(cursorVisibility == CursorDisplayState::Shown);
         }
-    }
-    void TermControl::SetTmuxControlHandlerProducer(winrt::Microsoft::Terminal::Control::TmuxDCSHandlerProducer producer)
-    {
-        _tmuxDCSHandlerProducer = producer;
     }
 }

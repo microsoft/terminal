@@ -168,7 +168,41 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T, typename Traits>
     bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
     {
-        return lhs.size() == rhs.size() && __builtin_memcmp(lhs.data(), rhs.data(), lhs.size() * sizeof(T)) == 0;
+        // MSVC can only optimize 1 pattern into a bunch of simple comparison instructions:
+        //   size1 == size2 && memcmp(data1, data2, size1/2) == 0
+        // If you introduce a `* sizeof(T)` into the size parameter to memcmp,
+        // it'll refuse to inline the memcmp call, resulting in much worse codegen.
+        // As a trade-off we multiply both sizes by sizeof(T) in advance.
+        // The extra addition instruction is comparatively very cheap.
+        const auto ls = lhs.size() * sizeof(T);
+        const auto rs = rhs.size() * sizeof(T);
+        return ls == rs && __builtin_memcmp(lhs.data(), rhs.data(), ls) == 0;
+    }
+
+    inline bool equals(const std::string_view& lhs, const std::string_view& rhs) noexcept
+    {
+        return equals<>(lhs, rhs);
+    }
+
+    inline bool equals(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    {
+        return equals<>(lhs, rhs);
+    }
+
+    // An extra overload that undoes the quirk in the main equals() implementation.
+    // It's not really needed, except for being neat. This function in particular
+    // is often the best, easy way to do something like:
+    //   match str {
+    //       "foo" => ...,
+    //       "bar" => ...,
+    //   }
+    // with:
+    //   if (til::equals(str, "foo")) { ... }
+    //   else if (til::equals(str, "bar")) { ... }
+    template<typename T, typename Traits, size_t N>
+    constexpr bool equals(const std::basic_string_view<T, Traits>& lhs, const T (&rhs)[N]) noexcept
+    {
+        return lhs.size() == (N - 1) && __builtin_memcmp(lhs.data(), rhs, (N - 1) * sizeof(T)) == 0;
     }
 
     // Just like _memicmp, but without annoying locales.

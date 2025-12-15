@@ -14,7 +14,7 @@
         <name>Feature_EditableUnfocusedAppearance</name>
         <description>The unfocused appearance section in profiles in the SUI that allows users to create and edit unfocused appearances.</description>
         <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
+        <alwaysDisabledReleaseTokens />
     </feature>
 
     <feature>
@@ -184,7 +184,7 @@
         <name>Feature_DebugModeUI</name>
         <description>Enables UI access to the debug mode setting</description>
         <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
+        <alwaysDisabledReleaseTokens />
     </feature>
 
     <feature>

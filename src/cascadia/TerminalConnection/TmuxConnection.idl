@@ -6,10 +6,11 @@ import "ITerminalConnection.idl";
 namespace Microsoft.Terminal.TerminalConnection
 {
     [default_interface]
-    runtimeclass DummyConnection : ITerminalConnection
+    runtimeclass TmuxConnection : ITerminalConnection
     {
-        DummyConnection();
+        TmuxConnection();
+
+        void WriteOutput(Char[] data);
         event TerminalOutputHandler TerminalInput;
     };
-
 }

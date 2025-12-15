@@ -33,8 +33,8 @@
     <ClInclude Include="EchoConnection.h">
       <DependentUpon>EchoConnection.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="DummyConnection.h">
-      <DependentUpon>DummyConnection.idl</DependentUpon>
+    <ClInclude Include="TmuxConnection.h">
+      <DependentUpon>TmuxConnection.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -52,11 +52,11 @@
     <ClCompile Include="EchoConnection.cpp">
       <DependentUpon>EchoConnection.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="DummyConnection.cpp">
-      <DependentUpon>DummyConnection.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="ConptyConnection.cpp">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TmuxConnection.cpp">
+      <DependentUpon>TmuxConnection.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
@@ -65,8 +65,8 @@
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
     <Midl Include="EchoConnection.idl" />
-    <Midl Include="DummyConnection.idl" />
     <Midl Include="AzureConnection.idl" />
+    <Midl Include="TmuxConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw">
