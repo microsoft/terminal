@@ -88,7 +88,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         fused_event(const fused_event&) = delete;
         fused_event& operator=(const fused_event&) = delete;
 
-        fused_event(fused_event&& other) {
+        fused_event(fused_event&& other)
+        {
             const winrt::slim_lock_guard change_guard{ other.m_change };
             if (!other.m_targets)
             {
@@ -98,7 +99,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             m_targets = std::move(other.m_targets);
         }
 
-        fused_event& operator=(fused_event&& other) {
+        fused_event& operator=(fused_event&& other)
+        {
             if (this != &other)
             {
                 const winrt::slim_lock_guard other_change_guard{ other.m_change };
