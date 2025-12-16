@@ -67,7 +67,7 @@ public:
 
     // NOTE: If your method has 200 chars worth of parameters, and it's hard to read
     // without wrapping, chance is you're doing it wrong. This is also true here.
-    // Should've been a default constructor + setters / builder pattern.
+    // Should have been a default constructor + setters / builder pattern.
     // GetScreenBufferInformation could return a struct. And so on.
 
     // Creation
