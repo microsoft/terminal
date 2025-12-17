@@ -68,6 +68,8 @@ namespace winrt::TerminalApp::implementation
     {
         _removeControlEvents();
 
+        _control.Close();
+
         // Clear out our media player callbacks, and stop any playing media. This
         // will prevent the callback from being triggered after we've closed, and
         // also make sure that our sound stops when we're closed.
