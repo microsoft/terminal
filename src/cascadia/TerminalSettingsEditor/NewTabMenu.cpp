@@ -10,8 +10,6 @@
 
 #include "NewTabMenuViewModel.h"
 
-#include <LibraryResources.h>
-
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;

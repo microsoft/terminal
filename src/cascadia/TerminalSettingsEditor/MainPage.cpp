@@ -26,7 +26,6 @@
 #include "GeneratedSettingsIndex.g.h"
 
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
-#include <LibraryResources.h>
 #include <ScopedResourceLoader.h>
 #include <dwmapi.h>
 #include <fmt/compile.h>
@@ -339,6 +338,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
+        _actionsVM = winrt::make<ActionsViewModel>(_settingsClone);
+        _actionsViewModelChangedRevoker = _actionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(_actionsVM.CurrentCommand(), *this));
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit);
+                    _breadcrumbs.Append(crumb);
+                }
+                else if (_actionsVM.CurrentPage() == ActionsSubPage::Base)
+                {
+                    _Navigate(winrt::hstring{ actionsTag }, BreadcrumbSubPage::None);
+                }
+            }
+        });
+
         auto extensionsVMImpl = winrt::make_self<ExtensionsViewModel>(_settingsClone, _colorSchemesPageVM);
         extensionsVMImpl->NavigateToProfileRequested({ this, &MainPage::_NavigateToProfileHandler });
         extensionsVMImpl->NavigateToColorSchemeRequested({ this, &MainPage::_NavigateToColorSchemeHandler });
@@ -417,6 +434,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
+        _actionsVM.UpdateSettings(_settingsClone);
         _newTabMenuPageVM.UpdateSettings(_settingsClone);
         _extensionsVM.UpdateSettings(_settingsClone, _colorSchemesPageVM);
 
@@ -726,10 +744,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(winrt::make<ActionsViewModel>(_settingsClone), *this, elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
+            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
             SettingsNav().SelectedItem(ActionsNavItem());
+
+            if (subPage == BreadcrumbSubPage::Actions_Edit && _actionsVM.CurrentCommand() != nullptr)
+            {
+                _actionsVM.CurrentPage(ActionsSubPage::Edit);
+            }
         }
         else if (clickedItemTag == newTabMenuTag)
         {

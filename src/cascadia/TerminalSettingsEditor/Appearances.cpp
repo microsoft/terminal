@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Appearances.h"
 
-#include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 
 #include "EnumEntry.h"

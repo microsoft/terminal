@@ -938,4 +938,15 @@ namespace til
     };
 }
 
+namespace std
+{
+    template<typename T, size_t N, typename F>
+    void erase_if(til::small_vector<T, N>& vec, F&& pred)
+    {
+        const auto beg = vec.begin();
+        const auto end = vec.end();
+        vec.erase(std::remove_if(beg, end, std::forward<F>(pred)), end);
+    }
+}
+
 #pragma warning(pop)

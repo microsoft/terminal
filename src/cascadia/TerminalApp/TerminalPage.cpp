@@ -5,7 +5,6 @@
 #include "pch.h"
 #include "TerminalPage.h"
 
-#include <LibraryResources.h>
 #include <TerminalThemeHelpers.h>
 #include <Utils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
@@ -1491,18 +1490,8 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
-            {
-                connection = TerminalConnection::AzureConnection{};
-            }
-            else
-            {
-                connection = TerminalConnection::ConptyConnection{};
-            }
-
-            valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
+            connection = TerminalConnection::AzureConnection{};
+            valueSet = TerminalConnection::ConptyConnection::CreateSettings(winrt::hstring{},
                                                                             L".",
                                                                             L"Azure",
                                                                             false,
@@ -2228,7 +2217,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::PersistState(bool serializeBuffer)
+    void TerminalPage::PersistState()
     {
         // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
         // We shouldn't persist such windows.
@@ -2243,7 +2232,7 @@ namespace winrt::TerminalApp::implementation
         for (auto tab : _tabs)
         {
             auto t = winrt::get_self<implementation::Tab>(tab);
-            auto tabActions = t->BuildStartupActions(serializeBuffer ? BuildStartupKind::PersistAll : BuildStartupKind::PersistLayout);
+            auto tabActions = t->BuildStartupActions(BuildStartupKind::Persist);
             actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 
@@ -2327,6 +2316,29 @@ namespace winrt::TerminalApp::implementation
         }
 
         CloseWindowRequested.raise(*this, nullptr);
+    }
+
+    std::vector<IPaneContent> TerminalPage::Panes() const
+    {
+        std::vector<IPaneContent> panes;
+
+        for (const auto tab : _tabs)
+        {
+            const auto impl = _GetTabImpl(tab);
+            if (!impl)
+            {
+                continue;
+            }
+
+            impl->GetRootPane()->WalkTree([&](auto&& pane) {
+                if (auto content = pane->GetContent())
+                {
+                    panes.push_back(std::move(content));
+                }
+            });
+        }
+
+        return panes;
     }
 
     // Method Description:
@@ -3217,33 +3229,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         PackageCatalog catalog = connectResult.PackageCatalog();
-        // clang-format off
-        static constexpr std::array<WinGetSearchParams, 3> searches{ {
-            { .Field = PackageMatchField::Command, .MatchOption = PackageFieldMatchOption::StartsWithCaseInsensitive },
-            { .Field = PackageMatchField::Name, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive },
-            { .Field = PackageMatchField::Moniker, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive } } };
-        // clang-format on
-
         PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
         filter.Value(query);
+        filter.Field(PackageMatchField::Command);
+        filter.Option(PackageFieldMatchOption::Equals);
 
         FindPackagesOptions options = WindowsPackageManagerFactory::CreateFindPackagesOptions();
         options.Filters().Append(filter);
         options.ResultLimit(20);
 
-        IVectorView<MatchResult> pkgList;
-        for (const auto& search : searches)
-        {
-            filter.Field(search.Field);
-            filter.Option(search.MatchOption);
-
-            const auto result = co_await catalog.FindPackagesAsync(options);
-            pkgList = result.Matches();
-            if (pkgList.Size() > 0)
-            {
-                break;
-            }
-        }
+        const auto result = co_await catalog.FindPackagesAsync(options);
+        const IVectorView<MatchResult> pkgList = result.Matches();
         co_return pkgList;
     }
 
@@ -3553,9 +3549,12 @@ namespace winrt::TerminalApp::implementation
 
         if (hasSessionId)
         {
+            using namespace std::string_view_literals;
+
             const auto settingsDir = CascadiaSettings::SettingsDirectory();
-            const auto idStr = Utils::GuidToPlainString(sessionId);
-            const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
+            const auto admin = IsRunningElevated();
+            const auto filenamePrefix = admin ? L"elevated_"sv : L"buffer_"sv;
+            const auto path = fmt::format(FMT_COMPILE(L"{}\\{}{}.txt"), settingsDir, filenamePrefix, sessionId);
             control.RestoreFromPath(path);
         }
 

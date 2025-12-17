@@ -33,6 +33,7 @@ namespace Microsoft::Console::TSF
     struct Handle
     {
         static Handle Create();
+        static void AvoidBuggyTSFConsoleFlags();
         static void SetDefaultScopeAlphanumericHalfWidth(bool enable);
 
         Handle() = default;

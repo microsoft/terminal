@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
-        void PersistToPath(const wchar_t* path) const;
+        void PersistTo(HANDLE handle) const;
         void RestoreFromPath(const wchar_t* path) const;
 
         void ClearQuickFix();
@@ -214,14 +214,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma endregion
 
-        void BlinkAttributeTick();
-        void BlinkCursor();
-        bool CursorOn() const;
-        void CursorOn(const bool isCursorOn);
-
         bool IsVtMouseModeEnabled() const;
         bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
+        bool ForceCursorVisible() const noexcept;
+        void ForceCursorVisible(bool force);
 
         bool CopyOnSelect() const;
         Control::SelectionData SelectionInfo() const;
@@ -347,6 +344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
+        void _rendererEnteredErrorState();
 #pragma endregion
 
         void _raiseReadOnlyWarning();
@@ -401,6 +399,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float _panelWidth{ 0 };
         float _panelHeight{ 0 };
         float _compositionScale{ 0 };
+        uint8_t _renderFailures{ 0 };
+        bool _forceCursorVisible = false;
 
         // Audio stuff.
         MidiAudio _midiAudio;

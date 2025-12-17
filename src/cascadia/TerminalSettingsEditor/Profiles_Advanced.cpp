@@ -7,7 +7,6 @@
 #include "ProfileViewModel.h"
 
 #include "EnumEntry.h"
-#include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::Foundation;

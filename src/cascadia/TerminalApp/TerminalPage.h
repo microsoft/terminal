@@ -122,7 +122,8 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine RequestQuit();
         safe_void_coroutine CloseWindow();
-        void PersistState(bool serializeBuffer);
+        void PersistState();
+        std::vector<IPaneContent> Panes() const;
 
         void ToggleFocusMode();
         void ToggleFullscreen();

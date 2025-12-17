@@ -150,8 +150,8 @@ namespace Microsoft.Terminal.Control
         void SetReadOnlyMode(Boolean readOnlyState);
 
         Microsoft.Terminal.Core.Point CursorPosition { get; };
+        Boolean ForceCursorVisible;
         void ResumeRendering();
-        void BlinkAttributeTick();
 
         SearchResults Search(SearchRequest request);
         void ClearSearch();
@@ -165,9 +165,7 @@ namespace Microsoft.Terminal.Control
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
 
-        void BlinkCursor();
         Boolean IsInReadOnlyMode { get; };
-        Boolean CursorOn;
         void EnablePainting();
 
         String ReadEntireBuffer();

@@ -7,7 +7,6 @@
 #include "JsonUtils.h"
 #include "HashUtils.h"
 
-#include <LibraryResources.h>
 #include <til/static_map.h>
 #include <ScopedResourceLoader.h>
 

@@ -144,12 +144,16 @@
                         </ComboBox>
 
                         <!--  Built-In Icon  -->
-                        <ComboBox x:Uid="Profile_BuiltInIcon"
-                                  Grid.Column="1"
-                                  ItemsSource="{x:Bind Profile.BuiltInIcons}"
-                                  SelectedItem="{x:Bind Profile.CurrentBuiltInIcon, Mode=TwoWay}"
-                                  Visibility="{x:Bind Profile.UsingBuiltInIcon, Mode=OneWay}">
-                            <ComboBox.ItemTemplate>
+                        <AutoSuggestBox x:Uid="Profile_BuiltInIcon"
+                                        Grid.Column="1"
+                                        GotFocus="BuiltInIconPicker_GotFocus"
+                                        ItemsSource="{x:Bind FilteredBuiltInIconList, Mode=OneWay}"
+                                        QuerySubmitted="BuiltInIconPicker_QuerySubmitted"
+                                        Text="{x:Bind Profile.CurrentBuiltInIcon.EnumName, Mode=OneWay}"
+                                        TextBoxStyle="{StaticResource TextBoxSettingStyle}"
+                                        TextChanged="BuiltInIconPicker_TextChanged"
+                                        Visibility="{x:Bind Profile.UsingBuiltInIcon, Mode=OneWay}">
+                            <AutoSuggestBox.ItemTemplate>
                                 <DataTemplate x:DataType="local:EnumEntry">
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
@@ -165,8 +169,8 @@
                                                    Text="{x:Bind EnumName}" />
                                     </Grid>
                                 </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                            </AutoSuggestBox.ItemTemplate>
+                        </AutoSuggestBox>
 
                         <!--  Image (File) Icon  -->
                         <TextBox x:Uid="Profile_IconBox"

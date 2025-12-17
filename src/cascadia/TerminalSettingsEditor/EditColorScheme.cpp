@@ -6,8 +6,6 @@
 #include "EditColorScheme.g.cpp"
 #include "NavigateToPageArgs.g.h"
 
-#include <LibraryResources.h>
-
 using namespace winrt;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;

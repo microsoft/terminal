@@ -70,7 +70,7 @@ public:
                                                  const UINT uiCursorSize,
                                                  _Outptr_ SCREEN_INFORMATION** const ppScreen);
 
-    ~SCREEN_INFORMATION();
+    ~SCREEN_INFORMATION() override;
 
     void GetScreenBufferInformation(_Out_ til::size* pcoordSize,
                                     _Out_ til::point* pcoordCursorPosition,
@@ -166,22 +166,20 @@ public:
     InputBuffer* const GetActiveInputBuffer() const override;
 #pragma endregion
 
-    bool CursorIsDoubleWidth() const;
+    DWORD OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT };
 
-    DWORD OutputMode;
-
-    short WheelDelta;
-    short HWheelDelta;
+    short WheelDelta{ 0 };
+    short HWheelDelta{ 0 };
 
 private:
-    std::unique_ptr<TextBuffer> _textBuffer;
+    std::unique_ptr<TextBuffer> _textBuffer{ nullptr };
 
 public:
-    SCREEN_INFORMATION* Next;
-    BYTE WriteConsoleDbcsLeadByte[2];
-    BYTE FillOutDbcsLeadChar;
+    SCREEN_INFORMATION* Next{ nullptr };
+    BYTE WriteConsoleDbcsLeadByte[2]{ 0, 0 };
+    BYTE FillOutDbcsLeadChar{ 0 };
 
-    UINT ScrollScale;
+    UINT ScrollScale{ 1u };
 
     bool IsActiveScreenBuffer() const;
 
@@ -194,7 +192,7 @@ public:
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
-    [[nodiscard]] NTSTATUS SetCursorPosition(const til::point Position, const bool TurnOn);
+    [[nodiscard]] NTSTATUS SetCursorPosition(til::point Position);
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer(const TextAttribute& initAttributes);
     void UseMainScreenBuffer();
@@ -223,6 +221,11 @@ public:
 
     [[nodiscard]] NTSTATUS ResizeWithReflow(const til::size coordnewScreenSize);
     [[nodiscard]] NTSTATUS ResizeTraditional(const til::size coordNewScreenSize);
+
+    bool ConptyCursorPositionMayBeWrong() const noexcept;
+    void SetConptyCursorPositionMayBeWrong() noexcept;
+    void ResetConptyCursorPositionMayBeWrong() noexcept;
+    void WaitForConptyCursorPositionToBeSynchronized() noexcept;
 
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
@@ -256,20 +259,20 @@ private:
     bool _IsInPtyMode() const;
     bool _IsInVTMode() const;
 
-    ConhostInternalGetSet _api;
+    ConhostInternalGetSet _api{ *this };
 
-    std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
+    std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine{ nullptr };
 
     // Specifies which coordinates of the screen buffer are visible in the
     //      window client (the "viewport" into the buffer)
     Microsoft::Console::Types::Viewport _viewport;
 
-    SCREEN_INFORMATION* _psiAlternateBuffer; // The VT "Alternate" screen buffer.
-    SCREEN_INFORMATION* _psiMainBuffer; // A pointer to the main buffer, if this is the alternate buffer.
+    SCREEN_INFORMATION* _psiAlternateBuffer{ nullptr }; // The VT "Alternate" screen buffer.
+    SCREEN_INFORMATION* _psiMainBuffer{ nullptr }; // A pointer to the main buffer, if this is the alternate buffer.
 
-    til::rect _rcAltSavedClientNew;
-    til::rect _rcAltSavedClientOld;
-    bool _fAltWindowChanged;
+    til::rect _rcAltSavedClientNew{};
+    til::rect _rcAltSavedClientOld{};
+    bool _fAltWindowChanged{ false };
 
     TextAttribute _PopupAttributes;
 
@@ -279,9 +282,10 @@ private:
     // Tracks the last virtual position the viewport was at. This is not
     //  affected by the user scrolling the viewport, only when API calls cause
     //  the viewport to move (SetBufferInfo, WriteConsole, etc)
-    til::CoordType _virtualBottom;
+    til::CoordType _virtualBottom{ 0 };
 
     std::optional<til::size> _deferredPtyResize{ std::nullopt };
+    std::atomic<bool> _conptyCursorPositionMayBeWrong = false;
 
     static void _handleDeferredResize(SCREEN_INFORMATION& siMain);
 

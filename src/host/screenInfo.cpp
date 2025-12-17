@@ -22,23 +22,9 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics* pMetrics,
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
-    OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
-    WheelDelta{ 0 },
-    HWheelDelta{ 0 },
-    _textBuffer{ nullptr },
-    Next{ nullptr },
-    WriteConsoleDbcsLeadByte{ 0, 0 },
-    FillOutDbcsLeadChar{ 0 },
-    ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
-    _api{ *this },
-    _stateMachine{ nullptr },
     _viewport(Viewport::Empty()),
-    _psiAlternateBuffer{ nullptr },
-    _psiMainBuffer{ nullptr },
-    _fAltWindowChanged{ false },
     _PopupAttributes{ popupAttributes },
-    _virtualBottom{ 0 },
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo }
 {
@@ -1311,12 +1297,6 @@ try
     // Also save the distance to the virtual bottom so it can be restored after the resize
     const auto cursorDistanceFromBottom = _virtualBottom - _textBuffer->GetCursor().GetPosition().y;
 
-    // skip any drawing updates that might occur until we swap _textBuffer with the new buffer or we exit early.
-    newTextBuffer->GetCursor().StartDeferDrawing();
-    _textBuffer->GetCursor().StartDeferDrawing();
-    // we're capturing _textBuffer by reference here because when we exit, we want to EndDefer on the current active buffer.
-    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
-
     TextBuffer::Reflow(*_textBuffer.get(), *newTextBuffer.get());
 
     // Since the reflow doesn't preserve the virtual bottom, we try and
@@ -1357,8 +1337,6 @@ NT_CATCH_RETURN()
 [[nodiscard]] NTSTATUS SCREEN_INFORMATION::ResizeTraditional(const til::size coordNewScreenSize)
 try
 {
-    _textBuffer->GetCursor().StartDeferDrawing();
-    auto endDefer = wil::scope_exit([&]() noexcept { _textBuffer->GetCursor().EndDeferDrawing(); });
     _textBuffer->ResizeTraditional(coordNewScreenSize);
     return STATUS_SUCCESS;
 }
@@ -1412,6 +1390,8 @@ NT_CATCH_RETURN()
 
     if (SUCCEEDED_NTSTATUS(status))
     {
+        SetConptyCursorPositionMayBeWrong();
+
         // Fire off an event to let accessibility apps know the layout has changed.
         if (IsActiveScreenBuffer())
         {
@@ -1428,6 +1408,86 @@ NT_CATCH_RETURN()
     }
 
     return status;
+}
+
+// If we're ConPTY, our copy of the buffer may be out of sync with the terminal,
+// because our VT, resize reflow, etc., implementation may be different.
+// For some operations we set a flag to indicate the cursor position may be wrong.
+// For GetConsoleScreenBufferInfo(Ex) we then fetch the latest position from the terminal.
+// This fixes some of the most glaring out of sync issues. See GH#18725.
+bool SCREEN_INFORMATION::ConptyCursorPositionMayBeWrong() const noexcept
+{
+    return _conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed);
+}
+
+// This should be called whenever we do something that may desynchronize
+// our cursor position from the terminal's, e.g. a buffer resize.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::SetConptyCursorPositionMayBeWrong() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    assert(gci.IsConsoleLocked());
+
+    if (gci.IsInVtIoMode())
+    {
+        _conptyCursorPositionMayBeWrong.store(true, std::memory_order_relaxed);
+    }
+}
+
+// This should be called whenever we've synchronized our cursor position again.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::ResetConptyCursorPositionMayBeWrong() noexcept
+{
+    _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
+    til::atomic_notify_all(_conptyCursorPositionMayBeWrong);
+}
+
+// Call this to synchronously wait until the ConPTY cursor position
+// is known to be correct again. To do so, this emits a DSR CPR sequence
+// and waits for a response from the terminal.
+// See ConptyCursorPositionMayBeWrong().
+void SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized() noexcept
+{
+    if (!_conptyCursorPositionMayBeWrong.load(std::memory_order_relaxed))
+    {
+        return;
+    }
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    {
+        gci.LockConsole();
+        const auto exit = wil::scope_exit([&] { gci.UnlockConsole(); });
+        auto writer = gci.GetVtWriterForBuffer(this);
+
+        if (!writer || !writer.WriteDSRCPR())
+        {
+            _conptyCursorPositionMayBeWrong.store(false, std::memory_order_relaxed);
+            return;
+        }
+
+        writer.Submit();
+    }
+
+    // If you were to hold the lock, the ConPTY input thread couldn't
+    // process any input and thus couldn't update the cursor position.
+    assert(!gci.IsConsoleLocked());
+
+    for (;;)
+    {
+        if (!_conptyCursorPositionMayBeWrong.load(std::memory_order::relaxed))
+        {
+            break;
+        }
+
+        // atomic_wait() returns false when the timeout expires.
+        // Technically we should decrement the timeout with each iteration,
+        // but I suspect infinite spurious wake-ups are a theoretical problem.
+        if (!til::atomic_wait(_conptyCursorPositionMayBeWrong, true, 500))
+        {
+            break;
+        }
+    }
 }
 
 // Routine Description:
@@ -1545,9 +1605,8 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
 // - TurnOn - true if cursor should be left on, false if should be left off
 // Return Value:
 // - Status
-[[nodiscard]] NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const til::point Position, const bool TurnOn)
+[[nodiscard]] NTSTATUS SCREEN_INFORMATION::SetCursorPosition(const til::point Position)
 {
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& cursor = _textBuffer->GetCursor();
 
     //
@@ -1579,20 +1638,6 @@ void SCREEN_INFORMATION::SetCursorDBMode(const bool DoubleCursor)
     if (Position.y > _virtualBottom)
     {
         _virtualBottom = Position.y;
-    }
-
-    // if we have the focus, adjust the cursor state
-    if (gci.Flags & CONSOLE_HAS_FOCUS)
-    {
-        if (TurnOn)
-        {
-            cursor.SetDelay(false);
-            cursor.SetIsOn(true);
-        }
-        else
-        {
-            cursor.SetDelay(true);
-        }
     }
 
     return STATUS_SUCCESS;
@@ -1746,7 +1791,7 @@ const SCREEN_INFORMATION* SCREEN_INFORMATION::GetAltBuffer() const noexcept
         auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
         altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         altCursor.SetIsVisible(myCursor.IsVisible());
-        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        altCursor.SetIsBlinking(myCursor.IsBlinking());
         // The new position should match the viewport-relative position of the main buffer.
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.y -= GetVirtualViewport().Top();
@@ -1895,7 +1940,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+        mainCursor.SetIsBlinking(altCursor.IsBlinking());
 
         // Copy the alt buffer's output mode back to the main buffer.
         psiMain->OutputMode = psiAlt->OutputMode;
@@ -2334,19 +2379,6 @@ Viewport SCREEN_INFORMATION::GetVtPageArea() const noexcept
     const auto bufferWidth = _textBuffer->GetSize().Width();
     const auto top = std::max(0, _virtualBottom - viewportHeight + 1);
     return Viewport::FromExclusive({ 0, top, bufferWidth, top + viewportHeight });
-}
-
-// Method Description:
-// - Returns true if the character at the cursor's current position is wide.
-// Arguments:
-// - <none>
-// Return Value:
-// - true if the character at the cursor's current position is wide
-bool SCREEN_INFORMATION::CursorIsDoubleWidth() const
-{
-    const auto& buffer = GetTextBuffer();
-    const auto position = buffer.GetCursor().GetPosition();
-    return buffer.GetRowByOffset(position.y).DbcsAttrAt(position.x) != DbcsAttribute::Single;
 }
 
 // Method Description:

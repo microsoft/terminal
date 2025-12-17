@@ -10,7 +10,6 @@
 #include "FragmentProfileViewModel.g.cpp"
 #include "ExtensionPackageTemplateSelector.g.cpp"
 
-#include <LibraryResources.h>
 #include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::Foundation;
@@ -41,7 +40,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
-        vmImpl->MarkAsVisited();
 
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
@@ -369,11 +367,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _ExtensionPackageIdentifierTemplateSelector.SelectTemplate(CurrentExtensionPackage());
     }
 
-    bool ExtensionsViewModel::DisplayBadge() const noexcept
-    {
-        return !Model::ApplicationState::SharedInstance().BadgeDismissed(L"page.extensions");
-    }
-
     // Returns true if the extension is enabled, false otherwise
     bool ExtensionsViewModel::GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings)
     {
@@ -440,12 +433,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _colorSchemesPageVM.CurrentScheme(schemeVM);
         NavigateToColorSchemeRequested.raise(*this, nullptr);
-    }
-
-    void ExtensionsViewModel::MarkAsVisited()
-    {
-        Model::ApplicationState::SharedInstance().DismissBadge(L"page.extensions");
-        _NotifyChanges(L"DisplayBadge");
     }
 
     bool ExtensionPackageViewModel::SortAscending(const Editor::ExtensionPackageViewModel& lhs, const Editor::ExtensionPackageViewModel& rhs)

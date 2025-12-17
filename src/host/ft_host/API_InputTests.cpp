@@ -94,7 +94,7 @@ void InputTests::TestGetMouseButtonsValid()
     }
     else
     {
-        dwButtonsExpected = Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider::s_DefaultNumberOfMouseButtons;
+        dwButtonsExpected = 3;
     }
 
     VERIFY_ARE_EQUAL(dwButtonsExpected, nMouseButtons);

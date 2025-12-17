@@ -6,7 +6,6 @@
 #include "NavigateToPageArgs.g.h"
 #include "GlobalAppearance.g.cpp"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 
 using namespace winrt;
