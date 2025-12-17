@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 prettyPrint << wch;
             }
         }
-        TerminalOutput.raise(prettyPrint.str());
+        TerminalOutput.raise(winrt_wstring_to_array_view(prettyPrint.str()));
     }
 
     void EchoConnection::Resize(uint32_t /*rows*/, uint32_t /*columns*/) noexcept

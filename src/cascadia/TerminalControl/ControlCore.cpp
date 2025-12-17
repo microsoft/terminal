@@ -10,8 +10,6 @@
 
 #include <DefaultSettings.h>
 #include <unicode.hpp>
-#include <utils.hpp>
-#include <WinUser.h>
 
 #include "EventArgs.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -2238,13 +2236,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         RaiseNotice.raise(*this, std::move(noticeArgs));
     }
-    void ControlCore::_connectionOutputHandler(const hstring& hstr)
+    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)
     {
         try
         {
             {
                 const auto lock = _terminal->LockForWriting();
-                _terminal->Write(hstr);
+                _terminal->Write(winrt_array_to_wstring_view(str));
             }
 
             if (!_pendingResponses.empty())
