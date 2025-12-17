@@ -104,13 +104,14 @@ namespace ControlUnitTests
         auto _addInputCallback(const winrt::com_ptr<MockConnection>& conn,
                                std::deque<std::wstring>& expectedOutput)
         {
-            conn->TerminalOutput([&](const hstring& hstr) {
+            conn->TerminalOutput([&](const winrt::array_view<const char16_t> str) {
                 VERIFY_IS_GREATER_THAN(expectedOutput.size(), 0u);
+                const auto actual = winrt_array_to_wstring_view(str);
                 const auto expected = expectedOutput.front();
                 expectedOutput.pop_front();
-                Log::Comment(fmt::format(L"Received: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(hstr.c_str())).c_str());
+                Log::Comment(fmt::format(L"Received: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(std::wstring{ actual })).c_str());
                 Log::Comment(fmt::format(L"Expected: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(expected)).c_str());
-                VERIFY_ARE_EQUAL(expected, hstr);
+                VERIFY_ARE_EQUAL(expected, actual);
             });
 
             return std::move(wil::scope_exit([&]() {

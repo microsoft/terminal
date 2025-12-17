@@ -349,7 +349,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode();
-        void _connectionOutputHandler(const hstring& hstr);
+        void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
         void _setOpacity(const float opacity, const bool focused = true);
