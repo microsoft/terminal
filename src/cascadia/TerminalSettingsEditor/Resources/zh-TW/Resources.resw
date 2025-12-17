@@ -690,7 +690,11 @@
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>動作</value>
-    <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
+    <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
+  </data>
+  <data name="Nav_EditAction.Content" xml:space="preserve">
+    <value>編輯動作...</value>
+    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>延伸模組</value>
@@ -1808,6 +1812,42 @@
     <value>刪除此設定檔的非焦點外觀。</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
+  <data name="Actions_Disclaimer.Content" xml:space="preserve">
+    <value>深入了解動作</value>
+    <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
+  </data>
+  <data name="Actions_DeleteButton2.Text" xml:space="preserve">
+    <value>刪除動作</value>
+    <comment>Button label that deletes the selected action.</comment>
+  </data>
+  <data name="Actions_Name.Text" xml:space="preserve">
+    <value>動作名稱</value>
+    <comment>Label for the text box that edits the action name.</comment>
+  </data>
+  <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
+    <value>動作名稱</value>
+    <comment>Placeholder text for the text box where the user can edit the action name.</comment>
+  </data>
+  <data name="Actions_ShortcutAction.Text" xml:space="preserve">
+    <value>動作類型</value>
+    <comment>Label for the combo box that edits the action type.</comment>
+  </data>
+  <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>按鍵繫結</value>
+    <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_Arguments.Text" xml:space="preserve">
+    <value>其他引數</value>
+    <comment>Label for the list of editable arguments for the currently selected action.</comment>
+  </data>
+  <data name="Actions_Keybindings.Text" xml:space="preserve">
+    <value>按鍵繫結</value>
+    <comment>Label for the list of editable keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_AddKeyChord.Text" xml:space="preserve">
+    <value>新增按鍵繫結</value>
+    <comment>Button label that adds a keybinding to the current action.</comment>
+  </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>是，刪除按鍵繫結關係</value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>
@@ -1815,6 +1855,14 @@
   <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>您確定要刪除此按鍵繫結關係？</value>
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
+    <value>是，刪除動作</value>
+    <comment>Button label that confirms deletion of an action.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>您是否確定要刪除此動作?</value>
+    <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
     <value>按鍵和同步選取無效。請輸入有效的按鍵和同步選取。</value>
@@ -1859,6 +1907,278 @@
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>動作</value>
     <comment>Label for a control that sets the action of a key binding.</comment>
+  </data>
+  <data name="Actions_NullEnumValue" xml:space="preserve">
+    <value>使用全域設定</value>
+    <comment>An option to choose from for nullable enums. Clears the enum value.</comment>
+  </data>
+  <data name="Actions_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+    <comment>An option to choose from for the "copy format". Copies content in HTML format.</comment>
+  </data>
+  <data name="Actions_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+    <comment>An option to choose from for the "copy format". Copies content in Rich Text Format (RTF).</comment>
+  </data>
+  <data name="Actions_SplitDirectionAuto.Content" xml:space="preserve">
+    <value>自動</value>
+    <comment>An option to choose from for the "split direction". Automatically determines the split direction.</comment>
+  </data>
+  <data name="Actions_SplitDirectionUp.Content" xml:space="preserve">
+    <value>向上鍵</value>
+    <comment>An option to choose from for the "split direction". Splits upward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionRight.Content" xml:space="preserve">
+    <value>右</value>
+    <comment>An option to choose from for the "split direction". Splits to the right.</comment>
+  </data>
+  <data name="Actions_SplitDirectionDown.Content" xml:space="preserve">
+    <value>向下</value>
+    <comment>An option to choose from for the "split direction". Splits downward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionLeft.Content" xml:space="preserve">
+    <value>左</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitDirectionVertical.Content" xml:space="preserve">
+    <value>垂直</value>
+    <comment>An option to choose from for the "split direction". Splits vertically.</comment>
+  </data>
+  <data name="Actions_SplitDirectionHorizontal.Content" xml:space="preserve">
+    <value>水平</value>
+    <comment>An option to choose from for the "split direction". Splits horizontally.</comment>
+  </data>
+  <data name="Actions_SplitTypeManual.Content" xml:space="preserve">
+    <value>手動設定</value>
+    <comment>An option to choose from for the "split type". Creates a manual split.</comment>
+  </data>
+  <data name="Actions_SplitTypeDuplicate.Content" xml:space="preserve">
+    <value>複製</value>
+    <comment>An option to choose from for the "split type". Creates a split by duplicating the current session.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
+    <value>無</value>
+    <comment>An option to choose from for the "resize direction". None option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionLeft.Content" xml:space="preserve">
+    <value>左</value>
+    <comment>An option to choose from for the "resize direction". Left option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionRight.Content" xml:space="preserve">
+    <value>右</value>
+    <comment>An option to choose from for the "resize direction". Right option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionUp.Content" xml:space="preserve">
+    <value>向上鍵</value>
+    <comment>An option to choose from for the "resize direction". Up option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionDown.Content" xml:space="preserve">
+    <value>向下</value>
+    <comment>An option to choose from for the "resize direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNone.Content" xml:space="preserve">
+    <value>無</value>
+    <comment>An option to choose from for the "focus direction". None option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionLeft.Content" xml:space="preserve">
+    <value>左</value>
+    <comment>An option to choose from for the "focus direction". Left option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionRight.Content" xml:space="preserve">
+    <value>右</value>
+    <comment>An option to choose from for the "focus direction". Right option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionUp.Content" xml:space="preserve">
+    <value>向上鍵</value>
+    <comment>An option to choose from for the "focus direction". Up option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionDown.Content" xml:space="preserve">
+    <value>向下</value>
+    <comment>An option to choose from for the "focus direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPrevious.Content" xml:space="preserve">
+    <value>上一個</value>
+    <comment>An option to choose from for the "focus direction". Previous option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPreviousInOrder.Content" xml:space="preserve">
+    <value>依序上一個</value>
+    <comment>An option to choose from for the "focus direction". Previous in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNextInOrder.Content" xml:space="preserve">
+    <value>依序下一個</value>
+    <comment>An option to choose from for the "focus direction". Next in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionFirst.Content" xml:space="preserve">
+    <value>第一</value>
+    <comment>An option to choose from for the "focus direction". First option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionParent.Content" xml:space="preserve">
+    <value>家長</value>
+    <comment>An option to choose from for the "focus direction". Parent option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionChild.Content" xml:space="preserve">
+    <value>兒童</value>
+    <comment>An option to choose from for the "focus direction". Child option.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsFile.Content" xml:space="preserve">
+    <value>設定檔案</value>
+    <comment>An option to choose from for the "settings target". Targets the settings file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDefaultsFile.Content" xml:space="preserve">
+    <value>預設檔案</value>
+    <comment>An option to choose from for the "settings target". Targets the defaults file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetAllFiles.Content" xml:space="preserve">
+    <value>所有檔案</value>
+    <comment>An option to choose from for the "settings target". Targets all files.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsUI.Content" xml:space="preserve">
+    <value>設定 UI</value>
+    <comment>An option to choose from for the "settings target". Targets the settings UI.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDirectory.Content" xml:space="preserve">
+    <value>目錄</value>
+    <comment>An option to choose from for the "settings target". Targets the directory.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionNone.Content" xml:space="preserve">
+    <value>無</value>
+    <comment>An option to choose from for the "move tab direction". No movement.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>向前</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>向後</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
+    <value>上一個</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionNext.Content" xml:space="preserve">
+    <value>下一個</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the next mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionFirst.Content" xml:space="preserve">
+    <value>第一</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the first mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionLast.Content" xml:space="preserve">
+    <value>最後</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the last mark.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeAction.Content" xml:space="preserve">
+    <value>動作</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in action mode.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeCommandLine.Content" xml:space="preserve">
+    <value>命令列</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in command line mode.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceNone.Content" xml:space="preserve">
+    <value>無</value>
+    <comment>An option to choose from for the "suggestions source". No suggestions source.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceTasks.Content" xml:space="preserve">
+    <value>工作</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from tasks.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceSnippets.Content" xml:space="preserve">
+    <value>程式碼片段</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from snippets.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceCommandHistory.Content" xml:space="preserve">
+    <value>命令歷程記錄</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from command history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceDirectoryHistory.Content" xml:space="preserve">
+    <value>目錄歷程記錄</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from directory history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceQuickFix.Content" xml:space="preserve">
+    <value>快速修正</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from quick fixes.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceAll.Content" xml:space="preserve">
+    <value>全部</value>
+    <comment>An option to choose from for the "suggestions source". Includes all suggestion sources.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNone.Content" xml:space="preserve">
+    <value>無</value>
+    <comment>An option to choose from for the "find match direction". No direction selected.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNext.Content" xml:space="preserve">
+    <value>下一個</value>
+    <comment>An option to choose from for the "find match direction". Finds the next match.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionPrev.Content" xml:space="preserve">
+    <value>上一個</value>
+    <comment>An option to choose from for the "find match direction". Finds the previous match.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorAny.Content" xml:space="preserve">
+    <value>任何</value>
+    <comment>An option to choose from for the "desktop behavior". Applies to any desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorToCurrent.Content" xml:space="preserve">
+    <value>至目前</value>
+    <comment>An option to choose from for the "desktop behavior". Moves to the current desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorOnCurrent.Content" xml:space="preserve">
+    <value>目前</value>
+    <comment>An option to choose from for the "desktop behavior". Stays on the current desktop.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorAny.Content" xml:space="preserve">
+    <value>任何</value>
+    <comment>An option to choose from for the "monitor behavior". Applies to any monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToCurrent.Content" xml:space="preserve">
+    <value>至目前</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the current monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToMouse.Content" xml:space="preserve">
+    <value>至滑鼠</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the monitor where the mouse is located.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScreen.Content" xml:space="preserve">
+    <value>螢幕</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the screen.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScrollback.Content" xml:space="preserve">
+    <value>捲動</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeAll.Content" xml:space="preserve">
+    <value>全部</value>
+    <comment>An option to choose from for the "clear buffer type". Clears both the screen and the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionPrev.Content" xml:space="preserve">
+    <value>上一個</value>
+    <comment>An option to choose from for the "select output direction". Selects the previous output.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionNext.Content" xml:space="preserve">
+    <value>下一個</value>
+    <comment>An option to choose from for the "select output direction". Selects the next output.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>最近用過函數</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs based on most recently used order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>依序</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs in sequential order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>已停用</value>
+    <comment>An option to choose from for the "tab switcher mode". Disables tab switching.</comment>
+  </data>
+  <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>無色彩</value>
+    <comment>Label for a button directing the user to opt out of choosing a color.</comment>
+  </data>
+  <data name="Actions_Browse.Content" xml:space="preserve">
+    <value>瀏覽...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>輸入您想要的鍵盤快速鍵。</value>

@@ -28,11 +28,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     PreviewConnection::PreviewConnection() noexcept = default;
 
-    void PreviewConnection::Start() noexcept
+    void PreviewConnection::Start()
     {
-        // Send the preview text
-        auto e = fmt::format(PreviewText, _displayPowerlineGlyphs ? PromptTextPowerline : PromptTextPlain);
-        TerminalOutput.raise(winrt_u8string_to_array_view(e));
+        const auto prompt = _displayPowerlineGlyphs ? PromptTextPowerline : PromptTextPlain;
+        const auto text = fmt::format(FMT_COMPILE(PreviewText), prompt);
+        TerminalOutput.raise(winrt_u8string_to_array_view(text));
     }
 
     void PreviewConnection::Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) noexcept
@@ -51,7 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
-    void PreviewConnection::DisplayPowerlineGlyphs(bool d) noexcept
+    void PreviewConnection::DisplayPowerlineGlyphs(bool d)
     {
         if (_displayPowerlineGlyphs != d)
         {

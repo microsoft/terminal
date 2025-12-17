@@ -12,9 +12,10 @@ using namespace Microsoft::Console::Types;
 using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
 static constexpr TimerRepr TimerReprMax = std::numeric_limits<TimerRepr>::max();
-static constexpr DWORD maxRetriesForRenderEngine = 3;
-// The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
-static constexpr DWORD renderBackoffBaseTimeMilliseconds = 150;
+// We want there to be five retry periods; after the last one, we will mark the render as failed.
+static constexpr unsigned int maxRetriesForRenderEngine = 5;
+// The renderer will wait this number of milliseconds * 2^tries before trying again.
+static constexpr DWORD renderBackoffBaseTimeMilliseconds = 100;
 
 // Routine Description:
 // - Creates a new renderer controller for a console.
@@ -326,40 +327,44 @@ DWORD Renderer::_timerToMillis(TimerRepr t) noexcept
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
-    auto tries = maxRetriesForRenderEngine;
-    while (tries > 0)
+    HRESULT hr{ S_FALSE };
+    // Attempt zero doesn't count as a retry. We should try maxRetries + 1 times.
+    for (unsigned int attempt = 0u; attempt <= maxRetriesForRenderEngine; ++attempt)
     {
+        if (attempt > 0) [[unlikely]]
+        {
+            // Add a bit of backoff.
+            // Sleep 100, 200, 400, 600, 800ms, 1600ms before failing out and disabling the renderer.
+            Sleep(renderBackoffBaseTimeMilliseconds * (1 << (attempt - 1)));
+        }
+
         // BODGY: Optimally we would want to retry per engine, but that causes different
         // problems (intermittent inconsistent states between text renderer and UIA output,
         // not being able to lock the cursor location, etc.).
-        const auto hr = _PaintFrame();
+        hr = _PaintFrame();
         if (SUCCEEDED(hr))
         {
             break;
         }
 
         LOG_HR_IF(hr, hr != E_PENDING);
-
-        if (--tries == 0)
-        {
-            // Stop trying.
-            _disablePainting();
-            if (_pfnRendererEnteredErrorState)
-            {
-                _pfnRendererEnteredErrorState();
-            }
-            // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
-            // isn't near as bad as the entire application aborting. We're a component. We shouldn't
-            // abort applications that host us.
-            return S_FALSE;
-        }
-
-        // Add a bit of backoff.
-        // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
-        Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
     }
 
-    return S_OK;
+    if (FAILED(hr))
+    {
+        // Stop trying.
+        _disablePainting();
+        if (_pfnRendererEnteredErrorState)
+        {
+            _pfnRendererEnteredErrorState();
+        }
+        // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
+        // isn't near as bad as the entire application aborting. We're a component. We shouldn't
+        // abort applications that host us.
+        hr = S_FALSE;
+    }
+
+    return hr;
 }
 
 [[nodiscard]] HRESULT Renderer::_PaintFrame() noexcept

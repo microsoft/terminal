@@ -344,6 +344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
+        void _rendererEnteredErrorState();
 #pragma endregion
 
         void _raiseReadOnlyWarning();
@@ -398,6 +399,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float _panelWidth{ 0 };
         float _panelHeight{ 0 };
         float _compositionScale{ 0 };
+        uint8_t _renderFailures{ 0 };
         bool _forceCursorVisible = false;
 
         // Audio stuff.

@@ -149,6 +149,10 @@
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xE765;" />
                 </muxc:NavigationViewItem.Icon>
+                <muxc:NavigationViewItem.InfoBadge>
+                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
+                                    Visibility="{x:Bind ActionsVM.DisplayBadge, Mode=OneWay}" />
+                </muxc:NavigationViewItem.InfoBadge>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItem x:Uid="Nav_NewTabMenu"
@@ -163,10 +167,6 @@
                 <muxc:NavigationViewItem.Icon>
                     <FontIcon Glyph="&#xEA86;" />
                 </muxc:NavigationViewItem.Icon>
-                <muxc:NavigationViewItem.InfoBadge>
-                    <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
-                                    Visibility="{x:Bind ExtensionsVM.DisplayBadge, Mode=OneWay}" />
-                </muxc:NavigationViewItem.InfoBadge>
             </muxc:NavigationViewItem>
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />

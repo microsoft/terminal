@@ -60,32 +60,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename ArgsT>
     struct event
     {
-        event<ArgsT>() = default;
+        explicit operator bool() const noexcept { return static_cast<bool>(_handlers); }
         winrt::event_token operator()(const ArgsT& handler) { return _handlers.add(handler); }
-        void operator()(const winrt::event_token& token) { _handlers.remove(token); }
-        operator bool() const noexcept { return bool(_handlers); }
-        template<typename... Arg>
+        void operator()(winrt::event_token token) { _handlers.remove(token); }
+
         void raise(auto&&... args)
         {
             _handlers(std::forward<decltype(args)>(args)...);
         }
+
+    private:
         winrt::event<ArgsT> _handlers;
     };
 
     template<typename SenderT = winrt::Windows::Foundation::IInspectable, typename ArgsT = winrt::Windows::Foundation::IInspectable>
-    struct typed_event
-    {
-        typed_event<SenderT, ArgsT>() = default;
-        winrt::event_token operator()(const winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>& handler) { return _handlers.add(handler); }
-        void operator()(const winrt::event_token& token) { _handlers.remove(token); }
-        operator bool() const noexcept { return bool(_handlers); }
-        template<typename... Arg>
-        void raise(Arg const&... args)
-        {
-            _handlers(std::forward<decltype(args)>(args)...);
-        }
-        winrt::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>> _handlers;
-    };
+    using typed_event = til::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>>;
+
 #endif
 #ifdef WINRT_Windows_UI_Xaml_Data_H
 
