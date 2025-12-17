@@ -22,23 +22,9 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics* pMetrics,
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
-    OutputMode{ ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT },
-    WheelDelta{ 0 },
-    HWheelDelta{ 0 },
-    _textBuffer{ nullptr },
-    Next{ nullptr },
-    WriteConsoleDbcsLeadByte{ 0, 0 },
-    FillOutDbcsLeadChar{ 0 },
-    ScrollScale{ 1ul },
     _pConsoleWindowMetrics{ pMetrics },
-    _api{ *this },
-    _stateMachine{ nullptr },
     _viewport(Viewport::Empty()),
-    _psiAlternateBuffer{ nullptr },
-    _psiMainBuffer{ nullptr },
-    _fAltWindowChanged{ false },
     _PopupAttributes{ popupAttributes },
-    _virtualBottom{ 0 },
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo }
 {
