@@ -11,6 +11,7 @@ namespace Microsoft.Terminal.Wpf
     using System.Windows.Automation.Peers;
     using System.Windows.Interop;
     using System.Windows.Media;
+    using System.Windows.Threading;
 
     /// <summary>
     /// The container class that hosts the native hwnd terminal.
