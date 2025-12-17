@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::Close()
     {
         // We deliberately remove the event handlers before closing the control.
-        // This is to prevent re-entrancy issues, pointless callbacks, etc.
+        // This is to prevent reentrancy issues, pointless callbacks, etc.
         _removeControlEvents();
 
         _control.Close();
