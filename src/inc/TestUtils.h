@@ -109,23 +109,6 @@ public:
         return iter;
     };
 
-    // Function Description:
-    // - Replaces all escapes with the printable symbol for that escape
-    //   character. This makes log parsing easier for debugging, as the literal
-    //   escapes won't be written to the console output.
-    // Arguments:
-    // - wstr: the string to escape.
-    // Return Value:
-    // - A modified version of that string with non-printable characters replaced.
-    static std::wstring ReplaceEscapes(std::wstring escaped)
-    {
-        std::replace(escaped.begin(), escaped.end(), L'\x1b', L'\x241b'); // ESC
-        std::replace(escaped.begin(), escaped.end(), L'\x08', L'\x2408'); // BS
-        std::replace(escaped.begin(), escaped.end(), L'\x0A', L'\x240A'); // LF
-        std::replace(escaped.begin(), escaped.end(), L'\x0D', L'\x240D'); // CR
-        return escaped;
-    }
-
     template<class... T>
     static bool VerifyLineContains(TextBufferCellIterator& actual, T&&... expectedContent)
     {

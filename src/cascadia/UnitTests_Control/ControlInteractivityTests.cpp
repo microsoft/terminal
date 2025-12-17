@@ -109,8 +109,8 @@ namespace ControlUnitTests
                 const auto actual = winrt_array_to_wstring_view(str);
                 const auto expected = expectedOutput.front();
                 expectedOutput.pop_front();
-                Log::Comment(fmt::format(L"Received: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(std::wstring{ actual })).c_str());
-                Log::Comment(fmt::format(L"Expected: \"{}\"", TerminalCoreUnitTests::TestUtils::ReplaceEscapes(expected)).c_str());
+                Log::Comment(fmt::format(L"Received: \"{}\"", til::visualize_nonspace_control_codes(std::wstring{ actual })).c_str());
+                Log::Comment(fmt::format(L"Expected: \"{}\"", til::visualize_nonspace_control_codes(expected)).c_str());
                 VERIFY_ARE_EQUAL(expected, actual);
             });
 
