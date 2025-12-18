@@ -104,6 +104,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _NotifyChanges(L"Icon", L"IconPath");
         }
 
+        constexpr bool TmuxControlEnabled() noexcept
+        {
+            return Feature_TmuxControl::IsEnabled();
+        }
+
         // starting directory
         hstring CurrentStartingDirectoryPreview() const;
         bool UseParentProcessDirectory() const;
@@ -175,7 +180,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
-        WINRT_PROPERTY(bool, TmuxControlEnabled, false);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>, IconTypes);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);

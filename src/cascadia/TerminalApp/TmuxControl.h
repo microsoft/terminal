@@ -3,17 +3,16 @@
 
 #pragma once
 
-#include <til/mutex.h>
-
-#include "Pane.h"
+class Pane;
 
 namespace winrt::TerminalApp::implementation
 {
+    struct Tab;
     struct TerminalPage;
+    struct TmuxConnection;
 
-    class TmuxControl : public std::enable_shared_from_this<TmuxControl>
+    struct TmuxControl : std::enable_shared_from_this<TmuxControl>
     {
-    public:
         TmuxControl(TerminalPage& page);
 
         bool AcquireSingleUseLock(winrt::Microsoft::Terminal::Control::TermControl control) noexcept;
@@ -74,29 +73,27 @@ namespace winrt::TerminalApp::implementation
             int64_t id = -1;
         };
 
-        // AttachedPane should not need to be copied. Anything else would be a mistake.
-        // But if we added a constructor to it, we could not use designated initializers anymore.
-        // This marker makes it possible.
-        struct MoveOnlyMarker
-        {
-            MoveOnlyMarker() = default;
-            MoveOnlyMarker(MoveOnlyMarker&&) = default;
-            MoveOnlyMarker& operator=(MoveOnlyMarker&&) = default;
-            MoveOnlyMarker(const MoveOnlyMarker&) = delete;
-            MoveOnlyMarker& operator=(const MoveOnlyMarker&) = delete;
-        };
-
         struct AttachedPane
         {
+            AttachedPane() = default;
+            AttachedPane(int64_t paneId, std::wstring outputBacklog);
+            ~AttachedPane();
+
+            // Have to redefine them because they get implicitly deleted once a destructor is defined.
+            AttachedPane(AttachedPane&&) = default;
+            AttachedPane& operator=(AttachedPane&&) = default;
+
+            // Why would you want to copy this.
+            AttachedPane(const AttachedPane&) = delete;
+            AttachedPane& operator=(const AttachedPane&) = delete;
+
             int64_t windowId = -1;
             int64_t paneId = -1;
-            winrt::Microsoft::Terminal::TerminalConnection::TmuxConnection connection{ nullptr };
+            winrt::com_ptr<TmuxConnection> connection{ nullptr };
             winrt::Microsoft::Terminal::Control::TermControl control{ nullptr };
             std::wstring outputBacklog;
             bool initialized = false;
             bool ignoreOutput = false;
-
-            [[msvc::no_unique_address]] MoveOnlyMarker moveOnlyMarker;
         };
 
         safe_void_coroutine _parseLine(std::wstring line);

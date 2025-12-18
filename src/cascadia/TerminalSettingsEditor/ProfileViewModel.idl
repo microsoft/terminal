@@ -114,7 +114,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UsingBuiltInIcon { get; };
         Boolean UsingEmojiIcon { get; };
         Boolean UsingImageIcon { get; };
-        Boolean TmuxControlEnabled;
+        Boolean TmuxControlEnabled { get; };
         String IconPath;
 
         EnumEntry CurrentBuiltInIcon;

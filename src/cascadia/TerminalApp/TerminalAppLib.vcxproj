@@ -173,9 +173,8 @@
     <ClInclude Include="SettingsPaneContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TmuxControl.h">
-      <DependentUpon>TerminalPage.idl</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="TmuxConnection.h" />
+    <ClInclude Include="TmuxControl.h" />
     <ClInclude Include="Toast.h" />
     <ClInclude Include="TerminalSettingsCache.h" />
     <ClInclude Include="SuggestionsControl.h">
@@ -288,10 +287,9 @@
     <ClCompile Include="SettingsPaneContent.cpp">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TmuxControl.cpp">
-      <DependentUpon>TerminalPage.xaml</DependentUpon>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="TmuxConnection.cpp" />
+    <ClCompile Include="TmuxControl.cpp" />
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="TerminalSettingsCache.cpp" />
     <ClCompile Include="SuggestionsControl.cpp">
@@ -301,7 +299,6 @@
       <DependentUpon>MarkdownPaneContent.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -428,7 +425,6 @@
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-
   </ItemGroup>
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See

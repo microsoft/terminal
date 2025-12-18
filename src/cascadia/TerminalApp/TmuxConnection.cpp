@@ -3,14 +3,9 @@
 
 #include "pch.h"
 #include "TmuxConnection.h"
-#include <sstream>
 
-#include "TmuxConnection.g.cpp"
-
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::TerminalApp::implementation
 {
-    TmuxConnection::TmuxConnection() noexcept = default;
-
     void TmuxConnection::Initialize(const Windows::Foundation::Collections::ValueSet&) const noexcept
     {
     }
@@ -38,9 +33,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return {};
     }
 
-    ConnectionState TmuxConnection::State() const noexcept
+    Microsoft::Terminal::TerminalConnection::ConnectionState TmuxConnection::State() const noexcept
     {
-        return ConnectionState::Connected;
+        return Microsoft::Terminal::TerminalConnection::ConnectionState::Connected;
     }
 
     void TmuxConnection::WriteOutput(const winrt::array_view<const char16_t> wstr)

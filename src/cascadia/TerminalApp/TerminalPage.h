@@ -12,7 +12,6 @@
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
-#include "TmuxControl.h"
 #include "Toast.h"
 
 #include "WindowsPackageManagerFactory.h"
@@ -38,6 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings
 namespace winrt::TerminalApp::implementation
 {
     struct TerminalSettingsCache;
+    struct TmuxControl;
 
     inline constexpr uint32_t DefaultRowsToScroll{ 3 };
     inline constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
@@ -582,7 +582,7 @@ namespace winrt::TerminalApp::implementation
 
         friend class TerminalAppLocalTests::TabTests;
         friend class TerminalAppLocalTests::SettingsTests;
-        friend class TmuxControl;
+        friend struct TmuxControl;
     };
 }
 

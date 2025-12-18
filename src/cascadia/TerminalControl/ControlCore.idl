@@ -67,10 +67,6 @@ namespace Microsoft.Terminal.Control
         Boolean SearchRegexInvalid;
     };
 
-    delegate Boolean TmuxDCSHandler(Char ch);
-    delegate void PrintHandler(String str);
-    delegate TmuxDCSHandler TmuxDCSHandlerProducer(PrintHandler print);
-
     [default_interface] runtimeclass SelectionColor
     {
         SelectionColor();

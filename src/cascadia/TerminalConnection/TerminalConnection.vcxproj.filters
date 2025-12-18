@@ -19,7 +19,6 @@
     <ClCompile Include="AzureConnection.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="CTerminalHandoff.cpp" />
-    <ClCompile Include="TmuxConnection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -28,7 +27,6 @@
     <ClInclude Include="AzureClientID.h" />
     <ClInclude Include="CTerminalHandoff.h" />
     <ClInclude Include="BaseTerminalConnection.h" />
-    <ClInclude Include="TmuxConnection.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
@@ -36,7 +34,6 @@
     <Midl Include="AzureConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
     <Midl Include="ConnectionInformation.idl" />
-    <Midl Include="TmuxConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />

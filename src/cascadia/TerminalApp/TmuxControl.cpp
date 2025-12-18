@@ -4,13 +4,13 @@
 #include "pch.h"
 #include "TmuxControl.h"
 
-#include <sstream>
-#include <iostream>
 #include <LibraryResources.h>
 
-#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
-#include "TerminalPage.h"
+#include "Pane.h"
 #include "TabRowControl.h"
+#include "TerminalPage.h"
+#include "TmuxConnection.h"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
@@ -109,42 +109,57 @@ static Identifier tokenize_identifier(std::wstring_view& remaining)
         return result;
     }
 
-    result.type = (IdentifierType)type;
+    result.type = static_cast<IdentifierType>(type);
     result.value = *id;
     return result;
 }
 
 namespace winrt::TerminalApp::implementation
 {
+    TmuxControl::AttachedPane::AttachedPane(int64_t paneId, std::wstring outputBacklog) :
+        paneId{ paneId },
+        outputBacklog{ std::move(outputBacklog) }
+    {
+    }
+
+    TmuxControl::AttachedPane::~AttachedPane()
+    {
+        // Explicitly defined such that we can have forward-declared T's for winrt::com_ptr<T> members.
+        // If you don't do that, the compiler will try to generate the destructor "in the header"
+        // where it won't find the Release() method of T. It's funny how defining a destructor in
+        // the .cpp file magically also moves the templated, inlined destructor of winrt::com_ptr
+        // "out" of the header and makes it compile. C++ is not particularly fun.
+    }
+
     TmuxControl::TmuxControl(TerminalPage& page) :
         _page{ page }
     {
         _dispatcherQueue = DispatcherQueue::GetForCurrentThread();
 
-        const auto newTabRun = Documents::Run();
+        Documents::Run newTabRun;
         newTabRun.Text(RS_(L"NewTabRun/Text"));
-        const auto newPaneRun = Documents::Run();
+        Documents::Run newPaneRun;
         newPaneRun.Text(RS_(L"NewPaneRun/Text"));
 
-        const auto textBlock = Controls::TextBlock{};
-        textBlock.Inlines().Append(newTabRun);
+        Controls::TextBlock textBlock;
+        textBlock.Inlines().Append(std::move(newTabRun));
         textBlock.Inlines().Append(Documents::LineBreak{});
-        textBlock.Inlines().Append(newPaneRun);
+        textBlock.Inlines().Append(std::move(newPaneRun));
 
-        Controls::ToolTipService::SetToolTip(_newTabMenu, box_value(textBlock));
+        Controls::ToolTipService::SetToolTip(_newTabMenu, box_value(std::move(textBlock)));
         _newTabMenu.Text(RS_(L"NewTmuxControlTab/Text"));
 
         Controls::FontIcon newTabIcon;
         newTabIcon.Glyph(L"\xF714");
         newTabIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons,Segoe MDL2 Assets" });
-        _newTabMenu.Icon(newTabIcon);
+        _newTabMenu.Icon(std::move(newTabIcon));
 
         _newTabMenu.Click([this](auto&&, auto&&) {
             _openNewTerminalViaDropdown();
         });
     }
 
-    bool TmuxControl::AcquireSingleUseLock(winrt::Microsoft::Terminal::Control::TermControl control) noexcept
+    bool TmuxControl::AcquireSingleUseLock(TermControl control) noexcept
     {
         if (_inUse)
         {
@@ -439,11 +454,11 @@ namespace winrt::TerminalApp::implementation
         _fontHeight = fontSize.Height;
         _thickness.Left = _thickness.Right = std::max(0.0f, (_fontWidth - 2 * PaneBorderSize) / 2);
         _thickness.Top = _thickness.Bottom = std::max(0.0f, (_fontHeight - 2 * PaneBorderSize) / 2);
-        _terminalWidth = (til::CoordType)floor((width - _thickness.Left - _thickness.Right) / _fontWidth);
-        _terminalHeight = (til::CoordType)floor((height - _thickness.Top - _thickness.Bottom) / _fontHeight);
+        _terminalWidth = static_cast<til::CoordType>(floor((width - _thickness.Left - _thickness.Right) / _fontWidth));
+        _terminalHeight = static_cast<til::CoordType>(floor((height - _thickness.Top - _thickness.Bottom) / _fontHeight));
 
         _profile.Padding(XamlThicknessToOptimalString(_thickness));
-        _profile.ScrollState(winrt::Microsoft::Terminal::Control::ScrollbarState::Hidden);
+        _profile.ScrollState(ScrollbarState::Hidden);
         _profile.Icon(MediaResourceHelper::FromString(L"\uF714"));
         _profile.Name(L"TmuxTab");
 
@@ -465,8 +480,8 @@ namespace winrt::TerminalApp::implementation
             _fontHeight = fontSize.Height;
             _thickness.Left = _thickness.Right = std::max(0.0f, (_fontWidth - 2 * PaneBorderSize) / 2);
             _thickness.Top = _thickness.Bottom = std::max(0.0f, (_fontHeight - 2 * PaneBorderSize) / 2);
-            _terminalWidth = (til::CoordType)floor((width - _thickness.Left - _thickness.Right) / _fontWidth);
-            _terminalHeight = (til::CoordType)floor((height - _thickness.Top - _thickness.Bottom) / _fontHeight);
+            _terminalWidth = static_cast<til::CoordType>(floor((width - _thickness.Left - _thickness.Right) / _fontWidth));
+            _terminalHeight = static_cast<til::CoordType>(floor((height - _thickness.Top - _thickness.Bottom) / _fontHeight));
 
             _sendSetOption(fmt::format(FMT_COMPILE(L"default-size {}x{}"), _terminalWidth, _terminalHeight));
 
@@ -612,7 +627,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        winrt::Microsoft::Terminal::Control::TermControl control{ nullptr };
+        TermControl control{ nullptr };
 
         // TODO: The system of relying on _splittingPane to compute pane
         // splits and know which direction to split is highly fragile.
@@ -785,7 +800,7 @@ namespace winrt::TerminalApp::implementation
                     p.second.ignoreOutput = true;
                     p.second.outputBacklog.clear();
 
-                    _sendCapturePane(p.second.paneId, (til::CoordType)*historyLimit);
+                    _sendCapturePane(p.second.paneId, static_cast<til::CoordType>(*historyLimit));
                 }
             }
             _sendDiscoverPanes(windowId.value);
@@ -834,7 +849,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (lastPane)
             {
-                const auto splitSize = 1.0f - ((float)lastPaneSize / (float)layoutSize);
+                const auto splitSize = 1.0f - (static_cast<float>(lastPaneSize) / static_cast<float>(layoutSize));
                 layoutSize -= lastPaneSize;
 
                 print_debug(L"--> _handleResponseDiscoverWindows: new pane {} @ {:.1f}%\n", current.id, splitSize * 100);
@@ -942,8 +957,8 @@ namespace winrt::TerminalApp::implementation
                 return layout;
             }
             layout.type = sep == L'[' ? TmuxLayoutType::PushVertical : TmuxLayoutType::PushHorizontal;
-            layout.width = (til::CoordType)args[0];
-            layout.height = (til::CoordType)args[1];
+            layout.width = static_cast<til::CoordType>(args[0]);
+            layout.height = static_cast<til::CoordType>(args[1]);
             return layout;
         case L']':
         case L'}':
@@ -961,8 +976,8 @@ namespace winrt::TerminalApp::implementation
                 return layout;
             }
             layout.type = TmuxLayoutType::Pane;
-            layout.width = (til::CoordType)args[0];
-            layout.height = (til::CoordType)args[1];
+            layout.width = static_cast<til::CoordType>(args[0]);
+            layout.height = static_cast<til::CoordType>(args[1]);
             layout.id = args[4];
             return layout;
         }
@@ -1043,7 +1058,7 @@ namespace winrt::TerminalApp::implementation
 
             if (paneId.type == IdentifierType::Pane && cursorX && cursorY)
             {
-                const auto str = fmt::format(FMT_COMPILE(L"\033[{};{}H"), (til::CoordType)*cursorY + 1, (til::CoordType)*cursorX + 1);
+                const auto str = fmt::format(FMT_COMPILE(L"\033[{};{}H"), static_cast<til::CoordType>(*cursorY) + 1, static_cast<til::CoordType>(*cursorX) + 1);
                 _deliverOutputToPane(paneId.value, str);
             }
             else
@@ -1208,13 +1223,7 @@ namespace winrt::TerminalApp::implementation
         const auto search = _attachedPanes.find(paneId);
         if (search == _attachedPanes.end())
         {
-            _attachedPanes.emplace_hint(
-                search,
-                paneId,
-                AttachedPane{
-                    .paneId = paneId,
-                    .outputBacklog = std::wstring{ text },
-                });
+            _attachedPanes.emplace(paneId, AttachedPane{ paneId, std::wstring{ text } });
             return;
         }
 
@@ -1268,7 +1277,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         print_debug(L"--> _deliverOutputToPane {}\n", paneId);
-        search->second.connection.WriteOutput(winrt_wstring_to_array_view(out));
+        search->second.connection->WriteOutput(winrt_wstring_to_array_view(out));
     }
 
     winrt::com_ptr<Tab> TmuxControl::_getTab(int64_t windowId) const
@@ -1294,18 +1303,18 @@ namespace winrt::TerminalApp::implementation
 
     std::pair<TmuxControl::AttachedPane&, std::shared_ptr<Pane>> TmuxControl::_newPane(int64_t windowId, int64_t paneId)
     {
-        auto& p = _attachedPanes.try_emplace(paneId, AttachedPane{}).first->second;
+        auto& p = _attachedPanes.try_emplace(paneId).first->second;
         assert(p.windowId == -1);
 
         const auto controlSettings = Settings::TerminalSettings::CreateWithProfile(_page._settings, _profile);
         p.windowId = windowId;
         p.paneId = paneId;
-        p.connection = TerminalConnection::TmuxConnection{};
-        p.control = _page._CreateNewControlAndContent(controlSettings, p.connection);
+        p.connection = winrt::make_self<TmuxConnection>();
+        p.control = _page._CreateNewControlAndContent(controlSettings, *p.connection);
 
         const auto pane = std::make_shared<Pane>(winrt::make<TerminalPaneContent>(_profile, _page._terminalSettingsCache, p.control));
 
-        p.connection.TerminalInput([this, paneId](const winrt::array_view<const char16_t> keys) {
+        p.connection->TerminalInput([this, paneId](const winrt::array_view<const char16_t> keys) {
             _sendSendKey(paneId, winrt_array_to_wstring_view(keys));
         });
 
@@ -1350,8 +1359,8 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            const auto width = (til::CoordType)lrint((args.NewSize().Width - 2 * _thickness.Left) / _fontWidth);
-            const auto height = (til::CoordType)lrint((args.NewSize().Height - 2 * _thickness.Top) / _fontHeight);
+            const auto width = static_cast<til::CoordType>(lrint((args.NewSize().Width - 2 * _thickness.Left) / _fontWidth));
+            const auto height = static_cast<til::CoordType>(lrint((args.NewSize().Height - 2 * _thickness.Top) / _fontHeight));
             _sendResizePane(paneId, width, height);
         });
 
@@ -1361,7 +1370,7 @@ namespace winrt::TerminalApp::implementation
         // to close the entire tab. There's no "pane split" event in order for the tab to know the root changed.
         // So, we hook into the connection's StateChanged event. It's only raised on connection.Close().
         // All of this would need a big, ugly refactor.
-        p.connection.StateChanged([this, paneId](auto&&, auto&&) {
+        p.connection->StateChanged([this, paneId](auto&&, auto&&) {
             _sendKillPane(paneId);
         });
 
