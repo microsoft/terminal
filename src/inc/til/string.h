@@ -159,50 +159,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // Just like std::wstring_view::operator==().
     //
-    // At the time of writing wmemcmp() is not an intrinsic for MSVC,
-    // but the STL uses it to implement wide string comparisons.
-    // This produces 3x the assembly _per_ comparison and increases
-    // runtime by 2-3x for strings of medium length (16 characters)
-    // and 5x or more for long strings (128 characters or more).
+    // NOTE: If you pass a literal, ALWAYS pass it as the 2nd argument.
+    // This is because MSVC does not understand that `lhs.size() == rhs.size()` implies
+    // that a constant size on one side implies a constant size on the other side.
+    // As such the size argument to memcmp() must be the constant size, which is `rhs`.
+    //
+    // The STL uses wmemcmp() to implement wide string comparisons.
+    // Compared to memcmp() this results 3x the assembly per comparison,
+    // while running 2-3x slower for 16 chars and >5x slower for >128 chars.
     // See: https://github.com/microsoft/STL/issues/2289
     template<typename T, typename Traits>
-    bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
+    constexpr bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
     {
-        // MSVC can only optimize 1 pattern into a bunch of simple comparison instructions:
-        //   size1 == size2 && memcmp(data1, data2, size1/2) == 0
-        // If you introduce a `* sizeof(T)` into the size parameter to memcmp,
-        // it'll refuse to inline the memcmp call, resulting in much worse codegen.
-        // As a trade-off we multiply both sizes by sizeof(T) in advance.
-        // The extra addition instruction is comparatively very cheap.
-        const auto ls = lhs.size() * sizeof(T);
-        const auto rs = rhs.size() * sizeof(T);
-        return ls == rs && __builtin_memcmp(lhs.data(), rhs.data(), ls) == 0;
+        return lhs.size() == rhs.size() && __builtin_memcmp(lhs.data(), rhs.data(), rhs.size() * sizeof(T)) == 0;
     }
 
-    inline bool equals(const std::string_view& lhs, const std::string_view& rhs) noexcept
+    constexpr bool equals(const std::string_view& lhs, const std::string_view& rhs) noexcept
     {
         return equals<>(lhs, rhs);
     }
 
-    inline bool equals(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    constexpr bool equals(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
     {
         return equals<>(lhs, rhs);
-    }
-
-    // An extra overload that undoes the quirk in the main equals() implementation.
-    // It's not really needed, except for being neat. This function in particular
-    // is often the best, easy way to do something like:
-    //   match str {
-    //       "foo" => ...,
-    //       "bar" => ...,
-    //   }
-    // with:
-    //   if (til::equals(str, "foo")) { ... }
-    //   else if (til::equals(str, "bar")) { ... }
-    template<typename T, typename Traits, size_t N>
-    constexpr bool equals(const std::basic_string_view<T, Traits>& lhs, const T (&rhs)[N]) noexcept
-    {
-        return lhs.size() == (N - 1) && __builtin_memcmp(lhs.data(), rhs, (N - 1) * sizeof(T)) == 0;
     }
 
     // Just like _memicmp, but without annoying locales.
