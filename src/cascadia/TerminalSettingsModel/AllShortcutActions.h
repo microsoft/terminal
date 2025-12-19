@@ -158,7 +158,10 @@
     ON_ALL_ACTIONS_WITH_ARGS(Suggestions)          \
     ON_ALL_ACTIONS_WITH_ARGS(SelectCommand)        \
     ON_ALL_ACTIONS_WITH_ARGS(SelectOutput)         \
-    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)
+    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection) \
+    ON_ALL_ACTIONS_WITH_ARGS(StartRecording)\
+    ON_ALL_ACTIONS_WITH_ARGS(StopRecording)\
+    ON_ALL_ACTIONS_WITH_ARGS(MarkRecording)
 
 // These two macros here are for actions that we only use as internal currency.
 // They don't need to be parsed by the settings model, or saved as actions to

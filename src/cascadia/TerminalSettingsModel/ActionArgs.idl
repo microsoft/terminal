@@ -482,5 +482,20 @@ namespace Microsoft.Terminal.Settings.Model
         SelectOutputDirection Direction { get; };
     }
 
+    runtimeclass StartRecordingArgs : [default] IActionArgs
+    {
+        String Filename { get; };
+        String Directory { get; };
+    }
+
+    runtimeclass StopRecordingArgs : [default] IActionArgs
+    {
+        Boolean Save { get; };
+    }
+
+    runtimeclass MarkRecordingArgs : [default] IActionArgs
+    {
+        String Marker { get; };
+    }
 
 }
