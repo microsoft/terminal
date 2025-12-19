@@ -203,7 +203,7 @@ try
             auto dst = _p.colorBitmap.data() + dstOffset;
             const auto bytes = count * sizeof(u32);
 
-            for (size_t i = 0; i < 2; ++i)
+            for (size_t i = 0; i < 3; ++i)
             {
                 // Avoid bumping the colorBitmapGeneration unless necessary. This approx. further halves
                 // the (already small) GPU load. This could easily be replaced with some custom SIMD
@@ -414,6 +414,7 @@ try
     const auto itEnd = highlights.end();
     auto hiStart = it->start - offset;
     auto hiEnd = it->end - offset;
+    auto r = _p.rows[row];
 
     // Nothing to paint if we haven't reached the row where the highlight region begins
     if (y < hiStart.y)
@@ -429,6 +430,7 @@ try
         const auto isFinalRow = y == hiEnd.y;
         const auto end = isFinalRow ? std::min(hiEnd.x, x2) : x2;
         _fillColorBitmap(row, x1, end, fgColor, bgColor);
+        r->highlightRanges.emplace_back(u32x4{ (u32)x1, (u32)end, bgColor, fgColor });
 
         // Return early if we couldn't paint the whole region (either this was not the last row, or
         // it was the last row but the highlight ends outside of our x range.)
@@ -452,6 +454,7 @@ try
         if (isStartInside && isEndInside)
         {
             _fillColorBitmap(row, hiStart.x, static_cast<size_t>(hiEnd.x), fgColor, bgColor);
+            r->highlightRanges.emplace_back(u32x4{ (u32)hiStart.x, (u32)hiEnd.x, bgColor, fgColor });
             ++it;
         }
         else
@@ -461,6 +464,7 @@ try
             {
                 const auto start = std::max(x1, hiStart.x);
                 _fillColorBitmap(y, start, x2, fgColor, bgColor);
+                r->highlightRanges.emplace_back(u32x4{ (u32)start, (u32)x2, bgColor, fgColor });
             }
 
             break;
@@ -791,7 +795,7 @@ void AtlasEngine::_recreateCellCountDependentResources()
     // so we round up to multiple of 8 because 8 * sizeof(u32) == 32.
     _p.colorBitmapRowStride = alignForward<size_t>(_p.s->viewportCellCount.x, 8);
     _p.colorBitmapDepthStride = _p.colorBitmapRowStride * _p.s->viewportCellCount.y;
-    _p.colorBitmap = Buffer<u32, 32>(_p.colorBitmapDepthStride * 2);
+    _p.colorBitmap = Buffer<u32, 32>(_p.colorBitmapDepthStride * 3);
     _p.backgroundBitmap = { _p.colorBitmap.data(), _p.colorBitmapDepthStride };
     _p.foregroundBitmap = { _p.colorBitmap.data() + _p.colorBitmapDepthStride, _p.colorBitmapDepthStride };
 

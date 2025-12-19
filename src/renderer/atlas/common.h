@@ -493,6 +493,8 @@ namespace Microsoft::Console::Render::Atlas
         // Same size as glyphIndices.
         std::vector<u32> colors;
 
+        std::vector<u32x4> highlightRanges; // from, to, bg, fg
+
         Bitmap bitmap;
         std::vector<GridLineRange> gridLineRanges;
         LineRendition lineRendition = LineRendition::SingleWidth;
@@ -569,7 +571,7 @@ namespace Microsoft::Console::Render::Atlas
         size_t colorBitmapDepthStride = 0;
         // A generation of 1 ensures that the backends redraw the background on the first Present().
         // The 1st entry in this array corresponds to the background and the 2nd to the foreground bitmap.
-        std::array<til::generation_t, 2> colorBitmapGenerations{ 1, 1 };
+        std::array<til::generation_t, 3> colorBitmapGenerations{ 1, 1, 1 };
         // In columns/rows.
         til::rect cursorRect;
         // The viewport/SwapChain area to be presented. In pixel.
