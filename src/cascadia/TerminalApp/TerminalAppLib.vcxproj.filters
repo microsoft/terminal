@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
-    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
@@ -33,8 +32,9 @@
     </ClCompile>
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
-    <ClCompile Include="Monarch.cpp" />
-    <ClCompile Include="Peasant.cpp" />
+    <ClCompile Include="TerminalSettingsCache.cpp" />
+    <ClCompile Include="TmuxConnection.cpp" />
+    <ClCompile Include="TmuxControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -60,14 +60,12 @@
     <ClInclude Include="fzf/fzf.h">
       <Filter>fzf</Filter>
     </ClInclude>
-    <ClInclude Include="fzf/LICENSE">
-      <Filter>fzf</Filter>
-    </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="WindowsPackageManagerFactory.h" />
-    <ClInclude Include="Monarch.h" />
-    <ClInclude Include="Peasant.h" />
+    <ClInclude Include="TerminalSettingsCache.h" />
+    <ClInclude Include="TmuxConnection.h" />
+    <ClInclude Include="TmuxControl.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
@@ -90,7 +88,8 @@
     <Midl Include="TerminalWindow.idl" />
     <Midl Include="TaskbarState.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="Monarch.idl" />
+    <Midl Include="Remoting.idl" />
+    <Midl Include="HighlightedTextControl.idl" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MinMaxCloseControl.xaml">
@@ -123,6 +122,7 @@
     <Page Include="AboutDialog.xaml" />
     <Page Include="SuggestionsControl.xaml" />
     <Page Include="SnippetsPaneContent.xaml" />
+    <Page Include="MarkdownPaneContent.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="app">

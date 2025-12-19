@@ -192,6 +192,8 @@ public:
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
 
     virtual void SetOptionalFeatures(const til::enumset<OptionalFeature> features) = 0;
+
+    virtual StringHandler EnterTmuxControl(const VTParameters parameters) = 0; // tmux -CC
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)
