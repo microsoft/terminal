@@ -23,7 +23,6 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     const TextAttribute popupAttributes,
     const FontInfo fontInfo) :
     _pConsoleWindowMetrics{ pMetrics },
-    _viewport(Viewport::Empty()),
     _PopupAttributes{ popupAttributes },
     _currentFont{ fontInfo },
     _desiredFont{ fontInfo }
