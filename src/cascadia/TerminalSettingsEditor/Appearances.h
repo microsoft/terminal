@@ -187,6 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Appearances : AppearancesT<Appearances>
     {
         Appearances();
+        void BringIntoViewWhenLoaded(hstring elementToFocus);
 
         // CursorShape visibility logic
         bool IsVintageCursor() const;
@@ -209,6 +210,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool IsCustomFontWeight();
 
         til::property_changed_event PropertyChanged;
+        winrt::Windows::UI::Xaml::FrameworkElement::Loaded_revoker _loadedRevoker;
 
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 

@@ -6,6 +6,7 @@
 #include "EnumEntry.h"
 #include "Compatibility.g.cpp"
 #include "CompatibilityViewModel.g.cpp"
+#include "NavigateToPageArgs.g.h"
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -54,7 +55,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Compatibility::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::CompatibilityViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::CompatibilityViewModel>();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,
