@@ -562,14 +562,17 @@ namespace Microsoft::Console::Render::Atlas
         // This exists as a convenience access to colorBitmap and
         // contains a view into the foreground color bitmap.
         std::span<u32> foregroundBitmap;
+        // This exists as a convenience access to colorBitmap and
+        // contains a view into the underline color bitmap.
+        std::span<u32> underlineBitmap;
         // This stride of the colorBitmap is a "count" of u32 and not in bytes.
         size_t colorBitmapRowStride = 0;
         // FYI depth refers to the `colorBitmapRowStride * height` size of each bitmap contained
-        // in colorBitmap. colorBitmap contains 2 bitmaps (background and foreground colors).
+        // in colorBitmap. colorBitmap contains 3 bitmaps (background, foreground and underline colors).
         size_t colorBitmapDepthStride = 0;
         // A generation of 1 ensures that the backends redraw the background on the first Present().
         // The 1st entry in this array corresponds to the background and the 2nd to the foreground bitmap.
-        std::array<til::generation_t, 2> colorBitmapGenerations{ 1, 1 };
+        std::array<til::generation_t, 3> colorBitmapGenerations{ 1, 1, 1 };
         // In columns/rows.
         til::rect cursorRect;
         // The viewport/SwapChain area to be presented. In pixel.
