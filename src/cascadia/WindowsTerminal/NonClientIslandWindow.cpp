@@ -958,6 +958,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     switch (message)
     {
+    case WM_NCACTIVATE:
+    {
+        const bool activated = LOWORD(wParam) != 0;
+        _titlebar.Focused(activated);
+        break;
+    }
     case WM_SETCURSOR:
         return _OnSetCursor(wParam, lParam);
     case WM_DISPLAYCHANGE:
