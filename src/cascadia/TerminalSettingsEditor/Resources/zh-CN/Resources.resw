@@ -2625,7 +2625,7 @@
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>实验性功能： 将键绑定添加到所选文本的颜色</value>
+    <value>实验性功能: 将键绑定添加到所选文本的颜色</value>
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
