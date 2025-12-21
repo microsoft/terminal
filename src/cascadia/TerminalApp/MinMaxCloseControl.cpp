@@ -21,6 +21,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    static const winrt::param::hstring& normalState(bool focused)
+    {
+        static winrt::param::hstring normal = L"Normal";
+        static winrt::param::hstring unfocused = L"Unfocused";
+        return (focused ? normal : unfocused);
+    }
+
     MinMaxCloseControl::MinMaxCloseControl()
     {
         // Get our dispatcher. This will get us the same dispatcher as
@@ -152,7 +159,7 @@ namespace winrt::TerminalApp::implementation
     //   - dismiss any open tooltips on other buttons.
     // Arguments:
     // - button: the button that was hovered
-    void MinMaxCloseControl::HoverButton(CaptionButton button)
+    void MinMaxCloseControl::HoverButton(CaptionButton button, bool focused)
     {
         // Keep track of the button that's been pressed. we get a mouse move
         // message when we open the tooltip. If we move the mouse on top of this
@@ -169,25 +176,25 @@ namespace winrt::TerminalApp::implementation
             // animate the fade in/out transition between colors.
         case CaptionButton::Minimize:
             VisualStateManager::GoToState(MinimizeButton(), L"PointerOver", true);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
+            VisualStateManager::GoToState(MaximizeButton(), normalState(focused), true);
+            VisualStateManager::GoToState(CloseButton(), normalState(focused), true);
 
             _displayToolTip->Run(MinimizeButton());
             closeToolTipForButton(MaximizeButton());
             closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Maximize:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MinimizeButton(), normalState(focused), true);
             VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", true);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
+            VisualStateManager::GoToState(CloseButton(), normalState(focused), true);
 
             closeToolTipForButton(MinimizeButton());
             _displayToolTip->Run(MaximizeButton());
             closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Close:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MinimizeButton(), normalState(focused), true);
+            VisualStateManager::GoToState(MaximizeButton(), normalState(focused), true);
             VisualStateManager::GoToState(CloseButton(), L"PointerOver", true);
 
             closeToolTipForButton(MinimizeButton());
@@ -204,23 +211,23 @@ namespace winrt::TerminalApp::implementation
     //   - Transition that button to `Pressed`
     // Arguments:
     // - button: the button that was pressed
-    void MinMaxCloseControl::PressButton(CaptionButton button)
+    void MinMaxCloseControl::PressButton(CaptionButton button, bool focused)
     {
         switch (button)
         {
         case CaptionButton::Minimize:
             VisualStateManager::GoToState(MinimizeButton(), L"Pressed", true);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
+            VisualStateManager::GoToState(MaximizeButton(), normalState(focused), true);
+            VisualStateManager::GoToState(CloseButton(), normalState(focused), true);
             break;
         case CaptionButton::Maximize:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MinimizeButton(), normalState(focused), true);
             VisualStateManager::GoToState(MaximizeButton(), L"Pressed", true);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
+            VisualStateManager::GoToState(CloseButton(), normalState(focused), true);
             break;
         case CaptionButton::Close:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MinimizeButton(), normalState(focused), true);
+            VisualStateManager::GoToState(MaximizeButton(), normalState(focused), true);
             VisualStateManager::GoToState(CloseButton(), L"Pressed", true);
             break;
         }
@@ -230,12 +237,12 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Called when buttons are no longer hovered or pressed. Return them all
     //   to the normal state, and dismiss the tooltips.
-    void MinMaxCloseControl::ReleaseButtons()
+    void MinMaxCloseControl::ReleaseButtons(bool focused)
     {
         _displayToolTip->Run(nullptr);
-        VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
-        VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
-        VisualStateManager::GoToState(CloseButton(), L"Normal", true);
+        VisualStateManager::GoToState(MinimizeButton(), normalState(focused), true);
+        VisualStateManager::GoToState(MaximizeButton(), normalState(focused), true);
+        VisualStateManager::GoToState(CloseButton(), normalState(focused), true);
 
         closeToolTipForButton(MinimizeButton());
         closeToolTipForButton(MaximizeButton());

@@ -11,9 +11,9 @@ namespace TerminalApp
 
         void SetWindowVisualState(WindowVisualState visualState);
 
-        void HoverButton(CaptionButton button);
-        void PressButton(CaptionButton button);
-        void ReleaseButtons();
+        void HoverButton(CaptionButton button, Boolean focused);
+        void PressButton(CaptionButton button, Boolean focused);
+        void ReleaseButtons(Boolean focused);
 
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MinimizeClick;
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MaximizeClick;
