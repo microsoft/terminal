@@ -156,7 +156,7 @@
     <value>關閉窗格</value>
   </data>
   <data name="CloseTabAtIndexCommandKey" xml:space="preserve">
-    <value>關閉索引 {0} 的分頁</value>
+    <value>關閉索引 {0} 的索引標籤</value>
     <comment>{0} will be replaced with a number</comment>
   </data>
   <data name="CloseTabCommandKey" xml:space="preserve">
@@ -341,7 +341,7 @@
     <value>上一個索引標籤</value>
   </data>
   <data name="RenameTabCommandKey" xml:space="preserve">
-    <value>將索引標籤重新命名為 “ {0}“</value>
+    <value>將索引標籤重新命名為「{0}」</value>
     <comment>{0} will be replaced with a user-defined string</comment>
   </data>
   <data name="ResetFontSizeCommandKey" xml:space="preserve">
@@ -357,10 +357,10 @@
     <value>重新命名索引標籤</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
-    <value>調整頁面大小</value>
+    <value>調整窗格大小</value>
   </data>
   <data name="ResizePaneWithArgCommandKey" xml:space="preserve">
-    <value>調整頁面大小 {0}</value>
+    <value>調整窗格大小 {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
   </data>
   <data name="ScrollDownCommandKey" xml:space="preserve">
@@ -705,7 +705,7 @@
     <value>重新啟動連線</value>
   </data>
   <data name="OpenScratchpadKey" xml:space="preserve">
-    <value>開啟聽寫面板</value>
+    <value>開啟便箋</value>
   </data>
   <data name="SelectOutputNextCommandKey" xml:space="preserve">
     <value>選取下一個命令輸出</value>
@@ -848,7 +848,7 @@
     <value>方向</value>
   </data>
   <data name="DeltaActionArgumentLocalized" xml:space="preserve">
-    <value>Delta</value>
+    <value>增量</value>
   </data>
   <data name="InputActionArgumentLocalized" xml:space="preserve">
     <value>輸入</value>
@@ -926,7 +926,7 @@
     <value>路徑</value>
   </data>
   <data name="ClearActionArgumentLocalized" xml:space="preserve">
-    <value>晴朗</value>
+    <value>清除</value>
   </data>
   <data name="OpacityActionArgumentLocalized" xml:space="preserve">
     <value>不透明度</value>
