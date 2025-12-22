@@ -35,51 +35,67 @@ int main()
             // Create & start thread to listen to the incoming pipe
             // Note: Using CRT-safe _beginthread() rather than CreateThread()
             HANDLE hPipeListenerThread{ reinterpret_cast<HANDLE>(_beginthread(PipeListener, 0, hPipeIn)) };
-
-            // Initialize the necessary startup info struct        
-            STARTUPINFOEX startupInfo{};
-            if (S_OK == InitializeStartupInfoAttachedToPseudoConsole(&startupInfo, hPC))
+            
+            // Check if thread creation succeeded
+            if (hPipeListenerThread == reinterpret_cast<HANDLE>(-1L))
             {
-                // Launch ping to emit some text back via the pipe
-                PROCESS_INFORMATION piClient{};
-                hr = CreateProcess(
-                    NULL,                           // No module name - use Command Line
-                    szCommand,                      // Command Line
-                    NULL,                           // Process handle not inheritable
-                    NULL,                           // Thread handle not inheritable
-                    FALSE,                          // Inherit handles
-                    EXTENDED_STARTUPINFO_PRESENT,   // Creation flags
-                    NULL,                           // Use parent's environment block
-                    NULL,                           // Use parent's starting directory 
-                    &startupInfo.StartupInfo,       // Pointer to STARTUPINFO
-                    &piClient)                      // Pointer to PROCESS_INFORMATION
-                    ? S_OK
-                    : GetLastError();
-
-                if (S_OK == hr)
+                hr = E_FAIL;
+            }
+            else
+            {
+                // Initialize the necessary startup info struct        
+                STARTUPINFOEX startupInfo{};
+                if (S_OK == InitializeStartupInfoAttachedToPseudoConsole(&startupInfo, hPC))
                 {
-                    // Wait up to 10s for ping process to complete
-                    WaitForSingleObject(piClient.hThread, 10 * 1000);
+                    // Launch ping to emit some text back via the pipe
+                    PROCESS_INFORMATION piClient{};
+                    hr = CreateProcess(
+                        NULL,                           // No module name - use Command Line
+                        szCommand,                      // Command Line
+                        NULL,                           // Process handle not inheritable
+                        NULL,                           // Thread handle not inheritable
+                        FALSE,                          // Inherit handles
+                        EXTENDED_STARTUPINFO_PRESENT,   // Creation flags
+                        NULL,                           // Use parent's environment block
+                        NULL,                           // Use parent's starting directory 
+                        &startupInfo.StartupInfo,       // Pointer to STARTUPINFO
+                        &piClient)                      // Pointer to PROCESS_INFORMATION
+                        ? S_OK
+                        : GetLastError();
 
-                    // Allow listening thread to catch-up with final output!
-                    Sleep(500);
+                    if (S_OK == hr)
+                    {
+                        // Wait up to 10s for ping process to complete
+                        WaitForSingleObject(piClient.hProcess, 10 * 1000);
+
+                        // Close output pipe to signal EOF to listener thread
+                        if (INVALID_HANDLE_VALUE != hPipeOut)
+                        {
+                            CloseHandle(hPipeOut);
+                            hPipeOut = INVALID_HANDLE_VALUE;
+                        }
+
+                        // Wait for listener thread to finish (with timeout)
+                        WaitForSingleObject(hPipeListenerThread, 2000);
+
+                        // Now safe to clean-up client app's process-info & thread
+                        CloseHandle(piClient.hThread);
+                        CloseHandle(piClient.hProcess);
+                    }
+
+                    // Cleanup attribute list
+                    if (startupInfo.lpAttributeList)
+                    {
+                        DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
+                        free(startupInfo.lpAttributeList);
+                    }
                 }
-
-                // --- CLOSEDOWN ---
-
-                // Now safe to clean-up client app's process-info & thread
-                CloseHandle(piClient.hThread);
-                CloseHandle(piClient.hProcess);
-
-                // Cleanup attribute list
-                DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
-                free(startupInfo.lpAttributeList);
             }
 
             // Close ConPTY - this will terminate client process if running
             ClosePseudoConsole(hPC);
 
-            // Clean-up the pipes
+            // Clean-up the remaining pipe
             if (INVALID_HANDLE_VALUE != hPipeOut) CloseHandle(hPipeOut);
             if (INVALID_HANDLE_VALUE != hPipeIn) CloseHandle(hPipeIn);
         }
@@ -180,10 +196,13 @@ void __cdecl PipeListener(LPVOID pipe)
         // Read from the pipe
         fRead = ReadFile(hPipe, szBuffer, BUFF_SIZE, &dwBytesRead, NULL);
 
-        // Write received text to the Console
+        // Write received text to the Console (only if bytes were read)
         // Note: Write to the Console using WriteFile(hConsole...), not printf()/puts() to
         // prevent partially-read VT sequences from corrupting output
-        WriteFile(hConsole, szBuffer, dwBytesRead, &dwBytesWritten, NULL);
+        if (fRead && dwBytesRead > 0)
+        {
+            WriteFile(hConsole, szBuffer, dwBytesRead, &dwBytesWritten, NULL);
+        }
 
-    } while (fRead && dwBytesRead >= 0);
+    } while (fRead && dwBytesRead > 0);
 }
