@@ -37,7 +37,7 @@ typedef struct {
     union {
         struct {
             UINT Code;
-            UINT MapType;
+            UNIT MapType;
             UINT ReturnValue;
         } MapVirtualKeyParams;
 
