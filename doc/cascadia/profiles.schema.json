@@ -3318,5 +3318,144 @@
         "defaultProfile"
       ]
     }
-  ]
+  //the code for mica alt 
+
+{
+  "mica_alt_support": {
+    "constants": {
+      "DWMWA_SYSTEMBACKDROP_TYPE": 38,
+      "DWMWA_MICA_EFFECT": 1029
+    },
+    "backdrop_types": {
+      "DWMSBT_AUTO": 0,
+      "DWMSBT_NONE": 1,
+      "DWMSBT_MAINWINDOW": 2,
+      "DWMSBT_TRANSIENTWINDOW": 3,
+      "DWMSBT_TABBEDWINDOW": 4
+    },
+    "implementation": {
+      "apply_mica_alt": {
+        "description": "Apply Mica Alt backdrop effect",
+        "attribute": "DWMWA_SYSTEMBACKDROP_TYPE",
+        "value": 3,
+        "fallback_attribute": "DWMWA_MICA_EFFECT",
+        "fallback_value": 1,
+        "requirements": {
+          "os": "Windows 11",
+          "build": "22000+"
+        },
+        "steps": [
+          "Get window handle (HWND)",
+          "Check if Windows 11 or greater",
+          "Call DwmSetWindowAttribute with DWMSBT_TRANSIENTWINDOW",
+          "If fails, try legacy DWMWA_MICA_EFFECT method"
+        ]
+      },
+      "apply_mica": {
+        "description": "Apply standard Mica backdrop effect",
+        "attribute": "DWMWA_SYSTEMBACKDROP_TYPE",
+        "value": 2,
+        "requirements": {
+          "os": "Windows 11",
+          "build": "22000+"
+        }
+      },
+      "remove_backdrop": {
+        "description": "Remove backdrop effect",
+        "attribute": "DWMWA_SYSTEMBACKDROP_TYPE",
+        "value": 1
+      },
+      "apply_tabbed": {
+        "description": "Apply tabbed window backdrop",
+        "attribute": "DWMWA_SYSTEMBACKDROP_TYPE",
+        "value": 4
+      }
+    },
+    "api_usage": {
+      "function": "DwmSetWindowAttribute",
+      "library": "dwmapi.dll",
+      "parameters": [
+        {
+          "name": "hwnd",
+          "type": "HWND",
+          "description": "Window handle"
+        },
+        {
+          "name": "dwAttribute",
+          "type": "DWORD",
+          "description": "Attribute to set"
+        },
+        {
+          "name": "pvAttribute",
+          "type": "LPCVOID",
+          "description": "Pointer to attribute value"
+        },
+        {
+          "name": "cbAttribute",
+          "type": "DWORD",
+          "description": "Size of attribute value"
+        }
+      ]
+    },
+    "differences": {
+      "mica": {
+        "type": "DWMSBT_MAINWINDOW",
+        "value": 2,
+        "appearance": "Lighter, subtle wallpaper tinting",
+        "use_case": "Primary windows, main application windows"
+      },
+      "mica_alt": {
+        "type": "DWMSBT_TRANSIENTWINDOW",
+        "value": 3,
+        "appearance": "Darker, more opaque variant",
+        "use_case": "Secondary windows, dialogs, transient windows"
+      }
+    },
+    "example_configuration": {
+      "window_properties": {
+        "background": "transparent",
+        "allows_transparency": false,
+        "window_style": "WS_OVERLAPPEDWINDOW"
+      },
+      "implementation_code": {
+        "c_sharp": "MicaAltSupport.ApplyMicaAlt(window);",
+        "cpp": "MicaAltSupport::ApplyMicaAlt(hwnd);",
+        "win32": "DwmSetWindowAttribute(hwnd, 38, &value, sizeof(int));"
+      }
+    },
+    "troubleshooting": {
+      "common_issues": [
+        {
+          "issue": "Backdrop not appearing",
+          "solutions": [
+            "Verify Windows 11 build 22000+",
+            "Ensure window background is transparent",
+            "Check DWM is enabled",
+            "Verify window is not layered (WS_EX_LAYERED)"
+          ]
+        },
+        {
+          "issue": "Black background instead of backdrop",
+          "solutions": [
+            "Set window background to transparent",
+            "Remove custom background brushes",
+            "Ensure AllowsTransparency is false (WPF)"
+          ]
+        }
+      ]
+    },
+    "platform_support": {
+      "windows_11": {
+        "build_22000": {
+          "mica": true,
+          "mica_alt": false
+        },
+        "build_22621": {
+          "mica": true,
+          "mica_alt": true,
+          "note": "22H2 update required for full Mica Alt support"
+        }
+      }
+    }
+  }
 }
