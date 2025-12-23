@@ -64,6 +64,7 @@ rlig
 rubyw
 runtimes
 servicebus
+settings.json.bak
 slnt
 stakeholders
 subpage

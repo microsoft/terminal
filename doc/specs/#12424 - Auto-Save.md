@@ -214,7 +214,7 @@ The `ConversionTrait` objects and `JsonManager` will ensure that only valid JSON
 ### Compatibility
 N/A
 ### Performance, Power, and Efficiency
-Since the entire settings model object tree won't be reconstructed on a settings reload, there should be an reduction in memory usage and an improved performance.
+Since the entire settings model object tree won't be reconstructed on a settings reload, there should be a reduction in memory usage and an improved performance.
 ## Potential Issues
 Some settings that allow runtime overrides may be set across multiple sources. Tab color, for example, can be set by a profile, at runtime, via the commandline, and using `DECAC`. It's important that this behavior is maintained.
 
