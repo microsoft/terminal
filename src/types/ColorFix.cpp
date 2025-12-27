@@ -71,7 +71,7 @@ __forceinline float cbrtf_est(float a) noexcept
     // It's similar to the well known "fast inverse square root" trick. Lots of numbers around 709921077 perform
     // at least equally well to 709921077, and it is unknown how and why 709921077 was chosen specifically.
     FP32 fp{ .f = a }; // evil floating point bit level hacking
-    fp.u = fp.u / 3 + 709921077; // what the fuck?
+    fp.u = fp.u / 3 + 709921077; // what is that?
     const auto x = fp.f;
 
     // One round of Newton's method. It follows the Wikipedia article at
@@ -222,3 +222,4 @@ float ColorFix::GetLightness(COLORREF color) noexcept
 }
 
 TIL_FAST_MATH_END
+
