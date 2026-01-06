@@ -41,7 +41,8 @@
 
             <DataTemplate x:Key="FontKeyValuePairTemplate"
                           x:DataType="local:FontKeyValuePair">
-                <Grid ColumnSpacing="8">
+                <Grid AutomationProperties.Name="{x:Bind AutomationName}"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -51,8 +52,10 @@
                                VerticalAlignment="Center"
                                Text="{x:Bind KeyDisplayString}" />
                     <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind KeyDisplayString}"
                                     Value="{x:Bind Value, Mode=TwoWay}" />
-                    <Button Grid.Column="2"
+                    <Button x:Uid="Profile_DeleteFontKeyValuePairButton"
+                            Grid.Column="2"
                             Click="DeleteFontKeyValuePair_Click"
                             Style="{StaticResource DeleteButtonStyle}"
                             Tag="{x:Bind (local:FontKeyValuePair)}">

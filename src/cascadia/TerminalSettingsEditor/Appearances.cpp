@@ -202,6 +202,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _isFontFeature;
     }
 
+    winrt::hstring FontKeyValuePair::AutomationName()
+    {
+        return hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), KeyDisplayStringRef(), _value) };
+    }
+
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
         _appearance{ appearance }
     {
