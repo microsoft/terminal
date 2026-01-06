@@ -343,7 +343,7 @@ private:
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 
     RenderSettings _renderSettings;
-    ::Microsoft::Console::VirtualTerminal::AdaptDispatch* _adaptDispatch;
+    ::Microsoft::Console::VirtualTerminal::AdaptDispatch* _adaptDispatch = nullptr;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     ::Microsoft::Console::VirtualTerminal::TerminalInput _terminalInput;
 
