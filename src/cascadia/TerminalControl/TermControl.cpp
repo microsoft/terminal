@@ -2877,9 +2877,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             // Do we ever get here (= uninitialized terminal)? If so: How?
-            // Yes, we can get here, when do Pane._Split, it need to call _SetupEntranceAnimation^M
-            // which need the control's size, while this size can only be available when the control^M
-            // is initialized.^M
+            // Yes, we can get here, when do Pane._Split, it need to call _SetupEntranceAnimation
+            // which need the control's size, while this size can only be available when the control
+            // is initialized.
             return { 10, 10 };
         }
     }
