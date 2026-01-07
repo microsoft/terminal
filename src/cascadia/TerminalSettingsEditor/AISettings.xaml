@@ -88,7 +88,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
-                                                     Color="#404040" />
+                                                     Color="{ThemeResource SystemBaseLowColor}" />
                                 </Grid.Background>
                                 <muxc:InfoBadge x:Name="GithubCopilotDescriptionInfoBadge"
                                                 Grid.Column="0"
@@ -189,7 +189,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
-                                                     Color="#404040" />
+                                                     Color="{ThemeResource SystemBaseLowColor}" />
                                 </Grid.Background>
                                 <muxc:InfoBadge x:Name="AzureOpenAIDescriptionInfoBadge"
                                                 Grid.Column="0"
@@ -315,7 +315,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid.Background>
                                     <SolidColorBrush Opacity="0.7"
-                                                     Color="#404040" />
+                                                     Color="{ThemeResource SystemBaseLowColor}" />
                                 </Grid.Background>
                                 <muxc:InfoBadge x:Name="OpenAIDescriptionInfoBadge"
                                                 Grid.Column="0"
