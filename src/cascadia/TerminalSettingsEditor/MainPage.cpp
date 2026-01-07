@@ -169,6 +169,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
+        // GH#19688: the nav item text may be truncated, so we need to set tooltips for all nav items. Reuse the displayed text resources.
+        WUX::Controls::ToolTipService::SetToolTip(AISettingsNavItem(), box_value(RS_(L"Nav_AISettings/Content")));
+
         _breadcrumbs = single_threaded_observable_vector<IInspectable>();
     }
 
