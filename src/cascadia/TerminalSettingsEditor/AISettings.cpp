@@ -71,6 +71,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         AISettings_GithubCopilotSignUpAndLearnMorePart2().Text(githubCopilotDescription.at(2));
         AISettings_GithubCopilotLearnMoreLinkText().Text(githubCopilotDescription.at(3));
         AISettings_GithubCopilotSignUpAndLearnMorePart3().Text(githubCopilotDescription.at(4));
+
+        Automation::AutomationProperties::SetName(AzureOpenAIEndpointInputBox(), RS_(L"AISettings_EndpointTextBox/Text"));
+        Automation::AutomationProperties::SetName(AzureOpenAIKeyInputBox(), RS_(L"AISettings_KeyTextBox/Text"));
+        Automation::AutomationProperties::SetName(OpenAIKeyInputBox(), RS_(L"AISettings_KeyTextBox/Text"));
     }
 
     void AISettings::OnNavigatedTo(const NavigationEventArgs& e)
