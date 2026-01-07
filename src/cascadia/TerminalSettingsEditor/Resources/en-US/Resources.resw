@@ -834,6 +834,9 @@
   <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Add new font feature</value>
   </data>
+  <data name="Profile_DeleteFontKeyValuePairButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Delete</value>
+  </data>
   <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
     <value>Add new</value>
     <comment>Button label that adds a new font feature for the current font.</comment>
