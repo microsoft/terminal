@@ -197,7 +197,8 @@
                                                FontFamily="Cascadia Code"
                                                Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
                                                Text="{x:Bind Name, Mode=OneWay}"
-                                               TextTrimming="WordEllipsis" />
+                                               TextTrimming="WordEllipsis"
+                                               ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}" />
                                 </Grid>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
