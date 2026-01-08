@@ -65,6 +65,14 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
+    const auto state = ApplicationState::SharedInstance();
+    const auto savedPercent = static_cast<float>(state.QuakeWindowSizePercent());
+    _window->SetQuakeWindowSizePercent(savedPercent);
+
+#ifdef _DEBUG
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] Loaded size percent from state: %.1f%%\n", savedPercent * 100.0f).c_str());
+#endif
+
     _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
@@ -75,6 +83,7 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     _windowCallbacks.WindowActivated = _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _windowCallbacks.WindowMoved = _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
+    _windowCallbacks.QuakeWindowSizeChanged = _window->QuakeWindowSizeChanged({ this, &AppHost::_QuakeWindowSizeChanged });
 
     _window->MakeWindow();
 
@@ -391,6 +400,7 @@ void AppHost::_revokeWindowCallbacks()
     _window->DragRegionClicked(_windowCallbacks.DragRegionClicked);
     _window->WindowVisibilityChanged(_windowCallbacks.WindowVisibilityChanged);
     _window->MaximizeChanged(_windowCallbacks.MaximizeChanged);
+    _window->QuakeWindowSizeChanged(_windowCallbacks.QuakeWindowSizeChanged);
 }
 
 // Method Description:
@@ -558,17 +568,32 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
 
     if (_windowLogic.IsQuakeWindow())
     {
-        // If we just use rcWork by itself, we'll fail to account for the invisible
-        // space reserved for the resize handles. So retrieve that size here.
-        const auto availableSpace = desktopDimensions + nonClientSize;
+        // Get cursor monitor for quake windows - the window should appear
+        // on the monitor where the cursor is, not the proposed window location
+        POINT cursorPos{};
+        GetCursorPos(&cursorPos);
+        auto hmon = MonitorFromPoint(cursorPos, MONITOR_DEFAULTTONEAREST);
+
+        MONITORINFO cursorMonitorInfo{};
+        cursorMonitorInfo.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfo(hmon, &cursorMonitorInfo);
+
+        UINT dpiX = USER_DEFAULT_SCREEN_DPI;
+        UINT dpiY = USER_DEFAULT_SCREEN_DPI;
+        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpiX, &dpiY);
+
+        const til::rect workArea{ cursorMonitorInfo.rcWork };
+        const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpiX);
+        const auto availableSpace = til::size{ workArea.width(), workArea.height() } + nonClientSize;
+        const auto savedPercent = ApplicationState::SharedInstance().QuakeWindowSizePercent();
 
         origin = {
-            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
-            (nearestMonitorInfo.rcWork.top)
+            (cursorMonitorInfo.rcWork.left - (nonClientSize.width / 2)) + 1,
+            cursorMonitorInfo.rcWork.top
         };
         dimensions = {
-            availableSpace.width,
-            availableSpace.height / 2
+            availableSpace.width - 2,
+            static_cast<til::CoordType>(availableSpace.height * savedPercent)
         };
         launchMode = LaunchMode::FocusMode;
     }
@@ -1028,6 +1053,16 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
                                     const winrt::Windows::Foundation::IInspectable&)
 {
     _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
+}
+
+void AppHost::_QuakeWindowSizeChanged(float sizePercent)
+{
+    // Persist the new quake window size to ApplicationState
+    ApplicationState::SharedInstance().QuakeWindowSizePercent(static_cast<double>(sizePercent));
+
+#ifdef _DEBUG
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] Persisting size percent to state: %.1f%%\n", sizePercent * 100.0f).c_str());
+#endif
 }
 
 // Raised from TerminalWindow. We handle by bubbling the request to the window manager.
