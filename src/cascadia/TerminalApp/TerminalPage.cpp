@@ -8,6 +8,7 @@
 #include <LibraryResources.h>
 #include <TerminalThemeHelpers.h>
 #include <TerminalCore/ControlKeyStates.hpp>
+#include <til/unicode.h>
 #include <Utils.h>
 
 #include "../../types/inc/utils.hpp"
@@ -2874,8 +2875,20 @@ namespace winrt::TerminalApp::implementation
             if (const auto strongThis = weakThis.get())
             {
                 // We have to initialize the dialog here to be able to change the text of the text block within it
-                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
-                ClipboardText().Text(text);
+                std::ignore = FindName(L"MultiLinePasteDialog");
+
+                // WinUI absolutely cannot deal with large amounts of text (at least O(n), possibly O(n^2),
+                // so we limit the string length here and add an ellipsis if necessary.
+                auto clipboardText = text;
+                if (clipboardText.size() > 1024)
+                {
+                    const std::wstring_view view{ text };
+                    // Make sure we don't cut in the middle of a surrogate pair
+                    const auto len = til::utf16_iterate_prev(view, 512);
+                    clipboardText = til::hstring_format(FMT_COMPILE(L"{}\n…"), view.substr(0, len));
+                }
+
+                ClipboardText().Text(std::move(clipboardText));
 
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
                 ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
@@ -2891,7 +2904,7 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Clear the clipboard text so it doesn't lie around in memory
-                ClipboardText().Text(L"");
+                ClipboardText().Text({});
 
                 if (warningResult != ContentDialogResult::Primary)
                 {
