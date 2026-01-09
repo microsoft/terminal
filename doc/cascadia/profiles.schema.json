@@ -2008,6 +2008,24 @@
         }
       }
     },
+    "PaneTheme": {
+      "additionalProperties": false,
+      "description": "A set of properties for customizing the appearance of the panes",
+      "properties": {
+        "activeBorderColor": {
+          "description": "The color of the pane border when the pane is active",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "inactiveBorderColor": {
+          "description": "The color of the pane border when the pane is inactive",
+          "$ref": "#/$defs/ThemeColor"
+        },
+        "broadcastBorderColor": {
+          "description": "The color of the pane border when broadcasted",
+          "$ref": "#/$defs/ThemeColor"
+        }
+      }
+    },
     "WindowTheme": {
       "additionalProperties": false,
       "description": "A set of properties for customizing the appearance of the window itself",
@@ -2064,6 +2082,9 @@
         },
         "window": {
           "$ref": "#/$defs/WindowTheme"
+        },
+        "pane": {
+          "$ref": "#/$defs/PaneTheme"
         }
       }
     },
