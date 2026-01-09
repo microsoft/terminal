@@ -13,6 +13,7 @@
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
 #include "Toast.h"
+#include "TabReorderAnimator.h"
 
 #include "WindowsPackageManagerFactory.h"
 
@@ -291,6 +292,8 @@ namespace winrt::TerminalApp::implementation
             winrt::Windows::Foundation::Point dragOffset{ 0, 0 };
         } _stashed;
 
+        std::unique_ptr<TabReorderAnimator> _tabReorderAnimator;
+
         safe_void_coroutine _NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e);
 
         __declspec(noinline) CommandPalette _loadCommandPaletteSlowPath();
@@ -551,6 +554,7 @@ namespace winrt::TerminalApp::implementation
         void _onTabStripDragOver(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
         void _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
         void _onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e);
+        void _onTabStripDragLeave(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<Tab>& tabImpl);
