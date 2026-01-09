@@ -119,4 +119,47 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return lhs == rhs;
         }
     };
+
+    // fmt::format but for HSTRING.
+    template<typename... Args>
+    winrt::hstring hstring_format(Args&&... args)
+    {
+        // We could use fmt::formatted_size and winrt::impl::hstring_builder here,
+        // and this would make formatting of large strings a bit faster, and a bit slower
+        // for short strings. More importantly, I hit compilation issues so I dropped that.
+        fmt::basic_memory_buffer<wchar_t> buf;
+        fmt::format_to(std::back_inserter(buf), args...);
+        return winrt::hstring{ buf.data(), gsl::narrow<uint32_t>(buf.size()) };
+    }
 }
+
+template<>
+struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::hstring& str, auto& ctx) const
+    {
+        return fmt::formatter<fmt::wstring_view, wchar_t>::format({ str.data(), str.size() }, ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<winrt::guid, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::guid& value, auto& ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(),
+            L"{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
+            value.Data1,
+            value.Data2,
+            value.Data3,
+            value.Data4[0],
+            value.Data4[1],
+            value.Data4[2],
+            value.Data4[3],
+            value.Data4[4],
+            value.Data4[5],
+            value.Data4[6],
+            value.Data4[7]);
+    }
+};
