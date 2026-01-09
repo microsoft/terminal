@@ -43,8 +43,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetFocusOnTextbox();
         void PopulateTextbox(const winrt::hstring& text);
         bool ContainsFocus();
-        winrt::hstring GetStatusText();
         void SetStatus(int32_t totalMatches, int32_t currentMatch, bool searchRegexInvalid);
+        winrt::hstring GetAccessibleStatus(int32_t totalMatches, int32_t currentMatch, bool searchRegexInvalid);
         void ClearStatus();
 
         void GoBackwardClicked(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::UI::Xaml::RoutedEventArgs& /*e*/);
@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _PlayCloseAnimation();
         bool _AnimationEnabled();
 
-        static winrt::hstring _FormatStatus(int32_t totalMatches, int32_t currentMatch);
+        static winrt::hstring _FormatStatus(int32_t totalMatches, int32_t currentMatch, bool isAccessible = false);
         static double _TextWidth(winrt::hstring text, double fontSize);
         double _GetStatusMaxWidth();
 

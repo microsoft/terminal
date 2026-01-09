@@ -3758,12 +3758,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
         {
-            auto status = _searchBox->GetStatusText();
-            if (const auto i = status.size() / 2; !status.empty() && status[i] == '/')
-            {
-                status = RS_fmt(L"TermControl_NumResultsAccessible", results.CurrentMatch + 1, results.TotalMatches);
-            }
-
+            const auto status = _searchBox->GetAccessibleStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
             if (!status.empty())
             {
                 automationPeer.RaiseNotificationEvent(

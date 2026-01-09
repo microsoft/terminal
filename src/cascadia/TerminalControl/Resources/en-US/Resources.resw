@@ -335,7 +335,15 @@ Please either install the missing font or choose another one.</value>
     <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
   </data>
   <data name="TermControl_NumResultsAccessible" xml:space="preserve">
-    <value>{} of {}</value>
-    <comment>{Locked="{}"} Read out by the screen reader to announce number of results from a search query. First "{}" is replaced with index of search result. Second "{}" is replaced by total number of results.</comment>
+    <value>{0} of {1}</value>
+    <comment>{Locked="{0}"}{Locked="{1}"} Read out by the screen reader to announce number of results from a search query. First "{}" is replaced with index of search result. Second "{}" is replaced by total number of results.</comment>
+  </data>
+  <data name="TermControl_UnknownSearchResultIndex" xml:space="preserve">
+    <value>unknown</value>
+    <comment>Will be read out by a screen reader when a value for the index of a search result is mismatched and unclear. Displayed as a part of TermControl_NumResultsAccessible.</comment>
+  </data>
+  <data name="TermControl_TooManySearchResults" xml:space="preserve">
+    <value>over 999</value>
+    <comment>Will be read out by a screen reader when a search returns over 999 search results.</comment>
   </data>
 </root>
