@@ -3754,13 +3754,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 };
                 _updateScrollBar->Run(update);
             }
+        }
 
-            if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        {
+            auto status = _searchBox->GetStatusText();
+            if (const auto i = status.size() / 2; !status.empty() && status[i] == '/')
+            {
+                status = RS_fmt(L"TermControl_NumResultsAccessible", results.CurrentMatch + 1, results.TotalMatches);
+            }
+
+            if (!status.empty())
             {
                 automationPeer.RaiseNotificationEvent(
                     AutomationNotificationKind::ActionCompleted,
                     AutomationNotificationProcessing::ImportantMostRecent,
-                    results.TotalMatches > 0 ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
+                    status,
                     L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
             }
         }

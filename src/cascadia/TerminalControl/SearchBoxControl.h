@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetFocusOnTextbox();
         void PopulateTextbox(const winrt::hstring& text);
         bool ContainsFocus();
+        winrt::hstring GetStatusText();
         void SetStatus(int32_t totalMatches, int32_t currentMatch, bool searchRegexInvalid);
         void ClearStatus();
 

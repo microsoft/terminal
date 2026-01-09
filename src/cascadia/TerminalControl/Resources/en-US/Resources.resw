@@ -229,14 +229,6 @@ Please either install the missing font or choose another one.</value>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Read-only mode is enabled.</value>
   </data>
-  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
-    <value>Results found</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
-  </data>
-  <data name="SearchBox_NoMatches" xml:space="preserve">
-    <value>No results found</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
-  </data>
   <data name="PasteCommandButton.Label" xml:space="preserve">
     <value>Paste</value>
     <comment>The label of a button for pasting the contents of the clipboard.</comment>
@@ -341,5 +333,9 @@ Please either install the missing font or choose another one.</value>
   <data name="PreviewTextAnnouncement" xml:space="preserve">
     <value>Suggested input: {0}</value>
     <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
+  </data>
+  <data name="TermControl_NumResultsAccessible" xml:space="preserve">
+    <value>{} of {}</value>
+    <comment>{Locked="{}"} Read out by the screen reader to announce number of results from a search query. First "{}" is replaced with index of search result. Second "{}" is replaced by total number of results.</comment>
   </data>
 </root>

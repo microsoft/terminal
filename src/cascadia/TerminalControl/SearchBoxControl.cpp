@@ -535,6 +535,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return maxLength;
     }
 
+    winrt::hstring SearchBoxControl::GetStatusText()
+    {
+        return StatusBox().Text();
+    }
+
     // Method Description:
     // - Formats and sets the status message in the status box.
     // Increases the size of the box if required.
@@ -561,6 +566,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Removes the status message in the status box.
     void SearchBoxControl::ClearStatus()
     {
-        StatusBox().Text(L"");
+        StatusBox().Text({});
     }
 }
