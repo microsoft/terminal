@@ -336,7 +336,7 @@ Please either install the missing font or choose another one.</value>
   </data>
   <data name="TermControl_NumResultsAccessible" xml:space="preserve">
     <value>{0} of {1}</value>
-    <comment>{Locked="{0}"}{Locked="{1}"} Read out by the screen reader to announce number of results from a search query. First "{}" is replaced with index of search result. Second "{}" is replaced by total number of results.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"} Read out by the screen reader to announce number of results from a search query. "{0}" is replaced with index of search result. "{1}" is replaced by total number of results.</comment>
   </data>
   <data name="TermControl_UnknownSearchResultIndex" xml:space="preserve">
     <value>unknown</value>
