@@ -3836,34 +3836,37 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const VTInt fontNumber,
         return nullptr;
     }
 
-    return [=](const auto ch) {
-        // We pass the data string straight through to the font buffer class
-        // until we receive an ESC, indicating the end of the string. At that
-        // point we can finalize the buffer, and if valid, update the renderer
-        // with the constructed bit pattern.
-        if (ch != AsciiChars::ESC)
+    return [=](const std::wstring_view str) {
+        for (const auto ch : str)
         {
-            _fontBuffer->AddSixelData(ch);
-        }
-        else if (_fontBuffer->FinalizeSixelData())
-        {
-            // We also need to inform the character set mapper of the ID that
-            // will map to this font (we only support one font buffer so there
-            // will only ever be one active dynamic character set).
-            if (charsetSize == DispatchTypes::CharsetSize::Size96)
+            // We pass the data string straight through to the font buffer class
+            // until we receive an ESC, indicating the end of the string. At that
+            // point we can finalize the buffer, and if valid, update the renderer
+            // with the constructed bit pattern.
+            if (ch != AsciiChars::ESC)
             {
-                _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
+                _fontBuffer->AddSixelData(ch);
             }
-            else
+            else if (_fontBuffer->FinalizeSixelData())
             {
-                _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
-            }
-            if (_renderer)
-            {
-                const auto bitPattern = _fontBuffer->GetBitPattern();
-                const auto cellSize = _fontBuffer->GetCellSize();
-                const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-                _renderer->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+                // We also need to inform the character set mapper of the ID that
+                // will map to this font (we only support one font buffer so there
+                // will only ever be one active dynamic character set).
+                if (charsetSize == DispatchTypes::CharsetSize::Size96)
+                {
+                    _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
+                }
+                else
+                {
+                    _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
+                }
+                if (_renderer)
+                {
+                    const auto bitPattern = _fontBuffer->GetBitPattern();
+                    const auto cellSize = _fontBuffer->GetCellSize();
+                    const auto centeringHint = _fontBuffer->GetTextCenteringHint();
+                    _renderer->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+                }
             }
         }
         return true;
@@ -3889,24 +3892,27 @@ void AdaptDispatch::RequestUserPreferenceCharset()
 // - a function to parse the character set ID
 ITermDispatch::StringHandler AdaptDispatch::AssignUserPreferenceCharset(const DispatchTypes::CharsetSize charsetSize)
 {
-    return [this, charsetSize, idBuilder = VTIDBuilder{}](const auto ch) mutable {
-        if (ch >= L'\x20' && ch <= L'\x2f')
+    return [this, charsetSize, idBuilder = VTIDBuilder{}](const std::wstring_view str) mutable {
+        for (const auto ch : str)
         {
-            idBuilder.AddIntermediate(ch);
-        }
-        else if (ch >= L'\x30' && ch <= L'\x7e')
-        {
-            const auto id = idBuilder.Finalize(ch);
-            switch (charsetSize)
+            if (ch >= L'\x20' && ch <= L'\x2f')
             {
-            case DispatchTypes::CharsetSize::Size94:
-                _termOutput.AssignUserPreferenceCharset(id, false);
-                break;
-            case DispatchTypes::CharsetSize::Size96:
-                _termOutput.AssignUserPreferenceCharset(id, true);
-                break;
+                idBuilder.AddIntermediate(ch);
             }
-            return false;
+            else if (ch >= L'\x30' && ch <= L'\x7e')
+            {
+                const auto id = idBuilder.Finalize(ch);
+                switch (charsetSize)
+                {
+                case DispatchTypes::CharsetSize::Size94:
+                    _termOutput.AssignUserPreferenceCharset(id, false);
+                    break;
+                case DispatchTypes::CharsetSize::Size96:
+                    _termOutput.AssignUserPreferenceCharset(id, true);
+                    break;
+                }
+                return false;
+            }
         }
         return true;
     };
@@ -3932,8 +3938,8 @@ ITermDispatch::StringHandler AdaptDispatch::DefineMacro(const VTInt macroId,
 
     if (_macroBuffer->InitParser(macroId, deleteControl, encoding))
     {
-        return [&](const auto ch) {
-            return _macroBuffer->ParseDefinition(ch);
+        return [&](const std::wstring_view str) {
+            return _macroBuffer->ParseDefinition(str);
         };
     }
 
@@ -4053,45 +4059,48 @@ void AdaptDispatch::_ReportColorTable(const DispatchTypes::ColorModel colorModel
 // - a function to parse the report data.
 ITermDispatch::StringHandler AdaptDispatch::_RestoreColorTable()
 {
-    return [this, parameter = VTInt{}, parameters = std::vector<VTParameter>{}](const auto ch) mutable {
-        if (ch >= L'0' && ch <= L'9')
+    return [this, parameter = VTInt{}, parameters = std::vector<VTParameter>{}](const std::wstring_view str) mutable {
+        for (const auto ch : str)
         {
-            parameter *= 10;
-            parameter += (ch - L'0');
-            parameter = std::min(parameter, MAX_PARAMETER_VALUE);
-        }
-        else if (ch == L';')
-        {
-            if (parameters.size() < 5)
+            if (ch >= L'0' && ch <= L'9')
+            {
+                parameter *= 10;
+                parameter += (ch - L'0');
+                parameter = std::min(parameter, MAX_PARAMETER_VALUE);
+            }
+            else if (ch == L';')
+            {
+                if (parameters.size() < 5)
+                {
+                    parameters.push_back(parameter);
+                }
+                parameter = 0;
+            }
+            else if (ch == L'/' || ch == AsciiChars::ESC)
             {
                 parameters.push_back(parameter);
-            }
-            parameter = 0;
-        }
-        else if (ch == L'/' || ch == AsciiChars::ESC)
-        {
-            parameters.push_back(parameter);
-            const auto colorParameters = VTParameters{ parameters.data(), parameters.size() };
-            const auto colorNumber = colorParameters.at(0).value_or(0);
-            if (colorNumber < TextColor::TABLE_SIZE)
-            {
-                const auto colorModel = DispatchTypes::ColorModel{ colorParameters.at(1) };
-                const auto x = colorParameters.at(2).value_or(0);
-                const auto y = colorParameters.at(3).value_or(0);
-                const auto z = colorParameters.at(4).value_or(0);
-                if (colorModel == DispatchTypes::ColorModel::HLS)
+                const auto colorParameters = VTParameters{ parameters.data(), parameters.size() };
+                const auto colorNumber = colorParameters.at(0).value_or(0);
+                if (colorNumber < TextColor::TABLE_SIZE)
                 {
-                    SetColorTableEntry(colorNumber, Utils::ColorFromHLS(x, y, z));
+                    const auto colorModel = DispatchTypes::ColorModel{ colorParameters.at(1) };
+                    const auto x = colorParameters.at(2).value_or(0);
+                    const auto y = colorParameters.at(3).value_or(0);
+                    const auto z = colorParameters.at(4).value_or(0);
+                    if (colorModel == DispatchTypes::ColorModel::HLS)
+                    {
+                        SetColorTableEntry(colorNumber, Utils::ColorFromHLS(x, y, z));
+                    }
+                    else if (colorModel == DispatchTypes::ColorModel::RGB)
+                    {
+                        SetColorTableEntry(colorNumber, Utils::ColorFromRGB100(x, y, z));
+                    }
                 }
-                else if (colorModel == DispatchTypes::ColorModel::RGB)
-                {
-                    SetColorTableEntry(colorNumber, Utils::ColorFromRGB100(x, y, z));
-                }
+                parameters.clear();
+                parameter = 0;
             }
-            parameters.clear();
-            parameter = 0;
         }
-        return (ch != AsciiChars::ESC);
+        return true;
     };
 }
 
@@ -4111,42 +4120,43 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
     // this is the opposite of what is documented in most DEC manuals, which
     // say that 0 is for a valid response, and 1 is for an error. The correct
     // interpretation is documented in the DEC STD 070 reference.
-    return [this, parameter = VTInt{}, idBuilder = VTIDBuilder{}](const auto ch) mutable {
-        const auto isFinal = ch >= L'\x40' && ch <= L'\x7e';
-        if (isFinal)
+    return [this, parameter = VTInt{}, idBuilder = VTIDBuilder{}](const std::wstring_view str) mutable {
+        for (const auto ch : str)
         {
-            const auto id = idBuilder.Finalize(ch);
-            switch (id)
+            const auto isFinal = ch >= L'\x40' && ch <= L'\x7e';
+            if (isFinal)
             {
-            case VTID("m"):
-                _ReportSGRSetting();
-                break;
-            case VTID("r"):
-                _ReportDECSTBMSetting();
-                break;
-            case VTID("s"):
-                _ReportDECSLRMSetting();
-                break;
-            case VTID(" q"):
-                _ReportDECSCUSRSetting();
-                break;
-            case VTID("\"q"):
-                _ReportDECSCASetting();
-                break;
-            case VTID("*x"):
-                _ReportDECSACESetting();
-                break;
-            case VTID(",|"):
-                _ReportDECACSetting(VTParameter{ parameter });
-                break;
-            default:
-                _ReturnDcsResponse(L"0$r");
-                break;
+                const auto id = idBuilder.Finalize(ch);
+                switch (id)
+                {
+                case VTID("m"):
+                    _ReportSGRSetting();
+                    break;
+                case VTID("r"):
+                    _ReportDECSTBMSetting();
+                    break;
+                case VTID("s"):
+                    _ReportDECSLRMSetting();
+                    break;
+                case VTID(" q"):
+                    _ReportDECSCUSRSetting();
+                    break;
+                case VTID("\"q"):
+                    _ReportDECSCASetting();
+                    break;
+                case VTID("*x"):
+                    _ReportDECSACESetting();
+                    break;
+                case VTID(",|"):
+                    _ReportDECACSetting(VTParameter{ parameter });
+                    break;
+                default:
+                    _ReturnDcsResponse(L"0$r");
+                    break;
+                }
+                return false;
             }
-            return false;
-        }
-        else
-        {
+
             // Although we don't yet support any operations with parameter
             // prefixes, it's important that we still parse the prefix and
             // include it in the ID. Otherwise, we'll mistakenly respond to
@@ -4164,8 +4174,8 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
                 parameter += (ch - L'0');
                 parameter = std::min(parameter, MAX_PARAMETER_VALUE);
             }
-            return true;
         }
+        return true;
     };
 }
 
@@ -4513,126 +4523,129 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreCursorInformation()
         VTParameter row{};
         VTParameter column{};
     };
-    return [&, state = State{}](const auto ch) mutable {
-        if (numeric.test(state.field))
+    return [&, state = State{}](const std::wstring_view str) mutable {
+        for (const auto ch : str)
         {
-            if (ch >= '0' && ch <= '9')
+            if (numeric.test(state.field))
             {
-                state.value *= 10;
-                state.value += (ch - L'0');
-                state.value = std::min(state.value, MAX_PARAMETER_VALUE);
+                if (ch >= '0' && ch <= '9')
+                {
+                    state.value *= 10;
+                    state.value += (ch - L'0');
+                    state.value = std::min(state.value, MAX_PARAMETER_VALUE);
+                }
+                else if (ch == L';' || ch == AsciiChars::ESC)
+                {
+                    if (state.field == Field::Row)
+                    {
+                        state.row = state.value;
+                    }
+                    else if (state.field == Field::Column)
+                    {
+                        state.column = state.value;
+                    }
+                    else if (state.field == Field::Page)
+                    {
+                        PagePositionAbsolute(state.value);
+                    }
+                    else if (state.field == Field::GL && state.value <= 3)
+                    {
+                        LockingShift(state.value);
+                    }
+                    else if (state.field == Field::GR && state.value <= 3)
+                    {
+                        LockingShiftRight(state.value);
+                    }
+                    state.value = {};
+                    state.field = static_cast<Field>(state.field + 1);
+                }
             }
-            else if (ch == L';' || ch == AsciiChars::ESC)
+            else if (flags.test(state.field))
             {
-                if (state.field == Field::Row)
+                // Note that there could potentially be multiple characters in a
+                // flag field, so we process the flags as soon as they're received.
+                // But for now we're only interested in the first one, so once the
+                // state.value is set, we ignore everything else until the `;`.
+                if (ch >= L'@' && ch <= '~' && !state.value)
                 {
-                    state.row = state.value;
-                }
-                else if (state.field == Field::Column)
-                {
-                    state.column = state.value;
-                }
-                else if (state.field == Field::Page)
-                {
-                    PagePositionAbsolute(state.value);
-                }
-                else if (state.field == Field::GL && state.value <= 3)
-                {
-                    LockingShift(state.value);
-                }
-                else if (state.field == Field::GR && state.value <= 3)
-                {
-                    LockingShiftRight(state.value);
-                }
-                state.value = {};
-                state.field = static_cast<Field>(state.field + 1);
-            }
-        }
-        else if (flags.test(state.field))
-        {
-            // Note that there could potentially be multiple characters in a
-            // flag field, so we process the flags as soon as they're received.
-            // But for now we're only interested in the first one, so once the
-            // state.value is set, we ignore everything else until the `;`.
-            if (ch >= L'@' && ch <= '~' && !state.value)
-            {
-                state.value = ch;
-                if (state.field == Field::SGR)
-                {
-                    const auto page = _pages.ActivePage();
-                    auto attr = page.Attributes();
-                    attr.SetIntense(state.value & 1);
-                    attr.SetUnderlineStyle(state.value & 2 ? UnderlineStyle::SinglyUnderlined : UnderlineStyle::NoUnderline);
-                    attr.SetBlinking(state.value & 4);
-                    attr.SetReverseVideo(state.value & 8);
-                    attr.SetInvisible(state.value & 16);
-                    page.SetAttributes(attr);
-                }
-                else if (state.field == Field::Attr)
-                {
-                    const auto page = _pages.ActivePage();
-                    auto attr = page.Attributes();
-                    attr.SetProtected(state.value & 1);
-                    page.SetAttributes(attr);
-                }
-                else if (state.field == Field::Sizes)
-                {
-                    state.charset96.at(0) = state.value & 1;
-                    state.charset96.at(1) = state.value & 2;
-                    state.charset96.at(2) = state.value & 4;
-                    state.charset96.at(3) = state.value & 8;
-                }
-                else if (state.field == Field::Flags)
-                {
-                    const bool originMode = state.value & 1;
-                    const bool ss2 = state.value & 2;
-                    const bool ss3 = state.value & 4;
-                    const bool delayedEOLWrap = state.value & 8;
-                    // The cursor position is parsed at the start of the sequence,
-                    // but we only set the position once we know the origin mode.
-                    _modes.set(Mode::Origin, originMode);
-                    CursorPosition(state.row, state.column);
-                    // There can only be one single shift applied at a time, so
-                    // we'll just apply the last one that is enabled.
-                    _termOutput.SingleShift(ss3 ? 3 : (ss2 ? 2 : 0));
-                    // The EOL flag will always be reset by the cursor movement
-                    // above, so we only need to worry about setting it.
-                    if (delayedEOLWrap)
+                    state.value = ch;
+                    if (state.field == Field::SGR)
                     {
                         const auto page = _pages.ActivePage();
-                        page.Cursor().DelayEOLWrap();
+                        auto attr = page.Attributes();
+                        attr.SetIntense(state.value & 1);
+                        attr.SetUnderlineStyle(state.value & 2 ? UnderlineStyle::SinglyUnderlined : UnderlineStyle::NoUnderline);
+                        attr.SetBlinking(state.value & 4);
+                        attr.SetReverseVideo(state.value & 8);
+                        attr.SetInvisible(state.value & 16);
+                        page.SetAttributes(attr);
+                    }
+                    else if (state.field == Field::Attr)
+                    {
+                        const auto page = _pages.ActivePage();
+                        auto attr = page.Attributes();
+                        attr.SetProtected(state.value & 1);
+                        page.SetAttributes(attr);
+                    }
+                    else if (state.field == Field::Sizes)
+                    {
+                        state.charset96.at(0) = state.value & 1;
+                        state.charset96.at(1) = state.value & 2;
+                        state.charset96.at(2) = state.value & 4;
+                        state.charset96.at(3) = state.value & 8;
+                    }
+                    else if (state.field == Field::Flags)
+                    {
+                        const bool originMode = state.value & 1;
+                        const bool ss2 = state.value & 2;
+                        const bool ss3 = state.value & 4;
+                        const bool delayedEOLWrap = state.value & 8;
+                        // The cursor position is parsed at the start of the sequence,
+                        // but we only set the position once we know the origin mode.
+                        _modes.set(Mode::Origin, originMode);
+                        CursorPosition(state.row, state.column);
+                        // There can only be one single shift applied at a time, so
+                        // we'll just apply the last one that is enabled.
+                        _termOutput.SingleShift(ss3 ? 3 : (ss2 ? 2 : 0));
+                        // The EOL flag will always be reset by the cursor movement
+                        // above, so we only need to worry about setting it.
+                        if (delayedEOLWrap)
+                        {
+                            const auto page = _pages.ActivePage();
+                            page.Cursor().DelayEOLWrap();
+                        }
                     }
                 }
+                else if (ch == L';')
+                {
+                    state.value = 0;
+                    state.field = static_cast<Field>(state.field + 1);
+                }
             }
-            else if (ch == L';')
+            else if (charset.test(state.field))
             {
-                state.value = 0;
-                state.field = static_cast<Field>(state.field + 1);
+                if (ch >= L' ' && ch <= L'/')
+                {
+                    state.charsetId.AddIntermediate(ch);
+                }
+                else if (ch >= L'0' && ch <= L'~')
+                {
+                    const auto id = state.charsetId.Finalize(ch);
+                    const auto gset = state.field - Field::G0;
+                    if (state.charset96.at(gset))
+                    {
+                        Designate96Charset(gset, id);
+                    }
+                    else
+                    {
+                        Designate94Charset(gset, id);
+                    }
+                    state.charsetId.Clear();
+                    state.field = static_cast<Field>(state.field + 1);
+                }
             }
         }
-        else if (charset.test(state.field))
-        {
-            if (ch >= L' ' && ch <= L'/')
-            {
-                state.charsetId.AddIntermediate(ch);
-            }
-            else if (ch >= L'0' && ch <= L'~')
-            {
-                const auto id = state.charsetId.Finalize(ch);
-                const auto gset = state.field - Field::G0;
-                if (state.charset96.at(gset))
-                {
-                    Designate96Charset(gset, id);
-                }
-                else
-                {
-                    Designate94Charset(gset, id);
-                }
-                state.charsetId.Clear();
-                state.field = static_cast<Field>(state.field + 1);
-            }
-        }
-        return (ch != AsciiChars::ESC);
+        return true;
     };
 }
 
@@ -4685,30 +4698,33 @@ ITermDispatch::StringHandler AdaptDispatch::_RestoreTabStops()
     _ClearAllTabStops();
     _InitTabStopsForWidth(width);
 
-    return [this, width, column = size_t{}](const auto ch) mutable {
-        if (ch >= L'0' && ch <= L'9')
+    return [this, width, column = size_t{}](const std::wstring_view str) mutable {
+        for (const auto ch : str)
         {
-            column *= 10;
-            column += (ch - L'0');
-            column = std::min<size_t>(column, MAX_PARAMETER_VALUE);
-        }
-        else if (ch == L'/' || ch == AsciiChars::ESC)
-        {
-            // Note that column 1 is always a tab stop, so there is no
-            // need to record an entry at that offset.
-            if (column > 1u && column <= static_cast<size_t>(width))
+            if (ch >= L'0' && ch <= L'9')
             {
-                _tabStopColumns.at(column - 1) = true;
+                column *= 10;
+                column += (ch - L'0');
+                column = std::min<size_t>(column, MAX_PARAMETER_VALUE);
             }
-            column = 0;
+            else if (ch == L'/' || ch == AsciiChars::ESC)
+            {
+                // Note that column 1 is always a tab stop, so there is no
+                // need to record an entry at that offset.
+                if (column > 1u && column <= static_cast<size_t>(width))
+                {
+                    _tabStopColumns.at(column - 1) = true;
+                }
+                column = 0;
+            }
+            else
+            {
+                // If we receive an unexpected character, we don't try and
+                // process any more of the input - we just abort.
+                return false;
+            }
         }
-        else
-        {
-            // If we receive an unexpected character, we don't try and
-            // process any more of the input - we just abort.
-            return false;
-        }
-        return (ch != AsciiChars::ESC);
+        return true;
     };
 }
 

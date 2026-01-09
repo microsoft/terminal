@@ -34,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         SixelParser(AdaptDispatch& dispatcher, const StateMachine& stateMachine, const VTInt conformanceLevel = DefaultConformance) noexcept;
         void SoftReset();
         void SetDisplayMode(const bool enabled) noexcept;
-        std::function<bool(wchar_t)> DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor);
+        std::function<bool(std::wstring_view)> DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor);
 
     private:
         // NB: If we want to support more than 256 colors, we'll also need to
