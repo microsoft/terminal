@@ -4872,7 +4872,7 @@ namespace winrt::TerminalApp::implementation
         const bool shouldUseAcrylic = _settings.GlobalSettings().UseAcrylicInTabRow() &&
                                       (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic());
 
-        if (shouldUseAcrylic)
+        if (_settings.GlobalSettings().UseAcrylicInTabRow() && (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic()))
         {
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
