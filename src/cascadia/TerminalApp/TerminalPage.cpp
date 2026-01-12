@@ -4869,9 +4869,6 @@ namespace winrt::TerminalApp::implementation
         // Use acrylic if:
         // 1. UseAcrylicInTabRow is enabled, AND
         // 2. Either the window is focused OR EnableUnfocusedAcrylic is enabled
-        const bool shouldUseAcrylic = _settings.GlobalSettings().UseAcrylicInTabRow() &&
-                                      (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic());
-
         if (_settings.GlobalSettings().UseAcrylicInTabRow() && (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic()))
         {
             const auto acrylicBrush = Media::AcrylicBrush();
