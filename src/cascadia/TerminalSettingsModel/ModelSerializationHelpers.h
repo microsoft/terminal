@@ -45,7 +45,10 @@ _TIL_INLINEPREFIX void ParseCommaSeparatedPair(const std::string& string,
             if (index == 0)
             {
                 leftValue(value);
-                if (string.find(',') == std::string::npos) {rightValue(value);}
+                if (string.find(',') == std::string::npos)
+                {
+                    rightValue(value);
+                }
             }
 
             if (index == 1)

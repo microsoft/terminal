@@ -1619,4 +1619,4 @@ namespace TerminalAppLocalTests
         }
     }
 
-} 
+}
