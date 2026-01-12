@@ -4881,13 +4881,17 @@ namespace winrt::TerminalApp::implementation
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
-            const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            auto acrylicBrush{ TitlebarBrush().try_as<Media::AcrylicBrush>() };
+            if (!acrylicBrush)
+            {
+                acrylicBrush = Media::AcrylicBrush();
+                acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+                acrylicBrush.TintOpacity(0.5);
+                TitlebarBrush(acrylicBrush);
+            }
+
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
-            acrylicBrush.TintOpacity(0.5);
-
-            TitlebarBrush(acrylicBrush);
         }
         else if (auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
                                                                theme.TabRow().UnfocusedBackground()) :
