@@ -4862,8 +4862,18 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // GH#19604: Get the theme's tabRow color to use as the acrylic tint.
+        const auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
+                                                            theme.TabRow().UnfocusedBackground()) :
+                                              ThemeColor{ nullptr } };
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
+            if (tabRowBg)
+            {
+                bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
+            }
+
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
@@ -4872,9 +4882,7 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
-                                                               theme.TabRow().UnfocusedBackground()) :
-                                                 ThemeColor{ nullptr } })
+        else if (tabRowBg)
         {
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
