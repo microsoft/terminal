@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Mover guia {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Mover guia para a janela "{0}"</value>
@@ -180,12 +180,6 @@
   </data>
   <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
     <value>Mover guia para uma nova janela</value>
-  </data>
-  <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>para frente</value>
-  </data>
-  <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>para trás</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Fechar todas as guias depois da guia atual</value>

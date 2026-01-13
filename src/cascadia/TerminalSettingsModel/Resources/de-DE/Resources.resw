@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Registerkarte {0} verschieben</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Registerkarte in Fenster "{0}" verschieben</value>
@@ -180,12 +180,6 @@
   </data>
   <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
     <value>Registerkarte in ein neues Fenster verschieben</value>
-  </data>
-  <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>vorwärts</value>
-  </data>
-  <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>rückwärts</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Alle Registerkarten nach der aktuellen Registerkarte schließen</value>

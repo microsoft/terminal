@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Sposta scheda {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Sposta scheda alla finestra "{0}"</value>
@@ -180,12 +180,6 @@
   </data>
   <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
     <value>Sposta scheda in una nuova finestra</value>
-  </data>
-  <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>avanti</value>
-  </data>
-  <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>indietro</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Chiudi tutte le schede dopo la scheda corrente</value>
