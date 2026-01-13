@@ -99,7 +99,8 @@ Resources/(?!en)
 ^NOTICE.md
 ^oss/.*?/
 ^samples/PixelShaders/Screenshots/
-^src/cascadia/TerminalSettingsEditor/SegoeFluentIconList.h$
+^src/cascadia/TerminalApp/TmuxControl\.cpp$
+^src/cascadia/TerminalSettingsEditor/SegoeFluentIconList\.h$
 ^src/interactivity/onecore/BgfxEngine\.
 ^src/renderer/atlas/
 ^src/renderer/wddmcon/WddmConRenderer\.

@@ -94,6 +94,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _NotifyChanges(L"Icon", L"IconPath");
         }
 
+        constexpr bool TmuxControlEnabled() noexcept
+        {
+            return Feature_TmuxControl::IsEnabled();
+        }
+
         // starting directory
         hstring CurrentStartingDirectoryPreview() const;
         bool UseParentProcessDirectory() const;
@@ -161,6 +166,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
         OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
         OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AllowTmuxControl);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

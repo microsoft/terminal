@@ -330,6 +330,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _revokers.SearchMissingCommand = _core.SearchMissingCommand(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleSearchMissingCommand });
         _revokers.WindowSizeChanged = _core.WindowSizeChanged(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWindowSizeChanged });
         _revokers.WriteToClipboard = _core.WriteToClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleWriteToClipboard });
+        _revokers.EnterTmuxControl = _core.EnterTmuxControl(winrt::auto_revoke, { get_weak(), &TermControl::_bubbleEnterTmuxControl });
 
         _revokers.PasteFromClipboard = _interactivity.PasteFromClipboard(winrt::auto_revoke, { get_weak(), &TermControl::_bubblePasteFromClipboard });
 
@@ -1506,6 +1507,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.SendInput(text);
     }
 
+    void TermControl::InjectTextAtCursor(const winrt::hstring& text)
+    {
+        _core.InjectTextAtCursor(text);
+    }
+
     // Method Description:
     // - Manually handles key events for certain keys that can't be passed to us
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
@@ -2667,6 +2673,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ViewHeight();
     }
 
+    int TermControl::ViewWidth() const
+    {
+        return _core.ViewWidth();
+    }
+
     int TermControl::BufferHeight() const
     {
         return _core.BufferHeight();
@@ -2866,7 +2877,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             // Do we ever get here (= uninitialized terminal)? If so: How?
-            assert(false);
+            // Yes, we can get here, when do Pane._Split, it need to call _SetupEntranceAnimation
+            // which need the control's size, while this size can only be available when the control
+            // is initialized.
             return { 10, 10 };
         }
     }
@@ -4000,6 +4013,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             WindowSizeChanged.raise(*this, winrt::make<implementation::WindowSizeChangedEventArgs>(static_cast<int32_t>(pixelSize.Width), static_cast<int32_t>(pixelSize.Height)));
         }
+    }
+
+    void TermControl::_bubbleEnterTmuxControl(const IInspectable&, Control::EnterTmuxControlEventArgs args)
+    {
+        EnterTmuxControl.raise(*this, std::move(args));
     }
 
     til::CoordType TermControl::_calculateSearchScrollOffset() const

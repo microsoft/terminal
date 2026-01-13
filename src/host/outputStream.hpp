@@ -71,6 +71,7 @@ public:
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
     void SearchMissingCommand(std::wstring_view missingCommand) override;
+    std::function<bool(wchar_t)> EnterTmuxControl() override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

@@ -4,12 +4,13 @@
 #include "pch.h"
 #include "App.h"
 
-#include "TerminalPage.h"
 #include "ScratchpadContent.h"
-#include "../WinRTUtils/inc/WtExeUtils.h"
+#include "TerminalPage.h"
+#include "TmuxControl.h"
+#include "Utils.h"
 #include "../../types/inc/utils.hpp"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
-#include "Utils.h"
+#include "../WinRTUtils/inc/WtExeUtils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -283,6 +284,15 @@ namespace winrt::TerminalApp::implementation
             const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
 
             const auto& activeTab{ _senderOrFocusedTab(sender) };
+
+            if constexpr (Feature_TmuxControl::IsEnabled())
+            {
+                //Tmux control takes over
+                if (_tmuxControl && _tmuxControl->TabIsTmuxControl(activeTab))
+                {
+                    return _tmuxControl->SplitPane(activeTab, realArgs.SplitDirection());
+                }
+            }
 
             _SplitPane(activeTab,
                        realArgs.SplitDirection(),

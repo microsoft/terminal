@@ -15,6 +15,7 @@
 #include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
+#include "../../terminal/adapter/adaptDispatch.hpp"
 #include "../../types/inc/CodepointWidthDetector.hpp"
 #include "../../types/inc/utils.hpp"
 
@@ -138,6 +139,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnWindowSizeChanged = [this](auto&& PH1, auto&& PH2) { _terminalWindowSizeChanged(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
         _terminal->SetWindowSizeChangedCallback(pfnWindowSizeChanged);
+
+        _terminal->SetEnterTmuxControlCallback([this]() -> std::function<bool(wchar_t)> {
+            const auto args = winrt::make_self<EnterTmuxControlEventArgs>();
+            EnterTmuxControl.raise(*this, *args);
+            if (auto inputCallback = args->InputCallback())
+            {
+                return [inputCallback = std::move(inputCallback)](wchar_t ch) -> bool {
+                    const auto c16 = static_cast<char16_t>(ch);
+                    inputCallback({ &c16, 1 });
+                    return true;
+                };
+            }
+            return nullptr;
+        });
 
         // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
         // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
@@ -1459,6 +1474,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->TrySnapOnInput();
     }
 
+    void ControlCore::InjectTextAtCursor(const winrt::hstring& text)
+    {
+        if (text.empty())
+        {
+            return;
+        }
+
+        const auto lock = _terminal->LockForWriting();
+        std::wstring_view remaining{ text };
+
+        // Process one line at a time
+        for (;;)
+        {
+            // Get the (CR)LF position
+            const auto lf = std::min(remaining.size(), remaining.find(L'\n'));
+
+            // Strip off the CR
+            auto lineEnd = lf;
+            if (lineEnd != 0 && remaining[lineEnd - 1] == L'\r')
+            {
+                lineEnd -= 1;
+            }
+
+            // Split into line and whatever comes after
+            const auto line = remaining.substr(0, lineEnd);
+            remaining = remaining.substr(std::min(remaining.size(), lf + 1));
+
+            // This will not just print the line but also handle delay wrap, etc.
+            _terminal->GetAdaptDispatch().PrintString(line);
+
+            if (remaining.empty())
+            {
+                break;
+            }
+
+            _terminal->GetAdaptDispatch().LineFeed(DispatchTypes::LineFeedType::DependsOnMode);
+        }
+    }
+
     FontInfo ControlCore::GetFont() const
     {
         return _actualFont;
@@ -1566,6 +1620,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForReading();
         return _terminal->GetViewport().Height();
+    }
+
+    // Function Description:
+    // - Gets the width of the terminal in lines of text. This is just the
+    //   width of the viewport.
+    // Return Value:
+    // - The width of the terminal in lines of text
+    int ControlCore::ViewWidth() const
+    {
+        const auto lock = _terminal->LockForReading();
+        return _terminal->GetViewport().Width();
     }
 
     // Function Description:

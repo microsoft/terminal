@@ -923,4 +923,11 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>An invalid regular expression was found.</value>
   </data>
+  <data name="TmuxControlInfo" xml:space="preserve">
+    <value>Running in tmux control mode; Press 'q' to detach:</value>
+    <comment>{Locked="'q'"}</comment>
+  </data>
+  <data name="NewTmuxControlTab.Text" xml:space="preserve">
+    <value>Tmux Control Tab</value>
+  </data>
 </root>

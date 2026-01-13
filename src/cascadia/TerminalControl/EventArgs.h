@@ -21,6 +21,7 @@
 #include "StringSentEventArgs.g.h"
 #include "SearchMissingCommandEventArgs.g.h"
 #include "WindowSizeChangedEventArgs.g.h"
+#include "EnterTmuxControlEventArgs.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -264,6 +265,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         WINRT_PROPERTY(int32_t, Width);
         WINRT_PROPERTY(int32_t, Height);
+    };
+
+    struct EnterTmuxControlEventArgs : public EnterTmuxControlEventArgsT<EnterTmuxControlEventArgs>
+    {
+        til::property<TmuxControlInputCallback> InputCallback;
     };
 }
 
