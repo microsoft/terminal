@@ -117,9 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddProfile_AddNewButton.Tag" xml:space="preserve">
-    <value>Create New Button</value>
-  </data>
   <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
     <value>New empty profile</value>
     <comment>Button label that creates a new profile with default settings.</comment>
@@ -127,9 +124,6 @@
   <data name="AddProfile_Duplicate.Header" xml:space="preserve">
     <value>Duplicate a profile</value>
     <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
-  </data>
-  <data name="AddProfile_DuplicateButton.Tag" xml:space="preserve">
-    <value>Duplicate Button</value>
   </data>
   <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
     <value>Duplicate</value>
@@ -318,10 +312,6 @@
     <value>Remove trailing white-space when pasting</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
-  <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
-    <value>Below are the currently bound keys, which can be modified by editing the JSON settings file.</value>
-    <comment>A disclaimer located at the top of the actions page that presents the list of keybindings.</comment>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>Default profile</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
@@ -405,14 +395,6 @@
     <value>Initial Rows</value>
     <comment>Name for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
-  <data name="Globals_InitialPosX.Text" xml:space="preserve">
-    <value>X position</value>
-    <comment>Header for a control to choose the X coordinate of the terminal's starting position.</comment>
-  </data>
-  <data name="Globals_InitialPosY.Text" xml:space="preserve">
-    <value>Y position</value>
-    <comment>Header for a control to choose the Y coordinate of the terminal's starting position.</comment>
-  </data>
   <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>X position</value>
     <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
@@ -467,14 +449,6 @@
   <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
     <value>Restore window layout</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
-  </data>
-  <data name="Globals_LaunchMode.Header" xml:space="preserve">
-    <value>Launch mode</value>
-    <comment>Header for a control to select what mode to launch the terminal in.</comment>
-  </data>
-  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
-    <value>How the terminal will appear on launch. Focus will hide the tabs and title bar.</value>
-    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>Launch parameters</value>
@@ -1264,10 +1238,6 @@
     <value>The selected font has no font features.</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_General.Header" xml:space="preserve">
-    <value>General</value>
-    <comment>Header for a sub-page of profile settings focused on more general scenarios.</comment>
-  </data>
   <data name="Profile_Hidden.Header" xml:space="preserve">
     <value>Hide profile from dropdown</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
@@ -1319,10 +1289,6 @@
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
-  </data>
-  <data name="Profile_PaddingSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Padding</value>
-    <comment>Name for a control to determine the amount of space between text in a terminal and the edge of the window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Padding</value>
@@ -1399,14 +1365,6 @@
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If enabled, this profile will spawn in the directory from which Terminal was launched.</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.Content" xml:space="preserve">
-    <value>Hide icon</value>
-    <comment>A supplementary setting to the "icon" setting.</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>If enabled, this profile will have no icon.</value>
-    <comment>A description for what the supplementary "Hide icon" setting does. Presented near "Profile_HideIconCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>Suppress title changes</value>
@@ -1559,10 +1517,6 @@
   <data name="Profile_BellStyleNone.Content" xml:space="preserve">
     <value>None</value>
     <comment>An option to choose from for the "bell style" setting. When selected, notifications are silenced.</comment>
-  </data>
-  <data name="Globals_DisableAnimations.Header" xml:space="preserve">
-    <value>Disable pane animations</value>
-    <comment>Header for a control to toggle animations on panes. "Enabled" value disables the animations.</comment>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>Black</value>
@@ -1736,9 +1690,6 @@
     <value>All</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a combination of the other bell styles is used to notify the user.</comment>
   </data>
-  <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
-    <value>Visual (flash taskbar)</value>
-  </data>
   <data name="Profile_BellStyleTaskbar.Content" xml:space="preserve">
     <value>Flash taskbar</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the taskbar is flashed.</comment>
@@ -1753,14 +1704,6 @@
   </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>Delete color scheme</value>
-    <comment>Button label that deletes the selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_EditButton.Text" xml:space="preserve">
-    <value>Edit</value>
-    <comment>Button label that edits the currently selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButton2.Text" xml:space="preserve">
-    <value>Delete</value>
     <comment>Button label that deletes the selected color scheme.</comment>
   </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
@@ -1818,14 +1761,6 @@
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Open your settings.json file. Alt+Click to open your defaults.json file.</value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
-  </data>
-  <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Rename</value>
-    <comment>Text label for a button that can be used to begin the renaming process.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButtonDisclaimerInBox.Text" xml:space="preserve">
-    <value>This color scheme cannot be deleted or renamed because it is included by default.</value>
-    <comment>Disclaimer presented next to the delete button when it is disabled.</comment>
   </data>
   <data name="ColorScheme_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete color scheme</value>
@@ -1938,14 +1873,6 @@
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Reset to inherited value.</value>
     <comment>This button will remove a user's customization from a given setting, restoring it to the value that the profile inherited. This is a text label on a button.</comment>
-  </data>
-  <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
-    <value>Terminal colors</value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for basic parts of the terminal.</comment>
-  </data>
-  <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
-    <value>System colors</value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
   </data>
   <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
     <value>Colors</value>
@@ -2212,12 +2139,12 @@
     <comment>An option to choose from for the "move tab direction". No movement.</comment>
   </data>
   <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
-    <value>Forward</value>
-    <comment>An option to choose from for the "move tab direction". Moves the tab forward.</comment>
+    <value>Forward (right)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward (right).</comment>
   </data>
   <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
-    <value>Backward</value>
-    <comment>An option to choose from for the "move tab direction". Moves the tab backward.</comment>
+    <value>Backward (left)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward (left).</comment>
   </data>
   <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
     <value>Previous</value>
@@ -2395,14 +2322,6 @@
     <value>If enabled, the terminal will be hidden as soon as you switch to another window.</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
-  <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
-    <value>This color scheme cannot be deleted because it is included by default.</value>
-    <comment>Disclaimer presented near the controls to delete the selected color scheme when that functionality is disabled.</comment>
-  </data>
-  <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
-    <value>This color scheme cannot be renamed because it is included by default.</value>
-    <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
-  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>default</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
@@ -2480,10 +2399,6 @@
     <value>Add sound</value>
     <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
   </data>
-  <data name="Profile_BellSoundBrowse.Content" xml:space="preserve">
-    <value>Browse...</value>
-    <comment>Text label for a button that opens a file picker to select a sound file to use for the bell sound. Presented near "Profile_BellSound".</comment>
-  </data>
   <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
     <value>When multiple sounds are defined, one is selected at random when the BEL character is received.</value>
     <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
@@ -2546,18 +2461,6 @@
   <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
     <value>More colors...</value>
     <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.Title" xml:space="preserve">
-    <value>Pick a color</value>
-    <comment>Title displayed on a content dialog directing the user to pick a color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.PrimaryButtonText" xml:space="preserve">
-    <value>OK</value>
-    <comment>Button label for the color picker content dialog. Used as confirmation to apply the selected color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.SecondaryButtonText" xml:space="preserve">
-    <value>Cancel</value>
-    <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
   </data>
   <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>Use scheme color</value>
