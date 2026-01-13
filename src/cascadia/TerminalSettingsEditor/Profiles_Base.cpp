@@ -134,18 +134,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    safe_void_coroutine Profiles_Base::Icon_Click(const IInspectable&, const RoutedEventArgs&)
-    {
-        auto lifetime = get_strong();
-
-        const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
-        auto file = co_await OpenImagePicker(parentHwnd);
-        if (!file.empty())
-        {
-            _Profile.IconPath(file);
-        }
-    }
-
     safe_void_coroutine Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
@@ -169,78 +157,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _Profile.StartingDirectory(folder);
         }
-    }
-
-    IconSource Profiles_Base::BuiltInIconConverter(const IInspectable& iconVal)
-    {
-        return Microsoft::Terminal::UI::IconPathConverter::IconSourceWUX(unbox_value<hstring>(iconVal));
-    }
-
-    void Profiles_Base::BuiltInIconPicker_GotFocus(const IInspectable& sender, const RoutedEventArgs& /*e*/)
-    {
-        _updateIconFilter({});
-        sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
-    }
-
-    void Profiles_Base::BuiltInIconPicker_QuerySubmitted(const AutoSuggestBox& /*sender*/, const AutoSuggestBoxQuerySubmittedEventArgs& e)
-    {
-        const auto iconEntry = unbox_value_or<EnumEntry>(e.ChosenSuggestion(), nullptr);
-        if (!iconEntry)
-        {
-            return;
-        }
-        _Profile.CurrentBuiltInIcon(iconEntry);
-    }
-
-    void Profiles_Base::BuiltInIconPicker_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& e)
-    {
-        if (e.Reason() != AutoSuggestionBoxTextChangeReason::UserInput)
-        {
-            return;
-        }
-        std::wstring_view filter{ sender.Text() };
-        filter = til::trim(filter, L' ');
-        _updateIconFilter(filter);
-    }
-
-    void Profiles_Base::_updateIconFilter(std::wstring_view filter)
-    {
-        if (_iconFilter != filter)
-        {
-            _filteredBuiltInIcons = nullptr;
-            _iconFilter = filter;
-            _updateFilteredIconList();
-            PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"FilteredBuiltInIconList" });
-        }
-    }
-
-    Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> Profiles_Base::FilteredBuiltInIconList()
-    {
-        if (!_filteredBuiltInIcons)
-        {
-            _updateFilteredIconList();
-        }
-        return _filteredBuiltInIcons;
-    }
-
-    void Profiles_Base::_updateFilteredIconList()
-    {
-        _filteredBuiltInIcons = ProfileViewModel::BuiltInIcons();
-        if (_iconFilter.empty())
-        {
-            return;
-        }
-
-        // Find matching icons and populate the filtered list
-        std::vector<Editor::EnumEntry> filtered;
-        filtered.reserve(_filteredBuiltInIcons.Size());
-        for (const auto& icon : _filteredBuiltInIcons)
-        {
-            if (til::contains_linguistic_insensitive(icon.EnumName(), _iconFilter))
-            {
-                filtered.emplace_back(icon);
-            }
-        }
-        _filteredBuiltInIcons = winrt::single_threaded_observable_vector(std::move(filtered));
     }
 }

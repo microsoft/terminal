@@ -36,14 +36,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Advanced = 3
     };
 
-    enum IconType
-    {
-        None = 0,
-        FontIcon,
-        Image,
-        Emoji
-    };
-
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
@@ -101,18 +93,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
-        String CurrentEmojiIcon;
-        IInspectable CurrentIconType;
-        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
-        Boolean UsingNoIcon { get; };
-        Boolean UsingBuiltInIcon { get; };
-        Boolean UsingEmojiIcon { get; };
-        Boolean UsingImageIcon { get; };
         Boolean TmuxControlEnabled { get; };
         String IconPath;
-
-        EnumEntry CurrentBuiltInIcon;
-        Windows.Foundation.Collections.IObservableVector<EnumEntry> BuiltInIcons { get; };
+        Boolean UsingNoIcon { get; };
 
         String TabTitlePreview { get; };
         String AnswerbackMessagePreview { get; };
