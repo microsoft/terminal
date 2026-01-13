@@ -1975,12 +1975,12 @@
     <comment>An option to choose from for the "move tab direction". No movement.</comment>
   </data>
   <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
-    <value>₣őřŵàŗđ (гϊğђт) !!! !</value>
-    <comment>An option to choose from for the "move tab direction". Moves the tab forward (right).</comment>
+    <value>₣őřŵàŗđ !!</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward.</comment>
   </data>
   <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
-    <value>ßąскẅǻŕđ (ĺĕƒť) !!! !</value>
-    <comment>An option to choose from for the "move tab direction". Moves the tab backward (left).</comment>
+    <value>ßąскẅǻŕđ !!</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward.</comment>
   </data>
   <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
     <value>Ρяēνΐøџş !!</value>
