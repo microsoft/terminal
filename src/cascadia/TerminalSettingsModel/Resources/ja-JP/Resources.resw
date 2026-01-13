@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>タブの移動 {0}</value>
-    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
+    <comment>{0} will be replaced with a "forward" / "backward"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>タブをウィンドウ "{0}" に移動</value>
@@ -180,6 +180,12 @@
   </data>
   <data name="MoveTabToNewWindowCommandKey" xml:space="preserve">
     <value>タブを新しいウィンドウに移動</value>
+  </data>
+  <data name="MoveTabDirectionForward" xml:space="preserve">
+    <value>前方</value>
+  </data>
+  <data name="MoveTabDirectionBackward" xml:space="preserve">
+    <value>後方</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>現在のタブの後のすべてのタブを閉じる</value>
