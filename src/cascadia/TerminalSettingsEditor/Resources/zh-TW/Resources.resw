@@ -117,9 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddProfile_AddNewButton.Tag" xml:space="preserve">
-    <value>建立新按鈕</value>
-  </data>
   <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
     <value>新的空白設定檔</value>
     <comment>Button label that creates a new profile with default settings.</comment>
@@ -127,9 +124,6 @@
   <data name="AddProfile_Duplicate.Header" xml:space="preserve">
     <value>複製設定檔</value>
     <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
-  </data>
-  <data name="AddProfile_DuplicateButton.Tag" xml:space="preserve">
-    <value>複製按鈕</value>
   </data>
   <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
     <value>複製</value>
@@ -310,10 +304,6 @@
     <value>貼上時移除尾端空白字元</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
-  <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
-    <value>以下是目前繫結的按鍵組合，可以透過編輯 JSON 設定檔加以修改。</value>
-    <comment>A disclaimer located at the top of the actions page that presents the list of keybindings.</comment>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>預設設定檔</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
@@ -397,14 +387,6 @@
     <value>初始資料列</value>
     <comment>Name for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
-  <data name="Globals_InitialPosX.Text" xml:space="preserve">
-    <value>X 位置</value>
-    <comment>Header for a control to choose the X coordinate of the terminal's starting position.</comment>
-  </data>
-  <data name="Globals_InitialPosY.Text" xml:space="preserve">
-    <value>Y 位置</value>
-    <comment>Header for a control to choose the Y coordinate of the terminal's starting position.</comment>
-  </data>
   <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>X 位置</value>
     <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
@@ -459,14 +441,6 @@
   <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
     <value>還原視窗版面配置</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
-  </data>
-  <data name="Globals_LaunchMode.Header" xml:space="preserve">
-    <value>啟動模式</value>
-    <comment>Header for a control to select what mode to launch the terminal in.</comment>
-  </data>
-  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
-    <value>啟動時終端機的顯示方式。焦點將會隱藏索引標籤和標題列。</value>
-    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>啟動參數</value>
@@ -1100,10 +1074,6 @@
     <value>選取的字型沒有字型功能。</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_General.Header" xml:space="preserve">
-    <value>一般</value>
-    <comment>Header for a sub-page of profile settings focused on more general scenarios.</comment>
-  </data>
   <data name="Profile_Hidden.Header" xml:space="preserve">
     <value>在下拉式清單中隱藏設定檔</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
@@ -1155,10 +1125,6 @@
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
     <value>瀏覽...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
-  </data>
-  <data name="Profile_PaddingSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>邊框間距</value>
-    <comment>Name for a control to determine the amount of space between text in a terminal and the edge of the window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>邊框間距</value>
@@ -1235,14 +1201,6 @@
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>如果啟用，這個設定檔將會在啟動 Windows 終端機的目錄中產生。</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.Content" xml:space="preserve">
-    <value>隱藏圖示</value>
-    <comment>A supplementary setting to the "icon" setting.</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>如果啟用，此配置檔將不會有圖示。</value>
-    <comment>A description for what the supplementary "Hide icon" setting does. Presented near "Profile_HideIconCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>禁止標題變更</value>
@@ -1395,10 +1353,6 @@
   <data name="Profile_BellStyleNone.Content" xml:space="preserve">
     <value>無</value>
     <comment>An option to choose from for the "bell style" setting. When selected, notifications are silenced.</comment>
-  </data>
-  <data name="Globals_DisableAnimations.Header" xml:space="preserve">
-    <value>停用窗格動畫</value>
-    <comment>Header for a control to toggle animations on panes. "Enabled" value disables the animations.</comment>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>超粗</value>
@@ -1572,9 +1526,6 @@
     <value>全部</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a combination of the other bell styles is used to notify the user.</comment>
   </data>
-  <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
-    <value>視覺效果 (閃爍工作列)</value>
-  </data>
   <data name="Profile_BellStyleTaskbar.Content" xml:space="preserve">
     <value>快閃工作列</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the taskbar is flashed.</comment>
@@ -1589,14 +1540,6 @@
   </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>刪除色彩配置</value>
-    <comment>Button label that deletes the selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_EditButton.Text" xml:space="preserve">
-    <value>編輯</value>
-    <comment>Button label that edits the currently selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButton2.Text" xml:space="preserve">
-    <value>刪除</value>
     <comment>Button label that deletes the selected color scheme.</comment>
   </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
@@ -1654,14 +1597,6 @@
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>開啟您的 settings.json 檔案。Alt+滑鼠左鍵 以開啟您的 defaults.json 檔案。</value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
-  </data>
-  <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>重新命名</value>
-    <comment>Text label for a button that can be used to begin the renaming process.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButtonDisclaimerInBox.Text" xml:space="preserve">
-    <value>無法刪除或重新命名此色彩配置，因為這是預設包含的色彩配置。</value>
-    <comment>Disclaimer presented next to the delete button when it is disabled.</comment>
   </data>
   <data name="ColorScheme_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>是的，刪除色彩配置</value>
@@ -1774,14 +1709,6 @@
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>重設為繼承值。</value>
     <comment>This button will remove a user's customization from a given setting, restoring it to the value that the profile inherited. This is a text label on a button.</comment>
-  </data>
-  <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
-    <value>終端機色彩</value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for basic parts of the terminal.</comment>
-  </data>
-  <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
-    <value>系統色彩</value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
   </data>
   <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
     <value>色彩</value>
@@ -2047,14 +1974,6 @@
     <value>無</value>
     <comment>An option to choose from for the "move tab direction". No movement.</comment>
   </data>
-  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
-    <value>向前</value>
-    <comment>An option to choose from for the "move tab direction". Moves the tab forward.</comment>
-  </data>
-  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
-    <value>向後</value>
-    <comment>An option to choose from for the "move tab direction". Moves the tab backward.</comment>
-  </data>
   <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
     <value>上一個</value>
     <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
@@ -2231,14 +2150,6 @@
     <value>如果啟用，當您切換到其他視窗時，就會立即隱藏終端機。</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
-  <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
-    <value>無法刪除此色彩配置，因為這是預設包含的色彩配置。</value>
-    <comment>Disclaimer presented near the controls to delete the selected color scheme when that functionality is disabled.</comment>
-  </data>
-  <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
-    <value>無法重新命名此色彩配置，因為這是預設包含的色彩配置。</value>
-    <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
-  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>預設值</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
@@ -2312,10 +2223,6 @@
     <value>新增音效</value>
     <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
   </data>
-  <data name="Profile_BellSoundBrowse.Content" xml:space="preserve">
-    <value>瀏覽...</value>
-    <comment>Text label for a button that opens a file picker to select a sound file to use for the bell sound. Presented near "Profile_BellSound".</comment>
-  </data>
   <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
     <value>定義多個音效時，當收到 BEL 字元時，會隨機選取一個聲音。</value>
     <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
@@ -2378,18 +2285,6 @@
   <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
     <value>更多色彩...</value>
     <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.Title" xml:space="preserve">
-    <value>挑選色彩</value>
-    <comment>Title displayed on a content dialog directing the user to pick a color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.PrimaryButtonText" xml:space="preserve">
-    <value>確定</value>
-    <comment>Button label for the color picker content dialog. Used as confirmation to apply the selected color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.SecondaryButtonText" xml:space="preserve">
-    <value>取消</value>
-    <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
   </data>
   <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>使用配置色彩</value>

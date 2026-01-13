@@ -149,12 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>При загрузке параметров пользователя возникли ошибки</value>
   </data>
-  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
-    <value>ОК</value>
-  </data>
-  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
-    <value>Внимание!</value>
-  </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
     <value>"{0}" не работает на вашем компьютере. Это может помешать терминалу получать ввод с клавиатуры.</value>
     <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
@@ -168,20 +162,8 @@
   <data name="AboutMenuItem" xml:space="preserve">
     <value>О программе</value>
   </data>
-  <data name="FeedbackMenuItem" xml:space="preserve">
-    <value>Отзыв</value>
-  </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Параметры</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Отмена</value>
-  </data>
-  <data name="CloseAll" xml:space="preserve">
-    <value>Закрыть все</value>
-  </data>
-  <data name="Quit" xml:space="preserve">
-    <value>Выход</value>
   </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Несколько областей</value>
@@ -288,13 +270,6 @@
   <data name="UnknownTheme" xml:space="preserve">
     <value>• Указанная тема не найдена в списке тем. Временно восстанавливается значение по умолчанию.</value>
     <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
-  </data>
-  <data name="LegacyGlobalsProperty" xml:space="preserve">
-    <value>Свойство "globals" устарело. Вашим параметрам может требоваться обновление. </value>
-    <comment>{Locked="\"globals\""} </comment>
-  </data>
-  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
-    <value>Дополнительные сведения см. на этой веб-странице.</value>
   </data>
   <data name="FailedToParseCommandJson" xml:space="preserve">
     <value>Не удалось расширить команду с помощью набора "iterateOn". Эта команда будет пропущена.</value>
@@ -476,20 +451,11 @@
   <data name="ElevatedRun.Text" xml:space="preserve">
     <value>Щелкните мышью с нажатой клавишей CTRL, чтобы открыть от имени администратора</value>
   </data>
-  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Закрыть</value>
-  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Закрыть</value>
   </data>
   <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
     <value>Закрыть</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Развернуть</value>
-  </data>
-  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Свернуть</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Свернуть</value>
@@ -509,10 +475,6 @@
   <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
     <value>Версия:</value>
     <comment>This is the heading for a version number label</comment>
-  </data>
-  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Приступая к работе</value>
-    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
     <value>Исходный код</value>
@@ -789,17 +751,8 @@
   <data name="ExportTabText" xml:space="preserve">
     <value>Экспорт текста</value>
   </data>
-  <data name="ExportFailure" xml:space="preserve">
-    <value>Не удалось экспортировать содержимое терминала</value>
-  </data>
-  <data name="ExportSuccess" xml:space="preserve">
-    <value>Содержимое терминала экспортировано</value>
-  </data>
   <data name="FindText" xml:space="preserve">
     <value>Найти</value>
-  </data>
-  <data name="PlainText" xml:space="preserve">
-    <value>Обычный текст</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Поведение завершения можно настроить в дополнительных параметрах профиля.</value>
@@ -905,10 +858,6 @@
   <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
     <value>Вкладка "{0}" перемещена в позицию "{1}"</value>
     <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
-  </data>
-  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
-    <value>Активная область перемещена на вкладку "{0}" в "{1}" окна</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
     <value>Активная область перемещена в окно "{0}"</value>
