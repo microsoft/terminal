@@ -823,7 +823,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(3u, command.NestedCommands().Size());
             _logCommandNames(command.NestedCommands());
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                const auto childCommandName = til::hstring_format(L"Split pane, profile: {}", name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -845,7 +845,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
+                const auto childCommandName = til::hstring_format(L"Split pane, split: down, profile: {}", name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -867,7 +867,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
+                const auto childCommandName = til::hstring_format(L"Split pane, split: right, profile: {}", name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -960,7 +960,7 @@ namespace TerminalAppLocalTests
 
         for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
         {
-            winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
+            const auto commandName = til::hstring_format(L"New tab, profile: {}", name);
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
@@ -1078,7 +1078,7 @@ namespace TerminalAppLocalTests
 
             _logCommandNames(command.NestedCommands());
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                const auto childCommandName = til::hstring_format(L"Split pane, profile: {}", name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1100,7 +1100,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
+                const auto childCommandName = til::hstring_format(L"Split pane, split: down, profile: {}", name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1122,7 +1122,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
+                const auto childCommandName = til::hstring_format(L"Split pane, split: right, profile: {}", name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();

@@ -692,11 +692,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(element, "ListItemText", listText);
             JsonUtils::GetValueForKey(element, "ToolTip", tooltipText);
 
-            auto args = winrt::make_self<SendInputArgs>(
-                winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
-                                            L"",
-                                            replaceLength,
-                                            completionText) });
+            auto args = winrt::make_self<SendInputArgs>(til::hstring_format(FMT_COMPILE(L"{:\x7f^{}}{}"), L"", replaceLength, completionText));
 
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
@@ -799,8 +795,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 continue;
             }
-            auto args = winrt::make_self<SendInputArgs>(
-                winrt::hstring{ fmt::format(FMT_COMPILE(L"{}{}{}"), cdText, backspaces, line) });
+            auto args = winrt::make_self<SendInputArgs>(til::hstring_format(FMT_COMPILE(L"{}{}{}"), cdText, backspaces, line));
 
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 

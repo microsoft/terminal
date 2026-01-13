@@ -121,14 +121,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 
     // fmt::format but for HSTRING.
-    template<typename... Args>
-    winrt::hstring hstring_format(Args&&... args)
+    winrt::hstring hstring_format(auto&&... args)
     {
         // We could use fmt::formatted_size and winrt::impl::hstring_builder here,
         // and this would make formatting of large strings a bit faster, and a bit slower
         // for short strings. More importantly, I hit compilation issues so I dropped that.
         fmt::basic_memory_buffer<wchar_t> buf;
-        fmt::format_to(std::back_inserter(buf), args...);
+        fmt::format_to(std::back_inserter(buf), std::forward<decltype(args)>(args)...);
         return winrt::hstring{ buf.data(), gsl::narrow<uint32_t>(buf.size()) };
     }
 }
