@@ -133,11 +133,11 @@ jobs:
           $SignFragments += "wpfdotnet"
         }
         If ([bool]::Parse("${{ parameters.buildWPF }}")) {
-          $BuildTargets += "Terminal\Control\Microsoft_Terminal_Control"
+          $BuildTargets += "Terminal\Control\TerminalControl"
           $SignFragments += "wpf"
         }
         If ([bool]::Parse("${{ parameters.buildConPTY }}")) {
-          $BuildTargets += "Conhost\Host_EXE;Conhost\winconpty_DLL"
+          $BuildTargets += "Conhost\Host_EXE;Conhost\winconptydll"
           $SignFragments += "conpty"
         }
         Write-Host "Targets: $($BuildTargets -Join ";")"

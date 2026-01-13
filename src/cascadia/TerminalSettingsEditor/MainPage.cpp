@@ -391,6 +391,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
 
+        // GH#19688: the nav item text may be truncated, so we need to set tooltips for all nav items. Reuse the displayed text resources.
+        WUX::Controls::ToolTipService::SetToolTip(LaunchNavItem(), box_value(RS_(L"Nav_Launch/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(InteractionNavItem(), box_value(RS_(L"Nav_Interaction/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(AppearanceNavItem(), box_value(RS_(L"Nav_Appearance/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(ColorSchemesNavItem(), box_value(RS_(L"Nav_ColorSchemes/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(RenderingNavItem(), box_value(RS_(L"Nav_Rendering/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(CompatibilityNavItem(), box_value(RS_(L"Nav_Compatibility/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(ActionsNavItem(), box_value(RS_(L"Nav_Actions/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(NewTabMenuNavItem(), box_value(RS_(L"Nav_NewTabMenu/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(ExtensionsNavItem(), box_value(RS_(L"Nav_Extensions/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(BaseLayerMenuItem(), box_value(RS_(L"Nav_ProfileDefaults/Content")));
+        WUX::Controls::ToolTipService::SetToolTip(OpenJsonNavItem(), box_value(RS_(L"Nav_OpenJSON/Content")));
+
         _breadcrumbs = single_threaded_observable_vector<IInspectable>();
         _UpdateSearchIndex();
         extensionsVMImpl->LazyLoadExtensions();
@@ -838,7 +851,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
-            SettingsNav().SelectedItem(GlobalAppearanceNavItem());
+            SettingsNav().SelectedItem(AppearanceNavItem());
         }
         else if (clickedItemTag == addProfileTag)
         {
@@ -1082,8 +1095,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Top off (the end of the nav view) with the Add Profile item
         MUX::Controls::NavigationViewItem addProfileItem;
-        addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
+        const auto addProfileText = RS_(L"Nav_AddNewProfile/Content");
+        addProfileItem.Content(box_value(addProfileText));
         addProfileItem.Tag(box_value(addProfileTag));
+        WUX::Controls::ToolTipService::SetToolTip(addProfileItem, box_value(addProfileText));
 
         FontIcon icon;
         // This is the "Add" symbol
@@ -1160,6 +1175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         profileNavItem.Content(box_value(profile.Name()));
         profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
         profileNavItem.Icon(UI::IconPathConverter::IconWUX(profile.EvaluatedIcon()));
+        WUX::Controls::ToolTipService::SetToolTip(profileNavItem, box_value(profile.Name()));
 
         if (profile.Orphaned())
         {
@@ -1183,6 +1199,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 else if (args.PropertyName() == L"Name")
                 {
                     menuItem.Content(box_value(tag.Name()));
+                    WUX::Controls::ToolTipService::SetToolTip(menuItem, box_value(tag.Name()));
                 }
                 else if (args.PropertyName() == L"Hidden")
                 {

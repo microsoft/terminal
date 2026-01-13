@@ -66,7 +66,11 @@ namespace winrt::TerminalApp::implementation
     }
     void TerminalPaneContent::Close()
     {
+        // We deliberately remove the event handlers before closing the control.
+        // This is to prevent reentrancy issues, pointless callbacks, etc.
         _removeControlEvents();
+
+        _control.Close();
 
         // Clear out our media player callbacks, and stop any playing media. This
         // will prevent the callback from being triggered after we've closed, and
