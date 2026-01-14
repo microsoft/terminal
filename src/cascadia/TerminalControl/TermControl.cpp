@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "TermControl.h"
 
-#include <LibraryResources.h>
 #include <inputpaneinterop.h>
 
 #include "TermControlAutomationPeer.h"
@@ -1401,51 +1400,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ScrollBar().ViewportSize(bufferHeight);
         ScrollBar().LargeChange(bufferHeight); // scroll one "screenful" at a time when the scroll bar is clicked
 
-        // Set up blinking cursor
-        int blinkTime = GetCaretBlinkTime();
-        if (blinkTime != INFINITE)
-        {
-            // Create a timer
-            _cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
-            _cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
-            // As of GH#6586, don't start the cursor timer immediately, and
-            // don't show the cursor initially. We'll show the cursor and start
-            // the timer when the control is first focused.
-            //
-            // As of GH#11411, turn on the cursor if we've already been marked
-            // as focused. We suspect that it's possible for the Focused event
-            // to fire before the LayoutUpdated. In that case, the
-            // _GotFocusHandler would mark us _focused, but find that a
-            // _cursorTimer doesn't exist, and it would never turn on the
-            // cursor. To mitigate, we'll initialize the cursor's 'on' state
-            // with `_focused` here.
-            _core.CursorOn(_focused || _displayCursorWhileBlurred());
-            if (_displayCursorWhileBlurred())
-            {
-                _cursorTimer.Start();
-            }
-        }
-        else
-        {
-            _cursorTimer.Destroy();
-        }
-
-        // Set up blinking attributes
-        auto animationsEnabled = TRUE;
-        SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
-        if (animationsEnabled && blinkTime != INFINITE)
-        {
-            // Create a timer
-            _blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
-            _blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
-            _blinkTimer.Start();
-        }
-        else
-        {
-            // The user has disabled blinking
-            _blinkTimer.Destroy();
-        }
-
         // Now that the renderer is set up, update the appearance for initialization
         _UpdateAppearanceFromUIThread(_core.FocusedAppearance());
 
@@ -1938,14 +1892,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             get_self<TermControlAutomationPeer>(_automationPeer)->RecordKeyEvent(vkey);
         }
 
-        if (_cursorTimer)
-        {
-            // Manually show the cursor when a key is pressed. Restarting
-            // the timer prevents flickering.
-            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer.Start();
-        }
-
         return handled;
     }
 
@@ -2403,17 +2349,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        if (_cursorTimer)
-        {
-            // When the terminal focuses, show the cursor immediately
-            _core.CursorOn(_core.SelectionMode() != SelectionInteractionMode::Mark);
-            _cursorTimer.Start();
-        }
-
-        if (_blinkTimer)
-        {
-            _blinkTimer.Start();
-        }
 
         // Only update the appearance here if an unfocused config exists - if an
         // unfocused config does not exist then we never would have switched
@@ -2448,17 +2383,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_interactivity)
         {
             _interactivity.LostFocus();
-        }
-
-        if (_cursorTimer && !_displayCursorWhileBlurred())
-        {
-            _cursorTimer.Stop();
-            _core.CursorOn(false);
-        }
-
-        if (_blinkTimer)
-        {
-            _blinkTimer.Stop();
         }
 
         // Check if there is an unfocused config we should set the appearance to
@@ -2526,34 +2450,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto scaleX = sender.CompositionScaleX();
 
         _core.ScaleChanged(scaleX);
-    }
-
-    // Method Description:
-    // - Toggle the cursor on and off when called by the cursor blink timer.
-    // Arguments:
-    // - sender: not used
-    // - e: not used
-    void TermControl::_CursorTimerTick(const Windows::Foundation::IInspectable& /* sender */,
-                                       const Windows::Foundation::IInspectable& /* e */)
-    {
-        if (!_IsClosing())
-        {
-            _core.BlinkCursor();
-        }
-    }
-
-    // Method Description:
-    // - Toggle the blinking rendition state when called by the blink timer.
-    // Arguments:
-    // - sender: not used
-    // - e: not used
-    void TermControl::_BlinkTimerTick(const Windows::Foundation::IInspectable& /* sender */,
-                                      const Windows::Foundation::IInspectable& /* e */)
-    {
-        if (!_IsClosing())
-        {
-            _core.BlinkAttributeTick();
-        }
     }
 
     // Method Description:
@@ -2681,7 +2577,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _restorePath = std::move(path);
     }
 
-    void TermControl::PersistToPath(const winrt::hstring& path) const
+    void TermControl::PersistTo(int64_t handle) const
     {
         // Don't persist us if we weren't ever initialized. In that case, we
         // never got an initial size, never instantiated a buffer, and didn't
@@ -2693,7 +2589,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // file then.
         if (_initializedTerminal)
         {
-            winrt::get_self<ControlCore>(_core)->PersistToPath(path.c_str());
+            winrt::get_self<ControlCore>(_core)->PersistTo(reinterpret_cast<HANDLE>(handle));
         }
     }
 
@@ -2724,8 +2620,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // while the thread is supposed to be idle. Stop these timers avoids this.
             _autoScrollTimer.Stop();
             _bellLightTimer.Stop();
-            _cursorTimer.Stop();
-            _blinkTimer.Stop();
 
             // This is absolutely crucial, as the TSF code tries to hold a strong reference to _tsfDataProvider,
             // but right now _tsfDataProvider implements IUnknown as a no-op. This ensures that TSF stops referencing us.
@@ -3860,13 +3754,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 };
                 _updateScrollBar->Run(update);
             }
+        }
 
-            if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        {
+            const auto status = _searchBox->GetAccessibleStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
+            if (!status.empty())
             {
                 automationPeer.RaiseNotificationEvent(
                     AutomationNotificationKind::ActionCompleted,
                     AutomationNotificationProcessing::ImportantMostRecent,
-                    results.TotalMatches > 0 ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
+                    status,
                     L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
             }
         }
@@ -4168,44 +4066,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ContextMenuSelectOutput();
     }
 
-    // Should the text cursor be displayed, even when the control isn't focused?
-    // n.b. "blur" is the opposite of "focus".
-    bool TermControl::_displayCursorWhileBlurred() const noexcept
-    {
-        return CursorVisibility() == Control::CursorDisplayState::Shown;
-    }
     Control::CursorDisplayState TermControl::CursorVisibility() const noexcept
     {
         return _cursorVisibility;
     }
+
     void TermControl::CursorVisibility(Control::CursorDisplayState cursorVisibility)
     {
         _cursorVisibility = cursorVisibility;
-        if (!_initializedTerminal)
-        {
-            return;
-        }
 
-        if (_displayCursorWhileBlurred())
+        // NOTE: This code is specific to broadcast input. It's never been well integrated.
+        // Ideally TermControl should not tie focus to XAML in the first place,
+        // allowing us to truly say "yeah these two controls both have focus".
+        if (_core)
         {
-            // If we should be ALWAYS displaying the cursor, turn it on and start blinking.
-            _core.CursorOn(true);
-            if (_cursorTimer)
-            {
-                _cursorTimer.Start();
-            }
-        }
-        else
-        {
-            // Otherwise, if we're unfocused, then turn the cursor off and stop
-            // blinking. (if we're focused, then we're already doing the right
-            // thing)
-            const auto focused = FocusState() != FocusState::Unfocused;
-            if (!focused && _cursorTimer)
-            {
-                _cursorTimer.Stop();
-            }
-            _core.CursorOn(focused);
+            _core.ForceCursorVisible(cursorVisibility == CursorDisplayState::Shown);
         }
     }
 }

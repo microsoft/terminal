@@ -6,7 +6,6 @@
 #include "AboutDialog.h"
 #include "AboutDialog.g.cpp"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 
 #include "../../types/inc/utils.hpp"

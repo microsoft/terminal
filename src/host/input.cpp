@@ -170,7 +170,12 @@ void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
 
         if (gci.HasActiveOutputBuffer())
         {
-            gci.GetActiveOutputBuffer().SnapOnInput(keyEvent.wVirtualKeyCode);
+            auto& buffer = gci.GetActiveOutputBuffer();
+
+            if (WI_IsFlagSet(buffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+            {
+                buffer.SnapOnInput(keyEvent.wVirtualKeyCode);
+            }
         }
     }
 }
@@ -355,6 +360,6 @@ void ProcessCtrlEvents()
         // The bad news is that EndTask() returns STATUS_UNSUCCESSFUL no matter whether
         // the process was already dead, or if the request actually failed for some reason.
         // Hopefully there aren't any regressions, but we can't know without trying.
-        LOG_IF_NTSTATUS_FAILED(ctrl->EndTask(r.dwProcessID, EventType, CtrlFlags));
+        ctrl->EndTask(r.dwProcessID, EventType, CtrlFlags);
     }
 }

@@ -167,14 +167,11 @@ void Window::_UpdateSystemMetrics() const
 {
     const auto dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
     auto& g = ServiceLocator::LocateGlobals();
-    auto& gci = g.getConsoleInformation();
 
     Scrolling::s_UpdateSystemMetrics();
 
     g.sVerticalScrollSize = dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
     g.sHorizontalScrollSize = dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
-
-    gci.GetCursorBlinker().UpdateSystemMetrics();
 
     const auto sysConfig = ServiceLocator::LocateSystemConfigurationProvider();
 
@@ -428,12 +425,8 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
         pSelection->HideSelection();
 
         // Fire off an event to let accessibility apps know we've scrolled.
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier != nullptr)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo.GetViewport().Left() - NewWindow.left,
-                                                      ScreenInfo.GetViewport().Top() - NewWindow.top);
-        }
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.ScrollViewport({ ScreenInfo.GetViewport().Left() - NewWindow.left, ScreenInfo.GetViewport().Top() - NewWindow.top });
 
         // The new window is OK. Store it in screeninfo and refresh screen.
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
@@ -1356,18 +1349,11 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     if (nullptr == _pUiaProvider)
     {
         LOG_IF_FAILED(WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this));
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.SetUIAProvider(_pUiaProvider->GetScreenInfoProvider());
     }
 
     return _pUiaProvider.Get();
-}
-
-[[nodiscard]] HRESULT Window::SignalUia(_In_ EVENTID id)
-{
-    if (_pUiaProvider != nullptr)
-    {
-        return _pUiaProvider->Signal(id);
-    }
-    return S_FALSE;
 }
 
 [[nodiscard]] HRESULT Window::UiaSetTextAreaFocus()

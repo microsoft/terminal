@@ -45,7 +45,6 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
-    ..\CursorBlinker.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
     ..\VtIo.cpp   \
@@ -82,6 +81,7 @@ SOURCES = \
     ..\writeData.cpp \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
+    ..\AccessibilityNotifier.cpp \
     ..\ConsoleArguments.cpp \
 
 

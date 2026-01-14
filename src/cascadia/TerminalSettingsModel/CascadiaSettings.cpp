@@ -9,7 +9,6 @@
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
 
-#include <LibraryResources.h>
 #include <VersionHelpers.h>
 #include <WtExeUtils.h>
 
@@ -585,6 +584,16 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
         catch (...)
         {
             // fall through
+        }
+    }
+
+    if (origin == winrt::Microsoft::Terminal::Settings::Model::OriginTag::Fragment)
+    {
+        if (PathIsUNCEx(resourcePath.c_str(), nullptr))
+        {
+            // A UNC path is just another type of network path, which fragments are not allowed to specify.
+            resource.Reject();
+            return;
         }
     }
 

@@ -7,7 +7,6 @@
 #include "EnumEntry.h"
 #include "Appearances.h"
 
-#include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
@@ -29,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
-    Windows::Foundation::Collections::IVector<IInspectable> ProfileViewModel::_BuiltInIcons{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> ProfileViewModel::_BuiltInIcons{ nullptr };
 
     static constexpr std::wstring_view HideIconValue{ L"none" };
 
@@ -114,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"CurrentBuiltInIcon")
             {
-                IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.EnumValue()));
             }
             else if (viewModelProperty == L"CurrentEmojiIcon")
             {
@@ -152,6 +151,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"AnswerbackMessagePreview");
             }
+            else if (viewModelProperty == L"TabColor")
+            {
+                _NotifyChanges(L"TabColorPreview");
+            }
+            else if (viewModelProperty == L"TabThemeColorPreview")
+            {
+                _NotifyChanges(L"TabColorPreview");
+            }
+        });
+
+        _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
+            {
+                _NotifyChanges(L"TabThemeColorPreview");
+            }
         });
 
         // Do the same for the starting directory
@@ -177,12 +192,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::_UpdateBuiltInIcons()
     {
-        std::vector<IInspectable> builtInIcons;
+        std::vector<Editor::EnumEntry> builtInIcons;
         for (auto& [val, name] : s_SegoeFluentIcons)
         {
             builtInIcons.emplace_back(make<EnumEntry>(hstring{ name }, box_value(val)));
         }
-        _BuiltInIcons = single_threaded_vector<IInspectable>(std::move(builtInIcons));
+        _BuiltInIcons = single_threaded_observable_vector<Editor::EnumEntry>(std::move(builtInIcons));
     }
 
     void ProfileViewModel::_DeduceCurrentIconType()
@@ -220,7 +235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (uint32_t i = 0; i < _BuiltInIcons.Size(); i++)
         {
             const auto& builtIn = _BuiltInIcons.GetAt(i);
-            if (profileIcon == unbox_value<hstring>(builtIn.as<Editor::EnumEntry>().EnumValue()))
+            if (profileIcon == unbox_value<hstring>(builtIn.EnumValue()))
             {
                 _CurrentBuiltInIcon = builtIn;
                 return;
@@ -438,7 +453,85 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return RS_(L"Profile_AnswerbackMessageNone");
     }
 
-    Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
+    Windows::UI::Color ProfileViewModel::TabColorPreview() const
+    {
+        if (const auto modelVal = _profile.TabColor())
+        {
+            const auto color = modelVal.Value();
+            // user defined an override value
+            return Windows::UI::Color{
+                .A = 255,
+                .R = color.R,
+                .G = color.G,
+                .B = color.B
+            };
+        }
+        // set to null --> deduce value from theme
+        return TabThemeColorPreview();
+    }
+
+    Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
+    {
+        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme();
+        if (const auto tabTheme = currentTheme.Tab())
+        {
+            // theme.tab.background: theme color must be evaluated
+            if (const auto tabBackground = tabTheme.Background())
+            {
+                const auto& tabBrush = tabBackground.Evaluate(Application::Current().Resources(),
+                                                              Windows::UI::Xaml::Media::SolidColorBrush{ DefaultAppearance().CurrentColorScheme().BackgroundColor().Color() },
+                                                              false);
+                if (const auto& tabColorBrush = tabBrush.try_as<Windows::UI::Xaml::Media::SolidColorBrush>())
+                {
+                    const auto brushColor = tabColorBrush.Color();
+                    return brushColor;
+                }
+            }
+        }
+        else if (const auto windowTheme = currentTheme.Window())
+        {
+            // theme.window.applicationTheme: evaluate light/dark to XAML default tab color
+            // Can also be "Default", in which case we fall through below
+            const auto appTheme = windowTheme.RequestedTheme();
+            if (appTheme == ElementTheme::Dark)
+            {
+                return Windows::UI::Color{
+                    .A = 0xFF,
+                    .R = 0x28,
+                    .G = 0x28,
+                    .B = 0x28
+                };
+            }
+            else if (appTheme == ElementTheme::Light)
+            {
+                return Windows::UI::Color{
+                    .A = 0xFF,
+                    .R = 0xF9,
+                    .G = 0xF9,
+                    .B = 0xF9
+                };
+            }
+        }
+
+        // XAML default tab color
+        if (Model::Theme::IsSystemInDarkTheme())
+        {
+            return Windows::UI::Color{
+                .A = 0xFF,
+                .R = 0x28,
+                .G = 0x28,
+                .B = 0x28
+            };
+        }
+        return Windows::UI::Color{
+            .A = 0xFF,
+            .R = 0xF9,
+            .G = 0xF9,
+            .B = 0xF9
+        };
+    }
+
+    Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance() const
     {
         return _defaultAppearanceViewModel;
     }
@@ -477,7 +570,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
     }
 
-    Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
+    Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance() const
     {
         return _unfocusedAppearanceViewModel;
     }
@@ -601,7 +694,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (_CurrentBuiltInIcon)
                 {
-                    IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.as<Editor::EnumEntry>().EnumValue()));
+                    IconPath(unbox_value<hstring>(_CurrentBuiltInIcon.EnumValue()));
                 }
                 break;
             }

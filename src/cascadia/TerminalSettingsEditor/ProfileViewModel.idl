@@ -116,11 +116,13 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UsingImageIcon { get; };
         String IconPath;
 
-        IInspectable CurrentBuiltInIcon;
-        Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
+        EnumEntry CurrentBuiltInIcon;
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> BuiltInIcons { get; };
 
         String TabTitlePreview { get; };
         String AnswerbackMessagePreview { get; };
+        Windows.UI.Color TabColorPreview { get; };
+        Windows.UI.Color TabThemeColorPreview { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();

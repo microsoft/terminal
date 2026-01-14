@@ -3,7 +3,6 @@
 
 #include "precomp.h"
 
-#include "_output.h"
 #include "stream.h"
 #include "scrolling.hpp"
 
@@ -121,10 +120,9 @@ void Selection::_SetSelectionVisibility(const bool fMakeVisible)
 
         _PaintSelection();
     }
-    if (const auto window = ServiceLocator::LocateConsoleWindow())
-    {
-        LOG_IF_FAILED(window->SignalUia(UIA_Text_TextSelectionChangedEventId));
-    }
+
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.SelectionChanged();
 }
 
 // Routine Description:
@@ -179,15 +177,11 @@ void Selection::InitializeMouseSelection(const til::point coordBufferPos)
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-        LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
     }
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-    if (pNotifier)
-    {
-        pNotifier->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
-    }
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.CursorChanged(coordBufferPos, true);
 }
 
 // Routine Description:
@@ -303,14 +297,8 @@ void Selection::_ExtendSelection(Selection::SelectionData* d, _In_ til::point co
     _PaintSelection();
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    if (const auto pNotifier = ServiceLocator::LocateAccessibilityNotifier())
-    {
-        pNotifier->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
-    }
-    if (const auto window = ServiceLocator::LocateConsoleWindow())
-    {
-        LOG_IF_FAILED(window->SignalUia(UIA_Text_TextSelectionChangedEventId));
-    }
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.CursorChanged(coordBufferPos, true);
 }
 
 // Routine Description:
@@ -321,9 +309,6 @@ void Selection::_ExtendSelection(Selection::SelectionData* d, _In_ til::point co
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto& ScreenInfo = gci.GetActiveOutputBuffer();
-
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
     HideSelection();
@@ -338,7 +323,11 @@ void Selection::_CancelMouseSelection()
     }
 
     // Mark the cursor position as changed so we'll fire off a win event.
-    ScreenInfo.GetTextBuffer().GetCursor().SetHasMoved(true);
+    // NOTE(lhecker): Why is this the only cancel function that would raise a WinEvent? Makes no sense to me.
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& ScreenInfo = gci.GetActiveOutputBuffer();
+    auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+    an.CursorChanged(ScreenInfo.GetTextBuffer().GetCursor().GetPosition(), false);
 }
 
 // Routine Description:
@@ -402,10 +391,9 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
         {
             _CancelMarkSelection();
         }
-        if (const auto window = ServiceLocator::LocateConsoleWindow())
-        {
-            LOG_IF_FAILED(window->SignalUia(UIA_Text_TextSelectionChangedEventId));
-        }
+
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.SelectionChanged();
 
         auto d{ _d.write() };
         wil::hide_name _d;
@@ -511,7 +499,7 @@ void Selection::InitializeMarkSelection()
     screenInfo.SetCursorInformation(100, TRUE);
 
     const auto coordPosition = cursor.GetPosition();
-    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition, true));
+    LOG_IF_FAILED(screenInfo.SetCursorPosition(coordPosition));
 
     // set the cursor position as the anchor position
     // it will get updated as the cursor moves for mark mode,
@@ -523,7 +511,9 @@ void Selection::InitializeMarkSelection()
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-        LOG_IF_FAILED(pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId));
+
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.SelectionChanged();
     }
 }
 

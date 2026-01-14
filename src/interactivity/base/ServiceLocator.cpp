@@ -23,7 +23,6 @@ std::unique_ptr<IConsoleControl> ServiceLocator::s_consoleControl;
 std::unique_ptr<IConsoleInputThread> ServiceLocator::s_consoleInputThread;
 std::unique_ptr<IConsoleWindow> ServiceLocator::s_consoleWindow;
 std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
-std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
 void (*ServiceLocator::s_oneCoreTeardownFunction)() = nullptr;
@@ -135,24 +134,6 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     }
 
     return status;
-}
-
-[[nodiscard]] HRESULT ServiceLocator::CreateAccessibilityNotifier()
-{
-    // Can't create if we've already created.
-    if (s_accessibilityNotifier)
-    {
-        return E_UNEXPECTED;
-    }
-
-    if (!s_interactivityFactory)
-    {
-        RETURN_IF_NTSTATUS_FAILED(ServiceLocator::LoadInteractivityFactory());
-    }
-
-    RETURN_IF_NTSTATUS_FAILED(s_interactivityFactory->CreateAccessibilityNotifier(s_accessibilityNotifier));
-
-    return S_OK;
 }
 
 #pragma endregion
@@ -275,11 +256,6 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
     LOG_IF_NTSTATUS_FAILED(status);
 
     return s_windowMetrics.get();
-}
-
-IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
-{
-    return s_accessibilityNotifier.get();
 }
 
 ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider()

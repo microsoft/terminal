@@ -5,11 +5,15 @@
 #include "pch.h"
 #include "TerminalPage.h"
 
-#include <LibraryResources.h>
-#include <TerminalThemeHelpers.h>
-#include <Utils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
+#include <TerminalThemeHelpers.h>
+#include <til/hash.h>
+#include <til/unicode.h>
+#include <Utils.h>
 
+#include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "App.h"
 #include "DebugTapConnection.h"
 #include "MarkdownPaneContent.h"
@@ -19,9 +23,6 @@
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "TerminalSettingsCache.h"
-#include "../../types/inc/ColorFix.hpp"
-#include "../../types/inc/utils.hpp"
-#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 #include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -1491,18 +1492,8 @@ namespace winrt::TerminalApp::implementation
         if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
-            if constexpr (Feature_AzureConnectionInProc::IsEnabled())
-            {
-                connection = TerminalConnection::AzureConnection{};
-            }
-            else
-            {
-                connection = TerminalConnection::ConptyConnection{};
-            }
-
-            valueSet = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.native(),
+            connection = TerminalConnection::AzureConnection{};
+            valueSet = TerminalConnection::ConptyConnection::CreateSettings(winrt::hstring{},
                                                                             L".",
                                                                             L"Azure",
                                                                             false,
@@ -2228,7 +2219,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::PersistState(bool serializeBuffer)
+    void TerminalPage::PersistState()
     {
         // This method may be called for a window even if it hasn't had a tab yet or lost all of them.
         // We shouldn't persist such windows.
@@ -2243,7 +2234,7 @@ namespace winrt::TerminalApp::implementation
         for (auto tab : _tabs)
         {
             auto t = winrt::get_self<implementation::Tab>(tab);
-            auto tabActions = t->BuildStartupActions(serializeBuffer ? BuildStartupKind::PersistAll : BuildStartupKind::PersistLayout);
+            auto tabActions = t->BuildStartupActions(BuildStartupKind::Persist);
             actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 
@@ -2327,6 +2318,29 @@ namespace winrt::TerminalApp::implementation
         }
 
         CloseWindowRequested.raise(*this, nullptr);
+    }
+
+    std::vector<IPaneContent> TerminalPage::Panes() const
+    {
+        std::vector<IPaneContent> panes;
+
+        for (const auto tab : _tabs)
+        {
+            const auto impl = _GetTabImpl(tab);
+            if (!impl)
+            {
+                continue;
+            }
+
+            impl->GetRootPane()->WalkTree([&](auto&& pane) {
+                if (auto content = pane->GetContent())
+                {
+                    panes.push_back(std::move(content));
+                }
+            });
+        }
+
+        return panes;
     }
 
     // Method Description:
@@ -2983,7 +2997,19 @@ namespace winrt::TerminalApp::implementation
             {
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 std::ignore = FindName(L"MultiLinePasteDialog");
-                ClipboardText().Text(text);
+
+                // WinUI absolutely cannot deal with large amounts of text (at least O(n), possibly O(n^2),
+                // so we limit the string length here and add an ellipsis if necessary.
+                auto clipboardText = text;
+                if (clipboardText.size() > 1024)
+                {
+                    const std::wstring_view view{ text };
+                    // Make sure we don't cut in the middle of a surrogate pair
+                    const auto len = til::utf16_iterate_prev(view, 512);
+                    clipboardText = til::hstring_format(FMT_COMPILE(L"{}\n…"), view.substr(0, len));
+                }
+
+                ClipboardText().Text(std::move(clipboardText));
 
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
                 ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
@@ -2999,7 +3025,7 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Clear the clipboard text so it doesn't lie around in memory
-                ClipboardText().Text(L"");
+                ClipboardText().Text({});
 
                 if (warningResult != ContentDialogResult::Primary)
                 {
@@ -3217,33 +3243,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         PackageCatalog catalog = connectResult.PackageCatalog();
-        // clang-format off
-        static constexpr std::array<WinGetSearchParams, 3> searches{ {
-            { .Field = PackageMatchField::Command, .MatchOption = PackageFieldMatchOption::StartsWithCaseInsensitive },
-            { .Field = PackageMatchField::Name, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive },
-            { .Field = PackageMatchField::Moniker, .MatchOption = PackageFieldMatchOption::ContainsCaseInsensitive } } };
-        // clang-format on
-
         PackageMatchFilter filter = WindowsPackageManagerFactory::CreatePackageMatchFilter();
         filter.Value(query);
+        filter.Field(PackageMatchField::Command);
+        filter.Option(PackageFieldMatchOption::Equals);
 
         FindPackagesOptions options = WindowsPackageManagerFactory::CreateFindPackagesOptions();
         options.Filters().Append(filter);
         options.ResultLimit(20);
 
-        IVectorView<MatchResult> pkgList;
-        for (const auto& search : searches)
-        {
-            filter.Field(search.Field);
-            filter.Option(search.MatchOption);
-
-            const auto result = co_await catalog.FindPackagesAsync(options);
-            pkgList = result.Matches();
-            if (pkgList.Size() > 0)
-            {
-                break;
-            }
-        }
+        const auto result = co_await catalog.FindPackagesAsync(options);
+        const IVectorView<MatchResult> pkgList = result.Matches();
         co_return pkgList;
     }
 
@@ -3553,9 +3563,12 @@ namespace winrt::TerminalApp::implementation
 
         if (hasSessionId)
         {
+            using namespace std::string_view_literals;
+
             const auto settingsDir = CascadiaSettings::SettingsDirectory();
-            const auto idStr = Utils::GuidToPlainString(sessionId);
-            const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
+            const auto admin = IsRunningElevated();
+            const auto filenamePrefix = admin ? L"elevated_"sv : L"buffer_"sv;
+            const auto path = fmt::format(FMT_COMPILE(L"{}\\{}{}.txt"), settingsDir, filenamePrefix, sessionId);
             control.RestoreFromPath(path);
         }
 
@@ -4866,8 +4879,18 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // GH#19604: Get the theme's tabRow color to use as the acrylic tint.
+        const auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
+                                                            theme.TabRow().UnfocusedBackground()) :
+                                              ThemeColor{ nullptr } };
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
+            if (tabRowBg)
+            {
+                bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
+            }
+
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
@@ -4876,9 +4899,7 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
-                                                               theme.TabRow().UnfocusedBackground()) :
-                                                 ThemeColor{ nullptr } })
+        else if (tabRowBg)
         {
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
@@ -5001,9 +5022,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_adjustProcessPriority() const
     {
         // Windowing is single-threaded, so this will not cause a race condition.
-        static bool supported{ true };
+        static uint64_t s_lastUpdateHash{ 0 };
+        static bool s_supported{ true };
 
-        if (!supported || !_hostingHwnd.has_value())
+        if (!s_supported || !_hostingHwnd.has_value())
         {
             return;
         }
@@ -5067,11 +5089,20 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
+        const auto hash = til::hash((void*)processes.data(), count * sizeof(HANDLE));
+
+        if (hash == s_lastUpdateHash)
+        {
+            return;
+        }
+
+        s_lastUpdateHash = hash;
         const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+
         if (S_FALSE == hr)
         {
             // Don't bother trying again or logging. The wrapper tells us it's unsupported.
-            supported = false;
+            s_supported = false;
             return;
         }
 

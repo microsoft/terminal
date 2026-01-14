@@ -7,7 +7,6 @@
 #include "BasicPaneEvents.h"
 #include "FilteredCommand.h"
 #include "CommandPaletteItems.h"
-#include <LibraryResources.h>
 
 namespace winrt::TerminalApp::implementation
 {

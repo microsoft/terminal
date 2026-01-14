@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Appearances.h"
 
-#include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 
 #include "EnumEntry.h"
@@ -201,6 +200,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool FontKeyValuePair::IsFontFeature() const noexcept
     {
         return _isFontFeature;
+    }
+
+    winrt::hstring FontKeyValuePair::AutomationName()
+    {
+        return hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), KeyDisplayStringRef(), _value) };
     }
 
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :

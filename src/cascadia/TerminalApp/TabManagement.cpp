@@ -15,8 +15,6 @@
 #include "../../inc/til/string.h"
 #include <til/io.h>
 
-#include <LibraryResources.h>
-
 #include "TabRowControl.h"
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
@@ -413,13 +411,11 @@ namespace winrt::TerminalApp::implementation
         auto actions = t->BuildStartupActions(BuildStartupKind::None);
         _AddPreviouslyClosedPaneOrTab(std::move(actions));
 
-        _RemoveTab(tab);
+        tab.Close();
     }
 
-    // Method Description:
-    // - Removes the tab (both TerminalControl and XAML)
-    // Arguments:
-    // - tab: the tab to remove
+    // Removes the tab (both TerminalControl and XAML).
+    // NOTE: Don't call this directly, but rather `tab.Close()`.
     void TerminalPage::_RemoveTab(const winrt::TerminalApp::Tab& tab)
     {
         uint32_t tabIndex{};

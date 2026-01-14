@@ -155,7 +155,7 @@ bool VtIo::IsUsingVt() const
     {
         if (IsValidHandle(_hInput.get()))
         {
-            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _lookingForCursorPosition);
+            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput));
         }
     }
     CATCH_RETURN();
@@ -177,7 +177,7 @@ bool VtIo::IsUsingVt() const
             // wait for the DA1 response below and effectively wait for both.
             if (_lookingForCursorPosition)
             {
-                writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+                writer.WriteDSRCPR();
             }
 
             // GH#4999 - Send a sequence to the connected terminal to request
@@ -718,6 +718,19 @@ void VtIo::Writer::WriteASB(bool enabled) const
     char buf[] = "\x1b[?1049h";
     buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
     _io->_back.append(&buf[0], std::size(buf) - 1);
+}
+
+// DSR CPR: Cursor Position Report
+bool VtIo::Writer::WriteDSRCPR() const
+{
+    if (!_io->_pVtInputThread)
+    {
+        return false;
+    }
+
+    _io->_back.append("\x1b[6n");
+    _io->_pVtInputThread->CaptureNextCursorPositionReport();
+    return true;
 }
 
 void VtIo::Writer::WriteWindowVisibility(bool visible) const

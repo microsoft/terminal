@@ -495,6 +495,7 @@ DSBUFFERDESC
 DSBVOLUME
 dsm
 dsound
+DSRCPR
 DSSCL
 DSwap
 DTo
@@ -540,7 +541,6 @@ EPres
 EQU
 ERASEBKGND
 ERRORONEXIT
-ESFCIB
 esrp
 ESV
 ETW
@@ -603,7 +603,6 @@ FONTSTRING
 FONTTYPE
 FONTWIDTH
 FONTWINDOW
-foob
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FRAMECHANGED
@@ -620,7 +619,6 @@ FUNCTIONCALL
 fuzzmain
 fuzzmap
 fuzzwrapper
-fuzzyfinder
 fwdecl
 fwe
 fwlink
@@ -807,6 +805,7 @@ IMPEXP
 inbox
 inclusivity
 INCONTEXT
+INDEXID
 INFOEX
 inheritcursor
 INITCOMMONCONTROLSEX
@@ -908,6 +907,7 @@ LNM
 LOADONCALL
 LOBYTE
 localappdata
+LOCATIONCHANGE
 locsrc
 Loewen
 LOGBRUSH
@@ -959,7 +959,6 @@ lsb
 lsconfig
 lstatus
 lstrcmp
-lstrcmpi
 LTEXT
 lto
 ltsc
@@ -1018,6 +1017,7 @@ minkernel
 MINMAXINFO
 minwin
 minwindef
+misprediction
 MMBB
 mmcc
 MMCPL
@@ -1033,6 +1033,7 @@ MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
 MOVESTART
+msaa
 msb
 msbuildcache
 msctls
@@ -1091,6 +1092,8 @@ NEXTLINE
 nfe
 NLSMODE
 NOACTIVATE
+NOACTIVATEKEYBOARDLAYOUT
+NOACTIVATETIP
 NOAPPLYNOW
 NOCLIP
 NOCOMM
@@ -1122,7 +1125,6 @@ NOREPOSITION
 NORMALDISPLAY
 NOSCRATCH
 NOSEARCH
-noselect
 NOSELECTION
 NOSENDCHANGING
 NOSIZE
@@ -1140,6 +1142,7 @@ NOYIELD
 NOZORDER
 NPFS
 nrcs
+NRNW
 NSTATUS
 ntapi
 ntdef
@@ -1180,7 +1183,6 @@ onecoreuuid
 ONECOREWINDOWS
 onehalf
 oneseq
-oob
 openbash
 opencode
 opencon
@@ -1505,7 +1507,6 @@ scrolllock
 scrolloffset
 SCROLLSCALE
 SCROLLSCREENBUFFER
-scursor
 sddl
 SDKDDK
 segfault
@@ -1704,9 +1705,11 @@ TEXTMETRIC
 TEXTMETRICW
 textmode
 texttests
+TFCAT
 THUMBPOSITION
 THUMBTRACK
 tilunittests
+TIPCAP
 titlebars
 TITLEISLINKNAME
 TLDP
@@ -1758,10 +1761,13 @@ UIACCESS
 uiacore
 uiautomationcore
 uielem
+UIELEMENTENABLED
+UIELEMENTENABLEDONLY
 UINTs
 uld
 uldash
 uldb
+ULONGLONG
 ulwave
 Unadvise
 unattend
@@ -1973,8 +1979,8 @@ WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT
 WRITECONSOLEOUTPUTSTRING
 wrkstr
-WRL
 wrl
+WRL
 wrp
 WRunoff
 WSLENV

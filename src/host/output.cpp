@@ -5,10 +5,6 @@
 
 #include "_output.h"
 #include "output.h"
-#include "handle.h"
-
-#include "getset.h"
-#include "misc.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
@@ -283,17 +279,8 @@ void ScreenBufferSizeChange(const til::size coordNewSize)
 // - source - The viewport describing the region where data was copied from
 // - fill - The viewport describing the area that was filled in with the fill character (uncovered area)
 // - target - The viewport describing the region where data was copied to
-static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source, const Viewport& fill, const Viewport& target)
+static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& fill, const Viewport& target)
 {
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier != nullptr)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().x - source.Left(), target.Origin().y - source.RightInclusive());
-        }
-    }
-
     // Get the text buffer and send it commands.
     // It will figure out whether or not we're active and where the messages need to go.
     auto& textBuffer = screenInfo.GetTextBuffer();
@@ -413,7 +400,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         _CopyRectangle(screenInfo, source, target.Origin());
 
         // Notify the renderer and accessibility as to what moved and where.
-        _ScrollScreen(screenInfo, source, fill, target);
+        _ScrollScreen(screenInfo, fill, target);
     }
 
     // ------ 6. FILL ------
@@ -447,21 +434,6 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetActiveOutputBuffer(screenInfo);
-
-    // initialize cursor GH#4102 - Typically, the cursor is set to on by the
-    // cursor blinker. Unfortunately, in conpty mode, there is no cursor
-    // blinker. So, in conpty mode, we need to leave the cursor on always. The
-    // cursor can still be set to hidden, and whether the cursor should be
-    // blinking will still be passed through to the terminal, but internally,
-    // the cursor should always be on.
-    //
-    // In particular, some applications make use of a calling
-    // `SetConsoleScreenBuffer` and `SetCursorPosition` without printing any
-    // text in between these calls. If we initialize the cursor to Off in conpty
-    // mode, then the cursor will remain off until they print text. This can
-    // lead to alignment problems in the terminal, because we won't move the
-    // terminal's cursor in this _exact_ scenario.
-    screenInfo.GetTextBuffer().GetCursor().SetIsOn(gci.IsInVtIoMode());
 
     // set font
     screenInfo.RefreshFontWithRenderer();

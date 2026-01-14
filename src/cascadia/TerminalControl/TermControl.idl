@@ -106,7 +106,7 @@ namespace Microsoft.Terminal.Control
         Boolean ExpandSelectionToWord();
         void ClearBuffer(ClearBufferType clearType);
         void RestoreFromPath(String path);
-        void PersistToPath(String path);
+        void PersistTo(Int64 handle);
         void OpenCWD();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };

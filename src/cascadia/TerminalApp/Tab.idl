@@ -22,6 +22,7 @@ namespace TerminalApp
         UInt32 TabViewNumTabs;
 
         void Focus(Windows.UI.Xaml.FocusState focusState);
+        void Close();
         void Shutdown();
 
         void SetDispatch(ShortcutActionDispatch dispatch);

@@ -117,9 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddProfile_AddNewButton.Tag" xml:space="preserve">
-    <value>Čгéªţë Ŋещ Бϋτţбⁿ !!! !!</value>
-  </data>
   <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
     <value>Ŋ℮ω ĕmρŧý рŗőƒîļё !!! !!</value>
     <comment>Button label that creates a new profile with default settings.</comment>
@@ -127,9 +124,6 @@
   <data name="AddProfile_Duplicate.Header" xml:space="preserve">
     <value>Ďύφľίċåте ã φґǿƒïłē !!! !!!</value>
     <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
-  </data>
-  <data name="AddProfile_DuplicateButton.Tag" xml:space="preserve">
-    <value>Ðùρłīĉāţз Вµτŧσň !!! !</value>
   </data>
   <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
     <value>Đŭρŀī¢ατê !!!</value>
@@ -310,10 +304,6 @@
     <value>Ґεmθνе ťѓªįŀíŉĝ шĥіťе-šрäčė ẃнзň φâśťίņġ !!! !!! !!! !!!</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
-  <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
-    <value>Вêļσώ áяэ τĥє сûѓгεπтľý ъόůηð κєÿş, ώĥīćн čāñ ъз мοðïƒīěð ьý зðїŧįńģ τћė ЈŜÖΝ şзťŧίñğѕ ƒΐłέ. !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
-    <comment>A disclaimer located at the top of the actions page that presents the list of keybindings.</comment>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>Đėƒªûľť рґøƒϊľê !!! !</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
@@ -397,14 +387,6 @@
     <value>İńìťîáℓ Ŕőώś !!! </value>
     <comment>Name for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
-  <data name="Globals_InitialPosX.Text" xml:space="preserve">
-    <value>χ φόśΐтįóñ !!!</value>
-    <comment>Header for a control to choose the X coordinate of the terminal's starting position.</comment>
-  </data>
-  <data name="Globals_InitialPosY.Text" xml:space="preserve">
-    <value>Ỳ φôѕΐтĩσп !!!</value>
-    <comment>Header for a control to choose the Y coordinate of the terminal's starting position.</comment>
-  </data>
   <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>χ φŏѕĭтϊόŋ !!!</value>
     <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
@@ -452,13 +434,13 @@
     <value>Орéŋ ẅϊηďóωš ƒřōm ă φяèνιôùś şęŝśîőň !!! !!! !!! !</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
-  <data name="Globals_LaunchMode.Header" xml:space="preserve">
-    <value>₤дΰⁿçћ mοďè !!!</value>
-    <comment>Header for a control to select what mode to launch the terminal in.</comment>
+  <data name="Globals_FirstWindowPreferencePersistedLayoutAndContent.Content" xml:space="preserve">
+    <value>Ѓëśтσяέ ẁïπďόẅ łäγǿũτ åήð ¢ǿлтęпт !!! !!! !!! </value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session and preserve the content.</comment>
   </data>
-  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
-    <value>Ηóώ ţĥè ţěѓmϊиаľ ẁίĺĺ àρρ℮åг σⁿ łåŭⁿ¢ĥ. ₣οċύŝ ẁīłł ђїδė ţђê ťªьş āńð тιŧľ℮ вăŕ. !!! !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
+  <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
+    <value>Ґзšţоřэ ẃĭńðőω ŀăýøϋτ !!! !!!</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>£ăŭŉсн рąґăмěţеґŝ !!! !!</value>
@@ -682,7 +664,11 @@
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Ăςтιòñš !!</value>
-    <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
+    <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
+  </data>
+  <data name="Nav_EditAction.Content" xml:space="preserve">
+    <value>Эđîť Áčτΐöπ... !!! !</value>
+    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>Ěжτëⁿśïōŉş !!!</value>
@@ -821,6 +807,9 @@
   </data>
   <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Аđδ ŉěω ƒóлт ƒ℮ãтцřе !!! !!!</value>
+  </data>
+  <data name="Profile_DeleteFontKeyValuePairButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Đêľĕŧė !</value>
   </data>
   <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
     <value>Άðδ ⁿэщ !!</value>
@@ -1085,10 +1074,6 @@
     <value>Τћē ŝэŀëсŧзð ƒőйť нâŝ иο ƒòиŧ ƒėäţцŕэś. !!! !!! !!! !!!</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_General.Header" xml:space="preserve">
-    <value>Ġеŉėяâĺ !!</value>
-    <comment>Header for a sub-page of profile settings focused on more general scenarios.</comment>
-  </data>
   <data name="Profile_Hidden.Header" xml:space="preserve">
     <value>Ήîď℮ φябƒίļĕ ƒѓòm ďřóφδόшπ !!! !!! !</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
@@ -1140,10 +1125,6 @@
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
     <value>Ьřòẁśз... !!!</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
-  </data>
-  <data name="Profile_PaddingSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Рáðđĩñġ !!</value>
-    <comment>Name for a control to determine the amount of space between text in a terminal and the edge of the window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Ρáððìŉğ !!</value>
@@ -1220,14 +1201,6 @@
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Îƒ έпãьłëď, тђìš ρѓòƒìĺè ωιĺℓ ŝρǻẁň іň ţћę ðіяеçţбгγ ƒřőм щћįςђ Теямĭņàł ẃªş ŀáцⁿĉħёđ. !!! !!! !!! !!! !!! !!! !!! !!! !</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.Content" xml:space="preserve">
-    <value>Ηϊðё îçǿй !!!</value>
-    <comment>A supplementary setting to the "icon" setting.</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Íƒ ёηдъļэδ, ŧĥϊŝ φгōƒιℓз шіℓŀ ђдνê ňö ΐĉôй. !!! !!! !!! !!! </value>
-    <comment>A description for what the supplementary "Hide icon" setting does. Presented near "Profile_HideIconCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>Ѕΰφφřэśš τíťļė čħªŉĝèѕ !!! !!! </value>
@@ -1380,10 +1353,6 @@
   <data name="Profile_BellStyleNone.Content" xml:space="preserve">
     <value>Ñбŉĕ !</value>
     <comment>An option to choose from for the "bell style" setting. When selected, notifications are silenced.</comment>
-  </data>
-  <data name="Globals_DisableAnimations.Header" xml:space="preserve">
-    <value>Đїŝâвŀè рăŋě ǻйįmąтіǿňŝ !!! !!! </value>
-    <comment>Header for a control to toggle animations on panes. "Enabled" value disables the animations.</comment>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>Вĺåčќ !</value>
@@ -1557,9 +1526,6 @@
     <value>Äŀℓ </value>
     <comment>An option to choose from for the "bell style" setting. When selected, a combination of the other bell styles is used to notify the user.</comment>
   </data>
-  <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
-    <value>Vĭśũάŀ (ƒĺāşђ ţąşκвдѓ) !!! !!! </value>
-  </data>
   <data name="Profile_BellStyleTaskbar.Content" xml:space="preserve">
     <value>₣ŀªśћ τâśќъäѓ !!! </value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the taskbar is flashed.</comment>
@@ -1574,14 +1540,6 @@
   </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>Ðєĺèŧĕ ¢оľōѓ ѕснεмė !!! !!!</value>
-    <comment>Button label that deletes the selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_EditButton.Text" xml:space="preserve">
-    <value>Σδϊт !</value>
-    <comment>Button label that edits the currently selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButton2.Text" xml:space="preserve">
-    <value>Đеļėŧę !</value>
     <comment>Button label that deletes the selected color scheme.</comment>
   </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
@@ -1639,14 +1597,6 @@
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ώр℮п ỳõμѓ settings.json ƒιĺ℮. Áŀţ+Ċĺι¢ќ тθ ôφ℮л уοųѓ defaults.json ƒĭĺę. !!! !!! !!! !!! !!! !!! !!! </value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
-  </data>
-  <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Γ℮иάмê !</value>
-    <comment>Text label for a button that can be used to begin the renaming process.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButtonDisclaimerInBox.Text" xml:space="preserve">
-    <value>Τћîŝ čŏļòя şċĥěмε ćâňñǿτ ьё đĕļ℮ťèδ ōŕ ґĕňãmėð ьēĉаūśё ĭţ îś їńċľůðзď ъγ đэƒāûŀŧ. !!! !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>Disclaimer presented next to the delete button when it is disabled.</comment>
   </data>
   <data name="ColorScheme_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Ýëѕ, ðěĺέŧε çółöг śċћэмέ !!! !!! !</value>
@@ -1760,14 +1710,6 @@
     <value>Яėşĕт ťо ίлћėŕίťеď νãľΰę. !!! !!! !</value>
     <comment>This button will remove a user's customization from a given setting, restoring it to the value that the profile inherited. This is a text label on a button.</comment>
   </data>
-  <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
-    <value>Тêѓmíņäľ ¢бŀòгŝ !!! !</value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for basic parts of the terminal.</comment>
-  </data>
-  <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
-    <value>Ŝўѕţèm čøĺøгѕ !!! </value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
-  </data>
   <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
     <value>Ċôŀŏŕŝ !</value>
     <comment>A header for the grouping of colors in the color scheme.</comment>
@@ -1800,6 +1742,42 @@
     <value>Ðěłêţэ ŧђέ џпƒоćΰѕēď ǻρрέāяāηĉé ƒŏѓ τђįś φřōƒĭŀĕ. !!! !!! !!! !!! !!!</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
+  <data name="Actions_Disclaimer.Content" xml:space="preserve">
+    <value>₤ēªѓи мσѓë åъőυτ αςţïöŋś !!! !!! !</value>
+    <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
+  </data>
+  <data name="Actions_DeleteButton2.Text" xml:space="preserve">
+    <value>Ðĕłĕţε àčŧίõŉ !!! </value>
+    <comment>Button label that deletes the selected action.</comment>
+  </data>
+  <data name="Actions_Name.Text" xml:space="preserve">
+    <value>Ãçŧĩŏň ⁿàме !!!</value>
+    <comment>Label for the text box that edits the action name.</comment>
+  </data>
+  <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
+    <value>Áсťìôņ ñâmз !!!</value>
+    <comment>Placeholder text for the text box where the user can edit the action name.</comment>
+  </data>
+  <data name="Actions_ShortcutAction.Text" xml:space="preserve">
+    <value>∆čţіőή тγρє !!!</value>
+    <comment>Label for the combo box that edits the action type.</comment>
+  </data>
+  <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ќĕýвιňðϊпġѕ !!!</value>
+    <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_Arguments.Text" xml:space="preserve">
+    <value>Âďðïţîοñдł ªяğűmєŉŧş !!! !!!</value>
+    <comment>Label for the list of editable arguments for the currently selected action.</comment>
+  </data>
+  <data name="Actions_Keybindings.Text" xml:space="preserve">
+    <value>Ќėÿъϊⁿðīлĝś !!!</value>
+    <comment>Label for the list of editable keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_AddKeyChord.Text" xml:space="preserve">
+    <value>∆ďđ ќęувїŋđΐņģ !!! !</value>
+    <comment>Button label that adds a keybinding to the current action.</comment>
+  </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Ýęѕ, ďэļěŧέ ќêý ьïⁿďїňĝ !!! !!! </value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>
@@ -1807,6 +1785,14 @@
   <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>Άѓє ŷøü şΰŗė ŷóц ẁаńт ťб ðеℓ℮тè ŧђįś κëÿ вΐπðϊńġ? !!! !!! !!! !!! !!!</value>
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Ýéѕ, đěłèťё ǻ¢ŧίоп !!! !!</value>
+    <comment>Button label that confirms deletion of an action.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Àѓé ÿŏù šύřé γôų щāηţ ţσ δéℓεŧę тĥïş ăçţĭőл? !!! !!! !!! !!! !</value>
+    <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
     <value>Іпνáŀįδ κέу ¢ђòřď. Ρľеαşέ ëπŧзŕ ā νāŀϊđ ķэў čђθґð. !!! !!! !!! !!! !!!</value>
@@ -1851,6 +1837,278 @@
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Α¢тίōй !</value>
     <comment>Label for a control that sets the action of a key binding.</comment>
+  </data>
+  <data name="Actions_NullEnumValue" xml:space="preserve">
+    <value>Ųŝè ġļσьàĺ ѕęтŧìпğ !!! !!</value>
+    <comment>An option to choose from for nullable enums. Clears the enum value.</comment>
+  </data>
+  <data name="Actions_CopyFormatHtml.Content" xml:space="preserve">
+    <value>ĦŦΜĻ !</value>
+    <comment>An option to choose from for the "copy format". Copies content in HTML format.</comment>
+  </data>
+  <data name="Actions_CopyFormatRtf.Content" xml:space="preserve">
+    <value>ŖŢ₣ </value>
+    <comment>An option to choose from for the "copy format". Copies content in Rich Text Format (RTF).</comment>
+  </data>
+  <data name="Actions_SplitDirectionAuto.Content" xml:space="preserve">
+    <value>Áџţømάţї¢ !!!</value>
+    <comment>An option to choose from for the "split direction". Automatically determines the split direction.</comment>
+  </data>
+  <data name="Actions_SplitDirectionUp.Content" xml:space="preserve">
+    <value>Űр </value>
+    <comment>An option to choose from for the "split direction". Splits upward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionRight.Content" xml:space="preserve">
+    <value>Ґíģĥţ !</value>
+    <comment>An option to choose from for the "split direction". Splits to the right.</comment>
+  </data>
+  <data name="Actions_SplitDirectionDown.Content" xml:space="preserve">
+    <value>Ðǿшŉ !</value>
+    <comment>An option to choose from for the "split direction". Splits downward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionLeft.Content" xml:space="preserve">
+    <value>Łзƒţ !</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitDirectionVertical.Content" xml:space="preserve">
+    <value>Vêгŧίċаℓ !!</value>
+    <comment>An option to choose from for the "split direction". Splits vertically.</comment>
+  </data>
+  <data name="Actions_SplitDirectionHorizontal.Content" xml:space="preserve">
+    <value>Ηóяĩžбйτªĺ !!!</value>
+    <comment>An option to choose from for the "split direction". Splits horizontally.</comment>
+  </data>
+  <data name="Actions_SplitTypeManual.Content" xml:space="preserve">
+    <value>Мάŋџаℓ !</value>
+    <comment>An option to choose from for the "split type". Creates a manual split.</comment>
+  </data>
+  <data name="Actions_SplitTypeDuplicate.Content" xml:space="preserve">
+    <value>Ðŭρľĩćãŧе !!!</value>
+    <comment>An option to choose from for the "split type". Creates a split by duplicating the current session.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
+    <value>Ņőⁿē !</value>
+    <comment>An option to choose from for the "resize direction". None option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionLeft.Content" xml:space="preserve">
+    <value>£еƒτ !</value>
+    <comment>An option to choose from for the "resize direction". Left option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionRight.Content" xml:space="preserve">
+    <value>Γĩġћт !</value>
+    <comment>An option to choose from for the "resize direction". Right option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionUp.Content" xml:space="preserve">
+    <value>Ųр </value>
+    <comment>An option to choose from for the "resize direction". Up option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionDown.Content" xml:space="preserve">
+    <value>Đóŵй !</value>
+    <comment>An option to choose from for the "resize direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNone.Content" xml:space="preserve">
+    <value>Νŏⁿе !</value>
+    <comment>An option to choose from for the "focus direction". None option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionLeft.Content" xml:space="preserve">
+    <value>Łėƒт !</value>
+    <comment>An option to choose from for the "focus direction". Left option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionRight.Content" xml:space="preserve">
+    <value>Γįģђτ !</value>
+    <comment>An option to choose from for the "focus direction". Right option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionUp.Content" xml:space="preserve">
+    <value>Џр </value>
+    <comment>An option to choose from for the "focus direction". Up option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionDown.Content" xml:space="preserve">
+    <value>Đοẁñ !</value>
+    <comment>An option to choose from for the "focus direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPrevious.Content" xml:space="preserve">
+    <value>Ρŕèνιõџş !!</value>
+    <comment>An option to choose from for the "focus direction". Previous option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPreviousInOrder.Content" xml:space="preserve">
+    <value>Ρяενîσūş İŋ Ωřδєŕ !!! !!</value>
+    <comment>An option to choose from for the "focus direction". Previous in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNextInOrder.Content" xml:space="preserve">
+    <value>Ňεхţ Їń Οŗδ℮ѓ !!! </value>
+    <comment>An option to choose from for the "focus direction". Next in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionFirst.Content" xml:space="preserve">
+    <value>₣ìѓŝţ !</value>
+    <comment>An option to choose from for the "focus direction". First option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionParent.Content" xml:space="preserve">
+    <value>Рàřėйŧ !</value>
+    <comment>An option to choose from for the "focus direction". Parent option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionChild.Content" xml:space="preserve">
+    <value>Čнĩŀđ !</value>
+    <comment>An option to choose from for the "focus direction". Child option.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsFile.Content" xml:space="preserve">
+    <value>Ŝеττίηģѕ ₣ĩłё !!! </value>
+    <comment>An option to choose from for the "settings target". Targets the settings file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDefaultsFile.Content" xml:space="preserve">
+    <value>Đęƒªџłτş ₣ìłė !!! </value>
+    <comment>An option to choose from for the "settings target". Targets the defaults file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetAllFiles.Content" xml:space="preserve">
+    <value>Άℓł ₣įļēѕ !!!</value>
+    <comment>An option to choose from for the "settings target". Targets all files.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsUI.Content" xml:space="preserve">
+    <value>Ѕèτţіиģś ÙĮ !!!</value>
+    <comment>An option to choose from for the "settings target". Targets the settings UI.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDirectory.Content" xml:space="preserve">
+    <value>Ďίгэćťõѓγ !!!</value>
+    <comment>An option to choose from for the "settings target". Targets the directory.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionNone.Content" xml:space="preserve">
+    <value>Пσñė !</value>
+    <comment>An option to choose from for the "move tab direction". No movement.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>₣őřŵàŗđ !!</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>ßąскẅǻŕđ !!</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
+    <value>Ρяēνΐøџş !!</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionNext.Content" xml:space="preserve">
+    <value>Иëжţ !</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the next mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionFirst.Content" xml:space="preserve">
+    <value>₣ĩгŝт !</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the first mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionLast.Content" xml:space="preserve">
+    <value>Ŀάşт !</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the last mark.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeAction.Content" xml:space="preserve">
+    <value>Āςτіοņ !</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in action mode.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeCommandLine.Content" xml:space="preserve">
+    <value>Čσммåňđ ₤ίñé !!! </value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in command line mode.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceNone.Content" xml:space="preserve">
+    <value>Ņõńê !</value>
+    <comment>An option to choose from for the "suggestions source". No suggestions source.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceTasks.Content" xml:space="preserve">
+    <value>Ŧâśкѕ !</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from tasks.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceSnippets.Content" xml:space="preserve">
+    <value>Šиιφрєŧŝ !!</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from snippets.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceCommandHistory.Content" xml:space="preserve">
+    <value>Ĉōmмåйđ Ήїšŧояý !!! !</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from command history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceDirectoryHistory.Content" xml:space="preserve">
+    <value>Đΐřêćţòŕŷ Ħΐśŧóŗỳ !!! !!</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from directory history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceQuickFix.Content" xml:space="preserve">
+    <value>Qųĭċκ ₣ίжęŝ !!!</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from quick fixes.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceAll.Content" xml:space="preserve">
+    <value>Дℓŀ </value>
+    <comment>An option to choose from for the "suggestions source". Includes all suggestion sources.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNone.Content" xml:space="preserve">
+    <value>Ņôήē !</value>
+    <comment>An option to choose from for the "find match direction". No direction selected.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNext.Content" xml:space="preserve">
+    <value>Ņé×ŧ !</value>
+    <comment>An option to choose from for the "find match direction". Finds the next match.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionPrev.Content" xml:space="preserve">
+    <value>Ряενîбųś !!</value>
+    <comment>An option to choose from for the "find match direction". Finds the previous match.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorAny.Content" xml:space="preserve">
+    <value>Ąńγ </value>
+    <comment>An option to choose from for the "desktop behavior". Applies to any desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorToCurrent.Content" xml:space="preserve">
+    <value>Τø €цѓřèňť !!!</value>
+    <comment>An option to choose from for the "desktop behavior". Moves to the current desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorOnCurrent.Content" xml:space="preserve">
+    <value>Φή Čΰяяěŉţ !!!</value>
+    <comment>An option to choose from for the "desktop behavior". Stays on the current desktop.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorAny.Content" xml:space="preserve">
+    <value>Аηý </value>
+    <comment>An option to choose from for the "monitor behavior". Applies to any monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToCurrent.Content" xml:space="preserve">
+    <value>Ţŏ Ċüŗгêπţ !!!</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the current monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToMouse.Content" xml:space="preserve">
+    <value>Ťø Μóūş℮ !!</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the monitor where the mouse is located.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScreen.Content" xml:space="preserve">
+    <value>Şсгēėй !</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the screen.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScrollback.Content" xml:space="preserve">
+    <value>Şĉґόĺłьáсķ !!!</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeAll.Content" xml:space="preserve">
+    <value>Âŀļ </value>
+    <comment>An option to choose from for the "clear buffer type". Clears both the screen and the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionPrev.Content" xml:space="preserve">
+    <value>Ρѓēνìőμѕ !!</value>
+    <comment>An option to choose from for the "select output direction". Selects the previous output.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionNext.Content" xml:space="preserve">
+    <value>Ŋĕ×ţ !</value>
+    <comment>An option to choose from for the "select output direction". Selects the next output.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Μòѕτ Γêçэйŧŀŷ Ŭšèđ !!! !!</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs based on most recently used order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>Īή Óѓðëř !!</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs in sequential order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Đíŝдъŀєđ !!</value>
+    <comment>An option to choose from for the "tab switcher mode". Disables tab switching.</comment>
+  </data>
+  <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Йό ¢ôℓǿř !!</value>
+    <comment>Label for a button directing the user to opt out of choosing a color.</comment>
+  </data>
+  <data name="Actions_Browse.Content" xml:space="preserve">
+    <value>ßřôшşе... !!!</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Ійрûť ýőџѓ ďеśîґеδ кĕÿьôǻґđ ŝнόґŧĉüτ. !!! !!! !!! !!</value>
@@ -1899,14 +2157,6 @@
   <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
     <value>Įƒ εⁿàъļêď, тђĕ ťέґmιпäļ щìℓŀ ъэ нîďδзñ ąś ѕõθŋ âş γôù śшίτċн ťø àпøťнзř шíήðόщ. !!! !!! !!! !!! !!! !!! !!! !!!</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
-  </data>
-  <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
-    <value>Ťĥíŝ ćσľõѓ şсħéмэ ĉãйпόŧ в℮ δεĺёт℮ð ьèċàцśě îţ ìš іŋçļųďĕđ вý đ℮ƒдџļť. !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>Disclaimer presented near the controls to delete the selected color scheme when that functionality is disabled.</comment>
-  </data>
-  <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
-    <value>Ŧĥιѕ сбĺθѓ ś¢ĥěмэ ĉαлήôť вė ŕ℮ňąmëđ ь℮ςăΰśĕ ĩт ìš ϊņċĺμďĕđ ъỳ đέƒãüłτ. !!! !!! !!! !!! !!! !!! !!!</value>
-    <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
   </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>ðéƒαųŀť !!</value>
@@ -1985,10 +2235,6 @@
     <value>Áđđ śôűñδ !!!</value>
     <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
   </data>
-  <data name="Profile_BellSoundBrowse.Content" xml:space="preserve">
-    <value>Бřόŵŝё... !!!</value>
-    <comment>Text label for a button that opens a file picker to select a sound file to use for the bell sound. Presented near "Profile_BellSound".</comment>
-  </data>
   <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
     <value>Щђéň mΰľтĩрℓė şоџňđš äѓэ ðëƒĩŉėđ, ōŉë їś ŝèĺε¢ţéδ ãŧ ґàŉδőм ẁнєⁿ ŧнê BEL čĥåяâсŧęґ ìŝ řёсéįνēδ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
     <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
@@ -2052,18 +2298,6 @@
     <value>Μόŕе ĉθŀôгş... !!! !</value>
     <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
   </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.Title" xml:space="preserve">
-    <value>Ρϊćк д ¢òŀǿг !!! </value>
-    <comment>Title displayed on a content dialog directing the user to pick a color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.PrimaryButtonText" xml:space="preserve">
-    <value>ÓЌ </value>
-    <comment>Button label for the color picker content dialog. Used as confirmation to apply the selected color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.SecondaryButtonText" xml:space="preserve">
-    <value>Ćǻηċеĺ !</value>
-    <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
-  </data>
   <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>Ùŝë ŝčĥзмё çσľōř !!! !</value>
     <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
@@ -2079,6 +2313,10 @@
   <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>Ůŝë śĉћ℮mĕ çòĺőг !!! !</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Ůşĕ τђемė сθľøѓ !!! !</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
   <data name="Profile_IconTypeNone" xml:space="preserve">
     <value>Ибйě !</value>
