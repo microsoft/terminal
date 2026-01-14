@@ -910,9 +910,18 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                         // which would change the _windows array, and invalidate our iterator and crash.
                         //
                         // We can prevent this by deferring Close() until after the erase() call.
+                        //
+                        // Wrapping it in an exception handler will prevent us from losing track of the window count, at
+                        // the perceived cost of leaking all the resources. However, the resources were being leaked
+                        // anyway (since we threw and exited this message handler) so this at least gives back our
+                        // deterministic window count management.
                         const auto strong = *it;
                         _windows.erase(it);
-                        strong->Close();
+                        try
+                        {
+                            strong->Close();
+                        }
+                        CATCH_LOG();
                         break;
                     }
                 }
