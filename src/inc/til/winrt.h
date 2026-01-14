@@ -121,6 +121,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 
     // fmt::format but for HSTRING.
+    //
+    // NOTE: This will fail to compile if you pass a string literal as the first argument (the format argument).
+    // This is because std::forwarding literals turns them from constant expressions into regular ones.
+    // It can be fixed by giving the first argument an explicit type. I intentionally didn't do that
+    // because if you pass a string literal, you really ought to pass a FMT_COMPILE() instead.
     winrt::hstring hstring_format(auto&&... args)
     {
         // We could use fmt::formatted_size and winrt::impl::hstring_builder here,
