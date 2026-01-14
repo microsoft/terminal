@@ -242,7 +242,7 @@ namespace winrt::TerminalApp::implementation
     {
         assert(_dispatcherQueue.HasThreadAccess());
 
-        if (!tab)
+        if (!tab || !_controlTab)
         {
             return false;
         }
