@@ -109,7 +109,8 @@
                 <AutoSuggestBox.ItemTemplate>
                     <DataTemplate x:DataType="local:FilteredSearchResult">
                         <Grid HorizontalAlignment="Stretch"
-                              ColumnSpacing="8">
+                              ColumnSpacing="8"
+                              ToolTipService.ToolTip="{x:Bind Label}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -120,7 +121,8 @@
                                               VerticalAlignment="Center"
                                               Content="{x:Bind Icon}" />
                             <TextBlock Grid.Column="1"
-                                       Text="{x:Bind Label}" />
+                                       Text="{x:Bind Label}"
+                                       TextTrimming="CharacterEllipsis" />
                         </Grid>
                     </DataTemplate>
                 </AutoSuggestBox.ItemTemplate>

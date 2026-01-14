@@ -324,8 +324,10 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         }
 
         # Deduce NavigationParam
-        # duplicateForVM is used to duplicate the entry if we need a VM param at runtime (i.e. profile vs global profile)
-        $duplicateForVM = $false
+        # includeInBuildIndex: include the entry in the build-time index (no special param at runtime)
+        # includeInPartialIndex: include the entry in the partial index, where the NavigationParam is the view model at runtime (i.e. profile vs profile defaults)
+        $includeInBuildIndex = $true
+        $includeInPartialIndex = $false
         $navigationParam = 'nullptr'
         if ($pageClass -match 'Editor::Launch')
         {
@@ -358,7 +360,7 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
             {
                 $navigationParam = 'NewTabMenu_Nav'
                 $subPage = 'BreadcrumbSubPage::None'
-                $duplicateForVM = $true
+                $includeInPartialIndex = $true
             }
         }
         elseif ($pageClass -match 'Editor::Extensions')
@@ -372,7 +374,8 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
                 $pageClass -match 'Editor::Profiles_Advanced')
         {
             $navigationParam = 'GlobalProfile_Nav'
-            $duplicateForVM = $true
+            $includeInBuildIndex = !($name -eq "Name" -or $name -eq "Commandline")
+            $includeInPartialIndex = $true
         }
         elseif ($pageClass -match 'Editor::EditColorScheme')
         {
@@ -388,20 +391,22 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
             $navigationParam = 'AddProfile'
         }
 
-        $entries += [pscustomobject]@{
-            DisplayTextUid       = "L`"$($uid)/Header`""
-            DisplayTextLocalized = "RS_(L`"$($uid)/Header`")"
-            HelpTextUid          = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ L`"$($uid)/HelpText`" }" : "std::nullopt"
-            HelpTextLocalized    = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ RS_(L`"$($uid)/HelpText`") }" : "std::nullopt"
-            ParentPage           = $pageClass
-            NavigationParam      = $navigationParam -eq "nullptr" ? $navigationParam : "winrt::box_value(hstring{L`"$($navigationParam)`"})"
-            SubPage              = $subPage
-            ElementName          = "L`"$($name)`""
-            File                 = $filename
+        if ($includeInBuildIndex)
+        {
+            $entries += [pscustomobject]@{
+                DisplayTextUid       = "L`"$($uid)/Header`""
+                DisplayTextLocalized = "RS_(L`"$($uid)/Header`")"
+                HelpTextUid          = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ L`"$($uid)/HelpText`" }" : "std::nullopt"
+                HelpTextLocalized    = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ RS_(L`"$($uid)/HelpText`") }" : "std::nullopt"
+                ParentPage           = $pageClass
+                NavigationParam      = $navigationParam -eq "nullptr" ? $navigationParam : "winrt::box_value(hstring{L`"$($navigationParam)`"})"
+                SubPage              = $subPage
+                ElementName          = "L`"$($name)`""
+                File                 = $filename
+            }
         }
 
-        # Duplicate entry for VM param if needed
-        if ($duplicateForVM)
+        if ($includeInPartialIndex)
         {
             $entries += [pscustomobject]@{
                 DisplayTextUid       = "L`"$($uid)/Header`""

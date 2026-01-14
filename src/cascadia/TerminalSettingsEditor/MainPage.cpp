@@ -445,11 +445,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Repopulate profile-related menu items
         _InitializeProfilesList();
+
         // Update the Nav State with the new version of the settings
         _colorSchemesPageVM.UpdateSettings(_settingsClone);
         _actionsVM.UpdateSettings(_settingsClone);
         _newTabMenuPageVM.UpdateSettings(_settingsClone);
         _extensionsVM.UpdateSettings(_settingsClone, _colorSchemesPageVM);
+        _profileDefaultsVM = nullptr; // Lazy-loaded upon navigation
 
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
