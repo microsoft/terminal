@@ -27,6 +27,7 @@ namespace winrt::TerminalApp::implementation
         _cache{ cache },
         _profile{ profile }
     {
+        _allowTmuxControl.store(_profile.AllowTmuxControl(), std::memory_order_relaxed);
         _setupControlEvents();
     }
 
@@ -342,6 +343,7 @@ namespace winrt::TerminalApp::implementation
         // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
         const auto profile{ settings.FindProfile(_profile.Guid()) };
         _profile = profile ? profile : settings.ProfileDefaults();
+        _allowTmuxControl.store(_profile.AllowTmuxControl(), std::memory_order_relaxed);
 
         if (const auto settings{ _cache->TryLookup(_profile) })
         {
@@ -361,6 +363,11 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::UI::Xaml::Media::Brush TerminalPaneContent::BackgroundBrush()
     {
         return _control.BackgroundBrush();
+    }
+
+    bool TerminalPaneContent::AllowTmuxControl() const noexcept
+    {
+        return _allowTmuxControl.load(std::memory_order_relaxed);
     }
 
     float TerminalPaneContent::SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap)

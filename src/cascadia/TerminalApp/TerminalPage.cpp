@@ -3600,9 +3600,8 @@ namespace winrt::TerminalApp::implementation
             control.RestoreFromPath(path);
         }
 
-        auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
-
-        auto resultPane = std::make_shared<Pane>(paneContent);
+        const auto paneContent = winrt::make_self<TerminalPaneContent>(profile, _terminalSettingsCache, control);
+        auto resultPane = std::make_shared<Pane>(*paneContent);
 
         if (debugConnection) // this will only be set if global debugging is on and tap is active
         {
@@ -3630,10 +3629,12 @@ namespace winrt::TerminalApp::implementation
                 _tmuxControl = std::make_shared<TmuxControl>(*this);
             }
 
-            control.EnterTmuxControl([tmuxControl = _tmuxControl.get()](auto&& sender, auto&& args) {
-                if (auto control = sender.try_as<TermControl>())
+            // We attach the callback to the control that paneContent owns.
+            // As such, using a weak-ref here is crucial.
+            control.EnterTmuxControl([tmuxControl = _tmuxControl.get(), paneContentWeak = winrt::make_weak(paneContent)](auto&&, auto&& args) {
+                if (const auto paneContent = paneContentWeak.get())
                 {
-                    if (tmuxControl->AcquireSingleUseLock(std::move(control)))
+                    if (paneContent->AllowTmuxControl() && tmuxControl->AcquireSingleUseLock(paneContent->GetTermControl()))
                     {
                         args.InputCallback([tmuxControl](auto&& str) {
                             tmuxControl->FeedInput(winrt_array_to_wstring_view(str));
