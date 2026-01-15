@@ -364,6 +364,11 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
     }
 }
 
+std::function<bool(wchar_t)> Terminal::EnterTmuxControl()
+{
+    return _pfnEnterTmuxControl ? _pfnEnterTmuxControl() : nullptr;
+}
+
 void Terminal::NotifyBufferRotation(const int delta)
 {
     // Update our selection, so it doesn't move as the buffer is cycled

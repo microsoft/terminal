@@ -159,4 +159,11 @@ namespace Microsoft.Terminal.Control
         Int32 Width;
         Int32 Height;
     }
+
+    delegate void TmuxControlInputCallback(Char[] input);
+
+    runtimeclass EnterTmuxControlEventArgs
+    {
+        void InputCallback(TmuxControlInputCallback callback);
+    }
 }

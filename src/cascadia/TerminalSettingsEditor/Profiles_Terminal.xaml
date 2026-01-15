@@ -77,6 +77,16 @@
                 <TextBox Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind Profile.AnswerbackMessage, Mode=TwoWay}" />
             </local:SettingContainer>
+
+            <!--  Allow Tmux Control  -->
+            <local:SettingContainer x:Uid="Profile_AllowTmuxControl"
+                                    ClearSettingValue="{x:Bind Profile.ClearAllowTmuxControl}"
+                                    HasSettingValue="{x:Bind Profile.HasAllowTmuxControl, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AllowTmuxControlOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Profile.TmuxControlEnabled, Mode=OneTime}">
+                <ToggleSwitch IsOn="{x:Bind Profile.AllowTmuxControl, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
         </StackPanel>
     </Grid>
 </Page>
