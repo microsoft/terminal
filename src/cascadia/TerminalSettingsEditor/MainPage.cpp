@@ -1108,10 +1108,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _MoveXamlParsedNavItemsIntoItemSource();
         }
 
-        // Manually create a NavigationViewItem for each profile
+        // Manually create a NavigationViewItem and view model for each profile
         // and keep a reference to them in a map so that we
         // can easily modify the correct one when the associated
         // profile changes.
+        _profileVMs.Clear();
         for (const auto& profile : _settingsClone.AllProfiles())
         {
             if (!profile.Deleted())
