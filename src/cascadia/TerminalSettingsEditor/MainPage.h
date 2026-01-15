@@ -7,6 +7,7 @@
 #include "Breadcrumb.g.h"
 #include "NavigateToPageArgs.g.h"
 #include "FilteredSearchResult.g.h"
+#include "SearchResultTemplateSelector.g.h"
 #include "Utils.h"
 #include "GeneratedSettingsIndex.g.h"
 #include <til/generational.h>
@@ -58,16 +59,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     struct FilteredSearchResult : FilteredSearchResultT<FilteredSearchResult>
     {
-        FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr, const std::optional<hstring>& label = std::nullopt) :
+        FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr, const std::optional<hstring>& label = std::nullopt, const hstring secondaryLabel = {}) :
             _SearchIndexEntry{ entry },
             _NavigationArgOverride{ navigationArgOverride },
-            _overrideLabel{ label } {}
+            _overrideLabel{ label },
+            _secondaryLabel{ secondaryLabel } {}
 
         static Editor::FilteredSearchResult CreateNoResultsItem(const winrt::hstring& query);
         static Editor::FilteredSearchResult CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj);
 
         hstring ToString() { return Label(); }
         winrt::hstring Label() const;
+        winrt::hstring SecondaryLabel() const { return _secondaryLabel; };
         bool IsNoResultsPlaceholder() const;
         const LocalizedIndexEntry& SearchIndexEntry() const noexcept { return *_SearchIndexEntry; }
         Windows::Foundation::IInspectable NavigationArg() const;
@@ -75,8 +78,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         const std::optional<winrt::hstring> _overrideLabel{ std::nullopt };
+        const winrt::hstring _secondaryLabel{};
         const Windows::Foundation::IInspectable _NavigationArgOverride{ nullptr };
         const LocalizedIndexEntry* _SearchIndexEntry{ nullptr };
+    };
+
+    struct SearchResultTemplateSelector : SearchResultTemplateSelectorT<SearchResultTemplateSelector>
+    {
+        SearchResultTemplateSelector() = default;
+
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item, const Windows::UI::Xaml::DependencyObject& container);
+        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item);
+
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> BasicTemplate;
+        til::property<winrt::Windows::UI::Xaml::DataTemplate> ComplexTemplate;
     };
 
     struct MainPage : MainPageT<MainPage>
@@ -187,4 +202,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(MainPage);
+    BASIC_FACTORY(SearchResultTemplateSelector);
 }

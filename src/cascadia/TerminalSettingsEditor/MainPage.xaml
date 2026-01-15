@@ -52,6 +52,75 @@
 
             </ResourceDictionary.MergedDictionaries>
 
+            <DataTemplate x:Key="BasicSearchResultTemplate"
+                          x:DataType="local:FilteredSearchResult">
+                <Grid HorizontalAlignment="Stretch"
+                      ColumnSpacing="8"
+                      ToolTipService.ToolTip="{x:Bind Label}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <ContentPresenter Grid.Column="0"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Content="{x:Bind Icon}" />
+                    <TextBlock Grid.Column="1"
+                               Text="{x:Bind Label}"
+                               TextTrimming="CharacterEllipsis" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ComplexSearchResultTemplate"
+                          x:DataType="local:FilteredSearchResult">
+                <Grid HorizontalAlignment="Stretch"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ContentPresenter Grid.Row="0"
+                                      Grid.RowSpan="2"
+                                      Grid.Column="0"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Content="{x:Bind Icon}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               FontSize="{ThemeResource BodyTextBlockFontSize}"
+                               Foreground="{ThemeResource TextFillColorPrimary}"
+                               Text="{x:Bind Label}"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               FontSize="{ThemeResource CaptionTextBlockFontSize}"
+                               Foreground="{ThemeResource TextFillColorSecondary}"
+                               Text="{x:Bind SecondaryLabel}"
+                               TextTrimming="CharacterEllipsis" />
+
+                    <ToolTipService.ToolTip>
+                        <StackPanel>
+                            <TextBlock FontSize="{ThemeResource CaptionTextBlockFontSize}"
+                                       Foreground="{ThemeResource TextFillColorPrimary}"
+                                       Text="{x:Bind Label}" />
+                            <TextBlock FontSize="{ThemeResource CaptionTextBlockFontSize}"
+                                       Foreground="{ThemeResource TextFillColorSecondary}"
+                                       Text="{x:Bind SecondaryLabel}" />
+                        </StackPanel>
+                    </ToolTipService.ToolTip>
+                </Grid>
+            </DataTemplate>
+
+            <local:SearchResultTemplateSelector x:Key="SearchResultTemplateSelector"
+                                                BasicTemplate="{StaticResource BasicSearchResultTemplate}"
+                                                ComplexTemplate="{StaticResource ComplexSearchResultTemplate}" />
+
             <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground"
                              Color="Transparent" />
             <SolidColorBrush x:Key="NavigationViewContentBackground"
@@ -102,31 +171,11 @@
         <muxc:NavigationView.AutoSuggestBox>
             <AutoSuggestBox x:Name="SettingsSearchBox"
                             x:Uid="Nav_SearchBox"
+                            ItemTemplateSelector="{StaticResource SearchResultTemplateSelector}"
                             QueryIcon="Find"
                             QuerySubmitted="SettingsSearchBox_QuerySubmitted"
                             SuggestionChosen="SettingsSearchBox_SuggestionChosen"
-                            TextChanged="SettingsSearchBox_TextChanged">
-                <AutoSuggestBox.ItemTemplate>
-                    <DataTemplate x:DataType="local:FilteredSearchResult">
-                        <Grid HorizontalAlignment="Stretch"
-                              ColumnSpacing="8"
-                              ToolTipService.ToolTip="{x:Bind Label}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <ContentPresenter Grid.Column="0"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Content="{x:Bind Icon}" />
-                            <TextBlock Grid.Column="1"
-                                       Text="{x:Bind Label}"
-                                       TextTrimming="CharacterEllipsis" />
-                        </Grid>
-                    </DataTemplate>
-                </AutoSuggestBox.ItemTemplate>
-            </AutoSuggestBox>
+                            TextChanged="SettingsSearchBox_TextChanged" />
         </muxc:NavigationView.AutoSuggestBox>
 
         <muxc:NavigationView.MenuItems>

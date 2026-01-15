@@ -24,6 +24,7 @@
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
 #include "GeneratedSettingsIndex.g.h"
+#include "SearchResultTemplateSelector.g.cpp"
 
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <ScopedResourceLoader.h>
@@ -83,6 +84,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    DataTemplate SearchResultTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)
+    {
+        return SelectTemplateCore(item);
+    }
+
+    DataTemplate SearchResultTemplateSelector::SelectTemplateCore(const IInspectable& item)
+    {
+        if (const auto searchResultItem = item.try_as<FilteredSearchResult>())
+        {
+            if (!searchResultItem->SecondaryLabel().empty())
+            {
+                return ComplexTemplate();
+            }
+            return BasicTemplate();
+        }
+        return nullptr;
+    }
+
     Editor::FilteredSearchResult FilteredSearchResult::CreateNoResultsItem(const winrt::hstring& query)
     {
         return winrt::make<FilteredSearchResult>(nullptr, nullptr, hstring{ fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), query) });
@@ -94,25 +113,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Editor::FilteredSearchResult FilteredSearchResult::CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj)
     {
         hstring runtimeObjLabel{};
+        hstring runtimeObjContext{};
         if (const auto profileVM = runtimeObj.try_as<Editor::ProfileViewModel>())
         {
+            // No runtimeObjContext: profile name and icon should be enough
             runtimeObjLabel = profileVM.Name();
         }
         else if (const auto colorSchemeVM = runtimeObj.try_as<Editor::ColorSchemeViewModel>())
         {
+            // No runtimeObjContext: scheme name and generic icon should be enough
             runtimeObjLabel = colorSchemeVM.Name();
         }
         else if (const auto ntmFolderEntryVM = runtimeObj.try_as<Editor::FolderEntryViewModel>())
         {
             runtimeObjLabel = ntmFolderEntryVM.Name();
+            runtimeObjContext = RS_(L"Nav_NewTabMenu/Content");
         }
         else if (const auto extensionPackageVM = runtimeObj.try_as<Editor::ExtensionPackageViewModel>())
         {
             runtimeObjLabel = extensionPackageVM.Package().DisplayName();
-        }
-        else if (const auto colorSchemeName = runtimeObj.try_as<hstring>())
-        {
-            runtimeObjLabel = *colorSchemeName;
+            runtimeObjContext = RS_(L"Nav_Extensions/Content");
         }
 
         hstring displayText{};
@@ -128,10 +148,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // empty display text --> just show runtime object label (i.e. "PowerShell") --> navigates to main runtime object page (i.e. Profiles_Base)
-        // otherwise --> "<ProfileName>: <display text>" (i.e. "PowerShell: Command line") --> navigates to setting container
-        const hstring label = displayText.empty() ? runtimeObjLabel : hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), runtimeObjLabel, displayText) };
-        return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, label);
+        if (displayText.empty())
+        {
+            // primaryText: <runtimeObjLabel>
+            // secondaryText: <runtimeObjContext>
+            // "PowerShell" --> navigates to main runtime object page (i.e. Profiles_Base)
+            // "SSH" | "Extension" --> navigates to main runtime object page (i.e. Extensions > SSH)
+            return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, runtimeObjLabel, runtimeObjContext);
+        }
+        // primaryText: <displayText>
+        // secondaryText: <runtimeObjLabel>
+        // navigates to setting container
+        return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, displayText, runtimeObjLabel);
     }
 
     winrt::hstring FilteredSearchResult::Label() const

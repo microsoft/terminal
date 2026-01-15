@@ -38,7 +38,16 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass FilteredSearchResult : Windows.Foundation.IStringable
     {
         String Label { get; };
+        String SecondaryLabel { get; };
         Windows.UI.Xaml.Controls.IconElement Icon { get; };
+    }
+
+    [default_interface] runtimeclass SearchResultTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        SearchResultTemplateSelector();
+
+        Windows.UI.Xaml.DataTemplate BasicTemplate;
+        Windows.UI.Xaml.DataTemplate ComplexTemplate;
     }
 
     runtimeclass Breadcrumb : Windows.Foundation.IStringable
