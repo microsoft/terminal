@@ -217,14 +217,6 @@
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Le mode lecture seule est activé.</value>
   </data>
-  <data name="SearchBox_MatchesAvailable" xml:space="preserve">
-    <value>Résultats trouvés</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are matches for that text in the terminal.</comment>
-  </data>
-  <data name="SearchBox_NoMatches" xml:space="preserve">
-    <value>Aucun résultat trouvé</value>
-    <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
-  </data>
   <data name="PasteCommandButton.Label" xml:space="preserve">
     <value>Coller</value>
     <comment>The label of a button for pasting the contents of the clipboard.</comment>
@@ -329,5 +321,17 @@
   <data name="PreviewTextAnnouncement" xml:space="preserve">
     <value>Entrée suggérée : {0}</value>
     <comment>{Locked="{0}"} {0} will be replaced with a string of input that is suggested for the user to input</comment>
+  </data>
+  <data name="TermControl_NumResultsAccessible" xml:space="preserve">
+    <value>{0} sur {1}</value>
+    <comment>{Locked="{0}"}{Locked="{1}"} Read out by the screen reader to announce number of results from a search query. "{0}" is replaced with index of search result. "{1}" is replaced by total number of results.</comment>
+  </data>
+  <data name="TermControl_UnknownSearchResultIndex" xml:space="preserve">
+    <value>inconnu</value>
+    <comment>Will be read out by a screen reader when a value for the index of a search result is mismatched and unclear. Displayed as a part of TermControl_NumResultsAccessible.</comment>
+  </data>
+  <data name="TermControl_TooManySearchResults" xml:space="preserve">
+    <value>plus de 999</value>
+    <comment>Will be read out by a screen reader when a search returns over 999 search results.</comment>
   </data>
 </root>

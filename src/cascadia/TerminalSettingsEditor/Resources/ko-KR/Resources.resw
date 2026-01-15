@@ -1974,6 +1974,14 @@
     <value>없음</value>
     <comment>An option to choose from for the "move tab direction". No movement.</comment>
   </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>앞쪽(오른쪽)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward (right).</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>뒤쪽(왼쪽)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward (left).</comment>
+  </data>
   <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
     <value>이전</value>
     <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>

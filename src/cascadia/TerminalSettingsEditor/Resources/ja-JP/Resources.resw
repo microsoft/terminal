@@ -1974,6 +1974,14 @@
     <value>なし</value>
     <comment>An option to choose from for the "move tab direction". No movement.</comment>
   </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>前方 (右)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward (right).</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>後方 (左)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward (left).</comment>
+  </data>
   <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
     <value>前へ</value>
     <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
