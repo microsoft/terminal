@@ -1428,14 +1428,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             co_return;
         }
 
+        const auto currentSearchId = ++_latestSearchId;
+
         // search the index on the background thread
         co_await winrt::resume_background();
+
+        if (currentSearchId != _latestSearchId)
+        {
+            // a newer search has started, abandon this one
+            co_return;
+        }
         const auto searchGeneration = _QuerySearchIndex(sanitizedQuery);
 
         // convert and display results on the foreground thread
         co_await winrt::resume_foreground(Dispatcher());
-        if (searchGeneration != _filteredSearchIndex.generation())
+        if (currentSearchId != _latestSearchId || searchGeneration != _filteredSearchIndex.generation())
         {
+            // a newer search has started, or the index changed, abandon this one
             co_return;
         }
 

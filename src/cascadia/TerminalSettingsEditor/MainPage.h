@@ -191,6 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
         til::generational<FilteredSearchIndex> _filteredSearchIndex;
 
+        std::atomic<uint32_t> _latestSearchId{ 0 };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _actionsViewModelChangedRevoker;
