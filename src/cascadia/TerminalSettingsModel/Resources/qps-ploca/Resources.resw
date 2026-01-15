@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Μονé ţãь {0} !!! </value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Мōνё тâв ŧó щîηďōẃ "{0}" !!! !!! !</value>
@@ -182,10 +182,10 @@
     <value>Μŏνĕ ťåъ тο ā ńęẃ шįŋďôẁ !!! !!! !</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>ƒояώäřđ !!</value>
+    <value>ƒояώäřđ (řіğнτ) !!! !</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>ьāςкωагð !!</value>
+    <value>ьāςкωагð (ℓëƒţ) !!! !</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Сłòšε àŀļ τãъš äƒťêѓ ŧĥĕ ĉŭґг℮ńτ тǻъ !!! !!! !!! !</value>
