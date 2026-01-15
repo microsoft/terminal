@@ -32,7 +32,8 @@ $ProhibitedXamlFiles = @(
     'KeyChordListener.xaml',
     'NullableColorPicker.xaml',
     'SettingContainerStyle.xaml',
-    'AISettings.xaml'
+    'AISettings.xaml',
+    'Profiles_Base_Orphaned.xaml'
 )
 
 if (-not (Test-Path $SourceDir)) { throw "SourceDir not found: $SourceDir" }
