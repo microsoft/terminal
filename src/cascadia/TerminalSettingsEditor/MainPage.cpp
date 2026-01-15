@@ -1592,6 +1592,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     safe_void_coroutine MainPage::_UpdateSearchIndex()
     {
+        auto weakThis = get_weak();
+
         co_await winrt::resume_background();
 
         // These are the new index entries we are building.
@@ -1631,7 +1633,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         localizedEntry.HelpTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.HelpTextUid.value());
                     }
                 }
-                storage.push_back(localizedEntry);
+                storage.emplace_back(std::move(localizedEntry));
             }
         };
 
@@ -1654,7 +1656,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         registerIndex(LoadColorSchemeIndex(), searchIndex.colorSchemeIndex);
         searchIndex.colorSchemeIndexEntry.Entry = &PartialColorSchemeIndexEntry();
 
-        *_searchIndex.write() = std::move(searchIndex);
+        if (auto strongThis = weakThis.get())
+        {
+            *strongThis->_searchIndex.write() = std::move(searchIndex);
+        }
     }
 
     const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept
