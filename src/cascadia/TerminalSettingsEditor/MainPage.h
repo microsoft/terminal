@@ -37,15 +37,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         NavigateToPageArgs(Windows::Foundation::IInspectable viewModel, Editor::IHostedInWindow windowRoot, const hstring& elementToFocus = {}) :
             _ViewModel(viewModel),
-            _WindowRoot(windowRoot),
+            _WeakWindowRoot(windowRoot),
             _ElementToFocus(elementToFocus) {}
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
         Windows::Foundation::IInspectable ViewModel() const noexcept { return _ViewModel; }
         hstring ElementToFocus() const noexcept { return _ElementToFocus; }
 
     private:
-        Editor::IHostedInWindow _WindowRoot;
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot;
         Windows::Foundation::IInspectable _ViewModel{ nullptr };
         hstring _ElementToFocus{};
     };

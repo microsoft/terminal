@@ -53,13 +53,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         NavigateToCommandArgs(CommandViewModel command, Editor::IHostedInWindow windowRoot) :
             _Command(command),
-            _WindowRoot(windowRoot) {}
+            _WeakWindowRoot(windowRoot) {}
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
         Editor::CommandViewModel Command() const noexcept { return _Command; }
 
     private:
-        Editor::IHostedInWindow _WindowRoot;
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot;
         Editor::CommandViewModel _Command{ nullptr };
     };
 
