@@ -330,10 +330,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - bool: whether the current focus is on the search box
     bool SearchBoxControl::ContainsFocus()
     {
-        auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
-        if (_focusableElements.count(focusedElement) > 0)
+        // BODGY: It is possible for this to get called with no XAML root. We are unsure why.
+        if (auto root = XamlRoot())
         {
-            return true;
+            auto focusedElement = Input::FocusManager::GetFocusedElement(root);
+            if (_focusableElements.count(focusedElement) > 0)
+            {
+                return true;
+            }
         }
 
         return false;
