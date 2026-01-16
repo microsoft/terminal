@@ -36,6 +36,7 @@ namespace winrt::TerminalApp::implementation
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
+        void ReloadSettingsAsync();
         void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
