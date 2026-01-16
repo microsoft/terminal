@@ -898,7 +898,10 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        // Hop to the BG thread
+        // ShellExecuteExW may block, so do it on a background thread.
+        //
+        // NOTE: All remaining code of this function doesn't touch `this`, so we don't need weak/strong_ref.
+        // NOTE NOTE: Don't touch `this` when you make changes here.
         co_await winrt::resume_background();
 
         // This will get us the correct exe for dev/preview/release. If you
@@ -1451,6 +1454,8 @@ namespace winrt::TerminalApp::implementation
 
     safe_void_coroutine TerminalPage::_doHandleSuggestions(SuggestionsArgs realArgs)
     {
+        const auto weak = get_weak();
+        const auto dispatcher = Dispatcher();
         const auto source = realArgs.Source();
         std::vector<Command> commandsCollection;
         Control::CommandHistoryContext context{ nullptr };
@@ -1517,7 +1522,12 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        co_await wil::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         // Open the palette with all these commands in it.
         _OpenSuggestions(_GetActiveControl(),

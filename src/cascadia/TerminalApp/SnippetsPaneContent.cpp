@@ -47,13 +47,22 @@ namespace winrt::TerminalApp::implementation
     {
         _settings = settings;
 
+        const auto dispatcher = Dispatcher();
+        const auto weak = get_weak();
+
         // You'd think that `FilterToSendInput(queryString)` would work. It
         // doesn't! That uses the queryString as the current command the user
         // has typed, then relies on the suggestions UI to _also_ filter with that
         // string.
 
         const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(winrt::hstring{}, winrt::hstring{}); // IVector<Model::Command>
-        co_await wil::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         _allTasks.Clear();
         for (const auto& t : tasks)

@@ -2044,7 +2044,15 @@ namespace winrt::TerminalApp::implementation
         if (!_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
+
+            const auto weak = get_weak();
             auto warningResult = co_await _ShowQuitDialog();
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
+
             _displayingCloseDialog = false;
 
             if (warningResult != ContentDialogResult::Primary)
@@ -3084,8 +3092,12 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the arguments specifying how to set the progress indicator
     safe_void_coroutine TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
+        const auto weak = get_weak();
         co_await wil::resume_foreground(Dispatcher());
-        SetTaskbarProgress.raise(*this, nullptr);
+        if (const auto strong = weak.get())
+        {
+            SetTaskbarProgress.raise(*this, nullptr);
+        }
     }
 
     // Method Description:
@@ -3158,6 +3170,12 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
+
+        const auto weak = get_weak();
+        const auto dispatcher = Dispatcher();
+
+        // All of the code until resume_foreground is static and
+        // doesn't touch `this`, so we don't need weak/strong_ref.
         co_await winrt::resume_background();
 
         // no packages were found, nothing to suggest
@@ -3175,7 +3193,12 @@ namespace winrt::TerminalApp::implementation
             suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} -s winget"), pkg.CatalogPackage().Id()));
         }
 
-        co_await wil::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         auto term = _GetActiveControl();
         if (!term)
@@ -3255,6 +3278,9 @@ namespace winrt::TerminalApp::implementation
             // UI) thread. This is IMPORTANT, because the Windows.Storage API's
             // (used for retrieving the path to the file) will crash on the UI
             // thread, because the main thread is a STA.
+            //
+            // NOTE: All remaining code of this function doesn't touch `this`, so we don't need weak/strong_ref.
+            // NOTE NOTE: Don't touch `this` when you make changes here.
             co_await winrt::resume_background();
 
             auto openFile = [](const auto& filePath) {
@@ -4633,12 +4659,18 @@ namespace winrt::TerminalApp::implementation
     // - sender: the ICoreState instance containing the connection state
     // Return Value:
     // - <none>
-    safe_void_coroutine TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/) const
+    safe_void_coroutine TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/)
     {
         if (const auto coreState{ sender.try_as<winrt::Microsoft::Terminal::Control::ICoreState>() })
         {
             const auto newConnectionState = coreState.ConnectionState();
+            const auto weak = get_weak();
             co_await wil::resume_foreground(Dispatcher());
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
 
             _adjustProcessPriorityThrottled->Run();
 
