@@ -896,7 +896,7 @@ namespace winrt::TerminalApp::implementation
             auto xamlRoot{ _root->XamlRoot() };
             if (!xamlRoot)
             {
-                return;
+                return false;
             }
 
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
