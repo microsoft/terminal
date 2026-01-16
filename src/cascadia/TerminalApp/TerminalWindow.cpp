@@ -1393,9 +1393,7 @@ namespace winrt::TerminalApp::implementation
     // - a string for displaying the name of the window.
     winrt::hstring WindowProperties::WindowIdForDisplay() const noexcept
     {
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"),
-                                           std::wstring_view(RS_(L"WindowIdLabel")),
-                                           _WindowId) };
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), std::wstring_view(RS_(L"WindowIdLabel")), _WindowId);
     }
 
     // Method Description:
@@ -1406,9 +1404,7 @@ namespace winrt::TerminalApp::implementation
     // - a string for displaying the name of the window.
     winrt::hstring WindowProperties::WindowNameForDisplay() const noexcept
     {
-        return _WindowName.empty() ?
-                   winrt::hstring{ fmt::format(FMT_COMPILE(L"<{}>"), RS_(L"UnnamedWindowName")) } :
-                   _WindowName;
+        return _WindowName.empty() ? til::hstring_format(FMT_COMPILE(L"<{}>"), RS_(L"UnnamedWindowName")) : _WindowName;
     }
 
     bool WindowProperties::IsQuakeWindow() const noexcept

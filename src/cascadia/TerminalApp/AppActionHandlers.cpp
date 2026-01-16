@@ -914,7 +914,7 @@ namespace winrt::TerminalApp::implementation
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         // `-w -1` will ensure a new window is created.
         const auto commandline = terminalArgs.ToCommandline();
-        winrt::hstring cmdline{ fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline) };
+        const auto cmdline = fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline);
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
         // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
