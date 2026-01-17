@@ -5,12 +5,6 @@ import "ColorSchemeViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass NavigateToEditColorSchemeArgs
-    {
-        ColorSchemeViewModel ViewModel { get; };
-        String ElementToFocus { get; };
-    }
-
     [default_interface] runtimeclass EditColorScheme : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         EditColorScheme();

@@ -1138,6 +1138,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
+    // Appearances doesn't implement HasScrollViewer<T> which normally adds this function.
     void Appearances::BringIntoViewWhenLoaded(hstring elementToFocus)
     {
         if (elementToFocus.empty())
@@ -1148,10 +1149,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _loadedRevoker = this->Loaded(winrt::auto_revoke, [weakThis{ get_weak() }, elementToFocus](auto&&, auto&&) {
             if (const auto strongThis = weakThis.get())
             {
-                if (const auto element = strongThis->FindName(elementToFocus))
+                if (const auto& controlToFocus{ strongThis->FindName(elementToFocus).try_as<Controls::Control>() })
                 {
-                    element.as<FrameworkElement>().StartBringIntoView();
+                    controlToFocus.as<FrameworkElement>().StartBringIntoView();
+                    controlToFocus.Focus(FocusState::Programmatic);
                 }
+                strongThis->_loadedRevoker.revoke();
             }
         });
     }

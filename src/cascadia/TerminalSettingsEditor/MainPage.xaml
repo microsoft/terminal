@@ -179,61 +179,34 @@
         </muxc:NavigationView.AutoSuggestBox>
 
         <muxc:NavigationView.MenuItems>
-
             <muxc:NavigationViewItem x:Name="LaunchNavItem"
                                      x:Uid="Nav_Launch"
-                                     Tag="Launch_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7B5;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="Launch_Nav" />
 
             <muxc:NavigationViewItem x:Name="InteractionNavItem"
                                      x:Uid="Nav_Interaction"
-                                     Tag="Interaction_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7C9;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="Interaction_Nav" />
 
             <muxc:NavigationViewItem x:Name="AppearanceNavItem"
                                      x:Uid="Nav_Appearance"
-                                     Tag="GlobalAppearance_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE771;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="GlobalAppearance_Nav" />
 
             <muxc:NavigationViewItem x:Name="ColorSchemesNavItem"
                                      x:Uid="Nav_ColorSchemes"
-                                     Tag="ColorSchemes_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE790;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="ColorSchemes_Nav" />
+
 
             <muxc:NavigationViewItem x:Name="RenderingNavItem"
                                      x:Uid="Nav_Rendering"
-                                     Tag="Rendering_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE7F8;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="Rendering_Nav" />
 
             <muxc:NavigationViewItem x:Name="CompatibilityNavItem"
                                      x:Uid="Nav_Compatibility"
-                                     Tag="Compatibility_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xEC7A;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="Compatibility_Nav" />
 
             <muxc:NavigationViewItem x:Name="ActionsNavItem"
                                      x:Uid="Nav_Actions"
                                      Tag="Actions_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE765;" />
-                </muxc:NavigationViewItem.Icon>
                 <muxc:NavigationViewItem.InfoBadge>
                     <muxc:InfoBadge Style="{StaticResource NewInfoBadge}"
                                     Visibility="{x:Bind ActionsVM.DisplayBadge, Mode=OneWay}" />
@@ -242,42 +215,24 @@
 
             <muxc:NavigationViewItem x:Name="NewTabMenuNavItem"
                                      x:Uid="Nav_NewTabMenu"
-                                     Tag="NewTabMenu_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE71d;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="NewTabMenu_Nav" />
 
             <muxc:NavigationViewItem x:Name="ExtensionsNavItem"
                                      x:Uid="Nav_Extensions"
-                                     Tag="Extensions_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xEA86;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="Extensions_Nav" />
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
 
             <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
                                      x:Uid="Nav_ProfileDefaults"
-                                     Tag="GlobalProfile_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE81E;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
-
+                                     Tag="GlobalProfile_Nav" />
         </muxc:NavigationView.MenuItems>
 
         <muxc:NavigationView.FooterMenuItems>
-            <!--  The OpenJson item needs both Tapped and KeyDown handler  -->
             <muxc:NavigationViewItem x:Name="OpenJsonNavItem"
                                      x:Uid="Nav_OpenJSON"
                                      SelectsOnInvoked="False"
-                                     Tag="OpenJson_Nav">
-                <muxc:NavigationViewItem.Icon>
-                    <FontIcon Glyph="&#xE713;" />
-                </muxc:NavigationViewItem.Icon>
-            </muxc:NavigationViewItem>
+                                     Tag="OpenJson_Nav" />
         </muxc:NavigationView.FooterMenuItems>
 
         <Grid>

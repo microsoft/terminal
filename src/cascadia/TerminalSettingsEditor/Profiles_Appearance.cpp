@@ -13,6 +13,8 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 
+static constexpr std::wstring_view AppearanceSettingPrefix{ L"App." };
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles_Appearance::Profiles_Appearance()
@@ -27,12 +29,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
         _windowRoot = args.WindowRoot();
 
+        // Settings are stored in Profiles_Appearance and Appearances.
+        // We use the "App." prefix to indicate if it's in Appearances,
+        // and remove it on the way to Appearances object.
         const auto elementToFocus = args.ElementToFocus();
-        if (elementToFocus.starts_with(L"App."))
+        if (elementToFocus.starts_with(AppearanceSettingPrefix))
         {
-            // remove "App." prefix
             std::wstring correctedName{ elementToFocus.c_str() };
-            get_self<implementation::Appearances>(DefaultAppearanceView())->BringIntoViewWhenLoaded(hstring{ correctedName.substr(4) });
+            get_self<implementation::Appearances>(DefaultAppearanceView())->BringIntoViewWhenLoaded(hstring{ correctedName.substr(AppearanceSettingPrefix.size()) });
         }
         else
         {

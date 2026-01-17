@@ -30,6 +30,7 @@
 #include <ScopedResourceLoader.h>
 #include <dwmapi.h>
 #include <fmt/compile.h>
+#include <til/static_map.h>
 
 namespace winrt
 {
@@ -45,21 +46,45 @@ using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::Foundation::Collections;
 
-static const std::wstring_view openJsonTag{ L"OpenJson_Nav" };
-static const std::wstring_view launchTag{ L"Launch_Nav" };
-static const std::wstring_view interactionTag{ L"Interaction_Nav" };
-static const std::wstring_view renderingTag{ L"Rendering_Nav" };
-static const std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
-static const std::wstring_view actionsTag{ L"Actions_Nav" };
-static const std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
-static const std::wstring_view extensionsTag{ L"Extensions_Nav" };
-static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
-static const std::wstring_view addProfileTag{ L"AddProfile" };
-static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
-static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
+static constexpr std::wstring_view openJsonTag{ L"OpenJson_Nav" };
+static constexpr std::wstring_view launchTag{ L"Launch_Nav" };
+static constexpr std::wstring_view interactionTag{ L"Interaction_Nav" };
+static constexpr std::wstring_view renderingTag{ L"Rendering_Nav" };
+static constexpr std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
+static constexpr std::wstring_view actionsTag{ L"Actions_Nav" };
+static constexpr std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
+static constexpr std::wstring_view extensionsTag{ L"Extensions_Nav" };
+static constexpr std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
+static constexpr std::wstring_view addProfileTag{ L"AddProfile" };
+static constexpr std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
+static constexpr std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
+
+static constexpr til::static_map NavTagIconMap{
+    std::pair{ launchTag, L"\xE7B5" }, /* Set Lock Screen */
+    std::pair{ interactionTag, L"\xE7C9" }, /* Touch Pointer */
+    std::pair{ globalAppearanceTag, L"\xE771" }, /* Personalize */
+    std::pair{ colorSchemesTag, L"\xE790" }, /* Color */
+    std::pair{ renderingTag, L"\xE7F8" }, /* Device Laptop No Pic */
+    std::pair{ compatibilityTag, L"\xEC7A" }, /* Developer Tools */
+    std::pair{ actionsTag, L"\xE765" }, /* Keyboard Classic */
+    std::pair{ newTabMenuTag, L"\xE71D" }, /* All Apps */
+    std::pair{ extensionsTag, L"\xEA86" }, /* Puzzle */
+    std::pair{ globalProfileTag, L"\xE81E" }, /* Map Layers */
+    std::pair{ addProfileTag, L"\xE710" }, /* Add */
+    std::pair{ openJsonTag, L"\xE713" }, /* Settings */
+};
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static WUX::Controls::FontIcon _fontIconForNavTag(const std::wstring_view navTag)
+    {
+        WUX::Controls::FontIcon icon{};
+        icon.Glyph(NavTagIconMap[navTag]);
+        icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+        icon.FontSize(16);
+        return icon;
+    }
+
     static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
     {
         return winrt::make<implementation::ProfileViewModel>(profile, appSettings, dispatcher);
@@ -219,7 +244,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 WUX::Controls::FontIcon icon{};
                 icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
                 icon.FontSize(iconSize);
-                icon.Glyph(L"\xE790");
+                icon.Glyph(NavTagIconMap[colorSchemesTag]);
                 return icon;
             }
             else if (const auto ntmFolderEntryVM = navigationArg.try_as<Editor::FolderEntryViewModel>())
@@ -238,66 +263,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (const auto stringNavArg = navigationArg.try_as<hstring>())
             {
-                // The hstring navArg can be...
-                // - color scheme name
-                // - hstring tag (all defined at the top of the file)
-                // Regardless, we'll use the font icon used by the navigation view item
                 WUX::Controls::FontIcon icon{};
                 icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
                 icon.FontSize(iconSize);
-                if (stringNavArg == colorSchemesTag || _SearchIndexEntry->Entry->SubPage == BreadcrumbSubPage::ColorSchemes_Edit)
+
+                if (_SearchIndexEntry->Entry->SubPage == BreadcrumbSubPage::ColorSchemes_Edit)
                 {
-                    icon.Glyph(L"\xE790");
+                    // If we're editing a color scheme, stringNavArg is the color scheme name.
+                    // Use the color scheme icon.
+                    icon.Glyph(NavTagIconMap[colorSchemesTag]);
                     return icon;
                 }
-                else if (stringNavArg == launchTag)
+                else if (const auto it = NavTagIconMap.find(*stringNavArg); it != NavTagIconMap.end())
                 {
-                    icon.Glyph(L"\xE7B5");
-                    return icon;
-                }
-                else if (stringNavArg == interactionTag)
-                {
-                    icon.Glyph(L"\xE7C9");
-                    return icon;
-                }
-                else if (stringNavArg == renderingTag)
-                {
-                    icon.Glyph(L"\xE7F8");
-                    return icon;
-                }
-                else if (stringNavArg == compatibilityTag)
-                {
-                    icon.Glyph(L"\xEC7A");
-                    return icon;
-                }
-                else if (stringNavArg == actionsTag)
-                {
-                    icon.Glyph(L"\xE765");
-                    return icon;
-                }
-                else if (stringNavArg == newTabMenuTag)
-                {
-                    icon.Glyph(L"\xE71d");
-                    return icon;
-                }
-                else if (stringNavArg == extensionsTag)
-                {
-                    icon.Glyph(L"\xEA86");
-                    return icon;
-                }
-                else if (stringNavArg == globalProfileTag)
-                {
-                    icon.Glyph(L"\xE81E");
-                    return icon;
-                }
-                else if (stringNavArg == addProfileTag)
-                {
-                    icon.Glyph(L"\xE710");
-                    return icon;
-                }
-                else if (stringNavArg == globalAppearanceTag)
-                {
-                    icon.Glyph(L"\xE771");
+                    // Use the font icon used by the navigation view item
+                    icon.Glyph(it->second);
                     return icon;
                 }
             }
@@ -414,6 +394,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Make sure to initialize the profiles _after_ we have initialized the color schemes page VM, because we pass
         // that VM into the appearance VMs within the profiles
         _InitializeProfilesList();
+
+        // Apply icons to static nav items
+        LaunchNavItem().Icon(_fontIconForNavTag(launchTag));
+        InteractionNavItem().Icon(_fontIconForNavTag(interactionTag));
+        AppearanceNavItem().Icon(_fontIconForNavTag(globalAppearanceTag));
+        ColorSchemesNavItem().Icon(_fontIconForNavTag(colorSchemesTag));
+        RenderingNavItem().Icon(_fontIconForNavTag(renderingTag));
+        CompatibilityNavItem().Icon(_fontIconForNavTag(compatibilityTag));
+        ActionsNavItem().Icon(_fontIconForNavTag(actionsTag));
+        NewTabMenuNavItem().Icon(_fontIconForNavTag(newTabMenuTag));
+        ExtensionsNavItem().Icon(_fontIconForNavTag(extensionsTag));
+        BaseLayerMenuItem().Icon(_fontIconForNavTag(globalProfileTag));
+        OpenJsonNavItem().Icon(_fontIconForNavTag(openJsonTag));
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
@@ -1133,7 +1126,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         FontIcon icon;
         // This is the "Add" symbol
-        icon.Glyph(L"\xE710");
+        icon.Glyph(NavTagIconMap[addProfileTag]);
         addProfileItem.Icon(icon);
 
         _menuItemSource.Append(addProfileItem);
