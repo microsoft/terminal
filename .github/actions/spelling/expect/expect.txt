@@ -392,6 +392,7 @@ DECNKM
 DECNRCM
 DECOM
 decommit
+decommitting
 DECPCCM
 DECPCTERM
 DECPS
@@ -1817,6 +1818,7 @@ uwa
 uwp
 uwu
 uxtheme
+VADs
 Vanara
 vararg
 vclib
