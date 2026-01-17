@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Extensions.h"
+#include "NavigateToPageArgs.g.h"
 #include "Extensions.g.cpp"
 #include "ExtensionPackageViewModel.g.cpp"
 #include "ExtensionsViewModel.g.cpp"
@@ -33,10 +34,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Extensions::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ExtensionsViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::ExtensionsViewModel>();
+
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
+
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         if (vmImpl->IsExtensionView())
         {
