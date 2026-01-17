@@ -331,7 +331,7 @@ void AtlasEngine::_createSwapChain()
         .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
         // Sometimes up to 2 buffers are locked, for instance during screen capture or when moving the window.
         // 3 buffers seems to guarantee a stable framerate at display frequency at all times.
-        .BufferCount = 3,
+        .BufferCount = 2,
         .Scaling = DXGI_SCALING_NONE,
         // DXGI_SWAP_EFFECT_FLIP_DISCARD is the easiest to use, because it's fast and uses little memory.
         // But it's a mode that was created at a time were display drivers lacked support
@@ -495,12 +495,12 @@ void AtlasEngine::_present()
         }
     }
 
-    auto hr = _p.swapChain.swapChain->Present1(1, 0, &params);
+    auto hr = _p.swapChain.swapChain->Present1(0, 0, &params);
     if constexpr (Feature_AtlasEnginePresentFallback::IsEnabled())
     {
         if (FAILED(hr) && params.DirtyRectsCount != 0)
         {
-            hr = _p.swapChain.swapChain->Present(1, 0);
+            hr = _p.swapChain.swapChain->Present(0, 0);
         }
     }
     THROW_IF_FAILED(hr);
