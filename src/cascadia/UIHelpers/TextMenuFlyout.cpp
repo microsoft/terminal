@@ -160,7 +160,13 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         IInspectable target = Target();
         if (!target)
         {
-            target = FocusManager::GetFocusedElement(XamlRoot());
+            auto root = XamlRoot();
+            if (!root)
+            {
+                return;
+            }
+            target = FocusManager::GetFocusedElement(root);
+
             if (!target)
             {
                 return;

@@ -861,6 +861,9 @@ safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool 
 
     // We must yield to a background thread, because MessageBoxW() is a blocking call, and we can't
     // block the main thread. That would prevent us from servicing WM_COPYDATA messages and similar.
+    //
+    // NOTE: All remaining code of this function doesn't touch `this`, so we don't need weak/strong_ref.
+    // NOTE NOTE: Don't touch `this` when you make changes here.
     co_await winrt::resume_background();
 
     const auto messageTitle = error ? IDS_ERROR_DIALOG_TITLE : IDS_HELP_DIALOG_TITLE;

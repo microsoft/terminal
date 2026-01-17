@@ -43,6 +43,9 @@ safe_void_coroutine Jumplist::UpdateJumplist(const CascadiaSettings& settings) n
     // make sure to capture the settings _before_ the co_await
     const auto strongSettings = settings;
 
+    // Explorer APIs may block, so do it on a background thread.
+    //
+    // NOTE: Jumplist has no members, so we don't need to hold onto `this` here.
     co_await winrt::resume_background();
 
     try

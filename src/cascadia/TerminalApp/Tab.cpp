@@ -2137,7 +2137,7 @@ namespace winrt::TerminalApp::implementation
             const auto profileName{ profile.Name() };
             if (profileName != Title())
             {
-                return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), profileName, Title()) };
+                return til::hstring_format(FMT_COMPILE(L"{}: {}"), profileName, Title());
             }
         }
 

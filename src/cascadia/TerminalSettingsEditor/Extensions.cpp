@@ -479,7 +479,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto source = _package.Source();
         if (const auto displayName = _package.DisplayName(); !displayName.empty())
         {
-            return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), displayName, source) };
+            return til::hstring_format(FMT_COMPILE(L"{}, {}"), displayName, source);
         }
         return source;
     }
@@ -491,7 +491,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring FragmentProfileViewModel::AccessibleName() const noexcept
     {
-        return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), Profile().Name(), SourceName()) };
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), Profile().Name(), SourceName());
     }
 
     bool FragmentColorSchemeViewModel::SortAscending(const Editor::FragmentColorSchemeViewModel& lhs, const Editor::FragmentColorSchemeViewModel& rhs)
@@ -501,7 +501,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring FragmentColorSchemeViewModel::AccessibleName() const noexcept
     {
-        return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), ColorSchemeVM().Name(), SourceName()) };
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), ColorSchemeVM().Name(), SourceName());
     }
 
     DataTemplate ExtensionPackageTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)

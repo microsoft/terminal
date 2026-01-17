@@ -35,7 +35,7 @@ winrt::hstring DefaultTerminal::Version() const
         return winrt::hstring{};
     }
 
-    return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}.{}.{}.{}"), version.major, version.minor, version.build, version.revision) };
+    return til::hstring_format(FMT_COMPILE(L"{}.{}.{}.{}"), version.major, version.minor, version.build, version.revision);
 }
 
 winrt::hstring DefaultTerminal::Author() const
