@@ -46,6 +46,7 @@ namespace winrt::TerminalApp::implementation
 
     safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
+        auto weakThis{ get_weak() };
         _settings = settings;
 
         const auto dispatcher = Dispatcher();
@@ -65,17 +66,20 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        _allTasks.Clear();
-        for (const auto& t : tasks)
+        if (auto strongThis{ weakThis.get() })
         {
-            const auto& filtered{ winrt::make<FilteredTask>(t) };
-            _allTasks.Append(filtered);
+            strongThis->_allTasks.Clear();
+            for (const auto& t : tasks)
+            {
+                const auto& filtered{ winrt::make<FilteredTask>(t) };
+                strongThis->_allTasks.Append(filtered);
+            }
+            strongThis->_treeView().ItemsSource(_allTasks);
+
+            strongThis->_updateFilteredCommands();
+
+            strongThis->PropertyChanged.raise(*strongThis, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"HasSnippets" });
         }
-        _treeView().ItemsSource(_allTasks);
-
-        _updateFilteredCommands();
-
-        PropertyChanged.raise(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"HasSnippets" });
     }
 
     bool SnippetsPaneContent::HasSnippets() const
