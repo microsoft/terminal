@@ -53,16 +53,14 @@ namespace winrt::TerminalApp::implementation
         return static_cast<float>(minMaxCloseWidth) / 3.0f;
     }
 
-    bool TitlebarControl::Focused() const
+    bool TitlebarControl::Focused()
     {
-        return _focused;
+        return MinMaxCloseControl().Focused();
     }
 
     void TitlebarControl::Focused(bool focused)
     {
-        _focused = focused;
-
-        MinMaxCloseControl().ReleaseButtons(_focused);
+        MinMaxCloseControl().Focused(focused);
     }
 
     IInspectable TitlebarControl::Content()
@@ -146,11 +144,11 @@ namespace winrt::TerminalApp::implementation
 
     void TitlebarControl::HoverButton(CaptionButton button)
     {
-        MinMaxCloseControl().HoverButton(button, _focused);
+        MinMaxCloseControl().HoverButton(button);
     }
     void TitlebarControl::PressButton(CaptionButton button)
     {
-        MinMaxCloseControl().PressButton(button, _focused);
+        MinMaxCloseControl().PressButton(button);
     }
     safe_void_coroutine TitlebarControl::ClickButton(CaptionButton button)
     {
@@ -180,7 +178,7 @@ namespace winrt::TerminalApp::implementation
     }
     void TitlebarControl::ReleaseButtons()
     {
-        MinMaxCloseControl().ReleaseButtons(_focused);
+        MinMaxCloseControl().ReleaseButtons();
     }
 
     void TitlebarControl::_backgroundChanged(winrt::Windows::UI::Xaml::Media::Brush brush)

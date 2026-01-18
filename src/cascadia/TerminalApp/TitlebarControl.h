@@ -17,7 +17,7 @@ namespace winrt::TerminalApp::implementation
         void ReleaseButtons();
         float CaptionButtonWidth();
 
-        bool Focused() const;
+        bool Focused();
         void Focused(bool focused);
 
         IInspectable Content();
@@ -33,7 +33,6 @@ namespace winrt::TerminalApp::implementation
         void DragBar_DoubleTapped(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs& e);
 
     private:
-        bool _focused{ false };
         void _OnMaximizeOrRestore(byte flag);
         HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.
 
