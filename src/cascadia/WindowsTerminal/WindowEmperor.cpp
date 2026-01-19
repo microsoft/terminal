@@ -997,7 +997,7 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                     // loader does call such methods. This results in RPC_E_CANTCALLOUT_ININPUTSYNCCALL, aka:
                     // "An outgoing call cannot be made since the application is dispatching an input-synchronous call."
                     // The solution is to simply do it in another tick.
-                    _app.Logic().ReloadSettingsAsync();
+                    _app.Logic().ReloadSettingsThrottled();
                 }
             }
             return 0;

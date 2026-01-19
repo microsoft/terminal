@@ -151,7 +151,7 @@ namespace winrt::TerminalApp::implementation
         _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
             // TODO: This is really bad, because we reset any current user customizations.
             // See GH#11522.
-            ReloadSettingsAsync();
+            ReloadSettingsThrottled();
         });
 
         // Do this here, rather than at the top of main. This will prevent us from
@@ -331,7 +331,7 @@ namespace winrt::TerminalApp::implementation
 
                 if (modifiedBasename == settingsBasename)
                 {
-                    ReloadSettingsAsync();
+                    ReloadSettingsThrottled();
                 }
             });
     }
@@ -437,7 +437,7 @@ namespace winrt::TerminalApp::implementation
         SettingsChanged.raise(*this, *ev);
     }
 
-    void AppLogic::ReloadSettingsAsync()
+    void AppLogic::ReloadSettingsThrottled()
     {
         _reloadSettings->Run();
     }
