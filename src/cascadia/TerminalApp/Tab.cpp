@@ -933,6 +933,13 @@ namespace winrt::TerminalApp::implementation
         return res;
     }
 
+    void Tab::Close()
+    {
+        ASSERT_UI_THREAD();
+
+        Closed.raise(nullptr, nullptr);
+    }
+
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void Tab::Shutdown()
@@ -2130,7 +2137,7 @@ namespace winrt::TerminalApp::implementation
             const auto profileName{ profile.Name() };
             if (profileName != Title())
             {
-                return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), profileName, Title()) };
+                return til::hstring_format(FMT_COMPILE(L"{}: {}"), profileName, Title());
             }
         }
 

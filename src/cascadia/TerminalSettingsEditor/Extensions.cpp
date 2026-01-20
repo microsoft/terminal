@@ -37,7 +37,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
-        vmImpl->MarkAsVisited();
 
         if (vmImpl->IsExtensionView())
         {
@@ -363,11 +362,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _ExtensionPackageIdentifierTemplateSelector.SelectTemplate(CurrentExtensionPackage());
     }
 
-    bool ExtensionsViewModel::DisplayBadge() const noexcept
-    {
-        return !Model::ApplicationState::SharedInstance().BadgeDismissed(L"page.extensions");
-    }
-
     // Returns true if the extension is enabled, false otherwise
     bool ExtensionsViewModel::GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings)
     {
@@ -436,12 +430,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         NavigateToColorSchemeRequested.raise(*this, nullptr);
     }
 
-    void ExtensionsViewModel::MarkAsVisited()
-    {
-        Model::ApplicationState::SharedInstance().DismissBadge(L"page.extensions");
-        _NotifyChanges(L"DisplayBadge");
-    }
-
     bool ExtensionPackageViewModel::SortAscending(const Editor::ExtensionPackageViewModel& lhs, const Editor::ExtensionPackageViewModel& rhs)
     {
         auto getKey = [&](const Editor::ExtensionPackageViewModel& pkgVM) {
@@ -491,7 +479,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto source = _package.Source();
         if (const auto displayName = _package.DisplayName(); !displayName.empty())
         {
-            return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), displayName, source) };
+            return til::hstring_format(FMT_COMPILE(L"{}, {}"), displayName, source);
         }
         return source;
     }
@@ -503,7 +491,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring FragmentProfileViewModel::AccessibleName() const noexcept
     {
-        return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), Profile().Name(), SourceName()) };
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), Profile().Name(), SourceName());
     }
 
     bool FragmentColorSchemeViewModel::SortAscending(const Editor::FragmentColorSchemeViewModel& lhs, const Editor::FragmentColorSchemeViewModel& rhs)
@@ -513,7 +501,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring FragmentColorSchemeViewModel::AccessibleName() const noexcept
     {
-        return hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), ColorSchemeVM().Name(), SourceName()) };
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), ColorSchemeVM().Name(), SourceName());
     }
 
     DataTemplate ExtensionPackageTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)

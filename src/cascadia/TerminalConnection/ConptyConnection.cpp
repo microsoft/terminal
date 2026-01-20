@@ -477,31 +477,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto hr = wil::ResultFromCaughtException();
 
         // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
-        const auto failureText = RS_fmt(L"ProcessFailedToLaunch", _formatStatus(hr), _commandline);
-        TerminalOutput.raise(failureText);
+        auto failureText = RS_fmt(L"ProcessFailedToLaunch", _formatStatus(hr), _commandline);
 
         // If the path was invalid, let's present an informative message to the user
         if (hr == HRESULT_FROM_WIN32(ERROR_DIRECTORY))
         {
-            const auto badPathText = RS_fmt(L"BadPathText", _startingDirectory);
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(badPathText);
+            failureText.append(L"\r\n");
+            failureText.append(RS_fmt(L"BadPathText", _startingDirectory));
         }
         // If the requested action requires elevation, display appropriate message
         else if (hr == HRESULT_FROM_WIN32(ERROR_ELEVATION_REQUIRED))
         {
-            const auto elevationText = RS_(L"ElevationRequired");
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(elevationText);
+            failureText.append(L"\r\n");
+            failureText.append(RS_(L"ElevationRequired"));
         }
         // If the requested executable was not found, display appropriate message
         else if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND))
         {
-            const auto fileNotFoundText = RS_(L"FileNotFound");
-            TerminalOutput.raise(L"\r\n");
-            TerminalOutput.raise(fileNotFoundText);
+            failureText.append(L"\r\n");
+            failureText.append(RS_(L"FileNotFound"));
         }
 
+        TerminalOutput.raise(winrt_wstring_to_array_view(failureText));
         _transitionToState(ConnectionState::Failed);
 
         // Tear down any state we may have accumulated.
@@ -520,7 +517,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto msg1 = RS_fmt(L"ProcessExited", _formatStatus(status));
             const auto msg2 = RS_(L"CtrlDToClose");
             const auto msg = fmt::format(FMT_COMPILE(L"\r\n{}\r\n{}\r\n"), msg1, msg2);
-            TerminalOutput.raise(msg);
+            TerminalOutput.raise(winrt_wstring_to_array_view(msg));
         }
         CATCH_LOG();
     }
@@ -792,7 +789,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
                 try
                 {
-                    TerminalOutput.raise(wstr);
+                    TerminalOutput.raise(winrt_wstring_to_array_view(wstr));
                 }
                 CATCH_LOG();
             }

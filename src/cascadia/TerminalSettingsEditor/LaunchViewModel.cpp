@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"qps-PLOCM",
         L"ru",
         L"sr-Cyrl-RS",
+        L"uk-UA",
         L"zh-Hans",
         L"zh-Hant",
     };
@@ -202,7 +203,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring LaunchViewModel::LaunchSizeCurrentValue() const
     {
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{} × {}"), InitialCols(), InitialRows()) };
+        return til::hstring_format(FMT_COMPILE(L"{} × {}"), InitialCols(), InitialRows());
     }
 
     winrt::hstring LaunchViewModel::LaunchParametersCurrentValue()
@@ -224,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // Append the CenterOnLaunch part
-        result = CenterOnLaunch() ? winrt::hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), result, RS_(L"Globals_CenterOnLaunchCentered")) } : result;
+        result = CenterOnLaunch() ? til::hstring_format(FMT_COMPILE(L"{}, {}"), result, RS_(L"Globals_CenterOnLaunchCentered")) : result;
         return result;
     }
 

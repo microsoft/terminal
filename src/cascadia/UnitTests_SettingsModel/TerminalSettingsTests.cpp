@@ -7,6 +7,7 @@
 #include <pcg_random.hpp>
 
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../TerminalSettingsModel/ModelSerializationHelpers.h"
 #include "TestUtils.h"
 
 using namespace Microsoft::Console;
@@ -52,6 +53,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
         TEST_METHOD(TestLayerProfileOnColorScheme);
         TEST_METHOD(TestCommandlineToTitlePromotion);
+        TEST_METHOD(TestInitialPositionParsing);
     };
 
     // CascadiaSettings::_normalizeCommandLine abuses some aspects from CommandLineToArgvW
@@ -889,6 +891,51 @@ namespace SettingsModelUnitTests
             args.Commandline(L" imagine a man");
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(*settings, args) };
             VERIFY_ARE_EQUAL(L"", settingsStruct.DefaultSettings()->StartingTitle());
+        }
+    }
+    void TerminalSettingsTests::TestInitialPositionParsing()
+    {
+        {
+            const auto pos = LaunchPositionFromString("50");
+            VERIFY_IS_TRUE(pos.X.Value());
+            VERIFY_IS_TRUE(pos.Y.Value());
+            VERIFY_ARE_EQUAL(50, static_cast<int32_t>(pos.X.Value()));
+            VERIFY_ARE_EQUAL(50, static_cast<int32_t>(pos.Y.Value()));
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("100,");
+            VERIFY_IS_TRUE(pos.X.Value());
+            VERIFY_ARE_EQUAL(100, static_cast<int32_t>(pos.X.Value()));
+            VERIFY_IS_TRUE(pos.Y == nullptr);
+        }
+
+        {
+            const auto pos = LaunchPositionFromString(",100");
+            VERIFY_IS_TRUE(pos.X == nullptr);
+            VERIFY_IS_TRUE(pos.Y.Value());
+            VERIFY_ARE_EQUAL(100, static_cast<int32_t>(pos.Y.Value()));
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("50,50");
+            VERIFY_IS_TRUE(pos.X.Value());
+            VERIFY_ARE_EQUAL(50, static_cast<int32_t>(pos.X.Value()));
+            VERIFY_IS_TRUE(pos.Y.Value());
+            VERIFY_ARE_EQUAL(50, static_cast<int32_t>(pos.Y.Value()));
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("abc,100");
+            VERIFY_IS_TRUE(pos.X == nullptr);
+            VERIFY_IS_TRUE(pos.Y.Value());
+            VERIFY_ARE_EQUAL(100, static_cast<int32_t>(pos.Y.Value()));
+        }
+
+        {
+            const auto pos = LaunchPositionFromString("abc");
+            VERIFY_IS_TRUE(pos.X == nullptr);
+            VERIFY_IS_TRUE(pos.Y == nullptr);
         }
     }
 }

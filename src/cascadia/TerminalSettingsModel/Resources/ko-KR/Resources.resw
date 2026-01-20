@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>탭 {0} 이동</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>탭을 "{0}" 창으로 이동</value>
@@ -182,10 +182,10 @@
     <value>탭을 새 창으로 이동</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>앞으로</value>
+    <value>앞쪽(오른쪽)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>뒤로</value>
+    <value>뒤쪽(왼쪽)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>현재 탭 이전 모든 탭 닫기</value>
