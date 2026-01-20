@@ -21,7 +21,6 @@ namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch;
     class Page;
-    class StateMachine;
 
     class SixelParser
     {
@@ -31,7 +30,7 @@ namespace Microsoft::Console::VirtualTerminal
         static til::size CellSizeForLevel(const VTInt conformanceLevel = DefaultConformance) noexcept;
         static size_t MaxColorsForLevel(const VTInt conformanceLevel = DefaultConformance) noexcept;
 
-        SixelParser(AdaptDispatch& dispatcher, const StateMachine& stateMachine, const VTInt conformanceLevel = DefaultConformance) noexcept;
+        SixelParser(AdaptDispatch& dispatcher, const VTInt conformanceLevel = DefaultConformance) noexcept;
         void SoftReset();
         void SetDisplayMode(const bool enabled) noexcept;
         std::function<bool(std::wstring_view)> DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor);
@@ -49,7 +48,6 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         AdaptDispatch& _dispatcher;
-        const StateMachine& _stateMachine;
         const VTInt _conformanceLevel;
 
         void _parseCommandChar(const wchar_t ch);
@@ -106,6 +104,7 @@ namespace Microsoft::Console::VirtualTerminal
         size_t _colorsAvailable = 0;
         IndexedPixel _foregroundPixel = {};
         bool _colorTableChanged = false;
+        bool _isProcessingLastCharacter = false;
 
         void _initImageBuffer();
         void _resizeImageBuffer(const til::CoordType requiredHeight);

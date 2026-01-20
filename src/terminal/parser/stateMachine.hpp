@@ -81,7 +81,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
-        bool IsProcessingLastCharacter() const noexcept;
 
         void InjectSequence(InjectionType type);
         const til::small_vector<Injection, 8>& GetInjections() const noexcept;

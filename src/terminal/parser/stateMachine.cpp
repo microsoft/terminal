@@ -2192,19 +2192,6 @@ void Microsoft::Console::VirtualTerminal::StateMachine::_processStringIncomplete
     }
 }
 
-// Routine Description:
-// - Determines whether the character being processed is the last in the
-//   current output fragment, or there are more still to come. Other parts
-//   of the framework can use this information to work more efficiently.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if we're processing the last character. False if not.
-bool StateMachine::IsProcessingLastCharacter() const noexcept
-{
-    return _runEnd == _currentString.size();
-}
-
 void StateMachine::InjectSequence(const InjectionType type)
 {
     _injections.emplace_back(type, _runEnd);
