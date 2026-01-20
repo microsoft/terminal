@@ -69,6 +69,10 @@
       <DependentUpon>NullableColorPicker.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="IconPicker.h">
+      <DependentUpon>IconPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="EditColorScheme.h">
       <DependentUpon>EditColorScheme.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -194,6 +198,9 @@
     <Page Include="NullableColorPicker.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="IconPicker.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="EditColorScheme.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -268,6 +275,10 @@
     </ClCompile>
     <ClCompile Include="NullableColorPicker.cpp">
       <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="IconPicker.cpp">
+      <DependentUpon>IconPicker.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="EditColorScheme.cpp">
@@ -397,6 +408,10 @@
     </Midl>
     <Midl Include="NullableColorPicker.idl">
       <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="IconPicker.idl">
+      <DependentUpon>IconPicker.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="EditColorScheme.idl">

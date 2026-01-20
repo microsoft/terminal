@@ -33,7 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void UpdateFontList() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
-        static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> BuiltInIcons() noexcept { return _BuiltInIcons; };
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
@@ -76,23 +75,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return _profile.Icon().Resolved();
         }
-        Windows::Foundation::IInspectable CurrentIconType() const noexcept
-        {
-            return _currentIconType;
-        }
         Windows::UI::Xaml::Controls::IconElement IconPreview() const;
         winrt::hstring LocalizedIcon() const;
-        void CurrentIconType(const Windows::Foundation::IInspectable& value);
-        bool UsingNoIcon() const;
-        bool UsingBuiltInIcon() const;
-        bool UsingEmojiIcon() const;
-        bool UsingImageIcon() const;
         winrt::hstring IconPath() const { return _profile.Icon().Path(); }
         void IconPath(const winrt::hstring& path)
         {
             Icon(Model::MediaResourceHelper::FromString(path));
             _NotifyChanges(L"Icon", L"IconPath");
         }
+        bool UsingNoIcon() const noexcept;
 
         constexpr bool TmuxControlEnabled() noexcept
         {
@@ -129,8 +120,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(ProfileSubPage, CurrentPage);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::BellSoundViewModel>, CurrentBellSounds);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::EnumEntry, CurrentBuiltInIcon, nullptr);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentEmojiIcon);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
@@ -171,7 +160,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
         WINRT_PROPERTY(hstring, ElementToFocus);
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Windows::Foundation::IInspectable>, IconTypes);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
@@ -182,8 +170,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
-        winrt::hstring _lastIconPath;
-        Windows::Foundation::IInspectable _currentIconType{};
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::UI::Core::CoreDispatcher _dispatcher;
 
@@ -194,13 +180,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _MarkDuplicateBellSoundDirectories();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
-        static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> _BuiltInIcons;
 
         Model::CascadiaSettings _appSettings;
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
-        void _UpdateBuiltInIcons();
-        void _DeduceCurrentIconType();
-        void _DeduceCurrentBuiltInIcon();
     };
 
     struct DeleteProfileEventArgs :

@@ -38,11 +38,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddFolderNameTextBox_KeyDown(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void AddFolderNameTextBox_TextChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::Controls::TextChangedEventArgs& e);
 
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _windowRoot; }
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(Editor::NewTabMenuViewModel, ViewModel, _PropertyChangedHandlers, nullptr);
 
     private:
         Editor::NewTabMenuEntryViewModel _draggedEntry{ nullptr };
+        Editor::IHostedInWindow _windowRoot;
 
         void _ScrollToEntry(const Editor::NewTabMenuEntryViewModel& entry);
     };
