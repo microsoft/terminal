@@ -759,7 +759,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             return RS_switchable_(L"NewWindowCommandKey");
         }
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NewWindowCommandKey"), newTerminalArgsStr) };
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NewWindowCommandKey"), newTerminalArgsStr);
     }
 
     winrt::hstring PrevTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
@@ -770,7 +770,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
-        return winrt::hstring(fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"PrevTabCommandKey"), mode));
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"PrevTabCommandKey"), mode);
     }
 
     winrt::hstring NextTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
@@ -781,7 +781,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
-        return winrt::hstring(fmt::format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NextTabCommandKey"), mode));
+        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NextTabCommandKey"), mode);
     }
 
     winrt::hstring RenameWindowArgs::GenerateName(const winrt::WARC::ResourceContext& context) const

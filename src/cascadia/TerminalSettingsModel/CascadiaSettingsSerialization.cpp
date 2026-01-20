@@ -1122,11 +1122,11 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
             userSettings.fixupsAppliedDuringLoad = true; // Make sure we save the settings.
             if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
             {
-                hstring newName{ fmt::format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name()) };
+                auto newName = til::hstring_format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name());
                 int differentiator = 2;
                 while (userSettings.colorSchemes.contains(newName))
                 {
-                    newName = hstring{ fmt::format(FMT_COMPILE(L"{} (modified {})"), existingScheme->Name(), differentiator++) };
+                    newName = til::hstring_format(FMT_COMPILE(L"{} (modified {})"), existingScheme->Name(), differentiator++);
                 }
                 // Rename the user's scheme.
                 existingScheme->Name(newName);
