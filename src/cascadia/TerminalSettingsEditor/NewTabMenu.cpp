@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "NewTabMenu.h"
+#include "NavigateToPageArgs.g.h"
 #include "NewTabMenu.g.cpp"
 #include "NewTabMenuEntryTemplateSelector.g.cpp"
 #include "EnumEntry.h"
@@ -41,7 +42,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void NewTabMenu::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::NewTabMenuViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::NewTabMenuViewModel>();
+
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,
