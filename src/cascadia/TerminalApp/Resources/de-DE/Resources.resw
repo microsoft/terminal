@@ -152,12 +152,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Beim Laden von Benutzereinstellungen sind Fehler aufgetreten</value>
   </data>
-  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
-    <value>OK</value>
-  </data>
-  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
-    <value>Warnung:</value>
-  </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
     <value>Der "{0}" wird nicht auf Ihrem Computer ausgeführt. Dies kann verhindern, dass die Terminal Tastatur Eingaben empfangen.</value>
     <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
@@ -171,20 +165,8 @@
   <data name="AboutMenuItem" xml:space="preserve">
     <value>Info</value>
   </data>
-  <data name="FeedbackMenuItem" xml:space="preserve">
-    <value>Feedback</value>
-  </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Einstellungen</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Abbrechen</value>
-  </data>
-  <data name="CloseAll" xml:space="preserve">
-    <value>Alle schließen</value>
-  </data>
-  <data name="Quit" xml:space="preserve">
-    <value>Beenden</value>
   </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Mehrere Bereiche</value>
@@ -291,13 +273,6 @@
   <data name="UnknownTheme" xml:space="preserve">
     <value>• Das angegebene "Design" wurde in der Liste der Designs nicht gefunden. Vorübergehender Fallback auf den Standardwert.</value>
     <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
-  </data>
-  <data name="LegacyGlobalsProperty" xml:space="preserve">
-    <value>Die Eigenschaft "globals" ist veraltet. Möglicherweise müssen Sie Ihre Einstellungen aktualisieren. </value>
-    <comment>{Locked="\"globals\""} </comment>
-  </data>
-  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
-    <value>Weitere Informationen hierzu finden Sie auf dieser Webseite.</value>
   </data>
   <data name="FailedToParseCommandJson" xml:space="preserve">
     <value>Fehler beim Erweitern eines Befehls mit "iterateOn". Dieser Befehl wird ignoriert.</value>
@@ -479,20 +454,11 @@
   <data name="ElevatedRun.Text" xml:space="preserve">
     <value>STRG+Klicken, um als Administrator zu öffnen</value>
   </data>
-  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Schließen</value>
-  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Schließen</value>
   </data>
   <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
     <value>Schließen</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Maximieren</value>
-  </data>
-  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Minimieren</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Minimieren</value>
@@ -512,10 +478,6 @@
   <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
     <value>Version:</value>
     <comment>This is the heading for a version number label</comment>
-  </data>
-  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Erste Schritte</value>
-    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
     <value>Quellcode</value>
@@ -792,17 +754,8 @@
   <data name="ExportTabText" xml:space="preserve">
     <value>Text exportieren</value>
   </data>
-  <data name="ExportFailure" xml:space="preserve">
-    <value>Exportieren des Terminalinhalts fehlgeschlagen</value>
-  </data>
-  <data name="ExportSuccess" xml:space="preserve">
-    <value>Terminalinhalt wurde erfolgreich exportiert</value>
-  </data>
   <data name="FindText" xml:space="preserve">
     <value>Suchen</value>
-  </data>
-  <data name="PlainText" xml:space="preserve">
-    <value>Unformatierter Text</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Das Beendigungsverhalten kann in den erweiterten Profileinstellungen konfiguriert werden.</value>
@@ -908,10 +861,6 @@
   <data name="TerminalPage_TabMovedAnnouncement_Direction" xml:space="preserve">
     <value>Registerkarte „{0}“ an Position „{1}“ verschoben</value>
     <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
-  </data>
-  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
-    <value>Der aktive Bereich wurde in "{1}" Fenster auf "{0}" Registerkarte verschoben.</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
     <value>Der aktive Bereich wurde in das Fenster "{0}" verschoben</value>

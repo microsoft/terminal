@@ -71,6 +71,9 @@ parameters:
   - name: enableCaching
     type: boolean
     default: false
+  - name: afterBuildSteps
+    type: stepList
+    default: []
 
 jobs:
 - job: ${{ parameters.jobName }}
@@ -130,11 +133,11 @@ jobs:
           $SignFragments += "wpfdotnet"
         }
         If ([bool]::Parse("${{ parameters.buildWPF }}")) {
-          $BuildTargets += "Terminal\Control\Microsoft_Terminal_Control"
+          $BuildTargets += "Terminal\Control\TerminalControl"
           $SignFragments += "wpf"
         }
         If ([bool]::Parse("${{ parameters.buildConPTY }}")) {
-          $BuildTargets += "Conhost\Host_EXE;Conhost\winconpty_DLL"
+          $BuildTargets += "Conhost\Host_EXE;Conhost\winconptydll"
           $SignFragments += "conpty"
         }
         Write-Host "Targets: $($BuildTargets -Join ";")"
@@ -209,6 +212,8 @@ jobs:
         inputs:
           contents: $(Build.SourcesDirectory)/MSBuildCacheLogs/**
           TargetFolder: $(Terminal.BinDir)/MSBuildCacheLogs
+
+  - ${{ parameters.afterBuildSteps }}
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:

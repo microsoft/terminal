@@ -615,7 +615,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return action.Name();
         }
-        return hstring{ fmt::format(L"{}: {}", RS_(L"NewTabMenu_ActionNotFound"), actionID) };
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"NewTabMenu_ActionNotFound"), actionID);
     }
 
     hstring ActionEntryViewModel::Icon() const

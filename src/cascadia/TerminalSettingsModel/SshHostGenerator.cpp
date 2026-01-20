@@ -36,12 +36,12 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 winrt::hstring _getProfileName(const std::wstring_view& hostName) noexcept
 {
-    return winrt::hstring{ fmt::format(FMT_COMPILE(L"{0}{1}"), PROFILE_TITLE_PREFIX, hostName) };
+    return til::hstring_format(FMT_COMPILE(L"{0}{1}"), PROFILE_TITLE_PREFIX, hostName);
 }
 
 winrt::hstring _getProfileCommandLine(const std::wstring_view& sshExePath, const std::wstring_view& hostName) noexcept
 {
-    return winrt::hstring{ fmt::format(FMT_COMPILE(LR"("{0}" {1})"), sshExePath, hostName) };
+    return til::hstring_format(FMT_COMPILE(LR"("{0}" {1})"), sshExePath, hostName);
 }
 
 /*static*/ bool SshHostGenerator::_tryFindSshExePath(std::wstring& sshExePath) noexcept

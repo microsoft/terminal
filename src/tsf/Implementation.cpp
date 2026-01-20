@@ -38,8 +38,6 @@ using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPro
 // --------
 //
 // In any case, we pass the same flags as conhost v1:
-// - TF_TMAE_UIELEMENTENABLEDONLY: TSF activates only text services that are
-//   categorized in GUID_TFCAT_TIPCAP_UIELEMENTENABLED.
 // - TF_TMAE_NOACTIVATEKEYBOARDLAYOUT: TSF does not sync the current keyboard layout
 //   while this method is called. The keyboard layout will be adjusted when the
 //   calling thread gets focus. This flag must be used with TF_TMAE_NOACTIVATETIP.
@@ -48,7 +46,12 @@ using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPro
 //   from this, because Korean relies on "recomposing" previously finished compositions.
 //   That can't work in a terminal, since we submit composed text to the shell immediately.
 //
-// I'm not sure what TF_TMAE_UIELEMENTENABLEDONLY does. I tried to figure it out but failed.
+// ...with the exception of, for the following reason:
+// - TF_TMAE_UIELEMENTENABLEDONLY: This flag tells TSF that the caller wants to render its
+//   own candidate "window". The required interface for that is `UIElement` and so it only works
+//   with TIPs (Text Input Panel) that flag themselves as `GUID_TFCAT_TIPCAP_UIELEMENTENABLED`.
+//   We don't support an "UILess" mode (= don't render our own TIP) and so we should not set this flag.
+//   See: https://learn.microsoft.com/en-us/windows/win32/tsf/uiless-mode-overview
 //
 // For TF_TMAE_NOACTIVATEKEYBOARDLAYOUT, I'm 99% sure it doesn't do anything, including in
 // conhost v1. This is because IMM will be initialized on WM_ACTIVATE, which calls ActivateEx(0).
@@ -56,7 +59,7 @@ using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPro
 // TF_TMAE_NOACTIVATETIP which are explicitly filtered out.
 //
 // TF_TMAE_NOACTIVATETIP however is important. Without it, TIPs are immediately initialized.
-static std::atomic<DWORD> s_activationFlags{ TF_TMAE_NOACTIVATETIP | TF_TMAE_UIELEMENTENABLEDONLY | TF_TMAE_NOACTIVATEKEYBOARDLAYOUT | TF_TMAE_CONSOLE };
+static std::atomic<DWORD> s_activationFlags{ TF_TMAE_NOACTIVATETIP | TF_TMAE_NOACTIVATEKEYBOARDLAYOUT | TF_TMAE_CONSOLE };
 void Implementation::AvoidBuggyTSFConsoleFlags() noexcept
 {
     s_activationFlags.fetch_and(~static_cast<DWORD>(TF_TMAE_CONSOLE), std::memory_order_relaxed);
@@ -68,9 +71,14 @@ void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
     s_wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
 }
 
-void Implementation::Initialize()
+bool Implementation::Initialize()
 {
-    _categoryMgr = wil::CoCreateInstance<ITfCategoryMgr>(CLSID_TF_CategoryMgr, CLSCTX_INPROC_SERVER);
+    _categoryMgr = wil::CoCreateInstanceNoThrow<ITfCategoryMgr>(CLSID_TF_CategoryMgr);
+    if (!_categoryMgr)
+    {
+        return false;
+    }
+
     _displayAttributeMgr = wil::CoCreateInstance<ITfDisplayAttributeMgr>(CLSID_TF_DisplayAttributeMgr);
 
     // There's no point in calling TF_GetThreadMgr. ITfThreadMgr is a per-thread singleton.
@@ -89,6 +97,7 @@ void Implementation::Initialize()
     THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
 
     THROW_IF_FAILED(_documentMgr->Push(_context.get()));
+    return true;
 }
 
 void Implementation::Uninitialize() noexcept

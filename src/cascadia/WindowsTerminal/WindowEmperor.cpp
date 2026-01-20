@@ -861,6 +861,9 @@ safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool 
 
     // We must yield to a background thread, because MessageBoxW() is a blocking call, and we can't
     // block the main thread. That would prevent us from servicing WM_COPYDATA messages and similar.
+    //
+    // NOTE: All remaining code of this function doesn't touch `this`, so we don't need weak/strong_ref.
+    // NOTE NOTE: Don't touch `this` when you make changes here.
     co_await winrt::resume_background();
 
     const auto messageTitle = error ? IDS_ERROR_DIALOG_TITLE : IDS_HELP_DIALOG_TITLE;
@@ -910,9 +913,18 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                         // which would change the _windows array, and invalidate our iterator and crash.
                         //
                         // We can prevent this by deferring Close() until after the erase() call.
+                        //
+                        // Wrapping it in an exception handler will prevent us from losing track of the window count, at
+                        // the perceived cost of leaking all the resources. However, the resources were being leaked
+                        // anyway (since we threw and exited this message handler) so this at least gives back our
+                        // deterministic window count management.
                         const auto strong = *it;
                         _windows.erase(it);
-                        strong->Close();
+                        try
+                        {
+                            strong->Close();
+                        }
+                        CATCH_LOG();
                         break;
                     }
                 }
@@ -982,7 +994,13 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 if (isCurrentlyDark != _currentSystemThemeIsDark)
                 {
                     _currentSystemThemeIsDark = isCurrentlyDark;
-                    _app.Logic().ReloadSettings();
+
+                    // GH#19505: WM_SETTINGCHANGE gets sent out with a SendMessage() call, which means
+                    // that COM methods marked as [input_sync] cannot be called. Well, our CascadiaSettings
+                    // loader does call such methods. This results in RPC_E_CANTCALLOUT_ININPUTSYNCCALL, aka:
+                    // "An outgoing call cannot be made since the application is dispatching an input-synchronous call."
+                    // The solution is to simply do it in another tick.
+                    _app.Logic().ReloadSettingsThrottled();
                 }
             }
             return 0;

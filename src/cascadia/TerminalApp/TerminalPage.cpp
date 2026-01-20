@@ -5,10 +5,15 @@
 #include "pch.h"
 #include "TerminalPage.h"
 
-#include <TerminalThemeHelpers.h>
-#include <Utils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
+#include <TerminalThemeHelpers.h>
+#include <til/hash.h>
+#include <til/unicode.h>
+#include <Utils.h>
 
+#include "../../types/inc/ColorFix.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "App.h"
 #include "DebugTapConnection.h"
 #include "MarkdownPaneContent.h"
@@ -18,9 +23,6 @@
 #include "SnippetsPaneContent.h"
 #include "TabRowControl.h"
 #include "TerminalSettingsCache.h"
-#include "../../types/inc/ColorFix.hpp"
-#include "../../types/inc/utils.hpp"
-#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 #include "LaunchPositionRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
@@ -2205,7 +2207,15 @@ namespace winrt::TerminalApp::implementation
         if (!_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
+
+            const auto weak = get_weak();
             auto warningResult = co_await _ShowQuitDialog();
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
+
             _displayingCloseDialog = false;
 
             if (warningResult != ContentDialogResult::Primary)
@@ -2995,7 +3005,19 @@ namespace winrt::TerminalApp::implementation
             {
                 // We have to initialize the dialog here to be able to change the text of the text block within it
                 std::ignore = FindName(L"MultiLinePasteDialog");
-                ClipboardText().Text(text);
+
+                // WinUI absolutely cannot deal with large amounts of text (at least O(n), possibly O(n^2),
+                // so we limit the string length here and add an ellipsis if necessary.
+                auto clipboardText = text;
+                if (clipboardText.size() > 1024)
+                {
+                    const std::wstring_view view{ text };
+                    // Make sure we don't cut in the middle of a surrogate pair
+                    const auto len = til::utf16_iterate_prev(view, 512);
+                    clipboardText = til::hstring_format(FMT_COMPILE(L"{}\n…"), view.substr(0, len));
+                }
+
+                ClipboardText().Text(std::move(clipboardText));
 
                 // The vertical offset on the scrollbar does not reset automatically, so reset it manually
                 ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
@@ -3011,7 +3033,7 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // Clear the clipboard text so it doesn't lie around in memory
-                ClipboardText().Text(L"");
+                ClipboardText().Text({});
 
                 if (warningResult != ContentDialogResult::Primary)
                 {
@@ -3191,8 +3213,12 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the arguments specifying how to set the progress indicator
     safe_void_coroutine TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
+        const auto weak = get_weak();
         co_await wil::resume_foreground(Dispatcher());
-        SetTaskbarProgress.raise(*this, nullptr);
+        if (const auto strong = weak.get())
+        {
+            SetTaskbarProgress.raise(*this, nullptr);
+        }
     }
 
     // Method Description:
@@ -3249,6 +3275,12 @@ namespace winrt::TerminalApp::implementation
         {
             co_return;
         }
+
+        const auto weak = get_weak();
+        const auto dispatcher = Dispatcher();
+
+        // All of the code until resume_foreground is static and
+        // doesn't touch `this`, so we don't need weak/strong_ref.
         co_await winrt::resume_background();
 
         // no packages were found, nothing to suggest
@@ -3266,7 +3298,12 @@ namespace winrt::TerminalApp::implementation
             suggestions.emplace_back(fmt::format(FMT_COMPILE(L"winget install --id {} -s winget"), pkg.CatalogPackage().Id()));
         }
 
-        co_await wil::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         auto term = _GetActiveControl();
         if (!term)
@@ -3361,6 +3398,9 @@ namespace winrt::TerminalApp::implementation
             // UI) thread. This is IMPORTANT, because the Windows.Storage API's
             // (used for retrieving the path to the file) will crash on the UI
             // thread, because the main thread is a STA.
+            //
+            // NOTE: All remaining code of this function doesn't touch `this`, so we don't need weak/strong_ref.
+            // NOTE NOTE: Don't touch `this` when you make changes here.
             co_await winrt::resume_background();
 
             auto openFile = [](const auto& filePath) {
@@ -4722,12 +4762,18 @@ namespace winrt::TerminalApp::implementation
     // - sender: the ICoreState instance containing the connection state
     // Return Value:
     // - <none>
-    safe_void_coroutine TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/) const
+    safe_void_coroutine TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/)
     {
         if (const auto coreState{ sender.try_as<winrt::Microsoft::Terminal::Control::ICoreState>() })
         {
             const auto newConnectionState = coreState.ConnectionState();
+            const auto weak = get_weak();
             co_await wil::resume_foreground(Dispatcher());
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
 
             _adjustProcessPriorityThrottled->Run();
 
@@ -4865,8 +4911,18 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // GH#19604: Get the theme's tabRow color to use as the acrylic tint.
+        const auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
+                                                            theme.TabRow().UnfocusedBackground()) :
+                                              ThemeColor{ nullptr } };
+
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
+            if (tabRowBg)
+            {
+                bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
+            }
+
             const auto acrylicBrush = Media::AcrylicBrush();
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
@@ -4875,9 +4931,7 @@ namespace winrt::TerminalApp::implementation
 
             TitlebarBrush(acrylicBrush);
         }
-        else if (auto tabRowBg{ theme.TabRow() ? (_activated ? theme.TabRow().Background() :
-                                                               theme.TabRow().UnfocusedBackground()) :
-                                                 ThemeColor{ nullptr } })
+        else if (tabRowBg)
         {
             const auto themeBrush{ tabRowBg.Evaluate(res, terminalBrush, true) };
             bgColor = ThemeColor::ColorFromBrush(themeBrush);
@@ -5000,9 +5054,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_adjustProcessPriority() const
     {
         // Windowing is single-threaded, so this will not cause a race condition.
-        static bool supported{ true };
+        static uint64_t s_lastUpdateHash{ 0 };
+        static bool s_supported{ true };
 
-        if (!supported || !_hostingHwnd.has_value())
+        if (!s_supported || !_hostingHwnd.has_value())
         {
             return;
         }
@@ -5066,11 +5121,20 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto count{ gsl::narrow_cast<DWORD>(it - processes.begin()) };
+        const auto hash = til::hash((void*)processes.data(), count * sizeof(HANDLE));
+
+        if (hash == s_lastUpdateHash)
+        {
+            return;
+        }
+
+        s_lastUpdateHash = hash;
         const auto hr = TerminalTrySetWindowAssociatedProcesses(_hostingHwnd.value(), count, count ? processes.data() : nullptr);
+
         if (S_FALSE == hr)
         {
             // Don't bother trying again or logging. The wrapper tells us it's unsupported.
-            supported = false;
+            s_supported = false;
             return;
         }
 

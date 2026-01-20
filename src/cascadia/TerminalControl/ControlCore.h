@@ -344,11 +344,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
+        void _rendererEnteredErrorState();
 #pragma endregion
 
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode();
-        void _connectionOutputHandler(const hstring& hstr);
+        void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
         void _setOpacity(const float opacity, const bool focused = true);
@@ -398,6 +399,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float _panelWidth{ 0 };
         float _panelHeight{ 0 };
         float _compositionScale{ 0 };
+        uint8_t _renderFailures{ 0 };
         bool _forceCursorVisible = false;
 
         // Audio stuff.

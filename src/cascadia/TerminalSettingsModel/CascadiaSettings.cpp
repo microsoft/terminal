@@ -587,6 +587,16 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
         }
     }
 
+    if (origin == winrt::Microsoft::Terminal::Settings::Model::OriginTag::Fragment)
+    {
+        if (PathIsUNCEx(resourcePath.c_str(), nullptr))
+        {
+            // A UNC path is just another type of network path, which fragments are not allowed to specify.
+            resource.Reject();
+            return;
+        }
+    }
+
     // Not a URI? Try a path.
     try
     {

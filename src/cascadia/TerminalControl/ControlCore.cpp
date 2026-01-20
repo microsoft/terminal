@@ -10,8 +10,6 @@
 
 #include <DefaultSettings.h>
 #include <unicode.hpp>
-#include <utils.hpp>
-#include <WinUser.h>
 
 #include "EventArgs.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -152,10 +150,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
             _renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });
-            _renderer->SetRendererEnteredErrorStateCallback([this]() { RendererEnteredErrorState.raise(nullptr, nullptr); });
+            _renderer->SetRendererEnteredErrorStateCallback([this]() { _rendererEnteredErrorState(); });
         }
 
         UpdateSettings(settings, unfocusedAppearance);
+    }
+
+    void ControlCore::_rendererEnteredErrorState()
+    {
+        // The first time the renderer fails out (after all of its own retries), switch it to D2D and WARP
+        // and force it to try again. If it _still_ fails, we can let it halt.
+        if (_renderFailures++ == 0)
+        {
+            const auto lock = _terminal->LockForWriting();
+            _renderEngine->SetGraphicsAPI(parseGraphicsAPI(GraphicsAPI::Direct2D));
+            _renderEngine->SetSoftwareRendering(true);
+            _renderer->EnablePainting();
+            return;
+        }
+        RendererEnteredErrorState.raise(nullptr, nullptr);
     }
 
     void ControlCore::_setupDispatcherAndCallbacks()
@@ -917,6 +930,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+        _renderFailures = 0; // We may have changed the engine; reset the failure counter.
 
         // Trigger a redraw to repaint the window background and tab colors.
         _renderer->TriggerRedrawAll(true, true);
@@ -1983,6 +1997,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // The lock must be held, because it calls into IRenderData which is shared state.
         const auto lock = _terminal->LockForWriting();
+        _renderFailures = 0;
         _renderer->EnablePainting();
     }
 
@@ -2221,13 +2236,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         RaiseNotice.raise(*this, std::move(noticeArgs));
     }
-    void ControlCore::_connectionOutputHandler(const hstring& hstr)
+    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)
     {
         try
         {
             {
                 const auto lock = _terminal->LockForWriting();
-                _terminal->Write(hstr);
+                _terminal->Write(winrt_array_to_wstring_view(str));
             }
 
             if (!_pendingResponses.empty())

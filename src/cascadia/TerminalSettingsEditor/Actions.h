@@ -16,12 +16,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Actions();
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-        Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-
-        void AddNew_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(Editor::ActionsViewModel, ViewModel, PropertyChanged.raise, nullptr);
+
+    private:
+        winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
     };
 }
 
