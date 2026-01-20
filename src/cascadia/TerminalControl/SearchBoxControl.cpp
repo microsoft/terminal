@@ -329,10 +329,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - bool: whether the current focus is on the search box
     bool SearchBoxControl::ContainsFocus()
     {
-        auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot());
-        if (_focusableElements.count(focusedElement) > 0)
+        // BODGY: It is possible for this to get called with no XAML root. We are unsure why.
+        if (auto root = XamlRoot())
         {
-            return true;
+            auto focusedElement = Input::FocusManager::GetFocusedElement(root);
+            if (_focusableElements.count(focusedElement) > 0)
+            {
+                return true;
+            }
         }
 
         return false;
@@ -463,9 +467,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - totalMatches - total number of matches (search results)
     // - currentMatch - the index of the current match (0-based)
+    // - isAccessible - if true, format the string for screen readers. Defaults to false.
     // Return Value:
     // - status message
-    winrt::hstring SearchBoxControl::_FormatStatus(int32_t totalMatches, int32_t currentMatch)
+    winrt::hstring SearchBoxControl::_FormatStatus(int32_t totalMatches, int32_t currentMatch, bool isAccessible)
     {
         if (totalMatches < 0)
         {
@@ -482,7 +487,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (currentMatch < 0 || currentMatch > (MaximumTotalResultsToShowInStatus - 1))
         {
-            currentString = CurrentIndexTooHighStatus;
+            currentString = isAccessible ? RS_(L"TermControl_UnknownSearchResultIndex") : CurrentIndexTooHighStatus;
         }
         else
         {
@@ -491,13 +496,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (totalMatches > MaximumTotalResultsToShowInStatus)
         {
-            totalString = TotalResultsTooHighStatus;
+            totalString = isAccessible ? RS_(L"TermControl_TooManySearchResults") : TotalResultsTooHighStatus;
         }
         else
         {
             totalString = fmt::to_wstring(totalMatches);
         }
 
+        if (isAccessible)
+        {
+            return winrt::hstring{ RS_fmt(L"TermControl_NumResultsAccessible", currentString, totalString) };
+        }
         return winrt::hstring{ RS_fmt(L"TermControl_NumResults", currentString, totalString) };
     }
 
@@ -558,9 +567,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Formats and returns an accessible status message representing the search state.
+    // - Similar to SetStatus but returns a more descriptive string for screen readers.
+    hstring SearchBoxControl::GetAccessibleStatus(int32_t totalMatches, int32_t currentMatch, bool searchRegexInvalid)
+    {
+        if (searchRegexInvalid)
+        {
+            return RS_(L"SearchRegexInvalid");
+        }
+        return _FormatStatus(totalMatches, currentMatch, true);
+    }
+
+    // Method Description:
     // - Removes the status message in the status box.
     void SearchBoxControl::ClearStatus()
     {
-        StatusBox().Text(L"");
+        StatusBox().Text({});
     }
 }

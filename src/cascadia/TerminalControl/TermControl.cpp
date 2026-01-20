@@ -3062,12 +3062,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             co_return;
         }
 
+        const auto weak = get_weak();
+
         if (e.DataView().Contains(StandardDataFormats::ApplicationLink()))
         {
             try
             {
                 auto link{ co_await e.DataView().GetApplicationLinkAsync() };
-                _pasteTextWithBroadcast(link.AbsoluteUri());
+                if (const auto strong = weak.get())
+                {
+                    _pasteTextWithBroadcast(link.AbsoluteUri());
+                }
             }
             CATCH_LOG();
         }
@@ -3076,7 +3081,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 auto link{ co_await e.DataView().GetWebLinkAsync() };
-                _pasteTextWithBroadcast(link.AbsoluteUri());
+                if (const auto strong = weak.get())
+                {
+                    _pasteTextWithBroadcast(link.AbsoluteUri());
+                }
             }
             CATCH_LOG();
         }
@@ -3085,7 +3093,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 auto text{ co_await e.DataView().GetTextAsync() };
-                _pasteTextWithBroadcast(text);
+                if (const auto strong = weak.get())
+                {
+                    _pasteTextWithBroadcast(text);
+                }
             }
             CATCH_LOG();
         }
@@ -3145,6 +3156,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     {
                         fullPaths.emplace_back(item.Path());
                     }
+                }
+
+                const auto strong = weak.get();
+                if (!strong)
+                {
+                    co_return;
                 }
 
                 std::wstring allPathsString;
@@ -3489,9 +3506,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     safe_void_coroutine TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
     {
+        if (!args)
+        {
+            co_return;
+        }
+
         auto weakThis{ get_weak() };
         co_await resume_foreground(Dispatcher());
-        if (weakThis.get() && args)
+        if (const auto strong = weakThis.get())
         {
             if (_core.HasSelection() && !args.ClearMarkers())
             {
@@ -3767,13 +3789,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 };
                 _updateScrollBar->Run(update);
             }
+        }
 
-            if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(*this) })
+        {
+            const auto status = _searchBox->GetAccessibleStatus(results.TotalMatches, results.CurrentMatch, results.SearchRegexInvalid);
+            if (!status.empty())
             {
                 automationPeer.RaiseNotificationEvent(
                     AutomationNotificationKind::ActionCompleted,
                     AutomationNotificationProcessing::ImportantMostRecent,
-                    results.TotalMatches > 0 ? RS_(L"SearchBox_MatchesAvailable") : RS_(L"SearchBox_NoMatches"), // what to announce if results were found
+                    status,
                     L"SearchBoxResultAnnouncement" /* unique name for this group of notifications */);
             }
         }

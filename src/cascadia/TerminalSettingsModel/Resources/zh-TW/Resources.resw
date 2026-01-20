@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>移動索引標籤 {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>將索引標籤移至視窗「{0}」</value>
@@ -182,10 +182,10 @@
     <value>將索引標籤移至新視窗</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>往前</value>
+    <value>向前 (右)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>往後</value>
+    <value>倒退 (左)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>關閉目前索引標籤之後的全部索引標籤</value>

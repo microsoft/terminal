@@ -34,9 +34,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
             // before actually starting the connection to the client app. This
             // will ensure both controls are initialized before the client app
             // is.
+            const auto weak = get_weak();
             co_await winrt::resume_background();
-            _pairedTap->_start.wait();
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
 
+            _pairedTap->_start.wait();
             _wrappedConnection.Start();
         }
         void WriteInput(const winrt::array_view<const char16_t> buffer)
