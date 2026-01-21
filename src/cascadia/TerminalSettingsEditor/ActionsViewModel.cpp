@@ -126,13 +126,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void CommandViewModel::Name(const winrt::hstring& newName)
     {
-        _command.Name(newName);
-        if (newName.empty())
+        if (_command.Name() != newName)
         {
-            // if the name was cleared, refresh the DisplayName
+            _command.Name(newName);
             _NotifyChanges(L"DisplayName", L"DisplayNameAndKeyChordAutomationPropName");
+            _cachedDisplayName.clear();
         }
-        _cachedDisplayName.clear();
     }
 
     winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
@@ -283,7 +282,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     weak->_ReplaceCommandWithUserCopy(false);
                 }
-                weak->_NotifyChanges(L"DisplayName");
+                if (!weak->_command.HasName())
+                {
+                    weak->_NotifyChanges(L"DisplayName");
+                }
             }
         });
     }
@@ -320,7 +322,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _RegisterActionArgsVMEvents(*actionArgsVM);
         actionArgsVM->Initialize();
         ActionArgsVM(*actionArgsVM);
-        _NotifyChanges(L"DisplayName");
+        if (!_command.HasName())
+        {
+            _NotifyChanges(L"DisplayName");
+        }
     }
 
     ArgWrapper::ArgWrapper(const Model::ArgDescriptor& descriptor, const Windows::Foundation::IInspectable& value) :
@@ -1186,6 +1191,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentPage(ActionsSubPage::Edit);
     }
 
+    void ActionsViewModel::ReSortCommandList()
+    {
+        if (_CommandListDirty)
+        {
+            std::vector<Editor::CommandViewModel> commandList;
+            commandList.reserve(_CommandList.Size());
+            for (const auto& cmd : _CommandList)
+            {
+                commandList.push_back(cmd);
+            }
+            std::sort(commandList.begin(), commandList.end(), [](const Editor::CommandViewModel& lhs, const Editor::CommandViewModel& rhs) {
+                return lhs.DisplayName() < rhs.DisplayName();
+            });
+            _CommandList = single_threaded_observable_vector(std::move(commandList));
+            _NotifyChanges(L"CommandList");
+            _CommandListDirty = false;
+        }
+    }
+
     void ActionsViewModel::CurrentCommand(const Editor::CommandViewModel& newCommand)
     {
         _CurrentCommand = newCommand;
@@ -1356,5 +1380,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         cmdVM->DeleteRequested({ this, &ActionsViewModel::_CmdVMDeleteRequestedHandler });
         cmdVM->PropagateColorSchemeRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeRequestedHandler });
         cmdVM->PropagateColorSchemeNamesRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeNamesRequestedHandler });
+        cmdVM->PropertyChanged([weakThis{ get_weak() }](const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+            if (const auto self{ weakThis.get() })
+            {
+                const auto senderVM{ sender.as<Editor::CommandViewModel>() };
+                const auto propertyName{ args.PropertyName() };
+                if (propertyName == L"DisplayName")
+                {
+                    // when a command's name changes, note that we need to re-sort the command list when we navigate back to the actions page
+                    self->_CommandListDirty = true;
+                }
+            }
+        });
     }
 }
