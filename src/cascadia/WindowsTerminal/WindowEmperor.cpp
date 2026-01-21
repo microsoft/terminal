@@ -994,7 +994,13 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 if (isCurrentlyDark != _currentSystemThemeIsDark)
                 {
                     _currentSystemThemeIsDark = isCurrentlyDark;
-                    _app.Logic().ReloadSettings();
+
+                    // GH#19505: WM_SETTINGCHANGE gets sent out with a SendMessage() call, which means
+                    // that COM methods marked as [input_sync] cannot be called. Well, our CascadiaSettings
+                    // loader does call such methods. This results in RPC_E_CANTCALLOUT_ININPUTSYNCCALL, aka:
+                    // "An outgoing call cannot be made since the application is dispatching an input-synchronous call."
+                    // The solution is to simply do it in another tick.
+                    _app.Logic().ReloadSettingsThrottled();
                 }
             }
             return 0;
