@@ -136,7 +136,11 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
 
         // We only apply the color if the R, G, B values fit within a byte.
         // This is to match XTerm's and VTE's behavior.
-        if (!hasColorSpaceId && red <= 255 && green <= 255 && blue <= 255)
+
+        // Allow the color if (No ID exists OR The ID is 0) AND colors are valid
+        bool validId = !hasColorSpaceId || (options.at(1).value() == 0);
+
+        if (validId && red <= 255 && green <= 255 && blue <= 255)
         {
             applyColor(TextColor{ RGB(red, green, blue) });
         }
