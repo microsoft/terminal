@@ -88,6 +88,7 @@
     <Link>
       <AllowIsolation>true</AllowIsolation>
       <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>ext-ms-win-com-ole32-l1.dll</DelayLoadDLLs>
       <DelayLoadDLLs>icu.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
