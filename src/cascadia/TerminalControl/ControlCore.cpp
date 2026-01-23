@@ -1748,12 +1748,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (searchInvalidated || !request.ResetOnly)
         {
             std::vector<til::point_span> oldResults;
-            til::point_span oldFocused;
-
-            if (const auto focused = _terminal->GetSearchHighlightFocused())
-            {
-                oldFocused = *focused;
-            }
 
             if (searchInvalidated)
             {
@@ -1770,7 +1764,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(std::max<ptrdiff_t>(0, _searcher.CurrentMatch())));
             _renderer->TriggerSearchHighlight(oldResults);
 
-            if (const auto focused = _terminal->GetSearchHighlightFocused(); focused && *focused != oldFocused)
+            if (!request.ResetOnly)
             {
                 _terminal->ScrollToSearchHighlight(request.ScrollOffset);
             }
