@@ -194,24 +194,24 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<IStateMachineEngine> _engine;
         const bool _isEngineForInput;
 
-        VTStates _state;
+        VTStates _state = VTStates::Ground;
 
         til::enumset<Mode> _parserMode{ Mode::Ansi };
 
         std::wstring_view _currentString;
-        size_t _runBeg;
-        size_t _runEnd;
+        size_t _runBeg = 0;
+        size_t _runEnd = 0;
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
-        bool _parameterLimitOverflowed;
         std::vector<VTParameter> _subParameters;
         std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
-        bool _subParameterLimitOverflowed;
-        BYTE _subParameterCounter;
+        bool _parameterLimitOverflowed = false;
+        bool _subParameterLimitOverflowed = false;
+        BYTE _subParameterCounter = 0;
 
         std::wstring _oscString;
-        VTInt _oscParameter;
+        VTInt _oscParameter = 0;
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
 

@@ -13,17 +13,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 //Takes ownership of the pEngine.
 StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine, const bool isEngineForInput) noexcept :
     _engine(std::move(engine)),
-    _isEngineForInput(isEngineForInput),
-    _state(VTStates::Ground),
-    _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
-    _parameters{},
-    _subParameters{},
-    _subParameterRanges{},
-    _parameterLimitOverflowed(false),
-    _subParameterLimitOverflowed(false),
-    _subParameterCounter(0),
-    _oscString{},
-    _cachedSequence{ std::nullopt }
+    _isEngineForInput(isEngineForInput)
 {
     // The state machine must always accept C1 controls for the input engine,
     // otherwise it won't work when the ConPTY terminal has S8C1T enabled.
@@ -1803,77 +1793,58 @@ void StateMachine::_EventDcsPassThrough(const wchar_t)
 {
     _trace.TraceOnEvent(L"DcsPassThrough");
 
-    assert(_runEnd != 0);
-    auto end = _runEnd - 1;
+    // Assuming other functions are correctly implemented,
+    // we're only called when we have data to process.
+    assert(_runEnd != 0 && _runEnd <= _currentString.size());
+
+    const auto end = _currentString.end();
+    auto runEnd = _currentString.begin() + (_runEnd - 1);
 
     for (;;)
     {
-        const auto beg = end;
+        const auto runBeg = runEnd;
 
-        // Find the end of a run of valid DCS characters.
-        for (;;)
+        // Find the sequence terminator (ESC) OR the end of a run of valid DCS characters.
+        for (; runEnd != end && !_isEscape(*runEnd) && !_isC0Code(*runEnd) && _isDcsPassThroughValid(*runEnd); ++runEnd)
         {
-            const auto ch = _currentString[end];
-            if (_isEscape(ch) || _isC0Code(ch) || !_isDcsPassThroughValid(ch))
-            {
-                break;
-            }
-
-            ++end;
-            if (end >= _currentString.size())
-            {
-                break;
-            }
         }
 
         // If we found a run, pass it to the handler.
-        if (beg != end && !_dcsStringHandler(_currentString.substr(beg, end - beg)))
+        if (runBeg != runEnd && !_dcsStringHandler({ runBeg, runEnd }))
         {
             _EnterDcsIgnore();
             break;
         }
 
         // Out of input? Done.
-        if (end >= _currentString.size())
+        if (runEnd == end)
         {
             break;
         }
 
         // Escape character? We treat it as the ST terminator for DCS passthrough.
         // Let StateMachine::ProcessCharacter take care of that.
-        if (_isEscape(_currentString[end]))
+        if (_isEscape(*runEnd))
         {
             break;
         }
 
-        // Skip all invalid characters. This mirrors the search loop above,
-        // including the same post-loop exit conditions.
-        for (;;)
+        // Skip all invalid characters, aka:
+        // Find the sequence terminator (ESC) OR the end of a run of *in*valid DCS characters.
+        for (; runEnd != end && !_isEscape(*runEnd) && (_isC0Code(*runEnd) || !_isDcsPassThroughValid(*runEnd)); ++runEnd)
         {
-            const auto ch = _currentString[end];
-            if (!_isEscape(ch) && !_isC0Code(ch) && _isDcsPassThroughValid(ch))
-            {
-                break;
-            }
-
-            ++end;
-            if (end >= _currentString.size())
-            {
-                break;
-            }
         }
-        if (end >= _currentString.size())
+        if (runEnd == end)
         {
             break;
         }
-        if (_isEscape(_currentString[end]))
+        if (_isEscape(*runEnd))
         {
             break;
         }
     }
 
-    // Mark all of the parsed text as processed.
-    _runEnd = std::max(_runEnd, end);
+    _runEnd = runEnd - _currentString.begin();
 }
 
 // Routine Description:
@@ -2046,6 +2017,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
     if (_state != VTStates::Ground)
     {
         // Jump straight to where we need to.
+#pragma warning(suppress : 26438) // Avoid 'goto' (es.76).
         goto processStringLoopVtStart;
     }
 
@@ -2063,6 +2035,7 @@ void StateMachine::ProcessString(const std::wstring_view string)
                 return;
             }
 
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
             const auto beg = _currentString.data() + _runBeg;
             const auto len = _currentString.size() - _runBeg;
             const auto it = Microsoft::Console::Utils::FindActionableControlCharacter(beg, len);
