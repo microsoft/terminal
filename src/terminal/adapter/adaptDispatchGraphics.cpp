@@ -125,10 +125,10 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
         // sub params are in the order:
         // :2:<color-space-id>:<r>:<g>:<b>
 
-        // We treat a color as invalid if it has a non-empty color space ID, as
+        // We treat a color as invalid if it has a non-zero color space ID, as
         // some applications that support non-standard ODA color sequence might
         // send the red value in its place.
-        const bool hasColorSpaceId = options.at(1).has_value();
+        const bool validColorSpace = options.at(1).value_or(0) == 0;
 
         const size_t red = options.at(2).value_or(0);
         const size_t green = options.at(3).value_or(0);
@@ -136,11 +136,7 @@ void AdaptDispatch::_SetRgbColorsHelperFromSubParams(const VTParameter colorItem
 
         // We only apply the color if the R, G, B values fit within a byte.
         // This is to match XTerm's and VTE's behavior.
-
-        // Allow the color if (No ID exists OR The ID is 0) AND colors are valid
-        bool validId = !hasColorSpaceId || (options.at(1).value() == 0);
-
-        if (validId && red <= 255 && green <= 255 && blue <= 255)
+        if (validColorSpace && red <= 255 && green <= 255 && blue <= 255)
         {
             applyColor(TextColor{ RGB(red, green, blue) });
         }
@@ -482,3 +478,4 @@ void AdaptDispatch::PopGraphicsRendition()
     const auto& currentAttributes = page.Attributes();
     page.SetAttributes(_sgrStack.Pop(currentAttributes));
 }
+
