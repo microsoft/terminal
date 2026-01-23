@@ -478,4 +478,3 @@ void AdaptDispatch::PopGraphicsRendition()
     const auto& currentAttributes = page.Attributes();
     page.SetAttributes(_sgrStack.Pop(currentAttributes));
 }
-
