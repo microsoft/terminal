@@ -55,7 +55,8 @@ namespace Microsoft.Terminal.Control
         Boolean GoForward;
         Boolean CaseSensitive;
         Boolean RegularExpression;
-        Boolean ResetOnly;
+        Boolean ExecuteSearch;
+        Boolean ScrollIntoView;
         Int32 ScrollOffset;
     };
 
