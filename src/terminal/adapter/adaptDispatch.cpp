@@ -4760,3 +4760,12 @@ void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> feat
 {
     _optionalFeatures = features;
 }
+
+ITermDispatch::StringHandler AdaptDispatch::EnterTmuxControl(const VTParameters parameters)
+{
+    if (parameters.size() != 1 || parameters.at(0).value() != 1000)
+    {
+        return nullptr;
+    }
+    return _api.EnterTmuxControl();
+}

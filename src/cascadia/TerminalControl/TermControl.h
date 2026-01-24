@@ -97,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         int ScrollOffset() const;
         int ViewHeight() const;
+        int ViewWidth() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -182,6 +183,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
         void RawWriteString(const winrt::hstring& text);
+        void InjectTextAtCursor(const winrt::hstring& text);
 
         void ShowContextMenu();
         bool OpenQuickFixMenu();
@@ -217,6 +219,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::StringSentEventArgs> StringSent;
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
         til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
+        til::typed_event<IInspectable, Control::EnterTmuxControlEventArgs> EnterTmuxControl;
 
         // UNDER NO CIRCUMSTANCES SHOULD YOU ADD A (PROJECTED_)FORWARDED_TYPED_EVENT HERE
         // Those attach the handler to the core directly, and will explode if
@@ -437,6 +440,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _bubbleSearchMissingCommand(const IInspectable& sender, const Control::SearchMissingCommandEventArgs& args);
         winrt::fire_and_forget _bubbleWindowSizeChanged(const IInspectable& sender, Control::WindowSizeChangedEventArgs args);
+        void _bubbleEnterTmuxControl(const IInspectable& sender, Control::EnterTmuxControlEventArgs args);
         til::CoordType _calculateSearchScrollOffset() const;
 
         void _PasteCommandHandler(const IInspectable& sender, const IInspectable& args);
@@ -471,6 +475,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
             Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
             Control::ControlCore::WindowSizeChanged_revoker WindowSizeChanged;
+            Control::ControlCore::EnterTmuxControl_revoker EnterTmuxControl;
 
             // These are set up in _InitializeTerminal
             Control::ControlCore::RendererWarning_revoker RendererWarning;
