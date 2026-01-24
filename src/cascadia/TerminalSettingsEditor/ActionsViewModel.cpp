@@ -220,7 +220,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         break;
                     }
                 }
-                actionsPageVM.DeleteKeyChord(args);
+                if (args)
+                {
+                    actionsPageVM.DeleteKeyChord(args);
+                }
             }
         });
         kcVM.PropertyChanged([weakThis{ get_weak() }](const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
@@ -1031,6 +1034,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             // if we're in edit mode, populate the text box with the current keys
             ProposedKeys(_currentKeys);
+        }
+        else if (!_currentKeys)
+        {
+            // we have left edit mode but don't have any current keys - delete this view model
+            DeleteKeyChord();
         }
     }
 
