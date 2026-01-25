@@ -226,8 +226,10 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
-        SwitchToTabArgs(UInt32 tabIndex);
+        SwitchToTabArgs();
+        SwitchToTabArgs(UInt32 tabIndex, Guid sessionId);
         UInt32 TabIndex;
+        Guid SessionId;  // WT_SESSION GUID to focus - if set, takes precedence over TabIndex
     };
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs, IActionArgsDescriptorAccess

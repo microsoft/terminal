@@ -318,6 +318,9 @@
   <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
     <value>Move focus the tab at the given index</value>
   </data>
+  <data name="CmdFocusTabSessionArgDesc" xml:space="preserve">
+    <value>Move focus to the tab containing the given WT_SESSION GUID</value>
+  </data>
   <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
     <value>Move focused pane to the tab at the given index</value>
   </data>

@@ -121,6 +121,7 @@ private:
     int _focusTabIndex{ -1 };
     bool _focusNextTab{ false };
     bool _focusPrevTab{ false };
+    std::string _focusTabSession;  // GUID string for --session targeting
 
     int _focusPaneTarget{ -1 };
     std::string _saveInputName;

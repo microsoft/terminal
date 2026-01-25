@@ -1128,6 +1128,58 @@ namespace TerminalAppLocalTests
                 VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
             }
         }
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Test focus-tab with --session flag"));
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"-s", L"12345678-1234-1234-1234-123456789abc" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            // With --session, there should be NO NewTab prepended (it routes to existing window)
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::SwitchToTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<SwitchToTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            // Verify SessionId is set (non-empty GUID)
+            VERIFY_ARE_NOT_EQUAL(winrt::guid{}, myArgs.SessionId());
+        }
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Test focus-tab with --session long form flag"));
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--session", L"12345678-1234-1234-1234-123456789abc" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::SwitchToTab, actionAndArgs.Action());
+            auto myArgs = actionAndArgs.Args().try_as<SwitchToTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_ARE_NOT_EQUAL(winrt::guid{}, myArgs.SessionId());
+        }
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Test that --session excludes -t (target index)"));
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"-s", L"12345678-1234-1234-1234-123456789abc", L"-t", L"2" };
+
+            auto commandlines = AppCommandlineArgs::BuildCommands(rawCommands);
+            VERIFY_ARE_EQUAL(1u, commandlines.size());
+
+            for (auto& cmdBlob : commandlines)
+            {
+                const auto result = appArgs.ParseCommand(cmdBlob);
+                Log::Comment(NoThrowString().Format(
+                    L"Exit Message:\n%hs",
+                    appArgs._exitMessage.c_str()));
+                VERIFY_ARE_NOT_EQUAL(0, result);
+                VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
+            }
+        }
     }
 
     void CommandlineTest::ParseMoveFocusArgs()

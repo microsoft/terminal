@@ -372,9 +372,15 @@ void AppCommandlineArgs::_buildFocusTabParser()
         auto* prevOpt = subcommand->add_flag("-p,--previous",
                                              _focusPrevTab,
                                              RS_A(L"CmdFocusTabPrevArgDesc"));
+        auto* sessionOpt = subcommand->add_option("-s,--session",
+                                                  _focusTabSession,
+                                                  RS_A(L"CmdFocusTabSessionArgDesc"));
         nextOpt->excludes(prevOpt);
         indexOpt->excludes(prevOpt);
         indexOpt->excludes(nextOpt);
+        sessionOpt->excludes(indexOpt);
+        sessionOpt->excludes(nextOpt);
+        sessionOpt->excludes(prevOpt);
 
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -384,10 +390,40 @@ void AppCommandlineArgs::_buildFocusTabParser()
             // Build the action from the values we've parsed on the commandline.
             ActionAndArgs focusTabAction{};
 
-            if (_focusTabIndex >= 0)
+            if (!_focusTabSession.empty())
+            {
+                // Focus tab by session GUID
+                focusTabAction.Action(ShortcutAction::SwitchToTab);
+                SwitchToTabArgs args{};
+                const auto str = winrt::to_hstring(_focusTabSession);
+                // GuidFromPlainString handles GUIDs without braces (e.g. "12345678-...")
+                // GuidFromString handles GUIDs with braces (e.g. "{12345678-...}")
+                // Try plain first (most common from WT_SESSION), fall back to braced
+                winrt::guid id{};
+                try
+                {
+                    id = ::Microsoft::Console::Utils::GuidFromPlainString(str.c_str());
+                }
+                catch (...)
+                {
+                    id = ::Microsoft::Console::Utils::GuidFromString(str.c_str());
+                }
+                args.SessionId(id);
+                focusTabAction.Args(args);
+                _startupActions.push_back(focusTabAction);
+                
+                // When targeting by session ID, route to an existing window on the 
+                // current desktop (if user didn't specify -w explicitly).
+                // The session ID uniquely identifies a pane in some window.
+                if (_windowTarget.empty())
+                {
+                    _windowTarget = "0";
+                }
+            }
+            else if (_focusTabIndex >= 0)
             {
                 focusTabAction.Action(ShortcutAction::SwitchToTab);
-                SwitchToTabArgs args{ static_cast<unsigned int>(_focusTabIndex) };
+                SwitchToTabArgs args{ static_cast<unsigned int>(_focusTabIndex), winrt::guid{} };
                 focusTabAction.Args(args);
                 _startupActions.push_back(focusTabAction);
             }
@@ -808,6 +844,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
+    _focusTabSession.clear();
 
     _moveFocusDirection = FocusDirection::None;
     _swapPaneDirection = FocusDirection::None;
@@ -1014,9 +1051,14 @@ void AppCommandlineArgs::ValidateStartupCommands()
     // If we parsed no commands, or the first command we've parsed is not a new
     // tab action, prepend a new-tab command to the front of the list.
     // (also, we don't need to do this if the only action is a x-save)
+    // Note: SwitchToTab with a SessionId is excluded because focus-tab --session
+    // targets an existing tab and doesn't need a new tab to be created.
+    // We check for non-empty _windowTarget as a proxy for --session being used,
+    // since --session sets _windowTarget = "0".
     else if (_startupActions.empty() ||
              (_startupActions.front().Action() != ShortcutAction::NewTab &&
-              _startupActions.front().Action() != ShortcutAction::SaveSnippet))
+              _startupActions.front().Action() != ShortcutAction::SaveSnippet &&
+              !(!_windowTarget.empty() && _startupActions.front().Action() == ShortcutAction::SwitchToTab)))
     {
         // Build the NewTab action from the values we've parsed on the commandline.
         NewTerminalArgs newTerminalArgs{};

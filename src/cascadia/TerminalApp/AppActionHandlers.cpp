@@ -482,6 +482,31 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<SwitchToTabArgs>())
         {
+            // Check if we're targeting by session ID
+            if (realArgs.SessionId() != winrt::guid{})
+            {
+                // Find the tab containing this session
+                const auto sessionId = realArgs.SessionId();
+                uint32_t tabIndex = 0;
+                
+                for (const auto& tab : _tabs)
+                {
+                    auto tabImpl = winrt::get_self<implementation::Tab>(tab);
+                    if (tabImpl && tabImpl->FocusPaneBySessionId(sessionId))
+                    {
+                        _SelectTab(tabIndex);
+                        args.Handled(true);
+                        return;
+                    }
+                    tabIndex++;
+                }
+                
+                // Session not found in this window
+                args.Handled(false);
+                return;
+            }
+            
+            // Fall back to tab index
             _SelectTab({ realArgs.TabIndex() });
             args.Handled(true);
         }

@@ -933,6 +933,47 @@ namespace winrt::TerminalApp::implementation
         return res;
     }
 
+    // Method Description:
+    // - Attempts to find and focus a pane within this tab by its WT_SESSION GUID.
+    // Arguments:
+    // - sessionId: The session GUID to search for.
+    // Return Value:
+    // - true if the session was found and focused, false otherwise.
+    bool Tab::FocusPaneBySessionId(const winrt::guid& sessionId)
+    {
+        ASSERT_UI_THREAD();
+
+        if (_rootPane == nullptr)
+        {
+            return false;
+        }
+
+        bool found = false;
+        _changingActivePane = true;
+        _rootPane->WalkTree([&](const auto& pane) {
+            if (const auto content = pane->GetContent())
+            {
+                if (const auto termContent = content.try_as<winrt::TerminalApp::TerminalPaneContent>())
+                {
+                    const auto control = termContent.GetTermControl();
+                    if (control)
+                    {
+                        const auto connection = control.Connection();
+                        if (connection && connection.SessionId() == sessionId)
+                        {
+                            _rootPane->FocusPane(pane);
+                            found = true;
+                            return true; // stop walking
+                        }
+                    }
+                }
+            }
+            return false; // keep walking
+        });
+        _changingActivePane = false;
+        return found;
+    }
+
     void Tab::Close()
     {
         ASSERT_UI_THREAD();

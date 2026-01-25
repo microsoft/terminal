@@ -118,7 +118,8 @@ protected:                                                                  \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWITCH_TO_TAB_ARGS(X) \
-    X(uint32_t, TabIndex, "index", false, ArgTypeHint::None, 0)
+    X(uint32_t, TabIndex, "index", false, ArgTypeHint::None, 0) \
+    X(winrt::guid, SessionId, "sessionId", false, ArgTypeHint::None, winrt::guid{})
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RESIZE_PANE_ARGS(X) \

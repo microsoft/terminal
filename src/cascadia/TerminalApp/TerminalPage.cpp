@@ -2258,7 +2258,7 @@ namespace winrt::TerminalApp::implementation
         {
             ActionAndArgs action;
             action.Action(ShortcutAction::SwitchToTab);
-            SwitchToTabArgs switchToTabArgs{ idx.value() };
+            SwitchToTabArgs switchToTabArgs{ idx.value(), winrt::guid{} };
             action.Args(switchToTabArgs);
 
             actions.emplace_back(std::move(action));
