@@ -1633,4 +1633,37 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleFocusBellTab(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        // Navigate to the next tab that has a bell indicator showing.
+        // If no tabs have bells, do nothing.
+        const auto tabCount = _tabs.Size();
+        if (tabCount == 0)
+        {
+            args.Handled(false);
+            return;
+        }
+
+        // Start searching from the tab after the current one
+        const auto currentIdx = _GetFocusedTabIndex().value_or(0);
+
+        for (uint32_t offset = 1; offset <= tabCount; offset++)
+        {
+            const auto idx = (currentIdx + offset) % tabCount;
+            if (const auto tab{ _tabs.GetAt(idx).try_as<Tab>() })
+            {
+                if (tab->TabStatus().BellIndicator())
+                {
+                    _SelectTab(idx);
+                    args.Handled(true);
+                    return;
+                }
+            }
+        }
+
+        // No tabs with bells found
+        args.Handled(false);
+    }
 }
