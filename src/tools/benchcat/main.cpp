@@ -193,11 +193,6 @@ static uint32_t parse_number_with_suffix(const wchar_t* str) noexcept
     return value;
 }
 
-static bool has_suffix(const wchar_t* str, const wchar_t* suffix)
-{
-    return wcscmp(str, suffix) == 0;
-}
-
 static const wchar_t* split_prefix(const wchar_t* str, const wchar_t* prefix) noexcept
 {
     for (; *prefix; ++prefix, ++str)
@@ -225,9 +220,10 @@ static char* buffer_append(char* dst, const char* src, size_t size)
     return dst;
 }
 
-static char* buffer_append_string(char* dst, const char* src)
+template<size_t N>
+static char* buffer_append_string(char* dst, const char (&src)[N])
 {
-    return buffer_append(dst, src, strlen(src));
+    return buffer_append(dst, src, N - 1);
 }
 
 char* buffer_append_number(char* dst, uint8_t val)
@@ -417,7 +413,7 @@ static BOOL WINAPI consoleCtrlHandler(DWORD)
 int __stdcall main() noexcept
 {
     g_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    g_stderr = GetStdHandle(STD_OUTPUT_HANDLE);
+    g_stderr = GetStdHandle(STD_ERROR_HANDLE);
     g_console_cp_old = GetConsoleOutputCP();
 
     SetConsoleCtrlHandler(consoleCtrlHandler, TRUE);
@@ -448,11 +444,11 @@ int __stdcall main() noexcept
             else if (const auto suffix = split_prefix(argv[i], L"-v"))
             {
                 vt = VtMode::On;
-                if (has_suffix(suffix, L"i"))
+                if (*suffix == L'i')
                 {
                     vt = VtMode::Italic;
                 }
-                else if (has_suffix(suffix, L"c"))
+                else if (*suffix == L'c')
                 {
                     vt = VtMode::Color;
                 }
@@ -461,9 +457,9 @@ int __stdcall main() noexcept
                     break;
                 }
             }
-            else if (has_suffix(argv[i], L"-s"))
+            else if (const auto suffix = split_prefix(argv[i], L"-s"))
             {
-                seed = parse_number_with_suffix(suffix);
+                seed = parse_number(suffix, nullptr);
                 has_seed = true;
             }
             else
@@ -510,7 +506,6 @@ int __stdcall main() noexcept
 
     pcg_engines::oneseq_dxsm_64_32 rng{ seed };
 
-    const auto stdout = GetStdHandle(STD_OUTPUT_HANDLE);
     const auto file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE)
     {
@@ -609,13 +604,8 @@ int __stdcall main() noexcept
         break;
     }
 
+    if (DWORD mode = 0; GetConsoleMode(g_stdout, &mode))
     {
-        DWORD mode = 0;
-        if (!GetConsoleMode(g_stdout, &mode))
-        {
-            print_last_error("get console mode");
-        }
-
         g_console_mode_old = mode;
 
         mode |= ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT;
@@ -643,7 +633,7 @@ int __stdcall main() noexcept
         for (auto remaining = stdout_size; remaining != 0; remaining -= written, write_data += written)
         {
             written = static_cast<DWORD>(min<size_t>(remaining, chunk_size));
-            if (!WriteFile(stdout, write_data, written, &written, nullptr))
+            if (!WriteFile(g_stdout, write_data, written, &written, nullptr))
             {
                 print_last_error("write");
             }
