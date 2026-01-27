@@ -272,6 +272,15 @@
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
+            <!--  Drag Drop Delimiter  -->
+            <local:SettingContainer x:Uid="Profile_DragDropDelimiter"
+                                    ClearSettingValue="{x:Bind Profile.ClearDragDropDelimiter}"
+                                    HasSettingValue="{x:Bind Profile.HasDragDropDelimiter, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.DragDropDelimiterOverrideSource, Mode=OneWay}">
+                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind Profile.DragDropDelimiter, Mode=TwoWay}" />
+            </local:SettingContainer>
+
         </StackPanel>
     </Grid>
 </Page>
