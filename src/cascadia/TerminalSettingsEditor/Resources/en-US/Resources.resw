@@ -2701,4 +2701,12 @@
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>Yes, clear the cache</value>
   </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>Drag/Drop delimiter</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>This text will be inserted between the paths of multiple files dropped into the terminal.</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
 </root>

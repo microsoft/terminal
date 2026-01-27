@@ -138,6 +138,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"CurrentPathTranslationStyle");
             }
+            else if (viewModelProperty == L"DragDropDelimiter")
+            {
+                // No specific computed property depends on this
+                // we can add _NotifyChanges(), if required
+            }
             else if (viewModelProperty == L"Padding")
             {
                 _parsedPadding = StringToXamlThickness(_profile.Padding());

@@ -106,6 +106,7 @@ Author(s):
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
+    X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
     X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
 
 // Intentionally omitted Profile settings:
