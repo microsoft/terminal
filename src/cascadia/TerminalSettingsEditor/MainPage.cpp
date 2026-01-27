@@ -23,11 +23,8 @@
 #include "NewTabMenu.h"
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
-#include "GeneratedSettingsIndex.g.h"
-#include "SearchResultTemplateSelector.g.cpp"
+#include "..\TerminalApp\fzf\fzf.h"
 
-#include <winrt/Windows.ApplicationModel.Resources.Core.h>
-#include <ScopedResourceLoader.h>
 #include <dwmapi.h>
 #include <fmt/compile.h>
 #include <til/static_map.h>
@@ -107,182 +104,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             assert(false);
             return ProfileSubPage::Base;
         }
-    }
-
-    DataTemplate SearchResultTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)
-    {
-        return SelectTemplateCore(item);
-    }
-
-    DataTemplate SearchResultTemplateSelector::SelectTemplateCore(const IInspectable& item)
-    {
-        if (const auto searchResultItem = item.try_as<FilteredSearchResult>())
-        {
-            if (!searchResultItem->SecondaryLabel().empty())
-            {
-                return ComplexTemplate();
-            }
-            return BasicTemplate();
-        }
-        return nullptr;
-    }
-
-    Editor::FilteredSearchResult FilteredSearchResult::CreateNoResultsItem(const winrt::hstring& query)
-    {
-        return winrt::make<FilteredSearchResult>(nullptr, nullptr, hstring{ fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), query) });
-    }
-
-    // Creates a FilteredSearchResult with the given search index entry and runtime object.
-    // The resulting search result will have a label like "<ProfileName>: <display text>" or "<ProfileName>".
-    // This is so that we can reuse the display text from the search index, but also add additional context to which runtime object this search result maps to.
-    Editor::FilteredSearchResult FilteredSearchResult::CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj)
-    {
-        hstring runtimeObjLabel{};
-        hstring runtimeObjContext{};
-        if (const auto profileVM = runtimeObj.try_as<Editor::ProfileViewModel>())
-        {
-            // No runtimeObjContext: profile name and icon should be enough
-            runtimeObjLabel = profileVM.Name();
-        }
-        else if (const auto colorSchemeVM = runtimeObj.try_as<Editor::ColorSchemeViewModel>())
-        {
-            // No runtimeObjContext: scheme name and generic icon should be enough
-            runtimeObjLabel = colorSchemeVM.Name();
-        }
-        else if (const auto ntmFolderEntryVM = runtimeObj.try_as<Editor::FolderEntryViewModel>())
-        {
-            runtimeObjLabel = ntmFolderEntryVM.Name();
-            runtimeObjContext = RS_(L"Nav_NewTabMenu/Content");
-        }
-        else if (const auto extensionPackageVM = runtimeObj.try_as<Editor::ExtensionPackageViewModel>())
-        {
-            runtimeObjLabel = extensionPackageVM.Package().DisplayName();
-            runtimeObjContext = RS_(L"Nav_Extensions/Content");
-        }
-
-        hstring displayText{};
-        if (searchIndexEntry)
-        {
-            if (searchIndexEntry->Entry)
-            {
-                displayText = searchIndexEntry->Entry->DisplayTextLocalized;
-            }
-            else if (searchIndexEntry->DisplayTextNeutral)
-            {
-                displayText = searchIndexEntry->DisplayTextNeutral.value();
-            }
-        }
-
-        if (displayText.empty())
-        {
-            // primaryText: <runtimeObjLabel>
-            // secondaryText: <runtimeObjContext>
-            // "PowerShell" --> navigates to main runtime object page (i.e. Profiles_Base)
-            // "SSH" | "Extension" --> navigates to main runtime object page (i.e. Extensions > SSH)
-            return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, runtimeObjLabel, runtimeObjContext);
-        }
-        // primaryText: <displayText>
-        // secondaryText: <runtimeObjLabel>
-        // navigates to setting container
-        return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, displayText, runtimeObjLabel);
-    }
-
-    winrt::hstring FilteredSearchResult::Label() const
-    {
-        if (_overrideLabel)
-        {
-            return _overrideLabel.value();
-        }
-        else if (_SearchIndexEntry)
-        {
-            if (_SearchIndexEntry->Entry)
-            {
-                return _SearchIndexEntry->Entry->DisplayTextLocalized;
-            }
-            else if (_SearchIndexEntry->DisplayTextNeutral.has_value())
-            {
-                return _SearchIndexEntry->DisplayTextNeutral.value();
-            }
-        }
-        return {};
-    }
-
-    bool FilteredSearchResult::IsNoResultsPlaceholder() const
-    {
-        return _overrideLabel.has_value() && !_NavigationArgOverride;
-    }
-
-    Windows::Foundation::IInspectable FilteredSearchResult::NavigationArg() const
-    {
-        if (_NavigationArgOverride)
-        {
-            return _NavigationArgOverride;
-        }
-        else if (_SearchIndexEntry)
-        {
-            return _SearchIndexEntry->Entry->NavigationArg;
-        }
-        return nullptr;
-    }
-
-    Windows::UI::Xaml::Controls::IconElement FilteredSearchResult::Icon() const
-    {
-        // We need to set the icon size here as opposed to in the XAML.
-        // Setting it in the XAML just crops the icon.
-        static constexpr double iconSize = 16;
-        if (auto navigationArg = NavigationArg())
-        {
-            if (const auto profileVM = navigationArg.try_as<Editor::ProfileViewModel>())
-            {
-                auto icon = UI::IconPathConverter::IconWUX(profileVM.EvaluatedIcon());
-                icon.Width(iconSize);
-                icon.Height(iconSize);
-                return icon;
-            }
-            else if (const auto colorSchemeVM = navigationArg.try_as<Editor::ColorSchemeViewModel>())
-            {
-                WUX::Controls::FontIcon icon{};
-                icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-                icon.FontSize(iconSize);
-                icon.Glyph(NavTagIconMap[colorSchemesTag]);
-                return icon;
-            }
-            else if (const auto ntmFolderEntryVM = navigationArg.try_as<Editor::FolderEntryViewModel>())
-            {
-                auto icon = UI::IconPathConverter::IconWUX(ntmFolderEntryVM.Icon());
-                icon.Width(iconSize);
-                icon.Height(iconSize);
-                return icon;
-            }
-            else if (const auto extensionPackageVM = navigationArg.try_as<Editor::ExtensionPackageViewModel>())
-            {
-                auto icon = UI::IconPathConverter::IconWUX(extensionPackageVM.Package().Icon());
-                icon.Width(iconSize);
-                icon.Height(iconSize);
-                return icon;
-            }
-            else if (const auto stringNavArg = navigationArg.try_as<hstring>())
-            {
-                WUX::Controls::FontIcon icon{};
-                icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-                icon.FontSize(iconSize);
-
-                if (_SearchIndexEntry->Entry->SubPage == BreadcrumbSubPage::ColorSchemes_Edit)
-                {
-                    // If we're editing a color scheme, stringNavArg is the color scheme name.
-                    // Use the color scheme icon.
-                    icon.Glyph(NavTagIconMap[colorSchemesTag]);
-                    return icon;
-                }
-                else if (const auto it = NavTagIconMap.find(*stringNavArg); it != NavTagIconMap.end())
-                {
-                    // Use the font icon used by the navigation view item
-                    icon.Glyph(it->second);
-                    return icon;
-                }
-            }
-        }
-        return nullptr;
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -1421,119 +1242,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             co_return;
         }
 
-        const auto currentSearchId = ++_latestSearchId;
-
-        // search the index on the background thread
-        co_await winrt::resume_background();
-
-        if (currentSearchId != _latestSearchId)
+        if (_currentSearch)
         {
             // a newer search has started, abandon this one
+            _currentSearch.Cancel();
             co_return;
         }
-        const auto searchGeneration = _QuerySearchIndex(sanitizedQuery);
-
-        // convert and display results on the foreground thread
-        co_await winrt::resume_foreground(Dispatcher());
-        if (currentSearchId != _latestSearchId || searchGeneration != _filteredSearchIndex.generation())
-        {
-            // a newer search has started, or the index changed, abandon this one
-            co_return;
-        }
-
-        // must be IInspectable to be used as ItemsSource
-        std::vector<IInspectable> results;
-        // Package filtered search index objects into WinRT FilteredSearchResults for UI
-        for (const auto* indexEntry : _filteredSearchIndex->mainIndex)
-        {
-            results.push_back(winrt::make<FilteredSearchResult>(indexEntry));
-        }
-
-        auto appendRuntimeObjectResults = [&](const auto& runtimeObjectList, const auto& filteredSearchIndex, const auto& partialSearchIndexEntry) {
-            for (const auto& runtimeObj : runtimeObjectList)
-            {
-                const auto& objName = runtimeObj.Name();
-                const bool nameMatches = til::contains_linguistic_insensitive(objName, sanitizedQuery);
-                if (nameMatches)
-                {
-                    // navigates to runtime object main page (i.e. "PowerShell" Profiles_Base page)
-                    results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(&partialSearchIndexEntry, runtimeObj));
-                }
-                for (const auto* indexEntry : filteredSearchIndex)
-                {
-                    // navigates to runtime object's setting (i.e. "PowerShell: Command line" )
-                    results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(indexEntry, runtimeObj));
-                }
-            }
-        };
-
-        // Profiles
-        appendRuntimeObjectResults(_profileVMs, _filteredSearchIndex->profileIndex, _searchIndex->profileIndexEntry);
-
-        // New Tab Menu (Folder View)
-        appendRuntimeObjectResults(get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList(), _filteredSearchIndex->ntmFolderIndex, _searchIndex->ntmFolderIndexEntry);
-
-        // Color schemes
-        appendRuntimeObjectResults(_colorSchemesPageVM.AllColorSchemes(), _filteredSearchIndex->colorSchemeIndex, _searchIndex->colorSchemeIndexEntry);
-
-        // Extensions
-        for (const auto& extension : _extensionsVM.ExtensionPackages())
-        {
-            if (til::contains_linguistic_insensitive(extension.Package().DisplayName(), sanitizedQuery))
-            {
-                results.push_back(FilteredSearchResult::CreateRuntimeObjectItem(&_searchIndex->extensionIndexEntry, extension));
-            }
-        }
-
-        if (results.empty())
-        {
-            // Explicitly show "no results"
-            results.reserve(1);
-            results.push_back(FilteredSearchResult::CreateNoResultsItem(sanitizedQuery));
-        }
+        _currentSearch = SearchIndex::Instance().SearchAsync(sanitizedQuery,
+                                                             _profileVMs.GetView(),
+                                                             get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList().GetView(),
+                                                             _colorSchemesPageVM.AllColorSchemes().GetView(),
+                                                             _extensionsVM.ExtensionPackages().GetView());
+        const auto results = co_await _currentSearch;
+        _currentSearch = nullptr;
 
         // Update the UI with the results
         const auto& searchBox = SettingsSearchBox();
-        searchBox.ItemsSource(winrt::single_threaded_observable_vector<IInspectable>(std::move(results)));
+        searchBox.ItemsSource(results);
         searchBox.IsSuggestionListOpen(true);
-    }
-
-    // Update _filteredSearchIndex with results matching queryText
-    til::generation_t MainPage::_QuerySearchIndex(const hstring& queryText)
-    {
-        auto filteredSearchIndex{ _filteredSearchIndex.write() };
-        const auto generation = _filteredSearchIndex.generation();
-        wil::hide_name _filteredSearchIndex;
-
-        auto findMatchingResults = [&queryText](const std::vector<LocalizedIndexEntry>& searchIndex, std::vector<const LocalizedIndexEntry*>& filteredIndex) {
-            filteredIndex.clear();
-            for (const auto& entry : searchIndex)
-            {
-                // Check for a match with DisplayText (i.e. "Globals_DefaultProfile/Header") and HelpText (i.e. "Globals_DefaultProfile/HelpText")
-                // in language neutral and current language
-                if (til::contains_linguistic_insensitive(entry.Entry->DisplayTextLocalized, queryText) ||
-                    (entry.Entry->HelpTextLocalized.has_value() && til::contains_linguistic_insensitive(entry.Entry->HelpTextLocalized.value(), queryText)) ||
-                    (entry.DisplayTextNeutral.has_value() && til::contains_linguistic_insensitive(entry.DisplayTextNeutral.value(), queryText)) ||
-                    (entry.HelpTextNeutral.has_value() && til::contains_linguistic_insensitive(entry.HelpTextNeutral.value(), queryText)))
-                {
-                    filteredIndex.push_back(&entry);
-                }
-            }
-        };
-
-        // build-time search index can be filtered and returned pretty much as-is
-        findMatchingResults(_searchIndex->mainIndex, filteredSearchIndex->mainIndex);
-
-        // Profiles
-        findMatchingResults(_searchIndex->profileIndex, filteredSearchIndex->profileIndex);
-
-        // New Tab Menu (Folder View)
-        findMatchingResults(_searchIndex->ntmFolderIndex, filteredSearchIndex->ntmFolderIndex);
-
-        // Color schemes
-        findMatchingResults(_searchIndex->colorSchemeIndex, filteredSearchIndex->colorSchemeIndex);
-
-        return generation;
     }
 
     void MainPage::SettingsSearchBox_QuerySubmitted(const AutoSuggestBox& /*sender*/, const AutoSuggestBoxQuerySubmittedEventArgs& args)
@@ -1589,75 +1315,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         co_await winrt::resume_background();
 
-        // These are the new index entries we are building.
-        // Don't actually modify the members until we're completely done here.
-        SearchIndex searchIndex;
-
-        // copied from CommandPaletteItems.h
-        static bool shouldIncludeLanguageNeutralResources = [] {
-            try
-            {
-                const auto context{ winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::GetForViewIndependentUse() };
-                const auto qualifiers{ context.QualifierValues() };
-                if (const auto language{ qualifiers.TryLookup(L"language") })
-                {
-                    return !til::starts_with_insensitive_ascii(*language, L"en-");
-                }
-            }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-            }
-            return false;
-        }();
-
-        auto registerIndex = [&](const auto& index, auto& storage) {
-            const auto& indexRef = index;
-            storage.reserve(indexRef.size());
-            for (const auto& entry : indexRef)
-            {
-                LocalizedIndexEntry localizedEntry;
-                localizedEntry.Entry = &entry;
-                if (shouldIncludeLanguageNeutralResources)
-                {
-                    localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.DisplayTextUid);
-                    if (entry.HelpTextUid)
-                    {
-                        localizedEntry.HelpTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.HelpTextUid.value());
-                    }
-                }
-                storage.emplace_back(std::move(localizedEntry));
-            }
-        };
-
-        registerIndex(LoadBuildTimeIndex(), searchIndex.mainIndex);
-
-        // Load profiles
-        registerIndex(LoadProfileIndex(), searchIndex.profileIndex);
-        searchIndex.profileIndexEntry.Entry = &PartialProfileIndexEntry();
-
-        // Load new tab menu
-        registerIndex(LoadNTMFolderIndex(), searchIndex.ntmFolderIndex);
-        searchIndex.ntmFolderIndexEntry.Entry = &PartialNTMFolderIndexEntry();
-
-        // Load extensions
-        // Nothing to load at build time.
-        // At query time, we'll search for matching extension names and use this entry below
-        searchIndex.extensionIndexEntry.Entry = &PartialExtensionIndexEntry();
-
-        // Load color schemes
-        registerIndex(LoadColorSchemeIndex(), searchIndex.colorSchemeIndex);
-        searchIndex.colorSchemeIndexEntry.Entry = &PartialColorSchemeIndexEntry();
-
         if (auto strongThis = weakThis.get())
         {
-            *strongThis->_searchIndex.write() = std::move(searchIndex);
+            if (strongThis->_currentSearch && strongThis->_currentSearch.Status() == AsyncStatus::Started)
+            {
+                strongThis->_currentSearch.Cancel();
+            }
+            SearchIndex::Instance().Reset();
         }
-    }
-
-    const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept
-    {
-        static ScopedResourceLoader loader{ GetLibraryResourceLoader().WithQualifier(L"language", L"en-US") };
-        return loader;
     }
 }

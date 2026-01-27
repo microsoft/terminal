@@ -6,18 +6,11 @@
 #include "MainPage.g.h"
 #include "Breadcrumb.g.h"
 #include "NavigateToPageArgs.g.h"
-#include "FilteredSearchResult.g.h"
-#include "SearchResultTemplateSelector.g.h"
 #include "Utils.h"
-#include "GeneratedSettingsIndex.g.h"
-#include <til/generational.h>
-
-class ScopedResourceLoader;
+#include "SearchIndex.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept;
-
     struct Breadcrumb : BreadcrumbT<Breadcrumb>
     {
         Breadcrumb(IInspectable tag, winrt::hstring label, BreadcrumbSubPage subPage) :
@@ -48,50 +41,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot;
         Windows::Foundation::IInspectable _ViewModel{ nullptr };
         hstring _ElementToFocus{};
-    };
-
-    struct LocalizedIndexEntry
-    {
-        std::optional<winrt::hstring> DisplayTextNeutral = std::nullopt;
-        std::optional<winrt::hstring> HelpTextNeutral = std::nullopt;
-        const IndexEntry* Entry = nullptr;
-    };
-
-    struct FilteredSearchResult : FilteredSearchResultT<FilteredSearchResult>
-    {
-        FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr, const std::optional<hstring>& label = std::nullopt, const hstring secondaryLabel = {}) :
-            _SearchIndexEntry{ entry },
-            _NavigationArgOverride{ navigationArgOverride },
-            _overrideLabel{ label },
-            _secondaryLabel{ secondaryLabel } {}
-
-        static Editor::FilteredSearchResult CreateNoResultsItem(const winrt::hstring& query);
-        static Editor::FilteredSearchResult CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj);
-
-        hstring ToString() { return Label(); }
-        winrt::hstring Label() const;
-        winrt::hstring SecondaryLabel() const { return _secondaryLabel; };
-        bool IsNoResultsPlaceholder() const;
-        const LocalizedIndexEntry& SearchIndexEntry() const noexcept { return *_SearchIndexEntry; }
-        Windows::Foundation::IInspectable NavigationArg() const;
-        Windows::UI::Xaml::Controls::IconElement Icon() const;
-
-    private:
-        const std::optional<winrt::hstring> _overrideLabel{ std::nullopt };
-        const winrt::hstring _secondaryLabel{};
-        const Windows::Foundation::IInspectable _NavigationArgOverride{ nullptr };
-        const LocalizedIndexEntry* _SearchIndexEntry{ nullptr };
-    };
-
-    struct SearchResultTemplateSelector : SearchResultTemplateSelectorT<SearchResultTemplateSelector>
-    {
-        SearchResultTemplateSelector() = default;
-
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item, const Windows::UI::Xaml::DependencyObject& container);
-        Windows::UI::Xaml::DataTemplate SelectTemplateCore(const Windows::Foundation::IInspectable& item);
-
-        til::property<winrt::Windows::UI::Xaml::DataTemplate> BasicTemplate;
-        til::property<winrt::Windows::UI::Xaml::DataTemplate> ComplexTemplate;
     };
 
     struct MainPage : MainPageT<MainPage>
@@ -155,7 +104,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateBackgroundForMica();
         void _MoveXamlParsedNavItemsIntoItemSource();
 
-        til::generation_t _QuerySearchIndex(const hstring& queryText);
         safe_void_coroutine _UpdateSearchIndex();
 
         winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel _profileDefaultsVM{ nullptr };
@@ -165,33 +113,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
 
-        struct SearchIndex
-        {
-            SearchIndex& operator=(const SearchIndex& other) = default;
+        Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IObservableVector<Windows::Foundation::IInspectable>> _currentSearch{ nullptr };
 
-            std::vector<LocalizedIndexEntry> mainIndex;
-            std::vector<LocalizedIndexEntry> profileIndex;
-            std::vector<LocalizedIndexEntry> ntmFolderIndex;
-            std::vector<LocalizedIndexEntry> colorSchemeIndex;
-
-            // Links to main page; used when searching runtime objects (i.e. profile/extension name --> Profile_Base/Extension View)
-            LocalizedIndexEntry profileIndexEntry;
-            LocalizedIndexEntry ntmFolderIndexEntry;
-            LocalizedIndexEntry colorSchemeIndexEntry;
-            LocalizedIndexEntry extensionIndexEntry;
-        };
-        til::generational<SearchIndex> _searchIndex;
-
-        struct FilteredSearchIndex
-        {
-            std::vector<const LocalizedIndexEntry*> mainIndex;
-            std::vector<const LocalizedIndexEntry*> profileIndex;
-            std::vector<const LocalizedIndexEntry*> ntmFolderIndex;
-            std::vector<const LocalizedIndexEntry*> colorSchemeIndex;
-        };
-        til::generational<FilteredSearchIndex> _filteredSearchIndex;
-
-        std::atomic<uint32_t> _latestSearchId{ 0 };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _actionsViewModelChangedRevoker;
@@ -203,5 +126,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(MainPage);
-    BASIC_FACTORY(SearchResultTemplateSelector);
 }

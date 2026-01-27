@@ -89,6 +89,7 @@
       <DependentUpon>NewTabMenu.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="SearchIndex.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
@@ -170,6 +171,7 @@
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
     <ClInclude Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h" />
+    <ClInclude Include="$(OpenConsoleDir)src\cascadia\TerminalApp\fzf\fzf.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -292,6 +294,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SearchIndex.cpp" />
     <ClCompile Include="MainPage.cpp">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
@@ -375,6 +378,7 @@
       <DependentUpon>PreviewConnection.h</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.cpp" />
+    <ClCompile Include="$(OpenConsoleDir)src\cascadia\TerminalApp\fzf\fzf.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -427,6 +431,7 @@
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="SearchIndex.idl" />
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Midl>

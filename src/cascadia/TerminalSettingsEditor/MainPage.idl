@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.Settings.Editor
     }
 
     runtimeclass NavigateToPageArgs
-    {        
+    {
         IHostedInWindow WindowRoot { get; };
         IInspectable ViewModel { get; };
         String ElementToFocus { get; };
@@ -34,21 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
         NewTabMenu_Folder,
         Extensions_Extension
     };
-
-    runtimeclass FilteredSearchResult : Windows.Foundation.IStringable
-    {
-        String Label { get; };
-        String SecondaryLabel { get; };
-        Windows.UI.Xaml.Controls.IconElement Icon { get; };
-    }
-
-    [default_interface] runtimeclass SearchResultTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
-    {
-        SearchResultTemplateSelector();
-
-        Windows.UI.Xaml.DataTemplate BasicTemplate;
-        Windows.UI.Xaml.DataTemplate ComplexTemplate;
-    }
 
     runtimeclass Breadcrumb : Windows.Foundation.IStringable
     {
