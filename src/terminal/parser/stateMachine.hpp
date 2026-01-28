@@ -81,7 +81,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
-        bool IsProcessingLastCharacter() const noexcept;
 
         void InjectSequence(InjectionType type);
         const til::small_vector<Injection, 8>& GetInjections() const noexcept;
@@ -94,6 +93,8 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine& Engine() noexcept;
 
     private:
+        void _processStringIncompleteSequence();
+
         void _ActionExecute(const wchar_t wch);
         void _ActionExecuteFromEscape(const wchar_t wch);
         void _ActionPrint(const wchar_t wch);
@@ -162,6 +163,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _SafeExecute(TLambda&& lambda);
 
         void _ExecuteCsiCompleteCallback();
+        std::wstring_view _CurrentRun() const;
 
         enum class VTStates
         {
@@ -192,42 +194,29 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<IStateMachineEngine> _engine;
         const bool _isEngineForInput;
 
-        VTStates _state;
+        VTStates _state = VTStates::Ground;
 
         til::enumset<Mode> _parserMode{ Mode::Ansi };
 
         std::wstring_view _currentString;
-        size_t _runOffset;
-        size_t _runSize;
-
-        // Construct current run.
-        //
-        // Note: We intentionally use this method to create the run lazily for better performance.
-        //       You may find the usage of offset & size unsafe, but under heavy load it shows noticeable performance benefit.
-        std::wstring_view _CurrentRun() const
-        {
-            return _currentString.substr(_runOffset, _runSize);
-        }
+        size_t _runBeg = 0;
+        size_t _runEnd = 0;
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;
-        bool _parameterLimitOverflowed;
         std::vector<VTParameter> _subParameters;
         std::vector<std::pair<BYTE /*range start*/, BYTE /*range end*/>> _subParameterRanges;
-        bool _subParameterLimitOverflowed;
-        BYTE _subParameterCounter;
+        bool _parameterLimitOverflowed = false;
+        bool _subParameterLimitOverflowed = false;
+        BYTE _subParameterCounter = 0;
 
         std::wstring _oscString;
-        VTInt _oscParameter;
+        VTInt _oscParameter = 0;
 
         IStateMachineEngine::StringHandler _dcsStringHandler;
 
         std::optional<std::wstring> _cachedSequence;
         til::small_vector<Injection, 8> _injections;
-
-        // This is tracked per state machine instance so that separate calls to Process*
-        //   can start and finish a sequence.
-        bool _processingLastCharacter;
 
         std::function<void()> _onCsiCompleteCallback;
     };

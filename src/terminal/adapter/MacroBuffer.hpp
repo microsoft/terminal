@@ -44,7 +44,7 @@ namespace Microsoft::Console::VirtualTerminal
         void InvokeMacro(const size_t macroId, StateMachine& stateMachine);
         void ClearMacrosIfInUse();
         bool InitParser(const size_t macroId, const DispatchTypes::MacroDeleteControl deleteControl, const DispatchTypes::MacroEncoding encoding);
-        bool ParseDefinition(const wchar_t ch);
+        bool ParseDefinition(std::wstring_view str);
 
     private:
         bool _decodeHexDigit(const wchar_t ch) noexcept;
