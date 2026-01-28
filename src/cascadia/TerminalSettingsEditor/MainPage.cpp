@@ -166,9 +166,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& currentExtensionPackage = _extensionsVM.CurrentExtensionPackage())
                 {
-                    const auto& pkg = currentExtensionPackage.Package();
-                    const auto label = pkg.DisplayName().empty() ? pkg.Source() : pkg.DisplayName();
-                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentExtensionPackage), label, BreadcrumbSubPage::Extensions_Extension);
+                    const auto crumb = winrt::make<Breadcrumb>(box_value(currentExtensionPackage), currentExtensionPackage.DisplayName(), BreadcrumbSubPage::Extensions_Extension);
                     _breadcrumbs.Append(crumb);
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
@@ -827,9 +825,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (pkgVM.Package().Source() == extPkgVM.Package().Source())
                 {
                     // Take advantage of the PropertyChanged event to navigate
-                    // to the correct extension package and build the breadcrumbs as we go
+                    // to the correct extension package and build the breadcrumbs as we go.
+                    const auto wasAlreadyOnExtension = (_extensionsVM.CurrentExtensionPackage() == pkgVM);
                     _extensionsVM.CurrentExtensionPackage(pkgVM);
                     found = true;
+
+                    // If CurrentExtensionPackage was already this extension, PropertyChanged won't fire,
+                    // so we add the breadcrumb manually.
+                    if (wasAlreadyOnExtension)
+                    {
+                        const auto extCrumb = winrt::make<Breadcrumb>(box_value(pkgVM), pkgVM.DisplayName(), BreadcrumbSubPage::Extensions_Extension);
+                        _breadcrumbs.Append(extCrumb);
+                    }
                     break;
                 }
             }

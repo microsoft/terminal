@@ -100,7 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (const auto extensionPackageVM = runtimeObj.try_as<Editor::ExtensionPackageViewModel>())
         {
-            runtimeObjLabel = extensionPackageVM.Package().DisplayName();
+            runtimeObjLabel = extensionPackageVM.DisplayName();
             runtimeObjContext = RS_(L"Nav_Extensions/Content");
         }
         else if (const auto commandVM = runtimeObj.try_as<Editor::CommandViewModel>())
@@ -183,7 +183,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (const auto extensionPackageVM = navigationArg.try_as<Editor::ExtensionPackageViewModel>())
             {
-                auto icon = UI::IconPathConverter::IconWUX(extensionPackageVM.Package().Icon());
+                // TODO GH #19806: IconWUX() sets a size on the icon automatically. This is great
+                //   for most icons, but font icons end up being a weird size.
+                // Check if we're using the generic font icon, and, if so, just build it ourselves
+                //   so that it looks right.
+                const auto& extPkgVMIconPath = extensionPackageVM.Icon();
+                if (extPkgVMIconPath == NavTagIconMap[extensionsTag])
+                {
+                    WUX::Controls::FontIcon icon{};
+                    icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+                    icon.FontSize(iconSize);
+                    icon.Glyph(NavTagIconMap[extensionsTag]);
+                    return icon;
+                }
+                auto icon = UI::IconPathConverter::IconWUX(extPkgVMIconPath);
                 icon.Width(iconSize);
                 icon.Height(iconSize);
                 return icon;
@@ -434,7 +447,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         };
 
-        appendSimpleRuntimeObjectResults(extensionPkgVMs, _index.extensionIndexEntry, [](const auto& ext) { return ext.Package().DisplayName(); });
+        appendSimpleRuntimeObjectResults(extensionPkgVMs, _index.extensionIndexEntry, [](const auto& ext) { return ext.DisplayName(); });
         appendSimpleRuntimeObjectResults(commandVMs, _index.actionIndexEntry, [](const auto& cmd) { return cmd.DisplayName(); });
 
         // must be IInspectable to be used as ItemsSource in XAML
