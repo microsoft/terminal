@@ -38,6 +38,17 @@ static constexpr til::static_map NavTagIconMap{
     std::pair{ openJsonTag, L"\xE713" }, /* Settings */
 };
 
+// Weight multipliers for search result scoring.
+// Higher values prioritize certain types of matches over others.
+static constexpr int WeightRuntimeObjectMatch = 6; // Direct runtime object name match (e.g., "PowerShell")
+static constexpr int WeightProfileDefaults = 6; // Profile Defaults setting
+static constexpr int WeightRuntimeObjectSetting = 5; // Setting with runtime object context (e.g., "PowerShell: Command line")
+static constexpr int WeightDisplayTextLocalized = 5; // Display text in current locale
+static constexpr int WeightDisplayTextNeutral = 2; // Display text in English (fallback)
+
+// Minimum fzf score threshold to filter out low-quality fuzzy matches
+static constexpr int MinimumMatchScore = 100;
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -54,6 +65,16 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    // Retrieves the searchable fields from the LocalizedIndexEntry and their associated weight bonus.
+    // This allows us to prioritize certain fields over others when scoring search results.
+    std::array<std::pair<std::optional<winrt::hstring>, int>, 2> LocalizedIndexEntry::GetSearchableFields() const
+    {
+        // Profile Defaults entries (DisplayTextUid starts with "Profile_") get a higher weight
+        const auto weight = til::starts_with(std::wstring_view{ Entry->DisplayTextUid }, L"Profile_") ? WeightProfileDefaults : WeightDisplayTextLocalized;
+        return { { { std::optional<winrt::hstring>{ Entry->DisplayTextLocalized }, weight },
+                   { DisplayTextNeutral, WeightDisplayTextNeutral } } };
+    }
+
     const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept
     {
         static ScopedResourceLoader loader{ GetLibraryResourceLoader().WithQualifier(L"language", L"en-US") };
@@ -322,47 +343,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto cancellationToken = co_await get_cancellation_token();
         const auto filter = fzf::matcher::ParsePattern(std::wstring_view{ query });
 
-        // 1st pass: filter and score build-time index, this reduces the search space for the 2nd pass
-        auto findMatchingResults = [&](const std::vector<LocalizedIndexEntry>& searchIndex) {
-            std::vector<std::pair<int, const LocalizedIndexEntry*>> filteredIndex;
-            for (const auto& entry : searchIndex)
+        std::vector<std::pair<int, Editor::FilteredSearchResult>> scoredResults;
+        for (const auto& entry : _index.mainIndex)
+        {
+            if (cancellationToken())
             {
-                if (cancellationToken())
-                {
-                    break;
-                }
+                break;
+            }
 
-                // Iterate through all searchable fields and find the best weighted score
-                int32_t bestScore = 0;
-                for (const auto& [searchTextOpt, weight] : entry.GetSearchableFields())
+            // Calculate best score across all searchable fields for entry
+            int bestScore = 0;
+            for (const auto& [searchTextOpt, weight] : entry.GetSearchableFields())
+            {
+                if (searchTextOpt.has_value())
                 {
-                    if (searchTextOpt.has_value())
+                    if (const auto match = fzf::matcher::Match(searchTextOpt.value(), filter))
                     {
-                        if (const auto match = fzf::matcher::Match(searchTextOpt.value(), filter))
-                        {
-                            const auto weightedScore = match->Score * weight;
-                            bestScore = std::max(bestScore, weightedScore);
-                        }
+                        bestScore = std::max(bestScore, match->Score * weight);
                     }
                 }
-
-                if (bestScore > 0)
-                {
-                    filteredIndex.emplace_back(bestScore, &entry);
-                }
             }
-            return filteredIndex;
-        };
 
-        std::vector<std::pair<int, Editor::FilteredSearchResult>> scoredResults;
-        for (const auto& [score, entry] : findMatchingResults(_index.mainIndex))
-        {
-            scoredResults.emplace_back(score, winrt::make<FilteredSearchResult>(entry));
+            if (bestScore >= MinimumMatchScore)
+            {
+                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(&entry));
+            }
         }
 
-        // 2nd pass: filter and score runtime objects (i.e. profiles)
-        //   appends results to scoredResults
-        auto appendRuntimeObjectResults = [&](const auto& runtimeObjectList, const auto& filteredSearchIndex, const auto& partialSearchIndexEntry) {
+        // Method Description:
+        // - Filter and score index dependent on runtime objects (i.e. profiles)
+        // - Matches against combined text: "<searchable field> <runtime object name>"
+        // - This allows queries like "font size powershell" to find "PowerShell: Font size"
+        // Arguments:
+        // - runtimeObjectList: the list of runtime objects to search (i.e. profiles, ntm folders, extensions, etc...)
+        // - searchIndex: the corresponding localized search index for the runtime object type (i.e. profile -> _index.profileIndex)
+        // - partialSearchIndexEntry: index entry that is populated with the runtime object (i.e. profile -> _index.profileIndexEntry)
+        auto appendRuntimeObjectResults = [&](const auto& runtimeObjectList, const std::vector<LocalizedIndexEntry>& searchIndex, const auto& partialSearchIndexEntry) {
             for (const auto& runtimeObj : runtimeObjectList)
             {
                 if (cancellationToken())
@@ -370,30 +386,80 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     break;
                 }
 
+                // Check for direct runtime object name match first
                 const auto& objName = runtimeObj.Name();
-                if (const auto match = fzf::matcher::Match(objName, filter))
+                const auto objNameMatch = fzf::matcher::Match(objName, filter);
+                if (objNameMatch && objNameMatch->Score >= MinimumMatchScore)
                 {
                     // navigates to runtime object main page (i.e. "PowerShell" Profiles_Base page)
-                    scoredResults.emplace_back(match->Score, FilteredSearchResult::CreateRuntimeObjectItem(&partialSearchIndexEntry, runtimeObj));
+                    scoredResults.emplace_back(objNameMatch->Score * WeightRuntimeObjectMatch,
+                                               FilteredSearchResult::CreateRuntimeObjectItem(&partialSearchIndexEntry, runtimeObj));
                 }
-                for (const auto& scoredResult : filteredSearchIndex)
+
+                for (const auto& entry : searchIndex)
                 {
-                    // navigates to runtime object's setting (i.e. "PowerShell: Command line" )
-                    scoredResults.emplace_back(scoredResult.first, FilteredSearchResult::CreateRuntimeObjectItem(scoredResult.second, runtimeObj));
+                    if (cancellationToken())
+                    {
+                        break;
+                    }
+
+                    // Calculate best score across all searchable fields for entry
+                    int bestScore = 0;
+                    for (const auto& [searchTextOpt, _] : entry.GetSearchableFields())
+                    {
+                        if (searchTextOpt.has_value())
+                        {
+                            // Score for combined text: "<searchable field> <runtime object name>"
+                            const auto combinedText = fmt::format(L"{} {}", std::wstring_view{ searchTextOpt.value() }, std::wstring_view{ objName });
+                            const auto combinedMatch = fzf::matcher::Match(combinedText, filter);
+                            if (!combinedMatch)
+                            {
+                                continue;
+                            }
+
+                            const auto settingMatch = fzf::matcher::Match(searchTextOpt.value(), filter);
+
+                            // Scoring:
+                            // 1. require EITHER the runtime object OR the setting to match the query independently,
+                            //    OR the combined match scores very well (handles "font size powershell" where neither matches alone)
+                            // 2. only include if query matches combined text (i.e. "font size PowerShell" matches "<setting name> <profile name>")
+                            // 3. combined match scores higher than runtime object alone (setting must contribute to the match)
+                            //   NOTE: don't compare to settingMatch! This allows "font size" to show results for all profiles
+                            const auto hasIndependentMatch = objNameMatch || settingMatch;
+                            const auto hasStrongCombinedMatch = combinedMatch->Score >= MinimumMatchScore * 3;
+                            if (!hasIndependentMatch && !hasStrongCombinedMatch)
+                            {
+                                continue;
+                            }
+
+                            if (combinedMatch->Score > (objNameMatch ? objNameMatch->Score : 0))
+                            {
+                                bestScore = std::max(combinedMatch->Score,
+                                                     settingMatch ? settingMatch->Score : 0);
+                            }
+                        }
+                    }
+
+                    if (bestScore >= MinimumMatchScore)
+                    {
+                        // navigates to runtime object's setting (i.e. "PowerShell: Command line")
+                        scoredResults.emplace_back(bestScore * WeightRuntimeObjectSetting,
+                                                   FilteredSearchResult::CreateRuntimeObjectItem(&entry, runtimeObj));
+                    }
                 }
             }
         };
 
-        appendRuntimeObjectResults(profileVMs, findMatchingResults(_index.profileIndex), _index.profileIndexEntry);
-        appendRuntimeObjectResults(ntmFolderVMs, findMatchingResults(_index.ntmFolderIndex), _index.ntmFolderIndexEntry);
-        appendRuntimeObjectResults(colorSchemeVMs, findMatchingResults(_index.colorSchemeIndex), _index.colorSchemeIndexEntry);
+        appendRuntimeObjectResults(profileVMs, _index.profileIndex, _index.profileIndexEntry);
+        appendRuntimeObjectResults(ntmFolderVMs, _index.ntmFolderIndex, _index.ntmFolderIndexEntry);
+        appendRuntimeObjectResults(colorSchemeVMs, _index.colorSchemeIndex, _index.colorSchemeIndexEntry);
 
         // Extensions
         for (const auto& extension : extensionPkgVMs)
         {
-            if (const auto match = fzf::matcher::Match(extension.Package().DisplayName(), filter))
+            if (const auto match = fzf::matcher::Match(extension.Package().DisplayName(), filter); match && match->Score >= MinimumMatchScore)
             {
-                scoredResults.emplace_back(match->Score, FilteredSearchResult::CreateRuntimeObjectItem(&_index.extensionIndexEntry, extension));
+                scoredResults.emplace_back(match->Score * WeightRuntimeObjectMatch, FilteredSearchResult::CreateRuntimeObjectItem(&_index.extensionIndexEntry, extension));
             }
         }
 

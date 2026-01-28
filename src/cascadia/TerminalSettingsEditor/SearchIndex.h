@@ -7,7 +7,7 @@
 #include "SearchResultTemplateSelector.g.h"
 #include "GeneratedSettingsIndex.g.h"
 #include <til/generational.h>
-#include "..\TerminalApp\fzf\fzf.h"
+#include "..\fzf\fzf.h"
 
 class ScopedResourceLoader;
 
@@ -23,15 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::optional<winrt::hstring> HelpTextNeutral = std::nullopt;
         const IndexEntry* Entry = nullptr;
 
-        // Retrieves the searchable fields from the LocalizedIndexEntry and their associated weight bonus.
-        // This allows us to prioritize certain fields over others when scoring search results.
-        std::array<std::pair<std::optional<winrt::hstring>, int>, 4> GetSearchableFields() const
-        {
-            return { { { std::optional<winrt::hstring>{ Entry->DisplayTextLocalized }, 4 },
-                       { Entry->HelpTextLocalized, 3 },
-                       { DisplayTextNeutral, 2 },
-                       { HelpTextNeutral, 1 } } };
-        }
+        std::array<std::pair<std::optional<winrt::hstring>, int>, 2> GetSearchableFields() const;
     };
 
     // WinRT object representing a single filtered search result

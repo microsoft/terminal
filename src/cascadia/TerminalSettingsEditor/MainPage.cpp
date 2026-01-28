@@ -23,7 +23,6 @@
 #include "NewTabMenu.h"
 #include "..\types\inc\utils.hpp"
 #include <..\WinRTUtils\inc\Utils.h>
-#include "..\TerminalApp\fzf\fzf.h"
 
 #include <dwmapi.h>
 #include <fmt/compile.h>

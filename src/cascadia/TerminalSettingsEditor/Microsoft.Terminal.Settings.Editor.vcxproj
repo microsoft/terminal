@@ -171,7 +171,7 @@
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
     <ClInclude Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h" />
-    <ClInclude Include="$(OpenConsoleDir)src\cascadia\TerminalApp\fzf\fzf.h" />
+    <ClInclude Include="../fzf/fzf.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -378,7 +378,7 @@
       <DependentUpon>PreviewConnection.h</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.cpp" />
-    <ClCompile Include="$(OpenConsoleDir)src\cascadia\TerminalApp\fzf\fzf.cpp" />
+    <ClCompile Include="../fzf/fzf.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
