@@ -31,6 +31,16 @@ TerminalInput::TerminalInput() noexcept
     _initKeyboardMap();
 }
 
+void TerminalInput::UseAlternateScreenBuffer() noexcept
+{
+    _inAlternateBuffer = true;
+}
+
+void TerminalInput::UseMainScreenBuffer() noexcept
+{
+    _inAlternateBuffer = false;
+}
+
 void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
 {
     // If we're changing a tracking mode, we always clear other tracking modes first.
@@ -70,12 +80,79 @@ void TerminalInput::ResetInputModes() noexcept
     _inputMode = { Mode::Ansi, Mode::AutoRepeat, Mode::AlternateScroll };
     _mouseInputState.lastPos = { -1, -1 };
     _mouseInputState.lastButton = 0;
+    ResetKittyKeyboardProtocols();
     _initKeyboardMap();
 }
 
 void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
 {
     _forceDisableWin32InputMode = win32InputMode;
+}
+
+// Kitty keyboard protocol methods
+
+void TerminalInput::SetKittyKeyboardProtocol(const uint8_t flags, const KittyKeyboardProtocolMode mode) noexcept
+{
+    switch (mode)
+    {
+    case KittyKeyboardProtocolMode::Replace:
+        _kittyFlags = flags & KittyKeyboardProtocolFlags::All;
+        break;
+    case KittyKeyboardProtocolMode::Set:
+        _kittyFlags |= (flags & KittyKeyboardProtocolFlags::All);
+        break;
+    case KittyKeyboardProtocolMode::Reset:
+        _kittyFlags &= ~(flags & KittyKeyboardProtocolFlags::All);
+        break;
+    }
+}
+
+uint8_t TerminalInput::GetKittyFlags() const noexcept
+{
+    return _kittyFlags;
+}
+
+void TerminalInput::PushKittyFlags(const uint8_t flags) noexcept
+{
+    auto& stack = _getKittyStack();
+    // Evict oldest entry if stack is full (DoS prevention)
+    if (stack.size() >= KittyStackMaxSize)
+    {
+        stack.erase(stack.begin());
+    }
+    stack.push_back(_kittyFlags);
+    _kittyFlags = flags & KittyKeyboardProtocolFlags::All;
+}
+
+void TerminalInput::PopKittyFlags(const size_t count) noexcept
+{
+    auto& stack = _getKittyStack();
+    const auto popCount = std::min(count, stack.size());
+    for (size_t i = 0; i < popCount; ++i)
+    {
+        if (!stack.empty())
+        {
+            _kittyFlags = stack.back();
+            stack.pop_back();
+        }
+    }
+    // If we've emptied the stack, reset all flags
+    if (stack.empty() && popCount > 0)
+    {
+        _kittyFlags = 0;
+    }
+}
+
+void TerminalInput::ResetKittyKeyboardProtocols() noexcept
+{
+    _kittyFlags = 0;
+    _kittyMainStack.clear();
+    _kittyAltStack.clear();
+}
+
+std::vector<uint8_t>& TerminalInput::_getKittyStack() noexcept
+{
+    return _inAlternateBuffer ? _kittyAltStack : _kittyMainStack;
 }
 
 TerminalInput::OutputType TerminalInput::MakeUnhandled() noexcept
@@ -121,6 +198,14 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     }
 
     const auto controlKeyState = _trackControlKeyState(keyEvent);
+
+    // If kitty keyboard mode is active, use kitty keyboard protocol.
+    // This handles release events when ReportEventTypes flag is set.
+    if (_kittyFlags != 0)
+    {
+        return _makeKittyOutput(keyEvent, controlKeyState);
+    }
+
     const auto virtualKeyCode = keyEvent.wVirtualKeyCode;
     auto unicodeChar = keyEvent.uChar.UnicodeChar;
 
@@ -668,4 +753,621 @@ TerminalInput::OutputType TerminalInput::_makeWin32Output(const KEY_EVENT_RECORD
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
     //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
     return fmt::format(FMT_COMPILE(L"{}{};{};{};{};{};{}_"), _csi, vk, sc, uc, kd, cs, rc);
+}
+
+// Maps Windows virtual key codes to kitty keyboard protocol functional key codes.
+// Returns 0 if the key is a text-generating key (should use unicode codepoint instead).
+// https://sw.kovidgoyal.net/kitty/keyboard-protocol/#functional-key-definitions
+uint32_t TerminalInput::_getKittyFunctionalKeyCode(const WORD virtualKeyCode, const DWORD controlKeyState) noexcept
+{
+    // Unicode Private Use Area codes for functional keys (57344+)
+    constexpr uint32_t CAPS_LOCK = 57358;
+    constexpr uint32_t SCROLL_LOCK = 57359;
+    constexpr uint32_t NUM_LOCK = 57360;
+    constexpr uint32_t PRINT_SCREEN = 57361;
+    constexpr uint32_t PAUSE = 57362;
+    constexpr uint32_t MENU = 57363;
+
+    // F13-F35
+    constexpr uint32_t F13 = 57376;
+
+    // Keypad keys
+    constexpr uint32_t KP_0 = 57399;
+    constexpr uint32_t KP_DECIMAL = 57409;
+    constexpr uint32_t KP_DIVIDE = 57410;
+    constexpr uint32_t KP_MULTIPLY = 57411;
+    constexpr uint32_t KP_SUBTRACT = 57412;
+    constexpr uint32_t KP_ADD = 57413;
+    constexpr uint32_t KP_ENTER = 57414;
+    // Note: KP_EQUAL (57415) has no standard Windows VK code
+    constexpr uint32_t KP_SEPARATOR = 57416;
+    constexpr uint32_t KP_LEFT = 57417;
+    constexpr uint32_t KP_RIGHT = 57418;
+    constexpr uint32_t KP_UP = 57419;
+    constexpr uint32_t KP_DOWN = 57420;
+    constexpr uint32_t KP_PAGE_UP = 57421;
+    constexpr uint32_t KP_PAGE_DOWN = 57422;
+    constexpr uint32_t KP_HOME = 57423;
+    constexpr uint32_t KP_END = 57424;
+    constexpr uint32_t KP_INSERT = 57425;
+    constexpr uint32_t KP_DELETE = 57426;
+
+    // Media keys
+    // Note: Windows only has VK_MEDIA_PLAY_PAUSE, not separate play/pause keys
+    // MEDIA_FAST_FORWARD (57433) and MEDIA_REWIND (57434) have no standard Windows VK codes
+    constexpr uint32_t MEDIA_PLAY_PAUSE = 57430;
+    constexpr uint32_t MEDIA_STOP = 57432;
+    constexpr uint32_t MEDIA_TRACK_NEXT = 57435;
+    constexpr uint32_t MEDIA_TRACK_PREVIOUS = 57436;
+    constexpr uint32_t LOWER_VOLUME = 57438;
+    constexpr uint32_t RAISE_VOLUME = 57439;
+    constexpr uint32_t MUTE_VOLUME = 57440;
+
+    // Modifier keys
+    constexpr uint32_t LEFT_SHIFT = 57441;
+    constexpr uint32_t LEFT_CONTROL = 57442;
+    constexpr uint32_t LEFT_ALT = 57443;
+    constexpr uint32_t LEFT_SUPER = 57444;
+    constexpr uint32_t RIGHT_SHIFT = 57447;
+    constexpr uint32_t RIGHT_CONTROL = 57448;
+    constexpr uint32_t RIGHT_ALT = 57449;
+    constexpr uint32_t RIGHT_SUPER = 57450;
+
+    const auto isEnhanced = WI_IsFlagSet(controlKeyState, ENHANCED_KEY);
+
+    switch (virtualKeyCode)
+    {
+    // Special keys with C0 control codes
+    case VK_ESCAPE:
+        return 27;
+    case VK_RETURN:
+        // Keypad Enter has ENHANCED_KEY flag
+        return isEnhanced ? KP_ENTER : 13;
+    case VK_TAB:
+        return 9;
+    case VK_BACK:
+        return 127;
+
+    // Navigation keys - when ENHANCED_KEY is not set, these are keypad keys
+    case VK_INSERT:
+        return isEnhanced ? 0 : KP_INSERT; // Use CSI 2~ for enhanced, kitty code for keypad
+    case VK_DELETE:
+        return isEnhanced ? 0 : KP_DELETE; // Use CSI 3~ for enhanced
+    case VK_HOME:
+        return isEnhanced ? 0 : KP_HOME; // Use CSI H for enhanced
+    case VK_END:
+        return isEnhanced ? 0 : KP_END; // Use CSI F for enhanced
+    case VK_PRIOR: // Page Up
+        return isEnhanced ? 0 : KP_PAGE_UP;
+    case VK_NEXT: // Page Down
+        return isEnhanced ? 0 : KP_PAGE_DOWN;
+    case VK_UP:
+        return isEnhanced ? 0 : KP_UP; // Use CSI A for enhanced
+    case VK_DOWN:
+        return isEnhanced ? 0 : KP_DOWN;
+    case VK_LEFT:
+        return isEnhanced ? 0 : KP_LEFT;
+    case VK_RIGHT:
+        return isEnhanced ? 0 : KP_RIGHT;
+
+    // Function keys F1-F12 - use legacy sequences
+    case VK_F1:
+    case VK_F2:
+    case VK_F3:
+    case VK_F4:
+    case VK_F5:
+    case VK_F6:
+    case VK_F7:
+    case VK_F8:
+    case VK_F9:
+    case VK_F10:
+    case VK_F11:
+    case VK_F12:
+        return 0; // Use legacy sequences
+
+    // Function keys F13-F24
+    case VK_F13:
+        return F13;
+    case VK_F14:
+        return F13 + 1;
+    case VK_F15:
+        return F13 + 2;
+    case VK_F16:
+        return F13 + 3;
+    case VK_F17:
+        return F13 + 4;
+    case VK_F18:
+        return F13 + 5;
+    case VK_F19:
+        return F13 + 6;
+    case VK_F20:
+        return F13 + 7;
+    case VK_F21:
+        return F13 + 8;
+    case VK_F22:
+        return F13 + 9;
+    case VK_F23:
+        return F13 + 10;
+    case VK_F24:
+        return F13 + 11;
+
+    // Lock keys
+    case VK_CAPITAL:
+        return CAPS_LOCK;
+    case VK_SCROLL:
+        return SCROLL_LOCK;
+    case VK_NUMLOCK:
+        return NUM_LOCK;
+
+    // Other special keys
+    case VK_SNAPSHOT:
+        return PRINT_SCREEN;
+    case VK_PAUSE:
+        return PAUSE;
+    case VK_APPS:
+        return MENU;
+
+    // Keypad keys
+    case VK_NUMPAD0:
+        return KP_0;
+    case VK_NUMPAD1:
+        return KP_0 + 1;
+    case VK_NUMPAD2:
+        return KP_0 + 2;
+    case VK_NUMPAD3:
+        return KP_0 + 3;
+    case VK_NUMPAD4:
+        return KP_0 + 4;
+    case VK_NUMPAD5:
+        return KP_0 + 5;
+    case VK_NUMPAD6:
+        return KP_0 + 6;
+    case VK_NUMPAD7:
+        return KP_0 + 7;
+    case VK_NUMPAD8:
+        return KP_0 + 8;
+    case VK_NUMPAD9:
+        return KP_0 + 9;
+    case VK_DECIMAL:
+        return KP_DECIMAL;
+    case VK_DIVIDE:
+        return KP_DIVIDE;
+    case VK_MULTIPLY:
+        return KP_MULTIPLY;
+    case VK_SUBTRACT:
+        return KP_SUBTRACT;
+    case VK_ADD:
+        return KP_ADD;
+    case VK_SEPARATOR:
+        return KP_SEPARATOR;
+    case VK_CLEAR:
+        return KP_0 + 5; // Keypad 5 when NumLock is off
+
+    // Media keys
+    case VK_MEDIA_PLAY_PAUSE:
+        return MEDIA_PLAY_PAUSE;
+    case VK_MEDIA_STOP:
+        return MEDIA_STOP;
+    case VK_MEDIA_NEXT_TRACK:
+        return MEDIA_TRACK_NEXT;
+    case VK_MEDIA_PREV_TRACK:
+        return MEDIA_TRACK_PREVIOUS;
+    case VK_VOLUME_DOWN:
+        return LOWER_VOLUME;
+    case VK_VOLUME_UP:
+        return RAISE_VOLUME;
+    case VK_VOLUME_MUTE:
+        return MUTE_VOLUME;
+
+    // Modifier keys
+    case VK_SHIFT:
+        // Distinguish left/right shift by scan code
+        return (MapVirtualKeyW(virtualKeyCode, MAPVK_VK_TO_VSC) == 0x2A) ? LEFT_SHIFT : RIGHT_SHIFT;
+    case VK_LSHIFT:
+        return LEFT_SHIFT;
+    case VK_RSHIFT:
+        return RIGHT_SHIFT;
+    case VK_CONTROL:
+        return isEnhanced ? RIGHT_CONTROL : LEFT_CONTROL;
+    case VK_LCONTROL:
+        return LEFT_CONTROL;
+    case VK_RCONTROL:
+        return RIGHT_CONTROL;
+    case VK_MENU:
+        return isEnhanced ? RIGHT_ALT : LEFT_ALT;
+    case VK_LMENU:
+        return LEFT_ALT;
+    case VK_RMENU:
+        return RIGHT_ALT;
+    case VK_LWIN:
+        return LEFT_SUPER;
+    case VK_RWIN:
+        return RIGHT_SUPER;
+
+    default:
+        return 0; // Text-generating key, use unicode codepoint
+    }
+}
+
+// Generates kitty keyboard protocol output for a key event.
+// https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+TerminalInput::OutputType TerminalInput::_makeKittyOutput(const KEY_EVENT_RECORD& key, const DWORD controlKeyState) const
+{
+    const auto virtualKeyCode = key.wVirtualKeyCode;
+    const auto unicodeChar = key.uChar.UnicodeChar;
+    const auto isKeyDown = key.bKeyDown;
+    const auto reportEventTypes = (_kittyFlags & KittyKeyboardProtocolFlags::ReportEventTypes) != 0;
+    const auto reportAllKeys = (_kittyFlags & KittyKeyboardProtocolFlags::ReportAllKeys) != 0;
+    const auto reportAlternateKeys = (_kittyFlags & KittyKeyboardProtocolFlags::ReportAlternateKeys) != 0;
+    const auto reportText = (_kittyFlags & KittyKeyboardProtocolFlags::ReportText) != 0;
+    // Note: Disambiguate flag (0x01) is implicitly handled - if we're in this function
+    // at all (_kittyFlags != 0), then Ctrl+key and Alt+key combos get CSI u encoding.
+
+    // Without ReportEventTypes or ReportAllKeys, we only handle key down events
+    // For Enter, Tab, Backspace - keep legacy behavior unless ReportAllKeys is set
+    if (!isKeyDown)
+    {
+        if (!reportEventTypes)
+        {
+            return _makeNoOutput();
+        }
+        // For release events, we need ReportEventTypes
+    }
+
+    // Get the functional key code, or 0 if this is a text key
+    const auto functionalKeyCode = _getKittyFunctionalKeyCode(virtualKeyCode, controlKeyState);
+
+    // Determine if we should use CSI u encoding
+    const auto isModifierKey = (virtualKeyCode >= VK_SHIFT && virtualKeyCode <= VK_MENU) ||
+                               virtualKeyCode == VK_LSHIFT || virtualKeyCode == VK_RSHIFT ||
+                               virtualKeyCode == VK_LCONTROL || virtualKeyCode == VK_RCONTROL ||
+                               virtualKeyCode == VK_LMENU || virtualKeyCode == VK_RMENU ||
+                               virtualKeyCode == VK_LWIN || virtualKeyCode == VK_RWIN ||
+                               virtualKeyCode == VK_CAPITAL || virtualKeyCode == VK_NUMLOCK ||
+                               virtualKeyCode == VK_SCROLL;
+
+    // Special handling for Enter, Tab, Backspace in legacy compatibility
+    // These should only be encoded as CSI u when ReportAllKeys is set
+    // This allows users to still type "reset" at a shell prompt if an app crashes
+    const auto isLegacySpecialKey = (virtualKeyCode == VK_RETURN || virtualKeyCode == VK_TAB || virtualKeyCode == VK_BACK);
+    if (isLegacySpecialKey && !reportAllKeys && isKeyDown)
+    {
+        // Send legacy sequence for compatibility
+        switch (virtualKeyCode)
+        {
+        case VK_RETURN:
+            return MakeOutput(_inputMode.test(Mode::LineFeed) ? L"\r\n" : L"\r");
+        case VK_TAB:
+            if (WI_IsFlagSet(controlKeyState, SHIFT_PRESSED))
+            {
+                return MakeOutput(fmt::format(FMT_COMPILE(L"{}Z"), _csi));
+            }
+            return MakeOutput(L"\t");
+        case VK_BACK:
+            return MakeOutput(_inputMode.test(Mode::BackarrowKey) ? L"\x08" : L"\x7f");
+        }
+    }
+
+    // With only disambiguate flag (no reportAllKeys), we still send plain text for
+    // unmodified text-producing keys, but Escape and modified keys get CSI u encoding.
+    // This is covered by the logic below.
+
+    // For text-producing keys without modifiers, send plain UTF-8 unless ReportAllKeys is set.
+    // With disambiguate flag, Ctrl+key and Alt+key combos get CSI u encoding, but plain
+    // keys (with or without shift) still send text directly.
+    if (functionalKeyCode == 0 && !isModifierKey && isKeyDown)
+    {
+        const auto ctrlIsPressed = WI_IsAnyFlagSet(controlKeyState, CTRL_PRESSED);
+        const auto altIsPressed = WI_IsAnyFlagSet(controlKeyState, ALT_PRESSED);
+
+        // If there are no significant modifiers (only shift is allowed for text), send plain text.
+        // ReportAllKeys forces everything through CSI u encoding.
+        if (!ctrlIsPressed && !altIsPressed && !reportAllKeys)
+        {
+            if (unicodeChar != 0 && unicodeChar >= 0x20)
+            {
+                return MakeOutput({ &unicodeChar, 1 });
+            }
+        }
+    }
+
+    // Calculate kitty modifiers early - needed for legacy sequences too
+    // kitty: shift=1, alt=2, ctrl=4, super=8, hyper=16, meta=32, caps_lock=64, num_lock=128
+    uint32_t modifiers = 0;
+    if (WI_IsFlagSet(controlKeyState, SHIFT_PRESSED))
+        modifiers |= 1;
+    if (WI_IsAnyFlagSet(controlKeyState, ALT_PRESSED))
+        modifiers |= 2;
+    if (WI_IsAnyFlagSet(controlKeyState, CTRL_PRESSED))
+        modifiers |= 4;
+    // Note: Windows key state is not reliably available in controlKeyState
+    // super would be modifiers |= 8
+    if (WI_IsFlagSet(controlKeyState, CAPSLOCK_ON))
+        modifiers |= 64;
+    if (WI_IsFlagSet(controlKeyState, NUMLOCK_ON))
+        modifiers |= 128;
+
+    const auto encodedModifiers = 1 + modifiers;
+
+    // Determine event type: 1=press, 2=repeat, 3=release
+    uint32_t eventType = 1; // press (default)
+    if (!isKeyDown)
+    {
+        eventType = 3; // release
+    }
+    else if (key.wRepeatCount > 1)
+    {
+        eventType = 2; // repeat
+    }
+
+    // Keys that use legacy CSI sequences (not CSI u):
+    // Arrow keys: CSI [1;modifiers] A/B/C/D
+    // Home/End: CSI [1;modifiers] H/F
+    // F1-F4: CSI [1;modifiers] P/Q/R/S (or SS3 P/Q/R/S without modifiers)
+    // Insert/Delete/PageUp/PageDown: CSI [param;modifiers] ~
+    // F5-F12: CSI [param;modifiers] ~
+    wchar_t legacyFinalChar = 0;
+    int legacyParam = 0;
+    const auto isEnhanced = WI_IsFlagSet(controlKeyState, ENHANCED_KEY);
+
+    switch (virtualKeyCode)
+    {
+    case VK_UP:
+        legacyFinalChar = L'A';
+        legacyParam = 1;
+        break;
+    case VK_DOWN:
+        legacyFinalChar = L'B';
+        legacyParam = 1;
+        break;
+    case VK_RIGHT:
+        legacyFinalChar = L'C';
+        legacyParam = 1;
+        break;
+    case VK_LEFT:
+        legacyFinalChar = L'D';
+        legacyParam = 1;
+        break;
+    case VK_HOME:
+        if (isEnhanced)
+        {
+            legacyFinalChar = L'H';
+            legacyParam = 1;
+        }
+        break;
+    case VK_END:
+        if (isEnhanced)
+        {
+            legacyFinalChar = L'F';
+            legacyParam = 1;
+        }
+        break;
+    case VK_INSERT:
+        if (isEnhanced)
+        {
+            legacyFinalChar = L'~';
+            legacyParam = 2;
+        }
+        break;
+    case VK_DELETE:
+        if (isEnhanced)
+        {
+            legacyFinalChar = L'~';
+            legacyParam = 3;
+        }
+        break;
+    case VK_PRIOR: // Page Up
+        if (isEnhanced)
+        {
+            legacyFinalChar = L'~';
+            legacyParam = 5;
+        }
+        break;
+    case VK_NEXT: // Page Down
+        if (isEnhanced)
+        {
+            legacyFinalChar = L'~';
+            legacyParam = 6;
+        }
+        break;
+    case VK_F1:
+        legacyFinalChar = L'P';
+        legacyParam = 1;
+        break;
+    case VK_F2:
+        legacyFinalChar = L'Q';
+        legacyParam = 1;
+        break;
+    case VK_F3:
+        legacyFinalChar = L'R';
+        legacyParam = 1;
+        break;
+    case VK_F4:
+        legacyFinalChar = L'S';
+        legacyParam = 1;
+        break;
+    case VK_F5:
+        legacyFinalChar = L'~';
+        legacyParam = 15;
+        break;
+    case VK_F6:
+        legacyFinalChar = L'~';
+        legacyParam = 17;
+        break;
+    case VK_F7:
+        legacyFinalChar = L'~';
+        legacyParam = 18;
+        break;
+    case VK_F8:
+        legacyFinalChar = L'~';
+        legacyParam = 19;
+        break;
+    case VK_F9:
+        legacyFinalChar = L'~';
+        legacyParam = 20;
+        break;
+    case VK_F10:
+        legacyFinalChar = L'~';
+        legacyParam = 21;
+        break;
+    case VK_F11:
+        legacyFinalChar = L'~';
+        legacyParam = 23;
+        break;
+    case VK_F12:
+        legacyFinalChar = L'~';
+        legacyParam = 24;
+        break;
+    }
+
+    // If this is a key that uses legacy CSI sequences, generate it
+    if (legacyFinalChar != 0)
+    {
+        std::wstring seq;
+        seq.reserve(16);
+        seq.append(_csi);
+
+        if (legacyFinalChar == L'~')
+        {
+            // Format: CSI param ; modifiers ~ or CSI param ; modifiers : event-type ~
+            seq.append(std::to_wstring(legacyParam));
+            if (encodedModifiers != 1 || (reportEventTypes && eventType != 1))
+            {
+                seq.push_back(L';');
+                seq.append(std::to_wstring(encodedModifiers));
+                if (reportEventTypes && eventType != 1)
+                {
+                    seq.push_back(L':');
+                    seq.append(std::to_wstring(eventType));
+                }
+            }
+        }
+        else
+        {
+            // Format: CSI 1 ; modifiers [letter] or CSI [letter]
+            // For kitty, we always use CSI 1 ; modifiers format when modifiers or event type present
+            if (encodedModifiers != 1 || (reportEventTypes && eventType != 1))
+            {
+                seq.append(L"1;");
+                seq.append(std::to_wstring(encodedModifiers));
+                if (reportEventTypes && eventType != 1)
+                {
+                    seq.push_back(L':');
+                    seq.append(std::to_wstring(eventType));
+                }
+            }
+        }
+
+        seq.push_back(legacyFinalChar);
+        return seq;
+    }
+
+    // Build kitty CSI u sequence
+    // Format: CSI unicode-key-code:shifted-key:base-layout-key ; modifiers:event-type ; text-as-codepoints u
+
+    // Determine the key code to send
+    // According to kitty protocol: "the codepoint used is always the lower-case
+    // (or more technically, un-shifted) version of the key"
+    uint32_t keyCode = functionalKeyCode;
+    if (keyCode == 0)
+    {
+        // For alphabetic keys, use the virtual key code converted to lowercase.
+        // We can't use unicodeChar here because when Ctrl is pressed, unicodeChar
+        // becomes the control character (e.g., Ctrl+C gives unicodeChar=0x03).
+        if (virtualKeyCode >= 'A' && virtualKeyCode <= 'Z')
+        {
+            keyCode = virtualKeyCode + 32; // Convert to lowercase ('A'->'a')
+        }
+        // For uppercase unicodeChar (shift+letter), convert to lowercase
+        else if (unicodeChar >= L'A' && unicodeChar <= L'Z')
+        {
+            keyCode = unicodeChar + 32; // Convert to lowercase
+        }
+        // For printable characters, use the unicode char directly
+        else if (unicodeChar >= 0x20)
+        {
+            keyCode = unicodeChar;
+        }
+        // For control characters (unicodeChar < 0x20), try to derive from VK code
+        else if (virtualKeyCode >= '0' && virtualKeyCode <= '9')
+        {
+            keyCode = virtualKeyCode; // Use the digit
+        }
+        else if (virtualKeyCode >= 0xBA && virtualKeyCode <= 0xC0)
+        {
+            // OEM keys like semicolon, equals, comma, minus, period, slash, backtick
+            // These need the actual character, but we'd need ToUnicodeEx to get it.
+            // For now, if we have a unicodeChar, use it; otherwise fall through.
+            if (unicodeChar != 0)
+            {
+                keyCode = unicodeChar;
+            }
+            else
+            {
+                return _makeNoOutput();
+            }
+        }
+        else if (unicodeChar != 0)
+        {
+            keyCode = unicodeChar;
+        }
+        else
+        {
+            // Unknown key without unicode - shouldn't happen for valid keys
+            return _makeNoOutput();
+        }
+    }
+
+    // Build the sequence
+    std::wstring seq;
+    seq.reserve(32);
+    seq.append(_csi);
+    seq.append(std::to_wstring(keyCode));
+
+    // Add alternate keys if requested (shifted key and base layout key)
+    if (reportAlternateKeys && modifiers != 0)
+    {
+        // Add shifted key if shift is pressed
+        if ((modifiers & 1) && unicodeChar != 0 && unicodeChar != keyCode)
+        {
+            seq.push_back(L':');
+            seq.append(std::to_wstring(static_cast<uint32_t>(unicodeChar)));
+        }
+
+        // TODO: Add base layout key for non-Latin keyboards
+        // For now, we just set it to a placeholder value
+        // seq.push_back(L':');
+        // seq.append(std::to_wstring(baseLayoutKey));
+    }
+
+    // Determine if we need to output text-as-codepoints (third field)
+    const auto needsText = reportText && reportAllKeys && functionalKeyCode == 0 && unicodeChar >= 0x20 && isKeyDown;
+
+    // We need to include modifiers field if:
+    // - modifiers are non-default (encodedModifiers != 1), OR
+    // - we need to report non-press event type, OR
+    // - we need to output text (text is the 3rd field, so we must have 2nd field too)
+    const auto needsModifiers = encodedModifiers != 1 || (reportEventTypes && eventType != 1) || needsText;
+    if (needsModifiers)
+    {
+        seq.push_back(L';');
+        seq.append(std::to_wstring(encodedModifiers));
+
+        if (reportEventTypes && eventType != 1)
+        {
+            seq.push_back(L':');
+            seq.append(std::to_wstring(eventType));
+        }
+    }
+
+    // Add text-as-codepoints if requested and this is a text-generating key
+    if (needsText)
+    {
+        seq.push_back(L';');
+        seq.append(std::to_wstring(static_cast<uint32_t>(unicodeChar)));
+    }
+
+    seq.push_back(L'u');
+
+    return seq;
 }
