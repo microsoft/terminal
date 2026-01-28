@@ -93,7 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             IndexData& operator=(const IndexData& other) = default;
 
-            // Basic index data loaded from GeneratedSettingsIndex.g.h and wrapped as LocalizedIndexEntrys.
+            // Basic index data loaded from GeneratedSettingsIndex.g.h and wrapped as LocalizedIndexEntry objects.
             // Non-main indices are duplicated at runtime when searching for runtime objects.
             std::vector<LocalizedIndexEntry> mainIndex;
             std::vector<LocalizedIndexEntry> profileIndex;

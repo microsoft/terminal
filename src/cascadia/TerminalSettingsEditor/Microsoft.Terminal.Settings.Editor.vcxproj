@@ -90,6 +90,7 @@
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="SearchIndex.h" />
+    <ClInclude Include="NavConstants.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>

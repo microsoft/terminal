@@ -5,38 +5,10 @@
 #include "SearchIndex.h"
 #include "FilteredSearchResult.g.cpp"
 #include "SearchResultTemplateSelector.g.cpp"
+#include "NavConstants.h"
 
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include <ScopedResourceLoader.h>
-#include <til/static_map.h>
-
-static constexpr std::wstring_view openJsonTag{ L"OpenJson_Nav" };
-static constexpr std::wstring_view launchTag{ L"Launch_Nav" };
-static constexpr std::wstring_view interactionTag{ L"Interaction_Nav" };
-static constexpr std::wstring_view renderingTag{ L"Rendering_Nav" };
-static constexpr std::wstring_view compatibilityTag{ L"Compatibility_Nav" };
-static constexpr std::wstring_view actionsTag{ L"Actions_Nav" };
-static constexpr std::wstring_view newTabMenuTag{ L"NewTabMenu_Nav" };
-static constexpr std::wstring_view extensionsTag{ L"Extensions_Nav" };
-static constexpr std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
-static constexpr std::wstring_view addProfileTag{ L"AddProfile" };
-static constexpr std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
-static constexpr std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
-
-static constexpr til::static_map NavTagIconMap{
-    std::pair{ launchTag, L"\xE7B5" }, /* Set Lock Screen */
-    std::pair{ interactionTag, L"\xE7C9" }, /* Touch Pointer */
-    std::pair{ globalAppearanceTag, L"\xE771" }, /* Personalize */
-    std::pair{ colorSchemesTag, L"\xE790" }, /* Color */
-    std::pair{ renderingTag, L"\xE7F8" }, /* Device Laptop No Pic */
-    std::pair{ compatibilityTag, L"\xEC7A" }, /* Developer Tools */
-    std::pair{ actionsTag, L"\xE765" }, /* Keyboard Classic */
-    std::pair{ newTabMenuTag, L"\xE71D" }, /* All Apps */
-    std::pair{ extensionsTag, L"\xEA86" }, /* Puzzle */
-    std::pair{ globalProfileTag, L"\xE81E" }, /* Map Layers */
-    std::pair{ addProfileTag, L"\xE710" }, /* Add */
-    std::pair{ openJsonTag, L"\xE713" }, /* Settings */
-};
 
 // Weight multipliers for search result scoring.
 // Higher values prioritize certain types of matches over others.
