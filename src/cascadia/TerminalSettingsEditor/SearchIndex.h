@@ -20,7 +20,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct LocalizedIndexEntry
     {
         std::optional<winrt::hstring> DisplayTextNeutral = std::nullopt;
-        std::optional<winrt::hstring> HelpTextNeutral = std::nullopt;
         const IndexEntry* Entry = nullptr;
 
         std::array<std::pair<std::optional<winrt::hstring>, int>, 2> GetSearchableFields() const;

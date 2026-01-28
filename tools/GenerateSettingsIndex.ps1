@@ -103,8 +103,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_Launch/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_Launch/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"Launch_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -117,8 +115,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_Interaction/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_Interaction/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"Interaction_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -131,8 +127,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_Appearance/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_Appearance/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"GlobalAppearance_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -145,8 +139,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_ColorSchemes/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_ColorSchemes/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -158,8 +150,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"ColorScheme_AddNewButton/Text`""
             DisplayTextLocalized = 'RS_(L"ColorScheme_AddNewButton/Text")'
-            HelpTextUid          = 'std::nullopt'
-            HelpTextLocalized    = 'std::nullopt'
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"ColorSchemes_Nav`"})"
             SubPage              = 'BreadcrumbSubPage::None'
@@ -173,8 +163,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_Rendering/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_Rendering/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"Rendering_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -187,8 +175,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_Compatibility/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_Compatibility/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"Compatibility_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -201,8 +187,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_Actions/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_Actions/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"Actions_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -215,8 +199,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_NewTabMenu/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_NewTabMenu/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"NewTabMenu_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -229,8 +211,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_Extensions/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_Extensions/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"Extensions_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -243,8 +223,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_ProfileDefaults/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_ProfileDefaults/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"GlobalProfile_Nav`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -257,8 +235,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"Nav_AddNewProfile/Content`""
             DisplayTextLocalized = "RS_(L`"Nav_AddNewProfile/Content`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"AddProfile`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -269,8 +245,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
         $entries += [pscustomobject]@{
             DisplayTextUid       = "L`"AddProfile_AddNewTextBlock/Text`""
             DisplayTextLocalized = "RS_(L`"AddProfile_AddNewTextBlock/Text`")"
-            HelpTextUid          = "std::nullopt"
-            HelpTextLocalized    = "std::nullopt"
             ParentPage           = $pageClass
             NavigationParam      = "winrt::box_value(hstring{L`"AddProfile`"})"
             SubPage              = "BreadcrumbSubPage::None"
@@ -397,8 +371,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
             $entries += [pscustomobject]@{
                 DisplayTextUid       = "L`"$($uid)/Header`""
                 DisplayTextLocalized = "RS_(L`"$($uid)/Header`")"
-                HelpTextUid          = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ L`"$($uid)/HelpText`" }" : "std::nullopt"
-                HelpTextLocalized    = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ RS_(L`"$($uid)/HelpText`") }" : "std::nullopt"
                 ParentPage           = $pageClass
                 NavigationParam      = $navigationParam -eq "nullptr" ? $navigationParam : "winrt::box_value(hstring{L`"$($navigationParam)`"})"
                 SubPage              = $subPage
@@ -412,8 +384,6 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
             $entries += [pscustomobject]@{
                 DisplayTextUid       = "L`"$($uid)/Header`""
                 DisplayTextLocalized = "RS_(L`"$($uid)/Header`")"
-                HelpTextUid          = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ L`"$($uid)/HelpText`" }" : "std::nullopt"
-                HelpTextLocalized    = $resourceKeys -contains "$($uid).HelpText" ? "std::optional<hstring>{ RS_(L`"$($uid)/HelpText`") }" : "std::nullopt"
                 ParentPage           = $pageClass
                 NavigationParam      = 'nullptr'  # VM param at runtime
                 SubPage              = $navigationParam -eq 'NewTabMenu_Nav' ? 'BreadcrumbSubPage::NewTabMenu_Folder' : $subPage
@@ -425,7 +395,7 @@ Get-ChildItem -Path $SourceDir -Recurse -Filter *.xaml | ForEach-Object {
 }
 
 # Ensure there aren't any duplicate entries
-$entries = $entries | Sort-Object DisplayTextLocalized, HelpTextLocalized, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
+$entries = $entries | Sort-Object DisplayTextLocalized, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
 
 $buildTimeEntries = @()
 $profileEntries = @()
@@ -433,7 +403,7 @@ $schemeEntries = @()
 $ntmEntries = @()
 foreach ($e in $entries)
 {
-    $formattedEntry = "            IndexEntry{ $($e.DisplayTextUid), $($e.DisplayTextLocalized), $($e.HelpTextUid), $($e.HelpTextLocalized), $($e.NavigationParam), $($e.SubPage), $($e.ElementName) }, // $($e.File)"
+    $formattedEntry = "            IndexEntry{ $($e.DisplayTextUid), $($e.DisplayTextLocalized), $($e.NavigationParam), $($e.SubPage), $($e.ElementName) }, // $($e.File)"
     
     if ($e.NavigationParam -eq 'nullptr' -and
         ($e.ParentPage -match 'Profiles_Base' -or
@@ -477,14 +447,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Localized display text shown in the SettingContainer (i.e. RS_(L"Globals_DefaultProfile/Header"))
         hstring DisplayTextLocalized;
-
-        // x:Uid of the SettingContainer's HelpText (i.e. "Globals_DefaultProfile/HelpText")
-        // May not exist for all entries
-        std::optional<hstring> HelpTextUid;
-
-        // Localized help text shown in the SettingContainer (i.e. RS_(L"Globals_DefaultProfile/HelpText"))
-        // May not exist for all entries
-        std::optional<hstring> HelpTextLocalized;
 
         // Navigation argument (i.e. winrt::box_value(hstring) or nullptr)
         // Use nullptr as placeholder for runtime navigation with a view model object
@@ -557,25 +519,25 @@ $( ($schemeEntries -join "`r`n") )
 
     const IndexEntry& PartialProfileIndexEntry()
     {
-        static IndexEntry entry{ L"", L"", std::nullopt, std::nullopt, nullptr, BreadcrumbSubPage::None, L"" };
+        static IndexEntry entry{ L"", L"", nullptr, BreadcrumbSubPage::None, L"" };
         return entry;
     }
 
     const IndexEntry& PartialNTMFolderIndexEntry()
     {
-        static IndexEntry entry{ L"", L"", std::nullopt, std::nullopt, nullptr, BreadcrumbSubPage::NewTabMenu_Folder, L"" };
+        static IndexEntry entry{ L"", L"", nullptr, BreadcrumbSubPage::NewTabMenu_Folder, L"" };
         return entry;
     }
 
     const IndexEntry& PartialColorSchemeIndexEntry()
     {
-        static IndexEntry entry{ L"", L"", std::nullopt, std::nullopt, nullptr, BreadcrumbSubPage::ColorSchemes_Edit, L"" };
+        static IndexEntry entry{ L"", L"", nullptr, BreadcrumbSubPage::ColorSchemes_Edit, L"" };
         return entry;
     }
 
     const IndexEntry& PartialExtensionIndexEntry()
     {
-        static IndexEntry entry{ L"", L"", std::nullopt, std::nullopt, nullptr, BreadcrumbSubPage::Extensions_Extension, L"" };
+        static IndexEntry entry{ L"", L"", nullptr, BreadcrumbSubPage::Extensions_Extension, L"" };
         return entry;
     }
 }

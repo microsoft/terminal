@@ -290,10 +290,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 if (shouldIncludeLanguageNeutralResources)
                 {
                     localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.DisplayTextUid);
-                    if (entry.HelpTextUid)
-                    {
-                        localizedEntry.HelpTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.HelpTextUid.value());
-                    }
                 }
                 localizedIndex.emplace_back(std::move(localizedEntry));
             }
