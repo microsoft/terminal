@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         IconPicker();
 
+        static constexpr std::wstring_view HideIconValue{ L"none" };
         static Windows::UI::Xaml::Controls::IconSource BuiltInIconConverter(const Windows::Foundation::IInspectable& iconVal);
         static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> BuiltInIcons() noexcept;
         static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> IconTypes() noexcept;

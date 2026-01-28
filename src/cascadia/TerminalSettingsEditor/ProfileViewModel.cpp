@@ -6,6 +6,7 @@
 #include "ProfileViewModel.g.cpp"
 #include "Appearances.h"
 #include "EnumEntry.h"
+#include "IconPicker.h"
 
 #include "../WinRTUtils/inc/Utils.h"
 #include "../../renderer/base/FontCache.h"
@@ -22,7 +23,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view HideIconValue{ L"none" };
     static Editor::Font fontObjectForDWriteFont(IDWriteFontFamily* family, const wchar_t* locale);
 
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
@@ -568,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::UsingNoIcon() const noexcept
     {
         const auto iconPath{ IconPath() };
-        return iconPath.empty() || iconPath == HideIconValue;
+        return iconPath.empty() || iconPath == IconPicker::HideIconValue;
     }
 
     hstring ProfileViewModel::BellStylePreview() const

@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "NewTabMenuViewModel.h"
+#include "IconPicker.h"
 
 #include "NewTabMenuViewModel.g.cpp"
 #include "FolderTreeViewEntry.g.cpp"
@@ -22,8 +23,6 @@ using namespace winrt::Windows::UI::Xaml::Data;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr std::wstring_view HideIconValue{ L"none" };
-
     static IObservableVector<Editor::NewTabMenuEntryViewModel> _ConvertToViewModelEntries(const IVector<Model::NewTabMenuEntry>& settingsModelEntries, const Model::CascadiaSettings& settings)
     {
         std::vector<Editor::NewTabMenuEntryViewModel> result{};
@@ -262,7 +261,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_CurrentFolder && _CurrentFolder.Icon() != path)
         {
             _CurrentFolder.Icon(path);
-            _NotifyChanges(L"CurrentFolderIconPath", L"CurrentFolderIconPreview", L"UsingNoIcon");
+            _NotifyChanges(L"CurrentFolderIconPreview", L"CurrentFolderLocalizedIcon", L"CurrentFolderIconPath", L"CurrentFolderUsingNoIcon");
         }
     }
 
@@ -273,7 +272,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return false;
         }
         const auto icon{ _CurrentFolder.Icon() };
-        return icon.empty() || icon == HideIconValue;
+        return icon.empty() || icon == IconPicker::HideIconValue;
     }
 
     Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> NewTabMenuViewModel::CurrentView() const
