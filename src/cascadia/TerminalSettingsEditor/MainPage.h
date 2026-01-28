@@ -97,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(const Editor::ColorSchemeViewModel& colorSchemeVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
         void _Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
         void _Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
+        void _Navigate(const Editor::CommandViewModel& commandVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
         Microsoft::UI::Xaml::Controls::NavigationViewItem _FindProfileNavItem(winrt::guid profileGuid) const;

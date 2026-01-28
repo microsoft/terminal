@@ -841,6 +841,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::_Navigate(const Editor::CommandViewModel& commandVM, BreadcrumbSubPage subPage, hstring elementToFocus)
+    {
+        _PreNavigateHelper();
+
+        contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
+        const auto crumb = winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None);
+        _breadcrumbs.Append(crumb);
+        SettingsNav().SelectedItem(ActionsNavItem());
+
+        if (subPage == BreadcrumbSubPage::None || !commandVM)
+        {
+            _actionsVM.CurrentCommand(nullptr);
+        }
+        else
+        {
+            // Take advantage of the PropertyChanged event to navigate
+            // to EditAction and build the breadcrumbs as we go.
+            const auto wasAlreadyEdit = (_actionsVM.CurrentPage() == ActionsSubPage::Edit);
+            _actionsVM.CurrentCommand(commandVM);
+            _actionsVM.CurrentPage(ActionsSubPage::Edit);
+
+            // If CurrentPage was already Edit, PropertyChanged won't fire,
+            // so we navigate and add breadcrumb manually.
+            if (wasAlreadyEdit)
+            {
+                contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(commandVM, *this));
+                const auto editCrumb = winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit);
+                _breadcrumbs.Append(editCrumb);
+            }
+        }
+    }
+
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.LogSettingChanges(false);
@@ -1223,7 +1255,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                              _profileVMs.GetView(),
                                                              get_self<implementation::NewTabMenuViewModel>(_newTabMenuPageVM)->FolderTreeFlatList().GetView(),
                                                              _colorSchemesPageVM.AllColorSchemes().GetView(),
-                                                             _extensionsVM.ExtensionPackages().GetView());
+                                                             _extensionsVM.ExtensionPackages().GetView(),
+                                                             _actionsVM.CommandList().GetView());
         const auto results = co_await _currentSearch;
         _currentSearch = nullptr;
 
@@ -1268,6 +1301,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto& extPkgVM = navigationArg.try_as<Editor::ExtensionPackageViewModel>())
             {
                 _Navigate(extPkgVM, subpage, elementToFocus);
+            }
+            else if (const auto& commandVM = navigationArg.try_as<Editor::CommandViewModel>())
+            {
+                _Navigate(commandVM, subpage, elementToFocus);
             }
             SettingsSearchBox().Text(L"");
         }

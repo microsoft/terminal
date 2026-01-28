@@ -467,6 +467,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     const IndexEntry& PartialNTMFolderIndexEntry();
     const IndexEntry& PartialColorSchemeIndexEntry();
     const IndexEntry& PartialExtensionIndexEntry();
+    const IndexEntry& PartialActionIndexEntry();
 }
 "@
 
@@ -538,6 +539,12 @@ $( ($schemeEntries -join "`r`n") )
     const IndexEntry& PartialExtensionIndexEntry()
     {
         static IndexEntry entry{ L"", L"", nullptr, BreadcrumbSubPage::Extensions_Extension, L"" };
+        return entry;
+    }
+
+    const IndexEntry& PartialActionIndexEntry()
+    {
+        static IndexEntry entry{ L"", L"", nullptr, BreadcrumbSubPage::Actions_Edit, L"" };
         return entry;
     }
 }

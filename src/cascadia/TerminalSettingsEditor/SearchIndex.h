@@ -85,7 +85,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                                                                                                  const Windows::Foundation::Collections::IVectorView<Editor::ProfileViewModel> profileVMs,
                                                                                                                                                  const Windows::Foundation::Collections::IVectorView<Editor::FolderEntryViewModel> ntmFolderVMs,
                                                                                                                                                  const Windows::Foundation::Collections::IVectorView<Editor::ColorSchemeViewModel> colorSchemeVMs,
-                                                                                                                                                 const Windows::Foundation::Collections::IVectorView<Editor::ExtensionPackageViewModel> extensionPkgVMs);
+                                                                                                                                                 const Windows::Foundation::Collections::IVectorView<Editor::ExtensionPackageViewModel> extensionPkgVMs,
+                                                                                                                                                 const Windows::Foundation::Collections::IVectorView<Editor::CommandViewModel> commandVMs);
 
     private:
         SearchIndex() = default;
@@ -105,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             LocalizedIndexEntry ntmFolderIndexEntry;
             LocalizedIndexEntry colorSchemeIndexEntry;
             LocalizedIndexEntry extensionIndexEntry;
+            LocalizedIndexEntry actionIndexEntry;
         } _index;
     };
 }

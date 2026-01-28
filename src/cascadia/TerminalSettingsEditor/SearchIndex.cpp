@@ -103,6 +103,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             runtimeObjLabel = extensionPackageVM.Package().DisplayName();
             runtimeObjContext = RS_(L"Nav_Extensions/Content");
         }
+        else if (const auto commandVM = runtimeObj.try_as<Editor::CommandViewModel>())
+        {
+            runtimeObjLabel = commandVM.DisplayName();
+            runtimeObjContext = RS_(L"Nav_Actions/Content");
+        }
 
         if (const auto& displayText = searchIndexEntry->Entry->DisplayTextLocalized; !displayText.empty())
         {
@@ -183,6 +188,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 icon.Height(iconSize);
                 return icon;
             }
+            else if (const auto commandVM = navigationArg.try_as<Editor::CommandViewModel>())
+            {
+                WUX::Controls::FontIcon icon{};
+                icon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+                icon.FontSize(iconSize);
+                icon.Glyph(NavTagIconMap[actionsTag]);
+                return icon;
+            }
             else if (const auto stringNavArg = navigationArg.try_as<hstring>())
             {
                 WUX::Controls::FontIcon icon{};
@@ -259,6 +272,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         indexData.ntmFolderIndexEntry.Entry = &PartialNTMFolderIndexEntry();
         indexData.extensionIndexEntry.Entry = &PartialExtensionIndexEntry();
         indexData.colorSchemeIndexEntry.Entry = &PartialColorSchemeIndexEntry();
+        indexData.actionIndexEntry.Entry = &PartialActionIndexEntry();
 
         _index = std::move(indexData);
     }
@@ -273,6 +287,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - ntmFolderVMs - the list of New Tab Menu folder entry view models to search
     // - colorSchemeVMs - the list of color scheme view models to search
     // - extensionPkgVMs - the list of extension package view models to search
+    // - commandVMs - the list of command view models to search
     // Return value:
     // - The results are sorted by score (best matches first).
     // - If no results are found, a "no results" placeholder item is returned.
@@ -280,7 +295,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                                                    const IVectorView<Editor::ProfileViewModel> profileVMs,
                                                                                                    const IVectorView<Editor::FolderEntryViewModel> ntmFolderVMs,
                                                                                                    const IVectorView<Editor::ColorSchemeViewModel> colorSchemeVMs,
-                                                                                                   const IVectorView<Editor::ExtensionPackageViewModel> extensionPkgVMs)
+                                                                                                   const IVectorView<Editor::ExtensionPackageViewModel> extensionPkgVMs,
+                                                                                                   const IVectorView<Editor::CommandViewModel> commandVMs)
     {
         co_await winrt::resume_background();
 
@@ -400,14 +416,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         appendRuntimeObjectResults(ntmFolderVMs, _index.ntmFolderIndex, _index.ntmFolderIndexEntry);
         appendRuntimeObjectResults(colorSchemeVMs, _index.colorSchemeIndex, _index.colorSchemeIndexEntry);
 
-        // Extensions
-        for (const auto& extension : extensionPkgVMs)
-        {
-            if (const auto match = fzf::matcher::Match(extension.Package().DisplayName(), filter); match && match->Score >= MinimumMatchScore)
+        // Simple runtime object matching (no associated search index, just match by display name)
+        auto appendSimpleRuntimeObjectResults = [&](const auto& runtimeObjectList, const LocalizedIndexEntry& indexEntry, auto getDisplayName) {
+            for (const auto& runtimeObj : runtimeObjectList)
             {
-                scoredResults.emplace_back(match->Score * WeightRuntimeObjectMatch, FilteredSearchResult::CreateRuntimeObjectItem(&_index.extensionIndexEntry, extension));
+                if (cancellationToken())
+                {
+                    break;
+                }
+
+                if (const auto match = fzf::matcher::Match(getDisplayName(runtimeObj), filter); match && match->Score >= MinimumMatchScore)
+                {
+                    // navigates to runtime object page (i.e. "Copy Text" --> Actions > EditAction page)
+                    scoredResults.emplace_back(match->Score * WeightRuntimeObjectMatch,
+                                               FilteredSearchResult::CreateRuntimeObjectItem(&indexEntry, runtimeObj));
+                }
             }
-        }
+        };
+
+        appendSimpleRuntimeObjectResults(extensionPkgVMs, _index.extensionIndexEntry, [](const auto& ext) { return ext.Package().DisplayName(); });
+        appendSimpleRuntimeObjectResults(commandVMs, _index.actionIndexEntry, [](const auto& cmd) { return cmd.DisplayName(); });
 
         // must be IInspectable to be used as ItemsSource in XAML
         std::vector<Windows::Foundation::IInspectable> results;
