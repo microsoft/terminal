@@ -132,51 +132,29 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             runtimeObjContext = RS_(L"Nav_Extensions/Content");
         }
 
-        hstring displayText{};
-        if (searchIndexEntry)
+        if (const auto& displayText = searchIndexEntry->Entry->DisplayTextLocalized; !displayText.empty())
         {
-            if (searchIndexEntry->Entry)
-            {
-                displayText = searchIndexEntry->Entry->DisplayTextLocalized;
-            }
-            else if (searchIndexEntry->DisplayTextNeutral)
-            {
-                displayText = searchIndexEntry->DisplayTextNeutral.value();
-            }
+            // Full index entry (for settings within runtime objects)
+            // - primaryText: <displayText>
+            // - secondaryText: <runtimeObjLabel>
+            // navigates to setting container
+            return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, displayText, runtimeObjLabel);
         }
-
-        if (displayText.empty())
-        {
-            // primaryText: <runtimeObjLabel>
-            // secondaryText: <runtimeObjContext>
-            // "PowerShell" --> navigates to main runtime object page (i.e. Profiles_Base)
-            // "SSH" | "Extension" --> navigates to main runtime object page (i.e. Extensions > SSH)
-            return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, runtimeObjLabel, runtimeObjContext);
-        }
-        // primaryText: <displayText>
-        // secondaryText: <runtimeObjLabel>
-        // navigates to setting container
-        return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, displayText, runtimeObjLabel);
+        // Partial index entry (for runtime object main pages)
+        // - primaryText: <runtimeObjLabel>
+        // - secondaryText: <runtimeObjContext>
+        // "PowerShell" --> navigates to main runtime object page (i.e. Profiles_Base)
+        // "SSH" | "Extension" --> navigates to main runtime object page (i.e. Extensions > SSH)
+        return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, runtimeObjLabel, runtimeObjContext);
     }
 
     winrt::hstring FilteredSearchResult::Label() const
     {
         if (_overrideLabel)
         {
-            return _overrideLabel.value();
+            return *_overrideLabel;
         }
-        else if (_SearchIndexEntry)
-        {
-            if (_SearchIndexEntry->Entry)
-            {
-                return _SearchIndexEntry->Entry->DisplayTextLocalized;
-            }
-            else if (_SearchIndexEntry->DisplayTextNeutral.has_value())
-            {
-                return _SearchIndexEntry->DisplayTextNeutral.value();
-            }
-        }
-        return {};
+        return _SearchIndexEntry->Entry->DisplayTextLocalized;
     }
 
     bool FilteredSearchResult::IsNoResultsPlaceholder() const

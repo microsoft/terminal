@@ -69,12 +69,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     class SearchIndex final
     {
     public:
-        struct ScoredSearchResult
-        {
-            const LocalizedIndexEntry* entry;
-            int32_t score;
-        };
-
         static SearchIndex& Instance() noexcept
         {
             static SearchIndex instance;
