@@ -60,6 +60,7 @@ public:
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
     void SetAutoHideWindow(bool autoHideWindow) noexcept;
+    void SetQuakeWindowSizePercent(float percent) noexcept;
 
     void HideWindow();
 
@@ -85,6 +86,7 @@ public:
 
     til::event<winrt::delegate<void()>> WindowMoved;
     til::event<winrt::delegate<void(bool)>> WindowVisibilityChanged;
+    til::event<winrt::delegate<void(float)>> QuakeWindowSizeChanged;
 
 protected:
     void ForceResize()
@@ -143,6 +145,7 @@ protected:
 
     bool _isQuakeWindow{ false };
     bool _autoHideWindow{ false };
+    float _quakeWindowSizePercent{ 0.5f };
 
     void _enterQuakeMode();
     til::rect _getQuakeModeSize(HMONITOR hmon);
