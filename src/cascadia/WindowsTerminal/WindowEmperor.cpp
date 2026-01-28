@@ -1058,6 +1058,11 @@ void WindowEmperor::_setupSessionPersistence(bool enabled)
     _persistStateTimer.Interval(std::chrono::minutes(5));
     _persistStateTimer.Tick([&](auto&&, auto&&) {
         _persistState(ApplicationState::SharedInstance());
+        // GH#19804: Also persist buffer content periodically to protect against
+        // unexpected termination (BSOD, power failure, etc.). Previously, buffer
+        // content was only saved on graceful exit, causing complete buffer loss
+        // after crashes even though tab layout was preserved.
+        _persistBuffers();
     });
     _persistStateTimer.Start();
 }
@@ -1081,6 +1086,86 @@ void WindowEmperor::_persistState(const ApplicationState& state) const
 
     // Ensure to write the state.json
     state.Flush();
+}
+
+// GH#19804: Persist all terminal buffers to disk. This function is called both
+// periodically (via the 5-minute timer) and on graceful shutdown. Periodic saves
+// protect against unexpected termination (BSOD, power failure, Task Manager kill).
+// Returns the set of buffer filenames that were written, for cleanup purposes.
+std::unordered_set<std::wstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> WindowEmperor::_persistBuffers() const
+{
+    using namespace std::string_view_literals;
+
+    std::unordered_set<std::wstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> bufferFilenames;
+
+    const auto firstWindowPreference = _app.Logic().Settings().GlobalSettings().FirstWindowPreference();
+    const auto persistBuffers = firstWindowPreference == FirstWindowPreference::PersistedLayoutAndContent;
+
+    if (!persistBuffers)
+    {
+        return bufferFilenames;
+    }
+
+    const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
+    const auto admin = _app.Logic().IsRunningElevated();
+    const auto filenamePrefix = admin ? L"elevated_"sv : L"buffer_"sv;
+
+    // If the app is running elevated, we create files with a mandatory
+    // integrity label (ML) of "High" (HI) for reading and writing (NR, NW).
+    wil::unique_hlocal_security_descriptor sd;
+    SECURITY_ATTRIBUTES sa{};
+    if (admin)
+    {
+        unsigned long cb;
+        THROW_IF_WIN32_BOOL_FALSE(ConvertStringSecurityDescriptorToSecurityDescriptorW(L"S:(ML;;NRNW;;;HI)", SDDL_REVISION_1, wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd), &cb));
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = sd.get();
+    }
+
+    // Persist all terminal buffers to "buffer_{guid}.txt" files.
+    // We remember the filenames so that we can clean up old ones later.
+    for (const auto& w : _windows)
+    {
+        const auto panes = w->Logic().Panes();
+        for (const auto pane : panes)
+        {
+            try
+            {
+                const auto term = pane.try_as<winrt::TerminalApp::ITerminalPaneContent>();
+                if (!term)
+                {
+                    continue;
+                }
+                const auto control = term.GetTermControl();
+                if (!control)
+                {
+                    continue;
+                }
+                const auto connection = control.Connection();
+                if (!connection)
+                {
+                    continue;
+                }
+                const auto sessionId = connection.SessionId();
+                if (sessionId == winrt::guid{})
+                {
+                    continue;
+                }
+
+                auto filename = fmt::format(FMT_COMPILE(L"{}{}.txt"), filenamePrefix, sessionId);
+                const auto path = settingsDirectory / filename;
+
+                if (wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) })
+                {
+                    control.PersistTo(reinterpret_cast<int64_t>(file.get()));
+                    bufferFilenames.emplace(std::move(filename));
+                }
+            }
+            CATCH_LOG();
+        }
+    }
+
+    return bufferFilenames;
 }
 
 void WindowEmperor::_finalizeSessionPersistence() const
@@ -1110,66 +1195,11 @@ void WindowEmperor::_finalizeSessionPersistence() const
     const std::filesystem::path settingsDirectory{ std::wstring_view{ CascadiaSettings::SettingsDirectory() } };
     const auto admin = _app.Logic().IsRunningElevated();
     const auto filenamePrefix = admin ? L"elevated_"sv : L"buffer_"sv;
-    const auto persistBuffers = firstWindowPreference == FirstWindowPreference::PersistedLayoutAndContent;
-    std::unordered_set<std::wstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> bufferFilenames;
 
-    if (persistBuffers)
-    {
-        // If the app is running elevated, we create files with a mandatory
-        // integrity label (ML) of "High" (HI) for reading and writing (NR, NW).
-        wil::unique_hlocal_security_descriptor sd;
-        SECURITY_ATTRIBUTES sa{};
-        if (admin)
-        {
-            unsigned long cb;
-            THROW_IF_WIN32_BOOL_FALSE(ConvertStringSecurityDescriptorToSecurityDescriptorW(L"S:(ML;;NRNW;;;HI)", SDDL_REVISION_1, wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd), &cb));
-            sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-            sa.lpSecurityDescriptor = sd.get();
-        }
-
-        // Persist all terminal buffers to "buffer_{guid}.txt" files.
-        // We remember the filenames so that we can clean up old ones later.
-        for (const auto& w : _windows)
-        {
-            const auto panes = w->Logic().Panes();
-            for (const auto pane : panes)
-            {
-                try
-                {
-                    const auto term = pane.try_as<winrt::TerminalApp::ITerminalPaneContent>();
-                    if (!term)
-                    {
-                        continue;
-                    }
-                    const auto control = term.GetTermControl();
-                    if (!control)
-                    {
-                        continue;
-                    }
-                    const auto connection = control.Connection();
-                    if (!connection)
-                    {
-                        continue;
-                    }
-                    const auto sessionId = connection.SessionId();
-                    if (sessionId == winrt::guid{})
-                    {
-                        continue;
-                    }
-
-                    auto filename = fmt::format(FMT_COMPILE(L"{}{}.txt"), filenamePrefix, sessionId);
-                    const auto path = settingsDirectory / filename;
-
-                    if (wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) })
-                    {
-                        control.PersistTo(reinterpret_cast<int64_t>(file.get()));
-                        bufferFilenames.emplace(std::move(filename));
-                    }
-                }
-                CATCH_LOG();
-            }
-        }
-    }
+    // GH#19804: Use the shared _persistBuffers() function instead of duplicating
+    // the buffer saving logic. This ensures consistency between periodic saves
+    // and shutdown saves.
+    const auto bufferFilenames = _persistBuffers();
 
     // Now remove the "buffer_{guid}.txt" files that shouldn't be there.
     if (_needsPersistenceCleanup)
