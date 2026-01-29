@@ -225,7 +225,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        SearchResults Search(SearchRequest request);
+        SearchResults Search(const SearchRequest& request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
 
