@@ -1151,6 +1151,8 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             const size_t col2 = _api.bufferLineColumn[a.textPosition + i];
             const auto fg = colors[col1 << shift];
 
+            // TODO: Instead of aligning each DWrite-cluster to the cell grid,
+            // we should align each grapheme cluster to the cell grid.
             const auto expectedAdvance = (col2 - col1) * _p.s->font->cellSize.x;
             f32 actualAdvance = 0;
             for (auto j = prevCluster; j < nextCluster; ++j)

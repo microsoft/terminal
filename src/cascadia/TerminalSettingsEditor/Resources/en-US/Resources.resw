@@ -546,6 +546,14 @@
     <value>Use the legacy input encoding</value>
     <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
   </data>
+  <data name="Profile_AllowKittyKeyboardMode.Header" xml:space="preserve">
+    <value>Kitty keyboard protocol mode</value>
+    <comment>Header for a control to set the kitty keyboard protocol mode.</comment>
+  </data>
+  <data name="Profile_AllowKittyKeyboardMode.HelpText" xml:space="preserve">
+    <value>Sets the baseline flags for the kitty keyboard protocol. Value is a sum of: 1=Disambiguate, 2=Report event types, 4=Report alternate keys, 8=Report all keys, 16=Report text.</value>
+    <comment>Additional description for what the "kitty keyboard mode" setting does.</comment>
+  </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>Allow DECRQCRA (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
@@ -2575,19 +2583,19 @@
     <comment>An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
-    <value>WSL (C:\ -> /mnt/c)</value>
+    <value>WSL (C:\ -&gt; /mnt/c)</value>
     <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
-    <value>Cygwin (C:\ -> /cygdrive/c)</value>
+    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
     <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
-    <value>MSYS2 (C:\ -> /c)</value>
+    <value>MSYS2 (C:\ -&gt; /c)</value>
     <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
-    <value>MinGW (C:\ -> C:/)</value>
+    <value>MinGW (C:\ -&gt; C:/)</value>
     <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
