@@ -136,6 +136,10 @@ namespace Microsoft::Console::VirtualTerminal
             DECSLRM_SetLeftRightMargins = VTID("s"),
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
             ANSISYSRC_CursorRestore = VTID("u"),
+            KKP_KittyKeyboardSet = VTID("=u"),
+            KKP_KittyKeyboardQuery = VTID("?u"),
+            KKP_KittyKeyboardPush = VTID(">u"),
+            KKP_KittyKeyboardPop = VTID("<u"),
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
             PPA_PagePositionAbsolute = VTID(" P"),
             PPR_PagePositionRelative = VTID(" Q"),

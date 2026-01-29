@@ -2054,6 +2054,35 @@ void AdaptDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
 }
 
+// CSI = flags ; mode u - Sets kitty keyboard protocol flags
+void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode)
+{
+    const auto kittyFlags = static_cast<uint8_t>(flags.value_or(0));
+    const auto KittyKeyboardProtocol = static_cast<TerminalInput::KittyKeyboardProtocolMode>(mode.value_or(1));
+    _terminalInput.SetKittyKeyboardProtocol(kittyFlags, KittyKeyboardProtocol);
+}
+
+// CSI ? u - Queries current kitty keyboard protocol flags
+void AdaptDispatch::QueryKittyKeyboardProtocol()
+{
+    const auto flags = static_cast<VTInt>(_terminalInput.GetKittyFlags());
+    _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"?{}u"), flags));
+}
+
+// CSI > flags u - Pushes current kitty keyboard flags onto the stack and sets new flags
+void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
+{
+    const auto kittyFlags = static_cast<uint8_t>(flags.value_or(0));
+    _terminalInput.PushKittyFlags(kittyFlags);
+}
+
+// CSI < count u - Pops one or more entries from the kitty keyboard stack
+void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count)
+{
+    const auto popCount = static_cast<size_t>(count.value_or(1));
+    _terminalInput.PopKittyFlags(popCount);
+}
+
 // Routine Description:
 // - Internal logic for adding or removing lines in the active screen buffer.
 //   This also moves the cursor to the left margin, which is expected behavior for IL and DL.

@@ -121,6 +121,7 @@ namespace Microsoft.Terminal.Core
         String WordDelimiters { get; };
 
         Boolean ForceVTInput { get; };
+        Boolean AllowKittyKeyboardMode { get; };
         Boolean AllowVtChecksumReport { get; };
         Boolean AllowVtClipboardWrite { get; };
         Boolean TrimBlockSelection { get; };

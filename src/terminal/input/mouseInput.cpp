@@ -487,7 +487,7 @@ TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point p
 // True if the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
 bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
-    const auto inAltBuffer{ _mouseInputState.inAlternateBuffer };
+    const auto inAltBuffer{ _inAlternateBuffer };
     const auto inAltScroll{ _inputMode.test(Mode::AlternateScroll) };
     const auto wasMouseWheel{ (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0 };
     return inAltBuffer && inAltScroll && wasMouseWheel;
