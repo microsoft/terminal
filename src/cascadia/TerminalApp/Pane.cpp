@@ -1306,10 +1306,10 @@ void Pane::UpdateSettings(const CascadiaSettings& settings)
 // - splitType: How the pane should be attached
 // Return Value:
 // - the new reference to the child created from the current pane.
-std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitDirection splitType)
+std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitDirection splitType, const float splitSize)
 {
     // Splice the new pane into the tree
-    const auto [first, _] = _Split(splitType, .5, pane);
+    const auto [first, _] = _Split(splitType, splitSize, pane);
 
     // If the new pane has a child that was the focus, re-focus it
     // to steal focus from the currently focused pane.
@@ -2298,8 +2298,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
         _firstChild->Closed(_firstClosedToken);
         _secondChild->Closed(_secondClosedToken);
         // If we are not a leaf we should create a new pane that contains our children
-        auto first = std::make_shared<Pane>(_firstChild, _secondChild, _splitState, _desiredSplitPosition);
-        _firstChild = first;
+        _firstChild = std::make_shared<Pane>(_firstChild, _secondChild, _splitState, _desiredSplitPosition);
     }
     else
     {

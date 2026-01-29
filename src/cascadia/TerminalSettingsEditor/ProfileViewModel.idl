@@ -114,6 +114,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UsingBuiltInIcon { get; };
         Boolean UsingEmojiIcon { get; };
         Boolean UsingImageIcon { get; };
+        Boolean TmuxControlEnabled { get; };
         String IconPath;
 
         EnumEntry CurrentBuiltInIcon;
@@ -162,5 +163,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowTmuxControl);
     }
 }

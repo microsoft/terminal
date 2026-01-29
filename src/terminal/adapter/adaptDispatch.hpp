@@ -190,6 +190,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
 
+        StringHandler EnterTmuxControl(const VTParameters parameters) override; // tmux -CC
+
     private:
         enum class Mode
         {

@@ -49,6 +49,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring Icon() const;
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept;
         winrt::Windows::UI::Xaml::Media::Brush BackgroundBrush();
+        bool AllowTmuxControl() const noexcept;
 
         float SnapDownToGrid(const TerminalApp::PaneSnapDirection direction, const float sizeToSnap);
         Windows::Foundation::Size GridUnitSize();
@@ -63,6 +64,13 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
         std::shared_ptr<TerminalSettingsCache> _cache{};
         bool _isDefTermSession{ false };
+        // Settings, UI, etc., handling occurs on the main thread.
+        // The EnterTmuxControl callback on the other hand occurs on the VT connection thread.
+        // In order to avoid threading issues, we cache the value of AllowTmuxControl here.
+        // The reason it's stored here and not elsewhere is because right now all decision making
+        // about tmux occurs at the TerminalPage (= window) layer of the app. It would not make sense
+        // to expose it on the IControlSettings object. TerminalPaneContent is the closest thing to it.
+        std::atomic<bool> _allowTmuxControl{ false };
 
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
         bool _bellPlayerCreated{ false };

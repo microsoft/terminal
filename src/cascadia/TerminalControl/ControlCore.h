@@ -23,6 +23,7 @@
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
+#include "../../terminal/adapter/ITermDispatch.hpp"
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -124,6 +125,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SendInput(std::wstring_view wstr);
         void PasteText(const winrt::hstring& hstr);
+        void InjectTextAtCursor(const winrt::hstring& text);
         bool CopySelectionToClipboard(bool singleLine, bool withControlSequences, const CopyFormat formats);
         void SelectAll();
         void ClearSelection();
@@ -172,6 +174,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         int ScrollOffset();
         int ViewHeight() const;
+        int ViewWidth() const;
         int BufferHeight() const;
 
         bool HasSelection() const;
@@ -295,10 +298,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
         til::typed_event<> RefreshQuickFixUI;
         til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
-
+        til::typed_event<IInspectable, Control::EnterTmuxControlEventArgs> EnterTmuxControl;
         til::typed_event<> CloseTerminalRequested;
         til::typed_event<> RestartTerminalRequested;
-
         til::typed_event<> Attached;
         // clang-format on
 
