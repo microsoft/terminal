@@ -49,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::Foundation::Collections::IObservableVector<Model::Profile> AvailableProfiles() const { return _Settings.AllProfiles(); }
         Windows::Foundation::Collections::IObservableVector<Editor::FolderTreeViewEntry> FolderTree() const;
+        Windows::Foundation::Collections::IObservableVector<Editor::FolderEntryViewModel> FolderTreeFlatList() const;
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> CurrentView() const;
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderEntryViewModel, CurrentFolder, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::FolderTreeViewEntry, CurrentFolderTreeViewSelectedItem, nullptr);
@@ -67,6 +68,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel>::VectorChanged_revoker _rootEntriesChangedRevoker;
 
         static bool _IsRemainingProfilesEntryMissing(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entries);
+        static void _FolderTreeFlatListImpl(const Windows::Foundation::Collections::IVector<Editor::NewTabMenuEntryViewModel>& entriesToAdd, std::vector<Editor::FolderEntryViewModel>& flatList);
         void _FolderPropertyChanged(const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
     };
 

@@ -134,7 +134,7 @@
     </ClInclude>
     <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="fzf/fzf.h" />
+    <ClInclude Include="../fzf/fzf.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -204,7 +204,7 @@
     <ClCompile Include="Tab.cpp">
       <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="fzf/fzf.cpp" />
+    <ClCompile Include="../fzf/fzf.cpp" />
     <ClCompile Include="TaskbarState.cpp">
       <DependentUpon>TaskbarState.idl</DependentUpon>
     </ClCompile>

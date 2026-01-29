@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "..\TerminalApp\fzf\fzf.h"
+#include "..\fzf\fzf.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
