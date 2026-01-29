@@ -26,6 +26,7 @@ jobs:
     pgoToolsPath: $(Build.SourcesDirectory)\build\PGO
     nuspecPath: $(pgoToolsPath)\NuSpecs
     nuspecFilename: PGO.nuspec
+    nugetFeed: "https://pkgs.dev.azure.com/shine-oss/terminal/_packaging/TerminalDependencies/nuget/v3/index.json"
 
   steps:
   - checkout: self
@@ -45,7 +46,8 @@ jobs:
 
   - task: NuGetAuthenticate@1
     inputs:
-      nuGetServiceConnections: 'Terminal Public Artifact Feed'
+      azureDevOpsServiceConnection: 'Terminal Public Artifact Feed'
+      feedUrl: $(nugetFeed)
 
   # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
   # This should be `task: NuGetCommand@2`
@@ -68,15 +70,7 @@ jobs:
     artifact: pgo-nupkg-${{ parameters.buildConfiguration }}${{ parameters.artifactStem }}
     displayName: "Publish Pipeline Artifact"
 
-  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
-    displayName: 'NuGet push'
-    inputs:
-      command: push
-      nuGetFeedType: external
-      packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
-      # The actual URL and PAT for this feed is configured at
-      # https://microsoft.visualstudio.com/Dart/_settings/adminservices
-      # This is the name of that connection
-      publishFeedCredentials: 'Terminal Public Artifact Feed'
-      feedsToUse: config
-      nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.config'
+  - pwsh: |-
+      $nupkg = Get-Item "$(Build.ArtifactStagingDirectory)/*.nupkg"
+      & nuget push -ApiKey az -Source "$(nugetFeed)" "$nupkg"
+    displayName: NuGet push

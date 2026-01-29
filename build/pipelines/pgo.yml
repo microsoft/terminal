@@ -50,6 +50,7 @@ stages:
           buildEverything: true
           pgoBuildMode: Instrument
           artifactStem: -instrumentation
+          keepAllExpensiveBuildOutputs: false # the ARM64 build agent runs out of memory downloading the artifacts...
 
   - stage: RunPGO
     displayName: Run PGO
