@@ -9,7 +9,7 @@ namespace winrt::TerminalApp::implementation
 {
     // Default to unset, 0%.
     TaskbarState::TaskbarState() :
-        TaskbarState(0, 0){};
+        TaskbarState(0, 0) {};
 
     TaskbarState::TaskbarState(const uint64_t dispatchTypesState, const uint64_t progressParam) :
         _State{ dispatchTypesState },

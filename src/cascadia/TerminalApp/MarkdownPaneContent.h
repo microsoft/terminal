@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
 #pragma region IPaneContent
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings&){};
+        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings&) {};
 
         winrt::Windows::Foundation::Size MinimumSize() { return { 1, 1 }; };
         void Focus(winrt::Windows::UI::Xaml::FocusState reason = winrt::Windows::UI::Xaml::FocusState::Programmatic) { reason; };

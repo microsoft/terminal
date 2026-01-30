@@ -678,12 +678,12 @@ void BackendD3D::_debugUpdateShaders(const RenderingPayload& p) noexcept
         struct FileVS
         {
             std::wstring_view filename;
-            wil::com_ptr<ID3D11VertexShader> BackendD3D::*target;
+            wil::com_ptr<ID3D11VertexShader> BackendD3D::* target;
         };
         struct FilePS
         {
             std::wstring_view filename;
-            wil::com_ptr<ID3D11PixelShader> BackendD3D::*target;
+            wil::com_ptr<ID3D11PixelShader> BackendD3D::* target;
         };
 
         static constexpr std::array filesVS{

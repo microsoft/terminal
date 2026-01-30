@@ -404,8 +404,8 @@ namespace fuzz
         }
 
     private:
-        CFuzzLogic(){};
-        virtual ~CFuzzLogic(){};
+        CFuzzLogic() {};
+        virtual ~CFuzzLogic() {};
 
         static LPWSTR FuzzStringW_NoRealloc(__inout LPWSTR pwsz, __inout size_t& rcch)
         {

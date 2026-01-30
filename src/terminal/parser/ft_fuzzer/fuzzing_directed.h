@@ -316,7 +316,7 @@ namespace fuzz
     protected:
         CFuzzBase() :
             m_fFuzzed(FALSE),
-            m_iPercentageTotal(100){};
+            m_iPercentageTotal(100) {};
         virtual ~CFuzzBase() = default;
 
         // Converts a percentage into a valid range.  Note that riTotal
