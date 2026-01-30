@@ -1,0 +1,42 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+import "MainPage.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    enum IconType
+    {
+        None = 0,
+        FontIcon,
+        Image,
+        Emoji
+    };
+
+    [default_interface] runtimeclass IconPicker : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        IconPicker();
+
+        IInspectable CurrentIconType;
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> IconTypes { get; };
+
+        Boolean UsingBuiltInIcon { get; };
+        Boolean UsingEmojiIcon { get; };
+        Boolean UsingImageIcon { get; };
+
+        String CurrentEmojiIcon;
+        
+        EnumEntry CurrentBuiltInIcon;
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> BuiltInIcons { get; };
+        Windows.Foundation.Collections.IObservableVector<EnumEntry> FilteredBuiltInIconList { get; };
+
+        static Windows.UI.Xaml.Controls.IconSource BuiltInIconConverter(IInspectable iconVal);
+
+        String CurrentIconPath;
+        static Windows.UI.Xaml.DependencyProperty CurrentIconPathProperty { get; };
+
+        IHostedInWindow WindowRoot;
+        static Windows.UI.Xaml.DependencyProperty WindowRootProperty { get; };
+    }
+}
