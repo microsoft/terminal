@@ -445,8 +445,6 @@ namespace Microsoft::Console::Render::Atlas
     struct GridLineRange
     {
         GridLineSet lines;
-        u32 gridlineColor = 0;
-        u32 underlineColor = 0;
         u16 from = 0;
         u16 to = 0;
     };
