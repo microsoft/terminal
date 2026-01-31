@@ -162,6 +162,7 @@ namespace Microsoft::Console::Render::Atlas
             u32 backgroundOpaqueMixin = 0xff000000;
             u32 currentBackground = 0;
             u32 currentForeground = 0;
+            u32 currentUnderlineColor = 0;
             FontRelevantAttributes attributes = FontRelevantAttributes::None;
             u16x2 lastPaintBufferLineCoord{};
             // UpdateHyperlinkHoveredId()
