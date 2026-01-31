@@ -394,6 +394,7 @@ namespace Microsoft::Console::Render::Atlas
     {
         u32 backgroundColor = 0;
         u32 foregroundColor = 0;
+        u32 underlineColor = 0;
         u32 selectionColor = 0xffffffff;
         u32 selectionForeground = 0xff000000;
         std::wstring customPixelShaderPath;

@@ -518,7 +518,7 @@ try
     }
 
     // Apply the current foreground and background colors to the cells
-    _fillColorBitmap(y, x, columnEnd, _api.currentForeground, _api.currentBackground, 0xfffa7720u);
+    _fillColorBitmap(y, x, columnEnd, _api.currentForeground, _api.currentBackground, _api.currentUnderlineColor);
 
     // Apply the highlighting colors to the highlighted cells
     RETURN_IF_FAILED(_drawHighlighted(_api.searchHighlights, y, x, columnEnd, highlightFg, highlightBg));
@@ -653,7 +653,9 @@ CATCH_RETURN()
 try
 {
     auto [fg, bg] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
+    auto ul = renderSettings.GetAttributeUnderlineColor(textAttributes);
     fg |= 0xff000000;
+    ul |= 0xff000000;
     bg |= _api.backgroundOpaqueMixin;
 
     if (!isSettingDefaultBrushes)
@@ -669,6 +671,7 @@ try
 
         _api.currentBackground = gsl::narrow_cast<u32>(bg);
         _api.currentForeground = gsl::narrow_cast<u32>(fg);
+        _api.currentUnderlineColor = gsl::narrow_cast<u32>(ul);
         _api.attributes = attributes;
     }
     else
@@ -682,6 +685,11 @@ try
         if (textAttributes.GetForeground().IsDefault() && fg != _api.s->misc->foregroundColor)
         {
             _api.s.write()->misc.write()->foregroundColor = fg;
+        }
+
+        if (textAttributes.GetUnderlineColor().IsDefault() && fg != _api.s->misc->underlineColor)
+        {
+            _api.s.write()->misc.write()->underlineColor = ul;
         }
     }
 
