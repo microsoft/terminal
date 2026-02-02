@@ -78,8 +78,8 @@ namespace Microsoft::Console::VirtualTerminal
         // Kitty keyboard protocol methods
         void SetKittyKeyboardProtocol(uint8_t flags, KittyKeyboardProtocolMode mode) noexcept;
         uint8_t GetKittyFlags() const noexcept;
-        void PushKittyFlags(uint8_t flags) noexcept;
-        void PopKittyFlags(size_t count) noexcept;
+        void PushKittyFlags(uint8_t flags);
+        void PopKittyFlags(size_t count);
         void ResetKittyKeyboardProtocols() noexcept;
 
 #pragma region MouseInput
@@ -94,6 +94,31 @@ namespace Microsoft::Console::VirtualTerminal
         {
             wchar_t buf[3];
             uint16_t len;
+        };
+
+        struct KeyEncodingInfo
+        {
+            // If not zero, this value represents the first field in the Kitty
+            // Keyboard Protocol (KKP) CSI u sequence. If the KKP is requested,
+            // this field will be preferred over the following fields.
+            int32_t kittyKeyCode = 0;
+
+            // A non-zero csiFinal value indicates that this key
+            // should be encoded as `CSI $csiParam1 ; $csiFinal`.
+            wchar_t csiFinal = 0;
+            int32_t csiParam1 = 0;
+
+            // A non-zero ss3Final value indicates that this key
+            // should be encoded as `ESC O $ss3Final`.
+            wchar_t ss3Final = 0;
+
+            // Any other encoding ends up as a non-zero plain value.
+            // For instance, the Tab key gets translated to a plain "\t".
+            std::wstring_view plain;
+
+            // If true, and Alt is pressed, an ESC prefix should be added to
+            // the final sequence. This only applies to non-KKP encodings.
+            bool altPrefix = false;
         };
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
@@ -118,19 +143,18 @@ namespace Microsoft::Console::VirtualTerminal
         std::vector<uint8_t> _kittyMainStack;
         std::vector<uint8_t> _kittyAltStack;
 
-        const wchar_t* _csi = L"\x1B[";
-        const wchar_t* _ss3 = L"\x1BO";
+        static constexpr std::wstring_view _csi{ L"\x1B[" };
+        static constexpr std::wstring_view _ss3{ L"\x1BO" };
 
         void _initKeyboardMap() noexcept;
         DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept;
         static std::array<byte, 256> _getKeyboardState(WORD virtualKeyCode, DWORD controlKeyState);
         [[nodiscard]] static wchar_t _makeCtrlChar(wchar_t ch);
-        [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
+        [[nodiscard]] static StringType _makeCharOutput(uint32_t ch);
         [[nodiscard]] static StringType _makeNoOutput() noexcept;
         void _escapeOutput(StringType& charSequence, bool altIsPressed) const;
         [[nodiscard]] OutputType _makeWin32Output(const KEY_EVENT_RECORD& key) const;
-        [[nodiscard]] OutputType _makeKittyOutput(const KEY_EVENT_RECORD& key, DWORD controlKeyState);
-        static int32_t _getKittyKeyCode(const KEY_EVENT_RECORD& key, DWORD controlKeyState) noexcept;
+        [[nodiscard]] KeyEncodingInfo _getKeyEncodingInfo(const KEY_EVENT_RECORD& key, DWORD simpleKeyState) const noexcept;
         std::vector<uint8_t>& _getKittyStack() noexcept;
         static bool _codepointIsText(uint32_t cp) noexcept;
         static CodepointBuffer _codepointToBuffer(uint32_t cp) noexcept;

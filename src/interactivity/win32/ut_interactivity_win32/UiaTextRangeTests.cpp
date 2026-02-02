@@ -109,97 +109,10 @@ static constexpr til::point point_offset_by_line(const til::point start, const t
 // IMPORTANT: reference this _after_ defining point_offset_by_XXX. We need it for some definitions
 #include "GeneratedUiaTextRangeMovementTests.g.cpp"
 
-namespace
-{
-#pragma region TAEF hookup for the test case array above
-    struct ArrayIndexTaefAdapterRow : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataRow>
-    {
-        HRESULT RuntimeClassInitialize(const size_t index)
-        {
-            _index = index;
-            return S_OK;
-        }
-
-        STDMETHODIMP GetTestData(BSTR /*pszName*/, SAFEARRAY** ppData) override
-        {
-            const auto indexString{ wil::str_printf<std::wstring>(L"%zu", _index) };
-            auto safeArray{ SafeArrayCreateVector(VT_BSTR, 0, 1) };
-            LONG index{ 0 };
-            auto indexBstr{ wil::make_bstr(indexString.c_str()) };
-            (void)SafeArrayPutElement(safeArray, &index, indexBstr.release());
-            *ppData = safeArray;
-            return S_OK;
-        }
-
-        STDMETHODIMP GetMetadataNames(SAFEARRAY** ppMetadataNames) override
-        {
-            *ppMetadataNames = nullptr;
-            return S_FALSE;
-        }
-
-        STDMETHODIMP GetMetadata(BSTR /*pszName*/, SAFEARRAY** ppData) override
-        {
-            *ppData = nullptr;
-            return S_FALSE;
-        }
-
-        STDMETHODIMP GetName(BSTR* ppszRowName) override
-        {
-            *ppszRowName = wil::make_bstr(s_movementTests[_index].name.data()).release();
-            return S_OK;
-        }
-
-    private:
-        size_t _index;
-    };
-
-    struct ArrayIndexTaefAdapterSource : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataSource>
-    {
-        STDMETHODIMP Advance(IDataRow** ppDataRow) override
-        {
-            if (_index < s_movementTests.size())
-            {
-                Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataRow, _index++);
-            }
-            else
-            {
-                *ppDataRow = nullptr;
-            }
-            return S_OK;
-        }
-
-        STDMETHODIMP Reset() override
-        {
-            _index = 0;
-            return S_OK;
-        }
-
-        STDMETHODIMP GetTestDataNames(SAFEARRAY** names) override
-        {
-            auto safeArray{ SafeArrayCreateVector(VT_BSTR, 0, 1) };
-            LONG index{ 0 };
-            auto dataNameBstr{ wil::make_bstr(L"index") };
-            (void)SafeArrayPutElement(safeArray, &index, dataNameBstr.release());
-            *names = safeArray;
-            return S_OK;
-        }
-
-        STDMETHODIMP GetTestDataType(BSTR /*name*/, BSTR* type) override
-        {
-            *type = nullptr;
-            return S_OK;
-        }
-
-    private:
-        size_t _index{ 0 };
-    };
-#pragma endregion
-}
-
 extern "C" HRESULT __declspec(dllexport) __cdecl GeneratedMovementTestDataSource(IDataSource** ppDataSource, void*)
 {
-    auto source{ Microsoft::WRL::Make<ArrayIndexTaefAdapterSource>() };
-    return source.CopyTo(ppDataSource);
+    *ppDataSource = new ArrayIndexTaefAdapterSource>(std::size(testCases));
+    return S_OK;
 }
 
 // UiaTextRange takes an object that implements

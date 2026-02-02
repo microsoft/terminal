@@ -67,7 +67,7 @@ public:
     virtual void DeleteColumn(const VTInt distance) = 0; // DECDC
     virtual void SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual void SetAnsiMode(const bool ansiMode) = 0; // DECANM
-    virtual void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) = 0; // CSI = flags ; mode u
+    virtual void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept = 0; // CSI = flags ; mode u
     virtual void QueryKittyKeyboardProtocol() = 0; // CSI ? u
     virtual void PushKittyKeyboardProtocol(const VTParameter flags) = 0; // CSI > flags u
     virtual void PopKittyKeyboardProtocol(const VTParameter count) = 0; // CSI < count u

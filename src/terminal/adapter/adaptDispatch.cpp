@@ -2055,9 +2055,9 @@ void AdaptDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 }
 
 // CSI = flags ; mode u - Sets kitty keyboard protocol flags
-void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode)
+void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept
 {
-    const auto kittyFlags = static_cast<uint8_t>(flags.value_or(0));
+    const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
     const auto KittyKeyboardProtocol = static_cast<TerminalInput::KittyKeyboardProtocolMode>(mode.value_or(1));
     _terminalInput.SetKittyKeyboardProtocol(kittyFlags, KittyKeyboardProtocol);
 }
@@ -2072,7 +2072,7 @@ void AdaptDispatch::QueryKittyKeyboardProtocol()
 // CSI > flags u - Pushes current kitty keyboard flags onto the stack and sets new flags
 void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
 {
-    const auto kittyFlags = static_cast<uint8_t>(flags.value_or(0));
+    const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
     _terminalInput.PushKittyFlags(kittyFlags);
 }
 
