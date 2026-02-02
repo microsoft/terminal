@@ -140,6 +140,12 @@ namespace
 
         return input.HandleKey(record);
     }
+
+    TerminalInput createInput(uint8_t flags)
+    {
+        auto input = createInput(flags);
+        return input;
+    }
 }
 
 class KittyKeyboardProtocolTests
@@ -152,10 +158,9 @@ class KittyKeyboardProtocolTests
     // =========================================================================
 
     // Flag Combination 0b00000 (0) - No enhancements (legacy mode)
-    TEST_METHOD(EnhancementFlags_0x00_NoEnhancements_SimpleKeyPress)
+    TEST_METHOD(EnhancementFlags_0b00000_NoEnhancements_SimpleKeyPress)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(0, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(0);
 
         // In legacy mode with no kitty flags, 'a' should produce plain text
         // This tests that without any enhancements, we fall through to non-kitty handling
@@ -165,67 +170,59 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b00001 (1) - Disambiguate escape codes only
-    TEST_METHOD(EnhancementFlags_0x01_Disambiguate_EscapeKey)
+    TEST_METHOD(EnhancementFlags_0b00001_Disambiguate_EscapeKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Escape key should be encoded as CSI 27 u (disambiguated from ESC byte)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[27u"), process(input, true, VK_ESCAPE, 0x01, 0, 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x01_Disambiguate_AltLetter)
+    TEST_METHOD(EnhancementFlags_0b00001_Disambiguate_AltLetter)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Alt+a should be CSI 97;3u (3 = 1 + alt modifier 2)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;3u"), process(input, true, VK_A, 0x1E, L'a', LEFT_ALT_PRESSED));
     }
 
-    TEST_METHOD(EnhancementFlags_0x01_Disambiguate_CtrlLetter)
+    TEST_METHOD(EnhancementFlags_0b00001_Disambiguate_CtrlLetter)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Ctrl+c should be CSI 99;5u (5 = 1 + ctrl modifier 4)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[99;5u"), process(input, true, VK_C, 0x2E, 0x03, LEFT_CTRL_PRESSED));
     }
 
-    TEST_METHOD(EnhancementFlags_0x01_Disambiguate_CtrlAltLetter)
+    TEST_METHOD(EnhancementFlags_0b00001_Disambiguate_CtrlAltLetter)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Ctrl+Alt+a should be CSI 97;7u (7 = 1 + ctrl 4 + alt 2)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;7u"), process(input, true, VK_A, 0x1E, 0, LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED));
     }
 
-    TEST_METHOD(EnhancementFlags_0x01_Disambiguate_ShiftAltLetter)
+    TEST_METHOD(EnhancementFlags_0b00001_Disambiguate_ShiftAltLetter)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Shift+Alt+a should be CSI 97;4u (4 = 1 + shift 1 + alt 2)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;4u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED | LEFT_ALT_PRESSED));
     }
 
     // Flag Combination 0b00010 (2) - Report event types only
-    TEST_METHOD(EnhancementFlags_0x02_EventTypes_PressEvent)
+    TEST_METHOD(EnhancementFlags_0b00010_EventTypes_PressEvent)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes);
 
-        // Press event is default (type 1), no event type suffix needed in output
-        // Key 'a' press with event types should be CSI 97;1:1u or just CSI 97u (press is default)
-        auto result = process(input, true, VK_A, 0x1E, L'a', 0);
-        // With only ReportEventTypes, text keys may still produce text
+        // ReportEventTypes alone doesn't encode text keys - they produce plain text
+        // Only functional keys get event type encoding without AllKeysAsEscapeCodes
+        VERIFY_ARE_EQUAL(wrap(L"a"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x02_EventTypes_ReleaseEvent_FunctionalKey)
+    TEST_METHOD(EnhancementFlags_0b00010_EventTypes_ReleaseEvent_FunctionalKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes);
 
         // Release event (type 3) for functional keys
         // First send press
@@ -235,10 +232,9 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b00011 (3) - Disambiguate + Event types
-    TEST_METHOD(EnhancementFlags_0x03_DisambiguateAndEventTypes_RepeatEvent)
+    TEST_METHOD(EnhancementFlags_0b00011_DisambiguateAndEventTypes_RepeatEvent)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes);
 
         // First press of 'a'
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -246,10 +242,9 @@ class KittyKeyboardProtocolTests
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;1:2u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x03_DisambiguateAndEventTypes_ReleaseEvent)
+    TEST_METHOD(EnhancementFlags_0b00011_DisambiguateAndEventTypes_ReleaseEvent)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes);
 
         // Press then release of 'a'
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -257,33 +252,28 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b00100 (4) - Report alternate keys only
-    TEST_METHOD(EnhancementFlags_0x04_AlternateKeys_ShiftedKey)
+    TEST_METHOD(EnhancementFlags_0b00100_AlternateKeys_ShiftedKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAlternateKeys, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAlternateKeys);
 
-        // With alternate keys, shift+a should report the shifted key (A = 65)
-        // Format: CSI unicode-key-code:shifted-key u
-        // Note: alternate keys only affects keys already encoded as escape codes
-        auto result = process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED);
-        // Without disambiguate, this may just produce 'A'
+        // ReportAlternateKeys alone doesn't trigger CSI u encoding for text keys
+        // Shift+a should produce plain 'A' since the key isn't being encoded as escape
+        VERIFY_ARE_EQUAL(wrap(L"A"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
     // Flag Combination 0b00101 (5) - Disambiguate + Alternate keys
-    TEST_METHOD(EnhancementFlags_0x05_DisambiguateAndAlternate_ShiftedKey)
+    TEST_METHOD(EnhancementFlags_0b00101_DisambiguateAndAlternate_ShiftedKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAlternateKeys, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAlternateKeys);
 
         // Shift+a with alternate keys: CSI 97:65;2u
         // 97 = 'a', 65 = 'A' (shifted key), 2 = 1 + shift(1)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
-    TEST_METHOD(EnhancementFlags_0x05_DisambiguateAndAlternate_BaseLayoutKey)
+    TEST_METHOD(EnhancementFlags_0b00101_DisambiguateAndAlternate_BaseLayoutKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAlternateKeys, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAlternateKeys);
 
         // Ctrl+a with alternate keys should include base layout key
         // Format: CSI 97::base-layout u (empty shifted key, only base layout)
@@ -291,10 +281,9 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b00110 (6) - Event types + Alternate keys
-    TEST_METHOD(EnhancementFlags_0x06_EventTypesAndAlternate)
+    TEST_METHOD(EnhancementFlags_0b00110_EventTypesAndAlternate)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAlternateKeys, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAlternateKeys);
 
         // F1 key release with alternate keys
         process(input, true, VK_F1, 0x3B, 0, 0);
@@ -302,10 +291,9 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b00111 (7) - Disambiguate + Event types + Alternate keys
-    TEST_METHOD(EnhancementFlags_0x07_ThreeFlags_ShiftedKeyWithRelease)
+    TEST_METHOD(EnhancementFlags_0b00111_ThreeFlags_ShiftedKeyWithRelease)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys);
 
         // Shift+a press: CSI 97:65;2:1u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
@@ -314,46 +302,41 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b01000 (8) - Report all keys as escape codes
-    TEST_METHOD(EnhancementFlags_0x08_AllKeysAsEscapeCodes_PlainText)
+    TEST_METHOD(EnhancementFlags_0b01000_AllKeysAsEscapeCodes_PlainText)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Plain 'a' key should now be encoded as CSI 97u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x08_AllKeysAsEscapeCodes_EnterKey)
+    TEST_METHOD(EnhancementFlags_0b01000_AllKeysAsEscapeCodes_EnterKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Enter key encoded as CSI 13u (not plain CR)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[13u"), process(input, true, VK_RETURN, 0x1C, L'\r', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x08_AllKeysAsEscapeCodes_TabKey)
+    TEST_METHOD(EnhancementFlags_0b01000_AllKeysAsEscapeCodes_TabKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Tab key encoded as CSI 9u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[9u"), process(input, true, VK_TAB_KEY, 0x0F, L'\t', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x08_AllKeysAsEscapeCodes_BackspaceKey)
+    TEST_METHOD(EnhancementFlags_0b01000_AllKeysAsEscapeCodes_BackspaceKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Backspace key encoded as CSI 127u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[127u"), process(input, true, VK_BACK, 0x0E, 0x7F, 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x08_AllKeysAsEscapeCodes_ModifierKey)
+    TEST_METHOD(EnhancementFlags_0b01000_AllKeysAsEscapeCodes_ModifierKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Left Shift key press should be reported as CSI 57441;2u
         // 57441 = LEFT_SHIFT functional key code, 2 = 1 + shift(1)
@@ -361,40 +344,36 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b01001 (9) - Disambiguate + All keys as escape codes
-    TEST_METHOD(EnhancementFlags_0x09_DisambiguateAndAllKeys)
+    TEST_METHOD(EnhancementFlags_0b01001_DisambiguateAndAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAllKeysAsEscapeCodes);
 
         // Both flags together - 'a' encoded as CSI 97u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b01010 (10) - Event types + All keys as escape codes
-    TEST_METHOD(EnhancementFlags_0x0A_EventTypesAndAllKeys_EnterRelease)
+    TEST_METHOD(EnhancementFlags_0b01010_EventTypesAndAllKeys_EnterRelease)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // With AllKeysAsEscapeCodes, Enter DOES report release events
         process(input, true, VK_RETURN, 0x1C, L'\r', 0);
         VERIFY_ARE_EQUAL(wrap(L"\x1b[13;1:3u"), process(input, false, VK_RETURN, 0x1C, L'\r', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x0A_EventTypesAndAllKeys_TabRelease)
+    TEST_METHOD(EnhancementFlags_0b01010_EventTypesAndAllKeys_TabRelease)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // With AllKeysAsEscapeCodes, Tab DOES report release events
         process(input, true, VK_TAB_KEY, 0x0F, L'\t', 0);
         VERIFY_ARE_EQUAL(wrap(L"\x1b[9;1:3u"), process(input, false, VK_TAB_KEY, 0x0F, L'\t', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x0A_EventTypesAndAllKeys_BackspaceRelease)
+    TEST_METHOD(EnhancementFlags_0b01010_EventTypesAndAllKeys_BackspaceRelease)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // With AllKeysAsEscapeCodes, Backspace DOES report release events
         process(input, true, VK_BACK, 0x0E, 0x7F, 0);
@@ -402,10 +381,9 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b01011 (11) - Disambiguate + Event types + All keys
-    TEST_METHOD(EnhancementFlags_0x0B_ThreeFlags_PlainKeyRepeat)
+    TEST_METHOD(EnhancementFlags_0b01011_ThreeFlags_PlainKeyRepeat)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // Press then repeat of plain 'a'
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -413,30 +391,27 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b01100 (12) - Alternate keys + All keys as escape codes
-    TEST_METHOD(EnhancementFlags_0x0C_AlternateAndAllKeys)
+    TEST_METHOD(EnhancementFlags_0b01100_AlternateAndAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAlternateKeys | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAlternateKeys | ReportAllKeysAsEscapeCodes);
 
         // Shift+a with alternate keys: CSI 97:65;2u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
     // Flag Combination 0b01101 (13) - Disambiguate + Alternate + All keys
-    TEST_METHOD(EnhancementFlags_0x0D_ThreeFlags)
+    TEST_METHOD(EnhancementFlags_0b01101_ThreeFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes);
 
         // Plain 'a'
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b01110 (14) - Event types + Alternate + All keys
-    TEST_METHOD(EnhancementFlags_0x0E_ThreeFlags)
+    TEST_METHOD(EnhancementFlags_0b01110_ThreeFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes);
 
         // Shift+a release with alternate keys
         process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED);
@@ -444,10 +419,9 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b01111 (15) - Disambiguate + Event types + Alternate + All keys
-    TEST_METHOD(EnhancementFlags_0x0F_FourFlags)
+    TEST_METHOD(EnhancementFlags_0b01111_FourFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes);
 
         // Full combination test
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -456,42 +430,38 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b10000 (16) - Report associated text only
-    TEST_METHOD(EnhancementFlags_0x10_AssociatedText_NoEffect)
+    TEST_METHOD(EnhancementFlags_0b10000_AssociatedText_NoEffect)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAssociatedText);
 
-        // Associated text without AllKeysAsEscapeCodes is undefined behavior
-        // The spec says it's undefined if used without ReportAllKeysAsEscapeCodes
-        auto result = process(input, true, VK_A, 0x1E, L'a', 0);
-        // Implementation defined behavior
+        // ReportAssociatedText without AllKeysAsEscapeCodes is undefined per spec.
+        // Text keys fall through to legacy - plain 'a' produces 'a'
+        VERIFY_ARE_EQUAL(wrap(L"a"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b10001 (17) - Disambiguate + Associated text
-    TEST_METHOD(EnhancementFlags_0x11_DisambiguateAndText)
+    TEST_METHOD(EnhancementFlags_0b10001_DisambiguateAndText)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAssociatedText);
 
-        // Still undefined without AllKeysAsEscapeCodes for text keys
-        auto result = process(input, true, VK_A, 0x1E, L'a', 0);
+        // Disambiguate only encodes modified keys or ambiguous keys.
+        // Plain 'a' with no modifiers produces legacy 'a'
+        VERIFY_ARE_EQUAL(wrap(L"a"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b10010 (18) - Event types + Associated text
-    TEST_METHOD(EnhancementFlags_0x12_EventTypesAndText)
+    TEST_METHOD(EnhancementFlags_0b10010_EventTypesAndText)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAssociatedText);
 
-        auto result = process(input, true, VK_F1, 0x3B, 0, 0);
-        // Functional keys work with event types
+        // F1 is a functional key - uses SS3 P encoding (press is default, no event type shown)
+        VERIFY_ARE_EQUAL(wrap(L"\x1bOP"), process(input, true, VK_F1, 0x3B, 0, 0));
     }
 
     // Flag Combination 0b10011 (19) - Disambiguate + Event types + Associated text
-    TEST_METHOD(EnhancementFlags_0x13_ThreeFlags)
+    TEST_METHOD(EnhancementFlags_0b10011_ThreeFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAssociatedText);
 
         // Ctrl+a release
         process(input, true, VK_A, 0x1E, 0x01, LEFT_CTRL_PRESSED);
@@ -499,119 +469,109 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b10100 (20) - Alternate keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x14_AlternateAndText)
+    TEST_METHOD(EnhancementFlags_0b10100_AlternateAndText)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAlternateKeys | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAlternateKeys | ReportAssociatedText);
 
-        auto result = process(input, true, VK_A, 0x1E, L'a', 0);
+        // Neither flag causes text keys to be CSI u encoded
+        VERIFY_ARE_EQUAL(wrap(L"a"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b10101 (21) - Disambiguate + Alternate + Associated text
-    TEST_METHOD(EnhancementFlags_0x15_ThreeFlags)
+    TEST_METHOD(EnhancementFlags_0b10101_ThreeFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAlternateKeys | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAlternateKeys | ReportAssociatedText);
 
-        // Shift+a with alternate and text
-        auto result = process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED);
+        // Shift+a triggers Disambiguate encoding with alternate key.
+        // Text param is undefined without AllKeysAsEscapeCodes, so just key:shifted;modifier
+        VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
     // Flag Combination 0b10110 (22) - Event types + Alternate + Associated text
-    TEST_METHOD(EnhancementFlags_0x16_ThreeFlags)
+    TEST_METHOD(EnhancementFlags_0b10110_ThreeFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAlternateKeys | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAlternateKeys | ReportAssociatedText);
 
-        auto result = process(input, true, VK_F1, 0x3B, 0, 0);
+        // F1 press - functional key uses legacy SS3 P (press is default)
+        VERIFY_ARE_EQUAL(wrap(L"\x1bOP"), process(input, true, VK_F1, 0x3B, 0, 0));
     }
 
     // Flag Combination 0b10111 (23) - Disambiguate + Event types + Alternate + Associated text
-    TEST_METHOD(EnhancementFlags_0x17_FourFlags)
+    TEST_METHOD(EnhancementFlags_0b10111_FourFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys | ReportAssociatedText);
 
         // Shift+a with full reporting (except AllKeys)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
     // Flag Combination 0b11000 (24) - All keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x18_AllKeysAndText_SimpleKey)
+    TEST_METHOD(EnhancementFlags_0b11000_AllKeysAndText_SimpleKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // With both flags: CSI 97;;97u (key 97, no modifiers, text 97)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;;97u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x18_AllKeysAndText_ShiftKey)
+    TEST_METHOD(EnhancementFlags_0b11000_AllKeysAndText_ShiftKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Shift+a: CSI 97;2;65u (key 97, modifier 2, text 'A'=65)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;2;65u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
     // Flag Combination 0b11001 (25) - Disambiguate + All keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x19_ThreeFlags)
+    TEST_METHOD(EnhancementFlags_0b11001_ThreeFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Same as 0x18 since disambiguate is implied by AllKeys
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;;97u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b11010 (26) - Event types + All keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x1A_ThreeFlags_KeyRelease)
+    TEST_METHOD(EnhancementFlags_0b11010_ThreeFlags_KeyRelease)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
-        // Press: CSI 97;1:1;97u or CSI 97;;97u (press is default)
+        // Press: CSI 97;;97u (with text)
         process(input, true, VK_A, 0x1E, L'a', 0);
-        // Release: CSI 97;1:3;97u (no text on release per spec? - implementation may vary)
-        auto result = process(input, false, VK_A, 0x1E, L'a', 0);
-        // Text may or may not be present on release
+        // Release: CSI 97;1:3u (no text on release per spec)
+        VERIFY_ARE_EQUAL(wrap(L"\x1b[97;1:3u"), process(input, false, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b11011 (27) - Disambiguate + Event types + All keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x1B_FourFlags)
+    TEST_METHOD(EnhancementFlags_0b11011_FourFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes | ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Full tracking with text
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;;97u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     // Flag Combination 0b11100 (28) - Alternate + All keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x1C_ThreeFlags)
+    TEST_METHOD(EnhancementFlags_0b11100_ThreeFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Shift+a: CSI 97:65;2;65u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2;65u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
     // Flag Combination 0b11101 (29) - Disambiguate + Alternate + All keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x1D_FourFlags)
+    TEST_METHOD(EnhancementFlags_0b11101_FourFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2;65u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
     }
 
     // Flag Combination 0b11110 (30) - Event types + Alternate + All keys + Associated text
-    TEST_METHOD(EnhancementFlags_0x1E_FourFlags)
+    TEST_METHOD(EnhancementFlags_0b11110_FourFlags)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Press with repeat
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -619,13 +579,9 @@ class KittyKeyboardProtocolTests
     }
 
     // Flag Combination 0b11111 (31) - All flags enabled
-    TEST_METHOD(EnhancementFlags_0x1F_AllFlags_FullSequence)
+    TEST_METHOD(EnhancementFlags_0b11111_AllFlags_FullSequence)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(
-            DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys |
-            ReportAllKeysAsEscapeCodes | ReportAssociatedText,
-            KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Full sequence: CSI unicode-key-code:alternate-key-codes ; modifiers:event-type ; text-as-codepoints u
         // Press 'a': CSI 97;;97u
@@ -636,13 +592,9 @@ class KittyKeyboardProtocolTests
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;1:3u"), process(input, false, VK_A, 0x1E, L'a', 0));
     }
 
-    TEST_METHOD(EnhancementFlags_0x1F_AllFlags_ShiftedKey)
+    TEST_METHOD(EnhancementFlags_0b11111_AllFlags_ShiftedKey)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(
-            DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys |
-            ReportAllKeysAsEscapeCodes | ReportAssociatedText,
-            KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes | ReportAlternateKeys | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Shift+a: CSI 97:65;2;65u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97:65;2;65u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
@@ -655,8 +607,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_Shift_Encoding)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Shift only: modifier = 1 + 1 = 2
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;2u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
@@ -664,8 +615,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_Alt_Encoding)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Alt only: modifier = 1 + 2 = 3
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;3u"), process(input, true, VK_A, 0x1E, L'a', LEFT_ALT_PRESSED));
@@ -673,8 +623,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_Ctrl_Encoding)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Ctrl only: modifier = 1 + 4 = 5
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;5u"), process(input, true, VK_A, 0x1E, 0x01, LEFT_CTRL_PRESSED));
@@ -682,8 +631,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_ShiftAlt_Encoding)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Shift+Alt: modifier = 1 + 1 + 2 = 4
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;4u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED | LEFT_ALT_PRESSED));
@@ -691,8 +639,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_ShiftCtrl_Encoding)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Shift+Ctrl: modifier = 1 + 1 + 4 = 6
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;6u"), process(input, true, VK_A, 0x1E, 0x01, SHIFT_PRESSED | LEFT_CTRL_PRESSED));
@@ -700,8 +647,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_AltCtrl_Encoding)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Alt+Ctrl: modifier = 1 + 2 + 4 = 7
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;7u"), process(input, true, VK_A, 0x1E, 0x01, LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED));
@@ -709,8 +655,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_ShiftAltCtrl_Encoding)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Shift+Alt+Ctrl: modifier = 1 + 1 + 2 + 4 = 8
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;8u"), process(input, true, VK_A, 0x1E, 0x01, SHIFT_PRESSED | LEFT_ALT_PRESSED | LEFT_CTRL_PRESSED));
@@ -718,8 +663,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_CapsLock_OnlyWithAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Caps Lock: modifier = 1 + 64 = 65
         // Lock modifiers only reported with ReportAllKeysAsEscapeCodes
@@ -728,8 +672,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_NumLock_OnlyWithAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Num Lock: modifier = 1 + 128 = 129
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;129u"), process(input, true, VK_A, 0x1E, L'a', NUMLOCK_ON));
@@ -737,8 +680,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_CapsLockAndNumLock_Together)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // Caps+Num Lock: modifier = 1 + 64 + 128 = 193
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;193u"), process(input, true, VK_A, 0x1E, L'a', CAPSLOCK_ON | NUMLOCK_ON));
@@ -746,8 +688,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(Modifiers_LocksNotReportedForTextKeys_WithoutAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Without ReportAllKeysAsEscapeCodes, lock modifiers are NOT reported for text keys
         // This should NOT include the caps_lock bit
@@ -764,18 +705,15 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(EventTypes_Press_IsDefault)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
-        // Press event (type 1) is default, may be omitted
-        auto result = process(input, true, VK_A, 0x1E, L'a', 0);
-        // Could be CSI 97u or CSI 97;1:1u - press is default so type can be omitted
+        // Press event (type 1) is default - first press should be CSI 97u (type omitted)
+        VERIFY_ARE_EQUAL(wrap(L"\x1b[97u"), process(input, true, VK_A, 0x1E, L'a', 0));
     }
 
     TEST_METHOD(EventTypes_Repeat_Type2)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // First press
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -785,8 +723,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(EventTypes_Release_Type3)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // Press then release
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -795,8 +732,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(EventTypes_ModifierOnRelease_MustBePresent)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // When modifier key is released, the modifier bit must still be set
         // (the release event state includes the key being released)
@@ -806,8 +742,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(EventTypes_ModifierOnRelease_ResetWhenBothReleased)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes);
 
         // When both shifts pressed, releasing one keeps shift bit
         // Press left shift
@@ -825,8 +760,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(SpecialKeys_Enter_NoReleaseWithoutAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes);
 
         // Without ReportAllKeysAsEscapeCodes, Enter does NOT report release
         process(input, true, VK_RETURN, 0x1C, L'\r', 0);
@@ -837,8 +771,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(SpecialKeys_Tab_NoReleaseWithoutAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes);
 
         // Without ReportAllKeysAsEscapeCodes, Tab does NOT report release
         process(input, true, VK_TAB_KEY, 0x0F, L'\t', 0);
@@ -848,8 +781,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(SpecialKeys_Backspace_NoReleaseWithoutAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes | ReportEventTypes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes | ReportEventTypes);
 
         // Without ReportAllKeysAsEscapeCodes, Backspace does NOT report release
         process(input, true, VK_BACK, 0x0E, 0x7F, 0);
@@ -859,8 +791,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(SpecialKeys_Escape_Disambiguated)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Escape key is disambiguated from ESC byte
         VERIFY_ARE_EQUAL(wrap(L"\x1b[27u"), process(input, true, VK_ESCAPE, 0x01, 0x1B, 0));
@@ -868,31 +799,27 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(SpecialKeys_Enter_LegacyBehavior)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
-        // Enter still produces CR in legacy-compatible way when not AllKeys
-        // Actually with disambiguate it may still be legacy
-        auto result = process(input, true, VK_RETURN, 0x1C, L'\r', 0);
-        // Could be 0x0d or CSI 13u depending on implementation
+        // Per spec: Enter, Tab, Backspace still produce legacy bytes with Disambiguate
+        // to allow typing 'reset' at shell prompt if program crashes
+        VERIFY_ARE_EQUAL(wrap(L"\r"), process(input, true, VK_RETURN, 0x1C, L'\r', 0));
     }
 
     TEST_METHOD(SpecialKeys_Tab_LegacyBehavior)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
-        // Tab still produces HT in legacy-compatible way when not AllKeys
-        auto result = process(input, true, VK_TAB_KEY, 0x0F, L'\t', 0);
+        // Per spec: Tab produces legacy HT to allow typing 'reset' at shell prompt
+        VERIFY_ARE_EQUAL(wrap(L"\t"), process(input, true, VK_TAB_KEY, 0x0F, L'\t', 0));
     }
 
     TEST_METHOD(SpecialKeys_Backspace_LegacyBehavior)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
-        // Backspace still produces DEL in legacy-compatible way when not AllKeys
-        auto result = process(input, true, VK_BACK, 0x0E, 0x7F, 0);
+        // Per spec: Backspace produces legacy DEL to allow typing 'reset' at shell prompt
+        VERIFY_ARE_EQUAL(wrap(L"\x7f"), process(input, true, VK_BACK, 0x0E, 0x7F, 0));
     }
 
     // =========================================================================
@@ -903,8 +830,7 @@ class KittyKeyboardProtocolTests
     // F1-F4 use SS3 prefix in legacy, CSI with P/Q/R/S final in kitty
     TEST_METHOD(FunctionalKeys_F1_Legacy)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // F1 without modifiers uses legacy SS3 P
         VERIFY_ARE_EQUAL(wrap(L"\x1bOP"), process(input, true, VK_F1, 0x3B, 0, 0));
@@ -912,8 +838,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_F1_WithModifiers)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // F1 with modifiers uses CSI 1;modifier P
         VERIFY_ARE_EQUAL(wrap(L"\x1b[1;2P"), process(input, true, VK_F1, 0x3B, 0, SHIFT_PRESSED));
@@ -921,32 +846,28 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_F2)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1bOQ"), process(input, true, VK_F2, 0x3C, 0, 0));
     }
 
     TEST_METHOD(FunctionalKeys_F3)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1bOR"), process(input, true, VK_F3, 0x3D, 0, 0));
     }
 
     TEST_METHOD(FunctionalKeys_F4)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1bOS"), process(input, true, VK_F4, 0x3E, 0, 0));
     }
 
     TEST_METHOD(FunctionalKeys_F5)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // F5 uses CSI 15 ~
         VERIFY_ARE_EQUAL(wrap(L"\x1b[15~"), process(input, true, VK_F5, 0x3F, 0, 0));
@@ -954,8 +875,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_F5_WithModifiers)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // F5 with Shift: CSI 15;2 ~
         VERIFY_ARE_EQUAL(wrap(L"\x1b[15;2~"), process(input, true, VK_F5, 0x3F, 0, SHIFT_PRESSED));
@@ -963,8 +883,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_F12)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // F12 uses CSI 24 ~
         VERIFY_ARE_EQUAL(wrap(L"\x1b[24~"), process(input, true, VK_F12, 0x58, 0, 0));
@@ -972,8 +891,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_F13)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // F13-F35 use CSI u encoding with functional key codes
         // F13 = 57376
@@ -982,8 +900,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_F24)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // F24 = 57387
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57387u"), process(input, true, VK_F24, 0x87, 0, 0));
@@ -992,8 +909,7 @@ class KittyKeyboardProtocolTests
     // Navigation keys
     TEST_METHOD(FunctionalKeys_ArrowUp_Legacy)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Arrow up: CSI A
         VERIFY_ARE_EQUAL(wrap(L"\x1b[A"), process(input, true, VK_UP, 0x48, 0, ENHANCED_KEY));
@@ -1001,8 +917,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_ArrowUp_WithModifiers)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Arrow up with Shift: CSI 1;2 A
         VERIFY_ARE_EQUAL(wrap(L"\x1b[1;2A"), process(input, true, VK_UP, 0x48, 0, ENHANCED_KEY | SHIFT_PRESSED));
@@ -1010,48 +925,42 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_ArrowDown)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1b[B"), process(input, true, VK_DOWN, 0x50, 0, ENHANCED_KEY));
     }
 
     TEST_METHOD(FunctionalKeys_ArrowLeft)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1b[D"), process(input, true, VK_LEFT, 0x4B, 0, ENHANCED_KEY));
     }
 
     TEST_METHOD(FunctionalKeys_ArrowRight)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1b[C"), process(input, true, VK_RIGHT, 0x4D, 0, ENHANCED_KEY));
     }
 
     TEST_METHOD(FunctionalKeys_Home)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1b[H"), process(input, true, VK_HOME, 0x47, 0, ENHANCED_KEY));
     }
 
     TEST_METHOD(FunctionalKeys_End)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         VERIFY_ARE_EQUAL(wrap(L"\x1b[F"), process(input, true, VK_END, 0x4F, 0, ENHANCED_KEY));
     }
 
     TEST_METHOD(FunctionalKeys_Insert)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Insert: CSI 2 ~
         VERIFY_ARE_EQUAL(wrap(L"\x1b[2~"), process(input, true, VK_INSERT, 0x52, 0, ENHANCED_KEY));
@@ -1059,8 +968,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_Delete)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Delete: CSI 3 ~
         VERIFY_ARE_EQUAL(wrap(L"\x1b[3~"), process(input, true, VK_DELETE, 0x53, 0, ENHANCED_KEY));
@@ -1068,8 +976,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_PageUp)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // PageUp: CSI 5 ~
         VERIFY_ARE_EQUAL(wrap(L"\x1b[5~"), process(input, true, VK_PRIOR, 0x49, 0, ENHANCED_KEY));
@@ -1077,8 +984,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(FunctionalKeys_PageDown)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // PageDown: CSI 6 ~
         VERIFY_ARE_EQUAL(wrap(L"\x1b[6~"), process(input, true, VK_NEXT, 0x51, 0, ENHANCED_KEY));
@@ -1090,8 +996,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_Numpad0_WithAllKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_0 = 57399
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57399u"), process(input, true, VK_NUMPAD0, 0x52, L'0', 0));
@@ -1099,8 +1004,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_NumpadAdd)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_ADD = 57413
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57413u"), process(input, true, VK_ADD, 0x4E, L'+', 0));
@@ -1108,8 +1012,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_NumpadSubtract)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_SUBTRACT = 57412
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57412u"), process(input, true, VK_SUBTRACT, 0x4A, L'-', 0));
@@ -1117,8 +1020,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_NumpadMultiply)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_MULTIPLY = 57411
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57411u"), process(input, true, VK_MULTIPLY, 0x37, L'*', 0));
@@ -1126,8 +1028,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_NumpadDivide)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_DIVIDE = 57410
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57410u"), process(input, true, VK_DIVIDE, 0x35, L'/', ENHANCED_KEY));
@@ -1135,8 +1036,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_NumpadDecimal)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_DECIMAL = 57409
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57409u"), process(input, true, VK_DECIMAL, 0x53, L'.', 0));
@@ -1144,8 +1044,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_NumpadEnter)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_ENTER = 57414
         // Numpad Enter has ENHANCED_KEY flag
@@ -1155,8 +1054,7 @@ class KittyKeyboardProtocolTests
     // Navigation keys on numpad (without NumLock)
     TEST_METHOD(KeypadKeys_NumpadHome)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_HOME = 57423 (Home on numpad without ENHANCED_KEY)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57423u"), process(input, true, VK_HOME, 0x47, 0, 0));
@@ -1164,8 +1062,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeypadKeys_NumpadUp)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // KP_UP = 57419 (Up on numpad without ENHANCED_KEY)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57419u"), process(input, true, VK_UP, 0x48, 0, 0));
@@ -1177,8 +1074,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_LeftShift)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // LEFT_SHIFT = 57441
         // When pressing shift, the shift modifier bit must be set
@@ -1187,8 +1083,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_RightShift)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // RIGHT_SHIFT = 57447
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57447;2u"), process(input, true, VK_RSHIFT, 0x36, 0, SHIFT_PRESSED));
@@ -1196,8 +1091,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_LeftControl)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // LEFT_CONTROL = 57442
         // When pressing ctrl, the ctrl modifier bit must be set
@@ -1206,8 +1100,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_RightControl)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // RIGHT_CONTROL = 57448
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57448;5u"), process(input, true, VK_RCONTROL, 0x1D, 0, RIGHT_CTRL_PRESSED | ENHANCED_KEY));
@@ -1215,8 +1108,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_LeftAlt)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // LEFT_ALT = 57443
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57443;3u"), process(input, true, VK_LMENU, 0x38, 0, LEFT_ALT_PRESSED));
@@ -1224,8 +1116,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_RightAlt)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // RIGHT_ALT = 57449
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57449;3u"), process(input, true, VK_RMENU, 0x38, 0, RIGHT_ALT_PRESSED | ENHANCED_KEY));
@@ -1233,8 +1124,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_CapsLock)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // CAPS_LOCK = 57358
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57358u"), process(input, true, VK_CAPITAL, 0x3A, 0, 0));
@@ -1242,8 +1132,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_NumLock)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // NUM_LOCK = 57360
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57360u"), process(input, true, VK_NUMLOCK, 0x45, 0, ENHANCED_KEY));
@@ -1251,8 +1140,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(ModifierKeys_ScrollLock)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
         // SCROLL_LOCK = 57359
         VERIFY_ARE_EQUAL(wrap(L"\x1b[57359u"), process(input, true, VK_SCROLL, 0x46, 0, 0));
@@ -1264,8 +1152,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeyCodes_AlwaysLowercase)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Key code must always be lowercase, even with shift
         // Shift+a should be CSI 97;2u (not 65)
@@ -1274,8 +1161,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(KeyCodes_CtrlShift_StillLowercase)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
         // Ctrl+Shift+a should still be CSI 97;6u
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;6u"), process(input, true, VK_A, 0x1E, 0x01, SHIFT_PRESSED | LEFT_CTRL_PRESSED));
@@ -1287,8 +1173,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(TextAsCodepoints_SimpleChar)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // 'a' produces text 'a' (97)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;;97u"), process(input, true, VK_A, 0x1E, L'a', 0));
@@ -1296,8 +1181,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(TextAsCodepoints_ShiftedChar)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Shift+a produces text 'A' (65)
         VERIFY_ARE_EQUAL(wrap(L"\x1b[97;2;65u"), process(input, true, VK_A, 0x1E, L'A', SHIFT_PRESSED));
@@ -1305,8 +1189,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(TextAsCodepoints_NoTextForNonTextKeys)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Escape doesn't produce text
         VERIFY_ARE_EQUAL(wrap(L"\x1b[27u"), process(input, true, VK_ESCAPE, 0x01, 0, 0));
@@ -1314,8 +1197,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(TextAsCodepoints_NoTextOnRelease)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportEventTypes | ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportEventTypes | ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Text should not be present on release events
         process(input, true, VK_A, 0x1E, L'a', 0);
@@ -1432,8 +1314,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(SurrogatePairs_LeadingSurrogate_Buffered)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Leading surrogate alone should produce no output
         auto result = process(input, true, 0, 0, 0xD83D, 0); // Leading surrogate of 😀
@@ -1442,8 +1323,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(SurrogatePairs_Complete_Emoji)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Leading surrogate (buffered)
         process(input, true, 0, 0, 0xD83D, 0);
@@ -1460,28 +1340,24 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(EdgeCase_VK_PACKET_PassThrough)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
-        // VK_PACKET (0xE7) should pass through the unicode char directly
-        // This is used for synthesized keyboard events
-        auto result = process(input, true, 0xE7, 0, L'x', 0);
-        // The implementation may handle this specially
+        // VK_PACKET (0xE7) bypasses kitty encoding - UnicodeChar is passed through directly
+        // This is used for synthesized keyboard events (e.g., IME input)
+        VERIFY_ARE_EQUAL(wrap(L"x"), process(input, true, 0xE7, 0, L'x', 0));
     }
 
     TEST_METHOD(EdgeCase_ZeroVirtualKey_PassThrough)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
 
-        // Zero virtual key with a unicode char should pass through
-        auto result = process(input, true, 0, 0, L'y', 0);
+        // Zero virtual key bypasses kitty encoding - UnicodeChar is passed through directly
+        VERIFY_ARE_EQUAL(wrap(L"y"), process(input, true, 0, 0, L'y', 0));
     }
 
     TEST_METHOD(EdgeCase_AutoRepeat_Disabled)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes);
         input.SetInputMode(TerminalInput::Mode::AutoRepeat, false);
 
         // First press
@@ -1512,8 +1388,7 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(EdgeCase_CtrlSpace_NullByte)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(ReportAllKeysAsEscapeCodes | ReportAssociatedText, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(ReportAllKeysAsEscapeCodes | ReportAssociatedText);
 
         // Ctrl+Space should produce key with null character
         // The kitty key code for space is 32
@@ -1525,13 +1400,11 @@ class KittyKeyboardProtocolTests
 
     TEST_METHOD(EdgeCase_AltGr_Handling)
     {
-        TerminalInput input;
-        input.SetKittyKeyboardProtocol(DisambiguateEscapeCodes, KittyKeyboardProtocolMode::Replace);
+        auto input = createInput(DisambiguateEscapeCodes);
 
-        // AltGr generates both RIGHT_ALT and LEFT_CTRL
-        // The implementation should detect this and not treat it as Ctrl+Alt
-        auto result = process(input, true, VK_A, 0x1E, L'ä', RIGHT_ALT_PRESSED | LEFT_CTRL_PRESSED);
-        // With AltGr, the character 'ä' should be transmitted if it's a valid char
-        // The exact handling depends on implementation
+        // AltGr generates both RIGHT_ALT and LEFT_CTRL on Windows
+        // The fake LeftCtrl is detected via timing heuristics and ignored
+        // So 'ä' should be transmitted as plain text (AltGr is for character input)
+        VERIFY_ARE_EQUAL(wrap(L"ä"), process(input, true, VK_A, 0x1E, L'ä', RIGHT_ALT_PRESSED | LEFT_CTRL_PRESSED));
     }
 };
