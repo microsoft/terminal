@@ -52,11 +52,11 @@ namespace Microsoft::Console::VirtualTerminal
         struct KittyKeyboardProtocolFlags
         {
             static constexpr uint8_t None = 0;
-            static constexpr uint8_t Disambiguate = 1 << 0; // Disambiguate escape codes
-            static constexpr uint8_t ReportEventTypes = 1 << 1; // Report event types (press/repeat/release)
-            static constexpr uint8_t ReportAlternateKeys = 1 << 2; // Report alternate keys
-            static constexpr uint8_t ReportAllKeys = 1 << 3; // Report all keys as escape codes
-            static constexpr uint8_t ReportText = 1 << 4; // Report associated text
+            static constexpr uint8_t DisambiguateEscapeCodes = 1 << 0;
+            static constexpr uint8_t ReportEventTypes = 1 << 1;
+            static constexpr uint8_t ReportAlternateKeys = 1 << 2;
+            static constexpr uint8_t ReportAllKeysAsEscapeCodes = 1 << 3;
+            static constexpr uint8_t ReportAssociatedText = 1 << 4;
             static constexpr uint8_t All = (1 << 5) - 1;
         };
         enum class KittyKeyboardProtocolMode : uint8_t
@@ -111,8 +111,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _forceDisableWin32InputMode{ false };
         bool _inAlternateBuffer{ false };
 
-        // Kitty keyboard protocol state - separate stacks for main and alternate screen buffers
-        static constexpr size_t KittyStackMaxSize = 16;
+        // Kitty keyboard protocol state
+        static constexpr size_t KittyStackMaxSize = 8;
         bool _forceDisableKittyKeyboardProtocol = false;
         uint8_t _kittyFlags = 0;
         std::vector<uint8_t> _kittyMainStack;
@@ -123,19 +123,21 @@ namespace Microsoft::Console::VirtualTerminal
 
         void _initKeyboardMap() noexcept;
         DWORD _trackControlKeyState(const KEY_EVENT_RECORD& key) noexcept;
-        std::array<byte, 256> _getKeyboardState(WORD virtualKeyCode, DWORD controlKeyState) const;
+        static std::array<byte, 256> _getKeyboardState(WORD virtualKeyCode, DWORD controlKeyState);
         [[nodiscard]] static wchar_t _makeCtrlChar(wchar_t ch);
         [[nodiscard]] StringType _makeCharOutput(wchar_t ch);
         [[nodiscard]] static StringType _makeNoOutput() noexcept;
         void _escapeOutput(StringType& charSequence, bool altIsPressed) const;
         [[nodiscard]] OutputType _makeWin32Output(const KEY_EVENT_RECORD& key) const;
         [[nodiscard]] OutputType _makeKittyOutput(const KEY_EVENT_RECORD& key, DWORD controlKeyState);
-        [[nodiscard]] static uint32_t _getKittyFunctionalKeyCode(WORD virtualKeyCode, WORD virtualScanCode, DWORD controlKeyState) noexcept;
+        static int32_t _getKittyKeyCode(const KEY_EVENT_RECORD& key, DWORD controlKeyState) noexcept;
         std::vector<uint8_t>& _getKittyStack() noexcept;
-        static bool _codepointIsNonControl(uint32_t cp) noexcept;
+        static bool _codepointIsText(uint32_t cp) noexcept;
         static CodepointBuffer _codepointToBuffer(uint32_t cp) noexcept;
         static uint32_t _bufferToCodepoint(const wchar_t* str) noexcept;
         static uint32_t _codepointToLower(uint32_t cp) noexcept;
+        static uint32_t _bufferToLowerCodepoint(wchar_t* buf, int cap) noexcept;
+        static uint32_t _getBaseLayoutCodepoint(WORD vkey) noexcept;
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp

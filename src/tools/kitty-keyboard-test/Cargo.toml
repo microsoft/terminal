@@ -1,0 +1,10 @@
+[package]
+name = "kitty-keyboard-test"
+version = "0.1.0"
+edition = "2021"
+description = "Interactive tester for the Kitty keyboard protocol enhancement flags"
+
+[dependencies]
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
