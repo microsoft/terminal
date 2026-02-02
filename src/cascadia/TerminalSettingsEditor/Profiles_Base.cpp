@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
         _Profile = args.Profile();
-        _windowRoot = args.WindowRoot();
+        _weakWindowRoot = args.WindowRoot();
 
         // Check the use parent directory box if the starting directory is empty
         if (_Profile.StartingDirectory().empty())
@@ -113,7 +113,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
 
         static constexpr winrt::guid clientGuidExecutables{ 0x2E7E4331, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
-        const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
+
+        const auto windowRoot = WindowRoot();
+        if (!windowRoot)
+        {
+            co_return;
+        }
+        const auto parentHwnd{ reinterpret_cast<HWND>(windowRoot.GetHostingWindow()) };
         auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExecutables));
             try
@@ -136,7 +142,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     safe_void_coroutine Profiles_Base::StartingDirectory_Click(const IInspectable&, const RoutedEventArgs&)
     {
         auto lifetime = get_strong();
-        const auto parentHwnd{ reinterpret_cast<HWND>(_windowRoot.GetHostingWindow()) };
+
+        const auto windowRoot = WindowRoot();
+        if (!windowRoot)
+        {
+            co_return;
+        }
+        const auto parentHwnd{ reinterpret_cast<HWND>(windowRoot.GetHostingWindow()) };
         auto folder = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             static constexpr winrt::guid clientGuidFolderPicker{ 0xAADAA433, 0xB04D, 0x4BAE, { 0xB1, 0xEA, 0x1E, 0x6C, 0xD1, 0xCD, 0xA6, 0x8B } };
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolderPicker));

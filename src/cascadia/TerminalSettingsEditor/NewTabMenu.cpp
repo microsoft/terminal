@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::NewTabMenuViewModel>();
-        _windowRoot = args.WindowRoot();
+        _weakWindowRoot = args.WindowRoot();
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

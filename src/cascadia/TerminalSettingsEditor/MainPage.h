@@ -29,13 +29,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         NavigateToPageArgs(Windows::Foundation::IInspectable viewModel, Editor::IHostedInWindow windowRoot) :
             _ViewModel(viewModel),
-            _WindowRoot(windowRoot) {}
+            _WeakWindowRoot(windowRoot) {}
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot ? _WeakWindowRoot.get() : nullptr; }
         Windows::Foundation::IInspectable ViewModel() const noexcept { return _ViewModel; }
 
     private:
-        Editor::IHostedInWindow _WindowRoot{ nullptr };
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
         Windows::Foundation::IInspectable _ViewModel{ nullptr };
     };
 

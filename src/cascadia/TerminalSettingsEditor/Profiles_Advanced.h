@@ -22,12 +22,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void BellSoundAdd_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
         til::property_changed_event PropertyChanged;
-        Editor::IHostedInWindow WindowRoot() { return _windowRoot; };
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot ? _weakWindowRoot.get() : nullptr; };
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
-        Editor::IHostedInWindow _windowRoot;
+        winrt::weak_ref<Editor::IHostedInWindow> _weakWindowRoot;
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
         bool _bellPlayerCreated{ false };
 

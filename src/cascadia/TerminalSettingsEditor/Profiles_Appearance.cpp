@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
         _Profile = args.Profile();
-        _windowRoot = args.WindowRoot();
+        _weakWindowRoot = args.WindowRoot();
 
         if (!_previewControl)
         {
