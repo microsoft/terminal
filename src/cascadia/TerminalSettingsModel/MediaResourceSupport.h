@@ -10,14 +10,14 @@ Licensed under the MIT license.
 
 struct
     __declspec(uuid("6068ee1b-1ea0-4804-993a-42ef0c58d867"))
-        IMediaResourceContainer : public IUnknown
+    IMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResources(const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
 
 struct
     __declspec(uuid("9f11361c-7c8f-45c9-8948-36b66d67eca8"))
-        IPathlessMediaResourceContainer : public IUnknown
+    IPathlessMediaResourceContainer : public IUnknown
 {
     virtual void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const winrt::Microsoft::Terminal::Settings::Model::MediaResourceResolver& resolver) = 0;
 };
