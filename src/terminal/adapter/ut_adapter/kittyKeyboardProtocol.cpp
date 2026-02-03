@@ -96,7 +96,7 @@ namespace
 
         // flags=0 (0b00000): No enhancements - legacy mode
         // Escape key in legacy mode: just ESC byte
-        TestCase{ L"Flags=0 (none) Esc key", L"\x1b", 0, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=0 (none) Esc key", L"\x1b", 0, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=1 (0b00001): DisambiguateEscapeCodes only
         // Escape key becomes CSI 27 u
@@ -104,24 +104,24 @@ namespace
 
         // flags=2 (0b00010): ReportEventTypes only
         // No disambiguation, so Esc is still legacy (but with event type tracking internally)
-        TestCase{ L"Flags=2 (EventTypes) Esc key down", L"\x1b", 2, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=2 (EventTypes) Esc key down", L"\x1b", 2, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=3 (0b00011): Disambiguate + EventTypes
         // Escape key with event type: CSI 27;1:1 u (mod=1, event=press=1)
-        TestCase{ L"Flags=3 (Disambiguate+EventTypes) Esc key press", L"\x1b[27;1:1u", 3, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=3 (Disambiguate+EventTypes) Esc key press", L"\x1b[27u", 3, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=4 (0b00100): ReportAlternateKeys only
         // Without Disambiguate, Escape is still legacy
-        TestCase{ L"Flags=4 (AltKeys) Esc key", L"\x1b", 4, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=4 (AltKeys) Esc key", L"\x1b", 4, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=5 (0b00101): Disambiguate + AltKeys
         TestCase{ L"Flags=5 (Disambiguate+AltKeys) Esc key", L"\x1b[27u", 5, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=6 (0b00110): EventTypes + AltKeys
-        TestCase{ L"Flags=6 (EventTypes+AltKeys) Esc key", L"\x1b", 6, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=6 (EventTypes+AltKeys) Esc key", L"\x1b", 6, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=7 (0b00111): Disambiguate + EventTypes + AltKeys
-        TestCase{ L"Flags=7 (Disambiguate+EventTypes+AltKeys) Esc key press", L"\x1b[27;1:1u", 7, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=7 (Disambiguate+EventTypes+AltKeys) Esc key press", L"\x1b[27u", 7, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=8 (0b01000): ReportAllKeysAsEscapeCodes only
         // All keys become CSI u, including Escape
@@ -131,10 +131,10 @@ namespace
         TestCase{ L"Flags=9 (Disambiguate+AllKeys) Esc key", L"\x1b[27u", 9, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=10 (0b01010): EventTypes + AllKeys
-        TestCase{ L"Flags=10 (EventTypes+AllKeys) Esc key press", L"\x1b[27;1:1u", 10, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=10 (EventTypes+AllKeys) Esc key press", L"\x1b[27u", 10, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=11 (0b01011): Disambiguate + EventTypes + AllKeys
-        TestCase{ L"Flags=11 (Disambiguate+EventTypes+AllKeys) Esc key press", L"\x1b[27;1:1u", 11, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=11 (Disambiguate+EventTypes+AllKeys) Esc key press", L"\x1b[27u", 11, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=12 (0b01100): AltKeys + AllKeys
         TestCase{ L"Flags=12 (AltKeys+AllKeys) Esc key", L"\x1b[27u", 12, true, VK_ESCAPE, 0x01, 0, 0 },
@@ -143,59 +143,59 @@ namespace
         TestCase{ L"Flags=13 (Disambiguate+AltKeys+AllKeys) Esc key", L"\x1b[27u", 13, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=14 (0b01110): EventTypes + AltKeys + AllKeys
-        TestCase{ L"Flags=14 (EventTypes+AltKeys+AllKeys) Esc key press", L"\x1b[27;1:1u", 14, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=14 (EventTypes+AltKeys+AllKeys) Esc key press", L"\x1b[27u", 14, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=15 (0b01111): Disambiguate + EventTypes + AltKeys + AllKeys
-        TestCase{ L"Flags=15 (Disambiguate+EventTypes+AltKeys+AllKeys) Esc key press", L"\x1b[27;1:1u", 15, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=15 (Disambiguate+EventTypes+AltKeys+AllKeys) Esc key press", L"\x1b[27u", 15, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=16 (0b10000): ReportAssociatedText only (meaningless without AllKeys)
-        TestCase{ L"Flags=16 (AssocText) Esc key", L"\x1b", 16, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=16 (AssocText) Esc key", L"\x1b", 16, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=17 (0b10001): Disambiguate + AssocText
         TestCase{ L"Flags=17 (Disambiguate+AssocText) Esc key", L"\x1b[27u", 17, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=18 (0b10010): EventTypes + AssocText
-        TestCase{ L"Flags=18 (EventTypes+AssocText) Esc key", L"\x1b", 18, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=18 (EventTypes+AssocText) Esc key", L"\x1b", 18, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=19 (0b10011): Disambiguate + EventTypes + AssocText
-        TestCase{ L"Flags=19 (Disambiguate+EventTypes+AssocText) Esc key press", L"\x1b[27;1:1u", 19, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=19 (Disambiguate+EventTypes+AssocText) Esc key press", L"\x1b[27u", 19, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=20 (0b10100): AltKeys + AssocText
-        TestCase{ L"Flags=20 (AltKeys+AssocText) Esc key", L"\x1b", 20, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=20 (AltKeys+AssocText) Esc key", L"\x1b", 20, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=21 (0b10101): Disambiguate + AltKeys + AssocText
         TestCase{ L"Flags=21 (Disambiguate+AltKeys+AssocText) Esc key", L"\x1b[27u", 21, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=22 (0b10110): EventTypes + AltKeys + AssocText
-        TestCase{ L"Flags=22 (EventTypes+AltKeys+AssocText) Esc key", L"\x1b", 22, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=22 (EventTypes+AltKeys+AssocText) Esc key", L"\x1b", 22, true, VK_ESCAPE, 0x01, L'\x1b', 0 },
 
         // flags=23 (0b10111): Disambiguate + EventTypes + AltKeys + AssocText
-        TestCase{ L"Flags=23 (Disambiguate+EventTypes+AltKeys+AssocText) Esc key press", L"\x1b[27;1:1u", 23, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"Flags=23 (Disambiguate+EventTypes+AltKeys+AssocText) Esc key press", L"\x1b[27u", 23, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // flags=24 (0b11000): AllKeys + AssocText
         // 'a' key with text reporting: CSI 97;;97 u
-        TestCase{ L"Flags=24 (AllKeys+AssocText) 'a' key", L"\x1b[97;1;97u", 24, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=24 (AllKeys+AssocText) 'a' key", L"\x1b[97;;97u", 24, true, 'A', 0x1E, L'a', 0 },
 
         // flags=25 (0b11001): Disambiguate + AllKeys + AssocText
-        TestCase{ L"Flags=25 (Disambiguate+AllKeys+AssocText) 'a' key", L"\x1b[97;1;97u", 25, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=25 (Disambiguate+AllKeys+AssocText) 'a' key", L"\x1b[97;;97u", 25, true, 'A', 0x1E, L'a', 0 },
 
         // flags=26 (0b11010): EventTypes + AllKeys + AssocText
-        TestCase{ L"Flags=26 (EventTypes+AllKeys+AssocText) 'a' key press", L"\x1b[97;1:1;97u", 26, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=26 (EventTypes+AllKeys+AssocText) 'a' key press", L"\x1b[97;;97u", 26, true, 'A', 0x1E, L'a', 0 },
 
         // flags=27 (0b11011): Disambiguate + EventTypes + AllKeys + AssocText
-        TestCase{ L"Flags=27 (Disambiguate+EventTypes+AllKeys+AssocText) 'a' key press", L"\x1b[97;1:1;97u", 27, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=27 (Disambiguate+EventTypes+AllKeys+AssocText) 'a' key press", L"\x1b[97;;97u", 27, true, 'A', 0x1E, L'a', 0 },
 
         // flags=28 (0b11100): AltKeys + AllKeys + AssocText
-        TestCase{ L"Flags=28 (AltKeys+AllKeys+AssocText) 'a' key", L"\x1b[97;1;97u", 28, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=28 (AltKeys+AllKeys+AssocText) 'a' key", L"\x1b[97;;97u", 28, true, 'A', 0x1E, L'a', 0 },
 
         // flags=29 (0b11101): Disambiguate + AltKeys + AllKeys + AssocText
-        TestCase{ L"Flags=29 (Disambiguate+AltKeys+AllKeys+AssocText) 'a' key", L"\x1b[97;1;97u", 29, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=29 (Disambiguate+AltKeys+AllKeys+AssocText) 'a' key", L"\x1b[97;;97u", 29, true, 'A', 0x1E, L'a', 0 },
 
         // flags=30 (0b11110): EventTypes + AltKeys + AllKeys + AssocText
-        TestCase{ L"Flags=30 (EventTypes+AltKeys+AllKeys+AssocText) 'a' key press", L"\x1b[97;1:1;97u", 30, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=30 (EventTypes+AltKeys+AllKeys+AssocText) 'a' key press", L"\x1b[97;;97u", 30, true, 'A', 0x1E, L'a', 0 },
 
         // flags=31 (0b11111): All flags enabled
-        TestCase{ L"Flags=31 (all) 'a' key press", L"\x1b[97;1:1;97u", 31, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"Flags=31 (all) 'a' key press", L"\x1b[97;;97u", 31, true, 'A', 0x1E, L'a', 0 },
 
         // ====================================================================
         // SECTION 2: Modifier Combinations with Disambiguate (flag=1)
@@ -297,13 +297,13 @@ namespace
         // ====================================================================
 
         // Key press with Disambiguate+EventTypes (flag=3)
-        TestCase{ L"EventTypes: Esc press", L"\x1b[27;1:1u", 3, true, VK_ESCAPE, 0x01, 0, 0 },
+        TestCase{ L"EventTypes: Esc press", L"\x1b[27u", 3, true, VK_ESCAPE, 0x01, 0, 0 },
 
         // Key release with Disambiguate+EventTypes (flag=3)
         TestCase{ L"EventTypes: Esc release", L"\x1b[27;1:3u", 3, false, VK_ESCAPE, 0x01, 0, 0 },
 
         // Key press with AllKeys+EventTypes (flag=10)
-        TestCase{ L"EventTypes+AllKeys: 'a' press", L"\x1b[97;1:1u", 10, true, 'A', 0x1E, L'a', 0 },
+        TestCase{ L"EventTypes+AllKeys: 'a' press", L"\x1b[97u", 10, true, 'A', 0x1E, L'a', 0 },
 
         // Key release with AllKeys+EventTypes (flag=10)
         TestCase{ L"EventTypes+AllKeys: 'a' release", L"\x1b[97;1:3u", 10, false, 'A', 0x1E, L'a', 0 },
@@ -314,8 +314,8 @@ namespace
         TestCase{ L"EventTypes+AllKeys: Tab release", L"\x1b[9;1:3u", 10, false, VK_TAB, 0x0F, L'\t', 0 },
         TestCase{ L"EventTypes+AllKeys: Backspace release", L"\x1b[127;1:3u", 10, false, VK_BACK, 0x0E, L'\b', 0 },
 
-        // Press with modifier: Shift+Esc -> CSI 27;2:1 u
-        TestCase{ L"EventTypes: Shift+Esc press", L"\x1b[27;2:1u", 3, true, VK_ESCAPE, 0x01, 0, SHIFT_PRESSED },
+        // Press with modifier: Shift+Esc -> CSI 27;2 u
+        TestCase{ L"EventTypes: Shift+Esc press", L"\x1b[27;2u", 3, true, VK_ESCAPE, 0x01, 0, SHIFT_PRESSED },
 
         // Release with modifier: Shift+Esc -> CSI 27;2:3 u
         TestCase{ L"EventTypes: Shift+Esc release", L"\x1b[27;2:3u", 3, false, VK_ESCAPE, 0x01, 0, SHIFT_PRESSED },
@@ -515,11 +515,11 @@ namespace
 
         // AllKeys + EventTypes + CapsLock: 'a' press with CapsLock
         // mod=1+64=65, event=press=1
-        TestCase{ L"AllKeys+EventTypes: CapsLock+a press", L"\x1b[97;65:1u", 10, true, 'A', 0x1E, L'A', CAPSLOCK_ON },
+        TestCase{ L"AllKeys+EventTypes: CapsLock+a press", L"\x1b[97;65u", 10, true, 'A', 0x1E, L'A', CAPSLOCK_ON },
 
         // AllKeys + EventTypes + all modifiers: press
         // mod=1+1+2+4+64+128=200, event=1
-        TestCase{ L"AllKeys+EventTypes: all mods press", L"\x1b[97;200:1u", 10, true, 'A', 0x1E, L'\x01', SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED | CAPSLOCK_ON | NUMLOCK_ON },
+        TestCase{ L"AllKeys+EventTypes: all mods press", L"\x1b[97;200u", 10, true, 'A', 0x1E, L'\x01', SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED | CAPSLOCK_ON | NUMLOCK_ON },
 
         // AllKeys + EventTypes + all modifiers: release
         TestCase{ L"AllKeys+EventTypes: all mods release", L"\x1b[97;200:3u", 10, false, 'A', 0x1E, L'\x01', SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED | CAPSLOCK_ON | NUMLOCK_ON },
@@ -538,7 +538,7 @@ namespace
 
         // Ctrl+a produces control character (0x01), which should not be in text
         // Text field should be omitted for control codes
-        TestCase{ L"AllKeys+AssocText: Ctrl+a (no text)", L"\x1b[97;5;1u", 24, true, 'A', 0x1E, L'\x01', CTRL_PRESSED },
+        TestCase{ L"AllKeys+AssocText: Ctrl+a (no text)", L"\x1b[97;5u", 24, true, 'A', 0x1E, L'\x01', CTRL_PRESSED },
 
         // ====================================================================
         // SECTION 16: Edge cases
@@ -586,7 +586,8 @@ class KittyKeyboardProtocolTests
         auto input = createInput(tc.flags);
         const auto expected = TerminalInput::MakeOutput(tc.expected);
         const auto actual = process(input, tc.keyDown, tc.vk, tc.sc, tc.ch, tc.state);
-        VERIFY_ARE_EQUAL(expected, actual);
+        const auto msg = fmt::format(L"{} != {}", til::visualize_control_codes(expected.value_or({})), til::visualize_control_codes(actual.value_or({})));
+        VERIFY_ARE_EQUAL(expected, actual, msg.c_str());
     }
 
     // Repeat events require stateful testing - the same key must be pressed twice
@@ -601,7 +602,7 @@ class KittyKeyboardProtocolTests
 
         // First press -> event type 1 (press)
         auto result1 = process(input, true, 'A', 0x1E, L'a', 0);
-        auto expected1 = TerminalInput::MakeOutput(L"\x1b[97;1:1u");
+        auto expected1 = TerminalInput::MakeOutput(L"\x1b[97u");
         VERIFY_ARE_EQUAL(expected1, result1, L"First press should be event type 1");
 
         // Second press (same key, no release) -> event type 2 (repeat)
