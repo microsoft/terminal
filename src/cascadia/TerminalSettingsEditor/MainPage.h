@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _ViewModel(viewModel),
             _WeakWindowRoot(windowRoot) {}
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot ? _WeakWindowRoot.get() : nullptr; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
         Windows::Foundation::IInspectable ViewModel() const noexcept { return _ViewModel; }
 
     private:

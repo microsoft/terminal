@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::IInspectable CurrentIconType() const noexcept { return _currentIconType; }
         void CurrentIconType(const Windows::Foundation::IInspectable& value);
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot ? _weakWindowRoot.get() : nullptr; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot.get(); }
         void WindowRoot(const Editor::IHostedInWindow& value) noexcept { _weakWindowRoot = value; }
 
         bool UsingNoIcon() const;

@@ -141,7 +141,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring Type() const noexcept { return _descriptor.Type; };
         Model::ArgTypeHint TypeHint() const noexcept { return _descriptor.TypeHint; };
         bool Required() const noexcept { return _descriptor.Required; };
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot ? _WeakWindowRoot.get() : nullptr; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
         void WindowRoot(const Editor::IHostedInWindow& value) { _WeakWindowRoot = value; }
 
         // We cannot use the macro here because we need to implement additional logic for the setter

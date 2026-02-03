@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot ? _WeakWindowRoot.get() : nullptr; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
         void WindowRoot(const Editor::IHostedInWindow& value) noexcept { _WeakWindowRoot = value; }
 
         Windows::Foundation::Collections::IObservableVector<Editor::Font> FilteredFontList();

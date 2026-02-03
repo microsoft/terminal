@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CreateUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void DeleteUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot ? _weakWindowRoot.get() : nullptr; };
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot.get(); };
 
         til::property_changed_event PropertyChanged;
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
