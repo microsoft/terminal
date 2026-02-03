@@ -17,13 +17,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         NavigateToProfileArgs(ProfileViewModel profile, Editor::IHostedInWindow windowRoot) :
             _Profile(profile),
-            _WindowRoot(windowRoot) {}
+            _WeakWindowRoot(windowRoot) {}
 
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WindowRoot; }
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot ? _WeakWindowRoot.get() : nullptr; }
         Editor::ProfileViewModel Profile() const noexcept { return _Profile; }
 
     private:
-        Editor::IHostedInWindow _WindowRoot;
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot;
         Editor::ProfileViewModel _Profile{ nullptr };
     };
 
