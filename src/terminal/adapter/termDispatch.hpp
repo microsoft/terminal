@@ -180,9 +180,9 @@ public:
     void RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat /*format*/) override {} // DECRQPSR
     StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/) override { return nullptr; } // DECRSPS
 
-    void PlaySounds(const VTParameters /*parameters*/) override{}; // DECPS
+    void PlaySounds(const VTParameters /*parameters*/) override {}; // DECPS
 
-    void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override{};
+    void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override {};
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning
