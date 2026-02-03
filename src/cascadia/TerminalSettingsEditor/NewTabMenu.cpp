@@ -24,10 +24,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Ideally, we'd bind IsEnabled to something like mtu:Converters.isEmpty(NewTabMenuListView.SelectedItems.Size) in the XAML,
         //   but the XAML compiler can't find NewTabMenuListView when we try that. Rather than copying the list of selected items over
         //   to the view model, we'll just do this instead (much simpler).
-        NewTabMenuListView().SelectionChanged([this](auto&&, auto&&) {
-            const auto list = NewTabMenuListView();
-            MoveToFolderButton().IsEnabled(list.SelectedItems().Size() > 0);
-            DeleteMultipleButton().IsEnabled(list.SelectedItems().Size() > 0);
+        NewTabMenuListView().SelectionChanged([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self = weakThis.get())
+            {
+                const auto list = self->NewTabMenuListView();
+                self->MoveToFolderButton().IsEnabled(list.SelectedItems().Size() > 0);
+                self->DeleteMultipleButton().IsEnabled(list.SelectedItems().Size() > 0);
+            }
         });
 
         Automation::AutomationProperties::SetName(MoveToFolderButton(), RS_(L"NewTabMenu_MoveToFolderTextBlock/Text"));

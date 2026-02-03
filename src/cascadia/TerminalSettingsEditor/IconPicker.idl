@@ -37,6 +37,5 @@ namespace Microsoft.Terminal.Settings.Editor
         static Windows.UI.Xaml.DependencyProperty CurrentIconPathProperty { get; };
 
         IHostedInWindow WindowRoot;
-        static Windows.UI.Xaml.DependencyProperty WindowRootProperty { get; };
     }
 }

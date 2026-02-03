@@ -29,6 +29,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::IInspectable CurrentIconType() const noexcept { return _currentIconType; }
         void CurrentIconType(const Windows::Foundation::IInspectable& value);
 
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot ? _weakWindowRoot.get() : nullptr; }
+        void WindowRoot(const Editor::IHostedInWindow& value) noexcept { _weakWindowRoot = value; }
+
         bool UsingNoIcon() const;
         bool UsingBuiltInIcon() const;
         bool UsingEmojiIcon() const;
@@ -39,7 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_OBSERVABLE_PROPERTY(Editor::EnumEntry, CurrentBuiltInIcon, PropertyChanged.raise, nullptr);
 
         DEPENDENCY_PROPERTY(hstring, CurrentIconPath);
-        DEPENDENCY_PROPERTY(IHostedInWindow, WindowRoot);
 
     private:
         static Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> _BuiltInIcons;
@@ -48,6 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::wstring _iconFilter;
         Windows::Foundation::IInspectable _currentIconType{};
         winrt::hstring _lastIconPath;
+        winrt::weak_ref<Editor::IHostedInWindow> _weakWindowRoot;
 
         static void _InitializeProperties();
         static void _OnCurrentIconPathChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
