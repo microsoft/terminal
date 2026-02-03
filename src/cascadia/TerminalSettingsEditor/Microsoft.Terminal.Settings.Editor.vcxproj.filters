@@ -57,6 +57,7 @@
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
     <Page Include="NullableColorPicker.xaml" />
+    <Page Include="IconPicker.xaml" />
     <Page Include="NewTabMenu.xaml" />
   </ItemGroup>
 </Project>
