@@ -678,12 +678,15 @@
                        Grid.Row="1"
                        Grid.Column="0"
                        VerticalAlignment="Center" />
-            <ComboBox Grid.Row="1"
-                      Grid.Column="1"
-                      VerticalAlignment="Center"
-                      AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
-                      ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.ProposedShortcutActionName, Mode=TwoWay}" />
+            <AutoSuggestBox x:Name="ShortcutActionBox"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
+                            GotFocus="ShortcutActionBox_GotFocus"
+                            QuerySubmitted="ShortcutActionBox_QuerySubmitted"
+                            SuggestionChosen="ShortcutActionBox_SuggestionChosen"
+                            TextChanged="ShortcutActionBox_TextChanged" />
             <TextBlock x:Uid="Actions_Arguments"
                        Grid.Row="2"
                        Grid.Column="0"
