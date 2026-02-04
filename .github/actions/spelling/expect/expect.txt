@@ -256,7 +256,6 @@ conterm
 contsf
 contypes
 conwinuserrefs
-coordnew
 COPYCOLOR
 COPYDATA
 COPYDATASTRUCT
@@ -622,7 +621,6 @@ fuzzmap
 fuzzwrapper
 fwdecl
 fwe
-fwlink
 fzf
 gci
 gcx
@@ -866,6 +864,7 @@ KILLACTIVE
 KILLFOCUS
 kinda
 KIYEOK
+KKP
 KLF
 KLMNO
 KOK
@@ -885,6 +884,7 @@ LBUTTONDOWN
 LBUTTONUP
 lcb
 lci
+LCMAP
 LCONTROL
 LCTRL
 lcx
@@ -1583,6 +1583,7 @@ SIZESCROLL
 SKIPFONT
 SKIPOWNPROCESS
 SKIPOWNTHREAD
+SKS
 sku
 sldl
 SLGP
