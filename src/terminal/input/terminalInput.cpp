@@ -561,7 +561,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         // KKP> [...] text will not be sent, instead only key events are sent.
         // KKP> [...] with this mode, events for pressing modifier keys are reported.
         //
-        // In other words: Get the functional key code if any, otherwise use the codepoint.
+        // In other words: Get the functional key code if any; otherwise use the codepoint.
         WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) ||
         // A continuation of DisambiguateEscapeCodes above: modifier + key = CSI u.
         (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::DisambiguateEscapeCodes) &&
