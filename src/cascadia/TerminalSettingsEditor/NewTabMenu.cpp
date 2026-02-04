@@ -25,9 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //   but the XAML compiler can't find NewTabMenuListView when we try that. Rather than copying the list of selected items over
         //   to the view model, we'll just do this instead (much simpler).
         NewTabMenuListView().SelectionChanged([this](auto&&, auto&&) {
-            const auto list = NewTabMenuListView();
-            MoveToFolderButton().IsEnabled(list.SelectedItems().Size() > 0);
-            DeleteMultipleButton().IsEnabled(list.SelectedItems().Size() > 0);
+            MoveToFolderButton().IsEnabled(NewTabMenuListView().SelectedItems().Size() > 0);
+            DeleteMultipleButton().IsEnabled(NewTabMenuListView().SelectedItems().Size() > 0);
         });
 
         Automation::AutomationProperties::SetName(MoveToFolderButton(), RS_(L"NewTabMenu_MoveToFolderTextBlock/Text"));
@@ -44,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::NewTabMenuViewModel>();
-        _windowRoot = args.WindowRoot();
+        _weakWindowRoot = args.WindowRoot();
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

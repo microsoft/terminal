@@ -33,7 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> IconPicker::_BuiltInIcons{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> IconPicker::_IconTypes{ nullptr };
     DependencyProperty IconPicker::_CurrentIconPathProperty{ nullptr };
-    DependencyProperty IconPicker::_WindowRootProperty{ nullptr };
 
     Windows::Foundation::Collections::IObservableVector<Editor::EnumEntry> IconPicker::BuiltInIcons() noexcept
     {
@@ -106,15 +105,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::IconPicker>(),
                     PropertyMetadata{ nullptr, PropertyChangedCallback{ &IconPicker::_OnCurrentIconPathChanged } });
-        }
-        if (!_WindowRootProperty)
-        {
-            _WindowRootProperty =
-                DependencyProperty::Register(
-                    L"WindowRoot",
-                    xaml_typename<IHostedInWindow>(),
-                    xaml_typename<Editor::IconPicker>(),
-                    PropertyMetadata{ nullptr });
         }
     }
 
