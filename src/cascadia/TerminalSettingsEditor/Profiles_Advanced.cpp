@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
-        _windowRoot = args.WindowRoot();
+        _weakWindowRoot = args.WindowRoot();
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
@@ -98,7 +98,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             { L"All Files (*.*)", L"*.*" }
         };
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
+        const auto windowRoot = WindowRoot();
+        if (!windowRoot)
+        {
+            co_return;
+        }
+        const auto parentHwnd{ reinterpret_cast<HWND>(windowRoot.GetHostingWindow()) };
         auto file = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             try
             {

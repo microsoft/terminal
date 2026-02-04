@@ -251,17 +251,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         rle_pair(rle_pair&&) = default;
         rle_pair& operator=(rle_pair&&) = default;
 
-        constexpr rle_pair(const T& value, const S& length) noexcept(std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_constructible_v<S>) :
+        constexpr rle_pair(const T& value, const S& length) noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_constructible_v<S>) :
             value(value), length(length)
         {
         }
 
-        constexpr rle_pair(T&& value, S&& length) noexcept(std::is_nothrow_constructible_v<T>&& std::is_nothrow_constructible_v<S>) :
+        constexpr rle_pair(T&& value, S&& length) noexcept(std::is_nothrow_constructible_v<T> && std::is_nothrow_constructible_v<S>) :
             value(std::forward<T>(value)), length(std::forward<S>(length))
         {
         }
 
-        constexpr void swap(rle_pair& other) noexcept(std::is_nothrow_swappable_v<T>&& std::is_nothrow_swappable_v<S>)
+        constexpr void swap(rle_pair& other) noexcept(std::is_nothrow_swappable_v<T> && std::is_nothrow_swappable_v<S>)
         {
             if (this != std::addressof(other))
             {

@@ -958,7 +958,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            GSL_SUPPRESS(bounds .3)
+            GSL_SUPPRESS(bounds.3)
             renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
 

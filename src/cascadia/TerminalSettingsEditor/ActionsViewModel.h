@@ -141,6 +141,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring Type() const noexcept { return _descriptor.Type; };
         Model::ArgTypeHint TypeHint() const noexcept { return _descriptor.TypeHint; };
         bool Required() const noexcept { return _descriptor.Required; };
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
+        void WindowRoot(const Editor::IHostedInWindow& value) { _WeakWindowRoot = value; }
 
         // We cannot use the macro here because we need to implement additional logic for the setter
         Windows::Foundation::IInspectable EnumValue() const noexcept { return _EnumValue; };
@@ -186,10 +188,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Editor::ColorSchemeViewModel, DefaultColorScheme, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::Foundation::IInspectable, Value, nullptr);
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::hstring>, ColorSchemeNamesList, nullptr);
-        WINRT_PROPERTY(Editor::IHostedInWindow, WindowRoot, nullptr);
 
     private:
         Model::ArgDescriptor _descriptor;
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
         Windows::Foundation::IInspectable _EnumValue{ nullptr };
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::EnumEntry> _EnumList;
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Editor::FlagEntry> _FlagList;

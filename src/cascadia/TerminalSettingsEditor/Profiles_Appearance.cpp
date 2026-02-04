@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
-        _windowRoot = args.WindowRoot();
+        _weakWindowRoot = args.WindowRoot();
 
         // Settings are stored in Profiles_Appearance and Appearances.
         // We use the "App." prefix to indicate if it's in Appearances,
