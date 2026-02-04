@@ -93,6 +93,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
         Model::ExtensionPackage Package() const noexcept { return _package; }
+        hstring DisplayName() const noexcept;
+        hstring Icon() const noexcept;
         hstring Scope() const noexcept;
         bool Enabled() const;
         void Enabled(bool val);
