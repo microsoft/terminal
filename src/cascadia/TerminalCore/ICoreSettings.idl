@@ -16,7 +16,9 @@ namespace Microsoft.Terminal.Core
         Underscore,
         DoubleUnderscore,
         FilledBox,
-        EmptyBox
+        EmptyBox,
+        RoundedFilledBox, // NEW
+        RoundedEmptyBox // NEW
     };
 
     enum AdjustTextMode

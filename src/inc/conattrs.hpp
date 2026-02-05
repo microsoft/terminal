@@ -44,7 +44,9 @@ enum class CursorType : unsigned int
     Underscore = 0x2, // a single horizontal underscore, smaller that the min height legacy cursor.
     EmptyBox = 0x3, // Just the outline of a full box
     FullBox = 0x4, // a full box, similar to legacy with height=100%
-    DoubleUnderscore = 0x5 // a double horizontal underscore
+    DoubleUnderscore = 0x5, // a double horizontal underscore
+    RoundedFullBox = 0x6, // NEW: Rounded filled box
+    RoundedEmptyBox = 0x7 // NEW: Rounded empty box
 };
 
 // Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color,

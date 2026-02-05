@@ -170,6 +170,12 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     auto cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
     {
+	case CursorStyle::RoundedFilledBox:           //new
+		cursorShape = CursorType::RoundedFullBox;  //new
+		break;                                      //new
+	case CursorStyle::RoundedEmptyBox:             //new
+		cursorShape = CursorType::RoundedEmptyBox; //new
+		break;                                      //new
     case CursorStyle::Underscore:
         cursorShape = CursorType::Underscore;
         break;
@@ -189,7 +195,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     case CursorStyle::Bar:
         cursorShape = CursorType::VerticalBar;
         break;
-    }
+}
 
     // We're checking if the main buffer exists here, but then setting the
     // appearance of the active one. If the main buffer exists, then at least
