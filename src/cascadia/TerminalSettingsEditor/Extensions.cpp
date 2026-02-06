@@ -8,6 +8,7 @@
 #include "ExtensionsViewModel.g.cpp"
 #include "FragmentProfileViewModel.g.cpp"
 #include "ExtensionPackageTemplateSelector.g.cpp"
+#include "NavigateToPageArgs.g.h"
 
 #include "..\WinRTUtils\inc\Utils.h"
 
@@ -33,7 +34,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Extensions::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ExtensionsViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::ExtensionsViewModel>();
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();

@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "EditAction.h"
 #include "EditAction.g.cpp"
+#include "NavigateToPageArgs.g.h"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
@@ -18,8 +19,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditAction::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToCommandArgs>();
-        _ViewModel = args.Command();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::CommandViewModel>();
         _propagateWindowRootRevoker = _ViewModel.PropagateWindowRootRequested(
             winrt::auto_revoke,
             [windowRoot = args.WindowRoot()](const IInspectable&, const Editor::ArgWrapper& wrapper) {

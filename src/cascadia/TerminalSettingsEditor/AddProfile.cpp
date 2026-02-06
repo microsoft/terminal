@@ -6,6 +6,7 @@
 #include "AddProfile.g.cpp"
 #include "AddProfilePageNavigationState.g.cpp"
 #include "EnumEntry.h"
+#include "NavigateToPageArgs.g.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System;
@@ -26,7 +27,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AddProfile::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::AddProfilePageNavigationState>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _State = args.ViewModel().as<Editor::AddProfilePageNavigationState>();
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

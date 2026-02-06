@@ -5,6 +5,7 @@
 #include "Profiles_Terminal.h"
 #include "Profiles_Terminal.g.cpp"
 #include "ProfileViewModel.h"
+#include "NavigateToPageArgs.g.h"
 
 #include "EnumEntry.h"
 #include "..\WinRTUtils\inc\Utils.h"
@@ -20,7 +21,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Terminal::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _Profile = e.Parameter().as<Editor::ProfileViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,
