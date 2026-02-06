@@ -4,6 +4,8 @@ vcpkg_from_github(
     REF "${VERSION}"
     SHA512 f0da82c545b01692e9fd30fdfb613dbb8dd9716983dcd0ff19ac2a8d36f74beb5540ef38072fdecc1e34191b3682a8542ecbf3a61ef287dbba0a2679d4e023f2
     HEAD_REF master
+    PATCHES
+        0001-When-using-MSVC-x86-to-compile-v12.0.0-or-v12.1.0-co.patch
 )
 
 vcpkg_cmake_configure(
