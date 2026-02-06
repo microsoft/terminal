@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "EditColorScheme.h"
 #include "EditColorScheme.g.cpp"
+#include "NavigateToPageArgs.g.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
@@ -38,7 +39,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditColorScheme::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ColorSchemeViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::ColorSchemeViewModel>();
 
         const auto schemeName = _ViewModel.Name();
         NameBox().Text(schemeName);

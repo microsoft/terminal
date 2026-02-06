@@ -35,12 +35,6 @@ namespace Microsoft.Terminal.Settings.Editor
         CommandViewModel ViewModel { get; };
     }
 
-    runtimeclass NavigateToCommandArgs
-    {
-        CommandViewModel Command { get; };
-        IHostedInWindow WindowRoot { get; };
-    }
-
     runtimeclass ModifyKeyChordEventArgs
     {
         Microsoft.Terminal.Control.KeyChord OldKeys { get; };

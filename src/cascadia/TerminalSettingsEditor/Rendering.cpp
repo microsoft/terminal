@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Rendering.h"
 #include "Rendering.g.cpp"
+#include "NavigateToPageArgs.g.h"
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
 
@@ -16,7 +17,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Rendering::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::RenderingViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::RenderingViewModel>();
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

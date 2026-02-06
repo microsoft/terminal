@@ -5,6 +5,7 @@
 #include "Profiles_Base.h"
 #include "Profiles_Base.g.cpp"
 #include "ProfileViewModel.h"
+#include "NavigateToPageArgs.g.h"
 
 #include "..\WinRTUtils\inc\Utils.h"
 
@@ -29,8 +30,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
-        _Profile = args.Profile();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
         _weakWindowRoot = args.WindowRoot();
 
         // Check the use parent directory box if the starting directory is empty
