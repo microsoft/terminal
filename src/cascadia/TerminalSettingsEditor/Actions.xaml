@@ -182,8 +182,7 @@
     </Page.Resources>
 
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-        <StackPanel MaxWidth="600"
-                    HorizontalAlignment="Left"
+        <StackPanel HorizontalAlignment="Stretch"
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
             <HyperlinkButton x:Uid="Actions_Disclaimer"
