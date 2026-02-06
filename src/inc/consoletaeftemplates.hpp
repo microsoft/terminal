@@ -19,6 +19,8 @@ Revision History:
 
 #include <til/bit.h>
 
+#include <IDataSource.h>
+
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
 #define INIT_TEST_PROPERTY(type, identifier, description) \
     type identifier;                                      \
@@ -45,6 +47,178 @@ Revision History:
 
 namespace WEX::TestExecution
 {
+    struct ArrayIndexTaefAdapterRow : IDataRow
+    {
+        ArrayIndexTaefAdapterRow(size_t index) :
+            _index(index) {}
+
+        // IUnknown
+        STDMETHODIMP QueryInterface(REFIID riid, void** ppvObject) override
+        {
+            if (!ppvObject)
+            {
+                return E_POINTER;
+            }
+
+            if (riid == __uuidof(IUnknown))
+            {
+                AddRef();
+                *ppvObject = static_cast<IUnknown*>(this);
+                return S_OK;
+            }
+            else if (riid == __uuidof(IDataRow))
+            {
+                *ppvObject = static_cast<IDataRow*>(this);
+                AddRef();
+                return S_OK;
+            }
+            else
+            {
+                *ppvObject = nullptr;
+                return E_NOINTERFACE;
+            }
+        }
+
+        ULONG STDMETHODCALLTYPE AddRef() override
+        {
+            return _refCount.fetch_add(1) + 1;
+        }
+
+        ULONG STDMETHODCALLTYPE Release() override
+        {
+            const auto count = _refCount.fetch_sub(1) - 1;
+            if (count == 0)
+            {
+                delete this;
+            }
+            return count;
+        }
+
+        // IDataRow
+        STDMETHODIMP GetTestData(BSTR /*pszName*/, SAFEARRAY** ppData) override
+        {
+            wchar_t buf[16];
+            swprintf_s(buf, L"%zu", _index);
+
+            LONG idx = 0;
+            const auto array = SafeArrayCreateVector(VT_BSTR, 0, 1);
+            SafeArrayPutElement(array, &idx, SysAllocString(buf));
+            *ppData = array;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetMetadataNames(SAFEARRAY** ppMetadataNames) override
+        {
+            *ppMetadataNames = nullptr;
+            return S_FALSE;
+        }
+
+        STDMETHODIMP GetMetadata(BSTR /*pszName*/, SAFEARRAY** ppData) override
+        {
+            *ppData = nullptr;
+            return S_FALSE;
+        }
+
+        STDMETHODIMP GetName(BSTR* ppszRowName) override
+        {
+            *ppszRowName = nullptr;
+            return S_FALSE;
+        }
+
+    private:
+        std::atomic<ULONG> _refCount{ 1 };
+        size_t _index = 0;
+    };
+
+    struct ArrayIndexTaefAdapterSource : IDataSource
+    {
+        explicit ArrayIndexTaefAdapterSource(size_t count) :
+            _count{ count } {}
+
+        // IUnknown
+        STDMETHODIMP QueryInterface(REFIID riid, void** ppvObject) override
+        {
+            if (!ppvObject)
+            {
+                return E_POINTER;
+            }
+
+            if (riid == __uuidof(IUnknown))
+            {
+                AddRef();
+                *ppvObject = static_cast<IUnknown*>(this);
+                return S_OK;
+            }
+            else if (riid == __uuidof(IDataSource))
+            {
+                *ppvObject = static_cast<IDataSource*>(this);
+                AddRef();
+                return S_OK;
+            }
+            else
+            {
+                *ppvObject = nullptr;
+                return E_NOINTERFACE;
+            }
+        }
+
+        ULONG STDMETHODCALLTYPE AddRef() override
+        {
+            return _refCount.fetch_add(1) + 1;
+        }
+
+        ULONG STDMETHODCALLTYPE Release() override
+        {
+            const auto count = _refCount.fetch_sub(1) - 1;
+            if (count == 0)
+            {
+                delete this;
+            }
+            return count;
+        }
+
+        // IDataSource
+        STDMETHODIMP Advance(IDataRow** ppDataRow) override
+        {
+            if (_index < _count)
+            {
+                *ppDataRow = static_cast<IDataRow*>(new ArrayIndexTaefAdapterRow(_index++));
+                return S_OK;
+            }
+            else
+            {
+                *ppDataRow = nullptr;
+            }
+            return S_OK;
+        }
+
+        STDMETHODIMP Reset() override
+        {
+            _index = 0;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestDataNames(SAFEARRAY** names) override
+        {
+            LONG idx = 0;
+            const auto array = SafeArrayCreateVector(VT_BSTR, 0, 1);
+            SafeArrayPutElement(array, &idx, SysAllocString(L"index"));
+            *names = array;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestDataType(BSTR /*name*/, BSTR* type) override
+        {
+            *type = nullptr;
+            return S_OK;
+        }
+
+    private:
+        std::atomic<ULONG> _refCount{ 1 };
+        size_t _count = 0;
+        size_t _index = 0;
+    };
+
     // Compare two floats using a ULP (unit last place) tolerance of up to 4.
     // Allows you to compare two floats that are almost equal.
     // Think of: 0.200000000000000 vs. 0.200000000000001.
