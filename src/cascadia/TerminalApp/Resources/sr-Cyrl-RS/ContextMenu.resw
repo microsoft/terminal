@@ -121,6 +121,10 @@
     <value>Терминал</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
+  <data name="AppNameDev" xml:space="preserve">
+    <value>Терминал Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="AppNameCan" xml:space="preserve">
     <value>Терминал Канаринац</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
@@ -132,6 +136,10 @@
   <data name="AppStoreName" xml:space="preserve">
     <value>Windows терминал</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
+  </data>
+  <data name="AppStoreNameDev" xml:space="preserve">
+    <value>Windows Терминал Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
   </data>
   <data name="AppStoreNameCan" xml:space="preserve">
     <value>Windows терминал Канаринац</value>
@@ -145,6 +153,10 @@
     <value>Терминал</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
   </data>
+  <data name="AppShortNameDev" xml:space="preserve">
+    <value>Терминал Dev</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="AppShortNameCan" xml:space="preserve">
     <value>Терминал Канаринац</value>
     <comment>{Locked=qps-ploc,qps-ploca,qps-plocm}</comment>
@@ -156,11 +168,23 @@
   <data name="AppDescription" xml:space="preserve">
     <value>Нови Windows терминал</value>
   </data>
+  <data name="AppDescriptionDev" xml:space="preserve">
+    <value>Windows Терминал, али незваничан</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
+  <data name="AppDescriptionCan" xml:space="preserve">
+    <value>Windows Терминал (Канаринац изградња)</value>
+    <comment>{Locked}</comment>
+  </data>
   <data name="AppDescriptionPre" xml:space="preserve">
     <value>Windows терминал са прегледом предстојећих функција</value>
   </data>
+  <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
+    <value>Отвори у Терминалу (&amp;Dev)</value>
+    <comment>{Locked} The dev build will never be seen in multiple languages</comment>
+  </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Canary" xml:space="preserve">
-    <value>Отвори у терминалу(&amp;Канаринац)</value>
+    <value>Отвори у терминалу (&amp;Канаринац)</value>
     <comment>This is a menu item that will be displayed in the Windows File Explorer that launches the Canary version of Windows Terminal. Please mark one of the characters to be an accelerator key.</comment>
   </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Preview" xml:space="preserve">
