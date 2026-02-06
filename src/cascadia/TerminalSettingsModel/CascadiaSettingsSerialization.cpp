@@ -1590,6 +1590,52 @@ void CascadiaSettings::ResetToDefaultSettings()
 // - <none>
 bool CascadiaSettings::WriteSettingsToDisk()
 {
+    const auto trimTrailingWhitespace = [](std::string_view text) {
+        std::string result;
+        result.reserve(text.size());
+
+        size_t lineStart = 0;
+        while (lineStart < text.size())
+        {
+            auto lineEnd = lineStart;
+            while (lineEnd < text.size() && text[lineEnd] != '\r' && text[lineEnd] != '\n')
+            {
+                ++lineEnd;
+            }
+
+            auto trimEnd = lineEnd;
+            while (trimEnd > lineStart && (text[trimEnd - 1] == ' ' || text[trimEnd - 1] == '\t'))
+            {
+                --trimEnd;
+            }
+
+            result.append(text.substr(lineStart, trimEnd - lineStart));
+
+            if (lineEnd < text.size())
+            {
+                if (text[lineEnd] == '\r')
+                {
+                    result.push_back('\r');
+                    ++lineEnd;
+                    if (lineEnd < text.size() && text[lineEnd] == '\n')
+                    {
+                        result.push_back('\n');
+                        ++lineEnd;
+                    }
+                }
+                else
+                {
+                    result.push_back('\n');
+                    ++lineEnd;
+                }
+            }
+
+            lineStart = lineEnd;
+        }
+
+        return result;
+    };
+
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
@@ -1598,7 +1644,7 @@ bool CascadiaSettings::WriteSettingsToDisk()
 
     try
     {
-        _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
+        _writeSettingsToDisk(trimTrailingWhitespace(Json::writeString(wbuilder, ToJson())));
     }
     catch (...)
     {
