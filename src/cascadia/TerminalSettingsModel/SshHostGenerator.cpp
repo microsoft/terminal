@@ -28,6 +28,7 @@ static constexpr std::wstring_view SSH_USER_CONFIG_PATH = L"%UserProfile%\\.ssh\
 
 static constexpr std::wstring_view SSH_CONFIG_HOST_KEY{ L"Host" };
 static constexpr std::wstring_view SSH_CONFIG_HOSTNAME_KEY{ L"HostName" };
+static constexpr std::wstring_view SSH_CONFIG_INCLUDE_KEY{ L"Include" };
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -116,11 +117,115 @@ winrt::hstring _getProfileCommandLine(const std::wstring_view& sshExePath, const
                             lastHost = L"";
                         }
                     }
+                    else if (til::equals_insensitive_ascii(key, SSH_CONFIG_INCLUDE_KEY))
+                    {
+                        // Handle Include directive
+                        _processIncludeDirective(resolvedConfigPath.parent_path(), value, hostNames);
+                    }
                 }
             }
         }
     }
     CATCH_LOG();
+}
+
+/*static*/ void SshHostGenerator::_processIncludeDirective(const std::filesystem::path& configDir, const std::wstring_view& includePattern, std::vector<std::wstring>& hostNames) noexcept
+{
+    try
+    {
+        // Resolve the include pattern relative to config directory
+        std::filesystem::path includePath = configDir / std::wstring(includePattern);
+        
+        // Handle wildcards by checking parent directory
+        if (includePattern.find(L'*') != std::wstring_view::npos || includePattern.find(L'?') != std::wstring_view::npos)
+        {
+            const auto parentPath = includePath.parent_path();
+            const auto pattern = includePath.filename().wstring();
+            
+            if (std::filesystem::exists(parentPath) && std::filesystem::is_directory(parentPath))
+            {
+                for (const auto& entry : std::filesystem::directory_iterator(parentPath))
+                {
+                    if (entry.is_regular_file())
+                    {
+                        const auto filename = entry.path().filename().wstring();
+                        // Simple wildcard matching: * matches any characters
+                        if (_matchesPattern(filename, pattern))
+                        {
+                            _getHostNamesFromConfigFile(entry.path().wstring(), hostNames);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Direct file include (no wildcards)
+            if (std::filesystem::exists(includePath))
+            {
+                _getHostNamesFromConfigFile(includePath.wstring(), hostNames);
+            }
+        }
+    }
+    CATCH_LOG();
+}
+
+/*static*/ bool SshHostGenerator::_matchesPattern(const std::wstring_view& filename, const std::wstring_view& pattern) noexcept
+{
+    try
+    {
+        // Simple wildcard matching: * matches any characters, ? matches single character
+        size_t filenamePos = 0;
+        size_t patternPos = 0;
+        
+        while (filenamePos < filename.length() && patternPos < pattern.length())
+        {
+            if (pattern[patternPos] == L'*')
+            {
+                // Skip consecutive asterisks
+                while (patternPos < pattern.length() && pattern[patternPos] == L'*')
+                {
+                    patternPos++;
+                }
+                
+                // If * is at the end, match everything
+                if (patternPos == pattern.length())
+                {
+                    return true;
+                }
+                
+                // Try to match the rest of the pattern
+                while (filenamePos < filename.length())
+                {
+                    if (_matchesPattern(filename.substr(filenamePos), pattern.substr(patternPos)))
+                    {
+                        return true;
+                    }
+                    filenamePos++;
+                }
+                return false;
+            }
+            else if (pattern[patternPos] == L'?' || pattern[patternPos] == filename[filenamePos])
+            {
+                filenamePos++;
+                patternPos++;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        
+        // Handle remaining asterisks in pattern
+        while (patternPos < pattern.length() && pattern[patternPos] == L'*')
+        {
+            patternPos++;
+        }
+        
+        return filenamePos == filename.length() && patternPos == pattern.length();
+    }
+    CATCH_LOG();
+    return false;
 }
 
 std::wstring_view SshHostGenerator::GetNamespace() const noexcept
