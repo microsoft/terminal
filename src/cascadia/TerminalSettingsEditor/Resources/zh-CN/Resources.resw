@@ -1110,11 +1110,11 @@
     <value>图标</value>
     <comment>Header for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
   </data>
-  <data name="Profile_IconBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_ImagePathBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>图标</value>
-    <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+    <comment>Name for a control to determine what icon can be used. This is not necessarily a file path, but can be one. It's usually used for images.</comment>
   </data>
-  <data name="Profile_IconEmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_EmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>图标</value>
     <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
   </data>
@@ -1122,7 +1122,7 @@
     <value>配置文件中所使用图标的表情符号或图像文件位置。</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="Profile_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
     <value>浏览……</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -2314,31 +2314,31 @@
     <value>使用主题颜色</value>
     <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
-  <data name="Profile_IconTypeNone" xml:space="preserve">
+  <data name="IconPicker_IconTypeNone" xml:space="preserve">
     <value>无</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon for the profile.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon set.</comment>
   </data>
-  <data name="Profile_IconTypeImage" xml:space="preserve">
+  <data name="IconPicker_IconTypeImage" xml:space="preserve">
     <value>文件</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set for the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set as the icon.</comment>
   </data>
-  <data name="Profile_IconTypeEmoji" xml:space="preserve">
+  <data name="IconPicker_IconTypeEmoji" xml:space="preserve">
     <value>表情符号</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set for the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set as the  icon.</comment>
   </data>
-  <data name="Profile_IconTypeFontIcon" xml:space="preserve">
+  <data name="IconPicker_IconTypeFontIcon" xml:space="preserve">
     <value>内置图标</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set as the icon.</comment>
   </data>
-  <data name="Profile_IconEmojiBox.PlaceholderText" xml:space="preserve">
-    <value>使用“Windows 键 + 句号”打开表情符号选取器</value>
+  <data name="IconPicker_EmojiBox.PlaceholderText" xml:space="preserve">
+    <value>使用“Win + 句号”打开表情符号选取器</value>
     <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
   </data>
-  <data name="Profile_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>图标类型</value>
     <comment>Accessible name for a control allowing the user to select the type of icon they would like to use.</comment>
   </data>
-  <data name="Profile_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>图标</value>
     <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
   </data>
@@ -2441,6 +2441,14 @@
   <data name="NewTabMenu_CurrentFolderName.Header" xml:space="preserve">
     <value>文件夹名称</value>
     <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.Header" xml:space="preserve">
+    <value>文件夹图标</value>
+    <comment>Header for a control that allows the user to modify the icon of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>文件夹图标</value>
+    <comment>Name for a control to that allows the user to modify the icon of the current folder entry.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
     <value>允许内联</value>
@@ -2696,5 +2704,9 @@
   </data>
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>是，清除缓存</value>
+  </data>
+  <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
+    <value>键入以筛选图标</value>
+    <comment>Placeholder text for a text box to filter and select an icon.</comment>
   </data>
 </root>
