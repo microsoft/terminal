@@ -245,7 +245,7 @@ namespace
 
 extern "C" HRESULT __declspec(dllexport) __cdecl KittyKeyTestDataSource(IDataSource** ppDataSource, void*)
 {
-    return Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataSource, std::size(testCases));
+    return Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterSource>(ppDataSource, std::size(testCases));
 }
 
 class KittyKeyboardProtocolTests
