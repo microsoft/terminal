@@ -50,7 +50,8 @@
             </local:SettingContainer>
 
             <!--  Kitty Keyboard Mode  -->
-            <local:SettingContainer x:Uid="Profile_AllowKittyKeyboardMode"
+            <local:SettingContainer x:Name="AllowKittyKeyboardMode"
+                                    x:Uid="Profile_AllowKittyKeyboardMode"
                                     ClearSettingValue="{x:Bind Profile.ClearAllowKittyKeyboardMode}"
                                     HasSettingValue="{x:Bind Profile.HasAllowKittyKeyboardMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.AllowKittyKeyboardModeOverrideSource, Mode=OneWay}">

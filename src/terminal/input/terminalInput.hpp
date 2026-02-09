@@ -155,7 +155,7 @@ namespace Microsoft::Console::VirtualTerminal
             uint32_t csiUnicodeKeyCode;
             uint32_t csiAltKeyCodeShifted; // KKP-specific
             uint32_t csiAltKeyCodeBase; // KKP-specific
-            uint32_t csiModifier; // NOTE: The final VT sequence expects it this to be 1-based.
+            uint32_t csiModifier; // NOTE: The final VT sequence expects this to be 1-based.
             uint32_t csiEventType; // KKP-specific
             uint32_t csiTextAsCodepoint; // KKP-specific
             // A non-zero csiFinal value indicates that this key

@@ -111,8 +111,8 @@ static constexpr til::point point_offset_by_line(const til::point start, const t
 
 extern "C" HRESULT __declspec(dllexport) __cdecl GeneratedMovementTestDataSource(IDataSource** ppDataSource, void*)
 {
-    *ppDataSource = new ArrayIndexTaefAdapterSource > (std::size(testCases));
-    return S_OK;
+    auto source{ Microsoft::WRL::Make<ArrayIndexTaefAdapterSource>() };
+    return source.CopyTo(ppDataSource);
 }
 
 // UiaTextRange takes an object that implements

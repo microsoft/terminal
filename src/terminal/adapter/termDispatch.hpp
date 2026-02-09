@@ -54,10 +54,10 @@ public:
     void DeleteColumn(const VTInt /*distance*/) override {} // DECDC
     void SetKeypadMode(const bool /*applicationMode*/) override {} // DECKPAM, DECKPNM
     void SetAnsiMode(const bool /*ansiMode*/) override {} // DECANM
-    void SetKittyKeyboardProtocol(const VTParameter /*flags*/, const VTParameter /*mode*/) noexcept override {} // CSI = flags ; mode u
-    void QueryKittyKeyboardProtocol() override {} // CSI ? u
-    void PushKittyKeyboardProtocol(const VTParameter /*flags*/) override {} // CSI > flags u
-    void PopKittyKeyboardProtocol(const VTParameter /*count*/) override {} // CSI < count u
+    void SetKittyKeyboardProtocol(const VTParameter /*flags*/, const VTParameter /*mode*/) noexcept override {} // KKP
+    void QueryKittyKeyboardProtocol() override {} // KKP
+    void PushKittyKeyboardProtocol(const VTParameter /*flags*/) override {} // KKP
+    void PopKittyKeyboardProtocol(const VTParameter /*count*/) override {} // KKP
     void SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override {} // DECSTBM
     void SetLeftRightScrollingMargins(const VTInt /*leftMargin*/, const VTInt /*rightMargin*/) override {} // DECSLRM
     void EnquireAnswerback() override {} // ENQ

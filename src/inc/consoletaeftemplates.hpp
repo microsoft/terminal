@@ -47,54 +47,14 @@ Revision History:
 
 namespace WEX::TestExecution
 {
-    struct ArrayIndexTaefAdapterRow : IDataRow
+    struct ArrayIndexTaefAdapterRow : Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataRow>
     {
-        ArrayIndexTaefAdapterRow(size_t index) :
-            _index(index) {}
-
-        // IUnknown
-        STDMETHODIMP QueryInterface(REFIID riid, void** ppvObject) override
+        HRESULT RuntimeClassInitialize(const size_t index)
         {
-            if (!ppvObject)
-            {
-                return E_POINTER;
-            }
-
-            if (riid == __uuidof(IUnknown))
-            {
-                AddRef();
-                *ppvObject = static_cast<IUnknown*>(this);
-                return S_OK;
-            }
-            else if (riid == __uuidof(IDataRow))
-            {
-                *ppvObject = static_cast<IDataRow*>(this);
-                AddRef();
-                return S_OK;
-            }
-            else
-            {
-                *ppvObject = nullptr;
-                return E_NOINTERFACE;
-            }
+            _index = index;
+            return S_OK;
         }
 
-        ULONG STDMETHODCALLTYPE AddRef() override
-        {
-            return _refCount.fetch_add(1) + 1;
-        }
-
-        ULONG STDMETHODCALLTYPE Release() override
-        {
-            const auto count = _refCount.fetch_sub(1) - 1;
-            if (count == 0)
-            {
-                delete this;
-            }
-            return count;
-        }
-
-        // IDataRow
         STDMETHODIMP GetTestData(BSTR /*pszName*/, SAFEARRAY** ppData) override
         {
             wchar_t buf[16];
@@ -126,70 +86,28 @@ namespace WEX::TestExecution
         }
 
     private:
-        std::atomic<ULONG> _refCount{ 1 };
         size_t _index = 0;
     };
 
-    struct ArrayIndexTaefAdapterSource : IDataSource
+    struct ArrayIndexTaefAdapterSource : Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataSource>
     {
-        explicit ArrayIndexTaefAdapterSource(size_t count) :
-            _count{ count } {}
-
-        // IUnknown
-        STDMETHODIMP QueryInterface(REFIID riid, void** ppvObject) override
+        HRESULT RuntimeClassInitialize(const size_t count)
         {
-            if (!ppvObject)
-            {
-                return E_POINTER;
-            }
-
-            if (riid == __uuidof(IUnknown))
-            {
-                AddRef();
-                *ppvObject = static_cast<IUnknown*>(this);
-                return S_OK;
-            }
-            else if (riid == __uuidof(IDataSource))
-            {
-                *ppvObject = static_cast<IDataSource*>(this);
-                AddRef();
-                return S_OK;
-            }
-            else
-            {
-                *ppvObject = nullptr;
-                return E_NOINTERFACE;
-            }
+            _count = count;
+            return S_OK;
         }
 
-        ULONG STDMETHODCALLTYPE AddRef() override
-        {
-            return _refCount.fetch_add(1) + 1;
-        }
-
-        ULONG STDMETHODCALLTYPE Release() override
-        {
-            const auto count = _refCount.fetch_sub(1) - 1;
-            if (count == 0)
-            {
-                delete this;
-            }
-            return count;
-        }
-
-        // IDataSource
         STDMETHODIMP Advance(IDataRow** ppDataRow) override
         {
             if (_index < _count)
             {
-                *ppDataRow = static_cast<IDataRow*>(new ArrayIndexTaefAdapterRow(_index++));
-                return S_OK;
+                return Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataRow, _index++);
             }
             else
             {
                 *ppDataRow = nullptr;
+                return S_OK;
             }
-            return S_OK;
         }
 
         STDMETHODIMP Reset() override
@@ -214,7 +132,6 @@ namespace WEX::TestExecution
         }
 
     private:
-        std::atomic<ULONG> _refCount{ 1 };
         size_t _count = 0;
         size_t _index = 0;
     };

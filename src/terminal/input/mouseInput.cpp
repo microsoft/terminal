@@ -514,10 +514,10 @@ TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsign
         return {};
     }
 
-    EncodingHelper enc;
-    SanitizedKeyEvent key{
+    const SanitizedKeyEvent key{
         .virtualKey = vkey,
     };
+    EncodingHelper enc;
     _encodeRegular(enc, key);
 
     std::wstring str;

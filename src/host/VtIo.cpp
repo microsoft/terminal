@@ -117,7 +117,7 @@ using namespace Microsoft::Console::Interactivity;
         CATCH_RETURN();
     }
 
-    // TODO: Avoid translating win32im sequences to Kitty Keyboard Protocol temporarily.
+    // TODO GH#19847: Avoid translating win32im sequences to Kitty Keyboard Protocol temporarily.
     // This is because as of this writing, our implementation is brand new, and Windows Terminal
     // needs a toggle to disable it. That only works if ConPTY then doesn't do it anyway.
     if (const auto inputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().pInputBuffer)
