@@ -20,7 +20,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Terminal::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _Profile = e.Parameter().as<Editor::ProfileViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,
