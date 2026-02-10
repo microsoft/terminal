@@ -504,9 +504,6 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
     static constexpr auto isTextKey = [](uint32_t fk) noexcept {
         return fk == KittyKeyCodeTextSentinel;
     };
-    static constexpr auto isAnyFunctionalKey = [](uint32_t fk) noexcept {
-        return fk > KittyKeyCodeTextSentinel;
-    };
     static constexpr auto isNonLegacyFunctionalKey = [](uint32_t fk) noexcept {
         return fk > KittyKeyCodeLegacySentinel;
     };
@@ -520,15 +517,14 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         // KKP> keys using CSI u sequences instead of legacy ones.
         // KKP> Here key is any ASCII key as described in Legacy text keys. [...]
         //
-        // NOTE: The specification is wrong. It's actually either Esc, or
-        //       *any modifier with any key* (!).
+        // NOTE: Additionally, Return, Tab, and Backspace are encoded
+        //       with CSI u even if only the Shift is held.
         //
         // KKP> Legacy text keys:
         // KKP> For legacy compatibility, the keys a-z 0-9 ` - = [ ] \ ; ' , . /
         //
-        // NOTE: Again, the list of keys is flat out wrong. It's actually all text-keys,
-        //       plus classic C0 keys Escape, Return, Tab, and Backspace. Since it involves
-        //       text keys, we'll all of them below, together with ReportAllKeysAsEscapeCodes.
+        // NOTE: It's actually all text-keys. Since it involves text keys,
+        //       we'll handle those below, together with ReportAllKeysAsEscapeCodes.
         //
         // KKP> Additionally, all non text keypad keys will be reported [...] with CSI u encoding, [...].
 
@@ -536,10 +532,15 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         constexpr uint32_t KP_0 = 57399; // The lowest keypad key
         constexpr uint32_t KP_BEGIN = 57427; // and the highest one
 
-        if (functionalKeyCode == ESCAPE || (functionalKeyCode >= KP_0 && functionalKeyCode <= KP_BEGIN))
+        if (isNonLegacyFunctionalKey(functionalKeyCode))
         {
-            enc.csiUnicodeKeyCode = functionalKeyCode;
-            enc.csiFinal = L'u';
+            if (functionalKeyCode == ESCAPE ||
+                (functionalKeyCode <= 127 && enc.csiModifier != 0) ||
+                (functionalKeyCode >= KP_0 && functionalKeyCode <= KP_BEGIN))
+            {
+                enc.csiUnicodeKeyCode = functionalKeyCode;
+                enc.csiFinal = L'u';
+            }
         }
     }
 
@@ -564,9 +565,8 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
         // In other words: Get the functional key code if any; otherwise use the codepoint.
         WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::ReportAllKeysAsEscapeCodes) ||
         // A continuation of DisambiguateEscapeCodes above: modifier + key = CSI u.
-        (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::DisambiguateEscapeCodes) &&
-         functionalKeyCode <= 127 && // As documented above: All text keys (=0) and control keys (1..127)
-         enc.csiModifier != 0) ||
+        // As documented above: All text keys (=0) with any modifier except for shift+key
+        (WI_IsFlagSet(_kittyFlags, KittyKeyboardProtocolFlags::DisambiguateEscapeCodes) && isTextKey(functionalKeyCode) && enc.csiModifier > CSI_SHIFT) ||
         // Enabling ReportEventTypes implies that `CSI u` is used for all key up events.
         enc.csiEventType == 3)
     {
@@ -668,7 +668,7 @@ bool TerminalInput::_encodeKitty(KeyboardHelper& kbd, EncodingHelper& enc, const
     // * Emit a proper CSI <num> u sequence, or
     // * Set whatever kitty fields we want and leave csiFinal at zero.
     //   (This then triggers the standard key encoding logic below.)
-    assert(enc.csiFinal == 0 || enc.csiUnicodeKeyCode > KittyKeyCodeLegacySentinel);
+    assert(enc.csiFinal == 0 || isNonLegacyFunctionalKey(enc.csiUnicodeKeyCode));
 
     return enc.csiFinal != 0;
 }

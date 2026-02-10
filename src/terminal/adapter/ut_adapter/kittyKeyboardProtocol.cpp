@@ -68,6 +68,7 @@ namespace
         { L"D Ctrl+a", L"\x1b[97;5u", D, true, 'A', 0x1E, L'\x01', Ctrl },
         { L"D Ctrl+Alt+a", L"\x1b[97;7u", D, true, 'A', 0x1E, L'\x01', Ctrl | Alt },
         { L"D Shift+Alt+a", L"\x1b[97;4u", D, true, 'A', 0x1E, L'A', Shift | Alt },
+        { L"D Shift+a", L"A", D, true, 'A', 0x1E, L'A', Shift },
 
         // Modifiers with AllKeys (K): all keys use CSI u
         { L"K a", L"\x1b[97u", K, true, 'A', 0x1E, L'a', 0 },
