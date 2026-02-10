@@ -232,7 +232,7 @@ static int run(int argc, const wchar_t* argv[])
     }
 }
 
-int wmain(int argc, const wchar_t* argv[])
+int __cdecl wmain(int argc, const wchar_t* argv[])
 {
     const auto inputHandle = GetStdHandle(STD_INPUT_HANDLE);
     const auto outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
