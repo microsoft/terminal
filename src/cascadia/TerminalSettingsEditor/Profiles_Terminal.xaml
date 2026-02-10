@@ -51,6 +51,16 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Kitty Keyboard Mode  -->
+            <local:SettingContainer x:Name="AllowKittyKeyboardMode"
+                                    x:Uid="Profile_AllowKittyKeyboardMode"
+                                    ClearSettingValue="{x:Bind Profile.ClearAllowKittyKeyboardMode}"
+                                    HasSettingValue="{x:Bind Profile.HasAllowKittyKeyboardMode, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AllowKittyKeyboardModeOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Profile.AllowKittyKeyboardMode, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Allow VT Checksum Report  -->
             <local:SettingContainer x:Name="AllowVtChecksumReport"
                                     x:Uid="Profile_AllowVtChecksumReport"

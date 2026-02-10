@@ -166,7 +166,11 @@ namespace Microsoft::Console::VirtualTerminal
             DECRQCRA_RequestChecksumRectangularArea = VTID("*y"),
             DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
-            DECPS_PlaySound = VTID(",~")
+            DECPS_PlaySound = VTID(",~"),
+            KKP_KittyKeyboardSet = VTID("=u"),
+            KKP_KittyKeyboardQuery = VTID("?u"),
+            KKP_KittyKeyboardPush = VTID(">u"),
+            KKP_KittyKeyboardPop = VTID("<u")
         };
 
         enum DcsActionCodes : uint64_t
