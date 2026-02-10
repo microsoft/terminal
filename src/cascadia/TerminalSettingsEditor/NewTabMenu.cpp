@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "NewTabMenu.h"
 #include "NewTabMenu.g.cpp"
-#include "NavigateToPageArgs.g.h"
 #include "NewTabMenuEntryTemplateSelector.g.cpp"
 #include "EnumEntry.h"
 
