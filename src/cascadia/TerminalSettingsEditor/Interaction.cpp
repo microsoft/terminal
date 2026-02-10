@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Interaction.h"
 #include "Interaction.g.cpp"
-#include "NavigateToPageArgs.g.h"
 
 #include "EnumEntry.h"
 

@@ -5,7 +5,6 @@
 #include "Profiles_Appearance.h"
 
 #include "ProfileViewModel.h"
-#include "NavigateToPageArgs.g.h"
 #include "PreviewConnection.h"
 
 #include "Profiles_Appearance.g.cpp"

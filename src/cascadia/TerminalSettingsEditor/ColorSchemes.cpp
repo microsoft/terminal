@@ -5,7 +5,6 @@
 #include "ColorSchemes.h"
 #include "ColorTableEntry.g.cpp"
 #include "ColorSchemes.g.cpp"
-#include "NavigateToPageArgs.g.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI;

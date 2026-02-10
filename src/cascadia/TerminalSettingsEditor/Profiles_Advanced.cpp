@@ -5,7 +5,6 @@
 #include "Profiles_Advanced.h"
 #include "Profiles_Advanced.g.cpp"
 #include "ProfileViewModel.h"
-#include "NavigateToPageArgs.g.h"
 
 #include "EnumEntry.h"
 #include "..\WinRTUtils\inc\Utils.h"

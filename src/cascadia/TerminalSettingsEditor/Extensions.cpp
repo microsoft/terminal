@@ -8,7 +8,6 @@
 #include "ExtensionsViewModel.g.cpp"
 #include "FragmentProfileViewModel.g.cpp"
 #include "ExtensionPackageTemplateSelector.g.cpp"
-#include "NavigateToPageArgs.g.h"
 
 #include "..\WinRTUtils\inc\Utils.h"
 

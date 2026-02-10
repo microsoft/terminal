@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
-#include "NavigateToPageArgs.g.h"
 
 #include <WtExeUtils.h>
 

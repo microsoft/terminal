@@ -6,7 +6,6 @@
 #include "AddProfile.g.cpp"
 #include "AddProfilePageNavigationState.g.cpp"
 #include "EnumEntry.h"
-#include "NavigateToPageArgs.g.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System;

@@ -5,7 +5,6 @@
 #include "Profiles_Base_Orphaned.h"
 #include "Profiles_Base_Orphaned.g.cpp"
 #include "ProfileViewModel.h"
-#include "NavigateToPageArgs.g.h"
 
 #include "..\WinRTUtils\inc\Utils.h"
 

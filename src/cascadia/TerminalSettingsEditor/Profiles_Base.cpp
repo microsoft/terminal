@@ -5,7 +5,6 @@
 #include "Profiles_Base.h"
 #include "Profiles_Base.g.cpp"
 #include "ProfileViewModel.h"
-#include "NavigateToPageArgs.g.h"
 
 #include "..\WinRTUtils\inc\Utils.h"
 
