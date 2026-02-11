@@ -136,7 +136,7 @@
             </Style>
             <Style x:Key="KeyChordEditorStyle"
                    TargetType="local:KeyChordListener">
-                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
             <x:Int32 x:Key="EditButtonSize">32</x:Int32>
@@ -173,8 +173,10 @@
                     <Grid Padding="-4,0,0,0"
                           VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0"
                                 Background="{ThemeResource AppBarItemBackgroundThemeBrush}"
@@ -184,43 +186,35 @@
                                        Text="{x:Bind KeyChordText, Mode=OneWay}"
                                        TextWrapping="WrapWholeWords" />
                         </Button>
-                        <Grid Grid.Column="0"
-                              ColumnSpacing="8"
-                              Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <!--  Edit Mode: Key Chord Listener  -->
-                            <local:KeyChordListener Grid.Column="0"
-                                                    Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
-                                                    Style="{StaticResource KeyChordEditorStyle}" />
+                        <local:KeyChordListener Grid.Column="0"
+                                                Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                Style="{StaticResource KeyChordEditorStyle}"
+                                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
+                        <Button x:Uid="Actions_CancelButton"
+                                Grid.Column="1"
+                                AutomationProperties.Name="{x:Bind CancelButtonName}"
+                                Click="{x:Bind CancelChanges}"
+                                Style="{StaticResource EditButtonStyle}"
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}"
+                                Margin="8,0,0,0">
+                            <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                      Glyph="&#xE711;" />
+                        </Button>
 
-                            <!--  Cancel editing the action  -->
-                            <Button x:Uid="Actions_CancelButton"
-                                    Grid.Column="1"
-                                    AutomationProperties.Name="{x:Bind CancelButtonName}"
-                                    Click="{x:Bind CancelChanges}"
-                                    Style="{StaticResource EditButtonStyle}">
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE711;" />
-                            </Button>
+                        <Button x:Uid="Actions_AcceptButton"
+                                Grid.Column="2"
+                                AutomationProperties.Name="{x:Bind AcceptButtonName}"
+                                Click="{x:Bind AcceptChanges}"
+                                Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
+                                Style="{StaticResource AccentEditButtonStyle}"
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}"
+                                Margin="8,0,8,0">
+                            <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                      Glyph="&#xE8FB;" />
+                        </Button>
 
-                            <!--  Accept changes  -->
-                            <Button x:Uid="Actions_AcceptButton"
-                                    Grid.Column="2"
-                                    AutomationProperties.Name="{x:Bind AcceptButtonName}"
-                                    Click="{x:Bind AcceptChanges}"
-                                    Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
-                                    Style="{StaticResource AccentEditButtonStyle}">
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE8FB;" />
-                            </Button>
-                        </Grid>
-                        <Button Grid.Column="1"
-                                Margin="8,0,0,0"
-                                HorizontalAlignment="Right"
+                        <Button Grid.Column="3"
+                                HorizontalAlignment="Left"
                                 AutomationProperties.Name="{x:Bind DeleteButtonName}"
                                 Style="{StaticResource DeleteSmallButtonStyle}">
                             <Button.Content>
@@ -503,7 +497,7 @@
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <ToggleSwitch Grid.Column="1"
-                                  HorizontalAlignment="Right"
+                                  HorizontalAlignment="Left"
                                   AutomationProperties.Name="{x:Bind Name}"
                                   IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}" />
                 </Grid>
@@ -524,7 +518,7 @@
                                TextWrapping="WrapWholeWords" />
                     <CheckBox Grid.Column="1"
                               Margin="0,0,-96,0"
-                              HorizontalAlignment="Right"
+                              HorizontalAlignment="Left"
                               AutomationProperties.Name="{x:Bind Name}"
                               IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
                               IsThreeState="True" />
@@ -665,9 +659,7 @@
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
             Margin="{StaticResource SettingStackMargin}">
         <Grid Margin="{StaticResource SettingStackMargin}"
-              HorizontalAlignment="Stretch"
-              ColumnSpacing="16"
-              RowSpacing="16">
+              HorizontalAlignment="Stretch">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -679,40 +671,46 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <TextBlock x:Uid="Actions_CommandDetails"
                        Grid.Row="0"
                        Grid.Column="0"
                        VerticalAlignment="Center"
-                       Style="{StaticResource TextBlockGroupingStyle}" />
+                       Style="{StaticResource TextBlockGroupingStyle}"
+                       Margin="0,0,0,12" />
             <TextBlock x:Uid="Actions_Name"
                        Grid.Row="1"
                        Grid.Column="0"
-                       VerticalAlignment="Center" />
+                       VerticalAlignment="Center"
+                       Margin="0,0,0,8" />
             <TextBox x:Name="CommandNameTextBox"
                      Grid.Row="1"
                      Grid.Column="1"
                      HorizontalAlignment="Stretch"
                      AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
                      PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
-                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}" />
+                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
+                     Margin="0,0,0,8" />
             <TextBlock x:Uid="Actions_ShortcutAction"
                        Grid.Row="2"
                        Grid.Column="0"
-                       VerticalAlignment="Center" />
+                       VerticalAlignment="Center"
+                       Margin="0,0,0,12" />
             <ComboBox Grid.Row="2"
                       Grid.Column="1"
                       VerticalAlignment="Center"
                       AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.ProposedShortcutActionName, Mode=TwoWay}" />
+                      SelectedItem="{x:Bind ViewModel.ProposedShortcutActionName, Mode=TwoWay}"
+                      Margin="0,0,0,12" />
             <TextBlock x:Uid="Actions_Keybindings"
                        Grid.Row="3"
                        Grid.Column="0"
                        VerticalAlignment="Center"
-                       Style="{StaticResource TextBlockGroupingStyle}" />
+                       Style="{StaticResource TextBlockGroupingStyle}"
+                       Margin="0,0,0,12" />
             <ListView x:Name="KeyChordListView"
                       x:Uid="Actions_KeyBindingsListView"
                       Grid.Row="4"
@@ -720,20 +718,22 @@
                       Grid.ColumnSpan="2"
                       ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
-                      SelectionMode="None">
-                <ListView.Header>
-                    <Button Margin="0,0,0,4"
+                      SelectionMode="None"
+                      Margin="0,0,0,12" >
+                <ListView.Footer>
+                    <Button Margin="0,4,0,0"
                             Click="{x:Bind ViewModel.AddKeybinding_Click}">
                         <TextBlock x:Uid="Actions_AddKeyChord" />
                     </Button>
-                </ListView.Header>
+                </ListView.Footer>
             </ListView>
             <TextBlock x:Uid="Actions_Arguments"
                        Grid.Row="5"
                        Grid.Column="0"
                        VerticalAlignment="Center"
                        Style="{StaticResource TextBlockGroupingStyle}"
-                       Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}" />
+                       Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}"
+                       Margin="0,0,0,12" />
             <ItemsControl Grid.Row="6"
                           Grid.Column="0"
                           Grid.ColumnSpan="2"
@@ -741,7 +741,8 @@
                           AutomationProperties.Name="{x:Bind ViewModel.AdditionalArgumentsControlAutomationPropName}"
                           IsTabStop="False"
                           ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
-                          ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}" />
+                          ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
+                          Margin="0,0,0,12" />
             <Button Grid.Row="7"
                     Grid.Column="0"
                     IsEnabled="{x:Bind ViewModel.IsUserAction, Mode=OneWay}"
