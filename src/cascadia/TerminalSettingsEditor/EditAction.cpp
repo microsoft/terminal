@@ -63,15 +63,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditAction::ShortcutActionBox_GotFocus(const IInspectable& sender, const RoutedEventArgs&)
     {
-        // Open the suggestions list with all available actions
-        std::vector<winrt::hstring> allActions;
-        for (const auto& action : _ViewModel.AvailableShortcutActions())
+        // Only rebuild the list if we don't have a cached list or if the cached list is filtered
+        if (!_filteredActions || !_currentActionFilter.empty())
         {
-            allActions.push_back(action);
-        }
+            // Open the suggestions list with all available actions
+            std::vector<winrt::hstring> allActions;
+            for (const auto& action : _ViewModel.AvailableShortcutActions())
+            {
+                allActions.push_back(action);
+            }
 
-        _filteredActions = winrt::single_threaded_observable_vector(std::move(allActions));
-        sender.as<AutoSuggestBox>().ItemsSource(_filteredActions);
+            _filteredActions = winrt::single_threaded_observable_vector(std::move(allActions));
+            _currentActionFilter = L"";
+            sender.as<AutoSuggestBox>().ItemsSource(_filteredActions);
+        }
         sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
     }
 
@@ -84,6 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             for (const auto& action : _ViewModel.AvailableShortcutActions())
             {
+                // TODO: Update this to use fzf later
                 if (til::contains_linguistic_insensitive(action, searchText))
                 {
                     filtered.push_back(action);
@@ -91,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
 
             _filteredActions = winrt::single_threaded_observable_vector(std::move(filtered));
+            _currentActionFilter = searchText;
             sender.ItemsSource(_filteredActions);
         }
     }

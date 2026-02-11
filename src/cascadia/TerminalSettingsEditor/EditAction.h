@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::CommandViewModel::FocusContainer_revoker _focusContainerRevoker;
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::hstring> _filteredActions{ nullptr };
         winrt::hstring _lastValidAction;
+        winrt::hstring _currentActionFilter;
     };
 }
 
