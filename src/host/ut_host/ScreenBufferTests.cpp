@@ -8292,6 +8292,12 @@ void ScreenBufferTests::EraseColorMode()
 
 void ScreenBufferTests::SimpleMarkCommand()
 {
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
@@ -8334,6 +8340,12 @@ void ScreenBufferTests::SimpleWrappedCommand()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD_PROPERTIES()
+
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
@@ -8400,6 +8412,12 @@ static void _writePrompt(StateMachine& stateMachine, const auto& path)
 
 void ScreenBufferTests::SimplePromptRegions()
 {
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
