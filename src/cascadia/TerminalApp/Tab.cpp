@@ -2678,4 +2678,3 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(sender, args);
     }
 }
-
