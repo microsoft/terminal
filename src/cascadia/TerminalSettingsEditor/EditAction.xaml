@@ -517,7 +517,6 @@
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <CheckBox Grid.Column="1"
-                              Margin="0,0,-96,0"
                               HorizontalAlignment="Left"
                               AutomationProperties.Name="{x:Bind Name}"
                               IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
