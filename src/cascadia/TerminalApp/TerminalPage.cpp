@@ -4091,12 +4091,12 @@ namespace winrt::TerminalApp::implementation
     {
         constexpr auto lightnessThreshold = 0.6f;
         // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
-        const auto IsBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
+        const auto isBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
         const auto isLightAccentColor = ColorFix::GetLightness(accentColor) >= lightnessThreshold;
         const auto hoverColorAdjustment = isLightAccentColor ? -0.05f : 0.05f;
         const auto pressedColorAdjustment = isLightAccentColor ? -0.1f : 0.1f;
 
-        const auto foregroundColor = IsBrightColor ? Colors::Black() : Colors::White();
+        const auto foregroundColor = isBrightColor ? Colors::Black() : Colors::White();
         const auto hoverColor = til::color{ ColorFix::AdjustLightness(accentColor, hoverColorAdjustment) };
         const auto pressedColor = til::color{ ColorFix::AdjustLightness(accentColor, pressedColorAdjustment) };
 
