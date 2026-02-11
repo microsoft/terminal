@@ -584,7 +584,7 @@
                                TextWrapping="WrapWholeWords" />
                     <ItemsControl Grid.Column="1"
                                   Margin="0"
-                                  HorizontalAlignment="Right"
+                                  HorizontalAlignment="Left"
                                   AutomationProperties.Name="{x:Bind Name}"
                                   ItemTemplate="{StaticResource FlagItemTemplate}"
                                   ItemsSource="{x:Bind FlagList, Mode=OneWay}" />
