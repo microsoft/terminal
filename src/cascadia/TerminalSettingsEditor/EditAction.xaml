@@ -192,23 +192,23 @@
                                                 Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
                         <Button x:Uid="Actions_CancelButton"
                                 Grid.Column="1"
+                                Margin="8,0,0,0"
                                 AutomationProperties.Name="{x:Bind CancelButtonName}"
                                 Click="{x:Bind CancelChanges}"
                                 Style="{StaticResource EditButtonStyle}"
-                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}"
-                                Margin="8,0,0,0">
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
                             <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                       Glyph="&#xE711;" />
                         </Button>
 
                         <Button x:Uid="Actions_AcceptButton"
                                 Grid.Column="2"
+                                Margin="8,0,8,0"
                                 AutomationProperties.Name="{x:Bind AcceptButtonName}"
                                 Click="{x:Bind AcceptChanges}"
                                 Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
                                 Style="{StaticResource AccentEditButtonStyle}"
-                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}"
-                                Margin="8,0,8,0">
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
                             <FontIcon FontSize="{StaticResource EditButtonIconSize}"
                                       Glyph="&#xE8FB;" />
                         </Button>
@@ -677,49 +677,49 @@
             <TextBlock x:Uid="Actions_CommandDetails"
                        Grid.Row="0"
                        Grid.Column="0"
+                       Margin="0,0,0,12"
                        VerticalAlignment="Center"
-                       Style="{StaticResource TextBlockGroupingStyle}"
-                       Margin="0,0,0,12" />
+                       Style="{StaticResource TextBlockGroupingStyle}" />
             <TextBlock x:Uid="Actions_Name"
                        Grid.Row="1"
                        Grid.Column="0"
-                       VerticalAlignment="Center"
-                       Margin="0,0,0,8" />
+                       Margin="0,0,0,8"
+                       VerticalAlignment="Center" />
             <TextBox x:Name="CommandNameTextBox"
                      Grid.Row="1"
                      Grid.Column="1"
+                     Margin="0,0,0,8"
                      HorizontalAlignment="Stretch"
                      AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
                      PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
-                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}"
-                     Margin="0,0,0,8" />
+                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}" />
             <TextBlock x:Uid="Actions_ShortcutAction"
                        Grid.Row="2"
                        Grid.Column="0"
-                       VerticalAlignment="Center"
-                       Margin="0,0,0,12" />
+                       Margin="0,0,0,12"
+                       VerticalAlignment="Center" />
             <ComboBox Grid.Row="2"
                       Grid.Column="1"
+                      Margin="0,0,0,12"
                       VerticalAlignment="Center"
                       AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
                       ItemsSource="{x:Bind ViewModel.AvailableShortcutActions, Mode=OneWay}"
-                      SelectedItem="{x:Bind ViewModel.ProposedShortcutActionName, Mode=TwoWay}"
-                      Margin="0,0,0,12" />
+                      SelectedItem="{x:Bind ViewModel.ProposedShortcutActionName, Mode=TwoWay}" />
             <TextBlock x:Uid="Actions_Keybindings"
                        Grid.Row="3"
                        Grid.Column="0"
+                       Margin="0,0,0,12"
                        VerticalAlignment="Center"
-                       Style="{StaticResource TextBlockGroupingStyle}"
-                       Margin="0,0,0,12" />
+                       Style="{StaticResource TextBlockGroupingStyle}" />
             <ListView x:Name="KeyChordListView"
                       x:Uid="Actions_KeyBindingsListView"
                       Grid.Row="4"
                       Grid.Column="0"
                       Grid.ColumnSpan="2"
+                      Margin="0,0,0,12"
                       ItemTemplate="{StaticResource KeyChordTemplate}"
                       ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
-                      SelectionMode="None"
-                      Margin="0,0,0,12" >
+                      SelectionMode="None">
                 <ListView.Footer>
                     <Button Margin="0,4,0,0"
                             Click="{x:Bind ViewModel.AddKeybinding_Click}">
@@ -730,19 +730,19 @@
             <TextBlock x:Uid="Actions_Arguments"
                        Grid.Row="5"
                        Grid.Column="0"
+                       Margin="0,0,0,12"
                        VerticalAlignment="Center"
                        Style="{StaticResource TextBlockGroupingStyle}"
-                       Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}"
-                       Margin="0,0,0,12" />
+                       Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}" />
             <ItemsControl Grid.Row="6"
                           Grid.Column="0"
                           Grid.ColumnSpan="2"
+                          Margin="0,0,0,12"
                           HorizontalAlignment="Stretch"
                           AutomationProperties.Name="{x:Bind ViewModel.AdditionalArgumentsControlAutomationPropName}"
                           IsTabStop="False"
                           ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
-                          ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}"
-                          Margin="0,0,0,12" />
+                          ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}" />
             <Button Grid.Row="7"
                     Grid.Column="0"
                     IsEnabled="{x:Bind ViewModel.IsUserAction, Mode=OneWay}"
