@@ -19,7 +19,6 @@ namespace Microsoft.Terminal.Settings.Editor
     }
 
     // This is used to pass data between pages during navigation.
-    // All pages will migrate to using this in GH #19519.
     runtimeclass NavigateToPageArgs
     {
         IHostedInWindow WindowRoot { get; };
