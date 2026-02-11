@@ -1114,7 +1114,7 @@ namespace winrt::TerminalApp::implementation
             [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
-                if (auto tab{ weakThis.get() })
+                if (auto tab{ weakThisCopy.get() })
                 {
                     tab->_RecalculateAndApplyReadOnly();
                 }
@@ -2678,3 +2678,4 @@ namespace winrt::TerminalApp::implementation
         RestartTerminalRequested.raise(sender, args);
     }
 }
+
