@@ -4,8 +4,13 @@
 #pragma once
 
 // Exclude stuff from <Windows.h> we don't need.
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 
 #include <dwrite_1.h>
 
