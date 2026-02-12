@@ -619,38 +619,52 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     const auto cellCenter = row->lineRendition == LineRendition::DoubleHeightTop ? rowBottom : rowTop;
     const auto scaleHorizontal = row->lineRendition != LineRendition::SingleWidth ? 0.5f : 1.0f;
     const auto scaledCellWidth = cellWidth * scaleHorizontal;
+    const auto horizontalShift = static_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
 
     const auto appendVerticalLines = [&](const GridLineRange& r, FontDecorationPosition pos) {
         const auto from = r.from * scaledCellWidth;
         const auto to = r.to * scaledCellWidth;
         auto x = from + pos.position;
 
+        const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
+
         D2D1_POINT_2F point0{ 0, cellCenter };
         D2D1_POINT_2F point1{ 0, cellCenter + cellHeight };
-        const auto brush = _brushWithColor(r.gridlineColor);
         const f32 w = pos.height;
         const f32 hw = w * 0.5f;
 
-        for (; x < to; x += cellWidth)
+        auto c = r.from;
+        for (; x < to; x += cellWidth, c += 1 << horizontalShift)
         {
+            const auto brush = _brushWithColor(colors[c]);
             const auto centerX = x + hw;
             point0.x = centerX;
             point1.x = centerX;
             _renderTarget->DrawLine(point0, point1, brush, w, nullptr);
         }
     };
-    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ID2D1StrokeStyle* strokeStyle, const u32 color) {
-        const auto from = r.from * scaledCellWidth;
-        const auto to = r.to * scaledCellWidth;
+    const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ID2D1StrokeStyle* strokeStyle, const std::span<const u32>& colorBitmap) {
+        const auto colors = &colorBitmap[p.colorBitmapRowStride * y];
 
-        const auto brush = _brushWithColor(color);
         const f32 w = pos.height;
         const f32 centerY = cellCenter + pos.position + w * 0.5f;
-        const D2D1_POINT_2F point0{ from, centerY };
-        const D2D1_POINT_2F point1{ to, centerY };
-        _renderTarget->DrawLine(point0, point1, brush, w, strokeStyle);
+
+        for (auto from = r.from; from < r.to;)
+        {
+            const auto start = colors[from];
+            u16 run = 1u;
+            for (; colors[from + run] == start && run < (r.to - from); ++run)
+                ;
+
+            const auto brush = _brushWithColor(start);
+            const D2D1_POINT_2F point0{ from * scaledCellWidth, centerY };
+            const D2D1_POINT_2F point1{ (from + run) * scaledCellWidth, centerY };
+            _renderTarget->DrawLine(point0, point1, brush, w, strokeStyle);
+
+            from += run;
+        }
     };
-    const auto appendCurlyLine = [&](const GridLineRange& r) {
+    const auto appendCurlyLine = [&](const GridLineRange& r, const std::span<const u32>& colorBitmap) {
         const auto& font = *p.s->font;
 
         const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
@@ -672,11 +686,16 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         const auto step = roundf(0.5f * height);
         const auto period = 4.0f * step;
 
-        const auto from = r.from * scaledCellWidth;
-        const auto to = r.to * scaledCellWidth;
+        const auto colors = &colorBitmap[p.colorBitmapRowStride * y];
+
+        // Calculate the wave over the entire region to be underlined, even if
+        // it has multiple colors in it. That way, when we clip it to render each
+        // color, it is seamless.
+        const auto fullSpanFrom = r.from * scaledCellWidth;
+        const auto fullSpanTo = r.to * scaledCellWidth;
         // Align the start of the wave to the nearest preceding period boundary.
         // This ensures that the wave is continuous across color and cell changes.
-        auto x = floorf(from / period) * period;
+        auto x = floorf(fullSpanFrom / period) * period;
 
         wil::com_ptr<ID2D1PathGeometry> geometry;
         THROW_IF_FAILED(p.d2dFactory->CreatePathGeometry(geometry.addressof()));
@@ -686,7 +705,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
 
         // This adds complete periods of the wave until we reach the end of the range.
         sink->BeginFigure({ x, center }, D2D1_FIGURE_BEGIN_HOLLOW);
-        for (D2D1_QUADRATIC_BEZIER_SEGMENT segment; x < to;)
+        for (D2D1_QUADRATIC_BEZIER_SEGMENT segment; x < fullSpanTo;)
         {
             x += step;
             segment.point1.x = x;
@@ -708,11 +727,21 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
 
         THROW_IF_FAILED(sink->Close());
 
-        const auto brush = _brushWithColor(r.underlineColor);
-        const D2D1_RECT_F clipRect{ from, rowTop, to, rowBottom };
-        _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-        _renderTarget->DrawGeometry(geometry.get(), brush, duHeight, nullptr);
-        _renderTarget->PopAxisAlignedClip();
+        for (auto from = r.from; from < r.to;)
+        {
+            const auto start = colors[from];
+            u16 run = 1u;
+            for (; colors[from + run] == start && run < (r.to - from); ++run)
+                ;
+
+            const auto brush = _brushWithColor(start);
+            const D2D1_RECT_F clipRect{ (from * scaledCellWidth), rowTop, (from + run) * scaledCellWidth, rowBottom };
+            _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _renderTarget->DrawGeometry(geometry.get(), brush, duHeight, nullptr);
+            _renderTarget->PopAxisAlignedClip();
+
+            from += run;
+        }
     };
 
     for (const auto& r : row->gridLineRanges)
@@ -730,20 +759,20 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         }
         if (r.lines.test(GridLines::Top))
         {
-            appendHorizontalLine(r, p.s->font->gridTop, nullptr, r.gridlineColor);
+            appendHorizontalLine(r, p.s->font->gridTop, nullptr, p.foregroundBitmap);
         }
         if (r.lines.test(GridLines::Bottom))
         {
-            appendHorizontalLine(r, p.s->font->gridBottom, nullptr, r.gridlineColor);
+            appendHorizontalLine(r, p.s->font->gridBottom, nullptr, p.foregroundBitmap);
         }
         if (r.lines.test(GridLines::Strikethrough))
         {
-            appendHorizontalLine(r, p.s->font->strikethrough, nullptr, r.gridlineColor);
+            appendHorizontalLine(r, p.s->font->strikethrough, nullptr, p.foregroundBitmap);
         }
 
         if (r.lines.test(GridLines::Underline))
         {
-            appendHorizontalLine(r, p.s->font->underline, nullptr, r.underlineColor);
+            appendHorizontalLine(r, p.s->font->underline, nullptr, p.underlineBitmap);
         }
         else if (r.lines.any(GridLines::DottedUnderline, GridLines::HyperlinkUnderline))
         {
@@ -753,7 +782,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 static constexpr FLOAT dashes[2]{ 1, 1 };
                 THROW_IF_FAILED(p.d2dFactory->CreateStrokeStyle(&props, &dashes[0], 2, _dottedStrokeStyle.addressof()));
             }
-            appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get(), r.underlineColor);
+            appendHorizontalLine(r, p.s->font->underline, _dottedStrokeStyle.get(), p.underlineBitmap);
         }
         else if (r.lines.test(GridLines::DashedUnderline))
         {
@@ -763,17 +792,17 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 static constexpr FLOAT dashes[2]{ 2, 2 };
                 THROW_IF_FAILED(p.d2dFactory->CreateStrokeStyle(&props, &dashes[0], 2, _dashedStrokeStyle.addressof()));
             }
-            appendHorizontalLine(r, p.s->font->underline, _dashedStrokeStyle.get(), r.underlineColor);
+            appendHorizontalLine(r, p.s->font->underline, _dashedStrokeStyle.get(), p.underlineBitmap);
         }
         else if (r.lines.test(GridLines::CurlyUnderline))
         {
-            appendCurlyLine(r);
+            appendCurlyLine(r, p.underlineBitmap);
         }
         else if (r.lines.test(GridLines::DoubleUnderline))
         {
             for (const auto pos : p.s->font->doubleUnderline)
             {
-                appendHorizontalLine(r, pos, nullptr, r.underlineColor);
+                appendHorizontalLine(r, pos, nullptr, p.underlineBitmap);
             }
         }
     }
