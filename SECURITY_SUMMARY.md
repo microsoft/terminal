@@ -33,7 +33,7 @@ This document provides a security analysis of the LanaServer backend application
    - **Recommendation**: Restrict CORS to specific origins in production
    - **Action Required**: Update `AddCors` configuration with `.WithOrigins("https://yourdomain.com")`
    - **Impact**: Medium - Could allow unauthorized cross-origin requests
-   - **Location**: `LanaServer/Program.cs` line 91
+   - **Location**: `LanaServer/Program.cs` line 98
 
 2. **Hardcoded Placeholder Secrets in Deployment Script**
    - **Status**: Placeholder credentials are present in `deploy-lana-auth0.ps1`
@@ -47,7 +47,7 @@ This document provides a security analysis of the LanaServer backend application
    - **Status**: Used for Gravatar hash generation only (non-cryptographic purpose)
    - **Recommendation**: No action needed - MD5 is appropriate for Gravatar's use case
    - **Impact**: None - Not used for security purposes
-   - **Location**: `LanaServer/Program.cs` line 145
+   - **Location**: `LanaServer/Program.cs` line 152
 
 4. **Connection String Security**
    - **Status**: Read from configuration (not hardcoded)
