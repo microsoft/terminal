@@ -78,6 +78,7 @@ var auth0Domain = Environment.GetEnvironmentVariable("Auth0Domain");
 var auth0ClientId = Environment.GetEnvironmentVariable("Auth0ClientId");
 var auth0ClientSecret = Environment.GetEnvironmentVariable("Auth0ClientSecret");
 
+// Always add authentication services to prevent middleware errors
 if (!string.IsNullOrEmpty(auth0Domain))
 {
     builder.Services.AddAuthentication(options =>
@@ -132,9 +133,16 @@ if (!string.IsNullOrEmpty(auth0Domain))
         };
     });
 }
+else
+{
+    // Register minimal authentication services for local development
+    builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie();
+}
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthorization();
 // NOTE: CORS is configured to allow all origins for development.
 // For production, restrict to specific origins using: .WithOrigins("https://yourdomain.com")
 builder.Services.AddCors(o => o.AddPolicy("All", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
