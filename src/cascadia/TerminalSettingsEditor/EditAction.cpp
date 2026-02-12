@@ -114,27 +114,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto submittedText = args.QueryText();
 
-        // Validate that this is a valid shortcut action
-        bool isValid = false;
         for (const auto& action : _ViewModel.AvailableShortcutActions())
         {
             if (action == submittedText)
             {
-                isValid = true;
-                break;
+                _ViewModel.ProposedShortcutActionName(winrt::box_value(submittedText));
+                _lastValidAction = submittedText;
+                return;
             }
         }
 
-        if (isValid)
-        {
-            _ViewModel.ProposedShortcutActionName(winrt::box_value(submittedText));
-            _lastValidAction = submittedText;
-        }
-        else
-        {
-            // Revert to the last valid action
-            sender.Text(_lastValidAction);
-        }
+        // If we get here, we never found a match.
+        // Revert to the last valid action
+        sender.Text(_lastValidAction);
     }
 
     void EditAction::ShortcutActionBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
