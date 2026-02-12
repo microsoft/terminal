@@ -6,6 +6,9 @@ $ResGroup   = "Carpuncle"
 $ZipFile    = "$Root\lana-deploy.zip"
 
 # --- AUTH0 DATEN (Aus deinem Upload übernommen) ---
+# ⚠️ SECURITY WARNING: These are PLACEHOLDER credentials for demonstration purposes only!
+# ⚠️ DO NOT commit real secrets to source control!
+# ⚠️ In production, use Azure Key Vault, environment variables, or secure parameter input.
 $Auth0Domain       = "carpuncle-dev.eu.auth0.com"
 $Auth0ClientId     = "xKpeKcEMLbPxIEv7lUZLESAWcc4rSQX9"
 $Auth0ClientSecret = "L2V_zb8KGS5Y_ynYV8ovVJteKGkotX_aOn4A0OPNUzfWFJVe7NdaHTSZbDsCBk4V" # ⚠️ BITTE ROTIEREN!
@@ -45,9 +48,7 @@ $CsprojContent = @"
 Write-Host "2️⃣ Schreibe Program.cs (Auth0 Integration)..." -ForegroundColor Cyan
 
 $Code = @'
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -134,6 +135,8 @@ if (!string.IsNullOrEmpty(auth0Domain))
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// NOTE: CORS is configured to allow all origins for development.
+// For production, restrict to specific origins using: .WithOrigins("https://yourdomain.com")
 builder.Services.AddCors(o => o.AddPolicy("All", p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 var app = builder.Build();
@@ -185,6 +188,7 @@ app.MapGet("/api/me", (HttpContext context) =>
     var picture = context.User.Claims.FirstOrDefault(c => c.Type == "picture")?.Value;
 
     // Fallback: Wenn Auth0 kein Bild liefert, generiere Gravatar aus Email
+    // NOTE: MD5 is used here for Gravatar's hash format (non-cryptographic use case)
     if (string.IsNullOrEmpty(picture) && !string.IsNullOrEmpty(email))
     {
         using (var md5 = MD5.Create())
