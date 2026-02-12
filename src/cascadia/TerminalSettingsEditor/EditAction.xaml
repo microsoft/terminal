@@ -684,6 +684,7 @@
                             VerticalAlignment="Center"
                             AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
                             GotFocus="ShortcutActionBox_GotFocus"
+                            LostFocus="ShortcutActionBox_LostFocus"
                             QuerySubmitted="ShortcutActionBox_QuerySubmitted"
                             SuggestionChosen="ShortcutActionBox_SuggestionChosen"
                             TextChanged="ShortcutActionBox_TextChanged" />

@@ -136,4 +136,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             sender.Text(_lastValidAction);
         }
     }
+
+    void EditAction::ShortcutActionBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
+    {
+        // The auto suggest box does a weird thing where it reverts to the last query text when you
+        // keyboard navigate out of it. Intercept it here and keep the correct text.
+        const auto box = sender.as<AutoSuggestBox>();
+        const auto currentText = box.Text();
+
+        if (currentText != _lastValidAction && !_lastValidAction.empty())
+        {
+            box.Text(_lastValidAction);
+        }
+    }
 }
