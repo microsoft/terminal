@@ -1782,6 +1782,10 @@
     <value>Add keybinding</value>
     <comment>Button label that adds a keybinding to the current action.</comment>
   </data>
+  <data name="Actions_AdditionalKeyChords" xml:space="preserve">
+    <value>and {} more</value>
+    <comment>Text that will be read out by a screen reader indicating that additional keybindings exist for this command. {} will be replaced by the number of additional keybindings.</comment>
+  </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete key binding</value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>

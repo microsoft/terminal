@@ -164,17 +164,33 @@
                                    Style="{StaticResource KeyBindingNameTextBlockStyle}"
                                    Text="{x:Bind DisplayName, Mode=OneWay}" />
                         <!--  Key Chord Text  -->
-                        <Border Grid.Column="1"
-                                Padding="8,4,8,4"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Style="{ThemeResource KeyChordBorderStyle}"
-                                Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(FirstKeyChordText)}">
-                            <TextBlock FontSize="14"
-                                       Style="{ThemeResource KeyChordTextBlockStyle}"
-                                       Text="{x:Bind FirstKeyChordText, Mode=OneWay}"
-                                       TextWrapping="WrapWholeWords" />
-                        </Border>
+                        <Grid Grid.Column="1"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Center"
+                              ColumnSpacing="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Padding="8,4,8,4"
+                                    Style="{ThemeResource KeyChordBorderStyle}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(FirstKeyChordText)}">
+                                <TextBlock FontSize="14"
+                                           Style="{ThemeResource KeyChordTextBlockStyle}"
+                                           Text="{x:Bind FirstKeyChordText, Mode=OneWay}"
+                                           TextWrapping="WrapWholeWords" />
+                            </Border>
+                            <Border Grid.Column="1"
+                                    Padding="8,4,8,4"
+                                    Style="{ThemeResource KeyChordBorderStyle}"
+                                    ToolTipService.ToolTip="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(AdditionalKeyChordCountText)}">
+                                <TextBlock FontSize="14"
+                                           Style="{ThemeResource KeyChordTextBlockStyle}"
+                                           Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
+                            </Border>
+                        </Grid>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
