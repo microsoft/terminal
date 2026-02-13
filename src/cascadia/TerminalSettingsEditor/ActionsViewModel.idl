@@ -55,6 +55,7 @@ namespace Microsoft.Terminal.Settings.Editor
         // View-model specific
         String DisplayName { get; };
         String FirstKeyChordText { get; };
+        String AdditionalKeyChordCountText { get; };
         String DisplayNameAndKeyChordAutomationPropName { get; };
 
         // UI side (command list page)

@@ -137,7 +137,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
     {
-        return DisplayName() + L", " + FirstKeyChordText();
+        auto result = DisplayName() + L", " + FirstKeyChordText();
+        const auto additional = AdditionalKeyChordCountText();
+        if (!additional.empty())
+        {
+            result = result + L" " + additional;
+        }
+        return result;
     }
 
     winrt::hstring CommandViewModel::FirstKeyChordText()
@@ -145,6 +151,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_KeyChordList.Size() != 0)
         {
             return _KeyChordList.GetAt(0).KeyChordText();
+        }
+        return L"";
+    }
+
+    winrt::hstring CommandViewModel::AdditionalKeyChordCountText()
+    {
+        const auto size = _KeyChordList.Size();
+        if (size > 1)
+        {
+            return winrt::hstring{ L"+" + winrt::to_hstring(size - 1) };
         }
         return L"";
     }
