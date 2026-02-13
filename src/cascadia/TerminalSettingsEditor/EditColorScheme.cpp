@@ -41,7 +41,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::ColorSchemeViewModel>();
-
         BringIntoViewWhenLoaded(args.ElementToFocus());
 
         const auto schemeName = _ViewModel.Name();

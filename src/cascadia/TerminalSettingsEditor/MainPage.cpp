@@ -145,7 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(_actionsVM.CurrentCommand(), *this));
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this));
                     const auto crumb = winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit);
                     _breadcrumbs.Append(crumb);
                 }
@@ -670,7 +670,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone, elementToFocus) };
             addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
-            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
+            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), winrt::make<NavigateToPageArgs>(addProfileState, *this));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_AddNewProfile/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
 
@@ -873,7 +873,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // so we navigate and add breadcrumb manually.
             if (wasAlreadyEdit)
             {
-                contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToCommandArgs>(commandVM, *this));
+                contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToPageArgs>(commandVM, *this, elementToFocus));
                 const auto editCrumb = winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit);
                 _breadcrumbs.Append(editCrumb);
             }

@@ -5,7 +5,6 @@
 #include "NewTabMenu.h"
 #include "NavigateToPageArgs.g.h"
 #include "NewTabMenu.g.cpp"
-#include "NavigateToPageArgs.g.h"
 #include "NewTabMenuEntryTemplateSelector.g.cpp"
 #include "EnumEntry.h"
 

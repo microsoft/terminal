@@ -121,7 +121,7 @@ namespace Microsoft::Console::Render
         void _scheduleRenditionBlink();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target);
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
         bool _isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept;
         void _PaintSelection(_In_ IRenderEngine* const pEngine);

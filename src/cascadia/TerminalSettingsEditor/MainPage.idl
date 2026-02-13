@@ -16,6 +16,7 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    // This is used to pass data between pages during navigation.
     runtimeclass NavigateToPageArgs
     {
         IHostedInWindow WindowRoot { get; };
