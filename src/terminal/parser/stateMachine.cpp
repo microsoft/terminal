@@ -315,18 +315,6 @@ static constexpr bool _isDcsIndicator(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is valid for a DCS pass through sequence.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isDcsPassThroughValid(const wchar_t wch) noexcept
-{
-    // 0x20 - 0x7E
-    return wch >= AsciiChars::SPC && wch < AsciiChars::DEL;
-}
-
-// Routine Description:
 // - Determines if a character is "start of string" beginning
 //      indicator.
 // Arguments:
@@ -1791,6 +1779,23 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
 // - <none>
 void StateMachine::_EventDcsPassThrough(const wchar_t)
 {
+    static constexpr auto isDcsIgnore = [](const wchar_t wch) {
+        return wch == AsciiChars::DEL;
+    };
+    static constexpr auto isDcsTerminator = [](const wchar_t wch) {
+        return wch == AsciiChars::CAN ||
+               wch == AsciiChars::SUB ||
+               wch == AsciiChars::ESC ||
+               (wch >= 0x80 && wch <= 0x9F);
+    };
+    static constexpr auto isDcsActionable = [](const wchar_t wch) {
+        return wch == AsciiChars::CAN ||
+               wch == AsciiChars::SUB ||
+               wch == AsciiChars::ESC ||
+               wch == AsciiChars::DEL ||
+               (wch >= 0x80 && wch <= 0x9F);
+    };
+
     _trace.TraceOnEvent(L"DcsPassThrough");
 
     // Assuming other functions are correctly implemented,
@@ -1804,41 +1809,32 @@ void StateMachine::_EventDcsPassThrough(const wchar_t)
     {
         const auto runBeg = runEnd;
 
-        // Find the sequence terminator (ESC) OR the end of a run of valid DCS characters.
-        for (; runEnd != end && !_isEscape(*runEnd) && !_isC0Code(*runEnd) && _isDcsPassThroughValid(*runEnd); ++runEnd)
+        // Process a chunk of non-actionable, passthrough characters
+        // and exit if we're out of input.
+        for (; runEnd != end && !isDcsActionable(*runEnd); ++runEnd)
         {
         }
-
-        // If we found a run, pass it to the handler.
         if (runBeg != runEnd && !_dcsStringHandler({ runBeg, runEnd }))
         {
             _EnterDcsIgnore();
             break;
         }
-
-        // Out of input? Done.
         if (runEnd == end)
         {
             break;
         }
 
-        // Escape character? We treat it as the ST terminator for DCS passthrough.
-        // Let StateMachine::ProcessCharacter take care of that.
-        if (_isEscape(*runEnd))
-        {
-            break;
-        }
-
-        // Skip all invalid characters, aka:
-        // Find the sequence terminator (ESC) OR the end of a run of *in*valid DCS characters.
-        for (; runEnd != end && !_isEscape(*runEnd) && (_isC0Code(*runEnd) || !_isDcsPassThroughValid(*runEnd)); ++runEnd)
+        // Ignore DEL characters.
+        for (; runEnd != end && isDcsIgnore(*runEnd); ++runEnd)
         {
         }
         if (runEnd == end)
         {
             break;
         }
-        if (_isEscape(*runEnd))
+
+        // Are we looking at a terminator?
+        if (isDcsTerminator(*runEnd))
         {
             break;
         }
