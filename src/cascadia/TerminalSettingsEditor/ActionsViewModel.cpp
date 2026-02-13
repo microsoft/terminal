@@ -175,6 +175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         kbdVM->IsInEditMode(true);
         _RegisterKeyChordVMEvents(*kbdVM);
         KeyChordList().Append(*kbdVM);
+        FocusContainer.raise(*this, *kbdVM);
     }
 
     winrt::hstring CommandViewModel::ActionNameTextBoxAutomationPropName()
