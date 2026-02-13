@@ -47,6 +47,7 @@ public:
     std::wstring GetOriginalCommandLine() const;
     std::wstring GetClientCommandline() const;
     const std::wstring& GetTextMeasurement() const;
+    const std::wstring& GetAmbiguousWidth() const;
     bool GetForceV1() const;
     bool GetForceNoHandoff() const;
 
@@ -118,6 +119,7 @@ private:
     HANDLE _vtOutHandle;
 
     std::wstring _textMeasurement;
+    std::wstring _ambiguousWidth;
 
     bool _forceNoHandoff;
     bool _forceV1;

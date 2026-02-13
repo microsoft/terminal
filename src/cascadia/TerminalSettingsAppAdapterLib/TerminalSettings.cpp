@@ -375,6 +375,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _TextMeasurement = globalSettings.TextMeasurement();
+        _AmbiguousWidth = globalSettings.AmbiguousWidth();
         _DefaultInputScope = globalSettings.DefaultInputScope();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();

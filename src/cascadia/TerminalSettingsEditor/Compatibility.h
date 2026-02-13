@@ -26,6 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), AllowHeadless);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), DebugFeaturesEnabled);
         GETSET_BINDABLE_ENUM_SETTING(TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, _settings.GlobalSettings().TextMeasurement);
+        GETSET_BINDABLE_ENUM_SETTING(AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth, _settings.GlobalSettings().AmbiguousWidth);
 
     private:
         Model::CascadiaSettings _settings;
