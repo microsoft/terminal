@@ -41,6 +41,11 @@ namespace Microsoft.Terminal.Settings.Editor
         String ProfileMatcherCommandline;
         String AddFolderName;
 
+        Windows.UI.Xaml.Controls.IconElement CurrentFolderIconPreview { get; };
+        String CurrentFolderLocalizedIcon { get; };
+        String CurrentFolderIconPath;
+        Boolean CurrentFolderUsingNoIcon { get; };
+
         void RequestReorderEntry(NewTabMenuEntryViewModel vm, Boolean goingUp);
         void RequestDeleteEntry(NewTabMenuEntryViewModel vm);
         void RequestMoveEntriesToFolder(IVector<NewTabMenuEntryViewModel> entries, FolderEntryViewModel folderEntry);
@@ -83,7 +88,7 @@ namespace Microsoft.Terminal.Settings.Editor
         FolderEntryViewModel(Microsoft.Terminal.Settings.Model.FolderEntry folderEntry, Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         String Name;
-        String Icon { get; };
+        String Icon;
         Boolean Inlining;
         Boolean AllowEmpty;
         IObservableVector<Microsoft.Terminal.Settings.Editor.NewTabMenuEntryViewModel> Entries;

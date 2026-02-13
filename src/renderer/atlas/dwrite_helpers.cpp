@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "dwrite.h"
+#include "dwrite_helpers.h"
 
 #pragma warning(disable : 26429) // Symbol '...' is never tested for nullness, it can be marked as not_null (f.23).
 
@@ -37,7 +37,7 @@ void DWrite_GetRenderParams(IDWriteFactory1* factory, float* gamma, float* clear
     THROW_IF_FAILED(factory->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, defaultParams->GetClearTypeLevel(), defaultParams->GetPixelGeometry(), defaultParams->GetRenderingMode(), linearParams));
 }
 
-// This function produces 4 magic constants for DWrite_ApplyAlphaCorrection() in dwrite.hlsl
+// This function produces 4 magic constants for DWrite_ApplyAlphaCorrection() in dwrite_helpers.hlsl
 // and are required as an argument for DWrite_GetGrayscaleCorrectedAlpha().
 // gamma should be set to the return value of DWrite_GetRenderParams() or (pseudo-code):
 //   IDWriteRenderingParams* defaultParams;

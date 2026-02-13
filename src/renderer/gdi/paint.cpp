@@ -323,8 +323,7 @@ bool GdiEngine::FontHasWesternScript(HDC hdc)
 //#define MAX_POLY_LINES 80
 [[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                  const til::point coord,
-                                                 const bool trimLeft,
-                                                 const bool /*lineWrapped*/) noexcept
+                                                 const bool trimLeft) noexcept
 {
     try
     {

@@ -117,8 +117,7 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT BgfxEngine::PaintBufferLine(const std::span<const Cluster> clusters,
                                                   const til::point coord,
-                                                  const bool /*trimLeft*/,
-                                                  const bool /*lineWrapped*/) noexcept
+                                                  const bool /*trimLeft*/) noexcept
 {
     try
     {

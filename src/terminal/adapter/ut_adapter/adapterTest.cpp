@@ -2158,6 +2158,12 @@ public:
 
     TEST_METHOD(RequestChecksumReportTests)
     {
+        if (!Feature_VtChecksumReport::IsEnabled())
+        {
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+        }
+
         const auto requestChecksumReport = [this](const auto length) {
             wchar_t checksumQuery[30];
             swprintf_s(checksumQuery, ARRAYSIZE(checksumQuery), L"\033[99;1;1;1;1;%zu*y", length);
