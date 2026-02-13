@@ -302,8 +302,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(const std::span<const Cluster> /*clusters*/,
                                                  const til::point /*coord*/,
-                                                 const bool /*trimLeft*/,
-                                                 const bool /*lineWrapped*/) noexcept
+                                                 const bool /*trimLeft*/) noexcept
 {
     return S_FALSE;
 }

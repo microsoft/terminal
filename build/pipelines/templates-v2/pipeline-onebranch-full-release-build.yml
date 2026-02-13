@@ -210,6 +210,8 @@ extends:
                   ob_createvpack_taskLogVerbosity: Detailed
                   ob_createvpack_verbose: true
                   ob_createvpack_vpackdirectory: '$(JobOutputDirectory)\vpack'
+                  ob_createvpack_versionAs: string
+                  ob_createvpack_version: '$(XES_APPXMANIFESTVERSION)'
                   ob_updateOSManifest_gitcheckinConfigPath: '$(Build.SourcesDirectory)\build\config\GitCheckin.json'
                   # We're skipping the 'fetch' part of the OneBranch rules, but that doesn't mean
                   # that it doesn't expect to have downloaded a manifest directly to some 'destination'
