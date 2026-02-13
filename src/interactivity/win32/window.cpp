@@ -24,10 +24,7 @@
 
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/gdi/gdirenderer.hpp"
-
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
 #include "../../renderer/atlas/AtlasEngine.h"
-#endif
 
 #include "../inc/ServiceLocator.hpp"
 #include "../../types/inc/Viewport.hpp"
@@ -67,9 +64,7 @@ Window::~Window()
     // reducing the change for existing race conditions to turn into deadlocks.
 #ifndef NDEBUG
     delete pGdiEngine;
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
     delete pAtlasEngine;
-#endif
 #endif
 }
 
@@ -208,14 +203,12 @@ void Window::_UpdateSystemMetrics() const
     const auto useDx = pSettings->GetUseDx();
     try
     {
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         if (useDx)
         {
             pAtlasEngine = new AtlasEngine();
             g.pRender->AddRenderEngine(pAtlasEngine);
         }
         else
-#endif
         {
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
@@ -309,14 +302,12 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
             if (pAtlasEngine)
             {
                 const auto hr = pAtlasEngine->SetHwnd(hWnd);
                 status = NTSTATUS_FROM_HRESULT(hr);
             }
             else
-#endif
             {
                 const auto hr = pGdiEngine->SetHwnd(hWnd);
                 status = NTSTATUS_FROM_HRESULT(hr);
