@@ -165,9 +165,9 @@
                                    Text="{x:Bind DisplayName, Mode=OneWay}" />
                         <!--  Key Chord Text  -->
                         <Grid Grid.Column="1"
-                              ColumnSpacing="4"
                               HorizontalAlignment="Right"
-                              VerticalAlignment="Center">
+                              VerticalAlignment="Center"
+                              ColumnSpacing="4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
