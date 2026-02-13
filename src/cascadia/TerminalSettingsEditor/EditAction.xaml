@@ -709,7 +709,7 @@
                             QuerySubmitted="ShortcutActionBox_QuerySubmitted"
                             SuggestionChosen="ShortcutActionBox_SuggestionChosen"
                             TextChanged="ShortcutActionBox_TextChanged" />
-            <TextBlock x:Uid="Actions_Arguments"
+            <TextBlock x:Uid="Actions_Keybindings"
                        Grid.Row="3"
                        Grid.Column="0"
                        Grid.ColumnSpan="2"
