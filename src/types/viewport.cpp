@@ -259,11 +259,11 @@ int Viewport::CompareInBounds(const til::point first, const til::point second, b
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.
     //   For the same row, it'll be 0 rows * 80 character width = 0 difference.
-    auto retVal = (til::HugeCoordType{ first.y } - second.y) * Width();
+    auto retVal = (gsl::narrow_cast<til::HugeCoordType>(first.y) - second.y) * Width();
 
     // Now adjust for horizontal differences
     //   If first is in position 15 and second is in position 30, first is -15 left in relation to 30.
-    retVal += til::HugeCoordType{ first.x } - second.x;
+    retVal +=l gs::narrow_cast<til::HugeCoordType>(first.x) - second.x;
 
     // Further notes:
     //   If we already moved behind one row, this will help correct for when first is right of second.
