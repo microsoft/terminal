@@ -676,6 +676,7 @@
             <TextBlock x:Uid="Actions_CommandDetails"
                        Grid.Row="0"
                        Grid.Column="0"
+                       Grid.ColumnSpan="2"
                        Margin="0,0,0,12"
                        VerticalAlignment="Center"
                        Style="{StaticResource TextBlockGroupingStyle}" />
@@ -707,6 +708,7 @@
             <TextBlock x:Uid="Actions_Keybindings"
                        Grid.Row="3"
                        Grid.Column="0"
+                       Grid.ColumnSpan="2"
                        Margin="0,0,0,12"
                        VerticalAlignment="Center"
                        Style="{StaticResource TextBlockGroupingStyle}" />
@@ -729,6 +731,7 @@
             <TextBlock x:Uid="Actions_Arguments"
                        Grid.Row="5"
                        Grid.Column="0"
+                       Grid.ColumnSpan="2"
                        Margin="0,0,0,12"
                        VerticalAlignment="Center"
                        Style="{StaticResource TextBlockGroupingStyle}"
