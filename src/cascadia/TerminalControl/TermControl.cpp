@@ -714,8 +714,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            const auto request = SearchRequest{ _searchBox->Text(), goForward, _searchBox->CaseSensitive(), _searchBox->RegularExpression(), false, _searchScrollOffset };
-            _handleSearchResults(_core.Search(request));
+            _handleSearchResults(_core.Search(SearchRequest{
+                .Text = _searchBox->Text(),
+                .GoForward = goForward,
+                .CaseSensitive = _searchBox->CaseSensitive(),
+                .RegularExpression = _searchBox->RegularExpression(),
+                .ExecuteSearch = true,
+                .ScrollIntoView = true,
+                .ScrollOffset = _searchScrollOffset,
+            }));
         }
     }
 
@@ -749,8 +756,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, false, _searchScrollOffset };
-            _handleSearchResults(_core.Search(request));
+            _handleSearchResults(_core.Search(SearchRequest{
+                .Text = text,
+                .GoForward = goForward,
+                .CaseSensitive = caseSensitive,
+                .RegularExpression = regularExpression,
+                .ExecuteSearch = true,
+                .ScrollIntoView = true,
+                .ScrollOffset = _searchScrollOffset,
+            }));
         }
     }
 
@@ -769,11 +783,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (_searchBox && _searchBox->IsOpen())
         {
-            // We only want to update the search results based on the new text. Set
-            // `resetOnly` to true so we don't accidentally update the current match index.
-            const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
-            const auto result = _core.Search(request);
-            _handleSearchResults(result);
+            _handleSearchResults(_core.Search(SearchRequest{
+                .Text = text,
+                .GoForward = goForward,
+                .CaseSensitive = caseSensitive,
+                .RegularExpression = regularExpression,
+                .ExecuteSearch = false,
+                .ScrollIntoView = true,
+                .ScrollOffset = _searchScrollOffset,
+            }));
         }
     }
 
@@ -3049,12 +3067,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             co_return;
         }
 
+        const auto weak = get_weak();
+
         if (e.DataView().Contains(StandardDataFormats::ApplicationLink()))
         {
             try
             {
                 auto link{ co_await e.DataView().GetApplicationLinkAsync() };
-                _pasteTextWithBroadcast(link.AbsoluteUri());
+                if (const auto strong = weak.get())
+                {
+                    _pasteTextWithBroadcast(link.AbsoluteUri());
+                }
             }
             CATCH_LOG();
         }
@@ -3063,7 +3086,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 auto link{ co_await e.DataView().GetWebLinkAsync() };
-                _pasteTextWithBroadcast(link.AbsoluteUri());
+                if (const auto strong = weak.get())
+                {
+                    _pasteTextWithBroadcast(link.AbsoluteUri());
+                }
             }
             CATCH_LOG();
         }
@@ -3072,7 +3098,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             try
             {
                 auto text{ co_await e.DataView().GetTextAsync() };
-                _pasteTextWithBroadcast(text);
+                if (const auto strong = weak.get())
+                {
+                    _pasteTextWithBroadcast(text);
+                }
             }
             CATCH_LOG();
         }
@@ -3132,6 +3161,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     {
                         fullPaths.emplace_back(item.Path());
                     }
+                }
+
+                const auto strong = weak.get();
+                if (!strong)
+                {
+                    co_return;
                 }
 
                 std::wstring allPathsString;
@@ -3476,9 +3511,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     safe_void_coroutine TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
     {
+        if (!args)
+        {
+            co_return;
+        }
+
         auto weakThis{ get_weak() };
         co_await resume_foreground(Dispatcher());
-        if (weakThis.get() && args)
+        if (const auto strong = weakThis.get())
         {
             if (_core.HasSelection() && !args.ClearMarkers())
             {
@@ -3720,8 +3760,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto goForward = _searchBox->GoForward();
         const auto caseSensitive = _searchBox->CaseSensitive();
         const auto regularExpression = _searchBox->RegularExpression();
-        const auto request = SearchRequest{ text, goForward, caseSensitive, regularExpression, true, _searchScrollOffset };
-        _handleSearchResults(_core.Search(request));
+        _handleSearchResults(_core.Search(SearchRequest{
+            .Text = text,
+            .GoForward = goForward,
+            .CaseSensitive = caseSensitive,
+            .RegularExpression = regularExpression,
+            .ExecuteSearch = false,
+            .ScrollIntoView = false,
+            .ScrollOffset = _searchScrollOffset,
+        }));
     }
 
     void TermControl::_handleSearchResults(SearchResults results)

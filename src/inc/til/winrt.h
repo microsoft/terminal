@@ -121,14 +121,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 
     // fmt::format but for HSTRING.
-    template<typename... Args>
-    winrt::hstring hstring_format(Args&&... args)
+    //
+    // NOTE: This will fail to compile if you pass a string literal as the first argument (the format argument).
+    // This is because std::forwarding literals turns them from constant expressions into regular ones.
+    // It can be fixed by giving the first argument an explicit type. I intentionally didn't do that
+    // because if you pass a string literal, you really ought to pass a FMT_COMPILE() instead.
+    winrt::hstring hstring_format(auto&&... args)
     {
         // We could use fmt::formatted_size and winrt::impl::hstring_builder here,
         // and this would make formatting of large strings a bit faster, and a bit slower
         // for short strings. More importantly, I hit compilation issues so I dropped that.
         fmt::basic_memory_buffer<wchar_t> buf;
-        fmt::format_to(std::back_inserter(buf), args...);
+        fmt::format_to(std::back_inserter(buf), std::forward<decltype(args)>(args)...);
         return winrt::hstring{ buf.data(), gsl::narrow<uint32_t>(buf.size()) };
     }
 }

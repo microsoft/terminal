@@ -159,7 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (HasLibraryResourceWithName(key))
             {
                 displayString = GetLibraryResourceString(key);
-                displayString = hstring{ fmt::format(FMT_COMPILE(L"{} ({})"), displayString, std::wstring_view{ tagString }) };
+                displayString = til::hstring_format(FMT_COMPILE(L"{} ({})"), displayString, std::wstring_view{ tagString });
             }
         }
 
@@ -204,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring FontKeyValuePair::AutomationName()
     {
-        return hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), KeyDisplayStringRef(), _value) };
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), KeyDisplayStringRef(), _value);
     }
 
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
@@ -515,7 +515,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto idx = getLocalizedStringIndex(names.get(), localeName, 0);
             const auto localizedName = getLocalizedStringByIndex(names.get(), idx);
             const auto tagString = tagToString(tag);
-            hstring displayString{ fmt::format(FMT_COMPILE(L"{} ({})"), localizedName, std::wstring_view{ tagString }) };
+            const auto displayString = til::hstring_format(FMT_COMPILE(L"{} ({})"), localizedName, std::wstring_view{ tagString });
 
             const auto value = axesVector[i].value;
 
@@ -1193,7 +1193,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto prefix = fontSpecView.substr(0, idx);
             const auto suffix = std::wstring_view{ fontName };
-            fontSpec = winrt::hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), prefix, suffix) };
+            fontSpec = til::hstring_format(FMT_COMPILE(L"{}, {}"), prefix, suffix);
         }
         else
         {
@@ -1423,10 +1423,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     safe_void_coroutine Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
     {
-        auto lifetime = get_strong();
+        const auto lifetime = get_strong();
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
-        auto file = co_await OpenImagePicker(parentHwnd);
+        const auto windowRoot = WindowRoot();
+        if (!windowRoot)
+        {
+            co_return;
+        }
+        const auto parentHwnd{ reinterpret_cast<HWND>(windowRoot.GetHostingWindow()) };
+        const auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
             Appearance().SetBackgroundImagePath(file);

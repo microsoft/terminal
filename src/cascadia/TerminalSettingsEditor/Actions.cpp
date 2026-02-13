@@ -20,7 +20,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Actions::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::ActionsViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::ActionsViewModel>();
         _ViewModel.ReSortCommandList();
         _ViewModel.CurrentPage(ActionsSubPage::Base);
         auto vmImpl = get_self<ActionsViewModel>(_ViewModel);

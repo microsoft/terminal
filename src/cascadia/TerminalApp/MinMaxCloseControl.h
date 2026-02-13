@@ -21,6 +21,9 @@ namespace winrt::TerminalApp::implementation
         void PressButton(CaptionButton button);
         void ReleaseButtons();
 
+        bool Focused() const;
+        void Focused(bool focused);
+
         void _MinimizeClick(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
         void _MaximizeClick(const winrt::Windows::Foundation::IInspectable& sender,
@@ -32,8 +35,12 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs> MaximizeClick;
         til::typed_event<TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs> CloseClick;
 
+        bool _focused{ false };
         std::shared_ptr<ThrottledFunc<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
         std::optional<CaptionButton> _lastPressedButton{ std::nullopt };
+
+    private:
+        const winrt::param::hstring& _normalState() const;
     };
 }
 

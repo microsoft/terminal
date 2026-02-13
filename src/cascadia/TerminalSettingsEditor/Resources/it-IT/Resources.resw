@@ -1110,11 +1110,11 @@
     <value>Icona</value>
     <comment>Header for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
   </data>
-  <data name="Profile_IconBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_ImagePathBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Icona</value>
-    <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+    <comment>Name for a control to determine what icon can be used. This is not necessarily a file path, but can be one. It's usually used for images.</comment>
   </data>
-  <data name="Profile_IconEmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_EmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Icona</value>
     <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
   </data>
@@ -1122,7 +1122,7 @@
     <value>Posizione del file dell'emoji o dell'immagine usato per l'immagine del profilo.</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="Profile_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
     <value>Sfoglia...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1974,6 +1974,14 @@
     <value>Nessuno</value>
     <comment>An option to choose from for the "move tab direction". No movement.</comment>
   </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>Avanti (a destra)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward (right).</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>Indietro (a sinistra)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward (left).</comment>
+  </data>
   <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
     <value>Indietro</value>
     <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
@@ -2306,31 +2314,31 @@
     <value>Usa colore del tema</value>
     <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
   </data>
-  <data name="Profile_IconTypeNone" xml:space="preserve">
+  <data name="IconPicker_IconTypeNone" xml:space="preserve">
     <value>Nessuno</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon for the profile.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon set.</comment>
   </data>
-  <data name="Profile_IconTypeImage" xml:space="preserve">
+  <data name="IconPicker_IconTypeImage" xml:space="preserve">
     <value>File</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set for the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set as the icon.</comment>
   </data>
-  <data name="Profile_IconTypeEmoji" xml:space="preserve">
+  <data name="IconPicker_IconTypeEmoji" xml:space="preserve">
     <value>Emoji</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set for the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set as the  icon.</comment>
   </data>
-  <data name="Profile_IconTypeFontIcon" xml:space="preserve">
+  <data name="IconPicker_IconTypeFontIcon" xml:space="preserve">
     <value>Icona predefinita</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set as the icon.</comment>
   </data>
-  <data name="Profile_IconEmojiBox.PlaceholderText" xml:space="preserve">
+  <data name="IconPicker_EmojiBox.PlaceholderText" xml:space="preserve">
     <value>Usa "TASTO WINDOWS + PUNTO" per aprire il selettore emoji</value>
     <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
   </data>
-  <data name="Profile_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Tipo di icona</value>
     <comment>Accessible name for a control allowing the user to select the type of icon they would like to use.</comment>
   </data>
-  <data name="Profile_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Icona</value>
     <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
   </data>
@@ -2433,6 +2441,14 @@
   <data name="NewTabMenu_CurrentFolderName.Header" xml:space="preserve">
     <value>Nome cartella</value>
     <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.Header" xml:space="preserve">
+    <value>Icona cartella</value>
+    <comment>Header for a control that allows the user to modify the icon of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Icona cartella</value>
+    <comment>Name for a control to that allows the user to modify the icon of the current folder entry.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
     <value>Consenti inlining</value>
@@ -2688,5 +2704,9 @@
   </data>
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>Sì, cancella la cache</value>
+  </data>
+  <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
+    <value>Digita per filtrare icone</value>
+    <comment>Placeholder text for a text box to filter and select an icon.</comment>
   </data>
 </root>
