@@ -48,8 +48,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(const std::span<const Cluster> clusters,
                                               const til::point coord,
-                                              const bool trimLeft,
-                                              const bool lineWrapped) noexcept override;
+                                              const bool trimLeft) noexcept override;
         [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines,
                                                    const COLORREF gridlineColor,
                                                    const COLORREF underlineColor,
