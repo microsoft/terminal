@@ -5,7 +5,6 @@
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
 
-#include <LibraryResources.h>
 #include <WtExeUtils.h>
 
 using namespace winrt;
@@ -24,7 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::GlobalAppearanceViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::GlobalAppearanceViewModel>();
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

@@ -52,7 +52,7 @@ float3 DWrite_ApplyAlphaCorrection3(float3 a, float3 f, float4 g)
 // out of the blending of foregroundColor with glyphAlpha.
 //
 // gammaRatios:
-//   Magic constants produced by DWrite_GetGammaRatios() in dwrite.cpp.
+//   Magic constants produced by DWrite_GetGammaRatios() in dwrite_helpers.cpp.
 //   The default value for this are the 1.8 gamma ratios, which equates to:
 //     0.148054421f, -0.894594550f, 1.47590804f, -0.324668258f
 // grayscaleEnhancedContrast:
@@ -92,7 +92,7 @@ float4 DWrite_GrayscaleBlend(float4 gammaRatios, float grayscaleEnhancedContrast
 // of foregroundColor and backgroundColor using glyphColor to do sub-pixel AA.
 //
 // gammaRatios:
-//   Magic constants produced by DWrite_GetGammaRatios() in dwrite.cpp.
+//   Magic constants produced by DWrite_GetGammaRatios() in dwrite_helpers.cpp.
 //   The default value for this are the 1.8 gamma ratios, which equates to:
 //     0.148054421f, -0.894594550f, 1.47590804f, -0.324668258f
 // enhancedContrast:

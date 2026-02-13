@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool SwitchSelectionEndpoint();
         bool ExpandSelectionToWord();
         void RestoreFromPath(winrt::hstring path);
-        void PersistToPath(const winrt::hstring& path) const;
+        void PersistTo(int64_t handle) const;
         void OpenCWD();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -313,9 +313,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::UI::Composition::ScalarKeyFrameAnimation _bellDarkAnimation{ nullptr };
         SafeDispatcherTimer _bellLightTimer;
 
-        SafeDispatcherTimer _cursorTimer;
-        SafeDispatcherTimer _blinkTimer;
-
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::hstring _restorePath;
         bool _showMarksInScrollbar{ false };
@@ -387,8 +384,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         safe_void_coroutine _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
 
-        void _CursorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
-        void _BlinkTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
         void _BellLightOff(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
         void _SetEndSelectionPointAtCursor(const Windows::Foundation::Point& cursorPosition);
@@ -450,7 +445,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _SelectCommandHandler(const IInspectable& sender, const IInspectable& args);
         void _SelectOutputHandler(const IInspectable& sender, const IInspectable& args);
-        bool _displayCursorWhileBlurred() const noexcept;
 
         struct Revokers
         {

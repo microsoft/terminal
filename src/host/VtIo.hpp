@@ -40,6 +40,7 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteSGR1006(bool enabled) const;
             void WriteDECAWM(bool enabled) const;
             void WriteASB(bool enabled) const;
+            bool WriteDSRCPR() const;
             void WriteWindowVisibility(bool visible) const;
             void WriteWindowTitle(std::wstring_view title) const;
             void WriteAttributes(const TextAttribute& attributes) const;

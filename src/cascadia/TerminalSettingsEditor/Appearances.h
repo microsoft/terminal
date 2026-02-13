@@ -23,7 +23,6 @@ Author(s):
 #include "Utils.h"
 #include "ViewModelHelpers.h"
 #include "SettingContainer.h"
-#include <LibraryResources.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -48,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         uint32_t Key() const noexcept;
         float Value() const noexcept;
         void Value(float v);
+        winrt::hstring AutomationName();
 
         void SetValueDirect(float v);
         bool IsFontFeature() const noexcept;
@@ -192,6 +192,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
+        void WindowRoot(const Editor::IHostedInWindow& value) noexcept { _WeakWindowRoot = value; }
+
         Windows::Foundation::Collections::IObservableVector<Editor::Font> FilteredFontList();
         bool ShowAllFonts() const noexcept;
         void ShowAllFonts(bool value);
@@ -218,12 +221,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
@@ -233,7 +236,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> _FontFeaturesNames;
         std::wstring _fontNameFilter;
         bool _ShowAllFonts = false;
-        bool _suppressFontFaceBoxList = false;
 
         static void _ViewModelChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
 

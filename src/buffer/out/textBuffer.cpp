@@ -2658,11 +2658,8 @@ void TextBuffer::_AppendRTFText(std::string& contentBuilder, const std::wstring_
     }
 }
 
-void TextBuffer::SerializeToPath(const wchar_t* destination) const
+void TextBuffer::SerializeTo(HANDLE handle) const
 {
-    const wil::unique_handle file{ CreateFileW(destination, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
-    THROW_LAST_ERROR_IF(!file);
-
     static constexpr size_t writeThreshold = 32 * 1024;
     std::wstring buffer;
     buffer.reserve(writeThreshold + writeThreshold / 2);
@@ -2691,7 +2688,7 @@ void TextBuffer::SerializeToPath(const wchar_t* destination) const
         {
             const auto fileSize = gsl::narrow<DWORD>(buffer.size() * sizeof(wchar_t));
             DWORD bytesWritten = 0;
-            THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), buffer.data(), fileSize, &bytesWritten, nullptr));
+            THROW_IF_WIN32_BOOL_FALSE(WriteFile(handle, buffer.data(), fileSize, &bytesWritten, nullptr));
             THROW_WIN32_IF_MSG(ERROR_WRITE_FAULT, bytesWritten != fileSize, "failed to write");
             buffer.clear();
         }

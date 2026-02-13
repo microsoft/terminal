@@ -11,8 +11,6 @@
 
 #include "MediaResourceSupport.h"
 
-#include <LibraryResources.h>
-
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI::Xaml;
@@ -23,6 +21,7 @@ static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
+static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreference" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
@@ -30,6 +29,7 @@ static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWar
 static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
+static constexpr std::string_view LegacyPersistedWindowLayout{ "persistedWindowLayout" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -194,6 +194,13 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     if (json[LegacyForceVTInputKey.data()])
     {
         _logSettingSet(LegacyForceVTInputKey);
+    }
+
+    // GLOBAL_SETTINGS_LAYER_JSON above should have already loaded this value properly.
+    // We just need to detect if the legacy value was used and mark it for fixup, if so.
+    if (const auto firstWindowPreferenceValue = json[FirstWindowPreferenceKey.data()])
+    {
+        _fixupsAppliedDuringLoad |= firstWindowPreferenceValue == LegacyPersistedWindowLayout.data();
     }
 
     // Remove settings included in userDefaults
@@ -377,7 +384,7 @@ void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collect
 
 bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
-    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    return FirstWindowPreference() != FirstWindowPreference::DefaultProfile;
 }
 
 void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver)

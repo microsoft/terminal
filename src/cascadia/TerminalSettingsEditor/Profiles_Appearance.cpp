@@ -22,18 +22,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
-        _Profile = args.Profile();
-        _windowRoot = args.WindowRoot();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
+        _weakWindowRoot = args.WindowRoot();
 
         if (!_previewControl)
         {
             const auto settings = winrt::get_self<implementation::ProfileViewModel>(_Profile)->TermSettings();
             _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
             _previewControl = Control::TermControl(settings, settings, *_previewConnection);
+            _previewControl.CursorVisibility(Control::CursorDisplayState::Shown);
             _previewControl.IsEnabled(false);
             _previewControl.AllowFocusWhenDisabled(false);
-            _previewControl.CursorVisibility(Microsoft::Terminal::Control::CursorDisplayState::Shown);
             ControlPreview().Child(_previewControl);
         }
 

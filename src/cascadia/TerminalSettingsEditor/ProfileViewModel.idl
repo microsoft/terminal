@@ -14,12 +14,6 @@ import "ColorSchemesPageViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass NavigateToProfileArgs
-    {
-        ProfileViewModel Profile { get; };
-        IHostedInWindow WindowRoot { get; };
-    }
-
     runtimeclass DeleteProfileEventArgs
     {
         Guid ProfileGuid { get; };
@@ -40,14 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Appearance = 1,
         Terminal = 2,
         Advanced = 3
-    };
-
-    enum IconType
-    {
-        None = 0,
-        FontIcon,
-        Image,
-        Emoji
     };
 
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -107,17 +93,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
-        String CurrentEmojiIcon;
-        IInspectable CurrentIconType;
-        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
-        Boolean UsingNoIcon { get; };
-        Boolean UsingBuiltInIcon { get; };
-        Boolean UsingEmojiIcon { get; };
-        Boolean UsingImageIcon { get; };
         String IconPath;
-
-        IInspectable CurrentBuiltInIcon;
-        Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
+        Boolean UsingNoIcon { get; };
 
         String TabTitlePreview { get; };
         String AnswerbackMessagePreview { get; };

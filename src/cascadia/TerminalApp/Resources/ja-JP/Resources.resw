@@ -150,12 +150,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>ユーザー設定の読み込み中にエラーが発生しました</value>
   </data>
-  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
-    <value>OK</value>
-  </data>
-  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
-    <value>警告:</value>
-  </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
     <value>"{0}" がお使いのマシンで実行されていません。 これにより、ターミナルがキーボード入力を受信できなくなる可能性があります。</value>
     <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
@@ -169,20 +163,8 @@
   <data name="AboutMenuItem" xml:space="preserve">
     <value>バージョン情報</value>
   </data>
-  <data name="FeedbackMenuItem" xml:space="preserve">
-    <value>フィードバック</value>
-  </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>設定</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
-  <data name="CloseAll" xml:space="preserve">
-    <value>すべて閉じる</value>
-  </data>
-  <data name="Quit" xml:space="preserve">
-    <value>終了</value>
   </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>複数ペイン</value>
@@ -290,13 +272,6 @@
     <value>• 指定された "テーマ" がテーマの一覧に見つかりませんでした。一時的に既定値にフォールバックしています。</value>
     <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
-  <data name="LegacyGlobalsProperty" xml:space="preserve">
-    <value>"globals" プロパティは廃止されました。設定を更新する必要がある場合があります。 </value>
-    <comment>{Locked="\"globals\""} </comment>
-  </data>
-  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
-    <value>詳細については、この Web ページを参照してください。</value>
-  </data>
   <data name="FailedToParseCommandJson" xml:space="preserve">
     <value>"iterateOn" セットを使用してコマンドを展開できませんでした。このコマンドは無視されます。</value>
     <comment>{Locked="\"iterateOn\""} </comment>
@@ -317,7 +292,7 @@
     <value>同じ名前ですが大文字と小文字が異なる環境変数が複数見つかりました。使用される値は 1 つだけです。</value>
   </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
-    <value>新しいタブまたはウィンドウで生成されるオプションのコマンドと引数</value>
+    <value>新しいタブまたはペインで生成されるオプションのコマンドと引数</value>
   </data>
   <data name="SaveSnippetDesc" xml:space="preserve">
     <value>コマンド ラインを入力アクションとして保存する</value>
@@ -412,7 +387,7 @@
     <comment>{Locked="\"tabTitle\""}</comment>
   </data>
   <data name="CmdInheritEnvDesc" xml:space="preserve">
-    <value>新しい環境ブロックを作成するのではなく、新しいタブまたはウィンドウを作成するときに、ターミナル独自の環境変数を継承します。これは、"command" が渡されたときに既定で設定されます。 </value>
+    <value>新しい環境ブロックを作成するのではなく、新しいタブまたはペインを作成するときに、ターミナル独自の環境変数を継承します。これは、"command" が渡されたときに既定で設定されます。 </value>
     <comment>{Locked="\"command\""}</comment>
   </data>
   <data name="CmdColorSchemeArgDesc" xml:space="preserve">
@@ -429,7 +404,7 @@
     <value>ウィンドウを全画面表示モードで起動する</value>
   </data>
   <data name="CmdMoveFocusDesc" xml:space="preserve">
-    <value>指定した方向にある隣のウィンドウにフォーカスを移動する</value>
+    <value>指定した方向にある隣のペインにフォーカスを移動する</value>
   </data>
   <data name="CmdMFDesc" xml:space="preserve">
     <value>"move-focus" サブコマンドのエイリアス。</value>
@@ -477,20 +452,11 @@
   <data name="ElevatedRun.Text" xml:space="preserve">
     <value>Ctrl + クリックして管理者として開く</value>
   </data>
-  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>閉じる</value>
-  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>閉じる</value>
   </data>
   <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
     <value>閉じる</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>最大化</value>
-  </data>
-  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>最小化</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>最小化</value>
@@ -510,10 +476,6 @@
   <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
     <value>バージョン:</value>
     <comment>This is the heading for a version number label</comment>
-  </data>
-  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>はじめに</value>
-    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
     <value>ソース コード</value>
@@ -790,17 +752,8 @@
   <data name="ExportTabText" xml:space="preserve">
     <value>テキストのエクスポート</value>
   </data>
-  <data name="ExportFailure" xml:space="preserve">
-    <value>ターミナルのコンテンツをエクスポートできませんでした</value>
-  </data>
-  <data name="ExportSuccess" xml:space="preserve">
-    <value>ターミナルのコンテンツが正常にエクスポートされました</value>
-  </data>
   <data name="FindText" xml:space="preserve">
     <value>検索する</value>
-  </data>
-  <data name="PlainText" xml:space="preserve">
-    <value>テキスト</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>終了動作は、プロファイルの詳細設定で構成できます。</value>
@@ -857,7 +810,7 @@
     <value>設定ページを開きます</value>
   </data>
   <data name="SplitTabToolTip" xml:space="preserve">
-    <value>現在のディレクトリのアクティブなプロファイルを使用して新しいウィンドウを開きます</value>
+    <value>現在のディレクトリのアクティブなプロファイルを使用して新しいペインを開きます</value>
   </data>
   <data name="TabCloseAfterToolTip" xml:space="preserve">
     <value>このタブの右側にあるすべてのタブを閉じます</value>
@@ -907,10 +860,6 @@
     <value>[{0}] タブを "{1}" の位置に移動しました</value>
     <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
   </data>
-  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
-    <value>アクティブなペインを "{1}" ウィンドウの [{0}] タブに移動しました</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
-  </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
     <value>アクティブなペインを "{0}" ウィンドウに移動しました</value>
     <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
@@ -930,7 +879,7 @@
     <value>接続の再起動</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
-    <value>アクティブウィンドウ接続を再起動します</value>
+    <value>アクティブ ペイン接続を再起動します</value>
   </data>
   <data name="SnippetPaneTitle.Text" xml:space="preserve">
     <value>抜粋</value>

@@ -288,7 +288,7 @@ public:
                        const bool isIntenseBold,
                        std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
-    void SerializeToPath(const wchar_t* destination) const;
+    void SerializeTo(HANDLE handle) const;
 
     struct PositionInformation
     {

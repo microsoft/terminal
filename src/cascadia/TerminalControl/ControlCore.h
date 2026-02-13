@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ColorSelection(const Control::SelectionColor& fg, const Control::SelectionColor& bg, Core::MatchMode matchMode);
 
         void Close();
-        void PersistToPath(const wchar_t* path) const;
+        void PersistTo(HANDLE handle) const;
         void RestoreFromPath(const wchar_t* path) const;
 
         void ClearQuickFix();
@@ -214,21 +214,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma endregion
 
-        void BlinkAttributeTick();
-        void BlinkCursor();
-        bool CursorOn() const;
-        void CursorOn(const bool isCursorOn);
-
         bool IsVtMouseModeEnabled() const;
         bool ShouldSendAlternateScroll(const unsigned int uiButton, const int32_t delta) const;
         Core::Point CursorPosition() const;
+        bool ForceCursorVisible() const noexcept;
+        void ForceCursorVisible(bool force);
 
         bool CopyOnSelect() const;
         Control::SelectionData SelectionInfo() const;
         void SetSelectionAnchor(const til::point position);
         void SetEndSelectionPoint(const til::point position);
 
-        SearchResults Search(SearchRequest request);
+        SearchResults Search(const SearchRequest& request);
         const std::vector<til::point_span>& SearchResultRows() const noexcept;
         void ClearSearch();
 
@@ -347,11 +344,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         safe_void_coroutine _renderEngineSwapChainChanged(const HANDLE handle);
         void _rendererBackgroundColorChanged();
         void _rendererTabColorChanged();
+        void _rendererEnteredErrorState();
 #pragma endregion
 
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode();
-        void _connectionOutputHandler(const hstring& hstr);
+        void _connectionOutputHandler(winrt::array_view<const char16_t> str);
         void _connectionStateChangedHandler(const TerminalConnection::ITerminalConnection&, const Windows::Foundation::IInspectable&);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
         void _setOpacity(const float opacity, const bool focused = true);
@@ -401,6 +399,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float _panelWidth{ 0 };
         float _panelHeight{ 0 };
         float _compositionScale{ 0 };
+        uint8_t _renderFailures{ 0 };
+        bool _forceCursorVisible = false;
 
         // Audio stuff.
         MidiAudio _midiAudio;

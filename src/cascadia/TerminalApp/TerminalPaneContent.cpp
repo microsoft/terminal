@@ -66,7 +66,11 @@ namespace winrt::TerminalApp::implementation
     }
     void TerminalPaneContent::Close()
     {
+        // We deliberately remove the event handlers before closing the control.
+        // This is to prevent reentrancy issues, pointless callbacks, etc.
         _removeControlEvents();
+
+        _control.Close();
 
         // Clear out our media player callbacks, and stop any playing media. This
         // will prevent the callback from being triggered after we've closed, and
@@ -140,22 +144,16 @@ namespace winrt::TerminalApp::implementation
             // "attach existing" rather than a "create"
             args.ContentId(_control.ContentId());
             break;
-        case BuildStartupKind::PersistAll:
+        case BuildStartupKind::Persist:
         {
             const auto connection = _control.Connection();
             const auto id = connection ? connection.SessionId() : winrt::guid{};
-
             if (id != winrt::guid{})
             {
-                const auto settingsDir = CascadiaSettings::SettingsDirectory();
-                const auto idStr = ::Microsoft::Console::Utils::GuidToPlainString(id);
-                const auto path = fmt::format(FMT_COMPILE(L"{}\\buffer_{}.txt"), settingsDir, idStr);
-                _control.PersistToPath(path);
                 args.SessionId(id);
             }
             break;
         }
-        case BuildStartupKind::PersistLayout:
         default:
             break;
         }

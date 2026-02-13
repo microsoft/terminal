@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "NewTabMenuViewModel.h"
-#include <LibraryResources.h>
+#include "IconPicker.h"
 
 #include "NewTabMenuViewModel.g.cpp"
 #include "FolderTreeViewEntry.g.cpp"
@@ -161,6 +161,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // FolderTree needs to be updated when a folder is renamed
             _folderTreeCache = nullptr;
         }
+        else if (viewModelProperty == L"Icon")
+        {
+            _NotifyChanges(L"CurrentFolderIconPreview", L"CurrentFolderLocalizedIcon", L"CurrentFolderIconPath", L"CurrentFolderUsingNoIcon");
+        }
     }
 
     hstring NewTabMenuViewModel::CurrentFolderName() const
@@ -215,6 +219,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _CurrentFolder.AllowEmpty(value);
             _NotifyChanges(L"CurrentFolderAllowEmpty");
         }
+    }
+
+    Windows::UI::Xaml::Controls::IconElement NewTabMenuViewModel::CurrentFolderIconPreview() const
+    {
+        if (!_CurrentFolder)
+        {
+            return nullptr;
+        }
+        // IconWUX sets the icon width/height to 32 by default
+        auto icon = Microsoft::Terminal::UI::IconPathConverter::IconWUX(_CurrentFolder.Icon());
+        icon.Width(16);
+        icon.Height(16);
+        return icon;
+    }
+
+    winrt::hstring NewTabMenuViewModel::CurrentFolderLocalizedIcon() const
+    {
+        if (!_CurrentFolder)
+        {
+            return {};
+        }
+        if (CurrentFolderUsingNoIcon())
+        {
+            return RS_(L"IconPicker_IconTypeNone");
+        }
+        return _CurrentFolder.Icon(); // For display as a string
+    }
+
+    winrt::hstring NewTabMenuViewModel::CurrentFolderIconPath() const
+    {
+        if (!_CurrentFolder)
+        {
+            return {};
+        }
+        return _CurrentFolder.Icon();
+    }
+
+    void NewTabMenuViewModel::CurrentFolderIconPath(const winrt::hstring& path)
+    {
+        if (_CurrentFolder && _CurrentFolder.Icon() != path)
+        {
+            _CurrentFolder.Icon(path);
+            _NotifyChanges(L"CurrentFolderIconPreview", L"CurrentFolderLocalizedIcon", L"CurrentFolderIconPath", L"CurrentFolderUsingNoIcon");
+        }
+    }
+
+    bool NewTabMenuViewModel::CurrentFolderUsingNoIcon() const noexcept
+    {
+        if (!_CurrentFolder)
+        {
+            return false;
+        }
+        const auto icon{ _CurrentFolder.Icon() };
+        return icon.empty() || icon == IconPicker::HideIconValue;
     }
 
     Windows::Foundation::Collections::IObservableVector<Editor::NewTabMenuEntryViewModel> NewTabMenuViewModel::CurrentView() const
@@ -556,7 +614,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return action.Name();
         }
-        return hstring{ fmt::format(L"{}: {}", RS_(L"NewTabMenu_ActionNotFound"), actionID) };
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"NewTabMenu_ActionNotFound"), actionID);
     }
 
     hstring ActionEntryViewModel::Icon() const

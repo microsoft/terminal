@@ -9,10 +9,7 @@
 #include <dsound.h>
 
 #include <DefaultSettings.h>
-#include <LibraryResources.h>
 #include <unicode.hpp>
-#include <utils.hpp>
-#include <WinUser.h>
 
 #include "EventArgs.h"
 #include "../../renderer/atlas/AtlasEngine.h"
@@ -153,10 +150,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             _renderer->SetBackgroundColorChangedCallback([this]() { _rendererBackgroundColorChanged(); });
             _renderer->SetFrameColorChangedCallback([this]() { _rendererTabColorChanged(); });
-            _renderer->SetRendererEnteredErrorStateCallback([this]() { RendererEnteredErrorState.raise(nullptr, nullptr); });
+            _renderer->SetRendererEnteredErrorStateCallback([this]() { _rendererEnteredErrorState(); });
         }
 
         UpdateSettings(settings, unfocusedAppearance);
+    }
+
+    void ControlCore::_rendererEnteredErrorState()
+    {
+        // The first time the renderer fails out (after all of its own retries), switch it to D2D and WARP
+        // and force it to try again. If it _still_ fails, we can let it halt.
+        if (_renderFailures++ == 0)
+        {
+            const auto lock = _terminal->LockForWriting();
+            _renderEngine->SetGraphicsAPI(parseGraphicsAPI(GraphicsAPI::Direct2D));
+            _renderEngine->SetSoftwareRendering(true);
+            _renderer->EnablePainting();
+            return;
+        }
+        RendererEnteredErrorState.raise(nullptr, nullptr);
     }
 
     void ControlCore::_setupDispatcherAndCallbacks()
@@ -918,6 +930,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+        _renderFailures = 0; // We may have changed the engine; reset the failure counter.
 
         // Trigger a redraw to repaint the window background and tab colors.
         _renderer->TriggerRedrawAll(true, true);
@@ -1723,7 +1736,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - resetOnly: If true, only Reset() will be called, if anything. FindNext() will never be called.
     // Return Value:
     // - <none>
-    SearchResults ControlCore::Search(SearchRequest request)
+    SearchResults ControlCore::Search(const SearchRequest& request)
     {
         const auto lock = _terminal->LockForWriting();
 
@@ -1732,15 +1745,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WI_SetFlagIf(flags, SearchFlag::RegularExpression, request.RegularExpression);
         const auto searchInvalidated = _searcher.IsStale(*_terminal.get(), request.Text, flags);
 
-        if (searchInvalidated || !request.ResetOnly)
+        if (searchInvalidated || request.ExecuteSearch)
         {
             std::vector<til::point_span> oldResults;
-            til::point_span oldFocused;
-
-            if (const auto focused = _terminal->GetSearchHighlightFocused())
-            {
-                oldFocused = *focused;
-            }
 
             if (searchInvalidated)
             {
@@ -1749,18 +1756,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _terminal->SetSearchHighlights(_searcher.Results());
             }
 
-            if (!request.ResetOnly)
+            if (request.ExecuteSearch)
             {
                 _searcher.FindNext(!request.GoForward);
             }
 
             _terminal->SetSearchHighlightFocused(gsl::narrow<size_t>(std::max<ptrdiff_t>(0, _searcher.CurrentMatch())));
             _renderer->TriggerSearchHighlight(oldResults);
+        }
 
-            if (const auto focused = _terminal->GetSearchHighlightFocused(); focused && *focused != oldFocused)
-            {
-                _terminal->ScrollToSearchHighlight(request.ScrollOffset);
-            }
+        if (request.ScrollIntoView)
+        {
+            _terminal->ScrollToSearchHighlight(request.ScrollOffset);
         }
 
         int32_t totalMatches = 0;
@@ -1787,6 +1794,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ClearSearch()
     {
         const auto lock = _terminal->LockForWriting();
+
+        // GH #19358: select the focused search result before clearing search
+        if (const auto focusedSearchResult = _terminal->GetSearchHighlightFocused())
+        {
+            // search results are buffer-relative, whereas the selection functions expect viewport-relative coordinates
+            const auto scrollOffset{ _terminal->GetScrollOffset() };
+            const auto startPos = til::point{ focusedSearchResult->start.x, focusedSearchResult->start.y - scrollOffset };
+            const auto endPos = til::point{ focusedSearchResult->end.x, focusedSearchResult->end.y - scrollOffset };
+
+            _terminal->SetSelectionAnchor(startPos);
+            _terminal->SetSelectionEnd(endPos);
+            _renderer->TriggerSelection();
+        }
+
         _terminal->SetSearchHighlights({});
         _terminal->SetSearchHighlightFocused(0);
         _renderer->TriggerSearchHighlight(_searcher.Results());
@@ -1806,15 +1827,43 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _closeConnection();
     }
 
-    void ControlCore::PersistToPath(const wchar_t* path) const
+    void ControlCore::PersistTo(HANDLE handle) const
     {
         const auto lock = _terminal->LockForReading();
-        _terminal->SerializeMainBuffer(path);
+        _terminal->SerializeMainBuffer(handle);
     }
 
     void ControlCore::RestoreFromPath(const wchar_t* path) const
     {
-        const wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+        wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
+
+        // This block of code exists temporarily to fix buffer dumps that were
+        // previously persisted as "buffer_" but really should be named "elevated_".
+        // If loading the properly named file fails, retry with the old name.
+        if (!file)
+        {
+            static constexpr std::wstring_view needle{ L"\\elevated_" };
+
+            // Check if the path contains "\elevated_", indicating that we're in an elevated session.
+            const std::wstring_view pathView{ path };
+            const auto idx = pathView.find(needle);
+
+            if (idx != std::wstring_view::npos)
+            {
+                // If so, try to open the file with "\buffer_" instead, which is what we previously used.
+                std::wstring altPath{ pathView };
+                altPath.replace(idx, needle.size(), L"\\buffer_");
+
+                file.reset(CreateFileW(altPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr));
+
+                // If the alternate file is found, move it to the correct location.
+                if (file)
+                {
+                    LOG_IF_WIN32_BOOL_FALSE(MoveFileW(altPath.c_str(), path));
+                }
+            }
+        }
+
         if (!file)
         {
             return;
@@ -1883,7 +1932,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (read < sizeof(buffer))
             {
                 // Normally the cursor should already be at the start of the line, but let's be absolutely sure it is.
-                if (_terminal->GetCursorPosition().x != 0)
+                if (_terminal->GetTextBuffer().GetCursor().GetPosition().x != 0)
                 {
                     _terminal->Write(L"\r\n");
                 }
@@ -1938,35 +1987,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TabColorChanged.raise(*this, nullptr);
     }
 
-    void ControlCore::BlinkAttributeTick()
-    {
-        const auto lock = _terminal->LockForWriting();
-
-        auto& renderSettings = _terminal->GetRenderSettings();
-        renderSettings.ToggleBlinkRendition(_renderer.get());
-    }
-
-    void ControlCore::BlinkCursor()
-    {
-        const auto lock = _terminal->LockForWriting();
-        _terminal->BlinkCursor();
-    }
-
-    bool ControlCore::CursorOn() const
-    {
-        return _terminal->IsCursorOn();
-    }
-
-    void ControlCore::CursorOn(const bool isCursorOn)
-    {
-        const auto lock = _terminal->LockForWriting();
-        _terminal->SetCursorOn(isCursorOn);
-    }
-
     void ControlCore::ResumeRendering()
     {
         // The lock must be held, because it calls into IRenderData which is shared state.
         const auto lock = _terminal->LockForWriting();
+        _renderFailures = 0;
         _renderer->EnablePainting();
     }
 
@@ -1992,6 +2017,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const auto lock = _terminal->LockForReading();
         return _terminal->GetViewportRelativeCursorPosition().to_core_point();
+    }
+
+    bool ControlCore::ForceCursorVisible() const noexcept
+    {
+        return _forceCursorVisible;
+    }
+
+    void ControlCore::ForceCursorVisible(bool force)
+    {
+        const auto lock = _terminal->LockForWriting();
+        _renderer->AllowCursorVisibility(Render::InhibitionSource::Host, _terminal->IsFocused() || force);
+        _forceCursorVisible = force;
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
@@ -2073,7 +2110,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // As noted in GH #8573, there's plenty of edge cases with this
         // approach, but it's good enough to bring value to 90% of use cases.
-        const auto cursorPos{ _terminal->GetCursorPosition() };
 
         // Does the current buffer line have a mark on it?
         const auto& marks{ _terminal->GetMarkExtents() };
@@ -2081,8 +2117,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto& last{ marks.back() };
             const auto [start, end] = last.GetExtent();
-            const auto bufferSize = _terminal->GetTextBuffer().GetSize();
-            auto lastNonSpace = _terminal->GetTextBuffer().GetLastNonSpaceCharacter();
+            const auto& buffer = _terminal->GetTextBuffer();
+            const auto cursorPos = buffer.GetCursor().GetPosition();
+            const auto bufferSize = buffer.GetSize();
+            auto lastNonSpace = buffer.GetLastNonSpaceCharacter();
             bufferSize.IncrementInBounds(lastNonSpace, true);
 
             // If the user clicked off to the right side of the prompt, we
@@ -2192,13 +2230,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
         RaiseNotice.raise(*this, std::move(noticeArgs));
     }
-    void ControlCore::_connectionOutputHandler(const hstring& hstr)
+    void ControlCore::_connectionOutputHandler(const winrt::array_view<const char16_t> str)
     {
         try
         {
             {
                 const auto lock = _terminal->LockForWriting();
-                _terminal->Write(hstr);
+                _terminal->Write(winrt_array_to_wstring_view(str));
             }
 
             if (!_pendingResponses.empty())
@@ -2460,7 +2498,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         TerminalInput::OutputType out;
         {
-            const auto lock = _terminal->LockForReading();
+            const auto lock = _terminal->LockForWriting();
+            _renderer->AllowCursorVisibility(Render::InhibitionSource::Host, focused || _forceCursorVisible);
             out = _terminal->FocusChanged(focused);
         }
         if (out && !out->empty())

@@ -182,7 +182,6 @@ void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
     cursor.SetSize(_d->ulSavedCursorSize);
     cursor.SetIsVisible(_d->fSavedCursorVisible);
     cursor.SetType(_d->savedCursorType);
-    cursor.SetIsOn(true);
     cursor.SetPosition(_d->coordSavedCursorPosition);
 }
 

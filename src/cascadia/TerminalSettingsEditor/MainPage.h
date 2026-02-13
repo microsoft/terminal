@@ -5,6 +5,7 @@
 
 #include "MainPage.g.h"
 #include "Breadcrumb.g.h"
+#include "NavigateToPageArgs.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -21,6 +22,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(IInspectable, Tag);
         WINRT_PROPERTY(winrt::hstring, Label);
         WINRT_PROPERTY(BreadcrumbSubPage, SubPage);
+    };
+
+    struct NavigateToPageArgs : NavigateToPageArgsT<NavigateToPageArgs>
+    {
+    public:
+        NavigateToPageArgs(Windows::Foundation::IInspectable viewModel, Editor::IHostedInWindow windowRoot) :
+            _ViewModel(viewModel),
+            _WeakWindowRoot(windowRoot) {}
+
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
+        Windows::Foundation::IInspectable ViewModel() const noexcept { return _ViewModel; }
+
+    private:
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
+        Windows::Foundation::IInspectable _ViewModel{ nullptr };
     };
 
     struct MainPage : MainPageT<MainPage>
@@ -44,6 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
         Editor::ExtensionsViewModel ExtensionsVM() const noexcept { return _extensionsVM; }
+        Editor::ActionsViewModel ActionsVM() const noexcept { return _actionsVM; }
 
         til::typed_event<Windows::Foundation::IInspectable, Model::SettingsTarget> OpenJson;
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::Collections::IVectorView<Model::SettingsLoadWarnings>> ShowLoadWarningsDialog;
@@ -78,11 +95,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _MoveXamlParsedNavItemsIntoItemSource();
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ActionsViewModel _actionsVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
 
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _colorSchemesPageViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _actionsViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ntmViewModelChangedRevoker;
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _extensionsViewModelChangedRevoker;
     };

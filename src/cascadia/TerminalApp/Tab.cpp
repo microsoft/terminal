@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <LibraryResources.h>
 #include "ColorPickupFlyout.h"
 #include "Tab.h"
 #include "SettingsPaneContent.h"
@@ -934,6 +933,13 @@ namespace winrt::TerminalApp::implementation
         return res;
     }
 
+    void Tab::Close()
+    {
+        ASSERT_UI_THREAD();
+
+        Closed.raise(nullptr, nullptr);
+    }
+
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
     void Tab::Shutdown()
@@ -1108,7 +1114,7 @@ namespace winrt::TerminalApp::implementation
             [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
-                if (auto tab{ weakThis.get() })
+                if (auto tab{ weakThisCopy.get() })
                 {
                     tab->_RecalculateAndApplyReadOnly();
                 }
@@ -2131,7 +2137,7 @@ namespace winrt::TerminalApp::implementation
             const auto profileName{ profile.Name() };
             if (profileName != Title())
             {
-                return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"), profileName, Title()) };
+                return til::hstring_format(FMT_COMPILE(L"{}: {}"), profileName, Title());
             }
         }
 

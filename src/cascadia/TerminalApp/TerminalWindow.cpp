@@ -6,7 +6,6 @@
 
 #include "AppLogic.h"
 
-#include <LibraryResources.h>
 #include <til/env.h>
 
 #include "TerminalWindow.g.cpp"
@@ -253,11 +252,11 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    void TerminalWindow::PersistState(bool serializeBuffer)
+    void TerminalWindow::PersistState()
     {
         if (_root)
         {
-            _root->PersistState(serializeBuffer);
+            _root->PersistState();
         }
     }
 
@@ -324,6 +323,10 @@ namespace winrt::TerminalApp::implementation
     // - an IAsyncOperation with the dialog result
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalWindow::ShowDialog(winrt::WUX::Controls::ContentDialog dialog)
     {
+        const auto weak = get_weak();
+        const auto dispatcher = _root->Dispatcher();
+        const auto root = _root->XamlRoot();
+
         // As mentioned on s_activeDialog, dismissing the active dialog is necessary.
         // We repeat it a few times in case the resume_foreground failed to work,
         // but I found that one iteration will always be enough in practice.
@@ -337,7 +340,7 @@ namespace winrt::TerminalApp::implementation
             s_activeDialog.Hide();
 
             // Wait for the current dialog to be hidden.
-            co_await wil::resume_foreground(_root->Dispatcher(), CoreDispatcherPriority::Low);
+            co_await wil::resume_foreground(dispatcher, CoreDispatcherPriority::Low);
         }
 
         // If two sources call ShowDialog() simultaneously, it may happen that both enter the above loop,
@@ -354,7 +357,7 @@ namespace winrt::TerminalApp::implementation
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
         // Since we're hosting the dialog in a Xaml island, we need to connect it to the
         // xaml tree somehow.
-        dialog.XamlRoot(_root->XamlRoot());
+        dialog.XamlRoot(root);
 
         // IMPORTANT: Set the requested theme of the dialog, because the
         // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
@@ -368,14 +371,17 @@ namespace winrt::TerminalApp::implementation
         // theme on each element up to the root. We're relying a bit on Xaml's implementation
         // details here, but it does have the desired effect.
         // It's not enough to set the theme on the dialog alone.
-        auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _settings.GlobalSettings().CurrentTheme() };
-            auto requestedTheme{ theme.RequestedTheme() };
-            auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
-            while (element)
+        auto themingLambda{ [weak](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
+            if (const auto strong = weak.get())
             {
-                element.RequestedTheme(requestedTheme);
-                element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+                auto theme{ strong->_settings.GlobalSettings().CurrentTheme() };
+                auto requestedTheme{ theme.RequestedTheme() };
+                auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
+                while (element)
+                {
+                    element.RequestedTheme(requestedTheme);
+                    element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+                }
             }
         } };
 
@@ -830,6 +836,11 @@ namespace winrt::TerminalApp::implementation
         return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
     }
 
+    winrt::Windows::Foundation::Collections::IVector<IPaneContent> TerminalWindow::Panes() const
+    {
+        return winrt::single_threaded_vector(_root->Panes());
+    }
+
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
     //   isn't a control selected for any reason, returns "Terminal"
@@ -890,6 +901,11 @@ namespace winrt::TerminalApp::implementation
         {
             // Manually bubble the OnDirectKeyEvent event up through the focus tree.
             auto xamlRoot{ _root->XamlRoot() };
+            if (!xamlRoot)
+            {
+                return false;
+            }
+
             auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(xamlRoot) };
             do
             {
@@ -1389,9 +1405,7 @@ namespace winrt::TerminalApp::implementation
     // - a string for displaying the name of the window.
     winrt::hstring WindowProperties::WindowIdForDisplay() const noexcept
     {
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{}: {}"),
-                                           std::wstring_view(RS_(L"WindowIdLabel")),
-                                           _WindowId) };
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), std::wstring_view(RS_(L"WindowIdLabel")), _WindowId);
     }
 
     // Method Description:
@@ -1402,9 +1416,7 @@ namespace winrt::TerminalApp::implementation
     // - a string for displaying the name of the window.
     winrt::hstring WindowProperties::WindowNameForDisplay() const noexcept
     {
-        return _WindowName.empty() ?
-                   winrt::hstring{ fmt::format(FMT_COMPILE(L"<{}>"), RS_(L"UnnamedWindowName")) } :
-                   _WindowName;
+        return _WindowName.empty() ? til::hstring_format(FMT_COMPILE(L"<{}>"), RS_(L"UnnamedWindowName")) : _WindowName;
     }
 
     bool WindowProperties::IsQuakeWindow() const noexcept

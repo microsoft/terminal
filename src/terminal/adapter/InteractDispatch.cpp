@@ -149,6 +149,9 @@ void InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // - col: The column to move the cursor to.
 void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
+    const auto& api = ServiceLocator::LocateGlobals().api;
+    auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
+
     // First retrieve some information about the buffer
     const auto viewport = _api.GetBufferAndViewport().viewport;
 
@@ -159,9 +162,11 @@ void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     coordCursor.x = std::clamp(coordCursor.x, viewport.left, viewport.right);
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
-    auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
     LOG_IF_FAILED(api->SetConsoleCursorPositionImpl(info, coordCursor));
+
+    // Unblock any callers inside SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized().
+    // The cursor position has now been updated to the terminal's.
+    info.ResetConptyCursorPositionMayBeWrong();
 }
 
 // Routine Description:

@@ -200,7 +200,7 @@ function Invoke-OpenConsoleTests()
         $OpenConsolePlatform = 'Win32'
     }
     $OpenConsolePath = "$root\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $TaefExePath = "$root\packages\Microsoft.Taef.10.93.240607003\build\Binaries\$Platform\te.exe"
+    $TaefExePath = "$root\packages\Microsoft.Taef.10.100.251104001\build\Binaries\$Platform\te.exe"
     $BinDir = "$root\bin\$OpenConsolePlatform\$Configuration"
 
     [xml]$TestConfig = Get-Content "$root\tools\tests.xml"
@@ -416,28 +416,19 @@ function Invoke-CodeFormat() {
         [switch]$IgnoreXaml
     )
 
+    $clangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -find "**\x64\bin\clang-format.exe"
+    If ([String]::IsNullOrEmpty($clangFormatPath)) {
+        Write-Error "No Visual Studio-supplied version of clang-format could be found."
+    }
+
     $root = Find-OpenConsoleRoot
-    & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
-    $clangPackage = ([xml](Get-Content "$root\tools\packages.config")).packages.package | Where-Object id -like "clang-format*"
-    $clangFormatPath = "$root\packages\$($clangPackage.id).$($clangPackage.version)\tools\clang-format.exe"
     Get-ChildItem -Recurse "$root\src" -Include *.cpp, *.hpp, *.h |
       Where FullName -NotLike "*Generated Files*" |
       Invoke-ClangFormat -ClangFormatPath $clangFormatPath
 
-    if ($IgnoreXaml) {
-        # do nothing
-    }
-    else {
+    if (-Not $IgnoreXaml) {
         Invoke-XamlFormat
     }
 }
 
-#.SYNOPSIS
-# Download clang-format.exe required for code formatting
-function Get-Format()
-{
-    $root = Find-OpenConsoleRoot
-    & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
-}
-
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Format
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat
