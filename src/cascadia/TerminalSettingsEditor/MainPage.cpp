@@ -579,6 +579,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _actionsVM.CurrentPage(ActionsSubPage::Edit);
             }
+            else
+            {
+                _actionsVM.CurrentPage(ActionsSubPage::Base);
+            }
         }
         else if (clickedItemTag == newTabMenuTag)
         {
