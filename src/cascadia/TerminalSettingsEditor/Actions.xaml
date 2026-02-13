@@ -184,6 +184,7 @@
                             <Border Grid.Column="1"
                                     Padding="8,4,8,4"
                                     Style="{ThemeResource KeyChordBorderStyle}"
+                                    ToolTipService.ToolTip="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
                                     Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(AdditionalKeyChordCountText)}">
                                 <TextBlock FontSize="14"
                                            Style="{ThemeResource KeyChordTextBlockStyle}"

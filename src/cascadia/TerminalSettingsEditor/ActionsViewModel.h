@@ -75,6 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::hstring FirstKeyChordText();
         winrt::hstring AdditionalKeyChordCountText();
+        winrt::hstring AdditionalKeyChordTooltipText();
 
         winrt::hstring ID();
         bool IsUserAction();
