@@ -138,10 +138,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
     {
         auto result = DisplayName() + L", " + FirstKeyChordText();
-        const auto additional = AdditionalKeyChordCountText();
-        if (!additional.empty())
+        const auto size = _KeyChordList.Size();
+        if (size > 1)
         {
-            result = result + L" " + additional;
+            result = result + L" " + hstring{ RS_fmt(L"Actions_AdditionalKeyChords", winrt::to_hstring(size - 1)) };
         }
         return result;
     }
