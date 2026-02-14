@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "GlobalAppearance.h"
-#include "NavigateToPageArgs.g.h"
 #include "GlobalAppearance.g.cpp"
 
 #include <WtExeUtils.h>

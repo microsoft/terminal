@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "NewTabMenu.h"
-#include "NavigateToPageArgs.g.h"
 #include "NewTabMenu.g.cpp"
 #include "NewTabMenuEntryTemplateSelector.g.cpp"
 #include "EnumEntry.h"

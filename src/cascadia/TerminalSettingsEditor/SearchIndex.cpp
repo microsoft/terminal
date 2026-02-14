@@ -455,7 +455,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (scoredResults.empty())
         {
             // Explicitly show "no results"
-            results.reserve(1);
             results.emplace_back(FilteredSearchResult::CreateNoResultsItem(query));
         }
         else

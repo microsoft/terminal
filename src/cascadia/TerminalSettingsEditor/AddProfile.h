@@ -26,9 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct AddProfilePageNavigationState : AddProfilePageNavigationStateT<AddProfilePageNavigationState>
     {
     public:
-        AddProfilePageNavigationState(const Model::CascadiaSettings& settings, const hstring& elementToFocus = {}) :
-            _Settings{ settings },
-            _ElementToFocus{ elementToFocus } {}
+        AddProfilePageNavigationState(const Model::CascadiaSettings& settings) :
+            _Settings{ settings } {}
 
         void RequestAddNew()
         {
@@ -43,7 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         til::event<AddNewArgs> AddNew;
 
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
-        WINRT_PROPERTY(hstring, ElementToFocus);
     };
 
     struct AddProfile : public HasScrollViewer<AddProfile>, AddProfileT<AddProfile>

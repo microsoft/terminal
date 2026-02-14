@@ -28,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _State = args.ViewModel().as<Editor::AddProfilePageNavigationState>();
-        BringIntoViewWhenLoaded(_State.ElementToFocus());
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "EditColorScheme.h"
 #include "EditColorScheme.g.cpp"
-#include "NavigateToPageArgs.g.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI;

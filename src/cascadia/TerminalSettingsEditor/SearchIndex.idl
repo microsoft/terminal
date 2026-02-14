@@ -12,7 +12,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement Icon { get; };
     }
 
-    [default_interface] runtimeclass SearchResultTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    runtimeclass SearchResultTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
     {
         SearchResultTemplateSelector();
 

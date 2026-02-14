@@ -6,7 +6,6 @@
 #include "EnumEntry.h"
 #include "Compatibility.g.cpp"
 #include "CompatibilityViewModel.g.cpp"
-#include "NavigateToPageArgs.g.h"
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;

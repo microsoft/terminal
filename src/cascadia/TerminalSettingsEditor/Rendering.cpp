@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "Rendering.h"
-#include "NavigateToPageArgs.g.h"
 #include "Rendering.g.cpp"
 
 using namespace winrt::Windows::UI::Xaml::Navigation;

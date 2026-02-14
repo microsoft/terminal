@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Actions.h"
 #include "Actions.g.cpp"
-#include "NavigateToPageArgs.g.h"
 #include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 

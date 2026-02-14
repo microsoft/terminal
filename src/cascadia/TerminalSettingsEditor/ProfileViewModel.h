@@ -38,6 +38,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
+        hstring TakeElementToFocus();
+        void PutElementToFocus(const hstring& elementName) { _elementToFocus = elementName; }
+
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
         void ForceRefreshCurrentPage()
         {
@@ -153,7 +156,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
-        WINRT_PROPERTY(hstring, ElementToFocus);
         GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode);
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
@@ -164,6 +166,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        winrt::hstring _elementToFocus;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::UI::Core::CoreDispatcher _dispatcher;
 

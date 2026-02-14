@@ -8,8 +8,6 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass AddProfilePageNavigationState
     {
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
-        String ElementToFocus { get; };
-
         void RequestAddNew();
         void RequestDuplicate(Guid profile);
         event AddNewArgs AddNew;

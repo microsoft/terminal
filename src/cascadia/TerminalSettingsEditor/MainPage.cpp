@@ -113,10 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (settingName == L"CurrentPage")
             {
                 // extract ElementToFocus and clear it; we only want to use it once
-                auto vmImpl = get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM);
-                const auto elementToFocus = vmImpl->ElementToFocus();
-                vmImpl->ElementToFocus({});
-
+                const auto elementToFocus = get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM)->TakeElementToFocus();
                 const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
                 if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
                 {
@@ -185,35 +182,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // that VM into the appearance VMs within the profiles
         _InitializeProfilesList();
 
-        // Apply icons to static nav items
-        LaunchNavItem().Icon(_fontIconForNavTag(launchTag));
-        InteractionNavItem().Icon(_fontIconForNavTag(interactionTag));
-        AppearanceNavItem().Icon(_fontIconForNavTag(globalAppearanceTag));
-        ColorSchemesNavItem().Icon(_fontIconForNavTag(colorSchemesTag));
-        RenderingNavItem().Icon(_fontIconForNavTag(renderingTag));
-        CompatibilityNavItem().Icon(_fontIconForNavTag(compatibilityTag));
-        ActionsNavItem().Icon(_fontIconForNavTag(actionsTag));
-        NewTabMenuNavItem().Icon(_fontIconForNavTag(newTabMenuTag));
-        ExtensionsNavItem().Icon(_fontIconForNavTag(extensionsTag));
-        BaseLayerMenuItem().Icon(_fontIconForNavTag(globalProfileTag));
+        // Apply icons and tooltips (GH#19688, long names may be truncated) to static nav items
+        for (const auto& item : SettingsNav().MenuItems())
+        {
+            const auto navItem = item.try_as<MUX::Controls::NavigationViewItem>();
+            if (!navItem)
+            {
+                continue;
+            }
+
+            const auto stringTag = navItem.Tag().try_as<hstring>();
+            if (!stringTag)
+            {
+                continue;
+            }
+
+            navItem.Icon(_fontIconForNavTag(*stringTag));
+            if (const auto navItemContentString = navItem.Content().try_as<hstring>())
+            {
+                WUX::Controls::ToolTipService::SetToolTip(navItem, box_value(*navItemContentString));
+            }
+        }
         OpenJsonNavItem().Icon(_fontIconForNavTag(openJsonTag));
+        WUX::Controls::ToolTipService::SetToolTip(OpenJsonNavItem(), box_value(RS_(L"Nav_OpenJSON/Content")));
 
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
-
-        // GH#19688: the nav item text may be truncated, so we need to set tooltips for all nav items. Reuse the displayed text resources.
-        WUX::Controls::ToolTipService::SetToolTip(LaunchNavItem(), box_value(RS_(L"Nav_Launch/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(InteractionNavItem(), box_value(RS_(L"Nav_Interaction/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(AppearanceNavItem(), box_value(RS_(L"Nav_Appearance/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(ColorSchemesNavItem(), box_value(RS_(L"Nav_ColorSchemes/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(RenderingNavItem(), box_value(RS_(L"Nav_Rendering/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(CompatibilityNavItem(), box_value(RS_(L"Nav_Compatibility/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(ActionsNavItem(), box_value(RS_(L"Nav_Actions/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(NewTabMenuNavItem(), box_value(RS_(L"Nav_NewTabMenu/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(ExtensionsNavItem(), box_value(RS_(L"Nav_Extensions/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(BaseLayerMenuItem(), box_value(RS_(L"Nav_ProfileDefaults/Content")));
-        WUX::Controls::ToolTipService::SetToolTip(OpenJsonNavItem(), box_value(RS_(L"Nav_OpenJSON/Content")));
 
         _breadcrumbs = single_threaded_observable_vector<IInspectable>();
         _UpdateSearchIndex();
@@ -498,10 +493,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (settingName == L"CurrentPage")
             {
                 // extract ElementToFocus and clear it; we only want to use it once
-                auto vmImpl = get_self<ProfileViewModel>(profile);
-                const auto elementToFocus = vmImpl->ElementToFocus();
-                vmImpl->ElementToFocus({});
-
+                const auto elementToFocus = get_self<ProfileViewModel>(profile)->TakeElementToFocus();
                 const auto currentPage = profile.CurrentPage();
                 if (currentPage == ProfileSubPage::Base)
                 {
@@ -637,7 +629,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Pass along the element to focus to the ProfileViewModel.
             // This will work as a staging area before we navigate to the correct sub-page
             auto profileVMImpl = get_self<ProfileViewModel>(_profileDefaultsVM);
-            profileVMImpl->ElementToFocus(elementToFocus);
+            profileVMImpl->PutElementToFocus(elementToFocus);
 
             // Set the profile's 'CurrentPage' to the correct one, if this requires further navigation, the
             // event handler will do it
@@ -672,9 +664,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == addProfileTag)
         {
-            auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone, elementToFocus) };
+            auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
             addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
-            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), winrt::make<NavigateToPageArgs>(addProfileState, *this));
+            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), winrt::make<NavigateToPageArgs>(addProfileState, *this, elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_AddNewProfile/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
 
@@ -732,7 +724,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Pass along the element to focus to the ProfileViewModel.
         // This will work as a staging area before we navigate to the correct sub-page
         auto profileVMImpl = get_self<ProfileViewModel>(profile);
-        profileVMImpl->ElementToFocus(elementToFocus);
+        profileVMImpl->PutElementToFocus(elementToFocus);
 
         // Set the profile's 'CurrentPage' to the correct one, if this requires further navigation, the
         // event handler will do it
@@ -758,7 +750,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Pass along the element to focus to the ColorSchemesPageViewModel.
         // This will work as a staging area before we navigate to EditColorScheme
-        get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM)->ElementToFocus(elementToFocus);
+        get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM)->PutElementToFocus(elementToFocus);
 
         // Set CurrentScheme BEFORE the CurrentPage!
         // Doing so triggers the PropertyChanged event which performs the navigation to EditColorScheme

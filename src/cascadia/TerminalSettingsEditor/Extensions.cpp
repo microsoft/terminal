@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "Extensions.h"
-#include "NavigateToPageArgs.g.h"
 #include "Extensions.g.cpp"
 #include "ExtensionPackageViewModel.g.cpp"
 #include "ExtensionsViewModel.g.cpp"
