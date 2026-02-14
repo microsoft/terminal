@@ -21,6 +21,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         Automation::AutomationProperties::SetName(AddBellSoundButton(), RS_(L"Profile_AddBellSound/Text"));
+
+        // The XAML -> C++ converter seems to use floats instead of doubles, which means it
+        // can't represent large numbers accurately (lol!). So, we set the property manually.
+        HistorySizeBox().Maximum(static_cast<double>(til::CoordTypeMax / 2));
     }
 
     void Profiles_Advanced::OnNavigatedTo(const NavigationEventArgs& e)
