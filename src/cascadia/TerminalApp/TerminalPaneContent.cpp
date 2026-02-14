@@ -339,13 +339,31 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPaneContent::UpdateSettings(const CascadiaSettings& settings)
     {
+        const auto currentControlSettings{ _control.Settings() };
+        const auto currentStartingTitle{ currentControlSettings.StartingTitle() };
+        const auto profileStartingTitle{ !_profile.TabTitle().empty() ? _profile.TabTitle() : _profile.Name() };
+        const auto preserveRuntimeStartingTitle{ !currentStartingTitle.empty() && currentStartingTitle != profileStartingTitle };
+
         // Reload our profile from the settings model to propagate bell mode, icon, and close on exit mode (anything that uses _profile).
         const auto profile{ settings.FindProfile(_profile.Guid()) };
         _profile = profile ? profile : settings.ProfileDefaults();
 
-        if (const auto settings{ _cache->TryLookup(_profile) })
+        if (preserveRuntimeStartingTitle)
         {
-            _control.UpdateControlSettings(settings->DefaultSettings(), settings->UnfocusedSettings());
+            // GH#19340: preserve an explicit runtime title override (for example, from `wt --title`)
+            // across settings reload. Without this, title can snap back to the profile default.
+            NewTerminalArgs newTerminalArgs{};
+            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(_profile.Guid()));
+            newTerminalArgs.TabTitle(currentStartingTitle);
+
+            const TerminalSettingsPair overrideSettings{ winrt::Microsoft::Terminal::Settings::TerminalSettings::CreateWithNewTerminalArgs(settings, newTerminalArgs) };
+            _control.UpdateControlSettings(overrideSettings.DefaultSettings(), overrideSettings.UnfocusedSettings());
+            return;
+        }
+
+        if (const auto cachedSettings{ _cache->TryLookup(_profile) })
+        {
+            _control.UpdateControlSettings(cachedSettings->DefaultSettings(), cachedSettings->UnfocusedSettings());
         }
     }
 
