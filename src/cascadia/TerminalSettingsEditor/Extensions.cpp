@@ -8,6 +8,7 @@
 #include "ExtensionsViewModel.g.cpp"
 #include "FragmentProfileViewModel.g.cpp"
 #include "ExtensionPackageTemplateSelector.g.cpp"
+#include "NavConstants.h"
 
 #include "..\WinRTUtils\inc\Utils.h"
 
@@ -35,9 +36,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::ExtensionsViewModel>();
+
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
         vmImpl->LazyLoadExtensions();
+
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         if (vmImpl->IsExtensionView())
         {
@@ -451,6 +455,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // The enabled state of the extension has changed, notify the UI
             _NotifyChanges(L"Enabled");
         }
+    }
+
+    hstring ExtensionPackageViewModel::DisplayName() const noexcept
+    {
+        // Fragment extensions may not have a DisplayName, so fall back to Source
+        const auto displayName = _package.DisplayName();
+        return displayName.empty() ? _package.Source() : displayName;
+    }
+
+    hstring ExtensionPackageViewModel::Icon() const noexcept
+    {
+        // Fragment extensions may not have an Icon, so fall back to the extensions nav icon glyph
+        const auto icon = _package.Icon();
+        return icon.empty() ? NavTagIconMap[extensionsTag] : icon;
     }
 
     hstring ExtensionPackageViewModel::Scope() const noexcept
