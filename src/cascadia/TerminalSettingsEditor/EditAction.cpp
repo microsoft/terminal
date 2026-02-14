@@ -38,6 +38,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (auto kcVM{ args.try_as<KeyChordViewModel>() })
                     {
+                        // Force a layout update in case this key chord was newly added
+                        page->KeyChordListView().ScrollIntoView(*kcVM);
+                        page->KeyChordListView().UpdateLayout();
                         if (const auto& container = page->KeyChordListView().ContainerFromItem(*kcVM))
                         {
                             container.as<Controls::ListViewItem>().Focus(FocusState::Programmatic);
