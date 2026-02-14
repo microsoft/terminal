@@ -103,6 +103,7 @@ Author(s):
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
     X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                      \
     X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
+    X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                   \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \

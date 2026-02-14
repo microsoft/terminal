@@ -487,7 +487,7 @@ TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point p
 // True if the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
 bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
-    const auto inAltBuffer{ _mouseInputState.inAlternateBuffer };
+    const auto inAltBuffer{ _inAlternateBuffer };
     const auto inAltScroll{ _inputMode.test(Mode::AlternateScroll) };
     const auto wasMouseWheel{ (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0 };
     return inAltBuffer && inAltScroll && wasMouseWheel;
@@ -499,30 +499,28 @@ bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const s
 // - delta: The scroll wheel delta of the input event
 TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsigned int button, const short delta) const
 {
+    uint16_t vkey = 0;
+
     if (button == WM_MOUSEWHEEL)
     {
-        if (delta > 0)
-        {
-            return MakeOutput(_keyMap.at(VK_UP));
-        }
-        else
-        {
-            return MakeOutput(_keyMap.at(VK_DOWN));
-        }
+        vkey = delta > 0 ? VK_UP : VK_DOWN;
     }
     else if (button == WM_MOUSEHWHEEL)
     {
-        if (delta > 0)
-        {
-            return MakeOutput(_keyMap.at(VK_RIGHT));
-        }
-        else
-        {
-            return MakeOutput(_keyMap.at(VK_LEFT));
-        }
+        vkey = delta > 0 ? VK_RIGHT : VK_LEFT;
     }
     else
     {
         return {};
     }
+
+    const SanitizedKeyEvent key{
+        .virtualKey = vkey,
+    };
+    EncodingHelper enc;
+    _encodeRegular(enc, key);
+
+    std::wstring str;
+    _formatEncodingHelper(enc, str);
+    return str;
 }

@@ -670,6 +670,18 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
     case CsiActionCodes::DECPS_PlaySound:
         _dispatch->PlaySounds(parameters);
         break;
+    case CsiActionCodes::KKP_KittyKeyboardSet:
+        _dispatch->SetKittyKeyboardProtocol(parameters.at(0), parameters.at(1));
+        break;
+    case CsiActionCodes::KKP_KittyKeyboardQuery:
+        _dispatch->QueryKittyKeyboardProtocol();
+        break;
+    case CsiActionCodes::KKP_KittyKeyboardPush:
+        _dispatch->PushKittyKeyboardProtocol(parameters.at(0));
+        break;
+    case CsiActionCodes::KKP_KittyKeyboardPop:
+        _dispatch->PopKittyKeyboardProtocol(parameters.at(0));
+        break;
     default:
         break;
     }
