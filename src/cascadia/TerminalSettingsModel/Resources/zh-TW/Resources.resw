@@ -824,7 +824,7 @@
     <value>關閉選取範圍</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>單一行</value>
+    <value>單線</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>使用控制項順序</value>
@@ -914,7 +914,7 @@
     <value>監視</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>切換可見度</value>
+    <value>切換可見性</value>
   </data>
   <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
     <value>下拉式清單持續時間</value>

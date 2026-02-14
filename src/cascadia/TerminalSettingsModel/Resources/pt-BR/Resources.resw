@@ -821,28 +821,28 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Ignorar Seleção</value>
+    <value>Ignorar seleção</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Linha Única</value>
+    <value>Linha única</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
-    <value>Com Sequências de Controle</value>
+    <value>Com sequências de controle</value>
   </data>
   <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
-    <value>Copiar Formatação</value>
+    <value>Copiar a formatação</value>
   </data>
   <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Índice de Guia</value>
+    <value>Índice da guia</value>
   </data>
   <data name="WindowActionArgumentLocalized" xml:space="preserve">
     <value>Janela</value>
   </data>
   <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Direção do Redimensionamento</value>
+    <value>Direção do redimensionamento</value>
   </data>
   <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Direção do Foco</value>
+    <value>Direção do foco</value>
   </data>
   <data name="DirectionActionArgumentLocalized" xml:space="preserve">
     <value>Direção</value>
@@ -857,16 +857,16 @@
     <value>Destino</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>Está no Modo de Foco</value>
+    <value>Está no modo de foco</value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
-    <value>Está Maximizado</value>
+    <value>Está maximizado</value>
   </data>
   <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
-    <value>Está em Tela Inteira</value>
+    <value>Está em tela inteira</value>
   </data>
   <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
-    <value>Nome do Esquema</value>
+    <value>Nome do esquema</value>
   </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
     <value>Cor da Guia</value>
@@ -881,28 +881,28 @@
     <value>Índice</value>
   </data>
   <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
-    <value>Linhas para Rolagem</value>
+    <value>Linhas para rolar</value>
   </data>
   <data name="ColorActionArgumentLocalized" xml:space="preserve">
     <value>Cor</value>
   </data>
   <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Modo de Inicialização</value>
+    <value>Modo de inicialização</value>
   </data>
   <data name="NameActionArgumentLocalized" xml:space="preserve">
     <value>Nome</value>
   </data>
   <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
-    <value>Pressionar Tecla Simultaneamente</value>
+    <value>Pressionar simultaneamente</value>
   </data>
   <data name="SourceActionArgumentLocalized" xml:space="preserve">
     <value>Fonte</value>
   </data>
   <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
-    <value>Usar Linha de Comando</value>
+    <value>Usar linha de comando</value>
   </data>
   <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
-    <value>Modo do Alternador</value>
+    <value>Modo de alternância</value>
   </data>
   <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
     <value>URL da consulta</value>
@@ -914,7 +914,7 @@
     <value>Monitorar</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>Ativar/Desativar Visibilidade</value>
+    <value>Alternar visibilidade</value>
   </data>
   <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
     <value>Duração do menu suspenso</value>
@@ -941,39 +941,39 @@
     <value>Tela de Fundo</value>
   </data>
   <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Modo de Correspondência</value>
+    <value>Modo corresp</value>
   </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
-    <value>Diretório Inicial</value>
+    <value>Diretório inicial</value>
   </data>
   <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Título da Guia</value>
+    <value>Título da guia</value>
   </data>
   <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Índice do Perfil</value>
+    <value>Índice do perfil</value>
   </data>
   <data name="ProfileActionArgumentLocalized" xml:space="preserve">
     <value>Perfil</value>
   </data>
   <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Suprimir Título do Aplicativo</value>
+    <value>Suprimir o título do aplicativo</value>
   </data>
   <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
-    <value>Esquema de Cores</value>
+    <value>Esquema de cores</value>
   </data>
   <data name="ElevateActionArgumentLocalized" xml:space="preserve">
     <value>Elevar</value>
   </data>
   <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
-    <value>Recarregar Variáveis de Ambiente</value>
+    <value>Recarregar variáveis de ambiente</value>
   </data>
   <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Direção da Divisão</value>
+    <value>Direção da divisão</value>
   </data>
   <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
-    <value>Modo de Divisão</value>
+    <value>Modo de divisão</value>
   </data>
   <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
-    <value>Tamanho da Divisão</value>
+    <value>Tamanho da divisão</value>
   </data>
 </root>

@@ -821,7 +821,7 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>关闭选择</value>
+    <value>消除选择</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
     <value>单行</value>
@@ -857,7 +857,7 @@
     <value>目标</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>专注模式</value>
+    <value>焦点模式</value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
     <value>已最大化</value>
