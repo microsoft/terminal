@@ -16,6 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _settings{ settings }
     {
         INITIALIZE_BINDABLE_ENUM_SETTING(TextMeasurement, TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, L"Globals_TextMeasurement_", L"Text");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth, L"Globals_AmbiguousWidth_", L"Text");
     }
 
     bool CompatibilityViewModel::DebugFeaturesAvailable() const noexcept
