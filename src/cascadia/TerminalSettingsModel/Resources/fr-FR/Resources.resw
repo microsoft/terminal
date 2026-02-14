@@ -820,29 +820,11 @@
     <value>Générateur de profil d’hôte SSH</value>
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
-  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Annuler la sélection</value>
-  </data>
-  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Une ligne</value>
-  </data>
-  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
-    <value>Avec des séquences de contrôle</value>
-  </data>
   <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
-    <value>Copier la mise en forme</value>
-  </data>
-  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Index de l’onglet</value>
+    <value>Copiez la mise en forme</value>
   </data>
   <data name="WindowActionArgumentLocalized" xml:space="preserve">
     <value>Fenêtre</value>
-  </data>
-  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Direction de redimensionnement</value>
-  </data>
-  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Direction du focus</value>
   </data>
   <data name="DirectionActionArgumentLocalized" xml:space="preserve">
     <value>Orientation</value>
@@ -856,20 +838,8 @@
   <data name="TargetActionArgumentLocalized" xml:space="preserve">
     <value>Cible</value>
   </data>
-  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>Est en mode Focus</value>
-  </data>
-  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
-    <value>Est agrandi</value>
-  </data>
-  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
-    <value>Est en mode Plein écran</value>
-  </data>
-  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
-    <value>Nom du schéma</value>
-  </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
-    <value>Couleur d’onglet</value>
+    <value>Couleur de l'onglet</value>
   </data>
   <data name="TitleActionArgumentLocalized" xml:space="preserve">
     <value>Titre</value>
@@ -880,9 +850,6 @@
   <data name="IndexActionArgumentLocalized" xml:space="preserve">
     <value>Index</value>
   </data>
-  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
-    <value>Lignes à faire défiler</value>
-  </data>
   <data name="ColorActionArgumentLocalized" xml:space="preserve">
     <value>Couleur</value>
   </data>
@@ -892,17 +859,8 @@
   <data name="NameActionArgumentLocalized" xml:space="preserve">
     <value>Nom</value>
   </data>
-  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
-    <value>Accord de touches</value>
-  </data>
   <data name="SourceActionArgumentLocalized" xml:space="preserve">
     <value>Source</value>
-  </data>
-  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
-    <value>Utiliser la ligne de commande</value>
-  </data>
-  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
-    <value>Mode sélecteur</value>
   </data>
   <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
     <value>URL de requête</value>
@@ -914,10 +872,7 @@
     <value>Superviser</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>Changer la visibilité</value>
-  </data>
-  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
-    <value>Durée du menu déroulant</value>
+    <value>Activer/désactiver la visibilité</value>
   </data>
   <data name="IdActionArgumentLocalized" xml:space="preserve">
     <value>ID</value>
@@ -940,40 +895,19 @@
   <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
     <value>Arrière-plan</value>
   </data>
-  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Mode de correspondance</value>
-  </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
     <value>Répertoire de démarrage</value>
   </data>
   <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
     <value>Titre de l’onglet</value>
   </data>
-  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Index du profil</value>
-  </data>
   <data name="ProfileActionArgumentLocalized" xml:space="preserve">
     <value>Profil</value>
   </data>
-  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Masquer le titre de l’application</value>
-  </data>
   <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
-    <value>Modèle de couleurs</value>
+    <value>Jeu de couleurs</value>
   </data>
   <data name="ElevateActionArgumentLocalized" xml:space="preserve">
     <value>Élever</value>
-  </data>
-  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
-    <value>Recharger les variables d’environnement</value>
-  </data>
-  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Direction du fractionnement</value>
-  </data>
-  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
-    <value>Mode fractionné</value>
-  </data>
-  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
-    <value>Taille fractionnée</value>
   </data>
 </root>

@@ -824,7 +824,7 @@
     <value>선택 영역 해제</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>한 줄</value>
+    <value>단일 줄</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>컨트롤 시퀀스 포함</value>
