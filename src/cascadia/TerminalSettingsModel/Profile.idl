@@ -93,5 +93,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
 
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
+        INHERITABLE_PROFILE_SETTING(String, DragDropDelimiter);
     }
 }
