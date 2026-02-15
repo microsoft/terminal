@@ -66,6 +66,7 @@ private:
     void _setupGlobalHotkeys();
     void _setupSessionPersistence(bool enabled);
     void _persistState(const winrt::Microsoft::Terminal::Settings::Model::ApplicationState& state) const;
+    std::unordered_set<std::wstring, til::transparent_hstring_hash, til::transparent_hstring_equal_to> _persistBuffers() const;
     void _finalizeSessionPersistence() const;
     void _checkWindowsForNotificationIcon();
 
