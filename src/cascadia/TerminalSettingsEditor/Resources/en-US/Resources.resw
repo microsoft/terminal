@@ -951,6 +951,14 @@
     <value>Filled box ( █ )</value>
     <comment>{Locked="█"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a filled box. The character in the parentheses is used to show what it looks like.</comment>
   </data>
+  <data name="Profile_CursorShapeRoundedFilledBox.Content" xml:space="preserve">
+    <value>Rounded filled box ( ⬮ )</value>
+    <comment>{Locked="⬮"} An option to choose the rounded filled box cursor shape</comment>
+  </data>
+  <data name="Profile_CursorShapeRoundedEmptyBox.Content" xml:space="preserve">
+    <value>Rounded empty box ( ⬯ )</value>
+    <comment>{Locked="⬯"} An option to choose the rounded empty box cursor shape</comment>
+  </data>
   <data name="Profile_CursorShapeUnderscore.Content" xml:space="preserve">
     <value>Underscore ( ▁ )</value>
     <comment>{Locked="▁"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like an underscore. The character in the parentheses is used to show what it looks like.</comment>

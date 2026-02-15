@@ -2018,6 +2018,156 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
         }
         case CursorType::FullBox:
             break;
+        case CursorType::RoundedFullBox:
+        {
+            const auto originalX = c0.position.x;
+            const auto originalY = c0.position.y;
+            const auto originalWidth = c0.size.x;
+            const auto originalHeight = c0.size.y;
+
+            const auto radiusF = static_cast<float>(std::min(originalWidth, originalHeight)) / 4.0f;
+            const auto radius = static_cast<u16>(radiusF);
+
+            if (radius > 1)
+            {
+                for (u16 i = 0; i < radius; ++i)
+                {
+                    float y = static_cast<float>(i);
+                    float x = radiusF - sqrtf(radiusF * radiusF - (radiusF - y) * (radiusF - y));
+                    const auto inset = static_cast<u16>(x + 0.5f);
+
+                    if (originalWidth > 2 * inset)
+                    {
+                        auto& top = _cursorRects.emplace_back();
+                        top.position = { static_cast<i16>(originalX + inset), static_cast<i16>(originalY + i) };
+                        top.size = { static_cast<u16>(originalWidth - 2 * inset), 1 };
+                        top.background = c0.background;
+                        top.foreground = c0.foreground;
+
+                        auto& bottom = _cursorRects.emplace_back();
+                        bottom.position = { static_cast<i16>(originalX + inset), static_cast<i16>(originalY + originalHeight - i - 1) };
+                        bottom.size = { static_cast<u16>(originalWidth - 2 * inset), 1 };
+                        bottom.background = c0.background;
+                        bottom.foreground = c0.foreground;
+                    }
+                }
+
+                c0.position.y += radius;
+                c0.size.y -= 2 * radius;
+            }
+            break;
+        }
+        case CursorType::RoundedEmptyBox:
+        {
+            const auto originalX = c0.position.x;
+            const auto originalY = c0.position.y;
+            const auto originalWidth = c0.size.x;
+            const auto originalHeight = c0.size.y;
+            const auto radiusF = static_cast<float>(std::min(originalWidth, originalHeight)) / 4.0f;
+            const auto radius = static_cast<u16>(radiusF);
+            const auto lineWidth = p.s->font->thinLineWidth;
+
+            if (radius > 1)
+            {
+                for (u16 i = 0; i < lineWidth; ++i)
+                {
+                    auto& top = _cursorRects.emplace_back();
+                    top.position = { static_cast<i16>(originalX + radius), static_cast<i16>(originalY + i) };
+                    top.size = { static_cast<u16>(originalWidth - 2 * radius), 1 };
+                    top.background = c0.background;
+                    top.foreground = c0.foreground;
+
+                    auto& bottom = _cursorRects.emplace_back();
+                    bottom.position = { static_cast<i16>(originalX + radius), static_cast<i16>(originalY + originalHeight - i - 1) };
+                    bottom.size = { static_cast<u16>(originalWidth - 2 * radius), 1 };
+                    bottom.background = c0.background;
+                    bottom.foreground = c0.foreground;
+                }
+
+                if (x0 == p.cursorRect.left)
+                {
+                    for (u16 i = 0; i < lineWidth; ++i)
+                    {
+                        auto& left = _cursorRects.emplace_back();
+                        left.position = { static_cast<i16>(originalX + i), static_cast<i16>(originalY + radius) };
+                        left.size = { 1, static_cast<u16>(originalHeight - 2 * radius) };
+                        left.background = c0.background;
+                        left.foreground = c0.foreground;
+                    }
+                }
+
+                if (x1 == p.cursorRect.right)
+                {
+                    for (u16 i = 0; i < lineWidth; ++i)
+                    {
+                        auto& right = _cursorRects.emplace_back();
+                        right.position = { static_cast<i16>(originalX + originalWidth - i - 1), static_cast<i16>(originalY + radius) };
+                        right.size = { 1, static_cast<u16>(originalHeight - 2 * radius) };
+                        right.background = c0.background;
+                        right.foreground = c0.foreground;
+                    }
+                }
+
+                for (u16 i = 0; i < radius; ++i)
+                {
+                    float y = static_cast<float>(i);
+                    float x = radiusF - sqrtf(radiusF * radiusF - (radiusF - y) * (radiusF - y));
+                    const auto inset = static_cast<u16>(x + 0.5f);
+
+                    for (u16 j = 0; j < lineWidth && (inset + j) < radius; ++j)
+                    {
+                        auto& tl = _cursorRects.emplace_back();
+                        tl.position = { static_cast<i16>(originalX + inset + j), static_cast<i16>(originalY + i) };
+                        tl.size = { 1, 1 };
+                        tl.background = c0.background;
+                        tl.foreground = c0.foreground;
+
+                        auto& tr = _cursorRects.emplace_back();
+                        tr.position = { static_cast<i16>(originalX + originalWidth - inset - j - 1), static_cast<i16>(originalY + i) };
+                        tr.size = { 1, 1 };
+                        tr.background = c0.background;
+                        tr.foreground = c0.foreground;
+
+                        auto& bl = _cursorRects.emplace_back();
+                        bl.position = { static_cast<i16>(originalX + inset + j), static_cast<i16>(originalY + originalHeight - i - 1) };
+                        bl.size = { 1, 1 };
+                        bl.background = c0.background;
+                        bl.foreground = c0.foreground;
+
+                        auto& br = _cursorRects.emplace_back();
+                        br.position = { static_cast<i16>(originalX + originalWidth - inset - j - 1), static_cast<i16>(originalY + originalHeight - i - 1) };
+                        br.size = { 1, 1 };
+                        br.background = c0.background;
+                        br.foreground = c0.foreground;
+                    }
+                }
+
+                c0.size = { 0, 0 };
+            }
+            else
+            {
+                auto& c1 = _cursorRects.emplace_back(c0);
+                if (x0 == p.cursorRect.left)
+                {
+                    auto& c = _cursorRects.emplace_back(c0);
+                    c.position.y += lineWidth;
+                    c.size.y -= 2 * lineWidth;
+                    c.size.x = lineWidth;
+                }
+                if (x1 == p.cursorRect.right)
+                {
+                    auto& c = _cursorRects.emplace_back(c0);
+                    c.position.y += lineWidth;
+                    c.size.y -= 2 * lineWidth;
+                    c.position.x += c.size.x - lineWidth;
+                    c.size.x = lineWidth;
+                }
+                c0.size.y = lineWidth;
+                c1.position.y += c1.size.y - lineWidth;
+                c1.size.y = lineWidth;
+            }
+            break;
+        }
         case CursorType::DoubleUnderscore:
         {
             auto& c1 = _cursorRects.emplace_back(c0);
