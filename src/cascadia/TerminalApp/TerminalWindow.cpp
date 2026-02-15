@@ -1332,26 +1332,24 @@ namespace winrt::TerminalApp::implementation
 
         if (!FocusMode())
         {
-            if (!_settings.GlobalSettings().AlwaysShowTabs())
+            const auto tabsInTitlebar = _settings.GlobalSettings().ShowTabsInTitlebar();
+            const auto tabRowVisible = _root ? _root->IsTabRowVisible() :
+                                               (_settings.GlobalSettings().AlwaysShowTabs() || tabsInTitlebar);
+
+            static constexpr auto titlebarHeight = 10;
+            static constexpr auto titlebarAndTabBarHeight = 40;
+
+            if (tabRowVisible)
             {
-                // Hide the title bar = off, Always show tabs = off.
-                static constexpr auto titlebarHeight = 10;
-                pixelSize.Height += (titlebarHeight)*scale;
+                pixelSize.Height += titlebarAndTabBarHeight * scale;
             }
-            else if (!_settings.GlobalSettings().ShowTabsInTitlebar())
+            else if (!tabsInTitlebar)
             {
-                // Hide the title bar = off, Always show tabs = on.
-                static constexpr auto titlebarAndTabBarHeight = 40;
-                pixelSize.Height += (titlebarAndTabBarHeight)*scale;
+                pixelSize.Height += titlebarHeight * scale;
             }
-            // Hide the title bar = on, Always show tabs = on.
-            // In this case, we don't add any height because
-            // NonClientIslandWindow::GetTotalNonClientExclusiveSize() gets
-            // called in AppHost::_resizeWindow and it already takes title bar
-            // height into account.  In other cases above
-            // IslandWindow::GetTotalNonClientExclusiveSize() is called, and it
-            // doesn't take the title bar height into account, so we have to do
-            // the calculation manually.
+            // When tabs are hosted in the title bar but not visible we don't
+            // need to adjust the size – the non-client window chrome already
+            // accounts for it.
         }
 
         args.Width(static_cast<int32_t>(pixelSize.Width));
