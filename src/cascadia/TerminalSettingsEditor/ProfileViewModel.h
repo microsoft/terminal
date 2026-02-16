@@ -4,7 +4,6 @@
 #pragma once
 
 #include "DeleteProfileEventArgs.g.h"
-#include "NavigateToProfileArgs.g.h"
 #include "BellSoundViewModel.g.h"
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
@@ -12,21 +11,6 @@
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct NavigateToProfileArgs : NavigateToProfileArgsT<NavigateToProfileArgs>
-    {
-    public:
-        NavigateToProfileArgs(ProfileViewModel profile, Editor::IHostedInWindow windowRoot) :
-            _Profile(profile),
-            _WeakWindowRoot(windowRoot) {}
-
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot ? _WeakWindowRoot.get() : nullptr; }
-        Editor::ProfileViewModel Profile() const noexcept { return _Profile; }
-
-    private:
-        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot;
-        Editor::ProfileViewModel _Profile{ nullptr };
-    };
-
     struct BellSoundViewModel : BellSoundViewModelT<BellSoundViewModel>, ViewModelHelper<BellSoundViewModel>
     {
     public:

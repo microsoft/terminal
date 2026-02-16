@@ -1770,6 +1770,10 @@
     <value>Keybindings</value>
     <comment>Name for a control which contains the list of keybindings for the current command.</comment>
   </data>
+  <data name="Actions_CommandDetails.Text" xml:space="preserve">
+    <value>Command details</value>
+    <comment>Label for the list of editable command details for the current command. This includes the command name and the shortcut action type.</comment>
+  </data>
   <data name="Actions_Arguments.Text" xml:space="preserve">
     <value>Additional arguments</value>
     <comment>Label for the list of editable arguments for the currently selected action.</comment>
@@ -1781,6 +1785,10 @@
   <data name="Actions_AddKeyChord.Text" xml:space="preserve">
     <value>Add keybinding</value>
     <comment>Button label that adds a keybinding to the current action.</comment>
+  </data>
+  <data name="Actions_AdditionalKeyChords" xml:space="preserve">
+    <value>and {} more</value>
+    <comment>Text that will be read out by a screen reader indicating that additional keybindings exist for this command. {} will be replaced by the number of additional keybindings.</comment>
   </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete key binding</value>

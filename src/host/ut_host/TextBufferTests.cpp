@@ -2774,6 +2774,12 @@ void TextBufferTests::ReflowPromptRegions()
 
     INIT_TEST_PROPERTY(int, dx, L"The change in width of the buffer");
 
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto* tbi = &si.GetTextBuffer();

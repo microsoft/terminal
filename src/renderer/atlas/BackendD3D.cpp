@@ -12,7 +12,7 @@
 #include <shader_vs.h>
 
 #include "BuiltinGlyphs.h"
-#include "dwrite.h"
+#include "dwrite_helpers.h"
 #include "wic.h"
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/convert.hpp"

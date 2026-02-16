@@ -37,7 +37,6 @@ Abstract:
 #pragma once
 
 #include "ActionsViewModel.g.h"
-#include "NavigateToCommandArgs.g.h"
 #include "CommandViewModel.g.h"
 #include "ArgWrapper.g.h"
 #include "ActionArgsViewModel.g.h"
@@ -48,21 +47,6 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct NavigateToCommandArgs : NavigateToCommandArgsT<NavigateToCommandArgs>
-    {
-    public:
-        NavigateToCommandArgs(CommandViewModel command, Editor::IHostedInWindow windowRoot) :
-            _Command(command),
-            _WeakWindowRoot(windowRoot) {}
-
-        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
-        Editor::CommandViewModel Command() const noexcept { return _Command; }
-
-    private:
-        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot;
-        Editor::CommandViewModel _Command{ nullptr };
-    };
-
     struct ModifyKeyChordEventArgs : ModifyKeyChordEventArgsT<ModifyKeyChordEventArgs>
     {
     public:
@@ -90,6 +74,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring DisplayNameAndKeyChordAutomationPropName();
 
         winrt::hstring FirstKeyChordText();
+        winrt::hstring AdditionalKeyChordCountText();
+        winrt::hstring AdditionalKeyChordTooltipText();
 
         winrt::hstring ID();
         bool IsUserAction();

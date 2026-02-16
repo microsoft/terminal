@@ -14,12 +14,6 @@ import "ColorSchemesPageViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass NavigateToProfileArgs
-    {
-        ProfileViewModel Profile { get; };
-        IHostedInWindow WindowRoot { get; };
-    }
-
     runtimeclass DeleteProfileEventArgs
     {
         Guid ProfileGuid { get; };
