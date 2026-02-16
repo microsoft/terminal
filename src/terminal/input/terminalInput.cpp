@@ -1223,6 +1223,14 @@ void TerminalInput::_formatFallback(KeyboardHelper& kbd, const EncodingHelper& e
     // this only makes sense if there were actually modifiers pressed.
     else if (anyAltPressed || WI_IsAnyFlagSet(key.controlKeyState, CTRL_PRESSED))
     {
+        // IMPORTANT NOTE: This implicitly, reliably rejects dead keys for us (good!).
+        //
+        // ToUnicodeEx() is documented to return <0 for dead keys, and that's true, but if you already
+        // pressed it once and we call ToUnicodeEx here again it's like pressing it a second time.
+        // This causes ToUnicodeEx to return length=2 and the dead key character twice.
+        //
+        // (!) ...but because getUnmodifiedKeyboardKey only supports returning exactly
+        // 1 codepoint it returns InvalidCodepoint in that case and we reject it.
         codepoint = kbd.getUnmodifiedKeyboardKey(key);
         if (codepoint >= InvalidCodepoint)
         {
