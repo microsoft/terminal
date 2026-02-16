@@ -131,7 +131,7 @@ bool MacroBuffer::ParseDefinition(const std::wstring_view str)
         // Any other control characters are just ignored.
         if (ch < L' ')
         {
-            return true;
+            continue;
         }
 
         // For "text encoded" macros, we'll always be in the ExpectingText state.
