@@ -117,6 +117,14 @@ using namespace Microsoft::Console::Interactivity;
         CATCH_RETURN();
     }
 
+    // TODO GH#19847: Avoid translating win32im sequences to Kitty Keyboard Protocol temporarily.
+    // This is because as of this writing, our implementation is brand new, and Windows Terminal
+    // needs a toggle to disable it. That only works if ConPTY then doesn't do it anyway.
+    if (const auto inputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().pInputBuffer)
+    {
+        inputBuffer->GetTerminalInput().ForceDisableKittyKeyboardProtocol(true);
+    }
+
     // The only way we're initialized is if the args said we're in conpty mode.
     // If the args say so, then at least one of in, out, or signal was specified
     _state = State::Initialized;
