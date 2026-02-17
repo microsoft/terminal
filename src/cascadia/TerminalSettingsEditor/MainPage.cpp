@@ -212,7 +212,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _breadcrumbs = single_threaded_observable_vector<IInspectable>();
         _UpdateSearchIndex();
-        extensionsVMImpl->LazyLoadExtensions();
     }
 
     // Method Description:
