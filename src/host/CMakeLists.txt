@@ -3,11 +3,11 @@ target_sources(conhost
 	PRIVATE
 		_output.cpp
 		_stream.cpp
+		AccessibilityNotifier.cpp
 		alias.cpp
 		cmdline.cpp
 		ConsoleArguments.cpp
 		consoleInformation.cpp
-		CursorBlinker.cpp
 		dbcs.cpp
 		directio.cpp
 		getset.cpp
@@ -52,6 +52,7 @@ target_sources(conhost
 target_include_directories(conhost
 	PRIVATE
 		.
+		"$<TARGET_PROPERTY:ConCOMProxy,INTERFACE_INCLUDE_DIRECTORIES>"
 )
 
 find_package(fmt CONFIG REQUIRED)
@@ -81,6 +82,7 @@ target_link_libraries(conhost
 
 		onecoreuap_apiset.lib
 		usp10.lib
+		imm32.lib
 		winmm.lib
 		ntdll.lib
 )

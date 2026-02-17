@@ -9,7 +9,6 @@ target_sources(ConRenderBase
 		RenderEngineBase.cpp
 		renderer.cpp
 		RenderSettings.cpp
-		thread.cpp
 )
 
 target_precompile_headers(ConRenderBase

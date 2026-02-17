@@ -14,7 +14,7 @@ target_sources(ConRenderAtlas
 		BackendD2D.cpp
 		BackendD3D.cpp
 		BuiltinGlyphs.cpp
-		dwrite.cpp
+		dwrite_helpers.cpp
 		DWriteTextAnalysis.cpp
 		stb_rect_pack.cpp
 		wic.cpp

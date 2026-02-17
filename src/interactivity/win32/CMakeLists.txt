@@ -1,7 +1,6 @@
 add_library(ConInteractivityWin32)
 target_sources(ConInteractivityWin32
 	PRIVATE
-		AccessibilityNotifier.cpp
 		Clipboard.cpp
 		ConsoleControl.cpp
 		ConsoleInputThread.cpp
