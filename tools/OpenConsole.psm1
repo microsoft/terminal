@@ -1,3 +1,4 @@
+#Requires -Version 7
 
 # The project's root directory.
 $script:OpenConsoleFallbackRoot="$PSScriptRoot\.."
@@ -82,6 +83,7 @@ function Set-MsbuildDevEnvironment
     switch ($env:PROCESSOR_ARCHITECTURE) {
         "amd64" { $arch = "x64" }
         "x86" { $arch = "x86" }
+        "arm64" { $arch = "arm64" }
         default { throw "Unknown architecture: $switch" }
     }
 
@@ -169,7 +171,7 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
-        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'unitSettingsModel', 'unitRemoting', 'unitControl', 'winconpty')]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'unitSettingsModel', 'unitControl', 'winconpty')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
@@ -198,7 +200,7 @@ function Invoke-OpenConsoleTests()
         $OpenConsolePlatform = 'Win32'
     }
     $OpenConsolePath = "$root\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $TaefExePath = "$root\packages\Microsoft.Taef.10.93.240607003\build\Binaries\$Platform\te.exe"
+    $TaefExePath = "$root\packages\Microsoft.Taef.10.100.251104001\build\Binaries\$Platform\te.exe"
     $BinDir = "$root\bin\$OpenConsolePlatform\$Configuration"
 
     [xml]$TestConfig = Get-Content "$root\tools\tests.xml"
@@ -262,13 +264,13 @@ function Invoke-OpenConsoleTests()
 
 
 #.SYNOPSIS
-# Builds OpenConsole.sln using msbuild. Any arguments get passed on to msbuild.
+# Builds OpenConsole.slnx using msbuild. Any arguments get passed on to msbuild.
 function Invoke-OpenConsoleBuild()
 {
     $root = Find-OpenConsoleRoot
-    & "$root\dep\nuget\nuget.exe" restore "$root\OpenConsole.sln"
+    & "$root\dep\nuget\nuget.exe" restore "$root\OpenConsole.slnx"
     & "$root\dep\nuget\nuget.exe" restore "$root\dep\nuget\packages.config"
-    msbuild.exe "$root\OpenConsole.sln" @args
+    msbuild.exe "$root\OpenConsole.slnx" @args
 }
 
 #.SYNOPSIS
@@ -414,28 +416,19 @@ function Invoke-CodeFormat() {
         [switch]$IgnoreXaml
     )
 
+    $clangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -find "**\x64\bin\clang-format.exe"
+    If ([String]::IsNullOrEmpty($clangFormatPath)) {
+        Write-Error "No Visual Studio-supplied version of clang-format could be found."
+    }
+
     $root = Find-OpenConsoleRoot
-    & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
-    $clangPackage = ([xml](Get-Content "$root\tools\packages.config")).packages.package | Where-Object id -like "clang-format*"
-    $clangFormatPath = "$root\packages\$($clangPackage.id).$($clangPackage.version)\tools\clang-format.exe"
     Get-ChildItem -Recurse "$root\src" -Include *.cpp, *.hpp, *.h |
       Where FullName -NotLike "*Generated Files*" |
       Invoke-ClangFormat -ClangFormatPath $clangFormatPath
 
-    if ($IgnoreXaml) {
-        # do nothing
-    }
-    else {
+    if (-Not $IgnoreXaml) {
         Invoke-XamlFormat
     }
 }
 
-#.SYNOPSIS
-# Download clang-format.exe required for code formatting
-function Get-Format()
-{
-    $root = Find-OpenConsoleRoot
-    & "$root\dep\nuget\nuget.exe" restore "$root\tools\packages.config"
-}
-
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Format
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat

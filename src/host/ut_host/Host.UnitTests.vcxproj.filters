@@ -83,7 +83,7 @@
     <ClInclude Include="..\precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\CommonState.hpp">
+    <ClInclude Include="..\..\inc\test\CommonState.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

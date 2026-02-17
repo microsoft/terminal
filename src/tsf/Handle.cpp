@@ -12,8 +12,22 @@ Handle Handle::Create()
 {
     Handle handle;
     handle._impl = new Implementation();
-    handle._impl->Initialize();
+    if (!handle._impl->Initialize())
+    {
+        delete handle._impl;
+        handle._impl = nullptr;
+    }
     return handle;
+}
+
+void Handle::AvoidBuggyTSFConsoleFlags()
+{
+    Implementation::AvoidBuggyTSFConsoleFlags();
+}
+
+void Handle::SetDefaultScopeAlphanumericHalfWidth(bool enable)
+{
+    Implementation::SetDefaultScopeAlphanumericHalfWidth(enable);
 }
 
 Handle::~Handle()

@@ -89,15 +89,19 @@ static bool operator==(const Ss3ToVkey& pair, const Ss3ActionCodes code) noexcep
     return pair.action == code;
 }
 
-InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR) :
+InputStateMachineEngine::InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch) :
     _pDispatch(std::move(pDispatch)),
-    _lookingForDSR(lookingForDSR),
     _doubleClickTime(std::chrono::milliseconds(GetDoubleClickTime()))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _pDispatch.get());
 }
 
-til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DWORD timeout) const noexcept
+void InputStateMachineEngine::CaptureNextCursorPositionReport() noexcept
+{
+    _captureNextCursorPositionReport.store(true, std::memory_order_relaxed);
+}
+
+til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DWORD timeout) noexcept
 {
     uint64_t val = 0;
 
@@ -117,6 +121,10 @@ til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DW
             break;
         }
     }
+
+    // VtIo first sends a DSR CPR and then a DA1 request.
+    // If we encountered a DA1 response here, the DSR request is definitely done now.
+    _captureNextCursorPositionReport.store(false, std::memory_order_relaxed);
 
     return til::enumset<DeviceAttribute, uint64_t>::from_bits(val);
 }
@@ -293,27 +301,10 @@ bool InputStateMachineEngine::ActionPrintString(const std::wstring_view string)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view string)
 {
-    if (string.empty())
+    if (!string.empty())
     {
-        return true;
+        _pDispatch->WriteStringRaw(string);
     }
-
-    if (_pDispatch->IsVtInputEnabled())
-    {
-        // Synthesize string into key events that we'll write to the buffer
-        // similar to TerminalInput::_SendInputSequence
-        InputEventQueue inputEvents;
-        for (const auto& wch : string)
-        {
-            inputEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
-        }
-        _pDispatch->WriteInput(inputEvents);
-    }
-    else
-    {
-        _pDispatch->WriteString(string);
-    }
-
     return true;
 }
 
@@ -327,6 +318,16 @@ bool InputStateMachineEngine::ActionPassThroughString(const std::wstring_view st
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
+    // If the _expectingStringTerminator flag is set, that means we've been
+    // processing a DCS sequence and are waiting for the string terminator.
+    // Once we receive the ST sequence here, we can return false to force the
+    // buffered DCS content to be flushed.
+    if (_expectingStringTerminator && id == VTID("\\"))
+    {
+        _expectingStringTerminator = false;
+        return false;
+    }
+
     if (_pDispatch->IsVtInputEnabled())
     {
         return false;
@@ -390,19 +391,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     //
     // Focus events in conpty are special, so don't flush those through either.
     // See GH#12799, GH#12900 for details
-    if (_pDispatch->IsVtInputEnabled() &&
-        id != CsiActionCodes::Win32KeyboardInput &&
-        id != CsiActionCodes::FocusIn &&
-        id != CsiActionCodes::FocusOut)
-    {
-        return false;
-    }
+    const auto vtInputEnabled = _pDispatch->IsVtInputEnabled();
 
     switch (id)
     {
     case CsiActionCodes::MouseDown:
     case CsiActionCodes::MouseUp:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
+
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
         const auto firstParameter = parameters.at(0).value_or(0);
@@ -420,17 +420,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // The F3 case is special - it shares a code with the DeviceStatusResponse.
         // If we're looking for that response, then do that, and break out.
         // Else, fall though to the _GetCursorKeysModifierState handler.
-        if (_lookingForDSR)
+        if (_captureNextCursorPositionReport.exchange(false, std::memory_order_relaxed))
         {
             _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
-            // Right now we're only looking for on initial cursor
-            //      position response. After that, only look for F3.
-            _lookingForDSR = false;
             return true;
         }
         // Heuristic: If the hosting terminal used the win32 input mode, chances are high
         // that this is a CPR requested by the terminal application as opposed to a F3 key.
         if (_encounteredWin32InputModeSequence)
+        {
+            return false;
+        }
+        if (vtInputEnabled)
         {
             return false;
         }
@@ -445,6 +446,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         short vkey = 0;
         if (_GetCursorKeysVkey(id, vkey))
         {
@@ -455,6 +460,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
     }
     case CsiActionCodes::Generic:
     {
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         short vkey = 0;
         if (_GetGenericVkey(parameters.at(0), vkey))
         {
@@ -464,6 +473,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         return true;
     }
     case CsiActionCodes::CursorBackTab:
+        if (vtInputEnabled)
+        {
+            return false;
+        }
         _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
         return true;
     case CsiActionCodes::FocusIn:
@@ -478,23 +491,26 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
         // We catch it here and store the information for later retrieval.
         if (_deviceAttributes.load(std::memory_order_relaxed) == 0)
         {
-            til::enumset<DeviceAttribute, uint64_t> attributes;
+            til::enumset<DeviceAttribute, uint64_t> attributes{ DeviceAttribute::__some__ };
 
             // The first parameter denotes the conformance level.
-            if (parameters.at(0).value() >= 61)
+            const auto len = parameters.size();
+            if (len >= 2 && parameters.at(0).value() >= 61)
             {
-                parameters.subspan(1).for_each([&](auto p) {
-                    attributes.set(static_cast<DeviceAttribute>(p));
-                    return true;
-                });
+                // NOTE: VTParameters::for_each will replace empty spans with a single default value.
+                // This means we could not distinguish between no parameters and a single default parameter.
+                for (size_t i = 1; i < len; i++)
+                {
+                    const auto value = parameters.at(i).value();
+                    if (value > 0 && value < 64)
+                    {
+                        attributes.set(static_cast<DeviceAttribute>(value));
+                    }
+                }
             }
 
             _deviceAttributes.fetch_or(attributes.bits(), std::memory_order_relaxed);
             til::atomic_notify_all(_deviceAttributes);
-
-            // VtIo first sends a DSR CPR and then a DA1 request.
-            // If we encountered a DA1 response here, the DSR request is definitely done now.
-            _lookingForDSR = false;
             return true;
         }
         return false;
@@ -524,7 +540,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
 // - the data string handler function or nullptr if the sequence is not supported
 IStateMachineEngine::StringHandler InputStateMachineEngine::ActionDcsDispatch(const VTID /*id*/, const VTParameters /*parameters*/) noexcept
 {
-    // DCS escape sequences are not used in the input state machine.
+    // Returning a nullptr here will cause the content of the DCS sequence to be
+    // ignored, but it'll still be buffered by the state machine, so we can flush
+    // the whole thing once we receive the string terminator.
+    _expectingStringTerminator = true;
     return nullptr;
 }
 
@@ -892,6 +911,22 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
         // scroll intensity is assumed to be constant value
         buttonState |= SCROLL_DELTA_FORWARD;
         eventFlags |= MOUSE_WHEELED;
+        break;
+    }
+    case CsiMouseButtonCodes::ScrollLeft:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        buttonState |= SCROLL_DELTA_BACKWARD;
+        eventFlags |= MOUSE_HWHEELED;
+        break;
+    }
+    case CsiMouseButtonCodes::ScrollRight:
+    {
+        // set high word to proper scroll direction
+        // scroll intensity is assumed to be constant value
+        buttonState |= SCROLL_DELTA_FORWARD;
+        eventFlags |= MOUSE_HWHEELED;
         break;
     }
     case CsiMouseButtonCodes::Released:

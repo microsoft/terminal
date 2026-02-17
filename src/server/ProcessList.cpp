@@ -211,9 +211,15 @@ ConsoleProcessHandle* ConsoleProcessList::GetOldestProcess() const
     {
         termRecords.clear();
 
+        // The caller (ProcessCtrlEvents) expects them in newest-to-oldest order,
+        // because that's how Windows has historically always dispatched these events.
+        auto it = _processes.crbegin();
+        const auto end = _processes.crend();
+
         // Dig through known processes looking for a match
-        for (const auto& p : _processes)
+        for (; it != end; ++it)
         {
+            const auto p = *it;
             // If no limit was specified OR if we have a match, generate a new termination record.
             if (!dwLimitingProcessId ||
                 p->_ulProcessGroupId == dwLimitingProcessId)
@@ -292,5 +298,5 @@ bool ConsoleProcessList::IsEmpty() const
 // - <none>
 void ConsoleProcessList::_ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const
 {
-    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground));
+    ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground);
 }

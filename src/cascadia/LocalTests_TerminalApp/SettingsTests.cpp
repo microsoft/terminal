@@ -5,12 +5,14 @@
 
 #include "../TerminalApp/TerminalPage.h"
 #include "../UnitTests_SettingsModel/TestUtils.h"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 
@@ -821,7 +823,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(3u, command.NestedCommands().Size());
             _logCommandNames(command.NestedCommands());
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -843,7 +845,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: down, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -865,7 +867,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: right, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -958,8 +960,8 @@ namespace TerminalAppLocalTests
 
         for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
         {
-            winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
-            auto command = rootCommand.NestedCommands().Lookup(commandName);
+            const auto childCommandName = fmt::format(FMT_COMPILE(L"New tab, profile: {}"), name);
+            auto command = rootCommand.NestedCommands().Lookup(childCommandName);
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -1076,7 +1078,7 @@ namespace TerminalAppLocalTests
 
             _logCommandNames(command.NestedCommands());
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1098,7 +1100,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: down, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1120,7 +1122,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
+                const auto childCommandName = fmt::format(FMT_COMPILE(L"Split pane, split: right, profile: {}"), name);
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1419,10 +1421,10 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile0", terminalArgs.Profile());
             VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=true, action.elevate=nullopt: DO auto elevate");
@@ -1442,10 +1444,10 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile1", terminalArgs.Profile());
             VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=false, action.elevate=nullopt: don't auto elevate");
@@ -1465,10 +1467,10 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile2", terminalArgs.Profile());
             VERIFY_IS_NULL(terminalArgs.Elevate());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
 
         {
@@ -1490,10 +1492,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=true, action.elevate=false: don't auto elevate");
@@ -1514,10 +1516,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=false, action.elevate=false: don't auto elevate");
@@ -1538,10 +1540,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_FALSE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(false, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(false, termSettings->Elevate());
         }
 
         {
@@ -1563,10 +1565,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=true, action.elevate=true: DO auto elevate");
@@ -1586,10 +1588,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
         {
             Log::Comment(L"profile.elevate=false, action.elevate=true: DO auto elevate");
@@ -1610,10 +1612,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(terminalArgs.Elevate());
             VERIFY_IS_TRUE(terminalArgs.Elevate().Value());
 
-            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs, nullptr);
+            const auto termSettingsResult = TerminalSettings::CreateWithNewTerminalArgs(settings, terminalArgs);
             const auto termSettings = termSettingsResult.DefaultSettings();
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(true, termSettings.Elevate());
+            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings->Commandline());
+            VERIFY_ARE_EQUAL(true, termSettings->Elevate());
         }
     }
 

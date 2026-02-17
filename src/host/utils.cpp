@@ -90,7 +90,7 @@ void _LoadString(const UINT id, std::wstring& out)
 // - wLangId - Language ID of resources that we should retrieve.
 UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId)
 {
-    // Make sure the parms are valid.
+    // Make sure the params are valid.
     if (lpBuffer == nullptr)
     {
         return 0;
@@ -124,7 +124,7 @@ UINT s_LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBuffe
                 lpsz += cch; // Step to start if next string
             }
 
-            // chhBufferMax == 0 means return a pointer to the read-only resource buffer.
+            // cchBufferMax == 0 means return a pointer to the read-only resource buffer.
             if (cchBufferMax == 0)
             {
                 *(LPTSTR*)lpBuffer = lpsz;

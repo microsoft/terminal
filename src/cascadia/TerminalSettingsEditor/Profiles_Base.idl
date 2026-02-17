@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "ProfileViewModel.idl";
+import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -9,5 +10,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Profiles_Base();
         ProfileViewModel Profile { get; };
+        IHostedInWindow WindowRoot { get; };
     }
 }

@@ -55,20 +55,22 @@
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     template<typename T>
-    as_view_t<T> safe_slice_abs(const T& view, size_t beg, size_t end)
+    as_view_t<T> safe_slice_abs(const T& view, size_t beg, size_t end) noexcept
     {
-        const auto len = view.size();
+        const size_t len = view.size();
         end = std::min(end, len);
         beg = std::min(beg, end);
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         return { view.data() + beg, end - beg };
     }
 
     template<typename T>
-    as_view_t<T> safe_slice_len(const T& view, size_t start, size_t count)
+    as_view_t<T> safe_slice_len(const T& view, size_t start, size_t count) noexcept
     {
-        const auto len = view.size();
+        const size_t len = view.size();
         start = std::min(start, len);
         count = std::min(count, len - start);
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         return { view.data() + start, count };
     }
 

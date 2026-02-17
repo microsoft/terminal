@@ -23,7 +23,7 @@ parameters:
     default: true
 
 pool:
-  vmImage: windows-2019
+  vmImage: windows-latest
 
 resources:
   repositories:
@@ -47,12 +47,12 @@ steps:
     git config --local core.autocrlf true
   displayName: Prepare git submission environment
 
-- task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@3
+- task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@5
   displayName: 'Touchdown Build - 7105, PRODEXT'
   inputs:
     teamId: 7105
-    TDBuildServiceConnection: $(TouchdownServiceConnection)
-    authType: SubjectNameIssuer
+    FederatedIdentityTDBuildServiceConnection: $(TouchdownServiceConnection)
+    authType: FederatedIdentityTDBuild
     resourceFilePath: |
      **\en-US\*.resw
      build\StoreSubmission\Stable\PDPs\en-us\PDP.xml

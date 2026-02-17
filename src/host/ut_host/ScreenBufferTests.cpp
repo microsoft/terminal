@@ -16,6 +16,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/colorTable.hpp"
 #include "../../types/inc/Viewport.hpp"
 
 #include "../../inc/TestUtils.h"
@@ -43,7 +44,6 @@ class ScreenBufferTests
 
         m_state->InitEvents();
         m_state->PrepareGlobalFont({ 1, 1 });
-        m_state->PrepareGlobalRenderer();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareGlobalScreenBuffer();
 
@@ -53,7 +53,6 @@ class ScreenBufferTests
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
         m_state->CleanupGlobalScreenBuffer();
-        m_state->CleanupGlobalRenderer();
         m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
@@ -409,7 +408,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     mainCursor.SetPosition(mainCursorPos);
     mainCursor.SetIsVisible(mainCursorVisible);
     mainCursor.SetStyle(mainCursorSize, mainCursorType);
-    mainCursor.SetBlinkingAllowed(mainCursorBlinking);
+    mainCursor.SetIsBlinking(mainCursorBlinking);
 
     Log::Comment(L"Switch to the alternate buffer.");
     VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer({}));
@@ -424,7 +423,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
     VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
     VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
-    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinkingAllowed());
+    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinking());
 
     Log::Comment(L"Set the cursor attributes in the alt buffer.");
     auto altCursorPos = til::point{ 5, 3 };
@@ -435,7 +434,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     altCursor.SetPosition(altCursorPos);
     altCursor.SetIsVisible(altCursorVisible);
     altCursor.SetStyle(altCursorSize, altCursorType);
-    altCursor.SetBlinkingAllowed(altCursorBlinking);
+    altCursor.SetIsBlinking(altCursorBlinking);
 
     Log::Comment(L"Switch back to the main buffer.");
     useMain.release();
@@ -449,7 +448,7 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
     VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
     VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
-    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinkingAllowed());
+    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinking());
 }
 
 void ScreenBufferTests::TestReverseLineFeed()
@@ -580,8 +579,6 @@ void ScreenBufferTests::TestResetClearTabStops()
     // Reset the screen buffer to test the defaults.
     m_state->CleanupNewTextBufferInfo();
     m_state->CleanupGlobalScreenBuffer();
-    m_state->CleanupGlobalRenderer();
-    m_state->PrepareGlobalRenderer();
     m_state->PrepareGlobalScreenBuffer();
     m_state->PrepareNewTextBufferInfo();
 
@@ -2070,6 +2067,15 @@ void ScreenBufferTests::VtRestoreColorTableReport()
     // Blue component is clamped at 100%, so 150% interpreted as 100%
     stateMachine.ProcessString(L"\033P2$p14;2;0;0;150\033\\");
     VERIFY_ARE_EQUAL(RGB(0, 0, 255), gci.GetColorTableEntry(14));
+
+    Log::Comment(L"RIS restores initial Campbell color scheme");
+
+    stateMachine.ProcessString(L"\033c");
+    for (auto i = 0; i < 16; i++)
+    {
+        const COLORREF expectedColor = Microsoft::Console::Utils::CampbellColorTable()[i];
+        VERIFY_ARE_EQUAL(expectedColor, gci.GetColorTableEntry(i));
+    }
 }
 
 void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
@@ -2543,11 +2549,7 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         // We're going to write some data to either the main buffer or the alt
         //  buffer, as if we were using the API.
 
-        std::unique_ptr<WriteData> waiter;
-        std::wstring seq = L"\x1b[5;6H";
-        auto seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"\x1b[5;6H"));
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         // recall: vt coordinates are (row, column), 1-indexed
         VERIFY_ARE_EQUAL(til::point(5, 4), altCursor.GetPosition());
@@ -2559,17 +2561,11 @@ void ScreenBufferTests::TestAltBufferVtDispatching()
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedDefaults, alternate.GetAttributes());
 
-        seq = L"\x1b[48;2;255;0;255m";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"\x1b[48;2;255;0;255m"));
         VERIFY_ARE_EQUAL(expectedDefaults, mainBuffer.GetAttributes());
         VERIFY_ARE_EQUAL(expectedRgb, alternate.GetAttributes());
 
-        seq = L"X";
-        seqCb = 2 * seq.size();
-        VERIFY_SUCCEEDED(DoWriteConsole(&seq[0], &seqCb, mainBuffer, waiter));
-
+        VERIFY_SUCCEEDED(DoWriteConsole(mainBuffer, L"X"));
         VERIFY_ARE_EQUAL(til::point(0, 0), mainCursor.GetPosition());
         VERIFY_ARE_EQUAL(til::point(6, 4), altCursor.GetPosition());
 
@@ -3352,6 +3348,13 @@ void ScreenBufferTests::AssignColorAliases()
     stateMachine.ProcessString(L"\033[2;34;56,|");
     VERIFY_ARE_EQUAL(34u, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
     VERIFY_ARE_EQUAL(56u, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
+
+    Log::Comment(L"Test RIS restores initial color assignments");
+    stateMachine.ProcessString(L"\033c");
+    VERIFY_ARE_EQUAL(defaultFg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground));
+    VERIFY_ARE_EQUAL(defaultBg, renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground));
+    VERIFY_ARE_EQUAL(frameFg, renderSettings.GetColorAliasIndex(ColorAlias::FrameForeground));
+    VERIFY_ARE_EQUAL(frameBg, renderSettings.GetColorAliasIndex(ColorAlias::FrameBackground));
 }
 
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
@@ -3826,7 +3829,7 @@ void ScreenBufferTests::ScrollOperations()
     }
 
     Log::Comment(L"Set the cursor position and perform the operation.");
-    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos));
     stateMachine.ProcessString(escapeSequence.str());
 
     // The cursor shouldn't move.
@@ -3908,7 +3911,7 @@ void ScreenBufferTests::InsertReplaceMode()
     Log::Comment(L"Write additional content into a line of text with IRM mode enabled.");
 
     // Set the cursor position partway through the target row.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }));
     // Enable Insert/Replace mode.
     stateMachine.ProcessString(L"\033[4h");
     // Write out some new content.
@@ -3933,7 +3936,7 @@ void ScreenBufferTests::InsertReplaceMode()
     Log::Comment(L"Write additional content into a line of text with IRM mode disabled.");
 
     // Set the cursor position partway through the target row.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ targetCol, targetRow }));
     // Disable Insert/Replace mode.
     stateMachine.ProcessString(L"\033[4l");
     // Write out some new content.
@@ -3996,7 +3999,7 @@ void ScreenBufferTests::InsertChars()
     auto insertPos = til::CoordType{ 20 };
 
     // Place the cursor in the center of the line.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }));
 
     // Save the cursor position. It shouldn't move for the rest of the test.
     const auto& cursor = si.GetTextBuffer().GetCursor();
@@ -4064,7 +4067,7 @@ void ScreenBufferTests::InsertChars()
 
     // Move cursor to right edge.
     insertPos = horizontalMarginsActive ? viewportEnd - 1 : bufferWidth - 1;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4113,7 +4116,7 @@ void ScreenBufferTests::InsertChars()
 
     // Move cursor to left edge.
     insertPos = horizontalMarginsActive ? viewportStart : 0;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ insertPos, insertLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4196,7 +4199,7 @@ void ScreenBufferTests::DeleteChars()
     auto deletePos = til::CoordType{ 20 };
 
     // Place the cursor in the center of the line.
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }));
 
     // Save the cursor position. It shouldn't move for the rest of the test.
     const auto& cursor = si.GetTextBuffer().GetCursor();
@@ -4264,7 +4267,7 @@ void ScreenBufferTests::DeleteChars()
 
     // Move cursor to right edge.
     deletePos = horizontalMarginsActive ? viewportEnd - 1 : bufferWidth - 1;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4313,7 +4316,7 @@ void ScreenBufferTests::DeleteChars()
 
     // Move cursor to left edge.
     deletePos = horizontalMarginsActive ? viewportStart : 0;
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ deletePos, deleteLine }));
     expectedCursor = cursor.GetPosition();
 
     // Fill the entire line with Qs. Blue on Green.
@@ -4481,7 +4484,7 @@ void ScreenBufferTests::ScrollingWideCharsHorizontally()
     _FillLine(testRow, testChars, testAttr);
 
     Log::Comment(L"Position the cursor at the start of the test row");
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, testRow }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, testRow }));
 
     Log::Comment(L"Insert 1 cell at the start of the test row");
     stateMachine.ProcessString(L"\033[@");
@@ -4549,7 +4552,7 @@ void ScreenBufferTests::EraseScrollbackTests()
     const auto cursorPos = til::point{ centerX, centerY };
 
     Log::Comment(L"Set the cursor position and erase the scrollback.");
-    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos));
     stateMachine.ProcessString(L"\x1b[3J");
 
     // The viewport should move to the top of the buffer, while the cursor
@@ -4679,7 +4682,7 @@ void ScreenBufferTests::EraseTests()
     const auto centerY = (viewport.Top() + viewport.BottomExclusive()) / 2;
 
     Log::Comment(L"Set the cursor position and perform the operation.");
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ centerX, centerY }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ centerX, centerY }));
     stateMachine.ProcessString(escapeSequence.str());
 
     // Get cursor position and viewport range.
@@ -5753,7 +5756,7 @@ void ScreenBufferTests::HardResetBuffer()
     si.SetAttributes(TextAttribute());
     si.ClearTextData();
     VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, true));
-    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, 0 }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, 0 }));
     VERIFY_IS_TRUE(isBufferClear());
 
     Log::Comment(L"Write a single line of text to the buffer");
@@ -5979,8 +5982,8 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
-        // Set the position to home, otherwise it's inherited from the main buffer.
-        VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }, true));
+        // Set the position to home; otherwise, it's inherited from the main buffer.
+        VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }));
 
         WriteText(altBuffer.GetTextBuffer());
         VerifyText(altBuffer.GetTextBuffer());
@@ -6887,7 +6890,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify initial position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
-    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
     cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
@@ -6902,7 +6905,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify initial saved position, delayed wrap, colors, and graphic character set.
     VERIFY_ARE_EQUAL(til::point(20, 10), cursor.GetPosition());
-    VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
     cursor.ResetDelayEOLWrap();
     VERIFY_ARE_EQUAL(colorAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
@@ -6920,7 +6923,7 @@ void ScreenBufferTests::CursorSaveRestore()
     stateMachine.ProcessString(restoreCursor);
     // Verify home position, no delayed wrap, default attributes, and ascii character set.
     VERIFY_ARE_EQUAL(til::point(0, 0), cursor.GetPosition());
-    VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
+    VERIFY_IS_FALSE(cursor.GetDelayEOLWrap().has_value());
     VERIFY_ARE_EQUAL(defaultAttrs, si.GetAttributes());
     stateMachine.ProcessString(asciiText);
     VERIFY_IS_TRUE(_ValidateLineContains(til::point(0, 0), asciiText, defaultAttrs));
@@ -7020,7 +7023,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
 
     // Place the cursor in the center.
     auto cursorPos = til::point{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
-    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos));
 
     Log::Comment(L"Execute the DECALN escape sequence.");
     stateMachine.ProcessString(L"\x1b#8");
@@ -7056,44 +7059,35 @@ void ScreenBufferTests::TestCursorIsOn()
     auto& cursor = tbi.GetCursor();
 
     stateMachine.ProcessString(L"Hello World");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
-    cursor.SetIsOn(false);
     stateMachine.ProcessString(L"\x1b[?12l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?25h");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_TRUE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_TRUE(cursor.IsBlinking());
     VERIFY_IS_TRUE(cursor.IsVisible());
 
     stateMachine.ProcessString(L"\x1b[?12;25l");
-    VERIFY_IS_TRUE(cursor.IsOn());
-    VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
+    VERIFY_IS_FALSE(cursor.IsBlinking());
     VERIFY_IS_FALSE(cursor.IsVisible());
 }
 
@@ -8155,7 +8149,7 @@ void ScreenBufferTests::DelayedWrapReset()
     stateMachine.ProcessCharacter(L'X');
     {
         auto& cursor = si.GetTextBuffer().GetCursor();
-        VERIFY_IS_TRUE(cursor.IsDelayedEOLWrap());
+        VERIFY_IS_TRUE(cursor.GetDelayEOLWrap().has_value());
         VERIFY_ARE_EQUAL(startPos, cursor.GetPosition());
     }
 
@@ -8167,7 +8161,7 @@ void ScreenBufferTests::DelayedWrapReset()
     {
         auto& cursor = si.GetTextBuffer().GetCursor();
         const auto actualPos = cursor.GetPosition() - si.GetViewport().Origin();
-        VERIFY_IS_FALSE(cursor.IsDelayedEOLWrap());
+        VERIFY_IS_FALSE(cursor.GetDelayEOLWrap().has_value());
         VERIFY_ARE_EQUAL(expectedPos, actualPos);
     }
 }
@@ -8298,6 +8292,12 @@ void ScreenBufferTests::EraseColorMode()
 
 void ScreenBufferTests::SimpleMarkCommand()
 {
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
@@ -8340,6 +8340,12 @@ void ScreenBufferTests::SimpleWrappedCommand()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD_PROPERTIES()
+
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
@@ -8406,6 +8412,12 @@ static void _writePrompt(StateMachine& stateMachine, const auto& path)
 
 void ScreenBufferTests::SimplePromptRegions()
 {
+    if (!Feature_ScrollbarMarks::IsEnabled())
+    {
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();

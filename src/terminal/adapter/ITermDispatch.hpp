@@ -25,6 +25,12 @@ class Microsoft::Console::VirtualTerminal::ITermDispatch
 public:
     using StringHandler = std::function<bool(const wchar_t)>;
 
+    enum class OptionalFeature
+    {
+        ChecksumReport,
+        ClipboardWrite,
+    };
+
 #pragma warning(push)
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
@@ -61,6 +67,10 @@ public:
     virtual void DeleteColumn(const VTInt distance) = 0; // DECDC
     virtual void SetKeypadMode(const bool applicationMode) = 0; // DECKPAM, DECKPNM
     virtual void SetAnsiMode(const bool ansiMode) = 0; // DECANM
+    virtual void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept = 0; // KKP
+    virtual void QueryKittyKeyboardProtocol() = 0; // KKP
+    virtual void PushKittyKeyboardProtocol(const VTParameter flags) = 0; // KKP
+    virtual void PopKittyKeyboardProtocol(const VTParameter count) = 0; // KKP
     virtual void SetTopBottomScrollingMargins(const VTInt topMargin, const VTInt bottomMargin) = 0; // DECSTBM
     virtual void SetLeftRightScrollingMargins(const VTInt leftMargin, const VTInt rightMargin) = 0; // DECSLRM
     virtual void EnquireAnswerback() = 0; // ENQ
@@ -78,8 +88,11 @@ public:
     virtual void TabSet(const VTParameter setType) = 0; // DECST8C
     virtual void SetColorTableEntry(const size_t tableIndex, const DWORD color) = 0; // OSCSetColorTable
     virtual void RequestColorTableEntry(const size_t tableIndex) = 0; // OSCGetColorTable
-    virtual void SetXtermColorResource(const size_t resource, const DWORD color) = 0; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+    virtual void ResetColorTable() = 0; // OSCResetColorTable
+    virtual void ResetColorTableEntry(const size_t tableIndex) = 0; // OSCResetColorTable
+    virtual void SetXtermColorResource(const size_t resource, const DWORD color) = 0; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor
     virtual void RequestXtermColorResource(const size_t resource) = 0; // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
+    virtual void ResetXtermColorResource(const size_t resource) = 0; // OSCResetForegroundColor, OSCResetBackgroundColor, OSCResetCursorColor, OSCResetHighlightColor
     virtual void AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) = 0; // DECAC
 
     virtual void EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
@@ -122,6 +135,7 @@ public:
     virtual void LockingShiftRight(const VTInt gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual void SingleShift(const VTInt gsetNumber) = 0; // SS2, SS3
     virtual void AcceptC1Controls(const bool enabled) = 0; // DECAC1
+    virtual void SendC1Controls(const bool enabled) = 0; // S8C1T, S7C1T
     virtual void AnnounceCodeStructure(const VTInt ansiLevel) = 0; // ACS
 
     virtual void SoftReset() = 0; // DECSTR
@@ -180,6 +194,8 @@ public:
     virtual StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) = 0; // DECRSPS
 
     virtual void PlaySounds(const VTParameters parameters) = 0; // DECPS
+
+    virtual void SetOptionalFeatures(const til::enumset<OptionalFeature> features) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

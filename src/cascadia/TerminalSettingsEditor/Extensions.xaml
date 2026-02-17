@@ -1,0 +1,558 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Extensions"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="ItalicDisclaimerStyle"
+                   BasedOn="{StaticResource DisclaimerStyle}"
+                   TargetType="TextBlock">
+                <Setter Property="FontStyle" Value="Italic" />
+            </Style>
+
+            <Style x:Key="CodeBlockStyle"
+                   TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Cascadia Mono, Consolas" />
+                <Setter Property="IsTextSelectionEnabled" Value="True" />
+            </Style>
+
+            <Style x:Key="CodeBlockScrollViewerStyle"
+                   TargetType="ScrollViewer">
+                <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+                <Setter Property="HorizontalScrollMode" Value="Auto" />
+                <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+                <Setter Property="VerticalScrollMode" Value="Disabled" />
+                <Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
+            </Style>
+
+            <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageIdentifierTemplateSelector"
+                                                    ComplexTemplate="{StaticResource ComplexExtensionIdentifierTemplate}"
+                                                    ComplexTemplateWithFontIcon="{StaticResource ComplexExtensionIdentifierTemplateWithFontIcon}"
+                                                    DefaultTemplate="{StaticResource DefaultExtensionIdentifierTemplate}" />
+
+            <DataTemplate x:Key="DefaultExtensionIdentifierTemplate"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <FontIcon Grid.Column="0"
+                              Margin="0,0,8,0"
+                              FontSize="32"
+                              Glyph="&#xE74C;" />
+                    <TextBlock Grid.Column="1"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Package.Source}" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ComplexExtensionIdentifierTemplate"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <IconSourceElement Grid.Row="0"
+                                       Grid.RowSpan="2"
+                                       Grid.Column="0"
+                                       Width="32"
+                                       Height="32"
+                                       Margin="0,0,8,0"
+                                       IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Package.Icon)}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Text="{x:Bind Package.DisplayName}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                               Text="{x:Bind Package.Source}" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ComplexExtensionIdentifierTemplateWithFontIcon"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <FontIcon Grid.Row="0"
+                              Grid.RowSpan="2"
+                              Grid.Column="0"
+                              Margin="0,0,8,0"
+                              FontSize="32"
+                              Glyph="{x:Bind Package.Icon}" />
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="1"
+                               Text="{x:Bind Package.DisplayName}" />
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="1"
+                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                               Text="{x:Bind Package.Source}" />
+                </Grid>
+            </DataTemplate>
+
+            <local:ExtensionPackageTemplateSelector x:Key="ExtensionPackageNavigatorTemplateSelector"
+                                                    ComplexTemplate="{StaticResource ComplexExtensionNavigatorTemplate}"
+                                                    ComplexTemplateWithFontIcon="{StaticResource ComplexExtensionNavigatorTemplateWithFontIcon}"
+                                                    DefaultTemplate="{StaticResource DefaultExtensionNavigatorTemplate}" />
+
+            <DataTemplate x:Key="DefaultExtensionNavigatorTemplate"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
+                        Click="ExtensionNavigator_Click"
+                        Style="{StaticResource NavigatorButtonStyle}"
+                        Tag="{x:Bind}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentPresenter Content="{x:Bind}"
+                                          ContentTemplate="{StaticResource DefaultExtensionIdentifierTemplate}" />
+
+                        <ToggleSwitch Grid.Column="1"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{x:Bind AccessibleName}"
+                                      IsOn="{x:Bind Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+
+                    </Grid>
+                </Button>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ComplexExtensionNavigatorTemplate"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
+                        Click="ExtensionNavigator_Click"
+                        Style="{StaticResource NavigatorButtonStyle}"
+                        Tag="{x:Bind}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentPresenter Content="{x:Bind}"
+                                          ContentTemplate="{StaticResource ComplexExtensionIdentifierTemplate}" />
+
+                        <ToggleSwitch Grid.Column="1"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{x:Bind AccessibleName}"
+                                      IsOn="{x:Bind Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    </Grid>
+                </Button>
+            </DataTemplate>
+
+            <DataTemplate x:Key="ComplexExtensionNavigatorTemplateWithFontIcon"
+                          x:DataType="local:ExtensionPackageViewModel">
+                <Button AutomationProperties.Name="{x:Bind AccessibleName}"
+                        Click="ExtensionNavigator_Click"
+                        Style="{StaticResource NavigatorButtonStyle}"
+                        Tag="{x:Bind}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentPresenter Content="{x:Bind}"
+                                          ContentTemplate="{StaticResource ComplexExtensionIdentifierTemplateWithFontIcon}" />
+
+                        <ToggleSwitch Grid.Column="1"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="{x:Bind AccessibleName}"
+                                      IsOn="{x:Bind Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    </Grid>
+                </Button>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FragmentProfileViewModelTemplate"
+                          x:DataType="local:FragmentProfileViewModel">
+                <muxc:Expander AutomationProperties.Name="{x:Bind AccessibleName}"
+                               Style="{StaticResource ExpanderStyle}">
+                    <muxc:Expander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0"
+                                        Orientation="Horizontal">
+                                <IconSourceElement Width="16"
+                                                   Height="16"
+                                                   Margin="0,0,12,0"
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.Icon.Resolved), Mode=OneWay}" />
+
+                                <TextBlock Text="{x:Bind Profile.Name, Mode=OneWay}" />
+
+                                <Button x:Name="NavigateToProfileButton"
+                                        x:Uid="Extensions_NavigateToProfileButton"
+                                        Click="NavigateToProfile_Click"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}"
+                                        Tag="{x:Bind Profile.Guid}">
+                                    <FontIcon Glyph="&#xE8A7;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
+
+                            <TextBlock Grid.Column="1"
+                                       Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                                       Text="{x:Bind SourceName}" />
+                        </Grid>
+                    </muxc:Expander.Header>
+                    <muxc:Expander.Content>
+                        <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
+                            <TextBlock Style="{StaticResource CodeBlockStyle}"
+                                       Text="{x:Bind Json, Mode=OneWay}" />
+                        </ScrollViewer>
+                    </muxc:Expander.Content>
+                </muxc:Expander>
+            </DataTemplate>
+
+            <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
+            <Style x:Key="ExpanderStyle"
+                   TargetType="muxc:Expander">
+                <Setter Property="MinHeight" Value="64" />
+                <Setter Property="Margin" Value="0,4,0,0" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+
+            <DataTemplate x:Key="JsonTemplate"
+                          x:DataType="local:FragmentExtensionViewModel">
+                <muxc:Expander Header="{x:Bind Fragment.Filename}"
+                               Style="{StaticResource ExpanderStyle}">
+                    <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
+                        <TextBlock Style="{StaticResource CodeBlockStyle}"
+                                   Text="{x:Bind Fragment.Json}" />
+                    </ScrollViewer>
+                </muxc:Expander>
+            </DataTemplate>
+
+            <!--
+                Copied over from Appearances.xaml. We're unable to add the DataTemplate to CommonResources.xaml
+                because it needs a code-behind class to use {x:Bind}
+            -->
+            <DataTemplate x:Key="ColorChipTemplate"
+                          x:DataType="local:ColorTableEntry">
+                <Border Width="8"
+                        Height="8"
+                        Background="{x:Bind mtu:Converters.ColorToBrush(Color)}"
+                        CornerRadius="1" />
+            </DataTemplate>
+
+            <!--
+                Copied over from Appearances.xaml. We're unable to add the DataTemplate to CommonResources.xaml
+                because it needs a code-behind class to use {x:Bind}
+            -->
+            <DataTemplate x:Key="ColorSchemeVMTemplate"
+                          x:DataType="local:ColorSchemeViewModel">
+                <StackPanel Orientation="Horizontal">
+                    <Grid Grid.Column="0"
+                          Padding="8"
+                          VerticalAlignment="Center"
+                          Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                          ColumnSpacing="2"
+                          CornerRadius="{StaticResource ControlCornerRadius}"
+                          RowSpacing="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="0"
+                                        Content="{x:Bind ColorEntryAt(0), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ColorEntryAt(1), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ColorEntryAt(2), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="3"
+                                        Content="{x:Bind ColorEntryAt(3), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="4"
+                                        Content="{x:Bind ColorEntryAt(4), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="5"
+                                        Content="{x:Bind ColorEntryAt(5), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="6"
+                                        Content="{x:Bind ColorEntryAt(6), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="0"
+                                        Grid.Column="7"
+                                        Content="{x:Bind ColorEntryAt(7), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="0"
+                                        Content="{x:Bind ColorEntryAt(8), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="1"
+                                        Content="{x:Bind ColorEntryAt(9), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="2"
+                                        Content="{x:Bind ColorEntryAt(10), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="3"
+                                        Content="{x:Bind ColorEntryAt(11), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="4"
+                                        Content="{x:Bind ColorEntryAt(12), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="5"
+                                        Content="{x:Bind ColorEntryAt(13), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="6"
+                                        Content="{x:Bind ColorEntryAt(14), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <ContentControl Grid.Row="1"
+                                        Grid.Column="7"
+                                        Content="{x:Bind ColorEntryAt(15), Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                        IsTabStop="False" />
+                        <TextBlock Grid.RowSpan="2"
+                                   Grid.Column="8"
+                                   MaxWidth="192"
+                                   Margin="4,0,4,0"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   AutomationProperties.AccessibilityView="Raw"
+                                   FontFamily="Cascadia Code"
+                                   Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                   Text="{x:Bind Name, Mode=OneWay}"
+                                   TextTrimming="WordEllipsis" />
+                    </Grid>
+                </StackPanel>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FragmentColorSchemeViewModelTemplate"
+                          x:DataType="local:FragmentColorSchemeViewModel">
+                <muxc:Expander AutomationProperties.Name="{x:Bind AccessibleName}"
+                               Style="{StaticResource ExpanderStyle}">
+                    <muxc:Expander.Header>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0"
+                                        Orientation="Horizontal">
+                                <ContentPresenter Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
+                                                  ContentTemplate="{StaticResource ColorSchemeVMTemplate}" />
+                                <Button x:Name="NavigateToColorSchemeButton"
+                                        x:Uid="Extensions_NavigateToColorSchemeButton"
+                                        Click="NavigateToColorScheme_Click"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}"
+                                        Tag="{x:Bind ColorSchemeVM}">
+                                    <FontIcon Glyph="&#xE8A7;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
+
+                            <TextBlock Grid.Column="1"
+                                       Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                                       Text="{x:Bind SourceName}" />
+                        </Grid>
+                    </muxc:Expander.Header>
+                    <muxc:Expander.Content>
+                        <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
+                            <TextBlock Style="{StaticResource CodeBlockStyle}"
+                                       Text="{x:Bind Json, Mode=OneWay}" />
+                        </ScrollViewer>
+                    </muxc:Expander.Content>
+                </muxc:Expander>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
+
+        <!--  [Root View Only]  -->
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsExtensionView), Mode=OneWay}">
+
+            <!--  Learn more about fragment extensions  -->
+            <HyperlinkButton x:Uid="Extensions_DisclaimerHyperlink"
+                             Margin="-12,0,0,0"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2321753" />
+
+            <!--  Grouping: Active Extensions  -->
+            <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
+                       Margin="0,12,0,8"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <ItemsControl x:Name="ActiveExtensionsList"
+                          IsTabStop="False"
+                          ItemTemplateSelector="{StaticResource ExtensionPackageNavigatorTemplateSelector}"
+                          ItemsSource="{x:Bind ViewModel.ExtensionPackages}"
+                          XYFocusKeyboardNavigation="Enabled" />
+        </StackPanel>
+
+        <!--  [Extension View Only]  -->
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Visibility="{x:Bind ViewModel.IsExtensionView, Mode=OneWay}">
+            <!--  Extension Status  -->
+            <muxc:Expander AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
+                           IsExpanded="True"
+                           Style="{StaticResource ExpanderStyle}">
+                <muxc:Expander.Header>
+                    <Grid MinHeight="64">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--
+                            BODGY
+                            Theoretically, you could use a ContentTemplateSelector directly. However, that doesn't work.
+                            For some reason, we just get the object type's ToString called and the selector gets nullptr as a parameter.
+                            Adding the template as a view model property is a workaround.
+                        -->
+                        <ContentPresenter Grid.Column="0"
+                                          VerticalAlignment="Center"
+                                          Content="{x:Bind ViewModel.CurrentExtensionPackage, Mode=OneWay}"
+                                          ContentTemplate="{x:Bind ViewModel.CurrentExtensionPackageIdentifierTemplate, Mode=OneWay}" />
+
+                        <ToggleSwitch Grid.Column="1"
+                                      Margin="0"
+                                      AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
+                                      IsOn="{x:Bind ViewModel.CurrentExtensionPackage.Enabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                                      Tag="{x:Bind ViewModel.CurrentExtensionPackage.Package.Source, Mode=OneWay}" />
+                    </Grid>
+                </muxc:Expander.Header>
+                <muxc:Expander.Content>
+                    <StackPanel>
+                        <!--  Scope  -->
+                        <local:SettingContainer x:Uid="Extensions_Scope"
+                                                Content="{x:Bind ViewModel.CurrentExtensionPackage.Scope, Mode=OneWay}"
+                                                IsTabStop="False"
+                                                Style="{StaticResource SettingContainerWithTextContent}" />
+                        <!--  JSON  -->
+                        <ItemsControl IsTabStop="False"
+                                      ItemTemplate="{StaticResource JsonTemplate}"
+                                      ItemsSource="{x:Bind ViewModel.CurrentExtensionPackage.FragmentExtensions, Mode=OneWay}" />
+                    </StackPanel>
+                </muxc:Expander.Content>
+            </muxc:Expander>
+        </StackPanel>
+
+        <!--  Grouping: Modified Profiles  -->
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesModified), Mode=OneWay}"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesModified), Mode=OneWay}">
+            <TextBlock x:Uid="Extensions_ModifiedProfilesHeader"
+                       Margin="0,0,0,8"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <ItemsControl x:Name="ModifiedProfilesList"
+                          IsTabStop="False"
+                          ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
+                          ItemsSource="{x:Bind ViewModel.ProfilesModified, Mode=OneWay}"
+                          XYFocusKeyboardNavigation="Enabled" />
+        </StackPanel>
+
+        <!--  Grouping: Added Profiles  -->
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoProfilesAdded), Mode=OneWay}">
+            <TextBlock x:Uid="Extensions_AddedProfilesHeader"
+                       Margin="0,0,0,8"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <ItemsControl x:Name="AddedProfilesList"
+                          IsTabStop="False"
+                          ItemTemplate="{StaticResource FragmentProfileViewModelTemplate}"
+                          ItemsSource="{x:Bind ViewModel.ProfilesAdded, Mode=OneWay}"
+                          XYFocusKeyboardNavigation="Enabled" />
+        </StackPanel>
+
+        <!--  Grouping: Added Color Schemes  -->
+        <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="{x:Bind CalculateMargin(ViewModel.NoProfilesAdded), Mode=OneWay}"
+                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.NoSchemesAdded), Mode=OneWay}">
+            <TextBlock x:Uid="Extensions_AddedColorSchemesHeader"
+                       Margin="0,0,0,8"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <ItemsControl x:Name="AddedColorSchemesList"
+                          IsTabStop="False"
+                          ItemTemplate="{StaticResource FragmentColorSchemeViewModelTemplate}"
+                          ItemsSource="{x:Bind ViewModel.ColorSchemesAdded, Mode=OneWay}"
+                          XYFocusKeyboardNavigation="Enabled" />
+        </StackPanel>
+    </StackPanel>
+</Page>

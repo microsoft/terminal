@@ -45,6 +45,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - ppWaiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
+// - IsWaitAllowed - Whether an async read via CONSOLE_STATUS_WAIT is permitted.
 // Return Value:
 // - STATUS_SUCCESS - If data was found and ready for return to the client.
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
@@ -56,12 +57,11 @@ using Microsoft::Console::Interactivity::ServiceLocator;
                                                        INPUT_READ_HANDLE_DATA& readHandleState,
                                                        const bool IsUnicode,
                                                        const bool IsPeek,
-                                                       std::unique_ptr<IWaitRoutine>& waiter) noexcept
+                                                       const bool IsWaitAllowed,
+                                                       CONSOLE_API_MSG* pWaitReplyMessage) noexcept
 {
     try
     {
-        waiter.reset();
-
         if (eventReadCount == 0)
         {
             return STATUS_SUCCESS;
@@ -73,7 +73,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         const auto Status = inputBuffer.Read(outEvents,
                                              eventReadCount,
                                              IsPeek,
-                                             true,
+                                             IsWaitAllowed,
                                              IsUnicode,
                                              false);
 
@@ -81,9 +81,7 @@ using Microsoft::Console::Interactivity::ServiceLocator;
         {
             // If we're told to wait until later, move all of our context
             // to the read data object and send it back up to the server.
-            waiter = std::make_unique<DirectReadData>(&inputBuffer,
-                                                      &readHandleState,
-                                                      eventReadCount);
+            std::ignore = ConsoleWaitQueue::s_CreateWait(pWaitReplyMessage, new DirectReadData(&inputBuffer, &readHandleState, eventReadCount));
         }
         return Status;
     }
@@ -283,7 +281,7 @@ CATCH_RETURN();
                 // If .AsciiChar and .UnicodeChar have the same offset (since they're a union),
                 // we can just write the latter with a byte-sized value to set the former
                 // _and_ simultaneously clear the upper byte of .UnicodeChar to 0. Nice!
-                static_assert(offsetof(CHAR_INFO, Char.AsciiChar) == offsetof(CHAR_INFO, Char.UnicodeChar));
+                static_assert(__builtin_offsetof(CHAR_INFO, Char.AsciiChar) == __builtin_offsetof(CHAR_INFO, Char.UnicodeChar));
 
                 // Any time we see the lead flag, we presume there will be a trailing one following it.
                 // Giving us two bytes of space (one per cell in the ascii part of the character union)

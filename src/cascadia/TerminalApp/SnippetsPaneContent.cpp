@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
     void SnippetsPaneContent::_updateFilteredCommands()
     {
         const auto& queryString = _filterBox().Text();
+        auto pattern = std::make_shared<fzf::matcher::Pattern>(fzf::matcher::ParsePattern(queryString));
 
         // DON'T replace the itemSource here. If you do, it'll un-expand all the
         // nested items the user has expanded. Instead, just update the filter.
@@ -39,7 +40,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& t : _allTasks)
         {
             auto impl = winrt::get_self<implementation::FilteredTask>(t);
-            impl->UpdateFilter(queryString);
+            impl->UpdateFilter(pattern);
         }
     }
 
@@ -47,13 +48,22 @@ namespace winrt::TerminalApp::implementation
     {
         _settings = settings;
 
+        const auto dispatcher = Dispatcher();
+        const auto weak = get_weak();
+
         // You'd think that `FilterToSendInput(queryString)` would work. It
         // doesn't! That uses the queryString as the current command the user
         // has typed, then relies on the suggestions UI to _also_ filter with that
         // string.
 
         const auto tasks = co_await _settings.GlobalSettings().ActionMap().FilterToSnippets(winrt::hstring{}, winrt::hstring{}); // IVector<Model::Command>
-        co_await wil::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         _allTasks.Clear();
         for (const auto& t : tasks)

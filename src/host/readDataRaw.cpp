@@ -48,7 +48,7 @@ RAW_READ_DATA::~RAW_READ_DATA() = default;
 // Arguments:
 // - TerminationReason - if this routine is called because a ctrl-c or
 // ctrl-break was seen, this argument contains CtrlC or CtrlBreak. If
-// the owning thread is exiting, it will have ThreadDying. Otherwise 0.
+// the owning thread is exiting, it will have ThreadDying. Otherwise, 0.
 // - fIsUnicode - Whether to convert the final data to A (using
 // Console Input CP) at the end or treat everything as Unicode (UCS-2)
 // - pReplyStatus - The status code to return to the client

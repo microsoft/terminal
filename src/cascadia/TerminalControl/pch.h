@@ -25,7 +25,7 @@
 
 #include <wil/cppwinrt.h>
 
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.system.h>
@@ -81,3 +81,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 
 #include <cppwinrt_utils.h>
 #include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
+
+#include <LibraryResources.h>

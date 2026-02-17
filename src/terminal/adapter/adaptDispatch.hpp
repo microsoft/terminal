@@ -97,6 +97,10 @@ namespace Microsoft::Console::VirtualTerminal
         void RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
         void SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
         void SetAnsiMode(const bool ansiMode) override; // DECANM
+        void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept override; // KKP
+        void QueryKittyKeyboardProtocol() override; // KKP
+        void PushKittyKeyboardProtocol(const VTParameter flags) override; // KKP
+        void PopKittyKeyboardProtocol(const VTParameter count) override; // KKP
         void SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
         void SetLeftRightScrollingMargins(const VTInt leftMargin,
@@ -121,6 +125,7 @@ namespace Microsoft::Console::VirtualTerminal
         void LockingShiftRight(const VTInt gsetNumber) override; // LS1R, LS2R, LS3R
         void SingleShift(const VTInt gsetNumber) noexcept override; // SS2, SS3
         void AcceptC1Controls(const bool enabled) override; // DECAC1
+        void SendC1Controls(const bool enabled) override; // S8C1T, S7C1T
         void AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         void SoftReset() override; // DECSTR
         void HardReset() override; // RIS
@@ -132,8 +137,11 @@ namespace Microsoft::Console::VirtualTerminal
         void SetColorTableEntry(const size_t tableIndex,
                                 const DWORD color) override; // OSCSetColorTable
         void RequestColorTableEntry(const size_t tableIndex) override; // OSCGetColorTable
-        void SetXtermColorResource(const size_t resource, const DWORD color) override; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor, OSCResetCursorColor
+        void ResetColorTable() override; // OSCResetColorTable
+        void ResetColorTableEntry(const size_t tableIndex) override; // OSCResetColorTable
+        void SetXtermColorResource(const size_t resource, const DWORD color) override; // OSCSetDefaultForeground, OSCSetDefaultBackground, OSCSetCursorColor
         void RequestXtermColorResource(const size_t resource) override; // OSCGetDefaultForeground, OSCGetDefaultBackground, OSCGetCursorColor
+        void ResetXtermColorResource(const size_t resource) override; // OSCResetForegroundColor, OSCResetBackgroundColor, OSCResetCursorColor, OSCResetHighlightColor
         void AssignColor(const DispatchTypes::ColorItem item, const VTInt fgIndex, const VTInt bgIndex) override; // DECAC
 
         void WindowManipulation(const DispatchTypes::WindowManipulationType function,
@@ -183,6 +191,8 @@ namespace Microsoft::Console::VirtualTerminal
         StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat format) override; // DECRSPS
 
         void PlaySounds(const VTParameters parameters) override; // DECPS
+
+        void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
 
     private:
         enum class Mode
@@ -235,7 +245,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::pair<int, int> _GetVerticalMargins(const Page& page, const bool absolute) noexcept;
         std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
         void _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
-        void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
         void _SelectiveEraseRect(const Page& page, const til::rect& eraseRect);
         void _ChangeRectAttributes(const Page& page, const til::rect& changeRect, const ChangeOps& changeOps);
@@ -289,6 +298,10 @@ namespace Microsoft::Console::VirtualTerminal
         void _ReportTabStops();
         StringHandler _RestoreTabStops();
 
+        void _ReturnCsiResponse(const std::wstring_view response) const;
+        void _ReturnDcsResponse(const std::wstring_view response) const;
+        void _ReturnOscResponse(const std::wstring_view response) const;
+
         std::vector<uint8_t> _tabStopColumns;
         bool _initDefaultTabStops = true;
 
@@ -303,6 +316,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
+        til::enumset<OptionalFeature> _optionalFeatures = { OptionalFeature::ClipboardWrite };
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer

@@ -77,6 +77,8 @@ namespace Microsoft::Console::VirtualTerminal
             LS2R_LockingShift = VTID("}"),
             LS3R_LockingShift = VTID("|"),
             DECAC1_AcceptC1Controls = VTID(" 7"),
+            S7C1T_Send7bitC1Controls = VTID(" F"),
+            S8C1T_Send8bitC1Controls = VTID(" G"),
             ACS_AnsiLevel1 = VTID(" L"),
             ACS_AnsiLevel2 = VTID(" M"),
             ACS_AnsiLevel3 = VTID(" N"),
@@ -164,7 +166,11 @@ namespace Microsoft::Console::VirtualTerminal
             DECRQCRA_RequestChecksumRectangularArea = VTID("*y"),
             DECINVM_InvokeMacro = VTID("*z"),
             DECAC_AssignColor = VTID(",|"),
-            DECPS_PlaySound = VTID(",~")
+            DECPS_PlaySound = VTID(",~"),
+            KKP_KittyKeyboardSet = VTID("=u"),
+            KKP_KittyKeyboardQuery = VTID("?u"),
+            KKP_KittyKeyboardPush = VTID(">u"),
+            KKP_KittyKeyboardPop = VTID("<u")
         };
 
         enum DcsActionCodes : uint64_t
@@ -212,9 +218,11 @@ namespace Microsoft::Console::VirtualTerminal
             SetHighlightColor = 17,
             DECSWT_SetWindowTitle = 21,
             SetClipboard = 52,
-            ResetForegroundColor = 110, // Not implemented
-            ResetBackgroundColor = 111, // Not implemented
+            ResetColor = 104,
+            ResetForegroundColor = 110,
+            ResetBackgroundColor = 111,
             ResetCursorColor = 112,
+            ResetHighlightColor = 117,
             FinalTermAction = 133,
             VsCodeAction = 633,
             ITerm2Action = 1337,

@@ -111,11 +111,6 @@ void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*w
 {
 }
 
-[[nodiscard]] HRESULT ConsoleWindow::SignalUia(_In_ EVENTID /*id*/) noexcept
-{
-    return E_NOTIMPL;
-}
-
 [[nodiscard]] HRESULT ConsoleWindow::UiaSetTextAreaFocus() noexcept
 {
     return E_NOTIMPL;

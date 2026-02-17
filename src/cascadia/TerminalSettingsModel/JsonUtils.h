@@ -89,7 +89,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         static constexpr std::optional<T> EmptyV() { return std::nullopt; }
         static constexpr bool HasValue(const std::optional<T>& o) { return o.has_value(); }
-        // We can return a reference here because the original value is stored inside an std::optional
+        // We can return a reference here because the original value is stored inside a std::optional
         static constexpr auto&& Value(const std::optional<T>& o) { return *o; }
     };
 

@@ -66,7 +66,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         hstring AccessibleName() const
         {
-            return hstring{ fmt::format(FMT_COMPILE(L"{} RGB({}, {}, {})"), _Name, _Color.R, _Color.G, _Color.B) };
+            return til::hstring_format(FMT_COMPILE(L"{} RGB({}, {}, {})"), _Name, _Color.R, _Color.G, _Color.B);
+        }
+
+        hstring NameWithHexCode() const
+        {
+            return til::hstring_format(FMT_COMPILE(L"{} #{:02X}{:02X}{:02X}"), _Name, _Color.R, _Color.G, _Color.B);
         }
 
         til::property_changed_event PropertyChanged;

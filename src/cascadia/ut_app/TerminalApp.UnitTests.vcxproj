@@ -21,15 +21,10 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="ColorHelperTests.cpp" />
-
     <ClCompile Include="JsonUtilsTests.cpp" />
-
+    <ClCompile Include="FzfTests.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\TerminalApp\ColorHelper.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
 

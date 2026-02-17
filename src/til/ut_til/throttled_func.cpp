@@ -19,21 +19,25 @@ class ThrottledFuncTests
     TEST_METHOD(Basic)
     {
         using namespace std::chrono_literals;
-        using throttled_func = til::throttled_func_trailing<bool>;
+        using throttled_func = til::throttled_func<bool>;
 
         til::latch latch{ 2 };
 
         std::unique_ptr<throttled_func> tf;
-        tf = std::make_unique<throttled_func>(10ms, [&](bool reschedule) {
-            latch.count_down();
+        tf = std::make_unique<throttled_func>(
+            til::throttled_func_options{
+                .delay = 10ms,
+                .trailing = true },
+            [&](bool reschedule) {
+                latch.count_down();
 
-            // This will ensure that the callback is called even if we
-            // invoke the throttled_func from inside the callback itself.
-            if (reschedule)
-            {
-                tf->operator()(false);
-            }
-        });
+                // This will ensure that the callback is called even if we
+                // invoke the throttled_func from inside the callback itself.
+                if (reschedule)
+                {
+                    tf->operator()(false);
+                }
+            });
         // This will ensure that the throttled_func invokes the callback in general.
         tf->operator()(true);
 

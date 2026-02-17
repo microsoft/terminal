@@ -8,7 +8,8 @@
                 "action": "experimental.colorSelection"
                 // default fg and bg (i07 and i00)
             },
-            "keys": "alt+1"
+            "keys": "alt+1",
+            "id": "Terminal.ColorSelectionDefaultFgAndBg"
         },
         {
             "command":
@@ -16,7 +17,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i08"
             },
-            "keys": "alt+2"
+            "keys": "alt+2",
+            "id": "Terminal.ColorSelectionFgIndex8"
         },
         {
             "command":
@@ -24,7 +26,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i0c"
             },
-            "keys": "alt+3"
+            "keys": "alt+3",
+            "id": "Terminal.ColorSelectionFgIndex12"
         },
         {
             "command":
@@ -32,7 +35,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i0a"
             },
-            "keys": "alt+4"
+            "keys": "alt+4",
+            "id": "Terminal.ColorSelectionFgIndex10"
         },
         {
             "command":
@@ -40,7 +44,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i0e"
             },
-            "keys": "alt+5"
+            "keys": "alt+5",
+            "id": "Terminal.ColorSelectionFgIndex14"
         },
         {
             "command":
@@ -48,7 +53,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i09"
             },
-            "keys": "alt+6"
+            "keys": "alt+6",
+            "id": "Terminal.ColorSelectionFgIndex9"
         },
         {
             "command":
@@ -56,7 +62,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i0d"
             },
-            "keys": "alt+7"
+            "keys": "alt+7",
+            "id": "Terminal.ColorSelectionFgIndex13"
         },
         {
             "command":
@@ -64,7 +71,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i0b"
             },
-            "keys": "alt+8"
+            "keys": "alt+8",
+            "id": "Terminal.ColorSelectionFgIndex11"
         },
         {
             "command":
@@ -72,7 +80,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i0f"
             },
-            "keys": "alt+9"
+            "keys": "alt+9",
+            "id": "Terminal.ColorSelectionFgIndex15"
         },
         {
             "command":
@@ -80,7 +89,8 @@
                 "action": "experimental.colorSelection",
                 "foreground": "i03"
             },
-            "keys": "alt+0"
+            "keys": "alt+0",
+            "id": "Terminal.ColorSelectionFgIndex3"
         },
         // background
         {
@@ -90,7 +100,8 @@
                 "foreground": "i00",
                 "background": "i07"
             },
-            "keys": "ctrl+1"
+            "keys": "ctrl+1",
+            "id": "Terminal.ColorSelectionBgIndex7"
         },
         {
             "command":
@@ -99,7 +110,8 @@
                 "foreground": "i00",
                 "background": "i08"
             },
-            "keys": "ctrl+2"
+            "keys": "ctrl+2",
+            "id": "Terminal.ColorSelectionBgIndex8"
         },
         {
             "command":
@@ -108,7 +120,8 @@
                 "foreground": "i00",
                 "background": "i0c"
             },
-            "keys": "ctrl+3"
+            "keys": "ctrl+3",
+            "id": "Terminal.ColorSelectionBgIndex12"
         },
         {
             "command":
@@ -117,7 +130,8 @@
                 "foreground": "i00",
                 "background": "i0a"
             },
-            "keys": "ctrl+4"
+            "keys": "ctrl+4",
+            "id": "Terminal.ColorSelectionBgIndex10"
         },
         {
             "command":
@@ -126,7 +140,8 @@
                 "foreground": "i00",
                 "background": "i0e"
             },
-            "keys": "ctrl+5"
+            "keys": "ctrl+5",
+            "id": "Terminal.ColorSelectionBgIndex14"
         },
         {
             "command":
@@ -135,7 +150,8 @@
                 "foreground": "i00",
                 "background": "i09"
             },
-            "keys": "ctrl+6"
+            "keys": "ctrl+6",
+            "id": "Terminal.ColorSelectionBgIndex9"
         },
         {
             "command":
@@ -144,7 +160,8 @@
                 "foreground": "i00",
                 "background": "i0d"
             },
-            "keys": "ctrl+7"
+            "keys": "ctrl+7",
+            "id": "Terminal.ColorSelectionBgIndex13"
         },
         {
             "command":
@@ -153,7 +170,8 @@
                 "foreground": "i00",
                 "background": "i0b"
             },
-            "keys": "ctrl+8"
+            "keys": "ctrl+8",
+            "id": "Terminal.ColorSelectionBgIndex11"
         },
         {
             "command":
@@ -162,7 +180,8 @@
                 "foreground": "i00",
                 "background": "i0f"
             },
-            "keys": "ctrl+9"
+            "keys": "ctrl+9",
+            "id": "Terminal.ColorSelectionBgIndex15"
         },
         {
             "command":
@@ -171,7 +190,8 @@
                 "foreground": "i00",
                 "background": "i03"
             },
-            "keys": "ctrl+0"
+            "keys": "ctrl+0",
+            "id": "Terminal.ColorSelectionBgIndex3"
         },
         // with matching
         // Foreground, all matches
@@ -182,7 +202,8 @@
                 "matchMode": "all",
                 // default fg and bg (i07 and i00)
             },
-            "keys": "alt+shift+1"
+            "keys": "alt+shift+1",
+            "id": "Terminal.ColorSelectionMatchDefaultFgAndBg"
         },
         {
             "command":
@@ -191,7 +212,8 @@
                 "matchMode": "all",
                 "foreground": "i08"
             },
-            "keys": "alt+shift+2"
+            "keys": "alt+shift+2",
+            "id": "Terminal.ColorSelectionMatchFgIndex8"
         },
         {
             "command":
@@ -200,7 +222,8 @@
                 "matchMode": "all",
                 "foreground": "i0c"
             },
-            "keys": "alt+shift+3"
+            "keys": "alt+shift+3",
+            "id": "Terminal.ColorSelectionMatchFgIndex12"
         },
         {
             "command":
@@ -209,7 +232,8 @@
                 "matchMode": "all",
                 "foreground": "i0a"
             },
-            "keys": "alt+shift+4"
+            "keys": "alt+shift+4",
+            "id": "Terminal.ColorSelectionMatchFgIndex10"
         },
         {
             "command":
@@ -218,7 +242,8 @@
                 "matchMode": "all",
                 "foreground": "i0e"
             },
-            "keys": "alt+shift+5"
+            "keys": "alt+shift+5",
+            "id": "Terminal.ColorSelectionMatchFgIndex14"
         },
         {
             "command":
@@ -227,7 +252,8 @@
                 "matchMode": "all",
                 "foreground": "i09"
             },
-            "keys": "alt+shift+6"
+            "keys": "alt+shift+6",
+            "id": "Terminal.ColorSelectionMatchFgIndex9"
         },
         {
             "command":
@@ -236,7 +262,8 @@
                 "matchMode": "all",
                 "foreground": "i0d"
             },
-            "keys": "alt+shift+7"
+            "keys": "alt+shift+7",
+            "id": "Terminal.ColorSelectionMatchFgIndex13"
         },
         {
             "command":
@@ -245,7 +272,8 @@
                 "matchMode": "all",
                 "foreground": "i0b"
             },
-            "keys": "alt+shift+8"
+            "keys": "alt+shift+8",
+            "id": "Terminal.ColorSelectionMatchFgIndex11"
         },
         {
             "command":
@@ -254,7 +282,8 @@
                 "matchMode": "all",
                 "foreground": "i0f"
             },
-            "keys": "alt+shift+9"
+            "keys": "alt+shift+9",
+            "id": "Terminal.ColorSelectionMatchFgIndex15"
         },
         {
             "command":
@@ -263,7 +292,8 @@
                 "matchMode": "all",
                 "foreground": "i03"
             },
-            "keys": "alt+shift+0"
+            "keys": "alt+shift+0",
+            "id": "Terminal.ColorSelectionMatchFgIndex3"
         },
         // background, all matches
         {
@@ -274,7 +304,8 @@
                 "foreground": "i00",
                 "background": "i07"
             },
-            "keys": "ctrl+shift+1"
+            "keys": "ctrl+shift+1",
+            "id": "Terminal.ColorSelectionMatchBgIndex7"
         },
         {
             "command":
@@ -284,7 +315,8 @@
                 "foreground": "i00",
                 "background": "i08"
             },
-            "keys": "ctrl+shift+2"
+            "keys": "ctrl+shift+2",
+            "id": "Terminal.ColorSelectionMatchBgIndex8"
         },
         {
             "command":
@@ -294,7 +326,8 @@
                 "foreground": "i00",
                 "background": "i0c"
             },
-            "keys": "ctrl+shift+3"
+            "keys": "ctrl+shift+3",
+            "id": "Terminal.ColorSelectionMatchBgIndex12"
         },
         {
             "command":
@@ -304,7 +337,8 @@
                 "foreground": "i00",
                 "background": "i0a"
             },
-            "keys": "ctrl+shift+4"
+            "keys": "ctrl+shift+4",
+            "id": "Terminal.ColorSelectionMatchBgIndex10"
         },
         {
             "command":
@@ -314,7 +348,8 @@
                 "foreground": "i00",
                 "background": "i0e"
             },
-            "keys": "ctrl+shift+5"
+            "keys": "ctrl+shift+5",
+            "id": "Terminal.ColorSelectionMatchBgIndex14"
         },
         {
             "command":
@@ -324,7 +359,8 @@
                 "foreground": "i00",
                 "background": "i09"
             },
-            "keys": "ctrl+shift+6"
+            "keys": "ctrl+shift+6",
+            "id": "Terminal.ColorSelectionMatchBgIndex9"
         },
         {
             "command":
@@ -334,7 +370,8 @@
                 "foreground": "i00",
                 "background": "i0d"
             },
-            "keys": "ctrl+shift+7"
+            "keys": "ctrl+shift+7",
+            "id": "Terminal.ColorSelectionMatchBgIndex13"
         },
         {
             "command":
@@ -344,7 +381,8 @@
                 "foreground": "i00",
                 "background": "i0b"
             },
-            "keys": "ctrl+shift+8"
+            "keys": "ctrl+shift+8",
+            "id": "Terminal.ColorSelectionMatchBgIndex11"
         },
         {
             "command":
@@ -354,7 +392,8 @@
                 "foreground": "i00",
                 "background": "i0f"
             },
-            "keys": "ctrl+shift+9"
+            "keys": "ctrl+shift+9",
+            "id": "Terminal.ColorSelectionMatchBgIndex15"
         },
         {
             "command":
@@ -364,7 +403,8 @@
                 "foreground": "i00",
                 "background": "i03"
             },
-            "keys": "ctrl+shift+0"
+            "keys": "ctrl+shift+0",
+            "id": "Terminal.ColorSelectionMatchBgIndex3"
         }
     ]
 }

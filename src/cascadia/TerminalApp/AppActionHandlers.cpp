@@ -8,6 +8,7 @@
 #include "ScratchpadContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
+#include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -41,13 +42,13 @@ namespace winrt::TerminalApp::implementation
         }
         return _GetActiveControl();
     }
-    winrt::com_ptr<TerminalTab> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
+    winrt::com_ptr<Tab> TerminalPage::_senderOrFocusedTab(const IInspectable& sender)
     {
         if (sender)
         {
-            if (auto tab{ sender.try_as<TerminalApp::TerminalTab>() })
+            if (auto tab = sender.try_as<TerminalApp::Tab>())
             {
-                return _GetTerminalTabImpl(tab);
+                return _GetTabImpl(tab);
             }
         }
         return _GetFocusedTabImpl();
@@ -118,7 +119,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseRequested.raise(nullptr, nullptr);
+        CloseWindow();
         args.Handled(true);
     }
 
@@ -193,17 +194,17 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseOtherPanes(const IInspectable& sender,
                                               const ActionEventArgs& args)
     {
-        if (const auto& terminalTab{ _senderOrFocusedTab(sender) })
+        if (const auto& activeTab{ _senderOrFocusedTab(sender) })
         {
-            const auto activePane = terminalTab->GetActivePane();
-            if (terminalTab->GetRootPane() != activePane)
+            const auto activePane = activeTab->GetActivePane();
+            if (activeTab->GetRootPane() != activePane)
             {
                 _UnZoomIfNeeded();
 
                 // Accumulate list of all unfocused leaf panes, ignore read-only panes
                 std::vector<uint32_t> unfocusedPaneIds;
                 const auto activePaneId = activePane->Id();
-                terminalTab->GetRootPane()->WalkTree([&](auto&& p) {
+                activeTab->GetRootPane()->WalkTree([&](auto&& p) {
                     const auto id = p->Id();
                     if (id.has_value() && id != activePaneId && !p->ContainsReadOnly())
                     {
@@ -215,7 +216,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     // Start by removing the panes that were least recently added
                     sort(begin(unfocusedPaneIds), end(unfocusedPaneIds), std::less<uint32_t>());
-                    _ClosePanes(terminalTab->get_weak(), std::move(unfocusedPaneIds));
+                    _ClosePanes(activeTab->get_weak(), std::move(unfocusedPaneIds));
                     args.Handled(true);
                     return;
                 }
@@ -281,9 +282,9 @@ namespace winrt::TerminalApp::implementation
 
             const auto& duplicateFromTab{ realArgs.SplitMode() == SplitType::Duplicate ? _GetFocusedTab() : nullptr };
 
-            const auto& terminalTab{ _senderOrFocusedTab(sender) };
+            const auto& activeTab{ _senderOrFocusedTab(sender) };
 
-            _SplitPane(terminalTab,
+            _SplitPane(activeTab,
                        realArgs.SplitDirection(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        realArgs.SplitSize(),
@@ -302,14 +303,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& sender,
                                              const ActionEventArgs& args)
     {
-        if (const auto terminalTab{ _senderOrFocusedTab(sender) })
+        if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
             // Don't do anything if there's only one pane. It's already zoomed.
-            if (terminalTab->GetLeafPaneCount() > 1)
+            if (activeTab->GetLeafPaneCount() > 1)
             {
                 // Togging the zoom on the tab will cause the tab to inform us of
                 // the new root Content for this tab.
-                terminalTab->ToggleZoom();
+                activeTab->ToggleZoom();
             }
         }
 
@@ -517,7 +518,7 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 // Mark as handled only when the move succeeded (e.g. when there
-                // is a pane to move to), otherwise mark as unhandled so the
+                // is a pane to move to); otherwise, mark as unhandled so the
                 // keychord can propagate to the terminal (GH#6129)
                 const auto moveSucceeded = _MoveFocus(realArgs.FocusDirection());
                 args.Handled(moveSucceeded);
@@ -548,7 +549,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.CopyFormatting());
+            const auto copyFormatting = realArgs.CopyFormatting();
+            const auto format = copyFormatting ? copyFormatting.Value() : _settings.GlobalSettings().CopyFormatting();
+            const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), format);
             args.Handled(handled);
         }
     }
@@ -666,8 +669,10 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
+                auto temporarySettings{ winrt::make_self<Settings::TerminalSettings>() };
+                temporarySettings->ApplyColorScheme(scheme);
                 const auto res = _ApplyToActiveControls([&](auto& control) {
-                    control.ColorScheme(scheme.ToCoreScheme());
+                    control.SetOverrideColorScheme(temporarySettings.try_as<winrt::Microsoft::Terminal::Core::ICoreScheme>());
                 });
                 args.Handled(res);
             }
@@ -752,13 +757,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<ExecuteCommandlineArgs>())
         {
-            auto actions = winrt::single_threaded_vector<ActionAndArgs>(
-                TerminalPage::ConvertExecuteCommandlineToActions(realArgs));
-
-            if (actions.Size() != 0)
+            auto actions = ConvertExecuteCommandlineToActions(realArgs);
+            if (!actions.empty())
             {
                 actionArgs.Handled(true);
-                ProcessStartupActions(actions, false);
+                ProcessStartupActions(std::move(actions));
             }
         }
     }
@@ -785,7 +788,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<winrt::TerminalApp::Tab> tabsToRemove;
             if (index > 0)
             {
                 std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
@@ -824,7 +827,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Since _RemoveTabs is asynchronous, create a snapshot of the  tabs we want to remove
-            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::vector<winrt::TerminalApp::Tab> tabsToRemove;
             std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             _RemoveTabs(tabsToRemove);
 
@@ -900,7 +903,10 @@ namespace winrt::TerminalApp::implementation
             co_return;
         }
 
-        // Hop to the BG thread
+        // ShellExecuteExW may block, so do it on a background thread.
+        //
+        // NOTE: All remaining code of this function doesn't touch `this`, so we don't need weak/strong_ref.
+        // NOTE NOTE: Don't touch `this` when you make changes here.
         co_await winrt::resume_background();
 
         // This will get us the correct exe for dev/preview/release. If you
@@ -911,7 +917,7 @@ namespace winrt::TerminalApp::implementation
         // Build the commandline to pass to wt for this set of NewTerminalArgs
         // `-w -1` will ensure a new window is created.
         const auto commandline = terminalArgs.ToCommandline();
-        winrt::hstring cmdline{ fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline) };
+        const auto cmdline = fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline);
 
         // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
         // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
@@ -1125,6 +1131,16 @@ namespace winrt::TerminalApp::implementation
                 _OpenHyperlinkHandler(termControl, shortcut);
                 args.Handled(true);
             }
+        }
+    }
+
+    void TerminalPage::_HandleOpenCWD(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.OpenCWD();
+            args.Handled(true);
         }
     }
 
@@ -1443,6 +1459,8 @@ namespace winrt::TerminalApp::implementation
 
     safe_void_coroutine TerminalPage::_doHandleSuggestions(SuggestionsArgs realArgs)
     {
+        const auto weak = get_weak();
+        const auto dispatcher = Dispatcher();
         const auto source = realArgs.Source();
         std::vector<Command> commandsCollection;
         Control::CommandHistoryContext context{ nullptr };
@@ -1509,7 +1527,12 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        co_await wil::resume_foreground(Dispatcher());
+        co_await wil::resume_foreground(dispatcher);
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         // Open the palette with all these commands in it.
         _OpenSuggestions(_GetActiveControl(),
@@ -1551,7 +1574,6 @@ namespace winrt::TerminalApp::implementation
             activeTab->ToggleBroadcastInput();
             args.Handled(true);
         }
-        // If the focused tab wasn't a TerminalTab, then leave handled=false
     }
 
     void TerminalPage::_HandleRestartConnection(const IInspectable& sender,

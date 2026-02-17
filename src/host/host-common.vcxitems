@@ -4,7 +4,6 @@
     <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
-    <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
     <ClCompile Include="..\dbcs.cpp" />
@@ -47,6 +46,7 @@
     <ClCompile Include="..\writeData.cpp" />
     <ClCompile Include="..\_output.cpp" />
     <ClCompile Include="..\_stream.cpp" />
+    <ClCompile Include="..\AccessibilityNotifier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\IIoProvider.hpp" />
@@ -58,7 +58,6 @@
     <ClInclude Include="..\ConsoleArguments.hpp" />
     <ClInclude Include="..\conserv.h" />
     <ClInclude Include="..\conwinuserrefs.h" />
-    <ClInclude Include="..\CursorBlinker.hpp" />
     <ClInclude Include="..\dbcs.h" />
     <ClInclude Include="..\directio.h" />
     <ClInclude Include="..\getset.h" />
@@ -95,6 +94,7 @@
     <ClInclude Include="..\writeData.hpp" />
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
+    <ClInclude Include="..\AccessibilityNotifier.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\audio\midi\lib\midi.vcxproj">

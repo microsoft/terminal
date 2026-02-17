@@ -77,9 +77,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj">
       <Project>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalAzBridge\TerminalAzBridge.vcxproj">
-      <Project>{067F0A06-FCB7-472C-96E9-B03B54E8E18D}</Project>
-    </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ShellExtension\WindowsTerminalShellExt.vcxproj">
       <Project>{f2ed628a-db22-446f-a081-4cc845b51a2b}</Project>
     </ProjectReference>

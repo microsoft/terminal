@@ -30,6 +30,7 @@ class ConsoleWaitBlock
 public:
     ~ConsoleWaitBlock();
 
+    const SCREEN_INFORMATION* GetScreenBuffer() const noexcept;
     bool Notify(const WaitTerminationReason TerminationReason);
 
     [[nodiscard]] static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplymessage,
@@ -42,10 +43,10 @@ private:
                      _In_ IWaitRoutine* const pWaiter);
 
     ConsoleWaitQueue* const _pProcessQueue;
-    std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itProcessQueue;
+    typename std::list<ConsoleWaitBlock*>::const_iterator _itProcessQueue;
 
     ConsoleWaitQueue* const _pObjectQueue;
-    std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itObjectQueue;
+    typename std::list<ConsoleWaitBlock*>::const_iterator _itObjectQueue;
 
     CONSOLE_API_MSG _WaitReplyMessage;
 

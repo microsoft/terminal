@@ -31,6 +31,7 @@
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Text.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Automation.h>
 #include <winrt/Windows.UI.Xaml.Automation.Peers.h>
@@ -43,6 +44,10 @@
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Xaml.Navigation.h>
 
+#include <winrt/Windows.Media.h>
+#include <winrt/Windows.Media.Core.h>
+#include <winrt/Windows.Media.Playback.h>
+
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
@@ -50,6 +55,13 @@
 #include <winrt/Microsoft.Terminal.Control.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Microsoft.Terminal.UI.h>
+
+// Including TraceLogging essentials for the binary
+#include <TraceLoggingProvider.h>
+#include <winmeta.h>
+TRACELOGGING_DECLARE_PROVIDER(g_hTerminalSettingsEditorProvider);
+#include <telemetry/ProjectTelemetry.h>
+#include <TraceLoggingActivity.h>
 
 #include <shlobj.h>
 #include <shobjidl_core.h>
@@ -60,3 +72,6 @@
 #include <til/winrt.h>
 
 #include <cppwinrt_utils.h>
+#include <wil/cppwinrt_helpers.h> // must go after the CoreDispatcher type is defined
+
+#include <LibraryResources.h>

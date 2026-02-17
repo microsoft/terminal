@@ -3,8 +3,13 @@
 
 #pragma once
 
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 
 #include <filesystem>
 #include <functional>
@@ -13,6 +18,7 @@
 #include <span>
 #include <string_view>
 #include <vector>
+#include <cassert>
 
 #include <d2d1_3.h>
 #include <d3d11_2.h>

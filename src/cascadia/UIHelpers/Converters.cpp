@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Converters.h"
+
+#include <til/winrt.h>
+
 #include "Converters.g.cpp"
 
 #pragma warning(disable : 26497) // We will make these functions constexpr, as they are part of an ABI boundary.
@@ -31,7 +34,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
     winrt::hstring Converters::PercentageToPercentageString(double value)
     {
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{:.0f}%"), value * 100.0) };
+        return til::hstring_format(FMT_COMPILE(L"{:.0f}%"), value * 100.0);
     }
 
     // Strings
@@ -58,7 +61,14 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     // Misc
     winrt::Windows::UI::Text::FontWeight Converters::DoubleToFontWeight(double value)
     {
-        return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
+        uint16_t val = 400;
+
+        if (value >= 1.0 && value <= 1000.0)
+        {
+            val = gsl::narrow_cast<uint16_t>(lrint(value));
+        }
+
+        return winrt::Windows::UI::Text::FontWeight{ val };
     }
 
     winrt::Windows::UI::Xaml::Media::SolidColorBrush Converters::ColorToBrush(const winrt::Windows::UI::Color color)
@@ -69,40 +79,5 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     double Converters::FontWeightToDouble(const winrt::Windows::UI::Text::FontWeight fontWeight)
     {
         return fontWeight.Weight;
-    }
-
-    double Converters::MaxValueFromPaddingString(const winrt::hstring& paddingString)
-    {
-        std::wstring_view remaining{ paddingString };
-        double maxVal = 0;
-
-        // Get padding values till we run out of delimiter separated values in the stream
-        // Non-numeral values detected will default to 0
-        // std::stod will throw invalid_argument exception if the input is an invalid double value
-        // std::stod will throw out_of_range exception if the input value is more than DBL_MAX
-        try
-        {
-            while (!remaining.empty())
-            {
-                const std::wstring token{ til::prefix_split(remaining, L',') };
-                // std::stod internally calls wcstod which handles whitespace prefix (which is ignored)
-                //  & stops the scan when first char outside the range of radix is encountered
-                // We'll be permissive till the extent that stod function allows us to be by default
-                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                const auto curVal = std::stod(token);
-                if (curVal > maxVal)
-                {
-                    maxVal = curVal;
-                }
-            }
-        }
-        catch (...)
-        {
-            // If something goes wrong, even if due to a single bad padding value, we'll return default 0 padding
-            maxVal = 0;
-            LOG_CAUGHT_EXCEPTION();
-        }
-
-        return maxVal;
     }
 }

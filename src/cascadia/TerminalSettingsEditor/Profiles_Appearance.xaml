@@ -29,30 +29,50 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
+
+            <Style x:Key="PaddingNumberBoxStyle"
+                   TargetType="muxc:NumberBox">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="muxc:NumberBox">
+                            <Grid x:Name="Root">
+                                <TextBox x:Name="InputBox"
+                                         Padding="0,6"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Text="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                         TextAlignment="Center" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid>
+    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
-                   Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
+                    Margin="0,12,0,0"
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Control Preview  -->
-            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+            <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
+                    Margin="0,0,0,32"
+                    CornerRadius="{StaticResource ControlCornerRadius}">
                 <Border x:Name="ControlPreview"
                         Width="400"
                         Height="180"
-                        Margin="0,12,0,12"
                         HorizontalAlignment="Left"
-                        BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                        BorderThickness="1" />
+                        BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource ControlCornerRadius}" />
             </Border>
 
             <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
@@ -106,21 +126,68 @@
                 <!--  Padding  -->
                 <local:SettingContainer x:Uid="Profile_Padding"
                                         ClearSettingValue="{x:Bind Profile.ClearPadding}"
+                                        CurrentValue="{x:Bind Profile.Padding, Mode=OneWay}"
                                         HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}">
-                    <Grid Style="{StaticResource CustomSliderControlGridStyle}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="PaddingSlider"
-                                x:Uid="Profile_PaddingSlider"
-                                Grid.Column="0"
-                                Value="{x:Bind mtu:Converters.MaxValueFromPaddingString(Profile.Padding), BindBack=Profile.SetPadding, Mode=TwoWay}" />
-                        <TextBlock Grid.Column="1"
-                                   Style="{StaticResource SliderValueLabelStyle}"
-                                   Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}" />
-                    </Grid>
+                                        SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <Border Margin="0,12,0,12"
+                            Padding="2,0,2,0"
+                            HorizontalAlignment="Left"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultSolidBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource OverlayCornerRadius}">
+                        <Grid>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="48" />
+                                <RowDefinition Height="48" />
+                                <RowDefinition Height="48" />
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="72" />
+                                <ColumnDefinition Width="72" />
+                            </Grid.ColumnDefinitions>
+
+                            <muxc:NumberBox Grid.Row="1"
+                                            Grid.Column="0"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="0"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.LeftPadding, Mode=TwoWay}" />
+
+                            <muxc:NumberBox Grid.Row="0"
+                                            Grid.Column="1"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="0"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.TopPadding, Mode=TwoWay}" />
+
+                            <muxc:NumberBox Grid.Row="1"
+                                            Grid.Column="2"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="0"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.RightPadding, Mode=TwoWay}" />
+
+                            <muxc:NumberBox Grid.Row="2"
+                                            Grid.Column="1"
+                                            LargeChange="10"
+                                            Maximum="100"
+                                            Minimum="0"
+                                            SmallChange="1"
+                                            Style="{StaticResource PaddingNumberBoxStyle}"
+                                            Value="{x:Bind Profile.BottomPadding, Mode=TwoWay}" />
+
+                        </Grid>
+                    </Border>
                 </local:SettingContainer>
 
                 <!--  Scrollbar Visibility  -->
@@ -139,25 +206,27 @@
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                     <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
-                               Style="{StaticResource TitleTextBlockStyle}" />
+                               Style="{StaticResource TextBlockSubtitleStyle}" />
                     <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
-                            Margin="10,0,0,0"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Bottom"
                             Click="CreateUnfocusedAppearance_Click"
                             Style="{StaticResource BaseButtonStyle}"
                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
                         <Button.Content>
                             <StackPanel Orientation="Horizontal">
-                                <FontIcon Margin="0,3,0,0"
+                                <FontIcon Margin="0,4,0,0"
                                           FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE710;" />
                                 <TextBlock x:Uid="Profile_AddAppearanceButton"
-                                           Margin="10,0,0,0"
+                                           Margin="8,0,0,0"
                                            FontSize="{StaticResource StandardIconSize}" />
                             </StackPanel>
                         </Button.Content>
                     </Button>
                     <Button x:Uid="Profile_DeleteUnfocusedAppearanceButton"
-                            Margin="10,0,0,0"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Bottom"
                             Click="DeleteUnfocusedAppearance_Click"
                             Style="{StaticResource DeleteButtonStyle}"
                             Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">
@@ -166,7 +235,7 @@
                                 <FontIcon FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE74D;" />
                                 <TextBlock x:Uid="Profile_DeleteAppearanceButton"
-                                           Margin="10,0,0,0"
+                                           Margin="8,0,0,0"
                                            FontSize="{StaticResource StandardIconSize}" />
                             </StackPanel>
                         </Button.Content>

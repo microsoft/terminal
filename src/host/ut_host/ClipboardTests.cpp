@@ -84,7 +84,7 @@ class ClipboardTests
         const auto& screenInfo = gci.GetActiveOutputBuffer();
         const auto& buffer = screenInfo.GetTextBuffer();
 
-        constexpr til::point_span selection = { { 0, 0 }, { 14, 3 } };
+        constexpr til::point_span selection = { { 0, 0 }, { 15, 3 } };
         const auto req = TextBuffer::CopyRequest::FromConfig(buffer, selection.start, selection.end, false, !fLineSelection, false);
         return buffer.GetPlainText(req);
     }
@@ -246,8 +246,8 @@ class ClipboardTests
     TEST_METHOD(CanConvertCharsOutsideKeyboardLayout)
     {
         const std::wstring wstr = L"\xbc"; // ¼ char U+00BC
-        const UINT outputCodepage = CP_JAPANESE;
-        ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP = outputCodepage;
+        const UINT codepage = CP_JAPANESE;
+        ServiceLocator::LocateGlobals().getConsoleInformation().CP = codepage;
         auto events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
                                                             wstr.size());
 

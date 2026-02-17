@@ -19,16 +19,16 @@
 
     <file src="../../../src/inc/conpty-static.h" target="inc/conpty.h" />
 
-    <file src="../../../bin/Win32/Release/conpty.dll" target="runtimes/win10-x86/native" />
-    <file src="../../../bin/Win32/Release/conpty.lib" target="runtimes/win10-x86/lib/uap10.0" />
+    <file src="../../../bin/Win32/Release/conpty.dll" target="runtimes/win-x86/native" />
+    <file src="../../../bin/Win32/Release/conpty.lib" target="runtimes/win-x86/lib/uap10.0" />
     <file src="../../../bin/Win32/Release/OpenConsole.exe" target="build/native/runtimes/x86" />
 
-    <file src="../../../bin/x64/Release/conpty.dll" target="runtimes/win10-x64/native" />
-    <file src="../../../bin/x64/Release/conpty.lib" target="runtimes/win10-x64/lib/uap10.0" />
+    <file src="../../../bin/x64/Release/conpty.dll" target="runtimes/win-x64/native" />
+    <file src="../../../bin/x64/Release/conpty.lib" target="runtimes/win-x64/lib/uap10.0" />
     <file src="../../../bin/x64/Release/OpenConsole.exe" target="build/native/runtimes/x64" />
 
-    <file src="../../../bin/ARM64/Release/conpty.lib" target="runtimes/win10-arm64/lib/uap10.0" />
-    <file src="../../../bin/ARM64/Release/conpty.dll" target="runtimes/win10-arm64/native" />
+    <file src="../../../bin/ARM64/Release/conpty.lib" target="runtimes/win-arm64/lib/uap10.0" />
+    <file src="../../../bin/ARM64/Release/conpty.dll" target="runtimes/win-arm64/native" />
     <file src="../../../bin/ARM64/Release/OpenConsole.exe" target="build/native/runtimes/arm64" />
   </files>
 </package>

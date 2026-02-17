@@ -44,21 +44,13 @@ jobs:
     submodules: true
     persistCredentials: True
 
-  - task: PkgESSetupBuild@12
-    displayName: Package ES - Setup Build
-    inputs:
-      disableOutputRedirect: true
+  - template: steps-setup-versioning.yml
 
   - task: DownloadPipelineArtifact@2
     displayName: Download all PDBs from all prior build phases
     inputs:
       itemPattern: '**/*.pdb'
       targetPath: '$(Build.SourcesDirectory)/bin'
-
-  - powershell: |-
-      Get-PackageProvider -Name NuGet -ForceBootstrap
-      Install-Module -Verbose -AllowClobber -Force Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute
-    displayName: Install Azure Module Dependencies
 
   # Transit the Azure token from the Service Connection into a secret variable for the rest of the pipeline to use.
   - task: AzurePowerShell@5
@@ -69,7 +61,7 @@ jobs:
       pwsh: true
       ScriptType: InlineScript
       Inline: |-
-        $AzToken = (Get-AzAccessToken -ResourceUrl api://30471ccf-0966-45b9-a979-065dbedb24c1).Token
+        $AzToken = (Get-AzAccessToken -AsSecureString -ResourceUrl api://30471ccf-0966-45b9-a979-065dbedb24c1).Token | ConvertFrom-SecureString -AsPlainText
         Write-Host "##vso[task.setvariable variable=SymbolAccessToken;issecret=true]$AzToken"
 
 

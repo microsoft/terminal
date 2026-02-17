@@ -51,6 +51,10 @@ namespace Microsoft::Console::VirtualTerminal
 
     enum class DeviceAttribute : uint64_t
     {
+        // Special value to indicate that InputStateMachineEngine::_deviceAttributes has been set.
+        // 0 in this case means 1<<0 == 1, which in turn means that _deviceAttributes is non-zero.
+        __some__ = 0,
+
         Columns132 = 1,
         PrinterPort = 2,
         Sixel = 4,
@@ -107,6 +111,8 @@ namespace Microsoft::Console::VirtualTerminal
         Released = 3,
         ScrollForward = 4,
         ScrollBack = 5,
+        ScrollLeft = 6,
+        ScrollRight = 7,
     };
 
     constexpr unsigned short CsiMouseModifierCode_Drag = 32;
@@ -155,9 +161,10 @@ namespace Microsoft::Console::VirtualTerminal
     class InputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR = false);
+        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch);
 
-        til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
+        void CaptureNextCursorPositionReport() noexcept;
+        til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) noexcept;
 
         bool EncounteredWin32InputModeSequence() const noexcept override;
 
@@ -185,8 +192,9 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         std::atomic<uint64_t> _deviceAttributes{ 0 };
-        bool _lookingForDSR = false;
+        std::atomic<bool> _captureNextCursorPositionReport{ false };
         bool _encounteredWin32InputModeSequence = false;
+        bool _expectingStringTerminator = false;
         DWORD _mouseButtonState = 0;
         std::chrono::milliseconds _doubleClickTime;
         std::optional<til::point> _lastMouseClickPos{};

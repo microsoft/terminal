@@ -322,6 +322,7 @@ public:
                                     const VTParameter parameter1,
                                     const VTParameter parameter2) override; // DTTERM_WindowManipulation
     virtual void WriteString(const std::wstring_view string) override;
+    virtual void WriteStringRaw(const std::wstring_view string) override;
 
     virtual void MoveCursor(const VTInt row,
                             const VTInt col) override;
@@ -372,6 +373,18 @@ void TestInteractDispatch::WriteString(const std::wstring_view string)
         // We're forcing the translation to CP_USA, so that it'll be constant
         //  regardless of the CP the test is running in
         Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA, keyEvents);
+    }
+
+    WriteInput(keyEvents);
+}
+
+void TestInteractDispatch::WriteStringRaw(const std::wstring_view string)
+{
+    InputEventQueue keyEvents;
+
+    for (const auto& wch : string)
+    {
+        keyEvents.push_back(SynthesizeKeyEvent(true, 1, 0, 0, wch, 0));
     }
 
     WriteInput(keyEvents);
@@ -666,11 +679,9 @@ void InputEngineTest::CursorPositioningTest()
     auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
 
     auto dispatch = std::make_unique<TestInteractDispatch>(pfn, &testState);
-    VERIFY_IS_NOT_NULL(dispatch.get());
-    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch), true);
-    VERIFY_IS_NOT_NULL(inputEngine.get());
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
+    inputEngine->CaptureNextCursorPositionReport();
     auto _stateMachine = std::make_unique<StateMachine>(std::move(inputEngine));
-    VERIFY_IS_NOT_NULL(_stateMachine);
     testState._stateMachine = _stateMachine.get();
 
     Log::Comment(NoThrowString().Format(
@@ -1181,8 +1192,10 @@ void InputEngineTest::SGRMouseTest_Scroll()
     // NOTE: scrolling events do NOT send a mouse up event
     const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
         //  TEST INPUT                                                                             EXPECTED OUTPUT
-        {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED } },
-        {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED } },
+        {   { CsiMouseButtonCodes::ScrollForward, 0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_WHEELED  } },
+        {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED  } },
+        {   { CsiMouseButtonCodes::ScrollLeft,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_HWHEELED } },
+        {   { CsiMouseButtonCodes::ScrollRight,   0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_FORWARD,  0, { 0, 0 }, MOUSE_HWHEELED } },
     };
     // clang-format on
     VerifySGRMouseData(testData);

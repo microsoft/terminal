@@ -11,11 +11,11 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hInstDll);
         break;
-    case DLL_PROCESS_DETACH:
-        break;
     default:
         break;
     }
 
     return TRUE;
 }
+
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"Microsoft.Terminal.UI/Resources")

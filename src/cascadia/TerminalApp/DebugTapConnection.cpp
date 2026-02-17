@@ -34,9 +34,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
             // before actually starting the connection to the client app. This
             // will ensure both controls are initialized before the client app
             // is.
+            const auto weak = get_weak();
             co_await winrt::resume_background();
-            _pairedTap->_start.wait();
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
 
+            _pairedTap->_start.wait();
             _wrappedConnection.Start();
         }
         void WriteInput(const winrt::array_view<const char16_t> buffer)
@@ -60,9 +66,12 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
     DebugTapConnection::DebugTapConnection(ITerminalConnection wrappedConnection)
     {
-        _outputRevoker = wrappedConnection.TerminalOutput(winrt::auto_revoke, { this, &DebugTapConnection::_OutputHandler });
-        _stateChangedRevoker = wrappedConnection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*e*/) {
-            StateChanged.raise(*this, nullptr);
+        _outputRevoker = wrappedConnection.TerminalOutput(winrt::auto_revoke, { get_weak(), &DebugTapConnection::_OutputHandler });
+        _stateChangedRevoker = wrappedConnection.StateChanged(winrt::auto_revoke, [weak = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+            if (const auto self = weak.get())
+            {
+                self->StateChanged.raise(*self, nullptr);
+            }
         });
         _wrappedConnection = wrappedConnection;
     }
@@ -117,9 +126,9 @@ namespace winrt::Microsoft::TerminalApp::implementation
         return ConnectionState::Failed;
     }
 
-    void DebugTapConnection::_OutputHandler(const std::wstring_view str)
+    void DebugTapConnection::_OutputHandler(const winrt::array_view<const char16_t> str)
     {
-        auto output = til::visualize_control_codes(str);
+        auto output = til::visualize_control_codes(winrt_array_to_wstring_view(str));
         // To make the output easier to read, we introduce a line break whenever
         // an LF control is encountered. But at this point, the LF would have
         // been converted to U+240A (␊), so that's what we need to search for.
@@ -127,7 +136,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         {
             output.insert(++lfPos, L"\r\n");
         }
-        TerminalOutput.raise(output);
+        TerminalOutput.raise(winrt_wstring_to_array_view(output));
     }
 
     // Called by the DebugInputTapConnection to print user input
@@ -135,7 +144,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     {
         auto clean{ til::visualize_control_codes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
-        TerminalOutput.raise(formatted);
+        TerminalOutput.raise(winrt_wstring_to_array_view(formatted));
     }
 
     // Wire us up so that we can forward input through

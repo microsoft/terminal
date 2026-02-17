@@ -23,7 +23,6 @@ Author(s):
 #include "Utils.h"
 #include "ViewModelHelpers.h"
 #include "SettingContainer.h"
-#include <LibraryResources.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -48,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         uint32_t Key() const noexcept;
         float Value() const noexcept;
         void Value(float v);
+        winrt::hstring AutomationName();
 
         void SetValueDirect(float v);
         bool IsFontFeature() const noexcept;
@@ -92,6 +92,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ClearLineHeight();
         Model::FontConfig LineHeightOverrideSource() const;
 
+        double CellWidth() const;
+        void CellWidth(const double value);
+        bool HasCellWidth() const;
+        void ClearCellWidth();
+        Model::FontConfig CellWidthOverrideSource() const;
+
         void SetFontWeightFromDouble(double fontWeight);
 
         const FontFaceDependentsData& FontFaceDependents();
@@ -114,15 +120,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UpdateFontSetting(const FontKeyValuePair* kv);
 
         // background image
-        bool UseDesktopBGImage();
+        hstring CurrentBackgroundImagePath() const;
+        bool UseDesktopBGImage() const;
         void UseDesktopBGImage(const bool useDesktop);
-        bool BackgroundImageSettingsVisible();
+        bool BackgroundImageSettingsVisible() const;
         void SetBackgroundImageOpacityFromPercentageValue(double percentageValue);
         void SetBackgroundImagePath(winrt::hstring path);
+        hstring BackgroundImageAlignmentCurrentValue() const;
 
         void ClearColorScheme();
-        Editor::ColorSchemeViewModel CurrentColorScheme();
+        Editor::ColorSchemeViewModel CurrentColorScheme() const;
         void CurrentColorScheme(const Editor::ColorSchemeViewModel& val);
+
+        Windows::UI::Color ForegroundPreview() const;
+        Windows::UI::Color BackgroundPreview() const;
+        Windows::UI::Color SelectionBackgroundPreview() const;
+        Windows::UI::Color CursorColorPreview() const;
 
         WINRT_PROPERTY(bool, IsDefault, false);
 
@@ -147,6 +160,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
         OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Foreground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, Background);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, SelectionBackground);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorColor);
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
@@ -161,6 +178,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _deleteAllFontKeyValuePairs(FontSettingIndex index);
         void _addMenuFlyoutItemToUnused(FontSettingIndex index, Windows::UI::Xaml::Controls::MenuFlyoutItemBase item);
 
+        double _parseCellSizeValue(const hstring& val) const;
+
         Model::AppearanceConfig _appearance;
         winrt::hstring _lastBgImagePath;
         std::optional<FontFaceDependentsData> _fontFaceDependents;
@@ -173,13 +192,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CursorShape visibility logic
         bool IsVintageCursor() const;
 
+        Editor::IHostedInWindow WindowRoot() const noexcept { return _WeakWindowRoot.get(); }
+        void WindowRoot(const Editor::IHostedInWindow& value) noexcept { _WeakWindowRoot = value; }
+
         Windows::Foundation::Collections::IObservableVector<Editor::Font> FilteredFontList();
         bool ShowAllFonts() const noexcept;
         void ShowAllFonts(bool value);
 
         void FontFaceBox_GotFocus(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void FontFaceBox_LostFocus(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void FontFaceBox_SuggestionChosen(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox&, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxSuggestionChosenEventArgs&);
+        void FontFaceBox_QuerySubmitted(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox&, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs&);
         void FontFaceBox_TextChanged(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox&, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs&);
         void DeleteFontKeyValuePair_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         safe_void_coroutine BackgroundImage_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
@@ -199,12 +221,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         DEPENDENCY_PROPERTY(Editor::AppearanceViewModel, Appearance);
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
-        WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance().BackgroundImageStretchMode);
 
         GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance().IntenseTextStyle);
 
     private:
+        winrt::weak_ref<Editor::IHostedInWindow> _WeakWindowRoot{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
         std::array<Windows::UI::Xaml::Controls::Primitives::ToggleButton, 9> _BIAlignmentButtons;
         Windows::Foundation::Collections::IMap<uint16_t, Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
@@ -217,6 +239,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static void _ViewModelChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
 
+        void _updateFontName(winrt::hstring fontSpec);
         void _updateFontNameFilter(std::wstring_view filter);
         void _updateFilteredFontList();
         void _UpdateBIAlignmentControl(const int32_t val);

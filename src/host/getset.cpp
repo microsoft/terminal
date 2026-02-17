@@ -487,49 +487,8 @@ void ApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newContex
 
         if (auto writer = gci.GetVtWriter())
         {
-            const auto viewport = gci.GetActiveOutputBuffer().GetBufferSize();
-            const auto size = viewport.Dimensions();
-            const auto area = static_cast<size_t>(viewport.Width() * viewport.Height());
-
-            auto& main = newContext.GetMainBuffer();
-            auto& alt = newContext.GetActiveBuffer();
-            const auto hasAltBuffer = &alt != &main;
-
-            // TODO GH#5094: This could use xterm's XTWINOPS "\e[8;<height>;<width>t" escape sequence here.
-            THROW_IF_NTSTATUS_FAILED(main.ResizeTraditional(size));
-            main.SetViewportSize(&size);
-            if (hasAltBuffer)
-            {
-                THROW_IF_NTSTATUS_FAILED(alt.ResizeTraditional(size));
-                alt.SetViewportSize(&size);
-            }
-
-            Viewport read;
-            til::small_vector<CHAR_INFO, 1024> infos;
-            infos.resize(area, CHAR_INFO{ L' ', FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED });
-
-            const auto dumpScreenInfo = [&](SCREEN_INFORMATION& screenInfo) {
-                THROW_IF_FAILED(ReadConsoleOutputWImpl(screenInfo, infos, viewport, read));
-                for (til::CoordType i = 0; i < size.height; i++)
-                {
-                    writer.WriteInfos({ 0, i }, { infos.begin() + i * size.width, static_cast<size_t>(size.width) });
-                }
-
-                writer.WriteCUP(screenInfo.GetTextBuffer().GetCursor().GetPosition());
-                writer.WriteAttributes(screenInfo.GetAttributes());
-                writer.WriteDECTCEM(screenInfo.GetTextBuffer().GetCursor().IsVisible());
-                writer.WriteDECAWM(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT));
-            };
-
-            writer.WriteASB(false);
-            dumpScreenInfo(main);
-
-            if (hasAltBuffer)
-            {
-                writer.WriteASB(true);
-                dumpScreenInfo(alt);
-            }
-
+            const auto oldSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
+            writer.WriteScreenInfo(newContext, oldSize);
             writer.Submit();
         }
 
@@ -790,7 +749,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             writer.Submit();
         }
 
-        RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
+        RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position));
 
         // Attempt to "snap" the viewport to the cursor position. If the cursor
         // is not in the current viewport, we'll try and move the viewport so
@@ -837,6 +796,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // how the cmd shell's CLS command resets the buffer.
         buffer.UpdateBottom();
 
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.CursorChanged(buffer.GetTextBuffer().GetCursor().GetPosition(), false);
         return S_OK;
     }
     CATCH_RETURN();
@@ -995,7 +956,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     try
     {
         // Just in case if the client application didn't check if this request is useless.
-        if (source.left == target.x && source.top == target.y)
+        // Checking if the source is empty also prevents bugs where we use the size of calculations.
+        if ((source.left == target.x && source.top == target.y) ||
+            source.left > source.right || source.top > source.bottom)
         {
             return S_OK;
         }
@@ -1044,23 +1007,23 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
             if (gci.GetVtIo()->GetDeviceAttributes().test(Microsoft::Console::VirtualTerminal::DeviceAttribute::RectangularAreaOperations))
             {
-                // This calculates just the positive offsets caused by out-of-bounds (OOB) source and target coordinates.
-                //
-                // If the source rectangle is OOB to the bottom-right, then the size of the rectangle that can
-                // be copied shrinks, but its origin stays the same. However, if the rectangle is OOB to the
-                // top-left then the origin of the to-be-copied rectangle will be offset by an inverse amount.
-                // Similarly, if the *target* rectangle is OOB to the bottom-right, its size shrinks while
-                // the origin stays the same, and if it's OOB to the top-left, then the origin is offset.
-                //
-                // In other words, this calculates the total offset that needs to be applied to the to-be-copied rectangle.
-                // Later down below we'll then clamp that rectangle which will cause its size to shrink as needed.
-                const til::point offset{
-                    std::max(0, -source.left) + std::max(0, clipViewport.Left() - target.x),
-                    std::max(0, -source.top) + std::max(0, clipViewport.Top() - target.y),
-                };
+                const til::point targetSourceDistance{ target - sourceViewport.Origin() };
+                const til::point sourceTargetDistance{ -targetSourceDistance.x, -targetSourceDistance.y };
 
-                const auto copyTargetViewport = Viewport::FromDimensions(target + offset, sourceViewport.Dimensions()).Clamp(clipViewport);
-                const auto copySourceViewport = Viewport::FromDimensions(sourceViewport.Origin() + offset, copyTargetViewport.Dimensions()).Clamp(bufferSize);
+                // To figure out what part of "source" we can copy to "target" without
+                // * reading outside the bufferSize
+                // * writing outside the clipViewport
+                // we move the clipViewport into a coordinate system relative to the source rectangle (= clipAtSource).
+                // Then we can intersect the source rectangle with both the valid bufferSize and clipAtSource at once.
+                const auto clipAtSource = Viewport::Offset(clipViewport, sourceTargetDistance);
+                auto copySourceViewport = sourceViewport.Clamp(bufferSize).Clamp(clipAtSource);
+                if (!copySourceViewport.IsValid())
+                {
+                    copySourceViewport = Viewport::Empty();
+                }
+
+                // Afterward we can undo the translation of clipAtSource to get the target rectangle.
+                const auto copyTargetViewport = Viewport::Offset(copySourceViewport, targetSourceDistance);
                 const auto fills = Viewport::Subtract(fillViewport, copyTargetViewport);
                 std::wstring buf;
 
@@ -1069,7 +1032,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                     Microsoft::Console::VirtualTerminal::VtIo::FormatAttributes(buf, TextAttribute{ fillAttribute });
                 }
 
-                if (copySourceViewport.IsValid() && copyTargetViewport.IsValid())
+                if (copyTargetViewport.IsValid())
                 {
                     // DECCRA: Copy Rectangular Area
                     fmt::format_to(
@@ -1179,7 +1142,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
     {
         // Set new code page
         gci.OutputCP = codepage;
-
         SetConsoleCPInfo(TRUE);
     }
 
@@ -1196,11 +1158,34 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 {
     try
     {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-        return DoSrvSetConsoleOutputCodePage(codepage);
+        RETURN_IF_FAILED(DoSrvSetConsoleOutputCodePage(codepage));
+        // Setting the code page via the API also updates the default value.
+        // This is how the initial code page is set to UTF-8 in a WSL shell.
+        gci.DefaultOutputCP = codepage;
+        return S_OK;
     }
     CATCH_RETURN();
+}
+
+[[nodiscard]] HRESULT DoSrvSetConsoleInputCodePage(const unsigned int codepage)
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
+
+    // Do nothing if no change.
+    if (gci.CP != codepage)
+    {
+        // Set new code page
+        gci.CP = codepage;
+        SetConsoleCPInfo(FALSE);
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -1216,19 +1201,10 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        // Return if it's not known as a valid codepage ID.
-        RETURN_HR_IF(E_INVALIDARG, !(IsValidCodePage(codepage)));
-
-        // Do nothing if no change.
-        if (gci.CP != codepage)
-        {
-            // Set new code page
-            gci.CP = codepage;
-
-            SetConsoleCPInfo(FALSE);
-        }
-
+        RETURN_IF_FAILED(DoSrvSetConsoleInputCodePage(codepage));
+        // Setting the code page via the API also updates the default value.
+        // This is how the initial code page is set to UTF-8 in a WSL shell.
+        gci.DefaultCP = codepage;
         return S_OK;
     }
     CATCH_RETURN();

@@ -209,7 +209,7 @@
   </data>
   <data name="CtrlDToClose" xml:space="preserve">
     <value>이제 Ctrl+D 이 터미널을 닫거나 Enter 키를 눌러 다시 시작할 수 있습니다.</value>
-	  <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
+    <comment>"Ctrl+D" and "Enter" represent keys the user will press (control+D and Enter).</comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
     <value>[’{1}' 시작 시 {0} 오류 발생]</value>
@@ -219,5 +219,11 @@
   <data name="BadPathText" xml:space="preserve">
     <value>시작 디렉터리 "{0}"에 액세스할 수 없습니다.</value>
     <comment>The first argument {0} is a path to a directory on the filesystem, as provided by the user.</comment>
+  </data>
+  <data name="ElevationRequired" xml:space="preserve">
+    <value>요청한 작업을 수행하려면 권한 상승이 필요합니다.</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>시스템에서 지정된 파일을 찾을 수 없습니다.</value>
   </data>
 </root>

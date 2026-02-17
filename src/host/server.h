@@ -16,7 +16,6 @@ Revision History:
 
 #pragma once
 
-#include "CursorBlinker.hpp"
 #include "IIoProvider.hpp"
 #include "readDataCooked.hpp"
 #include "settings.hpp"
@@ -90,6 +89,9 @@ public:
     // the following fields are used for ansi-unicode translation
     UINT CP = 0;
     UINT OutputCP = 0;
+    // the VT RIS sequence uses these default values to reset the code pages
+    UINT DefaultCP = 0;
+    UINT DefaultOutputCP = 0;
 
     ULONG CtrlFlags = 0; // indicates outstanding ctrl requests
     ULONG LimitingProcessId = 0;
@@ -123,6 +125,8 @@ public:
 
     bool GetBracketedPasteMode() const noexcept;
     void SetBracketedPasteMode(const bool enabled) noexcept;
+    void CopyTextToClipboard(const std::wstring_view text);
+    std::optional<std::wstring> UsePendingClipboardText();
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring_view newTitlePrefix);
@@ -138,7 +142,6 @@ public:
     friend void SetActiveScreenBuffer(_Inout_ SCREEN_INFORMATION& screenInfo);
     friend class SCREEN_INFORMATION;
     friend class CommonState;
-    Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
 
     MidiAudio& GetMidiAudio();
 
@@ -157,15 +160,15 @@ private:
     SCREEN_INFORMATION* pCurrentScreenBuffer = nullptr;
     COOKED_READ_DATA* _cookedReadData = nullptr; // non-ownership pointer
     bool _bracketedPasteMode = false;
+    std::optional<std::wstring> _pendingClipboardText;
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
-    Microsoft::Console::CursorBlinker _blinker;
     MidiAudio _midiAudio;
 };
 
-#define CONSOLE_STATUS_WAIT 0xC0030001
-#define CONSOLE_STATUS_READ_COMPLETE 0xC0030002
-#define CONSOLE_STATUS_WAIT_NO_BLOCK 0xC0030003
+#define CONSOLE_STATUS_WAIT ((HRESULT)0xC0030001)
+#define CONSOLE_STATUS_READ_COMPLETE ((HRESULT)0xC0030002)
+#define CONSOLE_STATUS_WAIT_NO_BLOCK ((HRESULT)0xC0030003)
 
 #include "../server/ObjectHandle.h"
 

@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
-#include <LibraryResources.h>
 #include "InteractivityAutomationPeer.h"
 #include "InteractivityAutomationPeer.g.cpp"
 
@@ -35,14 +34,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         THROW_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, _interactivity->GetRenderData(), this));
     };
 
+    // Bounds is expected to be in pixels.
     void InteractivityAutomationPeer::SetControlBounds(const Windows::Foundation::Rect bounds)
     {
-        _controlBounds = til::rect{ til::math::rounding, bounds };
+        _controlBounds = { til::math::rounding, bounds };
     }
+
+    // Padding is expected to be in DIPs.
     void InteractivityAutomationPeer::SetControlPadding(const Core::Padding padding)
     {
-        _controlPadding = til::rect{ til::math::rounding, padding };
+        const auto scale = static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
+        _controlPadding = { til::math::rounding, padding.Left * scale, padding.Top * scale, padding.Right * scale, padding.Bottom * scale };
     }
+
     void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
     {
         _parentProvider = parentProvider;
@@ -113,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
-    XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
+    XamlAutomation::ITextRangeProvider InteractivityAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple /*childElement*/)
     {
         UIA::ITextRangeProvider* returnVal;
         // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
@@ -169,11 +173,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _controlPadding;
     }
 
-    float InteractivityAutomationPeer::GetScaleFactor() const noexcept
-    {
-        return static_cast<float>(DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel());
-    }
-
     void InteractivityAutomationPeer::ChangeViewport(const til::inclusive_rect& NewWindow)
     {
         _interactivity->UpdateScrollbar(static_cast<float>(NewWindow.top));
@@ -190,7 +189,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return nullptr;
         }
-        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.ProviderFromPeer(parent));
+        const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parent.as<IAutomationPeerProtected>().ProviderFromPeer(parent));
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     };
 

@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,36 +26,36 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
@@ -124,10 +124,10 @@
     <value>新しいタブ...</value>
   </data>
   <data name="SplitPaneParentCommandName" xml:space="preserve">
-    <value>ウィンドウの分割...</value>
+    <value>ペインの分割...</value>
   </data>
   <data name="SnippetsPaneCommandName" xml:space="preserve">
-    <value>スニペット ウィンドウを開く</value>
+    <value>スニペット ペインを開く</value>
     <comment>This will open a pane with a list of the users's saved commands ("snippets") in it</comment>
   </data>
   <data name="ApplicationDisplayNamePortable" xml:space="preserve">
@@ -153,7 +153,7 @@
     <value>他のすべてのタブを閉じる</value>
   </data>
   <data name="ClosePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウを閉じる</value>
+    <value>ペインを閉じる</value>
   </data>
   <data name="CloseTabAtIndexCommandKey" xml:space="preserve">
     <value>インデックス {0}のタブを閉じる</value>
@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>タブの移動 {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>タブをウィンドウ "{0}" に移動</value>
@@ -182,10 +182,10 @@
     <value>タブを新しいウィンドウに移動</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>前方</value>
+    <value>前方 (右)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>後方</value>
+    <value>後方 (左)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>現在のタブの後のすべてのタブを閉じる</value>
@@ -229,7 +229,7 @@
     <value>以前</value>
   </data>
   <data name="DuplicatePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウの複製する</value>
+    <value>ペインの複製する</value>
   </data>
   <data name="DuplicateTabCommandKey" xml:space="preserve">
     <value>タブを複製する</value>
@@ -262,41 +262,41 @@
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
   <data name="MoveFocusToLastUsedPane" xml:space="preserve">
-    <value>前回使用したウィンドウにフォーカスを移動する</value>
+    <value>前回使用したペインにフォーカスを移動する</value>
   </data>
   <data name="MoveFocusNextInOrder" xml:space="preserve">
-    <value>次のウィンドウに順番にフォーカスを移動する</value>
+    <value>次のペインに順番にフォーカスを移動する</value>
   </data>
   <data name="MoveFocusPreviousInOrder" xml:space="preserve">
-    <value>前のウィンドウに順番にフォーカスを移動する</value>
+    <value>前のペインに順番にフォーカスを移動する</value>
   </data>
   <data name="MoveFocusFirstPane" xml:space="preserve">
-    <value>最初のウィンドウにフォーカスを移動する</value>
+    <value>最初のペインにフォーカスを移動する</value>
   </data>
   <data name="MoveFocusParentPane" xml:space="preserve">
-    <value>親ウィンドウにフォーカスを移動する</value>
+    <value>親ペインにフォーカスを移動する</value>
   </data>
   <data name="MoveFocusChildPane" xml:space="preserve">
-    <value>子ウィンドウにフォーカスを移動する</value>
+    <value>子ペインにフォーカスを移動する</value>
   </data>
   <data name="SwapPaneCommandKey" xml:space="preserve">
-    <value>ウィンドウを入れ替える</value>
+    <value>ペインを入れ替える</value>
   </data>
   <data name="SwapPaneWithArgCommandKey" xml:space="preserve">
-    <value>ウィンドウを入れ替える {0}</value>
+    <value>ペインを入れ替える {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
   <data name="SwapPaneToLastUsedPane" xml:space="preserve">
-    <value>ウィンドウを最後に使用したウィンドウと入れ替える</value>
+    <value>ペインを最後に使用したペインと入れ替える</value>
   </data>
   <data name="SwapPaneNextInOrder" xml:space="preserve">
-    <value>ウィンドウを次のウィンドウと順番に入れ替える</value>
+    <value>ペインを次のペインと順番に入れ替える</value>
   </data>
   <data name="SwapPanePreviousInOrder" xml:space="preserve">
-    <value>ウィンドウを前のウィンドウと順番に入れ替える</value>
+    <value>ペインを前のペインと順番に入れ替える</value>
   </data>
   <data name="SwapPaneFirstPane" xml:space="preserve">
-    <value>最初のウィンドウとウィンドウを入れ替える</value>
+    <value>最初のペインとペインを入れ替える</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>新しいタブ</value>
@@ -328,6 +328,9 @@
     <value>設定ファイル (JSON) を開く</value>
     <comment>{Locked="JSON"}. "JSON" is the extension of the file that will be opened.</comment>
   </data>
+  <data name="SettingsFileOpenInExplorerCommandKey" xml:space="preserve">
+    <value>設定ファイルのディレクトリを開く</value>
+  </data>
   <data name="OpenTabColorPickerCommandKey" xml:space="preserve">
     <value>タブの色を設定...</value>
   </data>
@@ -351,13 +354,13 @@
     <value>タブのタイトルをリセット</value>
   </data>
   <data name="OpenTabRenamerCommandKey" xml:space="preserve">
-    <value>[名前の変更] タブ</value>
+    <value>タブ名を変更</value>
   </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウのサイズの変更する</value>
+    <value>ペインのサイズの変更する</value>
   </data>
   <data name="ResizePaneWithArgCommandKey" xml:space="preserve">
-    <value>ウィンドウのサイズを変更する {0}</value>
+    <value>ペインのサイズを変更する {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
   </data>
   <data name="ScrollDownCommandKey" xml:space="preserve">
@@ -424,19 +427,19 @@
     <comment>{0} will be replaced with a color, displayed in hexadecimal (#RRGGBB) notation.</comment>
   </data>
   <data name="SplitHorizontalCommandKey" xml:space="preserve">
-    <value>ウィンドウを左右に分割</value>
+    <value>ペインを左右に分割</value>
   </data>
   <data name="MovePaneCommandKey" xml:space="preserve">
-    <value>ウィンドウの移動</value>
+    <value>ペインの移動</value>
   </data>
   <data name="MovePaneToNewWindowCommandKey" xml:space="preserve">
-    <value>ウィンドウを新しいウィンドウに移動</value>
+    <value>ペインを新しいウィンドウに移動</value>
   </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
-    <value>ウィンドウを分割する</value>
+    <value>ペインを分割する</value>
   </data>
   <data name="SplitVerticalCommandKey" xml:space="preserve">
-    <value>ウィンドウを上下に分割</value>
+    <value>ペインを上下に分割</value>
   </data>
   <data name="SwitchToTabCommandKey" xml:space="preserve">
     <value>タブに切り替え</value>
@@ -485,19 +488,19 @@
     <value>最大化ウィンドウを復元する</value>
   </data>
   <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
-    <value>ウィンドウ分割の方向の切り替え</value>
+    <value>ペイン分割の方向の切り替え</value>
   </data>
   <data name="TogglePaneZoomCommandKey" xml:space="preserve">
-    <value>ウィンドウのズームの切り替え</value>
+    <value>ペインのズームの切り替え</value>
   </data>
   <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
-    <value>ウィンドウを読み取り専用モードに切り替える</value>
+    <value>ペインを読み取り専用モードに切り替える</value>
   </data>
   <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
-    <value>ウィンドウの読み取り専用モードを有効にする</value>
+    <value>ペインの読み取り専用モードを有効にする</value>
   </data>
   <data name="DisablePaneReadOnlyCommandKey" xml:space="preserve">
-    <value>ウィンドウの読み取り専用モードを無効にする</value>
+    <value>ペインの読み取り専用モードを無効にする</value>
   </data>
   <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
     <value>ターミナルの視覚効果の切り替え</value>
@@ -529,7 +532,7 @@
     <comment>Quake is a well-known computer game and isn't related to earthquakes, etc. See https://en.wikipedia.org/wiki/Quake_(video_game)</comment>
   </data>
   <data name="FocusPaneCommandKey" xml:space="preserve">
-    <value>ウィンドウ {0} をフォーカスする</value>
+    <value>ペイン {0} をフォーカスする</value>
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
   <data name="ExportBufferToPathCommandKey" xml:space="preserve">
@@ -582,7 +585,7 @@
     <comment>A command to change how transparent the background of the window is</comment>
   </data>
   <data name="RestoreLastClosedCommandKey" xml:space="preserve">
-    <value>最後に閉じたウィンドウまたはタブを復元する</value>
+    <value>最後に閉じたペインまたはタブを復元する</value>
   </data>
   <data name="SelectAllCommandKey" xml:space="preserve">
     <value>すべてのテキストを選択</value>
@@ -692,10 +695,10 @@
     <value>コンテキスト メニューの表示</value>
   </data>
   <data name="CloseOtherPanesCommandKey" xml:space="preserve">
-    <value>他のすべてのウィンドウを閉じる</value>
+    <value>他のすべてのペインを閉じる</value>
   </data>
   <data name="ToggleBroadcastInputCommandKey" xml:space="preserve">
-    <value>ブロードキャスト入力をすべてのウィンドウに切り替える</value>
+    <value>ブロードキャスト入力をすべてのペインに切り替える</value>
     <comment>When enabled, input will go to all panes in this tab simultaneously</comment>
   </data>
   <data name="RestartConnectionKey" xml:space="preserve">
@@ -733,5 +736,244 @@
   </data>
   <data name="QuickFixCommandKey" xml:space="preserve">
     <value>クイック修正メニューを開く</value>
+  </data>
+  <data name="OpenCWDCommandKey" xml:space="preserve">
+    <value>現在の作業ディレクトリを開く</value>
+  </data>
+  <data name="CloseTab" xml:space="preserve">
+    <value>タブを閉じる</value>
+  </data>
+  <data name="SendInput" xml:space="preserve">
+    <value>入力の送信</value>
+  </data>
+  <data name="SetFocusMode" xml:space="preserve">
+    <value>フォーカス モードを設定</value>
+  </data>
+  <data name="SetFullScreen" xml:space="preserve">
+    <value>全画面表示を設定</value>
+  </data>
+  <data name="SetMaximized" xml:space="preserve">
+    <value>最大化を設定</value>
+  </data>
+  <data name="SetColorScheme" xml:space="preserve">
+    <value>配色を設定</value>
+  </data>
+  <data name="CloseOtherTabs" xml:space="preserve">
+    <value>他のタブを閉じる</value>
+  </data>
+  <data name="CloseTabsAfter" xml:space="preserve">
+    <value>の後にタブを閉じる</value>
+  </data>
+  <data name="MoveTab" xml:space="preserve">
+    <value>タブの移動</value>
+  </data>
+  <data name="FindMatch" xml:space="preserve">
+    <value>一致を検索</value>
+  </data>
+  <data name="SearchForText" xml:space="preserve">
+    <value>テキストを検索する</value>
+  </data>
+  <data name="FocusPane" xml:space="preserve">
+    <value>ペインをフォーカスする</value>
+  </data>
+  <data name="ExportBuffer" xml:space="preserve">
+    <value>バッファのエクスポート</value>
+  </data>
+  <data name="ClearBuffer" xml:space="preserve">
+    <value>バッファーのクリア</value>
+  </data>
+  <data name="MultipleActions" xml:space="preserve">
+    <value>複数のアクション</value>
+  </data>
+  <data name="AdjustOpacity" xml:space="preserve">
+    <value>不透明度の調整</value>
+  </data>
+  <data name="SelectCommand" xml:space="preserve">
+    <value>コマンドの選択</value>
+  </data>
+  <data name="SelectOutput" xml:space="preserve">
+    <value>出力の選択</value>
+  </data>
+  <data name="Suggestions" xml:space="preserve">
+    <value>候補</value>
+  </data>
+  <data name="ColorSelection" xml:space="preserve">
+    <value>色の選択</value>
+  </data>
+  <data name="WslDistroGeneratorDisplayName" xml:space="preserve">
+    <value>WSL ディストリビューション プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for WSL distros</comment>
+  </data>
+  <data name="PowershellCoreProfileGeneratorDisplayName" xml:space="preserve">
+    <value>PowerShell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for PowerShell</comment>
+  </data>
+  <data name="AzureCloudShellGeneratorDisplayName" xml:space="preserve">
+    <value>Azure Cloud Shell プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Azure Cloud Shell</comment>
+  </data>
+  <data name="VisualStudioGeneratorDisplayName" xml:space="preserve">
+    <value>Visual Studio プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for Visual Studio</comment>
+  </data>
+  <data name="SshHostGeneratorDisplayName" xml:space="preserve">
+    <value>SSH ホスト プロファイル ジェネレーター</value>
+    <comment>The display name of a dynamic profile generator for SSH hosts</comment>
+  </data>
+  <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
+    <value>選択を解除する</value>
+  </data>
+  <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
+    <value>1 行表示</value>
+  </data>
+  <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
+    <value>制御シーケンスを使用</value>
+  </data>
+  <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
+    <value>書式設定をコピー</value>
+  </data>
+  <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
+    <value>Tab Index</value>
+  </data>
+  <data name="WindowActionArgumentLocalized" xml:space="preserve">
+    <value>ウィンドウ</value>
+  </data>
+  <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>サイズ変更方向</value>
+  </data>
+  <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>フォーカス方向</value>
+  </data>
+  <data name="DirectionActionArgumentLocalized" xml:space="preserve">
+    <value>方向</value>
+  </data>
+  <data name="DeltaActionArgumentLocalized" xml:space="preserve">
+    <value>ブルース</value>
+  </data>
+  <data name="InputActionArgumentLocalized" xml:space="preserve">
+    <value>入力</value>
+  </data>
+  <data name="TargetActionArgumentLocalized" xml:space="preserve">
+    <value>ターゲット</value>
+  </data>
+  <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
+    <value>フォーカス モード</value>
+  </data>
+  <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
+    <value>最大化しました</value>
+  </data>
+  <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
+    <value>全画面表示</value>
+  </data>
+  <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
+    <value>スキーム名</value>
+  </data>
+  <data name="TabColorActionArgumentLocalized" xml:space="preserve">
+    <value>シート見出しの色</value>
+  </data>
+  <data name="TitleActionArgumentLocalized" xml:space="preserve">
+    <value>タイトル</value>
+  </data>
+  <data name="CommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>Commandline</value>
+  </data>
+  <data name="IndexActionArgumentLocalized" xml:space="preserve">
+    <value>インデックス</value>
+  </data>
+  <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
+    <value>スクロールする行数</value>
+  </data>
+  <data name="ColorActionArgumentLocalized" xml:space="preserve">
+    <value>色</value>
+  </data>
+  <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
+    <value>起動モード</value>
+  </data>
+  <data name="NameActionArgumentLocalized" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
+    <value>キー コード</value>
+  </data>
+  <data name="SourceActionArgumentLocalized" xml:space="preserve">
+    <value>ソース</value>
+  </data>
+  <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
+    <value>コマンドラインを使用する</value>
+  </data>
+  <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
+    <value>スイッチャー モード</value>
+  </data>
+  <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
+    <value>クエリの URL</value>
+  </data>
+  <data name="DesktopActionArgumentLocalized" xml:space="preserve">
+    <value>デスクトップ</value>
+  </data>
+  <data name="MonitorActionArgumentLocalized" xml:space="preserve">
+    <value>モニター</value>
+  </data>
+  <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
+    <value>表示の切り替え</value>
+  </data>
+  <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
+    <value>ドロップダウンの期間</value>
+  </data>
+  <data name="IdActionArgumentLocalized" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="PathActionArgumentLocalized" xml:space="preserve">
+    <value>パス</value>
+  </data>
+  <data name="ClearActionArgumentLocalized" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="OpacityActionArgumentLocalized" xml:space="preserve">
+    <value>不透明度</value>
+  </data>
+  <data name="RelativeActionArgumentLocalized" xml:space="preserve">
+    <value>相対</value>
+  </data>
+  <data name="ForegroundActionArgumentLocalized" xml:space="preserve">
+    <value>前景</value>
+  </data>
+  <data name="BackgroundActionArgumentLocalized" xml:space="preserve">
+    <value>背景</value>
+  </data>
+  <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
+    <value>一致モード</value>
+  </data>
+  <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
+    <value>開始ディレクトリ</value>
+  </data>
+  <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
+    <value>タブのタイトル</value>
+  </data>
+  <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
+    <value>プロファイル インデックス</value>
+  </data>
+  <data name="ProfileActionArgumentLocalized" xml:space="preserve">
+    <value>プロファイル</value>
+  </data>
+  <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
+    <value>アプリケーション タイトルを表示しない</value>
+  </data>
+  <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
+    <value>配色</value>
+  </data>
+  <data name="ElevateActionArgumentLocalized" xml:space="preserve">
+    <value>昇格</value>
+  </data>
+  <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
+    <value>環境変数を再度読み込む</value>
+  </data>
+  <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
+    <value>分割方向</value>
+  </data>
+  <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
+    <value>分割モード</value>
+  </data>
+  <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
+    <value>分割サイズ</value>
   </data>
 </root>

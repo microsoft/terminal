@@ -56,12 +56,9 @@ Dies ist ein Open Source-Projekt, und wir freuen uns über die Teilnahme an der 
   <ReleaseNotes>
     Version __VERSION_NUMBER__
 
-– Terminal speichert jetzt den Inhalt des Fensters, wenn Sie die Sitzungswiederherstellung verwenden.
-– Sie können jetzt mehrere Schriftarten gleichzeitig verwenden.
-– Kästchenzeichnende Zeichen werden jetzt pixelgenau gerendert.
-– Die Verwendung eines IME innerhalb des Terminals wurde erheblich verbessert.
-– Die Farbschemas in Ihrer JSON-Datei sind jetzt viel einfacher.
-– Eine Reihe von Fehlern im Zusammenhang mit der URL-Verarbeitung, Zeilen mit doppelter Breite, Zeilenumbruch und mehr wurden behoben.
+– Wir haben der Benutzeroberfläche Dutzende von Einstellungen hinzugefügt, die nur einmal in der JSON-Datei vorhanden waren, einschließlich einer neuen Seite zum Anpassen des Layouts Ihres Menüs „Neue Registerkarte“!
+– Wir haben die Fensterverwaltung umgestaltet, um die Zuverlässigkeit zu verbessern. Melden Sie alle Fehler, die beim alias „wt.exe“ auftreten
+– Profile zeigen jetzt ein Symbol an, wenn sie ausgeblendet wurden oder auf Programme verweisen, die deinstalliert wurden.
 
 Weitere Informationen finden Sie auf unserer GitHub-Releaseseite.
   </ReleaseNotes>

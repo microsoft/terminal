@@ -28,7 +28,6 @@ namespace winrt::Microsoft::Terminal::Core
 {
     struct ICoreSettings;
     struct ICoreAppearance;
-    struct Scheme;
     enum class MatchMode;
 }
 
@@ -92,9 +91,11 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void UpdateColorScheme(const winrt::Microsoft::Terminal::Core::ICoreScheme& scheme);
+    void SetHighContrastMode(bool hc) noexcept;
     void SetFontInfo(const FontInfo& fontInfo);
     void SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle);
-    void EraseScrollback();
+    void SetOptionalFeatures(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     bool IsXtermBracketedPasteModeEnabled() const noexcept;
     std::wstring_view GetWorkingDirectory() noexcept;
 
@@ -113,6 +114,7 @@ public:
 
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
+    bool IsFocused() const noexcept;
 
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
@@ -125,7 +127,7 @@ public:
 
     std::wstring CurrentCommand() const;
 
-    void SerializeMainBuffer(const wchar_t* destination) const;
+    void SerializeMainBuffer(HANDLE handle) const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -139,9 +141,11 @@ public:
     void WarningBell() override;
     void SetWindowTitle(const std::wstring_view title) override;
     CursorType GetUserDefaultCursorStyle() const noexcept override;
-    bool ResizeWindow(const til::CoordType width, const til::CoordType height) noexcept override;
-    void SetConsoleOutputCP(const unsigned int codepage) noexcept override;
-    unsigned int GetConsoleOutputCP() const noexcept override;
+    bool ResizeWindow(const til::CoordType width, const til::CoordType height) override;
+    void SetCodePage(const unsigned int codepage) noexcept override;
+    void ResetCodePage() noexcept override;
+    unsigned int GetOutputCodePage() const noexcept override;
+    unsigned int GetInputCodePage() const noexcept override;
     void CopyToClipboard(wil::zwstring_view content) override;
     void SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) override;
     void SetWorkingDirectory(std::wstring_view uri) override;
@@ -151,8 +155,8 @@ public:
     void UseMainScreenBuffer() override;
 
     bool IsVtInputEnabled() const noexcept override;
-    void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
+    void NotifyShellIntegrationMark() override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
@@ -195,30 +199,25 @@ public:
     void UnlockConsole() noexcept override;
 
     // These methods are defined in TerminalRenderData.cpp
-    til::point GetCursorPosition() const noexcept override;
-    bool IsCursorVisible() const noexcept override;
-    bool IsCursorOn() const noexcept override;
-    ULONG GetCursorHeight() const noexcept override;
+    Microsoft::Console::Render::TimerDuration GetBlinkInterval() noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    CursorType GetCursorStyle() const noexcept override;
-    bool IsCursorDoubleWidth() const override;
-    const bool IsGridLineDrawingAllowed() noexcept override;
-    const std::wstring GetHyperlinkUri(uint16_t id) const override;
-    const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
-    const std::vector<size_t> GetPatternId(const til::point location) const override;
+    bool IsGridLineDrawingAllowed() noexcept override;
+    std::wstring GetHyperlinkUri(uint16_t id) const override;
+    std::wstring GetHyperlinkCustomId(uint16_t id) const override;
+    std::vector<size_t> GetPatternId(const til::point location) const override;
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::span<const til::point_span> GetSelectionSpans() const noexcept override;
     std::span<const til::point_span> GetSearchHighlights() const noexcept override;
     const til::point_span* GetSearchHighlightFocused() const noexcept override;
-    const bool IsSelectionActive() const noexcept override;
-    const bool IsBlockSelection() const noexcept override;
+    bool IsSelectionActive() const noexcept override;
+    bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    const til::point GetSelectionAnchor() const noexcept override;
-    const til::point GetSelectionEnd() const noexcept override;
-    const std::wstring_view GetConsoleTitle() const noexcept override;
-    const bool IsUiaDataInitialized() const noexcept override;
+    til::point GetSelectionAnchor() const noexcept override;
+    til::point GetSelectionEnd() const noexcept override;
+    std::wstring_view GetConsoleTitle() const noexcept override;
+    bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept;
@@ -232,18 +231,14 @@ public:
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
+    void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
-    void SetSearchHighlightFocused(const size_t focusedIdx, til::CoordType searchScrollOffset);
-
-    void BlinkCursor() noexcept;
-    void SetCursorOn(const bool isOn) noexcept;
+    void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
+    void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
 
     void UpdatePatternsUnderLock();
 
     const std::optional<til::color> GetTabColor() const;
-
-    winrt::Microsoft::Terminal::Core::Scheme GetColorScheme() const;
-    void ApplyScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
@@ -314,9 +309,9 @@ public:
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
-    const SelectionEndpoint SelectionEndpointTarget() const noexcept;
+    SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool html = false, const bool rtf = false) const;
+    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false) const;
 #pragma endregion
 
 #ifndef NDEBUG
@@ -344,6 +339,7 @@ private:
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
     std::function<void()> _pfnClearQuickFix;
+    std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
@@ -360,13 +356,15 @@ private:
     mutable til::generation_t _lastSelectionGeneration{};
 
     CursorType _defaultCursorShape = CursorType::Legacy;
+    std::optional<Microsoft::Console::Render::TimerDuration> _cursorBlinkInterval;
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 
+    bool _focused = false;
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
     bool _suppressApplicationTitle = false;
-    bool _trimBlockSelection = false;
+    bool _trimBlockSelection = true;
     bool _autoMarkPrompts = false;
     bool _rainbowSuggestions = false;
 
@@ -377,6 +375,7 @@ private:
 
     std::wstring _answerbackMessage;
     std::wstring _workingDirectory;
+    bool _highContrastMode = false;
 
     // This default fake font value is only used to check if the font is a raster font.
     // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.
@@ -408,6 +407,7 @@ private:
     Microsoft::Console::Types::Viewport _mutableViewport;
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
+    bool _clipboardOperationsAllowed = true;
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize;
@@ -472,7 +472,7 @@ private:
     std::vector<til::point_span> _GetSelectionSpans() const noexcept;
     std::pair<til::point, til::point> _PivotSelection(const til::point targetPos, bool& targetStart) const noexcept;
     std::pair<til::point, til::point> _ExpandSelectionAnchors(std::pair<til::point, til::point> anchors) const;
-    til::point _ConvertToBufferCell(const til::point viewportPos) const;
+    til::point _ConvertToBufferCell(const til::point viewportPos, bool allowRightExclusive) const;
     void _ScrollToPoint(const til::point pos);
     void _MoveByChar(SelectionDirection direction, til::point& pos);
     void _MoveByWord(SelectionDirection direction, til::point& pos);

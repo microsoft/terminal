@@ -53,24 +53,54 @@ void InteractDispatch::WriteCtrlKey(const INPUT_RECORD& event)
     HandleGenericKeyEvent(event, false);
 }
 
-// Method Description:
-// - Writes a string of input to the host.
-// Arguments:
-// - string : a string to write to the console.
+// Call this method to write some plain text to the InputBuffer.
+//
+// Since the hosting terminal for ConPTY may not support win32-input-mode,
+// it may send an "A" key as an "A", for which we need to generate up/down events.
+// Because of this, we cannot simply call InputBuffer::WriteString directly.
 void InteractDispatch::WriteString(const std::wstring_view string)
 {
     if (!string.empty())
     {
-        const auto codepage = _api.GetConsoleOutputCP();
-        InputEventQueue keyEvents;
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+#pragma warning(suppress : 26429) // Symbol 'inputBuffer' is never tested for nullness, it can be marked as not_null (f.23).
+        const auto inputBuffer = gci.GetActiveInputBuffer();
 
-        for (const auto& wch : string)
+        // The input *may* be keyboard input in which case we must call CharToKeyEvents.
+        //
+        // However, it could also be legitimate VT sequences (e.g. a bracketed paste sequence).
+        // If we called `InputBuffer::Write` with those, we would end up indirectly
+        // calling `TerminalInput::HandleKey` and "double encode" the sequence.
+        // The effect of this is noticeable with the German keyboard layout, for instance,
+        // where the [ key maps to AltGr+8, and we fail to map it back to [ later.
+        //
+        // It's worth noting that all of this is bad design in either case.
+        // The way it should work is that we write INPUT_RECORDs and Strings as-is into the
+        // InputBuffer, and only during retrieval they're converted into one or the other.
+        // This prevents any kinds of double-encoding issues.
+        if (inputBuffer->IsInVirtualTerminalInputMode())
         {
-            CharToKeyEvents(wch, codepage, keyEvents);
+            inputBuffer->WriteString(string);
         }
+        else
+        {
+            const auto codepage = _api.GetOutputCodePage();
+            InputEventQueue keyEvents;
 
-        WriteInput(keyEvents);
+            for (const auto& wch : string)
+            {
+                CharToKeyEvents(wch, codepage, keyEvents);
+            }
+
+            inputBuffer->Write(keyEvents);
+        }
     }
+}
+
+void InteractDispatch::WriteStringRaw(std::wstring_view string)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.GetActiveInputBuffer()->WriteString(string);
 }
 
 //Method Description:
@@ -119,6 +149,9 @@ void InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
 // - col: The column to move the cursor to.
 void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 {
+    const auto& api = ServiceLocator::LocateGlobals().api;
+    auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
+
     // First retrieve some information about the buffer
     const auto viewport = _api.GetBufferAndViewport().viewport;
 
@@ -129,9 +162,11 @@ void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
     coordCursor.x = std::clamp(coordCursor.x, viewport.left, viewport.right);
 
     // Finally, attempt to set the adjusted cursor position back into the console.
-    const auto api = gsl::not_null{ ServiceLocator::LocateGlobals().api };
-    auto& info = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
     LOG_IF_FAILED(api->SetConsoleCursorPositionImpl(info, coordCursor));
+
+    // Unblock any callers inside SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized().
+    // The cursor position has now been updated to the terminal's.
+    info.ResetConptyCursorPositionMayBeWrong();
 }
 
 // Routine Description:
@@ -162,59 +197,8 @@ void InteractDispatch::FocusChanged(const bool focused)
     // InteractDispatch outside ConPTY mode, but just in case...
     if (gci.IsInVtIoMode())
     {
-        auto shouldActuallyFocus = false;
-
-        // From https://github.com/microsoft/terminal/pull/12799#issuecomment-1086289552
-        // Make sure that the process that's telling us it's focused, actually
-        // _is_ in the FG. We don't want to allow malicious.exe to say "yep I'm
-        // in the foreground, also, here's a popup" if it isn't actually in the
-        // FG.
-        if (focused)
-        {
-            if (const auto pseudoHwnd{ ServiceLocator::LocatePseudoWindow() })
-            {
-                // They want focus, we found a pseudo hwnd.
-
-                // BODGY
-                //
-                // This needs to be GA_ROOTOWNER here. Not GA_ROOT, GA_PARENT,
-                // or GetParent. The ConPTY hwnd is an owned, top-level, popup,
-                // non-parented window. It does not have a parent set. It does
-                // have an owner set. It is not a WS_CHILD window. This
-                // combination of things allows us to find the owning window
-                // with GA_ROOTOWNER. GA_ROOT will get us ourselves, and
-                // GA_PARENT will return the desktop HWND.
-                //
-                // See GH#13066
-
-                if (const auto ownerHwnd{ ::GetAncestor(pseudoHwnd, GA_ROOTOWNER) })
-                {
-                    // We have an owner from a previous call to ReparentWindow
-
-                    if (const auto currentFgWindow{ ::GetForegroundWindow() })
-                    {
-                        // There is a window in the foreground (it's possible there
-                        // isn't one)
-
-                        // Get the PID of the current FG window, and compare with our owner's PID.
-                        DWORD currentFgPid{ 0 };
-                        DWORD ownerPid{ 0 };
-                        GetWindowThreadProcessId(currentFgWindow, &currentFgPid);
-                        GetWindowThreadProcessId(ownerHwnd, &ownerPid);
-
-                        if (ownerPid == currentFgPid)
-                        {
-                            // Huzzah, the app that owns us is actually the FG
-                            // process. They're allowed to grand FG rights.
-                            shouldActuallyFocus = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, shouldActuallyFocus);
-        gci.ProcessHandleList.ModifyConsoleProcessFocus(shouldActuallyFocus);
+        WI_UpdateFlag(gci.Flags, CONSOLE_HAS_FOCUS, focused);
+        gci.ProcessHandleList.ModifyConsoleProcessFocus(focused);
         gci.pInputBuffer->WriteFocusEvent(focused);
     }
     // Does nothing outside of ConPTY. If there's a real HWND, then the HWND is solely in charge.

@@ -42,7 +42,7 @@ namespace Microsoft::Console::VirtualTerminal
         // to retain the 16-bit size.
         static constexpr size_t MAX_COLORS = 256;
         using IndexType = uint8_t;
-        struct IndexedPixel
+        struct alignas(int16_t) IndexedPixel
         {
             uint8_t transparent = false;
             IndexType colorIndex = 0;
@@ -89,6 +89,7 @@ namespace Microsoft::Console::VirtualTerminal
         til::CoordType _pendingTextScrollCount = 0;
         til::size _backgroundSize;
         bool _backgroundFillRequired = false;
+        std::optional<til::CoordType> _filledBackgroundHeight;
 
         void _initColorMap(const VTParameter backgroundColor);
         void _defineColor(const VTParameters& colorParameters);
@@ -103,12 +104,15 @@ namespace Microsoft::Console::VirtualTerminal
         const size_t _maxColors;
         size_t _colorsUsed = 0;
         size_t _colorsAvailable = 0;
+        IndexedPixel _foregroundPixel = {};
         bool _colorTableChanged = false;
-        IndexedPixel _foregroundPixel = 0;
 
         void _initImageBuffer();
         void _resizeImageBuffer(const til::CoordType requiredHeight);
         void _fillImageBackground();
+        void _fillImageBackground(const int backgroundHeight);
+        void _fillImageBackgroundWhenScrolled();
+        void _decreaseFilledBackgroundHeight(const int decreasedHeight) noexcept;
         void _writeToImageBuffer(const int sixelValue, const int repeatCount);
         void _eraseImageBufferRows(const int rowCount, const til::CoordType startRow = 0) noexcept;
         void _maybeFlushImageBuffer(const bool endOfSequence = false);

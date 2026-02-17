@@ -40,7 +40,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum FirstWindowPreference
     {
         DefaultProfile,
-        PersistedWindowLayout,
+        PersistedLayout,
+        PersistedLayoutAndContent,
     };
 
     enum NewTabPosition
@@ -57,6 +58,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Int32, InitialRows);
         INHERITABLE_SETTING(Int32, InitialCols);
         INHERITABLE_SETTING(Boolean, AlwaysShowTabs);
+        INHERITABLE_SETTING(Boolean, ShowTabsFullscreen);
         INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
         INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
@@ -69,10 +71,11 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, InputServiceWarning);
         INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
-        INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         INHERITABLE_SETTING(Boolean, TrimPaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.DefaultInputScope, DefaultInputScope);
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
@@ -81,15 +84,15 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_SETTING(Microsoft.Terminal.Control.TextMeasurement, TextMeasurement);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
-        INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
-        INHERITABLE_SETTING(Boolean, StartOnUserLogin);
         INHERITABLE_SETTING(Boolean, AlwaysOnTop);
         INHERITABLE_SETTING(Boolean, AutoHideWindow);
         INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
+        INHERITABLE_SETTING(Boolean, ScrollToZoom);
+        INHERITABLE_SETTING(Boolean, ScrollToChangeOpacity);
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);
@@ -101,7 +104,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
-        INHERITABLE_SETTING(Boolean, IsolatedMode);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
 

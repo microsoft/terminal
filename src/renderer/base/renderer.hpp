@@ -1,46 +1,40 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- Renderer.hpp
-
-Abstract:
-- This is the definition of our renderer.
-- It provides interfaces for the console application to notify when various portions of the console state have changed and need to be redrawn.
-- It requires a data interface to fetch relevant console structures required for drawing and a drawing engine target for output.
-
-Author(s):
-- Michael Niksa (MiNiksa) 17-Nov-2015
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
+#include "../../buffer/out/textBuffer.hpp"
 #include "../inc/IRenderEngine.hpp"
 #include "../inc/RenderSettings.hpp"
 
-#include "thread.hpp"
-
-#include "../../buffer/out/textBuffer.hpp"
-
 namespace Microsoft::Console::Render
 {
+    enum class InhibitionSource
+    {
+        Client, // E.g. VT sequences
+        Host, // E.g. because the window is out of focus
+        User, // The user turned it off
+    };
+
     class Renderer
     {
     public:
-        Renderer(const RenderSettings& renderSettings,
-                 IRenderData* pData,
-                 _In_reads_(cEngines) IRenderEngine** const pEngine,
-                 const size_t cEngines,
-                 std::unique_ptr<RenderThread> thread);
-
+        Renderer(RenderSettings& renderSettings, IRenderData* pData);
         ~Renderer();
 
         IRenderData* GetRenderData() const noexcept;
 
-        [[nodiscard]] HRESULT PaintFrame();
+        TimerHandle RegisterTimer(const char* description, TimerCallback routine);
+        bool IsTimerRunning(TimerHandle handle) const;
+        TimerDuration GetTimerInterval(TimerHandle handle) const;
+        void StartTimer(TimerHandle handle, TimerDuration delay);
+        void StartRepeatingTimer(TimerHandle handle, TimerDuration interval);
+        void StopTimer(TimerHandle handle);
 
         void NotifyPaintFrame() noexcept;
+        void SynchronizedOutputChanged() noexcept;
+        void AllowCursorVisibility(InhibitionSource source, bool enable) noexcept;
+        void AllowCursorBlinking(InhibitionSource source, bool enable) noexcept;
         void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
         void TriggerRedraw(const til::point* const pcoord);
@@ -71,8 +65,6 @@ namespace Microsoft::Console::Render
         bool IsGlyphWideByFont(const std::wstring_view glyph);
 
         void EnablePainting();
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
-        void WaitUntilCanRender();
 
         void AddRenderEngine(_In_ IRenderEngine* const pEngine);
         void RemoveRenderEngine(_In_ IRenderEngine* const pEngine);
@@ -80,12 +72,19 @@ namespace Microsoft::Console::Render
         void SetBackgroundColorChangedCallback(std::function<void()> pfn);
         void SetFrameColorChangedCallback(std::function<void()> pfn);
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
-        void ResetErrorStateAndResume();
 
         void UpdateHyperlinkHoveredId(uint16_t id) noexcept;
         void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
 
     private:
+        struct TimerRoutine
+        {
+            const char* description = nullptr;
+            TimerRepr interval = 0; // Timers with a 0 interval are marked for deletion.
+            TimerRepr next = 0;
+            TimerCallback routine;
+        };
+
         // Caches some essential information about the active composition.
         // This allows us to properly invalidate it between frames, etc.
         struct CompositionCache
@@ -97,12 +96,32 @@ namespace Microsoft::Console::Render
         static GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
         static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
+        // Base rendering loop
+        static DWORD WINAPI s_renderThread(void*) noexcept;
+        DWORD _renderThread() noexcept;
+        void _waitUntilCanRender() noexcept;
+
+        // Timer handling
+        void _startTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval);
+        DWORD _calculateTimerMaxWait() noexcept;
+        void _waitUntilTimerOrRedraw() noexcept;
+        void _tickTimers() noexcept;
+        static TimerRepr _timerInstant() noexcept;
+        static TimerRepr _timerSaturatingAdd(TimerRepr a, TimerRepr b) noexcept;
+        static TimerRepr _timerSaturatingSub(TimerRepr a, TimerRepr b) noexcept;
+        static DWORD _timerToMillis(TimerRepr t) noexcept;
+
+        // Actual rendering
+        [[nodiscard]] HRESULT PaintFrame();
         [[nodiscard]] HRESULT _PaintFrame() noexcept;
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
+        void _disablePainting() noexcept;
+        void _synchronizeWithOutput() noexcept;
         bool _CheckViewportAndScroll();
+        void _scheduleRenditionBlink();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target, const bool lineWrapped);
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target);
         void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
         bool _isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept;
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
@@ -114,26 +133,47 @@ namespace Microsoft::Console::Render
         bool _isInHoveredInterval(til::point coordTarget) const noexcept;
         void _updateCursorInfo();
         void _invalidateCurrentCursor() const;
-        void _invalidateOldComposition() const;
+        void _invalidateOldComposition();
         void _prepareNewComposition();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
-        const RenderSettings& _renderSettings;
-        std::array<IRenderEngine*, 2> _engines{};
+        // Constructor parameters, weakly referenced
+        RenderSettings& _renderSettings;
         IRenderData* _pData = nullptr; // Non-ownership pointer
-        std::unique_ptr<RenderThread> _pThread;
+
+        // Base render loop & timer management
+        wil::srwlock _threadMutex;
+        wil::unique_handle _thread;
+        wil::slim_event_manual_reset _enable;
+        std::atomic<bool> _redraw;
+        std::atomic<bool> _threadKeepRunning{ false };
+        til::small_vector<IRenderEngine*, 2> _engines;
+        til::small_vector<TimerRoutine, 4> _timers;
+        size_t _nextTimerId = 0;
+
         static constexpr size_t _firstSoftFontChar = 0xEF20;
         size_t _lastSoftFontChar = 0;
+
         uint16_t _hyperlinkHoveredId = 0;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
+
+        CursorOptions _currentCursorOptions{};
+        TimerHandle _cursorBlinker;
+        uint64_t _cursorBufferMutationId = 0;
+        uint64_t _cursorCursorMutationId = 0; // Stupid name, but it's _cursor related and stores the cursor mutation id.
+        til::enumset<InhibitionSource, uint8_t> _cursorVisibilityInhibitors{ InhibitionSource::Host };
+        til::enumset<InhibitionSource, uint8_t> _cursorBlinkingInhibitors;
+        bool _cursorBlinkerOn = false;
+
+        TimerHandle _renditionBlinker;
+
         Microsoft::Console::Types::Viewport _viewport;
-        CursorOptions _currentCursorOptions;
         std::optional<CompositionCache> _compositionCache;
         std::vector<Cluster> _clusterBuffer;
         std::function<void()> _pfnBackgroundColorChanged;
         std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
-        bool _destructing = false;
+        bool _isSynchronizingOutput = false;
         bool _forceUpdateViewport = false;
 
         til::point_span _lastSelectionPaintSpan{};

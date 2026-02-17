@@ -237,6 +237,7 @@ void SixelParser::_executeNextLine()
     _imageCursor.y += _sixelHeight;
     _availablePixelHeight -= _sixelHeight;
     _resizeImageBuffer(_sixelHeight);
+    _fillImageBackgroundWhenScrolled();
 }
 
 void SixelParser::_executeMoveToHome()
@@ -341,6 +342,12 @@ void SixelParser::_initRasterAttributes(const VTInt macroParameter, const Dispat
 
     // By default, the filled area will cover the maximum extent allowed.
     _backgroundSize = { til::CoordTypeMax, til::CoordTypeMax };
+
+    // If the image ends up extending beyond the bottom of the page, we may need
+    // to perform additional background filling as the screen is scrolled, which
+    // requires us to track the area filled so far. This will be initialized, if
+    // necessary, in the _fillImageBackground method below.
+    _filledBackgroundHeight = std::nullopt;
 }
 
 void SixelParser::_updateRasterAttributes(const VTParameters& rasterAttributes)
@@ -373,6 +380,15 @@ void SixelParser::_updateRasterAttributes(const VTParameters& rasterAttributes)
     // back to the dimensions from an earlier raster attributes command.
     _backgroundSize.width = width > 0 ? width : _backgroundSize.width;
     _backgroundSize.height = height > 0 ? height : _backgroundSize.height;
+
+    // If the aspect ratio has changed, the image height may increase, and that
+    // could potentially trigger a scroll requiring the background to be filled.
+    _fillImageBackgroundWhenScrolled();
+
+    // And while not documented, we know from testing on a VT330 that the raster
+    // attributes command should also trigger a carriage return. This applies
+    // regardless of whether the requested aspect ratio is valid or not.
+    _executeCarriageReturn();
 }
 
 void SixelParser::_scrollTextBuffer(Page& page, const int scrollAmount)
@@ -610,7 +626,7 @@ void SixelParser::_updateTextColors()
     // the text output as well.
     if (_conformanceLevel <= 3 && _maxColors > 2 && _colorTableChanged) [[unlikely]]
     {
-        for (IndexType tableIndex = 0; tableIndex < _maxColors; tableIndex++)
+        for (IndexType tableIndex = 0; _maxColors <= 16 && tableIndex < _maxColors; tableIndex++)
         {
             _dispatcher.SetColorTableEntry(tableIndex, _colorFromIndex(tableIndex));
         }
@@ -656,26 +672,67 @@ void SixelParser::_fillImageBackground()
     {
         _backgroundFillRequired = false;
 
-        const auto backgroundHeight = std::min(_backgroundSize.height, _availablePixelHeight);
-        const auto backgroundWidth = std::min(_backgroundSize.width, _availablePixelWidth);
-        _resizeImageBuffer(backgroundHeight);
-
         // When a background fill is requested, we prefill the buffer with the 0
         // color index, up to the boundaries set by the raster attributes (or if
         // none were given, up to the page boundaries). The actual image output
         // isn't limited by the background dimensions though.
-        static constexpr auto backgroundPixel = IndexedPixel{};
-        const auto backgroundOffset = _imageCursor.y * _imageMaxWidth;
-        auto dst = std::next(_imageBuffer.begin(), backgroundOffset);
-        for (auto i = 0; i < backgroundHeight; i++)
-        {
-            std::fill_n(dst, backgroundWidth, backgroundPixel);
-            std::advance(dst, _imageMaxWidth);
-        }
-
-        _imageWidth = std::max(_imageWidth, backgroundWidth);
+        const auto backgroundHeight = std::min(_backgroundSize.height, _availablePixelHeight);
+        _resizeImageBuffer(backgroundHeight);
+        _fillImageBackground(backgroundHeight);
+        // When the image extends beyond the page boundaries, and the screen is
+        // scrolled, we also need to fill the newly exposed lines, so we keep a
+        // record of the area filled so far. Initially this is considered to be
+        // the available height, even if it wasn't all filled to start with.
+        _filledBackgroundHeight = _imageCursor.y + _availablePixelHeight;
+        _fillImageBackgroundWhenScrolled();
     }
 }
+
+void SixelParser::_fillImageBackground(const int backgroundHeight)
+{
+    static constexpr auto backgroundPixel = IndexedPixel{};
+    const auto backgroundWidth = std::min(_backgroundSize.width, _availablePixelWidth);
+    const auto backgroundOffset = _imageCursor.y * _imageMaxWidth;
+    auto dst = std::next(_imageBuffer.begin(), backgroundOffset);
+    for (auto i = 0; i < backgroundHeight; i++)
+    {
+        std::fill_n(dst, backgroundWidth, backgroundPixel);
+        std::advance(dst, _imageMaxWidth);
+    }
+    _imageWidth = std::max(_imageWidth, backgroundWidth);
+}
+
+void SixelParser::_fillImageBackgroundWhenScrolled()
+{
+    // If _filledBackgroundHeight is set, that means a background fill has been
+    // requested, and we need to extend that area whenever the image is about to
+    // overrun it. The newly filled area is a multiple of the cell height (this
+    // is to match the behavior of the original hardware terminals).
+    const auto imageHeight = _imageCursor.y + _sixelHeight;
+    if (_filledBackgroundHeight && imageHeight > _filledBackgroundHeight) [[unlikely]]
+    {
+        _filledBackgroundHeight = (imageHeight + _cellSize.height - 1) / _cellSize.height * _cellSize.height;
+        const auto additionalFillHeight = *_filledBackgroundHeight - _imageCursor.y;
+        _resizeImageBuffer(additionalFillHeight);
+        _fillImageBackground(additionalFillHeight);
+    }
+}
+
+void SixelParser::_decreaseFilledBackgroundHeight(const int decreasedHeight) noexcept
+{
+    // Sometimes the top of the image buffer may be clipped (e.g. when the image
+    // scrolls off the top of a margin area). When that occurs, our record of
+    // the filled height will need to be decreased to account for the new start.
+    if (_filledBackgroundHeight) [[unlikely]]
+    {
+        _filledBackgroundHeight = *_filledBackgroundHeight - decreasedHeight;
+    }
+}
+
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'imageBufferPtr' is never tested for nullness, it can be marked as not_null (f.23).
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
 void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
 {
@@ -684,39 +741,105 @@ void SixelParser::_writeToImageBuffer(int sixelValue, int repeatCount)
     // is received. So if we haven't filled it yet, we need to do so now.
     _fillImageBackground();
 
+    repeatCount = std::min(repeatCount, _imageMaxWidth - _imageCursor.x);
+    if (repeatCount <= 0)
+    {
+        return;
+    }
+
+    if (sixelValue == 0)
+    {
+        _imageCursor.x += repeatCount;
+        return;
+    }
+
+    // This allows us to unsafely cast _imageBuffer to uint16_t
+    // and benefit from compiler/STL optimizations.
+    static_assert(sizeof(IndexedPixel) == sizeof(int16_t));
+    static_assert(alignof(IndexedPixel) == alignof(int16_t));
+
     // Then we need to render the 6 vertical pixels that are represented by the
     // bits in the sixel value. Although note that each of these sixel pixels
     // may cover more than one device pixel, depending on the aspect ratio.
     const auto targetOffset = _imageCursor.y * _imageMaxWidth + _imageCursor.x;
-    auto imageBufferPtr = std::next(_imageBuffer.data(), targetOffset);
-    repeatCount = std::min(repeatCount, _imageMaxWidth - _imageCursor.x);
-    for (auto i = 0; i < 6; i++)
+    const auto foreground = std::bit_cast<int16_t>(_foregroundPixel);
+    auto imageBufferPtr = reinterpret_cast<int16_t*>(_imageBuffer.data() + targetOffset);
+
+    // A aspect ratio of 1:1 is the most common and worth optimizing.
+    if (_pixelAspectRatio == 1)
     {
-        if (sixelValue & 1)
+        do
         {
-            auto repeatAspectRatio = _pixelAspectRatio;
-            do
+            // This gets unrolled by MSVC. It's written this way to use CMOV instructions.
+            // Modern CPUs have fat caches and deep pipelines. It's better to do pointless reads
+            // from memory than causing branch misprediction, as sixelValue is highly random.
+            for (int i = 0; i < 6; i++)
             {
-                std::fill_n(imageBufferPtr, repeatCount, _foregroundPixel);
-                std::advance(imageBufferPtr, _imageMaxWidth);
-            } while (--repeatAspectRatio > 0);
-        }
-        else
-        {
-            std::advance(imageBufferPtr, _imageMaxWidth * _pixelAspectRatio);
-        }
-        sixelValue >>= 1;
+                const auto test = sixelValue & (1 << i);
+                // Possibly pointless read from memory, but...
+                const auto before = imageBufferPtr[i * _imageMaxWidth];
+                // ...it allows the compiler to turn this into a CMOV (= no branch misprediction).
+                const auto after = test ? foreground : before;
+                imageBufferPtr[i * _imageMaxWidth] = after;
+            }
+
+            _imageCursor.x += 1;
+            imageBufferPtr += 1;
+            repeatCount -= 1;
+        } while (repeatCount > 0);
     }
-    _imageCursor.x += repeatCount;
+    else
+    {
+        for (auto i = 0; i < 6; i++)
+        {
+            if (sixelValue & 1)
+            {
+                auto repeatAspectRatio = _pixelAspectRatio;
+                do
+                {
+                    // If this used std::fill_n or just a primitive loop, MSVC would compile
+                    // it to a `rep stosw` instruction, which has a high startup cost.
+                    // This is not ideal when our repeatCount is almost always small.
+                    // The way this does ptr++ and len-- is also ideal for optimization.
+                    auto ptr = imageBufferPtr;
+                    auto remaining = repeatCount;
+                    do
+                    {
+                        __iso_volatile_store16(ptr++, foreground);
+                    } while (--remaining != 0);
+
+                    imageBufferPtr += _imageMaxWidth;
+                } while (--repeatAspectRatio > 0);
+            }
+            else
+            {
+                std::advance(imageBufferPtr, _imageMaxWidth * _pixelAspectRatio);
+            }
+            sixelValue >>= 1;
+        }
+        _imageCursor.x += repeatCount;
+    }
 }
+
+#pragma warning(pop)
 
 void SixelParser::_eraseImageBufferRows(const int rowCount, const til::CoordType rowOffset) noexcept
 {
     const auto pixelCount = rowCount * _cellSize.height;
     const auto bufferOffset = rowOffset * _cellSize.height * _imageMaxWidth;
     const auto bufferOffsetEnd = bufferOffset + pixelCount * _imageMaxWidth;
-    _imageBuffer.erase(_imageBuffer.begin() + bufferOffset, _imageBuffer.begin() + bufferOffsetEnd);
-    _imageCursor.y -= pixelCount;
+    if (static_cast<size_t>(bufferOffsetEnd) >= _imageBuffer.size()) [[unlikely]]
+    {
+        _decreaseFilledBackgroundHeight(_imageCursor.y);
+        _imageBuffer.clear();
+        _imageCursor.y = 0;
+    }
+    else
+    {
+        _decreaseFilledBackgroundHeight(pixelCount);
+        _imageBuffer.erase(_imageBuffer.begin() + bufferOffset, _imageBuffer.begin() + bufferOffsetEnd);
+        _imageCursor.y -= pixelCount;
+    }
 }
 
 void SixelParser::_maybeFlushImageBuffer(const bool endOfSequence)

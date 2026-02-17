@@ -32,12 +32,21 @@
       ]
     },
     "DynamicProfileSource": {
-      "enum": [
-        "Windows.Terminal.Wsl",
-        "Windows.Terminal.Azure",
-        "Windows.Terminal.PowershellCore"
-      ],
-      "type": "string"
+      "type": "string",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "enum": [
+            "Microsoft.WSL",
+            "Windows.Terminal.Wsl",
+            "Windows.Terminal.Azure",
+            "Windows.Terminal.PowershellCore",
+            "Windows.Terminal.VisualStudio"
+          ]
+        }
+      ]
     },
     "BellStyle": {
       "oneOf": [
@@ -423,6 +432,7 @@
         "newWindow",
         "nextTab",
         "openAbout",
+        "openCWD",
         "openNewTabDropdown",
         "openSettings",
         "openSystemMenu",
@@ -733,6 +743,9 @@
               "type": "string",
               "default": "",
               "description": "The name or GUID of the profile to show in this entry"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
             }
           }
         }
@@ -804,6 +817,9 @@
               "type": "string",
               "default": "",
               "description": "The ID of the action to show in this entry"
+            },
+            "icon": {
+              "$ref": "#/$defs/Icon"
             }
           }
         }
@@ -878,6 +894,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "withControlSequences": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, copied content will contain ANSI escape code control sequences representing the styling of the content."
             },
             "dismissSelection": {
               "type": "boolean",
@@ -1906,7 +1927,7 @@
             },
             "useCommandline": {
               "default": false,
-              "description": "When set to `true`, the current commandline the user has typed will pre-populate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
+              "description": "When set to `true`, the current commandline the user has typed will prepopulate the filter of the Suggestions UI. This requires that the user has enabled shell integration in their shell's config. When set to false, the filter will start empty."
             }
           }
         }
@@ -2281,8 +2302,15 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "The ID of the command this keybinding should execute.",
-          "type": "string"
+          "description": "The ID of the command this keybinding should execute (or null to disable a default).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
@@ -2340,7 +2368,7 @@
           "description": "When set to `true`, the terminal window will auto-center itself on the display it opens on. The terminal will use the \"initialPosition\" to determine which display to open on.",
           "type": "boolean"
         },
-        "inputServiceWarning": {
+        "warning.inputService": {
           "default": true,
           "description": "Warning if 'Touch Keyboard and Handwriting Panel Service' is disabled.",
           "type": "boolean"
@@ -2355,10 +2383,29 @@
           "description": "When set to true, the terminal will focus the pane on mouse hover.",
           "type": "boolean"
         },
-        "compatibility.isolatedMode": {
-          "default": false,
-          "description": "When set to true, Terminal windows will not be able to interact with each other (including global hotkeys, tab drag/drop, running commandlines in existing windows, etc.). This is a compatibility escape hatch for users who are running into certain windowing issues.",
+        "experimental.scrollToZoom": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl key while scrolling will increase or decrease the terminal font size.",
           "type": "boolean"
+        },
+        "experimental.scrollToChangeOpacity": {
+          "default": true,
+          "description": "When set to true, holding the Ctrl and Shift keys while scrolling will change the window opacity.",
+          "type": "boolean"
+        },
+        "compatibility.allowHeadless": {
+          "default": false,
+          "description": "When set to true, Windows Terminal will run in the background. This allows globalSummon and quakeMode actions to work even when no windows are open.",
+          "type": "boolean"
+        },
+        "compatibility.textMeasurement": {
+          "default": "graphemes",
+          "description": "This changes the way incoming text is grouped into cells. The \"graphemes\" option is the most modern and Unicode-correct way to do so, while \"wcswidth\" is a common approach on UNIX, and \"console\" replicates the way it used to work on Windows.",
+          "enum": [
+            "graphemes",
+            "wcswidth",
+            "console"
+          ]
         },
         "copyFormatting": {
           "default": true,
@@ -2390,12 +2437,12 @@
           "description": "When set to `true`, visual animations will be disabled across the application.",
           "type": "boolean"
         },
-        "largePasteWarning": {
+        "warning.largePaste": {
           "default": true,
           "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
         },
-        "multiLinePasteWarning": {
+        "warning.multiLinePaste": {
           "default": true,
           "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
@@ -2419,6 +2466,7 @@
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
           "enum": [
+            "automatic",
             "direct2d",
             "direct3d11"
           ]
@@ -2432,8 +2480,9 @@
           "type": "boolean"
         },
         "experimental.input.forceVT": {
-          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"compatibility.input.forceVT\" profile setting.",
+          "deprecated": true
         },
         "experimental.useBackgroundImageForWindow": {
           "default": false,
@@ -2458,11 +2507,6 @@
           "minimum": 1,
           "type": "integer"
         },
-        "startOnUserLogin": {
-          "default": false,
-          "description": "When set to true, this enables the launch of Terminal at startup. Setting this to false will disable the startup task entry. If the Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
-          "type": "boolean"
-        },
         "firstWindowPreference": {
           "default": "defaultProfile",
           "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",
@@ -2485,14 +2529,14 @@
           "type": "string"
         },
         "rowsToScroll": {
-          "default": "system",
-          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so. However, you can customize the number of lines to scroll in \"scrollUp\" and \"scrollDown\" bindings.",
-          "maximum": 999,
-          "minimum": 0,
           "type": [
             "integer",
             "string"
           ],
+          "description": "[Deprecated] This setting no longer has any effect. However, you can customize the number of lines to scroll using the \"rowsToScroll\" argument on the \"scrollUp\" and \"scrollDown\" actions.",
+          "default": "system",
+          "minimum": 0,
+          "maximum": 999,
           "deprecated": true
         },
         "minimizeToNotificationArea": {
@@ -2508,6 +2552,11 @@
         "showAdminShield": {
           "default": true,
           "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
+          "type": "boolean"
+        },
+        "showTabsFullscreen": {
+          "default": false,
+          "description": "When set to true, tabs remain visible in fullscreen mode. When set to false, tabs will be hidden when entering fullscreen mode.",
           "type": "boolean"
         },
         "useAcrylicInTabRow": {
@@ -2533,9 +2582,12 @@
           "$ref": "#/$defs/NewTabMenu"
         },
         "language": {
-          "default": "",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
-          "type": "string"
+          "default": null
         },
         "theme": {
           "default": "dark",
@@ -2593,25 +2645,25 @@
           "description": "Determines the delimiters used in a double click selection.",
           "type": "string"
         },
-        "confirmCloseAllTabs": {
+        "warning.confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
         },
         "useTabSwitcher": {
+          "description": "[Deprecated] Replaced with the \"tabSwitcherMode\" setting.",
           "default": true,
-          "description": "Deprecated. Please use \"tabSwitcherMode\" instead.",
           "oneOf": [
             {
               "type": "boolean"
             },
             {
+              "type": "string",
               "enum": [
                 "mru",
                 "inOrder",
                 "disabled"
-              ],
-              "type": "string"
+              ]
             }
           ],
           "deprecated": true
@@ -2668,12 +2720,12 @@
       "type": "object",
       "properties": {
         "acrylicOpacity": {
+          "type": "number",
+          "description": "[Deprecated] Replaced with the \"opacity\" setting.",
           "default": 0.5,
-          "description": "[deprecated] Please use `opacity` instead.",
-          "deprecated": true,
-          "maximum": 1,
           "minimum": 0,
-          "type": "number"
+          "maximum": 1,
+          "deprecated": true
         },
         "antialiasingMode": {
           "default": "grayscale",
@@ -2697,6 +2749,21 @@
         "compatibility.reloadEnvironmentVariables": {
           "default": true,
           "description": "When set to true, when opening a new tab or pane it will get reloaded environment variables.",
+          "type": "boolean"
+        },
+        "compatibility.input.forceVT": {
+          "default": false,
+          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
+          "type": "boolean"
+        },
+        "compatibility.allowDECRQCRA": {
+          "default": false,
+          "description": "When set to true, the terminal will support the DECRQCRA (Request Checksum of Rectangular Area) escape sequence.",
+          "type": "boolean"
+        },
+        "compatibility.allowOSC52": {
+          "default": true,
+          "description": "When set to true, VT applications will be allowed to set the contents of the local clipboard using OSC 52 (Manipulate Selection Data).",
           "type": "boolean"
         },
         "unfocusedAppearance": {
@@ -2848,7 +2915,7 @@
           "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
         "environment": {
-          "description": "Key-value pairs representing environment variables to set. Environment variable names are not case sensitive. You can reference existing environment variable names by enclosing them in literal percent characters (e.g. %PATH%).",
+          "description": "Key-value pairs representing environment variables to set. Environment variable names are not case-sensitive. You can reference existing environment variable names by enclosing them in literal percent characters (e.g. %PATH%).",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -2860,27 +2927,32 @@
           "type": "boolean"
         },
         "experimental.autoMarkPrompts": {
-          "deprecated": true,
-          "description": "This has been replaced by autoMarkPrompts in 1.21",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"autoMarkPrompts\" setting.",
+          "deprecated": true
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
         "experimental.showMarksOnScrollbar": {
-          "deprecated": true,
-          "description": "This has been replaced by showMarksOnScrollbar in 1.21",
-          "type": "boolean"
+          "type": "boolean",
+          "description": "[Deprecated] Replaced with the \"showMarksOnScrollbar\" setting.",
+          "deprecated": true
         },
         "showMarksOnScrollbar": {
           "default": false,
           "description": "When set to true, marks added to the buffer via the addMark action will appear on the scrollbar.",
           "type": "boolean"
         },
+        "experimental.rainbowSuggestions": {
+          "type": "boolean",
+          "description": "Enables displaying command suggestions in the terminal in RGB (all the colors of the rainbow!).",
+          "default": false
+        },
         "experimental.rightClickContextMenu": {
           "default": false,
-          "description": "When set to true, right-clicking on the terminal will show a context menu. When set to false, right-click will copy",
+          "description": "When true, right-click shows a context menu; otherwise, it pastes from the clipboard or copies selection.",
           "type": "boolean"
         },
         "experimental.repositionCursorWithMouse": {
@@ -2893,23 +2965,29 @@
           "type": "string"
         },
         "fontFace": {
-          "default": "Cascadia Mono",
-          "description": "[deprecated] Define 'face' within the 'font' object instead.",
           "type": "string",
+          "description": "[Deprecated] Replaced with the \"face\" setting within the \"font\" object.",
+          "default": "Cascadia Mono",
           "deprecated": true
         },
         "fontSize": {
-          "default": 12,
-          "description": "[deprecated] Define 'size' within the 'font' object instead.",
-          "minimum": 1,
           "type": "number",
+          "description": "[Deprecated] Replaced with the \"size\" setting within the \"font\" object.",
+          "default": 12,
+          "minimum": 1,
           "deprecated": true
         },
         "fontWeight": {
+          "description": "[Deprecated] Replaced with the \"weight\" setting within the \"font\" object.",
           "default": "normal",
-          "description": "[deprecated] Define 'weight' within the 'font' object instead.",
           "oneOf": [
             {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 990
+            },
+            {
+              "type": "string",
               "enum": [
                 "thin",
                 "extra-light",
@@ -2922,13 +3000,7 @@
                 "extra-bold",
                 "black",
                 "extra-black"
-              ],
-              "type": "string"
-            },
-            {
-              "maximum": 990,
-              "minimum": 100,
-              "type": "integer"
+              ]
             }
           ],
           "deprecated": true
@@ -3039,7 +3111,10 @@
         },
         "answerbackMessage": {
           "description": "The response that is sent when an ENQ control character is received.",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
@@ -3079,6 +3154,18 @@
           "default": false,
           "description": "When set to true, the window will have an acrylic material background. When set to false, the window will have a plain, untextured background.",
           "type": "boolean"
+        },
+        "pathTranslationStyle": {
+          "default": "none",
+          "description": "Controls how file paths are transformed when they are dragged and dropped on the terminal. Possible values are \"none\", \"wsl\", \"cygwin\", \"msys2\" and \"mingw\".",
+          "enum": [
+            "none",
+            "wsl",
+            "cygwin",
+            "msys2",
+            "mingw"
+          ],
+          "type": "string"
         }
       }
     },

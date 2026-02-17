@@ -54,14 +54,11 @@ Este é um projeto de código aberto e a participação da comunidade é bem-vin
     
   </DevStudio>
   <ReleaseNotes>
-    Versão __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-- Reescrevemos a forma como os aplicativos de console são hospedados no Terminal! Certifique-se de reportar os bugs que você encontrar.
-- O terminal agora é compatível com o Sixels!
-- Agora você pode abrir um painel acoplado contendo snippets de comandos que você salvou para usar mais tarde
-- Os usuários do Prompt de Comando na versão mais recente do Windows 11 podem ver um ícone de "dica rápida", que sugere softwares instaláveis a partir do WinGet
-- O texto selecionado agora ficará muito mais visível (e personalizável!)
-- Vários bugs de confiabilidade, problemas de conveniência e incômodos foram resolvidos.
+– Uma nova página de Extensões que mostra o que foi instalado no seu Terminal
+– A Paleta de Comandos agora aparece no seu idioma nativo, além do inglês
+– Novos recursos da VT, como renderização sincronizada, novos esquemas de cores, configuração para ações rápidas do mouse, como zoom, e muito mais
 
 Confira nossa página de lançamentos no GitHub para obter mais detalhes.
   </ReleaseNotes>

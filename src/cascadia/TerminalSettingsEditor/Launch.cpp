@@ -5,8 +5,7 @@
 #include "Launch.h"
 #include "Launch.g.cpp"
 #include "EnumEntry.h"
-
-#include <LibraryResources.h>
+#include "LaunchViewModel.h"
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
@@ -39,6 +38,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _ViewModel = e.Parameter().as<Editor::LaunchViewModel>();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _ViewModel = args.ViewModel().as<Editor::LaunchViewModel>();
+        auto innerViewModel{ winrt::get_self<Editor::implementation::LaunchViewModel>(_ViewModel) };
+        /* coroutine dispatch */ innerViewModel->PrepareStartOnUserLoginSettings();
+
+        TraceLoggingWrite(
+            g_hTerminalSettingsEditorProvider,
+            "NavigatedToPage",
+            TraceLoggingDescription("Event emitted when the user navigates to a page in the settings UI"),
+            TraceLoggingValue("startup", "PageId", "The identifier of the page that was navigated to"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 }

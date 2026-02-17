@@ -8,12 +8,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T>
     struct property
     {
-        explicit constexpr property(auto&&... args) :
+        explicit constexpr property(auto&&... args) noexcept(std::is_nothrow_constructible_v<T, decltype(args)...>) :
             _value{ std::forward<decltype(args)>(args)... } {}
 
         property& operator=(const property& other) = default;
 
-        T operator()() const noexcept
+        T operator()() const noexcept(std::is_nothrow_copy_constructible<T>::value)
         {
             return _value;
         }
@@ -60,32 +60,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename ArgsT>
     struct event
     {
-        event<ArgsT>() = default;
+        explicit operator bool() const noexcept { return static_cast<bool>(_handlers); }
         winrt::event_token operator()(const ArgsT& handler) { return _handlers.add(handler); }
-        void operator()(const winrt::event_token& token) { _handlers.remove(token); }
-        operator bool() const noexcept { return bool(_handlers); }
-        template<typename... Arg>
+        void operator()(winrt::event_token token) { _handlers.remove(token); }
+
         void raise(auto&&... args)
         {
             _handlers(std::forward<decltype(args)>(args)...);
         }
+
+    private:
         winrt::event<ArgsT> _handlers;
     };
 
     template<typename SenderT = winrt::Windows::Foundation::IInspectable, typename ArgsT = winrt::Windows::Foundation::IInspectable>
-    struct typed_event
-    {
-        typed_event<SenderT, ArgsT>() = default;
-        winrt::event_token operator()(const winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>& handler) { return _handlers.add(handler); }
-        void operator()(const winrt::event_token& token) { _handlers.remove(token); }
-        operator bool() const noexcept { return bool(_handlers); }
-        template<typename... Arg>
-        void raise(Arg const&... args)
-        {
-            _handlers(std::forward<decltype(args)>(args)...);
-        }
-        winrt::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>> _handlers;
-    };
+    using typed_event = til::event<winrt::Windows::Foundation::TypedEventHandler<SenderT, ArgsT>>;
+
 #endif
 #ifdef WINRT_Windows_UI_Xaml_Data_H
 
@@ -109,4 +99,71 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     //     Which is just silly
 
 #endif
+
+    struct transparent_hstring_hash
+    {
+        using is_transparent = void;
+
+        size_t operator()(const auto& hstr) const noexcept
+        {
+            return std::hash<std::wstring_view>{}(hstr);
+        }
+    };
+
+    struct transparent_hstring_equal_to
+    {
+        using is_transparent = void;
+
+        bool operator()(const auto& lhs, const auto& rhs) const noexcept
+        {
+            return lhs == rhs;
+        }
+    };
+
+    // fmt::format but for HSTRING.
+    //
+    // NOTE: This will fail to compile if you pass a string literal as the first argument (the format argument).
+    // This is because std::forwarding literals turns them from constant expressions into regular ones.
+    // It can be fixed by giving the first argument an explicit type. I intentionally didn't do that
+    // because if you pass a string literal, you really ought to pass a FMT_COMPILE() instead.
+    winrt::hstring hstring_format(auto&&... args)
+    {
+        // We could use fmt::formatted_size and winrt::impl::hstring_builder here,
+        // and this would make formatting of large strings a bit faster, and a bit slower
+        // for short strings. More importantly, I hit compilation issues so I dropped that.
+        fmt::basic_memory_buffer<wchar_t> buf;
+        fmt::format_to(std::back_inserter(buf), std::forward<decltype(args)>(args)...);
+        return winrt::hstring{ buf.data(), gsl::narrow<uint32_t>(buf.size()) };
+    }
 }
+
+template<>
+struct fmt::formatter<winrt::hstring, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::hstring& str, auto& ctx) const
+    {
+        return fmt::formatter<fmt::wstring_view, wchar_t>::format({ str.data(), str.size() }, ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<winrt::guid, wchar_t> : fmt::formatter<fmt::wstring_view, wchar_t>
+{
+    auto format(const winrt::guid& value, auto& ctx) const
+    {
+        return fmt::format_to(
+            ctx.out(),
+            L"{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
+            value.Data1,
+            value.Data2,
+            value.Data3,
+            value.Data4[0],
+            value.Data4[1],
+            value.Data4[2],
+            value.Data4[3],
+            value.Data4[4],
+            value.Data4[5],
+            value.Data4[6],
+            value.Data4[7]);
+    }
+};

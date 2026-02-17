@@ -400,27 +400,13 @@ Microsoft::Console::ICU::unique_utext Microsoft::Console::ICU::UTextFromTextBuff
     return ut;
 }
 
-Microsoft::Console::ICU::unique_uregex Microsoft::Console::ICU::CreateRegex(const std::wstring_view& pattern, uint32_t flags, UErrorCode* status) noexcept
-{
-#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
-    const auto re = uregex_open(reinterpret_cast<const char16_t*>(pattern.data()), gsl::narrow_cast<int32_t>(pattern.size()), flags, nullptr, status);
-    // ICU describes the time unit as being dependent on CPU performance and "typically [in] the order of milliseconds",
-    // but this claim seems highly outdated already. On my CPU from 2021, a limit of 4096 equals roughly 600ms.
-    uregex_setTimeLimit(re, 4096, status);
-    uregex_setStackLimit(re, 4 * 1024 * 1024, status);
-    return unique_uregex{ re };
-}
-
-// Returns an inclusive point range given a text start and end position.
+// Returns a half-open [beg,end) range given a text start and end position.
 // This function is designed to be used with uregex_start64/uregex_end64.
 til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegularExpression* re)
 {
     UErrorCode status = U_ZERO_ERROR;
     const auto nativeIndexBeg = uregex_start64(re, 0, &status);
-    auto nativeIndexEnd = uregex_end64(re, 0, &status);
-
-    // The parameters are given as a half-open [beg,end) range, but the point_span we return in closed [beg,end].
-    nativeIndexEnd--;
+    const auto nativeIndexEnd = uregex_end64(re, 0, &status);
 
     const auto& textBuffer = *static_cast<const TextBuffer*>(ut->context);
     til::point_span ret;
@@ -439,7 +425,7 @@ til::point_span Microsoft::Console::ICU::BufferRangeFromMatch(UText* ut, URegula
     if (utextAccess(ut, nativeIndexEnd, true))
     {
         const auto y = accessCurrentRow(ut);
-        ret.end.x = textBuffer.GetRowByOffset(y).GetTrailingColumnAtCharOffset(ut->chunkOffset);
+        ret.end.x = textBuffer.GetRowByOffset(y).GetLeadingColumnAtCharOffset(ut->chunkOffset);
         ret.end.y = y;
     }
     else

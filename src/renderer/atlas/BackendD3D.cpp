@@ -12,7 +12,7 @@
 #include <shader_vs.h>
 
 #include "BuiltinGlyphs.h"
-#include "dwrite.h"
+#include "dwrite_helpers.h"
 #include "wic.h"
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/convert.hpp"
@@ -588,7 +588,10 @@ void BackendD3D::_recreateConstBuffer(const RenderingPayload& p) const
         data.underlineWidth = p.s->font->underline.height;
         data.doubleUnderlineWidth = p.s->font->doubleUnderline[0].height;
         data.curlyLineHalfHeight = _curlyLineHalfHeight;
-        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 16.0f, p.s->font->cellSize.y / 32.0f)));
+        // The lightLineWidth used for drawing the built-in glyphs is `cellSize.x / 6.0f`.
+        // So this ends up using a quarter line width for the dotted glyphs.
+        // We use half that for the `cellSize.y`, because usually cells have an aspect ratio of 1:2.
+        data.shadedGlyphDotSize = std::max(1.0f, std::roundf(std::max(p.s->font->cellSize.x / 12.0f, p.s->font->cellSize.y / 24.0f)));
         p.deviceContext->UpdateSubresource(_psConstantBuffer.get(), 0, nullptr, &data, 0, 0);
     }
 }
@@ -675,12 +678,12 @@ void BackendD3D::_debugUpdateShaders(const RenderingPayload& p) noexcept
         struct FileVS
         {
             std::wstring_view filename;
-            wil::com_ptr<ID3D11VertexShader> BackendD3D::*target;
+            wil::com_ptr<ID3D11VertexShader> BackendD3D::* target;
         };
         struct FilePS
         {
             std::wstring_view filename;
-            wil::com_ptr<ID3D11PixelShader> BackendD3D::*target;
+            wil::com_ptr<ID3D11PixelShader> BackendD3D::* target;
         };
 
         static constexpr std::array filesVS{
@@ -2321,7 +2324,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
 
     {
         // Before we do anything else we have to unbound _renderTargetView from being
-        // a render target, otherwise we can't use it as a shader resource below.
+        // a render target; otherwise, we can't use it as a shader resource below.
         p.deviceContext->OMSetRenderTargets(1, _renderTargetView.addressof(), nullptr);
 
         // IA: Input Assembler

@@ -80,11 +80,12 @@ constexpr OutIt copy_n_small(InIt first, Diff count, OutIt dest)
     return dest;
 }
 
-CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t lastCharOffset, til::CoordType currentColumn) noexcept :
+CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* charOffsets, ptrdiff_t charsLength, til::CoordType currentColumn, til::CoordType columnCount) noexcept :
     _chars{ chars },
     _charOffsets{ charOffsets },
-    _lastCharOffset{ lastCharOffset },
-    _currentColumn{ currentColumn }
+    _charsLength{ charsLength },
+    _currentColumn{ currentColumn },
+    _columnCount{ columnCount }
 {
 }
 
@@ -92,7 +93,7 @@ CharToColumnMapper::CharToColumnMapper(const wchar_t* chars, const uint16_t* cha
 // This function in particular returns the glyph's first column.
 til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t targetOffset) noexcept
 {
-    targetOffset = clamp(targetOffset, 0, _lastCharOffset);
+    targetOffset = clamp(targetOffset, 0, _charsLength);
 
     // This code needs to fulfill two conditions on top of the obvious (a forward/backward search):
     // A: We never want to stop on a column that is marked with CharOffsetsTrailer (= "GetLeadingColumn").
@@ -130,10 +131,14 @@ til::CoordType CharToColumnMapper::GetLeadingColumnAt(ptrdiff_t targetOffset) no
 til::CoordType CharToColumnMapper::GetTrailingColumnAt(ptrdiff_t offset) noexcept
 {
     auto col = GetLeadingColumnAt(offset);
-    // This loop is a little redundant with the forward search loop in GetLeadingColumnAt()
-    // but it's realistically not worth caring about this. This code is not a bottleneck.
-    for (; WI_IsFlagSet(_charOffsets[col + 1], CharOffsetsTrailer); ++col)
+
+    if (col < _columnCount)
     {
+        // This loop is a little redundant with the forward search loop in GetLeadingColumnAt()
+        // but it's realistically not worth caring about this. This code is not a bottleneck.
+        for (; WI_IsFlagSet(_charOffsets[col + 1], CharOffsetsTrailer); ++col)
+        {
+        }
     }
     return col;
 }
@@ -426,7 +431,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const til::CoordType c
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= size());
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
-    const auto finalColumnInRow = limitRight.value_or(size() - 1);
+    const auto finalColumnInRow = gsl::narrow_cast<uint16_t>(limitRight.value_or(size() - 1));
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
@@ -937,12 +942,12 @@ void ROW::_resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDi
     }
 }
 
-til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() noexcept
+RowAttributes& ROW::Attributes() noexcept
 {
     return _attr;
 }
 
-const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexcept
+const RowAttributes& ROW::Attributes() const noexcept
 {
     return _attr;
 }
@@ -1114,6 +1119,9 @@ std::wstring_view ROW::GetText() const noexcept
     return { _chars.data(), width };
 }
 
+// Arguments:
+// - columnBegin: inclusive
+// - columnEnd: exclusive
 std::wstring_view ROW::GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept
 {
     const auto columns = GetReadableColumnCount();
@@ -1219,15 +1227,15 @@ T ROW::_adjustForward(T column) const noexcept
 }
 
 // Creates a CharToColumnMapper given an offset into _chars.data().
-// In other words, for a 120 column ROW with just ASCII text, the offset should be [0,120).
+// In other words, for a 120 column ROW with just ASCII text, the offset should be [0,120].
 CharToColumnMapper ROW::_createCharToColumnMapper(ptrdiff_t offset) const noexcept
 {
     const auto charsSize = _charSize();
-    const auto lastChar = gsl::narrow_cast<ptrdiff_t>(charsSize - 1);
+    const auto lastChar = gsl::narrow_cast<ptrdiff_t>(charsSize);
     // We can sort of guess what column belongs to what offset because BMP glyphs are very common and
     // UTF-16 stores them in 1 char. In other words, usually a ROW will have N chars for N columns.
     const auto guessedColumn = gsl::narrow_cast<til::CoordType>(clamp(offset, 0, _columnCount));
-    return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn };
+    return CharToColumnMapper{ _chars.data(), _charOffsets.data(), lastChar, guessedColumn, _columnCount };
 }
 
 const std::optional<ScrollbarData>& ROW::GetScrollbarData() const noexcept

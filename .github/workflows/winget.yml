@@ -1,4 +1,4 @@
-name: Publish to Winget
+name: Publish to WinGet
 
 on:
   release:
@@ -6,6 +6,9 @@ on:
 
 env:
   REGEX: 'Microsoft\.WindowsTerminal(?:Preview)?_([\d.]+)_8wekyb3d8bbwe\.msixbundle$'
+  # winget-create will read the following environment variable to access the GitHub token needed for submitting a PR
+  # See https://aka.ms/winget-create-token
+  WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
 
 jobs:
   publish:
@@ -21,4 +24,4 @@ jobs:
           $wingetPackage = "Microsoft.WindowsTerminal${{ github.event.release.prerelease && '.Preview' || '' }}"
 
           & curl.exe -JLO https://aka.ms/wingetcreate/latest
-          & .\wingetcreate.exe update $wingetPackage -s -v $version -u $wingetRelevantAsset.browser_download_url -t "${{ secrets.WINGET_TOKEN }}"
+          & .\wingetcreate.exe update $wingetPackage -s -v $version -u $wingetRelevantAsset.browser_download_url

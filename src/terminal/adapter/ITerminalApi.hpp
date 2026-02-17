@@ -72,8 +72,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual void ShowWindow(bool showOrHide) = 0;
 
-        virtual void SetConsoleOutputCP(const unsigned int codepage) = 0;
-        virtual unsigned int GetConsoleOutputCP() const = 0;
+        virtual void SetCodePage(const unsigned int codepage) = 0;
+        virtual void ResetCodePage() = 0;
+        virtual unsigned int GetOutputCodePage() const = 0;
+        virtual unsigned int GetInputCodePage() const = 0;
 
         virtual void CopyToClipboard(const wil::zwstring_view content) = 0;
         virtual void SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress) = 0;
@@ -82,8 +84,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ResizeWindow(const til::CoordType width, const til::CoordType height) = 0;
 
-        virtual void NotifyAccessibilityChange(const til::rect& changedRect) = 0;
         virtual void NotifyBufferRotation(const int delta) = 0;
+        virtual void NotifyShellIntegrationMark() = 0;
 
         virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
 

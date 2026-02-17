@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Extensions.idl";
+import "ActionsViewModel.idl";
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     // Due to a XAML Compiler bug, it is hard for us to propagate an HWND into a XAML-using runtimeclass.
@@ -13,12 +16,23 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    // This is used to pass data between pages during navigation.
+    runtimeclass NavigateToPageArgs
+    {
+        IHostedInWindow WindowRoot { get; };
+        IInspectable ViewModel { get; };
+    }
+
     enum BreadcrumbSubPage
     {
         None = 0,
         Profile_Appearance,
+        Profile_Terminal,
         Profile_Advanced,
-        ColorSchemes_Edit
+        ColorSchemes_Edit,
+        Actions_Edit,
+        NewTabMenu_Folder,
+        Extensions_Extension
     };
 
     runtimeclass Breadcrumb : Windows.Foundation.IStringable
@@ -34,12 +48,15 @@ namespace Microsoft.Terminal.Settings.Editor
 
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
+        event Windows.Foundation.TypedEventHandler<Object, Windows.Foundation.Collections.IVectorView<Microsoft.Terminal.Settings.Model.SettingsLoadWarnings> > ShowLoadWarningsDialog;
 
         // Due to the aforementioned bug, we can't use IInitializeWithWindow _here_ either.
         // Let's just smuggle the HWND in as a UInt64 :|
         void SetHostingWindow(UInt64 window);
 
         Windows.Foundation.Collections.IObservableVector<IInspectable> Breadcrumbs { get; };
+        ExtensionsViewModel ExtensionsVM { get; };
+        ActionsViewModel ActionsVM { get; };
 
         Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }

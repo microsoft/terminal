@@ -13,6 +13,7 @@
 #include "srvinit.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../interactivity/win32/CustomWindowMessages.h"
 #include "../types/inc/convert.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
@@ -179,6 +180,32 @@ void CONSOLE_INFORMATION::SetBracketedPasteMode(const bool enabled) noexcept
     _bracketedPasteMode = enabled;
 }
 
+void CONSOLE_INFORMATION::CopyTextToClipboard(const std::wstring_view text)
+{
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (window)
+    {
+        // The clipboard can only be updated from the main GUI thread, so we
+        // need to post a message to trigger the actual copy operation. But if
+        // the pending clipboard content is already set, a message would have
+        // already been posted, so there's no need to post another one.
+        const auto clipboardMessageSent = _pendingClipboardText.has_value();
+        _pendingClipboardText = text;
+        if (!clipboardMessageSent)
+        {
+            PostMessageW(window->GetWindowHandle(), CM_UPDATE_CLIPBOARD, 0, 0);
+        }
+    }
+}
+
+std::optional<std::wstring> CONSOLE_INFORMATION::UsePendingClipboardText()
+{
+    // Once the pending text has been used, we clear the variable to let the
+    // CopyTextToClipboard method know that the last CM_UPDATE_CLIPBOARD message
+    // has been processed, and future updates will require another message.
+    return std::exchange(_pendingClipboardText, {});
+}
+
 // Method Description:
 // - Return the active screen buffer of the console.
 // Arguments:
@@ -326,17 +353,6 @@ const std::wstring_view CONSOLE_INFORMATION::GetOriginalTitle() const noexcept
 const std::wstring_view CONSOLE_INFORMATION::GetLinkTitle() const noexcept
 {
     return _LinkTitle;
-}
-
-// Method Description:
-// - return a reference to the console's cursor blinker.
-// Arguments:
-// - <none>
-// Return Value:
-// - a reference to the console's cursor blinker.
-Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexcept
-{
-    return _blinker;
 }
 
 // Method Description:
