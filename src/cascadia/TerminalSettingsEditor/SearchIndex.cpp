@@ -54,13 +54,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Editor::FilteredSearchResult FilteredSearchResult::CreateNoResultsItem(const winrt::hstring& query)
     {
-        return winrt::make<FilteredSearchResult>(nullptr, nullptr, hstring{ fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), query) });
+        return winrt::make<FilteredSearchResult>(nullptr, nullptr, nullptr, hstring{ fmt::format(fmt::runtime(std::wstring{ RS_(L"Search_NoResults") }), query) });
     }
 
     // Creates a FilteredSearchResult with the given search index entry and runtime object.
     // The resulting search result will have a label like "<ProfileName>: <display text>" or "<ProfileName>".
     // This is so that we can reuse the display text from the search index, but also add additional context to which runtime object this search result maps to.
-    Editor::FilteredSearchResult FilteredSearchResult::CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj)
+    Editor::FilteredSearchResult FilteredSearchResult::CreateRuntimeObjectItem(std::shared_ptr<const IndexData> indexData, const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj)
     {
         hstring runtimeObjLabel{};
         hstring runtimeObjContext{};
@@ -96,14 +96,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // - primaryText: <displayText>
             // - secondaryText: <runtimeObjLabel>
             // navigates to setting container
-            return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, displayText, runtimeObjLabel);
+            return winrt::make<FilteredSearchResult>(indexData, searchIndexEntry, runtimeObj, displayText, runtimeObjLabel);
         }
         // Partial index entry (for runtime object main pages)
         // - primaryText: <runtimeObjLabel>
         // - secondaryText: <runtimeObjContext>
         // "PowerShell" --> navigates to main runtime object page (i.e. Profiles_Base)
         // "SSH" | "Extension" --> navigates to main runtime object page (i.e. Extensions > SSH)
-        return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, runtimeObjLabel, runtimeObjContext);
+        return winrt::make<FilteredSearchResult>(indexData, searchIndexEntry, runtimeObj, runtimeObjLabel, runtimeObjContext);
     }
 
     winrt::hstring FilteredSearchResult::AccessibleName() const
@@ -277,7 +277,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         indexData.colorSchemeIndexEntry.Entry = &PartialColorSchemeIndexEntry();
         indexData.actionIndexEntry.Entry = &PartialActionIndexEntry();
 
-        _index = std::move(indexData);
+        _index.store(std::make_shared<const IndexData>(std::move(indexData)));
     }
 
     // Method Description:
@@ -301,6 +301,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                                                    const IVectorView<Editor::ExtensionPackageViewModel> extensionPkgVMs,
                                                                                                    const IVectorView<Editor::CommandViewModel> commandVMs)
     {
+        // Snapshot the current index so that Reset() can safely swap
+        // it without invalidating pointers used by this search.
+        const auto index = _index.load();
+        wil::hide_name _index;
+        if (!index)
+        {
+            // invalid search; do not return any results
+            co_return single_threaded_observable_vector<Windows::Foundation::IInspectable>();
+        }
+
         co_await winrt::resume_background();
 
         // The search can be cancelled at any time by the caller.
@@ -309,7 +319,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto filter = fzf::matcher::ParsePattern(std::wstring_view{ query });
 
         std::vector<std::pair<int, Editor::FilteredSearchResult>> scoredResults;
-        for (const auto& entry : _index.mainIndex)
+        for (const auto& entry : index->mainIndex)
         {
             if (cancellationToken())
             {
@@ -331,7 +341,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (bestScore >= MinimumMatchScore)
             {
-                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(&entry));
+                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(index, &entry));
             }
         }
 
@@ -358,7 +368,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     // navigates to runtime object main page (i.e. "PowerShell" Profiles_Base page)
                     scoredResults.emplace_back(objNameMatch->Score * WeightRuntimeObjectMatch,
-                                               FilteredSearchResult::CreateRuntimeObjectItem(&partialSearchIndexEntry, runtimeObj));
+                                               FilteredSearchResult::CreateRuntimeObjectItem(index, &partialSearchIndexEntry, runtimeObj));
                 }
 
                 for (const auto& entry : searchIndex)
@@ -409,15 +419,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         // navigates to runtime object's setting (i.e. "PowerShell: Command line")
                         scoredResults.emplace_back(bestScore * WeightRuntimeObjectSetting,
-                                                   FilteredSearchResult::CreateRuntimeObjectItem(&entry, runtimeObj));
+                                                   FilteredSearchResult::CreateRuntimeObjectItem(index, &entry, runtimeObj));
                     }
                 }
             }
         };
 
-        appendRuntimeObjectResults(profileVMs, _index.profileIndex, _index.profileIndexEntry);
-        appendRuntimeObjectResults(ntmFolderVMs, _index.ntmFolderIndex, _index.ntmFolderIndexEntry);
-        appendRuntimeObjectResults(colorSchemeVMs, _index.colorSchemeIndex, _index.colorSchemeIndexEntry);
+        appendRuntimeObjectResults(profileVMs, index->profileIndex, index->profileIndexEntry);
+        appendRuntimeObjectResults(ntmFolderVMs, index->ntmFolderIndex, index->ntmFolderIndexEntry);
+        appendRuntimeObjectResults(colorSchemeVMs, index->colorSchemeIndex, index->colorSchemeIndexEntry);
 
         // Simple runtime object matching (no associated search index, just match by display name)
         auto appendSimpleRuntimeObjectResults = [&](const auto& runtimeObjectList, const LocalizedIndexEntry& indexEntry, auto getDisplayName) {
@@ -432,13 +442,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     // navigates to runtime object page (i.e. "Copy Text" --> Actions > EditAction page)
                     scoredResults.emplace_back(match->Score * WeightRuntimeObjectMatch,
-                                               FilteredSearchResult::CreateRuntimeObjectItem(&indexEntry, runtimeObj));
+                                               FilteredSearchResult::CreateRuntimeObjectItem(index, &indexEntry, runtimeObj));
                 }
             }
         };
 
-        appendSimpleRuntimeObjectResults(extensionPkgVMs, _index.extensionIndexEntry, [](const auto& ext) { return ext.DisplayName(); });
-        appendSimpleRuntimeObjectResults(commandVMs, _index.actionIndexEntry, [](const auto& cmd) { return cmd.DisplayName(); });
+        appendSimpleRuntimeObjectResults(extensionPkgVMs, index->extensionIndexEntry, [](const auto& ext) { return ext.DisplayName(); });
+        appendSimpleRuntimeObjectResults(commandVMs, index->actionIndexEntry, [](const auto& cmd) { return cmd.DisplayName(); });
 
         // must be IInspectable to be used as ItemsSource in XAML
         std::vector<Windows::Foundation::IInspectable> results;

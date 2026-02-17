@@ -24,17 +24,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::array<std::pair<std::optional<winrt::hstring>, int>, 2> GetSearchableFields() const;
     };
 
+    // Data backing the search index. Shared via shared_ptr so that
+    // in-flight search results keep their snapshot alive even after
+    // the index is rebuilt by Reset().
+    struct IndexData
+    {
+        // Basic index data loaded from GeneratedSettingsIndex.g.h and wrapped as LocalizedIndexEntry objects.
+        // Non-main indices are duplicated at runtime when searching for runtime objects.
+        std::vector<LocalizedIndexEntry> mainIndex;
+        std::vector<LocalizedIndexEntry> profileIndex;
+        std::vector<LocalizedIndexEntry> ntmFolderIndex;
+        std::vector<LocalizedIndexEntry> colorSchemeIndex;
+
+        // Links to main page; used when searching runtime objects
+        LocalizedIndexEntry profileIndexEntry;
+        LocalizedIndexEntry ntmFolderIndexEntry;
+        LocalizedIndexEntry colorSchemeIndexEntry;
+        LocalizedIndexEntry extensionIndexEntry;
+        LocalizedIndexEntry actionIndexEntry;
+    };
+
     // WinRT object representing a single filtered search result
     struct FilteredSearchResult : FilteredSearchResultT<FilteredSearchResult>
     {
-        FilteredSearchResult(const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr, const std::optional<hstring>& label = std::nullopt, const hstring secondaryLabel = {}) :
+        FilteredSearchResult(std::shared_ptr<const IndexData> indexData, const LocalizedIndexEntry* entry, const Windows::Foundation::IInspectable& navigationArgOverride = nullptr, const std::optional<hstring>& label = std::nullopt, const hstring secondaryLabel = {}) :
+            _indexData{ std::move(indexData) },
             _SearchIndexEntry{ entry },
             _NavigationArgOverride{ navigationArgOverride },
             _overrideLabel{ label },
             _secondaryLabel{ secondaryLabel } {}
 
         static Editor::FilteredSearchResult CreateNoResultsItem(const winrt::hstring& query);
-        static Editor::FilteredSearchResult CreateRuntimeObjectItem(const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj);
+        static Editor::FilteredSearchResult CreateRuntimeObjectItem(std::shared_ptr<const IndexData> indexData, const LocalizedIndexEntry* searchIndexEntry, const Windows::Foundation::IInspectable& runtimeObj);
 
         hstring ToString() { return AccessibleName(); }
         winrt::hstring AccessibleName() const;
@@ -46,6 +67,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Xaml::Controls::IconElement Icon() const;
 
     private:
+        // Prevent the IndexData (and the LocalizedIndexEntry objects within)
+        // from being freed while this search result is still alive.
+        const std::shared_ptr<const IndexData> _indexData;
         const std::optional<winrt::hstring> _overrideLabel{ std::nullopt };
         const winrt::hstring _secondaryLabel{};
         const Windows::Foundation::IInspectable _NavigationArgOverride{ nullptr };
@@ -79,23 +103,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         SearchIndex() = default;
-        struct IndexData
-        {
-            IndexData& operator=(const IndexData& other) = default;
-
-            // Basic index data loaded from GeneratedSettingsIndex.g.h and wrapped as LocalizedIndexEntry objects.
-            // Non-main indices are duplicated at runtime when searching for runtime objects.
-            std::vector<LocalizedIndexEntry> mainIndex;
-            std::vector<LocalizedIndexEntry> profileIndex;
-            std::vector<LocalizedIndexEntry> ntmFolderIndex;
-            std::vector<LocalizedIndexEntry> colorSchemeIndex;
-
-            // Links to main page; used when searching runtime objects
-            LocalizedIndexEntry profileIndexEntry;
-            LocalizedIndexEntry ntmFolderIndexEntry;
-            LocalizedIndexEntry colorSchemeIndexEntry;
-            LocalizedIndexEntry extensionIndexEntry;
-            LocalizedIndexEntry actionIndexEntry;
-        } _index;
+        std::atomic<std::shared_ptr<const IndexData>> _index;
     };
 }
