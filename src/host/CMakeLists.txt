@@ -1,5 +1,5 @@
-add_executable(conhost WIN32)
-target_sources(conhost
+add_library(ConHostLib)
+target_sources(ConHostLib
 	PRIVATE
 		_output.cpp
 		_stream.cpp
@@ -44,21 +44,23 @@ target_sources(conhost
 		VtInputThread.cpp
 		VtIo.cpp
 		writeData.cpp
-
-		exe/CConsoleHandoff.cpp
-		exe/exemain.cpp
 )
 
-target_include_directories(conhost
+target_include_directories(ConHostLib
 	PRIVATE
 		.
 		"$<TARGET_PROPERTY:ConCOMProxy,INTERFACE_INCLUDE_DIRECTORIES>"
 )
 
+target_precompile_headers(ConHostLib
+	PRIVATE
+		precomp.h
+)
+
 find_package(fmt CONFIG REQUIRED)
 
-target_link_libraries(conhost
-	PRIVATE
+target_link_libraries(ConHostLib
+	INTERFACE
 		ConCOMProxy
 		ConAudioMidi
 		ConBufferOut
@@ -87,11 +89,5 @@ target_link_libraries(conhost
 		ntdll.lib
 )
 
-target_link_options(conhost PRIVATE /entry:wWinMainCRTStartup)
-
-target_precompile_headers(conhost
-	PRIVATE
-		precomp.h
-)
-
 add_subdirectory(proxy)
+add_subdirectory(exe)
