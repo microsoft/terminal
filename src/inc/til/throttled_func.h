@@ -142,7 +142,7 @@ namespace til
 
             if (!timerRunning || _debounce)
             {
-                SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+                SetThreadpoolTimer(_timer.get(), &_delay, 0, 0);
             }
         }
 
