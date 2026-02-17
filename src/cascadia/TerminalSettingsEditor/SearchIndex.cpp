@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "SearchIndex.h"
 #include "FilteredSearchResult.g.cpp"
-#include "SearchResultTemplateSelector.g.cpp"
 #include "NavConstants.h"
 
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
@@ -51,24 +50,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         static ScopedResourceLoader loader{ GetLibraryResourceLoader().WithQualifier(L"language", L"en-US") };
         return loader;
-    }
-
-    DataTemplate SearchResultTemplateSelector::SelectTemplateCore(const IInspectable& item, const DependencyObject& /*container*/)
-    {
-        return SelectTemplateCore(item);
-    }
-
-    DataTemplate SearchResultTemplateSelector::SelectTemplateCore(const IInspectable& item)
-    {
-        if (const auto searchResultItem = item.try_as<FilteredSearchResult>())
-        {
-            if (!searchResultItem->SecondaryLabel().empty())
-            {
-                return ComplexTemplate();
-            }
-            return BasicTemplate();
-        }
-        return nullptr;
     }
 
     Editor::FilteredSearchResult FilteredSearchResult::CreateNoResultsItem(const winrt::hstring& query)
@@ -123,6 +104,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // "PowerShell" --> navigates to main runtime object page (i.e. Profiles_Base)
         // "SSH" | "Extension" --> navigates to main runtime object page (i.e. Extensions > SSH)
         return winrt::make<FilteredSearchResult>(searchIndexEntry, runtimeObj, runtimeObjLabel, runtimeObjContext);
+    }
+
+    winrt::hstring FilteredSearchResult::AccessibleName() const
+    {
+        if (const auto secondaryLabel = SecondaryLabel(); !secondaryLabel.empty())
+        {
+            return hstring{ fmt::format(fmt::runtime(L"{}, {}"), Label(), secondaryLabel) };
+        }
+        return Label();
     }
 
     winrt::hstring FilteredSearchResult::Label() const

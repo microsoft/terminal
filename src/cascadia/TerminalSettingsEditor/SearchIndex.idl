@@ -11,12 +11,4 @@ namespace Microsoft.Terminal.Settings.Editor
         String SecondaryLabel { get; };
         Windows.UI.Xaml.Controls.IconElement Icon { get; };
     }
-
-    runtimeclass SearchResultTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
-    {
-        SearchResultTemplateSelector();
-
-        Windows.UI.Xaml.DataTemplate BasicTemplate;
-        Windows.UI.Xaml.DataTemplate ComplexTemplate;
-    }
 }
