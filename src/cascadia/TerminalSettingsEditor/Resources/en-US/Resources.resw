@@ -376,7 +376,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
-    <value>This controls how East Asian Ambiguous characters are measured.</value>
+    <value>Sets the width used for East Asian Ambiguous characters. "Narrow" (default) prioritizes compatibility, while "Wide" prioritizes readability with many CJK fonts. In "Wide" mode, applications that compute character widths independently (for example, PSReadLine or readline-based applications) may show cursor movement or Backspace behavior that does not fully match the display.</value>
   </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
     <value>Narrow</value>
