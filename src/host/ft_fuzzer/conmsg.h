@@ -90,7 +90,7 @@ CONSOLE_API_T(ConsolepSetHistory, CONSOLE_HISTORY_MSG, consoleMsgL3.SetConsoleHi
 CONSOLE_API_T(ConsolepSetCurrentFont, CONSOLE_CURRENTFONT_MSG, consoleMsgL3.SetCurrentConsoleFont)
 
 template<int Id>
-auto& PrepareConsoleMessage(CONSOLE_API_MSG& message)
+auto& PrepareConsoleMessage(auto& message)
 {
     message.Descriptor.Function = CONSOLE_IO_USER_DEFINED;
     using orl = ConsoleMessageTypeOracle<Id>;
@@ -111,7 +111,7 @@ auto& PrepareConsoleMessage(CONSOLE_API_MSG& message)
 }
 
 template<int Id>
-const auto& ReadConsoleMessage(CONSOLE_API_MSG& message)
+const auto& ReadConsoleMessage(auto& message)
 {
     using orl = ConsoleMessageTypeOracle<Id>;
     if constexpr (orl::has_body::value)
