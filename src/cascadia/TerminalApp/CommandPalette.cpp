@@ -928,6 +928,16 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(const IInspectable& /*sender*/,
                                             const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
+        // Only respond to this change if we are visible:
+        // _close calls _searchBox().Text(L"") to reset the search text, which lands us
+        // in here after the command palette is dismissed. Since we have a code path here that
+        // leads to actions being previewed, it is possible for the preview to stick around
+        // with no way to clear it.
+        if (Visibility() != Visibility::Visible)
+        {
+            return;
+        }
+
         // When we are executing the _SelectNextTab in the TabManagement.cpp, this method
         // is getting triggered because we set up the default value for that CommandPalette
         // with an empty string. Therefore, to avoid the reset of the index when executing
