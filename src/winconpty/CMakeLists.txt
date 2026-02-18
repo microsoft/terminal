@@ -15,3 +15,9 @@ target_precompile_headers(conpty
 	PRIVATE
 		precomp.h
 )
+
+install(
+	TARGETS
+		conpty
+	DESTINATION lib
+)

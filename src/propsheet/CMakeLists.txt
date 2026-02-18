@@ -49,3 +49,9 @@ add_custom_command(
 	COMMAND mc.exe -r "${CMAKE_CURRENT_BINARY_DIR}" -h "${CMAKE_CURRENT_BINARY_DIR}" strid.mc
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+install(
+	TARGETS
+		console
+	DESTINATION bin
+)
