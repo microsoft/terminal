@@ -17,15 +17,16 @@ struct ConsoleMessageTypeOracle
 
 #define CONSOLE_API_Z(Number) CONSOLE_API_L(Number, 0, 0)
 
-#define CONSOLE_API_B(Number, Struct, Member, InputBuffers, OutputBuffers)            \
-    template<>                                                                        \
-    struct ConsoleMessageTypeOracle<Number>                                           \
-    {                                                                                 \
-        using type = Struct;                                                          \
-        using has_body = std::true_type;                                              \
-        static constexpr int input_buffers = InputBuffers;                            \
-        static constexpr int output_buffers = OutputBuffers;                          \
-        static auto& memb(CONSOLE_API_MSG& message) { return message.u.Member = {}; } \
+#define CONSOLE_API_B(Number, Struct, Member, InputBuffers, OutputBuffers)                    \
+    template<>                                                                                \
+    struct ConsoleMessageTypeOracle<Number>                                                   \
+    {                                                                                         \
+        using type = Struct;                                                                  \
+        using has_body = std::true_type;                                                      \
+        static constexpr int input_buffers = InputBuffers;                                    \
+        static constexpr int output_buffers = OutputBuffers;                                  \
+        static auto& rwmem(CONSOLE_API_MSG& message) { return message.u.Member = {}; }        \
+        static const auto& romem(const CONSOLE_API_MSG& message) { return message.u.Member; } \
     };
 
 #define CONSOLE_API_T(Number, Struct, Member) \
@@ -90,9 +91,10 @@ CONSOLE_API_T(ConsolepSetHistory, CONSOLE_HISTORY_MSG, consoleMsgL3.SetConsoleHi
 CONSOLE_API_T(ConsolepSetCurrentFont, CONSOLE_CURRENTFONT_MSG, consoleMsgL3.SetCurrentConsoleFont)
 
 template<int Id>
-auto& PrepareConsoleMessage(auto& message)
+auto& PrepareConsoleMessage(ULONG_PTR targetObject, auto& message)
 {
     message.Descriptor.Function = CONSOLE_IO_USER_DEFINED;
+    message.Descriptor.Object = targetObject;
     using orl = ConsoleMessageTypeOracle<Id>;
     message.msgHeader.ApiNumber = Id;
     if constexpr (orl::has_body::value)
@@ -100,7 +102,7 @@ auto& PrepareConsoleMessage(auto& message)
         using t = typename orl::type;
         message.Descriptor.InputSize = sizeof(t) + sizeof(CONSOLE_MSG_HEADER);
         message.msgHeader.ApiDescriptorSize = sizeof(t);
-        return orl::memb(message);
+        return orl::rwmem(message);
     }
     else
     {
@@ -111,12 +113,12 @@ auto& PrepareConsoleMessage(auto& message)
 }
 
 template<int Id>
-const auto& ReadConsoleMessage(auto& message)
+const auto& ReadConsoleMessage(const auto& message)
 {
     using orl = ConsoleMessageTypeOracle<Id>;
     if constexpr (orl::has_body::value)
     {
-        return orl::memb(message);
+        return orl::romem(message);
     }
     else
     {
