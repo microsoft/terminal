@@ -530,7 +530,9 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     const auto end = std::min(bufferSize.BottomInclusive(), bufferPos.y + viewportHeight);
     const auto patterns = _getPatterns(beg, end);
 
-    const auto results = patterns.findOverlapping(bufferPos, bufferPos);
+    // Intervals use half-open ranges, so query with x+1 to
+    // avoid matching past the exclusive end
+    const auto results = patterns.findOverlapping({ bufferPos.x + 1, bufferPos.y }, bufferPos);
     for (const auto& result : results)
     {
         if (result.value == _hyperlinkPatternId)
