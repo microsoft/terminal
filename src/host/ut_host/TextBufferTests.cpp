@@ -2246,7 +2246,6 @@ void TextBufferTests::GetWordBoundaries()
     }
 }
 
-
 void TextBufferTests::GetGlyphBoundaries()
 {
     struct ExpectedResult
