@@ -72,8 +72,8 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), til::color{ scheme->CursorColor() });
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
-        const auto campbellSpan = std::span{ expectedCampbellTable };
-        Utils::InitializeColorTable(campbellSpan);
+        Utils::InitializeANSIColorTable(expectedCampbellTable);
+        Utils::InitializeExtendedColorTable(expectedCampbellTable);
 
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {

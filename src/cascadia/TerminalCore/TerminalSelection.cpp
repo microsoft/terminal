@@ -959,7 +959,7 @@ void Terminal::ClearSelection()
 // Return Value:
 // - Plain and formatted selected text from buffer. Empty string represents no data for that format.
 // - If extended to multiple lines, each line is separated by \r\n
-Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences, const bool html, const bool rtf) const
+Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences, const bool html, const bool rtf)
 {
     TextCopyData data;
 

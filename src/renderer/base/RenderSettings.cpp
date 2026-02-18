@@ -8,12 +8,12 @@
 #include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/colorTable.hpp"
 
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
-using Microsoft::Console::Utils::InitializeColorTable;
 
 RenderSettings::RenderSettings() noexcept
 {
-    InitializeColorTable(_colorTable);
+    Utils::InitializeANSIColorTable(_colorTable);
 
     SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
     SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
@@ -30,12 +30,14 @@ RenderSettings::RenderSettings() noexcept
     SaveDefaultSettings();
 }
 
-// Routine Description:
-// - Saves the current color table and color aliases as the default values, so
-//   we can later restore them when a hard reset (RIS) is requested.
+// Saves the current color table and color aliases as the default values,
+// so we can later restore them when a hard reset (RIS) is requested.
+//
+// Since this is called after any color table modifications were made by
+// the hosting terminal, it's a convenient time to handle Generate256Colors.
 void RenderSettings::SaveDefaultSettings() noexcept
 {
-    _defaultColorTable = _colorTable;
+    _defaultColorTable = _getColorTable();
     _defaultColorAliasIndices = _colorAliasIndices;
 }
 
@@ -49,6 +51,7 @@ void RenderSettings::RestoreDefaultSettings() noexcept
     // DECSCNM and Synchronized Output are the only render mode we need to reset.
     // The others are all user preferences that can't be changed programmatically.
     _renderMode.reset(Mode::ScreenReversed, Mode::SynchronizedOutput);
+    _flagColorTableDirty();
 }
 
 // Routine Description:
@@ -58,6 +61,13 @@ void RenderSettings::RestoreDefaultSettings() noexcept
 // - enabled - Set to true to enable the mode, false to disable it.
 void RenderSettings::SetRenderMode(const Mode mode, const bool enabled) noexcept
 {
+    // NOTE: This doesn't call _flagColorTableDirty(), because we want
+    // to *always* force a refresh if Mode::Generate256Colors gets flipped.
+    if (mode == Mode::Generate256Colors && _renderMode.test(mode) != enabled)
+    {
+        _colorTableDirty = true;
+    }
+
     _renderMode.set(mode, enabled);
 }
 
@@ -74,26 +84,48 @@ bool RenderSettings::GetRenderMode(const Mode mode) const noexcept
 
 // Routine Description:
 // - Returns a reference to the active color table array.
-const std::array<COLORREF, TextColor::TABLE_SIZE>& RenderSettings::GetColorTable() const noexcept
+const std::array<COLORREF, TextColor::TABLE_SIZE>& RenderSettings::GetColorTable() noexcept
 {
+    return _getColorTable();
+}
+
+const std::array<COLORREF, TextColor::TABLE_SIZE>& RenderSettings::_getColorTable() noexcept
+{
+    if (_colorTableDirty)
+    {
+        _generate256ColorTable();
+    }
     return _colorTable;
 }
 
-// Routine Description:
-// - Resets the first 16 color table entries with default values.
-void RenderSettings::ResetColorTable() noexcept
+void RenderSettings::_flagColorTableDirty() noexcept
 {
-    InitializeColorTable({ _colorTable.data(), 16 });
+    _colorTableDirty |= _renderMode.test(Mode::Generate256Colors);
 }
 
-// Routine Description:
-// - Updates the given index in the color table to a new value.
-// Arguments:
-// - tableIndex - The index of the color to update.
-// - color - The new COLORREF to use as that color table value.
+__declspec(noinline) void RenderSettings::_generate256ColorTable() noexcept
+{
+    _colorTableDirty = false;
+
+    if (_renderMode.test(Mode::Generate256Colors))
+    {
+        const auto bg = _colorTable[GetColorAliasIndex(ColorAlias::DefaultBackground)];
+        const auto fg = _colorTable[GetColorAliasIndex(ColorAlias::DefaultForeground)];
+        Utils::InitializeExtendedColorTableDynamic(_colorTable, bg, fg);
+    }
+    else
+    {
+        Utils::InitializeExtendedColorTable(_colorTable);
+    }
+}
+
+// Updates the given index in the color table to a new value.
+//
+// NOTE: After calling SetColorTableEntry you MUST call NotifyColorTableChanged!
 void RenderSettings::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 {
     _colorTable.at(tableIndex) = color;
+    _flagColorTableDirty();
 }
 
 // Routine Description:
@@ -102,9 +134,9 @@ void RenderSettings::SetColorTableEntry(const size_t tableIndex, const COLORREF 
 // - tableIndex - The index of the color to retrieve.
 // Return Value:
 // - The COLORREF value for the color at that index in the table.
-COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex) const
+COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex)
 {
-    return _colorTable.at(tableIndex);
+    return _getColorTable().at(tableIndex);
 }
 
 // Routine Description:
@@ -112,6 +144,7 @@ COLORREF RenderSettings::GetColorTableEntry(const size_t tableIndex) const
 void RenderSettings::RestoreDefaultIndexed256ColorTable()
 {
     std::copy_n(_defaultColorTable.begin(), 256, _colorTable.begin());
+    _flagColorTableDirty();
 }
 
 // Routine Description:
@@ -119,6 +152,7 @@ void RenderSettings::RestoreDefaultIndexed256ColorTable()
 void RenderSettings::RestoreDefaultColorTableEntry(const size_t tableIndex)
 {
     _colorTable.at(tableIndex) = _defaultColorTable.at(tableIndex);
+    _flagColorTableDirty();
 }
 
 // Routine Description:
@@ -127,6 +161,8 @@ void RenderSettings::RestoreDefaultColorTableEntry(const size_t tableIndex)
 // - alias - The color alias to update.
 // - tableIndex - The new position of the alias in the color table.
 // - color - The new COLORREF to assign to that alias.
+//
+// NOTE: After calling SetColorAlias you MUST call NotifyColorTableChanged!
 void RenderSettings::SetColorAlias(const ColorAlias alias, const size_t tableIndex, const COLORREF color)
 {
     SetColorAliasIndex(alias, tableIndex);
@@ -139,7 +175,7 @@ void RenderSettings::SetColorAlias(const ColorAlias alias, const size_t tableInd
 // - alias - The color alias to retrieve.
 // Return Value:
 // - The COLORREF value of the alias.
-COLORREF RenderSettings::GetColorAlias(const ColorAlias alias) const
+COLORREF RenderSettings::GetColorAlias(const ColorAlias alias)
 {
     return GetColorTableEntry(GetColorAliasIndex(alias));
 }
@@ -154,6 +190,7 @@ void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tab
     if (tableIndex < TextColor::TABLE_SIZE)
     {
         gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = tableIndex;
+        _flagColorTableDirty();
     }
 }
 
@@ -163,7 +200,7 @@ void RenderSettings::SetColorAliasIndex(const ColorAlias alias, const size_t tab
 // - alias - The color alias to retrieve.
 // Return Value:
 // - The position in the color table where the color is stored.
-size_t RenderSettings::GetColorAliasIndex(const ColorAlias alias) const noexcept
+size_t RenderSettings::GetColorAliasIndex(const ColorAlias alias) noexcept
 {
     return gsl::at(_colorAliasIndices, static_cast<size_t>(alias));
 }
@@ -171,6 +208,7 @@ size_t RenderSettings::GetColorAliasIndex(const ColorAlias alias) const noexcept
 void RenderSettings::RestoreDefaultColorAliasIndex(const ColorAlias alias) noexcept
 {
     gsl::at(_colorAliasIndices, static_cast<size_t>(alias)) = gsl::at(_defaultColorAliasIndices, static_cast<size_t>(alias));
+    _flagColorTableDirty();
 }
 
 // Routine Description:
@@ -180,7 +218,7 @@ void RenderSettings::RestoreDefaultColorAliasIndex(const ColorAlias alias) noexc
 // - attr - The TextAttribute to retrieve the colors for.
 // Return Value:
 // - The color values of the attribute's foreground and background.
-std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttribute& attr) const noexcept
+std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttribute& attr) noexcept
 {
     const auto fgTextColor = attr.GetForeground();
     const auto bgTextColor = attr.GetBackground();
@@ -192,8 +230,9 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
     const auto dimFg = attr.IsFaint() || (_blinkShouldBeFaint && attr.IsBlinking());
     const auto swapFgAndBg = attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed);
 
-    auto fg = fgTextColor.GetColor(_colorTable, defaultFgIndex, brightenFg);
-    auto bg = bgTextColor.GetColor(_colorTable, defaultBgIndex);
+    const auto& colorTable = _getColorTable();
+    auto fg = fgTextColor.GetColor(colorTable, defaultFgIndex, brightenFg);
+    auto bg = bgTextColor.GetColor(colorTable, defaultBgIndex);
 
     if (dimFg)
     {
@@ -233,7 +272,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
 // - attr - The TextAttribute to retrieve the colors for.
 // Return Value:
 // - The color values of the attribute's foreground and background.
-std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColorsWithAlpha(const TextAttribute& attr) const noexcept
+std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColorsWithAlpha(const TextAttribute& attr) noexcept
 {
     auto [fg, bg] = GetAttributeColors(attr);
 
@@ -256,7 +295,7 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColorsWithAlpha(const 
 // - attr - The TextAttribute to retrieve the underline color from.
 // Return Value:
 // - The color value of the attribute's underline.
-COLORREF RenderSettings::GetAttributeUnderlineColor(const TextAttribute& attr) const noexcept
+COLORREF RenderSettings::GetAttributeUnderlineColor(const TextAttribute& attr) noexcept
 {
     const auto [fg, bg] = GetAttributeColors(attr);
     const auto ulTextColor = attr.GetUnderlineColor();
@@ -265,8 +304,9 @@ COLORREF RenderSettings::GetAttributeUnderlineColor(const TextAttribute& attr) c
         return fg;
     }
 
+    const auto& colorTable = _getColorTable();
     const auto defaultUlIndex = GetColorAliasIndex(ColorAlias::DefaultForeground);
-    auto ul = ulTextColor.GetColor(_colorTable, defaultUlIndex, true);
+    auto ul = ulTextColor.GetColor(colorTable, defaultUlIndex, true);
     if (attr.IsInvisible())
     {
         ul = bg;

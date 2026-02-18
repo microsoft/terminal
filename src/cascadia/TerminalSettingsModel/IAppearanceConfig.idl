@@ -54,6 +54,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(IMediaResource, PixelShaderImagePath);
         INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
         INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
+        INHERITABLE_APPEARANCE_SETTING(Boolean, GeneratePalette);
         INHERITABLE_APPEARANCE_SETTING(Single, Opacity);
         INHERITABLE_APPEARANCE_SETTING(Boolean, UseAcrylic);
     };

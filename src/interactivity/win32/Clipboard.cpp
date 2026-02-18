@@ -342,9 +342,9 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
         return;
     }
 
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
-    const auto& renderSettings = gci.GetRenderSettings();
+    auto& renderSettings = gci.GetRenderSettings();
 
     const auto GetAttributeColors = [&](const auto& attr) {
         const auto [fg, bg] = renderSettings.GetAttributeColors(attr);
