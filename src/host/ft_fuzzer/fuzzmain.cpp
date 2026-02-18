@@ -17,6 +17,12 @@
 #include <til/spsc.h>
 #include <til/mutex.h>
 
+template<typename... Ts>
+void debug_log(fmt::wformat_string<Ts...> fs, Ts&&... args)
+{
+    fmt::print(stderr, fs, std::forward<Ts>(args)...);
+}
+
 struct EnqueuedMessage
 {
     std::unique_ptr<uint8_t[]> outputBuffer;
@@ -54,14 +60,17 @@ struct Owc
     std::list<Rd> q;
 };
 
-static void
-FillLuid(LUID& l, uint64_t seq)
+static LUID
+ToLuid(uint64_t seq)
 {
-    l.HighPart = static_cast<LONG>((seq & 0xFFFFFFFF00000000ULL) >> 32ULL);
-    l.LowPart = static_cast<DWORD>(seq & DWORD_MAX);
+    return LUID{
+        .LowPart = static_cast<DWORD>(seq & DWORD_MAX),
+        .HighPart = static_cast<LONG>((seq & 0xFFFFFFFF00000000ULL) >> 32ULL),
+    };
 }
 
-static uint64_t GetLuid(const LUID& l)
+static uint64_t
+FromLuid(const LUID& l)
 {
     return static_cast<uint64_t>(l.HighPart) << 32ULL | static_cast<uint64_t>(l.LowPart);
 }
@@ -74,6 +83,8 @@ static void hdl(std::span<INPUT_RECORD> buffer)
     {
         if (it->EventType == WINDOW_BUFFER_SIZE_EVENT)
         {
+            auto& we = it->Event.WindowBufferSizeEvent.dwSize;
+            debug_log(L"<- TIOCSWINSZ {}x{}\n", we.X, we.Y);
             // TIOCSWINSZ
             //_windowSizeChangedCallback();
         }
@@ -126,29 +137,36 @@ static void hdl(std::span<INPUT_RECORD> buffer)
 
 struct NullDeviceComm : public IDeviceComm
 {
-    mutable uint64_t _seq{ 1 };
-    static constexpr DWORD InitialConnectMessage = 0xA0000000;
-    static constexpr DWORD EnqueuedReadInputMessage = 0xAA000000;
+    mutable uint64_t _seq{ 0 };
+    static constexpr uint64_t InitialConnectMessage = 0xA0000000;
+    static constexpr uint64_t EnqueuedReadInputMessage = 0xAA000000;
     mutable std::atomic<BOOL> signal{ TRUE }; // start out true to kick off an enqueue
     mutable BOOL enqueueInput{ TRUE };
     mutable Owc _outgoingWriteConsole;
 
     void _RetireIoOperation(CD_IO_COMPLETE* const complete) const
     {
-        if (complete->Identifier.LowPart == InitialConnectMessage)
+        const auto id{ FromLuid(complete->Identifier) };
+        if (id == InitialConnectMessage)
         {
             memcpy((void*)&Connection, reinterpret_cast<uint8_t*>(complete->Write.Data) + complete->Write.Offset, std::min(sizeof(Connection), (unsigned long long)complete->Write.Size));
+        }
+        else if (id == 5)
+        {
+            debug_log(L"OP-{:X} Retire With Data (dest = 0x{:016x} + 0x{:x}, len = {})\n", id, (uintptr_t)(complete->Write.Data), complete->Write.Offset, complete->Write.Size);
+            const auto w = *(CONSOLE_SCREENBUFFERINFO_MSG*)(((uint8_t*)complete->Write.Data) + complete->Write.Offset);
+            debug_log(L"Checking - Console window is {}x{}\n", w.CurrentWindowSize.X, w.CurrentWindowSize.Y);
         }
         else
         {
             auto head = _outgoingWriteConsole.q.begin();
-            if (head != _outgoingWriteConsole.q.end() && head->seq == GetLuid(complete->Identifier))
+            if (head != _outgoingWriteConsole.q.end() && head->seq == id)
             {
                 _outgoingWriteConsole.q.pop_front();
                 signal = signal || _outgoingWriteConsole.q.size() > 0;
             }
         }
-        fmt::print(stderr, L"OP-{} Retired\n", complete->Identifier.LowPart);
+        debug_log(L"OP-{:X} Retired (Status = 0x{:08X})\n", id, complete->IoStatus.Status);
     }
 
     HRESULT SetServerInformation(CD_IO_SERVER_INFORMATION* const) const override
@@ -159,77 +177,71 @@ struct NullDeviceComm : public IDeviceComm
     {
         if (pReplyMessage)
         {
-            fmt::print(stderr, L"OP-{} Reply Received During Read\n", pReplyMessage->Complete.Identifier.LowPart);
+            const auto replyId = FromLuid(pReplyMessage->Complete.Identifier);
+            debug_log(L"OP-{:X} Reply Received During Read\n", replyId);
+            if (replyId == 2)
+            {
+                auto& msg = ReadConsoleMessage<ConsolepGetMode>(*pReplyMessage);
+                debug_log(L"---- Console mode = {:X}\n", msg.Mode);
+            }
+            else if (replyId == 5)
+            {
+                auto& msg = ReadConsoleMessage<ConsolepGetScreenBufferInfo>(*pReplyMessage);
+                debug_log(L"Console window is {}x{}\n", msg.CurrentWindowSize.X, msg.CurrentWindowSize.Y);
+            }
             _RetireIoOperation(&pReplyMessage->Complete);
         }
 
         CONSOLE_API_MSG& local = *pMessage;
         memset(&local.Descriptor, 0, sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
 
-        if (!Connection.Process)
-        {
-            local.Descriptor.Identifier.LowPart = InitialConnectMessage;
-            local.Descriptor.Function = CONSOLE_IO_CONNECT;
-            local.Descriptor.Process = GetCurrentProcessId(); // CAC - Process=PID
-            local.Descriptor.Object = GetCurrentThreadId(); // CAC - Object=TID
-            local.Descriptor.InputSize = sizeof(CONSOLE_SERVER_MSG);
-            // Populated pMessage; send it
-            return S_OK;
-        }
-
-        local.Descriptor.Process = Connection.Process;
         auto seq = _seq++;
+        local.Descriptor.Process = Connection.Process;
+        local.Descriptor.Identifier = ToLuid(seq);
 
-        FillLuid(local.Descriptor.Identifier, seq);
-
+        // We spend the first five messages on setting up the client, console modes and codepages.
+        // All following messages are generated on-the-fly as WriteConsole or ReadConsoleInput
         switch (seq)
         {
+        case 0:
+        {
+            if (Connection.Process)
+            {
+                debug_log(L"UNEXPECTED -- Message 0, but we already have a connected process?\n");
+            }
+            local.Descriptor.Identifier = ToLuid(InitialConnectMessage); // Sentinel value for WriteOutput
+            local.Descriptor.Function = CONSOLE_IO_CONNECT;
+            local.Descriptor.Process = GetCurrentProcessId(); // CAC Special - Process=PID
+            local.Descriptor.Object = GetCurrentThreadId(); // CAC Special - Object=TID
+            local.Descriptor.InputSize = sizeof(CONSOLE_SERVER_MSG);
+            break;
+        }
         case 1:
         {
-            local.Descriptor.Object = Connection.Output;
-            auto& msg = PrepareConsoleMessage<ConsolepSetMode>(local);
-            msg.Mode = 0x3 | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            auto& msg = PrepareConsoleMessage<ConsolepSetMode>(Connection.Output, local);
+            msg.Mode = ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
             break;
         }
         case 2:
         {
-            local.Descriptor.Object = Connection.Input;
-            auto& msg = PrepareConsoleMessage<ConsolepSetMode>(local);
+            auto& msg = PrepareConsoleMessage<ConsolepSetMode>(Connection.Input, local);
             msg.Mode = ENABLE_VIRTUAL_TERMINAL_INPUT;
+            msg.Mode |= ENABLE_WINDOW_INPUT;
             break;
         }
         case 3:
         case 4:
         {
-            local.Descriptor.Object = Connection.Output;
-            auto& msg = PrepareConsoleMessage<ConsolepSetCP>(local);
+            auto& msg = PrepareConsoleMessage<ConsolepSetCP>(Connection.Output, local);
             msg.CodePage = CP_UTF8;
             msg.Output = seq == 3 ? TRUE : FALSE;
             break;
         }
-#if 0
-        case 3:
-        case 4:
-        {
-            local.Descriptor.Identifier.LowPart = seq;
-            local.Descriptor.Function = CONSOLE_IO_RAW_WRITE;
-            local.Descriptor.Object = Connection.Output;
-            local.Descriptor.InputSize = 6;
-            break;
-        }
         case 5:
         {
-            local.Descriptor.Object = Connection.Output;
-            auto& msg = PrepareConsoleMessage<ConsolepFillConsoleOutput>(local);
-            msg = {
-                .WriteCoord = { 0, 0 },
-                .ElementType = CONSOLE_ATTRIBUTE,
-                .Element = 0x43,
-                .Length = 40,
-            };
+            auto& msg = PrepareConsoleMessage<ConsolepGetScreenBufferInfo>(Connection.Output, local);
             break;
         }
-#endif
         default:
         {
             BOOL old{ FALSE };
@@ -238,17 +250,14 @@ struct NullDeviceComm : public IDeviceComm
 
             if (enqueueInput)
             {
-                local.Descriptor.Identifier.LowPart = EnqueuedReadInputMessage;
-                auto& msg = PrepareConsoleMessage<ConsolepGetConsoleInput>(local);
+                local.Descriptor.Identifier = ToLuid(EnqueuedReadInputMessage);
+                auto& msg = PrepareConsoleMessage<ConsolepGetConsoleInput>(Connection.Input, local);
                 msg.Unicode = TRUE;
-                local.Descriptor.Object = Connection.Input;
                 local.Descriptor.OutputSize = 128 * 1024;
                 enqueueInput = FALSE;
                 signal = _outgoingWriteConsole.q.size() > 0;
-                return S_OK;
             }
-
-            if (_outgoingWriteConsole.q.size())
+            else if (_outgoingWriteConsole.q.size())
             {
                 auto head = _outgoingWriteConsole.q.begin();
                 head->seq = seq;
@@ -256,29 +265,26 @@ struct NullDeviceComm : public IDeviceComm
                 local.Descriptor.Object = Connection.Output;
                 local.Descriptor.InputSize = static_cast<ULONG>(head->len);
                 signal = enqueueInput; // if we should also enqueue an input on the next trip around
-                return S_OK;
             }
-
-            return S_OK;
+            break;
         }
         }
 
-        //send:
-        //memcpy(&pMessage->Descriptor, &local.Descriptor, sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
-        // The easiest way to get the IO thread to stop reading from us us to simply
-        // suspend it. The fuzzer doesn't need a device IO thread.
         return S_OK;
     }
     HRESULT CompleteIo(CD_IO_COMPLETE* const completion) const override
     {
-        fmt::print(stderr, L"OP-{} Completed\n", completion->Identifier.LowPart);
+        const auto id = FromLuid(completion->Identifier);
+        debug_log(L"OP-{:X} Completed\n", id);
         _RetireIoOperation(completion);
         return S_OK;
     }
     HRESULT ReadInput(CD_IO_OPERATION* const operation) const override
     {
-        fmt::print(stderr, L"OP-{} ReadInput\n", operation->Identifier.LowPart);
-        if (operation->Identifier.LowPart == InitialConnectMessage)
+        const auto id = FromLuid(operation->Identifier);
+        debug_log(L"OP-{:X} ReadInput (dest = 0x{:016x} + 0x{:x}, len = {})\n", id, (uintptr_t)(operation->Buffer.Data), operation->Buffer.Offset, operation->Buffer.Size);
+
+        if (id == InitialConnectMessage)
         {
             CONSOLE_SERVER_MSG msg{
                 .StartupFlags = STARTF_USECOUNTCHARS,
@@ -300,40 +306,38 @@ struct NullDeviceComm : public IDeviceComm
         }
 
         auto head = _outgoingWriteConsole.q.begin();
-        if (head->seq == GetLuid(operation->Identifier))
+        if (head->seq == id)
         {
-            fmt::print(stderr, L"OP-{} Filling Get request for {} (dest 0x{:016X} + 0x{:X})\n", head->seq, operation->Buffer.Size, (uintptr_t)(operation->Buffer.Data), operation->Buffer.Offset);
             memcpy((uint8_t*)(operation->Buffer.Data) + operation->Buffer.Offset, head->buf.get(), std::min(static_cast<size_t>(operation->Buffer.Size), head->len));
             return S_OK;
         }
 
-        fmt::print(stderr, L"OP-{} OUT OF ORDER READ???\n", head->seq, operation->Buffer.Size);
+        debug_log(L"OP-{:X} OUT OF ORDER READ?", id);
+        if (head != _outgoingWriteConsole.q.end())
+        {
+            debug_log(L" Expected {:X}", head->seq);
+        }
+        debug_log(L"\n");
         return S_FALSE;
     }
     HRESULT WriteOutput(CD_IO_OPERATION* const operation) const override
     {
-        fmt::print(stderr, L"OP-{} WriteOutput\n", operation->Identifier.LowPart);
-        fmt::print(stderr, L"Writing output of size {}\n", operation->Buffer.Size);
-        if (operation->Identifier.LowPart == EnqueuedReadInputMessage)
+        const auto id = FromLuid(operation->Identifier);
+        debug_log(L"OP-{:X} WriteOutput (dest = 0x{:016x} + 0x{:x}, len = {})\n", id, (uintptr_t)(operation->Buffer.Data), operation->Buffer.Offset, operation->Buffer.Size);
+        if (id == EnqueuedReadInputMessage)
         {
             // TODO(DH) - figure out why Offset should be ignored here. It looks like that's how CompleteIo gets the _message_ back, but it's unused here?
             auto records = reinterpret_cast<INPUT_RECORD*>(reinterpret_cast<uint8_t*>(operation->Buffer.Data) + 0 /*operation->Buffer.Offset*/);
             std::span<INPUT_RECORD> spr{ records, operation->Buffer.Size / sizeof(INPUT_RECORD) };
             hdl(spr);
-            #if 0
-            for (auto&& i : spr)
-            {
-                if (i.EventType == KEY_EVENT)
-                {
-                    fmt::print(stderr, L"KEY {2} {0:02X} {1:04X}\n", i.Event.KeyEvent.wVirtualKeyCode, (wchar_t)(i.Event.KeyEvent.uChar.UnicodeChar), i.Event.KeyEvent.bKeyDown ? L"v" : L"^"); //L"\u2193" : L"\u2191");
-                }
-            }
-            #endif
 
+            // Since we just read the input handle (maybe asynchronously), enqueue another ReadInput
             enqueueInput = TRUE;
             signal.store(TRUE);
             til::atomic_notify_one(signal);
+            return S_OK;
         }
+        debug_log(L"OP-{:X} Unexpected WriteOutput Request\n", id);
         return S_FALSE;
     }
     HRESULT AllowUIAccess() const override
