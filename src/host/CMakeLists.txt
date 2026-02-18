@@ -91,3 +91,4 @@ target_link_libraries(ConHostLib
 
 add_subdirectory(proxy)
 add_subdirectory(exe)
+add_subdirectory(ft_fuzzer)
