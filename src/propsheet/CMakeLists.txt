@@ -17,8 +17,11 @@ target_sources(console
 		registry.cpp
 		TerminalPropsheetPage.cpp
 		util.cpp
+
 		${CMAKE_CURRENT_BINARY_DIR}/strid.h
-		${CMAKE_CURRENT_BINARY_DIR}/strid.rc
+
+		console.rc
+		console.def
 )
 
 target_include_directories(console
