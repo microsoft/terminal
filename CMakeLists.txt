@@ -27,6 +27,7 @@ execute_process(
 add_compile_definitions(
 	UNICODE
 	_UNICODE
+	EXTERNAL_BUILD
 )
 
 add_compile_options(
