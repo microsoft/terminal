@@ -1417,8 +1417,8 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
         {
             do
             {
-                auto range = ICU::BufferRangeFromMatch(&text, re.get());
                 // PointTree uses half-open ranges and buffer-absolute coordinates.
+                const auto range = ICU::BufferRangeFromMatch(&text, re.get());
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));
             } while (uregex_findNext(re.get(), &status));
         }
