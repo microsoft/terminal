@@ -35,23 +35,18 @@ namespace Microsoft::Console::Render
 
         void SaveDefaultSettings() noexcept;
         void RestoreDefaultSettings() noexcept;
-
         void SetRenderMode(const Mode mode, const bool enabled) noexcept;
         bool GetRenderMode(const Mode mode) const noexcept;
-
         const std::array<COLORREF, TextColor::TABLE_SIZE>& GetColorTable() noexcept;
-        void RestoreDefaultIndexed256ColorTable();
-        void RestoreDefaultColorTableEntry(const size_t tableIndex);
-
         void SetColorTableEntry(const size_t tableIndex, const COLORREF color);
         COLORREF GetColorTableEntry(const size_t tableIndex);
-
+        void RestoreDefaultIndexed256ColorTable();
+        void RestoreDefaultColorTableEntry(const size_t tableIndex);
         void SetColorAlias(const ColorAlias alias, const size_t tableIndex, const COLORREF color);
         COLORREF GetColorAlias(const ColorAlias alias);
         void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept;
         size_t GetColorAliasIndex(const ColorAlias alias) noexcept;
         void RestoreDefaultColorAliasIndex(const ColorAlias alias) noexcept;
-
         std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) noexcept;
         std::pair<COLORREF, COLORREF> GetAttributeColorsWithAlpha(const TextAttribute& attr) noexcept;
         COLORREF GetAttributeUnderlineColor(const TextAttribute& attr) noexcept;
