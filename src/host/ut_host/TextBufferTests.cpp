@@ -143,7 +143,7 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
-    TEST_METHOD(MoveByWord);
+
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
@@ -2039,12 +2039,12 @@ void TextBufferTests::GetWordBoundaries()
 
     // Test Data:
     // - til::point - starting position
-    // - til::point - expected result (accessibilityMode = false)
-    // - til::point - expected result (accessibilityMode = true)
+    // - til::point - expected result (includeWhitespace = false)
+    // - til::point - expected result (includeWhitespace = true)
     struct ExpectedResult
     {
-        til::point accessibilityModeDisabled;
-        til::point accessibilityModeEnabled;
+        til::point selectionMode;
+        til::point accessibilityMode;
     };
 
     struct Test
@@ -2056,7 +2056,8 @@ void TextBufferTests::GetWordBoundaries()
     // Set testData for GetWordStart tests
     // clang-format off
     std::vector<Test> testData = {
-        // tests for first line of text
+        // tests for first line of text ("word other" + spaces)
+        //                    selectionMode  accessibilityMode
         { {  0, 0 },    {{  0, 0 },      { 0, 0 }} },
         { {  1, 0 },    {{  0, 0 },      { 0, 0 }} },
         { {  3, 0 },    {{  0, 0 },      { 0, 0 }} },
@@ -2066,7 +2067,7 @@ void TextBufferTests::GetWordBoundaries()
         { { 20, 0 },    {{ 10, 0 },      { 5, 0 }} },
         { { 79, 0 },    {{ 10, 0 },      { 5, 0 }} },
 
-        // tests for second line of text
+        // tests for second line of text ("  more   words" + spaces)
         { {  0, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  1, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  2, 1 },     {{ 2, 1 },       { 2, 1 }} },
@@ -2082,54 +2083,56 @@ void TextBufferTests::GetWordBoundaries()
     // clang-format on
 
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:accessibilityMode", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:includeWhitespace", L"{false, true}")
     END_TEST_METHOD_PROPERTIES();
 
-    bool accessibilityMode;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"accessibilityMode", accessibilityMode), L"Get accessibility mode variant");
+    bool includeWhitespace;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"includeWhitespace", includeWhitespace), L"Get includeWhitespace variant");
 
     const std::wstring_view delimiters = L" ";
     for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
-        const auto result = _buffer->GetWordStart(test.startPos, delimiters, accessibilityMode);
-        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        const auto result = _buffer->GetWordStart(test.startPos, delimiters, includeWhitespace);
+        const auto expected = includeWhitespace ? test.expected.accessibilityMode : test.expected.selectionMode;
         VERIFY_ARE_EQUAL(expected, result);
     }
 
     // Update testData for GetWordEnd tests
+    // Note: GetWordEnd returns exclusive end positions
     // clang-format off
     testData = {
-        // tests for first line of text
-        { { 0, 0 }, { { 3, 0 }, { 5, 0 } } },
-        { { 1, 0 }, { { 3, 0 }, { 5, 0 } } },
-        { { 3, 0 }, { { 3, 0 }, { 5, 0 } } },
-        { { 4, 0 }, { { 4, 0 }, { 5, 0 } } },
-        { { 5, 0 }, { { 9, 0 }, { 2, 1 } } },
-        { { 6, 0 }, { { 9, 0 }, { 2, 1 } } },
-        { { 20, 0 }, { { 79, 0 }, { 2, 1 } } },
-        { { 79, 0 }, { { 79, 0 }, { 2, 1 } } },
+        // tests for first line of text ("word other" + spaces)
+        //                  selectionMode  accessibilityMode
+        { { 0, 0 }, { {  4, 0 }, {  5, 0 } } },
+        { { 1, 0 }, { {  4, 0 }, {  5, 0 } } },
+        { { 3, 0 }, { {  4, 0 }, {  5, 0 } } },
+        { { 4, 0 }, { {  5, 0 }, {  5, 0 } } },
+        { { 5, 0 }, { { 10, 0 }, {  2, 1 } } },
+        { { 6, 0 }, { { 10, 0 }, {  2, 1 } } },
+        { { 20, 0 }, { { 80, 0 }, { 2, 1 } } },
+        { { 79, 0 }, { { 80, 0 }, { 2, 1 } } },
 
-        // tests for second line of text
-        { { 0, 1 }, { { 1, 1 }, { 2, 1 } } },
-        { { 1, 1 }, { { 1, 1 }, { 2, 1 } } },
-        { { 2, 1 }, { { 5, 1 }, { 9, 1 } } },
-        { { 3, 1 }, { { 5, 1 }, { 9, 1 } } },
-        { { 5, 1 }, { { 5, 1 }, { 9, 1 } } },
-        { { 6, 1 }, { { 8, 1 }, { 9, 1 } } },
-        { { 7, 1 }, { { 8, 1 }, { 9, 1 } } },
-        { { 9, 1 }, { { 13, 1 }, { 0, 9001 } } },
-        { { 10, 1 }, { { 13, 1 }, { 0, 9001 } } },
-        { { 20, 1 }, { { 79, 1 }, { 0, 9001 } } },
-        { { 79, 1 }, { { 79, 1 }, { 0, 9001 } } },
+        // tests for second line of text ("  more   words" + spaces)
+        { { 0, 1 }, { {  2, 1 }, {  2, 1 } } },
+        { { 1, 1 }, { {  2, 1 }, {  2, 1 } } },
+        { { 2, 1 }, { {  6, 1 }, {  9, 1 } } },
+        { { 3, 1 }, { {  6, 1 }, {  9, 1 } } },
+        { { 5, 1 }, { {  6, 1 }, {  9, 1 } } },
+        { { 6, 1 }, { {  9, 1 }, {  9, 1 } } },
+        { { 7, 1 }, { {  9, 1 }, {  9, 1 } } },
+        { { 9, 1 }, { { 14, 1 }, { 80, 9000 } } },
+        { { 10, 1 }, { { 14, 1 }, { 80, 9000 } } },
+        { { 20, 1 }, { { 80, 1 }, { 80, 9000 } } },
+        { { 79, 1 }, { { 80, 1 }, { 80, 9000 } } },
     };
     // clang-format on
 
     for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
-        auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
-        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        auto result = _buffer->GetWordEnd(test.startPos, delimiters, includeWhitespace);
+        const auto expected = includeWhitespace ? test.expected.accessibilityMode : test.expected.selectionMode;
         VERIFY_ARE_EQUAL(expected, result);
     }
 
@@ -2161,6 +2164,7 @@ void TextBufferTests::GetWordBoundaries()
 
     // clang-format off
     testData = {
+        //                  selectionMode  accessibilityMode
         { { 0, 0 }, { { 0, 0 }, { 0, 0 } } },
         { { 1, 0 }, { { 0, 0 }, { 0, 0 } } },
         { { 4, 0 }, { { 4, 0 }, { 0, 0 } } },
@@ -2173,11 +2177,11 @@ void TextBufferTests::GetWordBoundaries()
 
         { { 0, 2 }, { { 0, 2 }, { 0, 2 } } },
         { { 9, 2 }, { { 0, 2 }, { 0, 2 } } },
-                                  // v accessibility does not consider wrapping
+
         { { 0, 3 }, { { 0, 3 }, { 0, 2 } } },
         { { 7, 3 }, { { 6, 3 }, { 0, 2 } } },
-                                  // v accessibility does not consider wrapping
-        { { 1, 4 }, { { 0, 4 }, { 0, 2 } } },
+                                  // v selection mode now also crosses wrapped rows for ControlChar
+        { { 1, 4 }, { { 6, 3 }, { 0, 2 } } },
         { { 4, 4 }, { { 4, 4 }, { 4, 4 } } },
         { { 8, 4 }, { { 4, 4 }, { 4, 4 } } },
 
@@ -2188,8 +2192,8 @@ void TextBufferTests::GetWordBoundaries()
     for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"Testing til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
-        const auto result = _buffer->GetWordStart(test.startPos, delimiters, accessibilityMode);
-        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        const auto result = _buffer->GetWordStart(test.startPos, delimiters, includeWhitespace);
+        const auto expected = includeWhitespace ? test.expected.accessibilityMode : test.expected.selectionMode;
         VERIFY_ARE_EQUAL(expected, result);
     }
 
@@ -2205,122 +2209,43 @@ void TextBufferTests::GetWordBoundaries()
     // clang-format off
     testData = {
         // tests for first line of text
-        { { 0, 0 }, { { 3, 0 }, { 5, 0 } } },
-        { { 1, 0 }, { { 3, 0 }, { 5, 0 } } },
-        { { 4, 0 }, { { 4, 0 }, { 5, 0 } } },
-        { { 5, 0 }, { { 7, 1 }, { 0, 2 } } },
-        { { 7, 0 }, { { 7, 1 }, { 0, 2 } } },
+        //                  selectionMode  accessibilityMode
+        { { 0, 0 }, { {  4, 0 }, { 5, 0 } } },
+        { { 1, 0 }, { {  4, 0 }, { 5, 0 } } },
+        { { 4, 0 }, { {  5, 0 }, { 5, 0 } } },
+        { { 5, 0 }, { {  8, 1 }, { 0, 2 } } },
+        { { 7, 0 }, { {  8, 1 }, { 0, 2 } } },
 
-        { { 4, 1 }, { { 7, 1 }, { 0, 2 } } },
-        { { 7, 1 }, { { 7, 1 }, { 0, 2 } } },
-        { { 9, 1 }, { { 9, 1 }, { 0, 2 } } },
+        { { 4, 1 }, { {  8, 1 }, { 0, 2 } } },
+        { { 7, 1 }, { {  8, 1 }, { 0, 2 } } },
+        { { 9, 1 }, { { 10, 1 }, { 0, 2 } } },
 
-        { { 0, 2 }, { { 9, 2 }, { 4, 4 } } },
-        { { 9, 2 }, { { 9, 2 }, { 4, 4 } } },
+        { { 0, 2 }, { { 10, 2 }, { 4, 4 } } },
+        { { 9, 2 }, { { 10, 2 }, { 4, 4 } } },
 
-        { { 0, 3 }, { { 5, 3 }, { 4, 4 } } },
-        { { 7, 3 }, { { 9, 3 }, { 4, 4 } } },
+        { { 0, 3 }, { {  6, 3 }, { 4, 4 } } },
+        { { 7, 3 }, { {  4, 4 }, { 4, 4 } } },
 
-        { { 1, 4 }, { { 3, 4 }, { 4, 4 } } },
-        { { 4, 4 }, { { 0, 5 }, { 2, 5 } } },
-        { { 8, 4 }, { { 0, 5 }, { 2, 5 } } },
+        { { 1, 4 }, { {  4, 4 }, { 4, 4 } } },
+        { { 4, 4 }, { {  1, 5 }, { 2, 5 } } },
+        { { 8, 4 }, { {  1, 5 }, { 2, 5 } } },
 
-        { { 0, 5 }, { { 0, 5 }, { 2, 5 } } },
-        { { 1, 5 }, { { 1, 5 }, { 2, 5 } } },
-        { { 4, 5 }, { { 9, 5 }, { 0, 6 } } },
-        { { 9, 5 }, { { 9, 5 }, { 0, 6 } } },
+        { { 0, 5 }, { {  1, 5 }, { 2, 5 } } },
+        { { 1, 5 }, { {  2, 5 }, { 2, 5 } } },
+        { { 4, 5 }, { { 10, 5 }, { 10, 5 } } },
+        { { 9, 5 }, { { 10, 5 }, { 10, 5 } } },
     };
     // clang-format on
 
     for (const auto& test : testData)
     {
         Log::Comment(NoThrowString().Format(L"TestEnd til::point (%hd, %hd)", test.startPos.x, test.startPos.y));
-        auto result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
-        const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
+        auto result = _buffer->GetWordEnd(test.startPos, delimiters, includeWhitespace);
+        const auto expected = includeWhitespace ? test.expected.accessibilityMode : test.expected.selectionMode;
         VERIFY_ARE_EQUAL(expected, result);
     }
 }
 
-void TextBufferTests::MoveByWord()
-{
-    til::size bufferSize{ 80, 9001 };
-    UINT cursorSize = 12;
-    TextAttribute attr{ 0x7f };
-    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, false, &_renderer);
-
-    // Setup: Write lines of text to the buffer
-    const std::vector<std::wstring> text = { L"word other",
-                                             L"  more   words" };
-    WriteLinesToBuffer(text, *_buffer);
-
-    // Test Data:
-    // - til::point - starting position
-    // - til::point - expected result (moving forwards)
-    // - til::point - expected result (moving backwards)
-    struct ExpectedResult
-    {
-        til::point moveForwards;
-        til::point moveBackwards;
-    };
-
-    struct Test
-    {
-        til::point startPos;
-        ExpectedResult expected;
-    };
-
-    // Set testData for GetWordStart tests
-    // clang-format off
-    std::vector<Test> testData = {
-        // tests for first line of text
-        { {  0, 0 },    {{  5, 0 },      { 0, 0 }} },
-        { {  1, 0 },    {{  5, 0 },      { 1, 0 }} },
-        { {  3, 0 },    {{  5, 0 },      { 3, 0 }} },
-        { {  4, 0 },    {{  5, 0 },      { 4, 0 }} },
-        { {  5, 0 },    {{  2, 1 },      { 0, 0 }} },
-        { {  6, 0 },    {{  2, 1 },      { 0, 0 }} },
-        { { 20, 0 },    {{  2, 1 },      { 0, 0 }} },
-        { { 79, 0 },    {{  2, 1 },      { 0, 0 }} },
-
-        // tests for second line of text
-        { {  0, 1 },     {{ 2, 1 },       { 0, 0 }} },
-        { {  1, 1 },     {{ 2, 1 },       { 0, 0 }} },
-        { {  2, 1 },     {{ 9, 1 },       { 5, 0 }} },
-        { {  3, 1 },     {{ 9, 1 },       { 5, 0 }} },
-        { {  5, 1 },     {{ 9, 1 },       { 5, 0 }} },
-        { {  6, 1 },     {{ 9, 1 },       { 5, 0 }} },
-        { {  7, 1 },     {{ 9, 1 },       { 5, 0 }} },
-        { {  9, 1 },     {{ 9, 1 },       { 2, 1 }} },
-        { { 10, 1 },     {{10, 1 },       { 2, 1 }} },
-        { { 20, 1 },     {{20, 1 },       { 2, 1 }} },
-        { { 79, 1 },     {{79, 1 },       { 2, 1 }} },
-    };
-    // clang-format on
-
-    BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:movingForwards", L"{false, true}")
-    END_TEST_METHOD_PROPERTIES();
-
-    bool movingForwards;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"movingForwards", movingForwards), L"Get movingForwards variant");
-
-    const std::wstring_view delimiters = L" ";
-    const auto lastCharPos = _buffer->GetLastNonSpaceCharacter();
-    for (const auto& test : testData)
-    {
-        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.x, test.startPos.y));
-        auto pos{ test.startPos };
-        const auto result = movingForwards ?
-                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
-                                _buffer->MoveToPreviousWord(pos, delimiters);
-        const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
-        VERIFY_ARE_EQUAL(expected, pos);
-
-        // if we moved, result is true and pos != startPos.
-        // otherwise, result is false and pos == startPos.
-        VERIFY_ARE_EQUAL(result, pos != test.startPos);
-    }
-}
 
 void TextBufferTests::GetGlyphBoundaries()
 {

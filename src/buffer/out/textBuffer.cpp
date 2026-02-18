@@ -1141,7 +1141,20 @@ DelimiterClass TextBuffer::_GetDelimiterClassAt(const til::point pos, const std:
     return GetRowByOffset(realPos.y).DelimiterClassAt(realPos.x, wordDelimiters);
 }
 
-til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
+// Method Description:
+// - Get the start of the word at or before the given position
+// - When includeWhitespace is false, returns the start of the current delimiter class run
+//   (selection behavior: stops at non-wrapped row boundaries)
+// - When includeWhitespace is true, also skips backward past any leading ControlChars
+//   to include the preceding word (accessibility/UIA behavior: crosses all row boundaries)
+// Arguments:
+// - pos - the buffer position to start from
+// - wordDelimiters - characters considered as DelimiterClass::DelimiterChar
+// - includeWhitespace - when true, skip past leading whitespace to find the word start
+// - limitOptional - (optional) the last possible position in the buffer that can be explored
+// Return Value:
+// - The position of the first character of the word (inclusive)
+til::point TextBuffer::GetWordStart(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize{ GetSize() };
     const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
@@ -1174,7 +1187,7 @@ til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wor
     // 1. move to the beginning of the delimiter class run
     // 2. (includeWhitespace) if we were on a ControlChar, go back one more delimiter class run
     const auto initialDelimiter = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
-    pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
+    pos = _GetDelimiterClassRunStart(pos, wordDelimiters, includeWhitespace);
     if (!includeWhitespace || pos.x == bufferSize.Left())
     {
         // Special case:
@@ -1185,12 +1198,26 @@ til::point TextBuffer::GetWordStart2(til::point pos, const std::wstring_view wor
     else if (initialDelimiter == DelimiterClass::ControlChar)
     {
         bufferSize.DecrementInExclusiveBounds(pos);
-        pos = _GetDelimiterClassRunStart(pos, wordDelimiters);
+        pos = _GetDelimiterClassRunStart(pos, wordDelimiters, includeWhitespace);
     }
     return pos;
 }
 
-til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
+// Method Description:
+// - Get the exclusive end of the word at or after the given position
+// - When includeWhitespace is false, returns the exclusive end of the current delimiter class run
+//   (selection behavior: stops at non-wrapped row boundaries)
+// - When includeWhitespace is true, also skips forward past any trailing ControlChars
+//   to include trailing whitespace (accessibility/UIA behavior: crosses all row boundaries)
+// - The result is clamped to limitOptional when provided
+// Arguments:
+// - pos - the buffer position to start from
+// - wordDelimiters - characters considered as DelimiterClass::DelimiterChar
+// - includeWhitespace - when true, skip past trailing whitespace to find the next word boundary
+// - limitOptional - (optional) the last possible position in the buffer that can be explored
+// Return Value:
+// - The exclusive end position of the word
+til::point TextBuffer::GetWordEnd(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional) const
 {
     const auto bufferSize{ GetSize() };
     const auto limit{ limitOptional.value_or(bufferSize.BottomInclusiveRightExclusive()) };
@@ -1223,8 +1250,12 @@ til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordD
     // So the heuristic we use is:
     // 1. move to the end of the delimiter class run
     // 2. (includeWhitespace) if the next delimiter class run is a ControlChar, go forward one more delimiter class run
-    pos = _GetDelimiterClassRunEnd(pos, wordDelimiters);
-    if (!includeWhitespace || pos.x == bufferSize.RightExclusive())
+    pos = _GetDelimiterClassRunEnd(pos, wordDelimiters, includeWhitespace);
+    if (pos >= limit)
+    {
+        return limit;
+    }
+    else if (!includeWhitespace || pos.x == bufferSize.RightExclusive())
     {
         // Special case:
         // we're at the right boundary (and end of a delimiter class run),
@@ -1235,7 +1266,8 @@ til::point TextBuffer::GetWordEnd2(til::point pos, const std::wstring_view wordD
     if (const auto nextDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
         nextDelimClass == DelimiterClass::ControlChar)
     {
-        return _GetDelimiterClassRunEnd(pos, wordDelimiters);
+        pos = _GetDelimiterClassRunEnd(pos, wordDelimiters, includeWhitespace);
+        return std::min(pos, limit);
     }
     return pos;
 }
@@ -1288,28 +1320,47 @@ bool TextBuffer::IsWordBoundary(const til::point pos, const std::wstring_view wo
     return prevDelimiterClass != currentDelimiterClass && currentDelimiterClass != DelimiterClass::ControlChar;
 }
 
-til::point TextBuffer::_GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters) const
+// Method Description:
+// - Get the start position for the current delimiter class run, scanning backward
+// - Stops when the delimiter class changes or a row boundary is reached
+// - When accessibilityMode is true, freely crosses non-wrapped row boundaries
+// - When accessibilityMode is false, only crosses wrap-forced row boundaries
+// Arguments:
+// - pos - the buffer position to start scanning from
+// - wordDelimiters - what characters are we considering for the separation of words
+// - accessibilityMode - when true, cross non-wrapped row boundaries freely
+// Return Value:
+// - The position of the first character in the current delimiter class run (inclusive)
+til::point TextBuffer::_GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters, const bool accessibilityMode) const
 {
     const auto bufferSize = GetSize();
     const auto initialDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
-    for (auto nextPos = pos; nextPos != bufferSize.Origin(); pos = nextPos)
+    auto nextPos = pos;
+    while (nextPos != bufferSize.Origin())
     {
         bufferSize.DecrementInExclusiveBounds(nextPos);
 
         if (nextPos.x == bufferSize.RightExclusive())
         {
-            // wrapped onto previous line,
-            // check if it was forced to wrap
+            // wrapped onto previous line
             const auto& row = GetRowByOffset(nextPos.y);
-            if (!row.WasWrapForced())
+            if (!row.WasWrapForced() && !accessibilityMode)
             {
                 return pos;
             }
+            // In accessibility mode (or if row was wrap-forced), continue
+            // across the row boundary. The actual last character of the
+            // previous row will be checked on the next iteration.
+            // Don't update pos to avoid storing a transient position
         }
         else if (_GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
         {
             // if we changed delim class, we're done (don't apply move)
             return pos;
+        }
+        else
+        {
+            pos = nextPos;
         }
     }
     return pos;
@@ -1320,7 +1371,8 @@ til::point TextBuffer::_GetDelimiterClassRunStart(til::point pos, const std::wst
 // Arguments:
 // - pos - the buffer position being within the current delimiter class
 // - wordDelimiters - what characters are we considering for the separation of words
-til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters) const
+// - accessibilityMode - when true, cross non-wrapped row boundaries freely
+til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters, const bool accessibilityMode) const
 {
     const auto bufferSize = GetSize();
     const auto initialDelimClass = bufferSize.IsInBounds(pos) ? _GetDelimiterClassAt(pos, wordDelimiters) : DelimiterClass::ControlChar;
@@ -1333,7 +1385,16 @@ til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstri
             // wrapped onto next line,
             // check if it was forced to wrap or switched delimiter class
             const auto& row = GetRowByOffset(pos.y);
-            if (!row.WasWrapForced() || _GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+            if (accessibilityMode)
+            {
+                // In accessibility mode, always cross row boundaries,
+                // but still stop if the delimiter class changes
+                if (_GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
+                {
+                    return nextPos;
+                }
+            }
+            else if (!row.WasWrapForced() || _GetDelimiterClassAt(nextPos, wordDelimiters) != initialDelimClass)
             {
                 return pos;
             }
@@ -1346,283 +1407,6 @@ til::point TextBuffer::_GetDelimiterClassRunEnd(til::point pos, const std::wstri
         }
     }
     return pos;
-}
-
-// Method Description:
-// - Get the til::point for the beginning of the word you are on
-// Arguments:
-// - target - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// - accessibilityMode - when enabled, we continue expanding left until we are at the beginning of a readable word.
-//                        Otherwise, expand left until a character of a new delimiter class is found
-//                        (or a row boundary is encountered)
-// - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
-// Return Value:
-// - The til::point for the first character on the "word" (inclusive)
-til::point TextBuffer::GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
-{
-    // Consider a buffer with this text in it:
-    // "  word   other  "
-    // In selection (accessibilityMode = false),
-    //  a "word" is defined as the range between two delimiters
-    //  so the words in the example include ["  ", "word", "   ", "other", "  "]
-    // In accessibility (accessibilityMode = true),
-    //  a "word" includes the delimiters after a range of readable characters
-    //  so the words in the example include ["word   ", "other  "]
-    // NOTE: the start anchor (this one) is inclusive, whereas the end anchor (GetWordEnd) is exclusive
-
-#pragma warning(suppress : 26496)
-    auto copy{ target };
-    const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
-    if (target == bufferSize.Origin())
-    {
-        // can't expand left
-        return target;
-    }
-    else if (target == bufferSize.EndExclusive())
-    {
-        // GH#7664: Treat EndExclusive as EndInclusive so
-        // that it actually points to a space in the buffer
-        copy = bufferSize.BottomRightInclusive();
-    }
-    else if (bufferSize.CompareInBounds(target, limit, true) >= 0)
-    {
-        // if at/past the limit --> clamp to limit
-        copy = limitOptional.value_or(bufferSize.BottomRightInclusive());
-    }
-
-    if (accessibilityMode)
-    {
-        return _GetWordStartForAccessibility(copy, wordDelimiters);
-    }
-    else
-    {
-        return _GetWordStartForSelection(copy, wordDelimiters);
-    }
-}
-
-// Method Description:
-// - Helper method for GetWordStart(). Get the til::point for the beginning of the word (accessibility definition) you are on
-// Arguments:
-// - target - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// Return Value:
-// - The til::point for the first character on the current/previous READABLE "word" (inclusive)
-til::point TextBuffer::_GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const
-{
-    auto result = target;
-    const auto bufferSize = GetSize();
-
-    // ignore left boundary. Continue until readable text found
-    while (_GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
-    {
-        if (result == bufferSize.Origin())
-        {
-            //looped around and hit origin (no word between origin and target)
-            return result;
-        }
-        bufferSize.DecrementInBounds(result);
-    }
-
-    // make sure we expand to the left boundary or the beginning of the word
-    while (_GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
-    {
-        if (result == bufferSize.Origin())
-        {
-            // first char in buffer is a RegularChar
-            // we can't move any further back
-            return result;
-        }
-        bufferSize.DecrementInBounds(result);
-    }
-
-    // move off of delimiter
-    bufferSize.IncrementInBounds(result);
-
-    return result;
-}
-
-// Method Description:
-// - Helper method for GetWordStart(). Get the til::point for the beginning of the word (selection definition) you are on
-// Arguments:
-// - target - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// Return Value:
-// - The til::point for the first character on the current word or delimiter run (stopped by the left margin)
-til::point TextBuffer::_GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const
-{
-    auto result = target;
-    const auto bufferSize = GetSize();
-
-    const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
-    const bool isControlChar = initialDelimiter == DelimiterClass::ControlChar;
-
-    // expand left until we hit the left boundary or a different delimiter class
-    while (result != bufferSize.Origin() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
-    {
-        if (result.x == bufferSize.Left())
-        {
-            // Prevent wrapping to the previous line if the selection begins on whitespace
-            if (isControlChar)
-            {
-                break;
-            }
-
-            if (result.y > 0)
-            {
-                // Prevent wrapping to the previous line if it was hard-wrapped (e.g. not forced by us to wrap)
-                const auto& priorRow = GetRowByOffset(result.y - 1);
-                if (!priorRow.WasWrapForced())
-                {
-                    break;
-                }
-            }
-        }
-        bufferSize.DecrementInBounds(result);
-    }
-
-    if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)
-    {
-        // move off of delimiter
-        bufferSize.IncrementInBounds(result);
-    }
-
-    return result;
-}
-
-// Method Description:
-// - Get the til::point for the beginning of the NEXT word
-// Arguments:
-// - target - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// - accessibilityMode - when enabled, we continue expanding right until we are at the beginning of the next READABLE word
-//                        Otherwise, expand right until a character of a new delimiter class is found
-//                        (or a row boundary is encountered)
-// - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
-// Return Value:
-// - The til::point for the last character on the "word" (inclusive)
-til::point TextBuffer::GetWordEnd(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
-{
-    // Consider a buffer with this text in it:
-    // "  word   other  "
-    // In selection (accessibilityMode = false),
-    //  a "word" is defined as the range between two delimiters
-    //  so the words in the example include ["  ", "word", "   ", "other", "  "]
-    // In accessibility (accessibilityMode = true),
-    //  a "word" includes the delimiters after a range of readable characters
-    //  so the words in the example include ["word   ", "other  "]
-    // NOTE: the end anchor (this one) is exclusive, whereas the start anchor (GetWordStart) is inclusive
-
-    // Already at/past the limit. Can't move forward.
-    const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
-    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
-    {
-        return target;
-    }
-
-    if (accessibilityMode)
-    {
-        return _GetWordEndForAccessibility(target, wordDelimiters, limit);
-    }
-    else
-    {
-        return _GetWordEndForSelection(target, wordDelimiters);
-    }
-}
-
-// Method Description:
-// - Helper method for GetWordEnd(). Get the til::point for the beginning of the next READABLE word
-// Arguments:
-// - target - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// - limit - the last "valid" position in the text buffer (to improve performance)
-// Return Value:
-// - The til::point for the first character of the next readable "word". If no next word, return one past the end of the buffer
-til::point TextBuffer::_GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const
-{
-    const auto bufferSize{ GetSize() };
-    auto result{ target };
-
-    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
-    {
-        // if we're already on/past the last RegularChar,
-        // clamp result to that position
-        result = limit;
-
-        // make the result exclusive
-        bufferSize.IncrementInBounds(result, true);
-    }
-    else
-    {
-        while (result != limit && result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
-        {
-            // Iterate through readable text
-            bufferSize.IncrementInBounds(result);
-        }
-
-        while (result != limit && result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
-        {
-            // expand to the beginning of the NEXT word
-            bufferSize.IncrementInBounds(result);
-        }
-
-        // Special case: we tried to move one past the end of the buffer
-        // Manually increment onto the EndExclusive point.
-        if (result == bufferSize.BottomRightInclusive())
-        {
-            bufferSize.IncrementInBounds(result, true);
-        }
-    }
-
-    return result;
-}
-
-// Method Description:
-// - Helper method for GetWordEnd(). Get the til::point for the beginning of the NEXT word
-// Arguments:
-// - target - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// Return Value:
-// - The til::point for the last character of the current word or delimiter run (stopped by right margin)
-til::point TextBuffer::_GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const
-{
-    const auto bufferSize = GetSize();
-
-    auto result = target;
-    const auto initialDelimiter = _GetDelimiterClassAt(result, wordDelimiters);
-    const bool isControlChar = initialDelimiter == DelimiterClass::ControlChar;
-
-    // expand right until we hit the right boundary as a ControlChar or a different delimiter class
-    while (result != bufferSize.BottomRightInclusive() && _GetDelimiterClassAt(result, wordDelimiters) == initialDelimiter)
-    {
-        if (result.x == bufferSize.RightInclusive())
-        {
-            // Prevent wrapping to the next line if the selection begins on whitespace
-            if (isControlChar)
-            {
-                break;
-            }
-
-            // Prevent wrapping to the next line if this one was hard-wrapped (e.g. not forced by us to wrap)
-            const auto& row = GetRowByOffset(result.y);
-            if (!row.WasWrapForced())
-            {
-                break;
-            }
-        }
-
-        bufferSize.IncrementInBounds(result);
-    }
-
-    if (_GetDelimiterClassAt(result, wordDelimiters) != initialDelimiter)
-    {
-        // move off of delimiter
-        bufferSize.DecrementInBounds(result);
-    }
-
-    return result;
 }
 
 void TextBuffer::_PruneHyperlinks()
@@ -1669,57 +1453,6 @@ void TextBuffer::_PruneHyperlinks()
             RemoveHyperlinkFromMap(hyperlinkReference);
         }
     }
-}
-
-// Method Description:
-// - Update pos to be the position of the first character of the next word. This is used for accessibility
-// Arguments:
-// - pos - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
-// Return Value:
-// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
-// - pos - The til::point for the first character on the "word" (inclusive)
-bool TextBuffer::MoveToNextWord(til::point& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
-{
-    // move to the beginning of the next word
-    // NOTE: _GetWordEnd...() returns the exclusive position of the "end of the word"
-    //       This is also the inclusive start of the next word.
-    const auto bufferSize{ GetSize() };
-    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
-    const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
-
-    if (bufferSize.CompareInBounds(copy, limit, true) >= 0)
-    {
-        return false;
-    }
-
-    pos = copy;
-    return true;
-}
-
-// Method Description:
-// - Update pos to be the position of the first character of the previous word. This is used for accessibility
-// Arguments:
-// - pos - a til::point on the word you are currently on
-// - wordDelimiters - what characters are we considering for the separation of words
-// Return Value:
-// - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
-// - pos - The til::point for the first character on the "word" (inclusive)
-bool TextBuffer::MoveToPreviousWord(til::point& pos, std::wstring_view wordDelimiters) const
-{
-    // move to the beginning of the current word
-    auto copy{ GetWordStart(pos, wordDelimiters, true) };
-
-    if (!GetSize().DecrementInBounds(copy, true))
-    {
-        // can't move behind current word
-        return false;
-    }
-
-    // move to the beginning of the previous word
-    pos = GetWordStart(copy, wordDelimiters, true);
-    return true;
 }
 
 // Method Description:

@@ -172,15 +172,10 @@ public:
     void TriggerNewTextNotification(const std::wstring_view newText);
     void TriggerSelection();
 
-    til::point GetWordStart(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
-    til::point GetWordEnd(const til::point target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
-
-    til::point GetWordStart2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
-    til::point GetWordEnd2(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
+    til::point GetWordStart(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
+    til::point GetWordEnd(til::point pos, const std::wstring_view wordDelimiters, bool includeWhitespace, std::optional<til::point> limitOptional = std::nullopt) const;
 
     bool IsWordBoundary(const til::point pos, const std::wstring_view wordDelimiters) const;
-    bool MoveToNextWord(til::point& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
-    bool MoveToPreviousWord(til::point& pos, const std::wstring_view wordDelimiters) const;
 
     til::point GetGlyphStart(const til::point pos, std::optional<til::point> limitOptional = std::nullopt) const;
     til::point GetGlyphEnd(const til::point pos, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
@@ -328,12 +323,8 @@ private:
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
     DelimiterClass _GetDelimiterClassAt(const til::point pos, const std::wstring_view wordDelimiters) const;
-    til::point _GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters) const;
-    til::point _GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters) const;
-    til::point _GetWordStartForAccessibility(const til::point target, const std::wstring_view wordDelimiters) const;
-    til::point _GetWordStartForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
-    til::point _GetWordEndForAccessibility(const til::point target, const std::wstring_view wordDelimiters, const til::point limit) const;
-    til::point _GetWordEndForSelection(const til::point target, const std::wstring_view wordDelimiters) const;
+    til::point _GetDelimiterClassRunStart(til::point pos, const std::wstring_view wordDelimiters, const bool accessibilityMode = false) const;
+    til::point _GetDelimiterClassRunEnd(til::point pos, const std::wstring_view wordDelimiters, const bool accessibilityMode = false) const;
     void _PruneHyperlinks();
 
     std::wstring _commandForRow(const til::CoordType rowOffset, const til::CoordType bottomInclusive, const bool clipAtCursor = false) const;
