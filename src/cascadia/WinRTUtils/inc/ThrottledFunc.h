@@ -116,7 +116,7 @@ private:
         }
         else if (schedule)
         {
-            SetThreadpoolTimerEx(_timer.get(), &_delay, 0, 0);
+            SetThreadpoolTimer(_timer.get(), &_delay, 0, 0);
         }
     }
 
@@ -152,7 +152,7 @@ private:
 
                     if (schedule)
                     {
-                        SetThreadpoolTimerEx(self->_timer.get(), &self->_delay, 0, 0);
+                        SetThreadpoolTimer(self->_timer.get(), &self->_delay, 0, 0);
                     }
                 }
             });

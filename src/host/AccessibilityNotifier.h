@@ -82,12 +82,12 @@ namespace Microsoft::Console
         // It's null if the delay is set to 0.
         wil::unique_threadpool_timer _timer;
         // The delay to use for MSAA/UIA events, in filetime units (100ns units).
-        // The value will be negative because that's what SetThreadpoolTimerEx needs.
+        // The value will be negative because that's what SetThreadpoolTimer needs.
         int64_t _msaaDelay = 0;
         int64_t _uiaDelay = 0;
         // Depending on whether we have a UIA provider or not, this points to either _msaaDelay or _uiaDelay.
         FILETIME* _delay = nullptr;
-        // The delay window to use for SetThreadpoolTimerEx, in milliseconds.
+        // The delay window to use for SetThreadpoolTimer, in milliseconds.
         DWORD _delayWindow = 0;
         // Whether MSAA and UIA are enabled.
         bool _msaaEnabled = false;
