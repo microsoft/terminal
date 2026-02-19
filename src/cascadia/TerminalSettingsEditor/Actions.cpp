@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::ActionsViewModel>();
+        _ViewModel.ReSortCommandList();
         _ViewModel.CurrentPage(ActionsSubPage::Base);
         auto vmImpl = get_self<ActionsViewModel>(_ViewModel);
         vmImpl->MarkAsVisited();
