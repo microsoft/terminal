@@ -24,6 +24,8 @@ target_sources(console
 		console.def
 )
 
+set_property(SOURCE console.rc APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/strid.rc)
+
 target_include_directories(console
 	PRIVATE
 		${CMAKE_CURRENT_BINARY_DIR}
