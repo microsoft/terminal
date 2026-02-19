@@ -1,0 +1,7 @@
+LIBRARY winunixptybridge
+EXPORTS
+PtyRead
+PtyWrite
+OpenPty
+ResizePty
+SpawnChild

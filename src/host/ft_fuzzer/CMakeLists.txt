@@ -16,6 +16,8 @@ target_include_directories(confuzz
 target_link_libraries(confuzz
 	PRIVATE
 		ConHostLib
+		winunixptybridge
+		delayimp.lib
 )
 
 install(
@@ -23,3 +25,7 @@ install(
 		confuzz
 	DESTINATION bin
 )
+
+target_link_options(confuzz PRIVATE /DELAYLOAD:icu.dll)
+
+add_subdirectory(PtyBridge)

@@ -16,6 +16,7 @@
 #include "conmsg.h"
 #include <til/spsc.h>
 #include <til/mutex.h>
+#include "PtyBridge/PtyBridge.h"
 
 template<typename... Ts>
 void debug_log(fmt::wformat_string<Ts...> fs, Ts&&... args)
@@ -75,66 +76,6 @@ FromLuid(const LUID& l)
     return static_cast<uint64_t>(l.HighPart) << 32ULL | static_cast<uint64_t>(l.LowPart);
 }
 
-static void hdl(std::span<INPUT_RECORD> buffer)
-{
-    std::optional<wchar_t> _highSurrogate;
-    std::wstring _convertedString;
-    for (auto it = buffer.begin(); it != buffer.end(); ++it)
-    {
-        if (it->EventType == WINDOW_BUFFER_SIZE_EVENT)
-        {
-            auto& we = it->Event.WindowBufferSizeEvent.dwSize;
-            debug_log(L"<- TIOCSWINSZ {}x{}\n", we.X, we.Y);
-            // TIOCSWINSZ
-            //_windowSizeChangedCallback();
-        }
-        else if (it->EventType == KEY_EVENT)
-        {
-            const auto& keyEvent = it->Event.KeyEvent;
-            if (keyEvent.bKeyDown || (!keyEvent.bKeyDown && keyEvent.wVirtualKeyCode == VK_MENU))
-            {
-                // Got a high surrogate at the end of the buffer
-                if (IS_HIGH_SURROGATE(keyEvent.uChar.UnicodeChar))
-                {
-                    _highSurrogate.emplace(keyEvent.uChar.UnicodeChar);
-                    continue; // we've consumed it -- only dispatch it if we get a low
-                }
-
-                if (IS_LOW_SURROGATE(keyEvent.uChar.UnicodeChar))
-                {
-                    // No matter what we do, we want to destructively consume the high surrogate
-                    if (const auto oldHighSurrogate{ std::exchange(_highSurrogate, std::nullopt) })
-                    {
-                        _convertedString.push_back(*oldHighSurrogate);
-                    }
-                    else
-                    {
-                        // If we get a low without a high surrogate, we've done everything we can.
-                        // This is an illegal state.
-                        _convertedString.push_back(UNICODE_REPLACEMENT);
-                        continue; // onto the next event
-                    }
-                }
-
-                // (\0 with a scancode is probably a modifier key, not a VT input key)
-                if (keyEvent.uChar.UnicodeChar != L'\0' || keyEvent.wVirtualScanCode == 0)
-                {
-                    if (_highSurrogate) // non-destructive: we don't want to set it to nullopt needlessly for every character
-                    {
-                        // If we get a high surrogate *here*, we didn't find a low surrogate.
-                        // This state is also illegal.
-                        _convertedString.push_back(UNICODE_REPLACEMENT);
-                        _highSurrogate.reset();
-                    }
-                    _convertedString.push_back(keyEvent.uChar.UnicodeChar);
-                }
-            }
-        }
-    }
-    auto eightString = til::u16u8(_convertedString);
-    WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), eightString.data(), (DWORD)eightString.size(), nullptr, nullptr);
-}
-
 struct NullDeviceComm : public IDeviceComm
 {
     mutable uint64_t _seq{ 0 };
@@ -143,6 +84,69 @@ struct NullDeviceComm : public IDeviceComm
     mutable std::atomic<BOOL> signal{ TRUE }; // start out true to kick off an enqueue
     mutable BOOL enqueueInput{ TRUE };
     mutable Owc _outgoingWriteConsole;
+
+    mutable int pmas, pslv;
+
+    void handleInputRecords(std::span<INPUT_RECORD> buffer) const
+    {
+        std::optional<wchar_t> _highSurrogate;
+        std::wstring _convertedString;
+        for (auto it = buffer.begin(); it != buffer.end(); ++it)
+        {
+            if (it->EventType == WINDOW_BUFFER_SIZE_EVENT)
+            {
+                auto& we = it->Event.WindowBufferSizeEvent.dwSize;
+                debug_log(L"<- TIOCSWINSZ {}x{}\n", we.X, we.Y);
+                // TIOCSWINSZ
+                //_windowSizeChangedCallback();
+            }
+            else if (it->EventType == KEY_EVENT)
+            {
+                const auto& keyEvent = it->Event.KeyEvent;
+                if (keyEvent.bKeyDown || (!keyEvent.bKeyDown && keyEvent.wVirtualKeyCode == VK_MENU))
+                {
+                    // Got a high surrogate at the end of the buffer
+                    if (IS_HIGH_SURROGATE(keyEvent.uChar.UnicodeChar))
+                    {
+                        _highSurrogate.emplace(keyEvent.uChar.UnicodeChar);
+                        continue; // we've consumed it -- only dispatch it if we get a low
+                    }
+
+                    if (IS_LOW_SURROGATE(keyEvent.uChar.UnicodeChar))
+                    {
+                        // No matter what we do, we want to destructively consume the high surrogate
+                        if (const auto oldHighSurrogate{ std::exchange(_highSurrogate, std::nullopt) })
+                        {
+                            _convertedString.push_back(*oldHighSurrogate);
+                        }
+                        else
+                        {
+                            // If we get a low without a high surrogate, we've done everything we can.
+                            // This is an illegal state.
+                            _convertedString.push_back(UNICODE_REPLACEMENT);
+                            continue; // onto the next event
+                        }
+                    }
+
+                    // (\0 with a scancode is probably a modifier key, not a VT input key)
+                    if (keyEvent.uChar.UnicodeChar != L'\0' || keyEvent.wVirtualScanCode == 0)
+                    {
+                        if (_highSurrogate) // non-destructive: we don't want to set it to nullopt needlessly for every character
+                        {
+                            // If we get a high surrogate *here*, we didn't find a low surrogate.
+                            // This state is also illegal.
+                            _convertedString.push_back(UNICODE_REPLACEMENT);
+                            _highSurrogate.reset();
+                        }
+                        _convertedString.push_back(keyEvent.uChar.UnicodeChar);
+                    }
+                }
+            }
+        }
+        auto eightString = til::u16u8(_convertedString);
+        //WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), eightString.data(), (DWORD)eightString.size(), nullptr, nullptr);
+        PtyWrite(pmas, eightString.data(), (int)eightString.size());
+    }
 
     void _RetireIoOperation(CD_IO_COMPLETE* const complete) const
     {
@@ -156,6 +160,14 @@ struct NullDeviceComm : public IDeviceComm
             debug_log(L"OP-{:X} Retire With Data (dest = 0x{:016x} + 0x{:x}, len = {})\n", id, (uintptr_t)(complete->Write.Data), complete->Write.Offset, complete->Write.Size);
             const auto w = *(CONSOLE_SCREENBUFFERINFO_MSG*)(((uint8_t*)complete->Write.Data) + complete->Write.Offset);
             debug_log(L"Checking - Console window is {}x{}\n", w.CurrentWindowSize.X, w.CurrentWindowSize.Y);
+            auto val = OpenPty(&pmas, &pslv, w.CurrentWindowSize.X, w.CurrentWindowSize.Y);
+            debug_log(L"BRIDGE - OpenPty = {} (mas {} slv {})\n", val, pmas, pslv);
+            if (val == 0)
+            {
+                val = SpawnChild(pmas, pslv, "/bin/bash");
+                debug_log(L"BRIDGE - SpawnChild {}\n", val);
+                StartPtyServiceThread();
+            }
         }
         else
         {
@@ -329,7 +341,7 @@ struct NullDeviceComm : public IDeviceComm
             // TODO(DH) - figure out why Offset should be ignored here. It looks like that's how CompleteIo gets the _message_ back, but it's unused here?
             auto records = reinterpret_cast<INPUT_RECORD*>(reinterpret_cast<uint8_t*>(operation->Buffer.Data) + 0 /*operation->Buffer.Offset*/);
             std::span<INPUT_RECORD> spr{ records, operation->Buffer.Size / sizeof(INPUT_RECORD) };
-            hdl(spr);
+            handleInputRecords(spr);
 
             // Since we just read the input handle (maybe asynchronously), enqueue another ReadInput
             enqueueInput = TRUE;
@@ -364,6 +376,27 @@ struct NullDeviceComm : public IDeviceComm
         _outgoingWriteConsole.q.emplace_back(Rd{ std::move(buffer), len, 0 });
         signal.store(TRUE);
         til::atomic_notify_one(signal);
+    }
+
+    void StartPtyServiceThread() const
+    {
+        std::thread([&]() {
+            auto& globals = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+            auto n = static_cast<NullDeviceComm*>(globals.pDeviceComm);
+            while (true)
+            {
+                static constexpr int bsz = 4096;
+                std::unique_ptr<uint8_t[]> buf = std::make_unique_for_overwrite<uint8_t[]>(bsz);
+                int read;
+                read = PtyRead(pmas, buf.get(), bsz);
+                if (read > 0)
+                    n->WriteData(std::move(buf), read);
+                if (read < 0)
+                {
+                    debug_log(L"BRIDGE - Read returned {}\n", read);
+                }
+            }
+        }).detach();
     }
 
     CD_CONNECTION_INFORMATION Connection{};
@@ -407,6 +440,7 @@ int main(int /*argc*/, char** /*argv*/)
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
     RETURN_IF_FAILED(RunConhost());
+#if 0
     std::thread([]() {
         auto& globals = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
         auto n = static_cast<NullDeviceComm*>(globals.pDeviceComm);
@@ -419,6 +453,7 @@ int main(int /*argc*/, char** /*argv*/)
             n->WriteData(std::move(buf), read);
         }
     }).detach();
+#endif
     ExitThread(0);
     return 0;
 }
