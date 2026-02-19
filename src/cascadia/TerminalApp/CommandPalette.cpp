@@ -928,7 +928,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(const IInspectable& /*sender*/,
                                             const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        // Only respond to this change if we are visible:
+        // GH#18737: Only respond to this change if we are visible:
         // _close calls _searchBox().Text(L"") to reset the search text, which lands us
         // in here after the command palette is dismissed. Since we have a code path here that
         // could potentially lead to an action being previewed (specifically if there is a
