@@ -932,7 +932,7 @@ namespace winrt::TerminalApp::implementation
         // _close calls _searchBox().Text(L"") to reset the search text, which lands us
         // in here after the command palette is dismissed. Since we have a code path here that
         // could potentially lead to an action being previewed (specifically if there is a
-        // previewable action as the first entry in the command list), that preview will
+        // preview-able action as the first entry in the command list), that preview will
         // appear after the palette is dismissed without this check.
         if (Visibility() != Visibility::Visible)
         {
