@@ -437,23 +437,7 @@ extern "C" __declspec(dllexport) int LLVMFuzzerInitialize(int* /*argc*/, char***
 int main(int /*argc*/, char** /*argv*/)
 #endif
 {
-    SetConsoleCP(CP_UTF8);
-    SetConsoleOutputCP(CP_UTF8);
     RETURN_IF_FAILED(RunConhost());
-#if 0
-    std::thread([]() {
-        auto& globals = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
-        auto n = static_cast<NullDeviceComm*>(globals.pDeviceComm);
-        while (true)
-        {
-            static constexpr int bsz = 4096;
-            std::unique_ptr<uint8_t[]> buf = std::make_unique_for_overwrite<uint8_t[]>(bsz);
-            DWORD read;
-            ReadFile(GetStdHandle(STD_INPUT_HANDLE), buf.get(), bsz, &read, nullptr);
-            n->WriteData(std::move(buf), read);
-        }
-    }).detach();
-#endif
     ExitThread(0);
     return 0;
 }
