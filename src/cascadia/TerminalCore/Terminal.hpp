@@ -397,7 +397,6 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
-    bool _selectionIsTargetingUrl = false;
     SelectionEndpoint _selectionEndpoint = SelectionEndpoint::None;
     bool _anchorInactiveSelectionEndpoint = false;
 #pragma endregion
