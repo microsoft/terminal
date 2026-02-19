@@ -1,4 +1,4 @@
-add_library(console SHARED)
+add_library(console MODULE)
 target_sources(console
 	PRIVATE
 		ColorControl.cpp
