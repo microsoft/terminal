@@ -106,30 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
 
         _colorSchemesPageVM = winrt::make<ColorSchemesPageViewModel>(_settingsClone);
-        _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-            const auto settingName{ args.PropertyName() };
-            if (settingName == L"CurrentPage")
-            {
-                // extract ElementToFocus and clear it; we only want to use it once
-                const auto elementToFocus = get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM)->TakeElementToFocus();
-                const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
-                if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToPageArgs>(currentScheme, *this, elementToFocus));
-                    _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit));
-                }
-                else if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::Base)
-                {
-                    _Navigate(box_value(winrt::hstring{ colorSchemesTag }), BreadcrumbSubPage::None, elementToFocus);
-                }
-            }
-            else if (settingName == L"CurrentSchemeName")
-            {
-                // this is not technically a setting, it is the ColorSchemesPageVM telling us the breadcrumb item needs to be updated because of a rename
-                _breadcrumbs.RemoveAtEnd();
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(colorSchemesTag), _colorSchemesPageVM.CurrentScheme().Name(), BreadcrumbSubPage::ColorSchemes_Edit));
-            }
-        });
+        _SetupColorSchemesEventHandling();
 
         _actionsVM = winrt::make<ActionsViewModel>(_settingsClone);
         _actionsViewModelChangedRevoker = _actionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
@@ -452,19 +429,57 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _breadcrumbs.Clear();
     }
 
+    void MainPage::_SetupColorSchemesEventHandling()
+    {
+        _colorSchemesPageViewModelChangedRevoker = _colorSchemesPageVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
+                if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToPageArgs>(currentScheme, *this));
+                    _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(colorSchemesTag), currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit));
+                }
+                else if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::Base)
+                {
+                    _Navigate(box_value(winrt::hstring{ colorSchemesTag }), BreadcrumbSubPage::None);
+                }
+            }
+            else if (settingName == L"CurrentSchemeName")
+            {
+                _breadcrumbs.RemoveAtEnd();
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(colorSchemesTag), _colorSchemesPageVM.CurrentScheme().Name(), BreadcrumbSubPage::ColorSchemes_Edit));
+            }
+        });
+    }
+
+    void MainPage::_NavigateToProfileSubPage(const Editor::ProfileViewModel& profile, ProfileSubPage page, const IInspectable& breadcrumbTag, const hstring& elementToFocus)
+    {
+        if (page == ProfileSubPage::Base)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+        }
+        else if (page == ProfileSubPage::Appearance)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance));
+        }
+        else if (page == ProfileSubPage::Terminal)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Terminal/Header"), BreadcrumbSubPage::Profile_Terminal));
+        }
+        else if (page == ProfileSubPage::Advanced)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced));
+        }
+        SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+    }
+
     void MainPage::_SetupProfileEventHandling(const Editor::ProfileViewModel profile)
     {
-        // Add an event handler to navigate to Profiles_Appearance or Profiles_Advanced
-        // Some notes on this:
-        // - At first we tried putting another frame inside Profiles.xaml and having that
-        //   frame default to showing Profiles_Base. This allowed the logic for navigation
-        //   to Profiles_Advanced/Profiles_Appearance to live within Profiles.cpp.
-        // - However, the header for the SUI lives in MainPage.xaml (because that's where
-        //   the whole NavigationView is) and so the BreadcrumbBar needs to be in MainPage.xaml.
-        //   We decided that it's better for the owner of the BreadcrumbBar to also be responsible
-        //   for navigation, so the navigation to Profiles_Advanced/Profiles_Appearance from
-        //   Profiles_Base got moved here.
-
         // If this is the base layer, the breadcrumb tag should be the globalProfileTag instead of the
         // ProfileViewModel, because the navigation menu item for this profile is the globalProfileTag.
         // See MainPage::UpdateSettings for why this matters
@@ -474,34 +489,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto settingName{ args.PropertyName() };
             if (settingName == L"CurrentPage")
             {
-                // extract ElementToFocus and clear it; we only want to use it once
-                const auto elementToFocus = get_self<ProfileViewModel>(profile)->TakeElementToFocus();
                 const auto currentPage = profile.CurrentPage();
                 if (currentPage == ProfileSubPage::Base)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
                     _breadcrumbs.Clear();
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None));
-                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
                 }
-                else if (currentPage == ProfileSubPage::Appearance)
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
-                    _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance));
-                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
-                }
-                else if (currentPage == ProfileSubPage::Terminal)
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
-                    _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Terminal/Header"), BreadcrumbSubPage::Profile_Terminal));
-                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
-                }
-                else if (currentPage == ProfileSubPage::Advanced)
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
-                    _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced));
-                    SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
-                }
+                _NavigateToProfileSubPage(profile, currentPage, breadcrumbTag, {});
             }
         });
     }
@@ -589,27 +583,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _profileDefaultsVM.IsBaseLayer(true);
                 }
 
-                _SetupProfileEventHandling(_profileDefaultsVM);
-
-                contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<NavigateToPageArgs>(_profileDefaultsVM, *this, elementToFocus));
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(*clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"), BreadcrumbSubPage::None));
-
-                // Pass along the element to focus to the ProfileViewModel.
-                // This will work as a staging area before we navigate to the correct sub-page
-                auto profileVMImpl = get_self<ProfileViewModel>(_profileDefaultsVM);
-                profileVMImpl->PutElementToFocus(elementToFocus);
-
-                // Set the profile's 'CurrentPage' to the correct one, if this requires further navigation, the
-                // event handler will do it
+                // Set CurrentPage before registering the handler to avoid double-navigation
                 const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage);
-                const bool needsForcedRefresh = _profileDefaultsVM.CurrentPage() == profileSubPage;
                 _profileDefaultsVM.CurrentPage(profileSubPage);
-                if (needsForcedRefresh)
-                {
-                    // If we're already on the correct sub-page, the PropertyChanged event won't fire.
-                    // However, we still need to pass along the ElementToFocus, so we need to force a refresh.
-                    profileVMImpl->ForceRefreshCurrentPage();
-                }
+
+                // Navigate directly to the correct sub-page
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(*clickedItemTag), RS_(L"Nav_ProfileDefaults/Content"), BreadcrumbSubPage::None));
+                _NavigateToProfileSubPage(_profileDefaultsVM, profileSubPage, box_value(*clickedItemTag), elementToFocus);
+
+                // Register handler for future user-driven sub-page changes
+                _SetupProfileEventHandling(_profileDefaultsVM);
             }
             else if (*clickedItemTag == colorSchemesTag)
             {
@@ -636,57 +619,43 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (const auto& profile = vm.try_as<Editor::ProfileViewModel>())
         {
-            _SetupProfileEventHandling(profile);
-
             if (profile.Orphaned())
             {
                 contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None));
                 profile.CurrentPage(ProfileSubPage::Base);
+                _SetupProfileEventHandling(profile);
                 return;
             }
 
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            // Set CurrentPage before registering the handler to avoid double-navigation
+            const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage);
+            profile.CurrentPage(profileSubPage);
+
+            // Navigate directly to the correct sub-page
             _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(profile), profile.Name(), BreadcrumbSubPage::None));
+            _NavigateToProfileSubPage(profile, profileSubPage, box_value(profile), elementToFocus);
+
             if (const auto profileNavItem = _FindProfileNavItem(profile.OriginalProfileGuid()))
             {
-                // Special case: normally SelectedItem() is handled at the end of this function,
-                // but profiles have a non-string tag, so we handle that here.
                 SettingsNav().SelectedItem(profileNavItem);
             }
 
-            // Pass along the element to focus to the ProfileViewModel.
-            // This will work as a staging area before we navigate to the correct sub-page
-            auto profileVMImpl = get_self<ProfileViewModel>(profile);
-            profileVMImpl->PutElementToFocus(elementToFocus);
-
-            // Set the profile's 'CurrentPage' to the correct one, if this requires further navigation, the
-            // event handler will do it
-            const ProfileSubPage profileSubPage = ProfileSubPageFromBreadcrumb(subPage);
-            const bool needsForcedRefresh = profile.CurrentPage() == profileSubPage;
-            profile.CurrentPage(profileSubPage);
-            if (needsForcedRefresh)
-            {
-                // If we're already on the correct sub-page, the PropertyChanged event won't fire.
-                // However, we still need to pass along the ElementToFocus, so we need to force a refresh.
-                profileVMImpl->ForceRefreshCurrentPage();
-            }
+            // Register handler for future user-driven sub-page changes
+            _SetupProfileEventHandling(profile);
         }
         else if (const auto& colorSchemeVM = vm.try_as<Editor::ColorSchemeViewModel>())
         {
             selectedNavTag = colorSchemesTag;
 
+            // Suppress the handler to avoid double-navigation
+            _colorSchemesPageViewModelChangedRevoker.revoke();
+
             _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(colorSchemesTag), RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None));
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus));
 
-            // Pass along the element to focus to the ColorSchemesPageViewModel.
-            // This will work as a staging area before we navigate to EditColorScheme
-            get_self<ColorSchemesPageViewModel>(_colorSchemesPageVM)->PutElementToFocus(elementToFocus);
-
-            // Set CurrentScheme BEFORE the CurrentPage!
-            // Doing so triggers the PropertyChanged event which performs the navigation to EditColorScheme
             if (subPage == BreadcrumbSubPage::None)
             {
+                contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus));
                 _colorSchemesPageVM.CurrentScheme(nullptr);
                 _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::Base);
             }
@@ -694,7 +663,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _colorSchemesPageVM.CurrentScheme(colorSchemeVM);
                 _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::EditColorScheme);
+                contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToPageArgs>(colorSchemeVM, *this, elementToFocus));
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(colorSchemesTag), colorSchemeVM.Name(), BreadcrumbSubPage::ColorSchemes_Edit));
             }
+
+            // Re-register the handler for future user-driven changes
+            _SetupColorSchemesEventHandling();
         }
         else if (const auto& ntmEntryVM = vm.try_as<Editor::NewTabMenuEntryViewModel>())
         {
