@@ -17,6 +17,8 @@ list(APPEND CMAKE_CXX_SOURCE_FILE_EXTENSIONS c)
 
 set(CMAKE_CXX_STANDARD 20)
 
+set(X_VCPKG_APPLOCAL_DEPS_INSTALL ON)
+
 # Hybrid CRT (runtime library is static, crt is dynamic)
 set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>)
 
@@ -55,6 +57,17 @@ add_compile_definitions(
 	"$<$<CONFIG:DEBUG>:DEBUG>"
 	"$<$<CONFIG:DEBUG>:_DEBUG>"
 	"$<$<CONFIG:DEBUG>:DBG>"
+)
+
+cmake_policy(SET CMP0091 NEW)
+set(
+	CMAKE_MSVC_RUNTIME_LIBRARY
+	# Statically link the C++ runtime libraries, but partially override this below
+	"MultiThreaded$<$<CONFIG:Debug>:Debug>"
+)
+add_link_options(
+	"/DEFAULTLIB:ucrt$<$<CONFIG:Debug>:d>.lib" # include the dynamic UCRT
+	"/NODEFAULTLIB:libucrt$<$<CONFIG:Debug>:d>.lib" # ignore the static UCRT
 )
 
 add_subdirectory(src)
