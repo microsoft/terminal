@@ -38,7 +38,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
+        hstring TakeElementToFocus();
+        void PutElementToFocus(const hstring& elementName) { _elementToFocus = elementName; }
+
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
+        void ForceRefreshCurrentPage()
+        {
+            // Used to trigger the PropertyChanged handler in MainPage.cpp
+            // This forces the page to refresh
+            _NotifyChanges(L"CurrentPage");
+        }
 
         // bell style bits
         hstring BellStylePreview() const;
@@ -158,6 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid _originalProfileGuid{};
         winrt::hstring _lastBgImagePath;
         winrt::hstring _lastStartingDirectoryPath;
+        winrt::hstring _elementToFocus;
         Editor::AppearanceViewModel _defaultAppearanceViewModel;
         Windows::UI::Core::CoreDispatcher _dispatcher;
 

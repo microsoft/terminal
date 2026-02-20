@@ -23,6 +23,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         IHostedInWindow WindowRoot { get; };
         IInspectable ViewModel { get; };
+        String ElementToFocus { get; };
     }
 
     enum BreadcrumbSubPage

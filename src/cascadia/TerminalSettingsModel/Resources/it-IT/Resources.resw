@@ -821,10 +821,10 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Ignora selezione</value>
+    <value>Rimuovi selezione</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Riga singola</value>
+    <value>Linea singola</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>Con sequenze di controllo</value>
@@ -899,7 +899,7 @@
     <value>Origine</value>
   </data>
   <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
-    <value>Usa Commandline</value>
+    <value>Usa riga di comando</value>
   </data>
   <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
     <value>Modalità commutazione</value>
@@ -941,13 +941,13 @@
     <value>Sfondo</value>
   </data>
   <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Modalità corrispondenza</value>
+    <value>Modalità di corrispondenza</value>
   </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
     <value>Directory iniziale</value>
   </data>
   <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Titolo scheda</value>
+    <value>Titolo della scheda</value>
   </data>
   <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
     <value>Indice profilo</value>
@@ -974,6 +974,6 @@
     <value>Modalità divisione</value>
   </data>
   <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
-    <value>Dimensione suddivisione</value>
+    <value>Dimensione divisione</value>
   </data>
 </root>
