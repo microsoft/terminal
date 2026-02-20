@@ -109,21 +109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _SetupColorSchemesEventHandling();
 
         _actionsVM = winrt::make<ActionsViewModel>(_settingsClone);
-        _actionsViewModelChangedRevoker = _actionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-            const auto settingName{ args.PropertyName() };
-            if (settingName == L"CurrentPage")
-            {
-                if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this));
-                    _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
-                }
-                else if (_actionsVM.CurrentPage() == ActionsSubPage::Base)
-                {
-                    _Navigate(box_value(winrt::hstring{ actionsTag }), BreadcrumbSubPage::None);
-                }
-            }
-        });
+        _SetupActionsEventHandling();
 
         auto extensionsVMImpl = winrt::make_self<ExtensionsViewModel>(_settingsClone, _colorSchemesPageVM);
         extensionsVMImpl->NavigateToProfileRequested({ this, &MainPage::_NavigateToProfileHandler });
@@ -454,6 +440,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
     }
 
+    void MainPage::_SetupActionsEventHandling()
+    {
+        _actionsViewModelChangedRevoker = _actionsVM.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this));
+                    _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
+                }
+                else if (_actionsVM.CurrentPage() == ActionsSubPage::Base)
+                {
+                    _Navigate(box_value(winrt::hstring{ actionsTag }), BreadcrumbSubPage::None);
+                }
+            }
+        });
+    }
+
     void MainPage::_NavigateToProfileSubPage(const Editor::ProfileViewModel& profile, ProfileSubPage page, const IInspectable& breadcrumbTag, const hstring& elementToFocus)
     {
         if (page == ProfileSubPage::Base)
@@ -533,14 +538,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (*clickedItemTag == actionsTag)
             {
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(*clickedItemTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None));
-                contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
 
                 if (subPage == BreadcrumbSubPage::Actions_Edit && _actionsVM.CurrentCommand() != nullptr)
                 {
+                    // Suppress the handler to avoid double-navigation
+                    _actionsViewModelChangedRevoker.revoke();
+
+                    // Navigate directly to EditAction instead of relying on PropertyChanged,
+                    // which won't fire if CurrentPage is already Edit
                     _actionsVM.CurrentPage(ActionsSubPage::Edit);
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this, elementToFocus));
+                    _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(*clickedItemTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
+
+                    // Re-register the handler for future user-driven changes
+                    _SetupActionsEventHandling();
                 }
                 else
                 {
+                    contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
                     _actionsVM.CurrentPage(ActionsSubPage::Base);
                 }
             }
@@ -745,28 +760,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             selectedNavTag = actionsTag;
 
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
             _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_Actions/Content"), BreadcrumbSubPage::None));
 
             if (subPage == BreadcrumbSubPage::None || !commandVM)
             {
+                contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
                 _actionsVM.CurrentCommand(nullptr);
             }
             else
             {
-                // Take advantage of the PropertyChanged event to navigate
-                // to EditAction and build the breadcrumbs as we go.
-                const auto wasAlreadyEdit = (_actionsVM.CurrentPage() == ActionsSubPage::Edit);
+                // Suppress the handler to avoid double-navigation
+                _actionsViewModelChangedRevoker.revoke();
+
                 _actionsVM.CurrentCommand(commandVM);
                 _actionsVM.CurrentPage(ActionsSubPage::Edit);
+                contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(commandVM, *this, elementToFocus));
+                _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
 
-                // If CurrentPage was already Edit, PropertyChanged won't fire,
-                // so we navigate and add breadcrumb manually.
-                if (wasAlreadyEdit)
-                {
-                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<implementation::NavigateToPageArgs>(commandVM, *this, elementToFocus));
-                    _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(actionsTag), RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
-                }
+                // Re-register the handler for future user-driven changes
+                _SetupActionsEventHandling();
             }
         }
 

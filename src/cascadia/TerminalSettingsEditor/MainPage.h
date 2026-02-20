@@ -91,6 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel profile);
         void _SetupColorSchemesEventHandling();
+        void _SetupActionsEventHandling();
         void _NavigateToProfileSubPage(const Editor::ProfileViewModel& profile, ProfileSubPage page, const IInspectable& breadcrumbTag, const hstring& elementToFocus);
 
         void _PreNavigateHelper();
