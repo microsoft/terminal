@@ -144,7 +144,7 @@
 </value>
   </data>
   <data name="UsingDefaultSettingsText" xml:space="preserve">
-    <value>Vorrübergehend werden die Standardeinstellungen für Windows-Terminal verwendet.</value>
+    <value>Vorübergehend werden die Standardeinstellungen für Windows-Terminal verwendet.</value>
   </data>
   <data name="InitialJsonParseErrorTitle" xml:space="preserve">
     <value>Fehler beim Laden der Einstellungen</value>
@@ -926,4 +926,5 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>Ein ungültiger regulärer Ausdruck wurde entdeckt.</value>
   </data>
+
 </root>
