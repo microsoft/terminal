@@ -784,6 +784,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DeleteProfileRequested.raise(*this, *deleteProfileArgs);
     }
 
+    hstring ProfileViewModel::TakeElementToFocus()
+    {
+        const auto elementToFocus = _elementToFocus;
+        _elementToFocus.clear();
+        return elementToFocus;
+    }
+
     void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList)
     {
         DefaultAppearance().SchemesList(schemesList);

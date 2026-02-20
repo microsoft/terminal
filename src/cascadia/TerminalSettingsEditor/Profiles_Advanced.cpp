@@ -28,6 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
         _weakWindowRoot = args.WindowRoot();
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,
