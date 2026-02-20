@@ -821,28 +821,28 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Ðīŝmіšѕ Ś℮ℓĕċţĩöл !!! !!</value>
+    <value>Ðīŝmіšѕ ś℮ℓĕċţĩöл !!! !!</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Ѕíηğłε £íпę !!!</value>
+    <value>Ѕíηğłε ĺíпę !!!</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
-    <value>Ŵĩтĥ Сōηťяøļ Şėqμєⁿčēś !!! !!! </value>
+    <value>Ŵĩтĥ сōηťяøļ şėqμєⁿčēś !!! !!! </value>
   </data>
   <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
-    <value>€ǿφỳ ₣θřmдťτιňģ !!! !</value>
+    <value>€ǿφỳ ƒθřmдťτιňģ !!! !</value>
   </data>
   <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Ŧäъ Íŉðêх !!!</value>
+    <value>Ŧäъ íŉðêх !!!</value>
   </data>
   <data name="WindowActionArgumentLocalized" xml:space="preserve">
     <value>Ẃϊńđбώ !</value>
   </data>
   <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Яèśīžę Ďîґēсťíöń !!! !</value>
+    <value>Яèśīžę đîґēсťíöń !!! !</value>
   </data>
   <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>₣όçůѕ Ðįгеĉтїöπ !!! !</value>
+    <value>₣όçůѕ ďįгеĉтїöπ !!! !</value>
   </data>
   <data name="DirectionActionArgumentLocalized" xml:space="preserve">
     <value>Đίяêčţїóń !!!</value>
@@ -857,19 +857,19 @@
     <value>Ţάѓģėт !</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>İş ₣ôçûś Μøδé !!! </value>
+    <value>İş ƒôçûś møδé !!! </value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
-    <value>Ĭş Μąхímîźέð !!! </value>
+    <value>Ĭş mąхímîźέð !!! </value>
   </data>
   <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
-    <value>Їѕ ₣ùĺł Ŝčŕėéπ !!! !</value>
+    <value>Їѕ ƒùĺł ŝčŕėéπ !!! !</value>
   </data>
   <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
-    <value>Śςћεmĕ ∏åmé !!!</value>
+    <value>Śςћεmĕ ñåmé !!!</value>
   </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
-    <value>Тáв Çσłоѓ !!!</value>
+    <value>Тáв ¢σłоѓ !!!</value>
   </data>
   <data name="TitleActionArgumentLocalized" xml:space="preserve">
     <value>Ţįţŀè !</value>
@@ -881,28 +881,28 @@
     <value>Ìпðéж !</value>
   </data>
   <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
-    <value>Гőẃŝ Тŏ Šçѓοŀł !!! !</value>
+    <value>Гőẃŝ тŏ šçѓοŀł !!! !</value>
   </data>
   <data name="ColorActionArgumentLocalized" xml:space="preserve">
     <value>Čòļóг !</value>
   </data>
   <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Łªůŋĉћ Мőďè !!!</value>
+    <value>Łªůŋĉћ мőďè !!!</value>
   </data>
   <data name="NameActionArgumentLocalized" xml:space="preserve">
     <value>Ñǻmé !</value>
   </data>
   <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
-    <value>Κėŷ Ċħőŗð !!!</value>
+    <value>Κėŷ ĉħőŗð !!!</value>
   </data>
   <data name="SourceActionArgumentLocalized" xml:space="preserve">
     <value>Śбυŕсé !</value>
   </data>
   <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
-    <value>Ūѕè Ċőммáⁿđĺĭŉз !!! !</value>
+    <value>Ūѕè ċőммáⁿđĺĭŉз !!! !</value>
   </data>
   <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
-    <value>Ѕẁìť¢ħęя Μôď℮ !!! </value>
+    <value>Ѕẁìť¢ħęя môď℮ !!! </value>
   </data>
   <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
     <value>Qџëŗу ŪЯ₤ !!!</value>
@@ -914,10 +914,10 @@
     <value>Μöŉітоŗ !!</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>Ţòĝĝļè Vĩşĩьîľїŧŷ !!! !!</value>
+    <value>Ţòĝĝļè νīŝίвīℓįťγ !!! !!</value>
   </data>
   <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
-    <value>Ðяοрδõщŋ Đŭгåτīόⁿ !!! !!</value>
+    <value>Ðяοрδõщŋ δŭгåτīόⁿ !!! !!</value>
   </data>
   <data name="IdActionArgumentLocalized" xml:space="preserve">
     <value>Īδ </value>
@@ -941,39 +941,39 @@
     <value>ßд¢кĝѓöüпδ !!!</value>
   </data>
   <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Ματ¢н Мσðě !!!</value>
+    <value>Ματ¢н мσðě !!!</value>
   </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
-    <value>Śťǻятìŋģ Đίѓėĉţóŕу !!! !!</value>
+    <value>Śťǻятìŋģ δίѓėĉţóŕу !!! !!</value>
   </data>
   <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Тάв Τìтłê !!!</value>
+    <value>Тάв τìтłê !!!</value>
   </data>
   <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Ρřσƒïĺэ Īňďз× !!! </value>
+    <value>Ρřσƒïĺэ īňďз× !!! </value>
   </data>
   <data name="ProfileActionArgumentLocalized" xml:space="preserve">
     <value>Рѓôƒíŀ℮ !!</value>
   </data>
   <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Śцφφŕέšś Αρрľíçáťîои Ŧιŧłé !!! !!! !</value>
+    <value>Śцφφŕέšś ǻρрľíçáťîои ŧιŧłé !!! !!! !</value>
   </data>
   <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
-    <value>€οŀόг Ś¢ђєm℮ !!! </value>
+    <value>€οŀόг ś¢ђєm℮ !!! </value>
   </data>
   <data name="ElevateActionArgumentLocalized" xml:space="preserve">
     <value>Ёŀένăţέ !!</value>
   </data>
   <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
-    <value>Гĕŀõãð Ĕиνīřöŋm℮ηт Vàґίªъŀéš !!! !!! !!</value>
+    <value>Гĕŀõãð ĕиνīřöŋm℮ηт νǻѓìǻьĺэŝ !!! !!! !!</value>
   </data>
   <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Ѕρľїť Đΐŕєċŧĭőŉ !!! !</value>
+    <value>Ѕρľїť đΐŕєċŧĭőŉ !!! !</value>
   </data>
   <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
-    <value>Ѕφŀĭτ Μσđе !!!</value>
+    <value>Ѕφŀĭτ mσđе !!!</value>
   </data>
   <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
-    <value>Šрļϊŧ Ѕìžє !!!</value>
+    <value>Šрļϊŧ ѕìžє !!!</value>
   </data>
 </root>
