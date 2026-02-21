@@ -428,6 +428,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             std::array<COLORREF, TextColor::TABLE_SIZE> scheme;
             size_t foregroundAlias;
             size_t backgroundAlias;
+            bool generatePalette;
         };
         std::unique_ptr<StashedColorScheme> _stashedColorScheme;
 

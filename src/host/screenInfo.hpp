@@ -147,7 +147,7 @@ public:
     bool PostUpdateWindowSize() const;
 
     // General Information
-    void GetScreenBufferInformation(til::size* size, til::point* cursorPosition, til::inclusive_rect* window, PWORD attributes, til::size* maximumWindowSize, PWORD popupAttributes, LPCOLORREF colorTable) const;
+    void GetScreenBufferInformation(til::size* size, til::point* cursorPosition, til::inclusive_rect* window, PWORD attributes, til::size* maximumWindowSize, PWORD popupAttributes, LPCOLORREF colorTable);
     void GetRequiredConsoleSizeInPixels(til::size* requiredSize) const;
     til::size GetMinWindowSizeInCharacters(til::size fontSize = { 1, 1 }) const;
     til::size GetMaxWindowSizeInCharacters(til::size fontSize = { 1, 1 }) const;

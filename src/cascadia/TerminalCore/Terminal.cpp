@@ -141,6 +141,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
     auto& renderSettings = GetRenderSettings();
 
+    renderSettings.SetRenderMode(RenderSettings::Mode::Generate256Colors, appearance.GeneratePalette());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
 
@@ -1230,7 +1231,7 @@ void Terminal::_clearPatternTree()
 // Method Description:
 // - Returns the tab color
 // If the starting color exists, its value is preferred
-const std::optional<til::color> Terminal::GetTabColor() const
+const std::optional<til::color> Terminal::GetTabColor()
 {
     if (_startingTabColor.has_value())
     {
@@ -1493,14 +1494,14 @@ std::vector<MarkExtents> Terminal::GetMarkExtents() const
     return _inAltBuffer() ? std::vector<MarkExtents>{} : _activeBuffer().GetMarkExtents();
 }
 
-til::color Terminal::GetColorForMark(const ScrollbarData& markData) const
+til::color Terminal::GetColorForMark(const ScrollbarData& markData)
 {
     if (markData.color.has_value())
     {
         return *markData.color;
     }
 
-    const auto& renderSettings = GetRenderSettings();
+    auto& renderSettings = GetRenderSettings();
 
     switch (markData.category)
     {

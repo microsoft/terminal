@@ -12,6 +12,7 @@
     X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                \
+    X(bool, GeneratePalette, true)                                                                                        \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
     X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Automatic)
