@@ -289,6 +289,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
+            const auto ambiguousWidth = unbox_prop_or<winrt::hstring>(settings, L"ambiguousWidth", winrt::hstring{});
+            if (!ambiguousWidth.empty())
+            {
+                if (ambiguousWidth == L"narrow")
+                {
+                    _flags |= PSEUDOCONSOLE_AMBIGUOUS_WIDTH_NARROW;
+                }
+                else if (ambiguousWidth == L"wide")
+                {
+                    _flags |= PSEUDOCONSOLE_AMBIGUOUS_WIDTH_WIDE;
+                }
+            }
+
             const auto& initialEnvironment{ unbox_prop_or<winrt::hstring>(settings, L"initialEnvironment", L"") };
             const bool reloadEnvironmentVariables = unbox_prop_or<bool>(settings, L"reloadEnvironmentVariables", false);
 

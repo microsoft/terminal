@@ -844,7 +844,7 @@ bool CodepointWidthDetector::_graphemeNext(GraphemeState& s, const std::wstring_
                 auto w = ucdToCharacterWidth(lead);
                 if (w == 3)
                 {
-                    w = _ambiguousWidth;
+                    w = _resolveAmbiguousWidth();
                 }
 
                 // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
@@ -941,7 +941,7 @@ bool CodepointWidthDetector::_graphemePrev(GraphemeState& s, const std::wstring_
                 auto w = ucdToCharacterWidth(trail);
                 if (w == 3)
                 {
-                    w = _ambiguousWidth;
+                    w = _resolveAmbiguousWidth();
                 }
 
                 // U+FE0F Variation Selector-16 is used to turn unqualified Emojis into qualified ones.
@@ -1033,7 +1033,7 @@ bool CodepointWidthDetector::_graphemeNextWcswidth(GraphemeState& s, const std::
         auto w = ucdToCharacterWidth(val);
         if (w == 3)
         {
-            w = _ambiguousWidth;
+            w = _resolveAmbiguousWidth();
         }
 
         if (state != 0 && w != 0)
@@ -1098,7 +1098,7 @@ bool CodepointWidthDetector::_graphemePrevWcswidth(GraphemeState& s, const std::
             auto w = ucdToCharacterWidth(val);
             if (w == 3)
             {
-                w = _ambiguousWidth;
+                w = _resolveAmbiguousWidth();
             }
 
             width += w;
@@ -1122,7 +1122,6 @@ bool CodepointWidthDetector::_graphemePrevWcswidth(GraphemeState& s, const std::
 }
 
 // Implements a clustering algorithm that behaves similar to the old conhost.
-// It even asks the text renderer how wide ambiguous width characters are instead of defaulting to 1 (or 2).
 bool CodepointWidthDetector::_graphemeNextConsole(GraphemeState& s, const std::wstring_view& str) noexcept
 {
     const auto beg = str.data();
@@ -1168,7 +1167,6 @@ bool CodepointWidthDetector::_graphemeNextConsole(GraphemeState& s, const std::w
 }
 
 // Implements a clustering algorithm that behaves similar to the old conhost.
-// It even asks the text renderer how wide ambiguous width characters are instead of defaulting to 1 (or 2).
 bool CodepointWidthDetector::_graphemePrevConsole(GraphemeState& s, const std::wstring_view& str) noexcept
 {
     const auto beg = str.data();
@@ -1213,49 +1211,39 @@ bool CodepointWidthDetector::_graphemePrevConsole(GraphemeState& s, const std::w
     return delayedCompletion == 0;
 }
 
+int CodepointWidthDetector::_resolveAmbiguousWidth() const noexcept
+{
+    switch (_ambiguousWidthMode)
+    {
+    case AmbiguousWidthMode::Narrow:
+        return 1;
+    case AmbiguousWidthMode::Wide:
+    default:
+        return 2;
+    }
+}
+
 // Call the function specified via SetFallbackMethod() to turn ambiguous (width = 3) into narrow/wide.
 // Caches the results in _fallbackCache.
-int CodepointWidthDetector::_checkFallbackViaCache(const char32_t codepoint) noexcept
+int CodepointWidthDetector::_checkFallbackViaCache(const char32_t /*codepoint*/) noexcept
 try
 {
-    // Ambiguous glyphs are considered narrow by default. See microsoft/terminal#2066 for more info.
-    if (!_pfnFallbackMethod)
-    {
-        return 1;
-    }
-
-    if (const auto it = _fallbackCache.find(codepoint); it != _fallbackCache.end())
-    {
-        return it->second;
-    }
-
-    wchar_t buf[2];
-    size_t len;
-    if (codepoint <= 0xffff)
-    {
-        buf[0] = static_cast<wchar_t>(codepoint);
-        len = 1;
-    }
-    else
-    {
-        buf[0] = static_cast<wchar_t>((codepoint >> 10) + 0xD7C0);
-        buf[1] = static_cast<wchar_t>((codepoint & 0x3ff) | 0xDC00);
-        len = 2;
-    }
-
-    const int width = _pfnFallbackMethod({ &buf[0], len }) ? 2 : 1;
-    _fallbackCache.insert_or_assign(codepoint, width);
-    return width;
+    return _resolveAmbiguousWidth();
 }
 catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
-    return 1;
+    return _resolveAmbiguousWidth();
 }
 
 TextMeasurementMode CodepointWidthDetector::GetMode() const noexcept
 {
     return _mode;
+}
+
+AmbiguousWidthMode CodepointWidthDetector::GetAmbiguousWidthMode() const noexcept
+{
+    return _ambiguousWidthMode;
 }
 
 // Method Description:
@@ -1271,6 +1259,13 @@ TextMeasurementMode CodepointWidthDetector::GetMode() const noexcept
 void CodepointWidthDetector::SetFallbackMethod(std::function<bool(const std::wstring_view&)> pfnFallback) noexcept
 {
     _pfnFallbackMethod = std::move(pfnFallback);
+    _fallbackCache.clear();
+}
+
+void CodepointWidthDetector::SetAmbiguousWidthMode(const AmbiguousWidthMode mode) noexcept
+{
+    _ambiguousWidthMode = mode;
+    _fallbackCache.clear();
 }
 
 void CodepointWidthDetector::Reset(const TextMeasurementMode mode) noexcept
