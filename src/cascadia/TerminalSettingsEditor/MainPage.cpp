@@ -214,63 +214,55 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _extensionsVM.UpdateSettings(_settingsClone, _colorSchemesPageVM);
         _profileDefaultsVM = nullptr; // Lazy-loaded upon navigation
 
-        // We'll update the profile in the _profilesNavState whenever we actually navigate to one
-
-        // now that the menuItems are repopulated,
+        // Now that the menuItems are repopulated,
         // refresh the current page using the breadcrumb data we collected before the refresh
         if (const auto& crumb{ lastBreadcrumb.try_as<Breadcrumb>() }; crumb && crumb->Tag())
         {
+            bool foundNavigationParams = false;
+            auto destination = crumb->Tag();
+            auto subPage = crumb->SubPage();
             for (const auto& item : _menuItemSource)
             {
-                if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+                const auto menuItem = item.try_as<MUX::Controls::NavigationViewItem>();
+                if (!menuItem)
                 {
-                    if (const auto& tag{ menuItem.Tag() })
+                    continue;
+                }
+
+                const auto& tag = menuItem.Tag();
+                if (const auto& stringTag{ tag.try_as<hstring>() })
+                {
+                    if (const auto& destString{ destination.try_as<hstring>() })
                     {
-                        if (const auto& stringTag{ tag.try_as<hstring>() })
-                        {
-                            if (const auto& breadcrumbStringTag{ crumb->Tag().try_as<hstring>() })
-                            {
-                                if (stringTag == breadcrumbStringTag)
-                                {
-                                    // found the one that was selected before the refresh
-                                    _Navigate(box_value(*breadcrumbStringTag), crumb->SubPage());
-                                    return;
-                                }
-                            }
-                            else if (const auto& breadcrumbFolderEntry{ crumb->Tag().try_as<Editor::FolderEntryViewModel>() })
-                            {
-                                if (stringTag == newTabMenuTag)
-                                {
-                                    // navigate to the NewTabMenu page,
-                                    // _Navigate() will handle trying to find the right subpage
-                                    _Navigate(breadcrumbFolderEntry, BreadcrumbSubPage::NewTabMenu_Folder);
-                                    return;
-                                }
-                            }
-                            else if (const auto& breadcrumbExtensionPackage{ crumb->Tag().try_as<Editor::ExtensionPackageViewModel>() })
-                            {
-                                if (stringTag == extensionsTag)
-                                {
-                                    // navigate to the Extensions page,
-                                    // _Navigate() will handle trying to find the right subpage
-                                    _Navigate(breadcrumbExtensionPackage, BreadcrumbSubPage::Extensions_Extension);
-                                    return;
-                                }
-                            }
-                        }
-                        else if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
-                        {
-                            if (const auto& breadcrumbProfileTag{ crumb->Tag().try_as<ProfileViewModel>() })
-                            {
-                                if (profileTag->OriginalProfileGuid() == breadcrumbProfileTag->OriginalProfileGuid())
-                                {
-                                    // found the one that was selected before the refresh
-                                    _Navigate(tag, crumb->SubPage());
-                                    return;
-                                }
-                            }
-                        }
+                        foundNavigationParams = (*stringTag == *destString);
                     }
+                    else if (destination.try_as<Editor::FolderEntryViewModel>() && *stringTag == newTabMenuTag)
+                    {
+                        foundNavigationParams = true;
+                        subPage = BreadcrumbSubPage::NewTabMenu_Folder;
+                    }
+                    else if (destination.try_as<Editor::ExtensionPackageViewModel>() && *stringTag == extensionsTag)
+                    {
+                        foundNavigationParams = true;
+                        subPage = BreadcrumbSubPage::Extensions_Extension;
+                    }
+                }
+                else if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
+                {
+                    const auto destProfile = destination.try_as<ProfileViewModel>();
+                    if (destProfile && profileTag->OriginalProfileGuid() == destProfile->OriginalProfileGuid())
+                    {
+                        // Use the new profile VM from the refreshed menu items
+                        destination = tag;
+                        foundNavigationParams = true;
+                    }
+                }
+
+                if (foundNavigationParams)
+                {
+                    // found the one that was selected before the refresh
+                    _Navigate(destination, subPage);
+                    return;
                 }
             }
         }
