@@ -102,7 +102,7 @@ of corner cases and employ various optimizations.
 When making exact calculations—such as for buffer lengths—it's often necessary
 to know when those calculations trigger an overflow, undefined behavior, or
 other boundary conditions. The `CheckedNumeric` template does this by storing
-a bit determining whether or not some arithmetic operation has occured that
+a bit determining whether or not some arithmetic operation has occurred that
 would put the variable in an "invalid" state. Attempting to extract the value
 from a variable in an invalid state will trigger a check/trap condition, that
 by default will result in process termination.
