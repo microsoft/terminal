@@ -2551,11 +2551,11 @@
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>實驗性： 將按鍵系結新增到選取文字的色彩</value>
+    <value>實驗性： 將按鍵繫結新增到選取文字的色彩</value>
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
-    <value>這些索引鍵系結可以醒目提示選取文字或具有指定色彩之選取文字的所有實例。</value>
+    <value>這些索引鍵繫結可以醒目提示選取文字或具有指定色彩之選取文字的所有實例。</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
