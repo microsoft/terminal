@@ -1847,11 +1847,8 @@ public:
     {
         const auto requestSetting = [=](const std::wstring_view settingId = {}) {
             const auto stringHandler = _pDispatch->RequestSetting();
-            for (auto ch : settingId)
-            {
-                stringHandler(ch);
-            }
-            stringHandler(L'\033'); // String terminator
+            stringHandler(settingId);
+            stringHandler(L"\033"); // String terminator
         };
 
         Log::Comment(L"Requesting DECSTBM margins (5 to 10).");
@@ -3568,11 +3565,8 @@ public:
     {
         const auto assignCharset = [=](const auto charsetSize, const std::wstring_view charsetId = {}) {
             const auto stringHandler = _pDispatch->AssignUserPreferenceCharset(charsetSize);
-            for (auto ch : charsetId)
-            {
-                stringHandler(ch);
-            }
-            stringHandler(L'\033'); // String terminator
+            stringHandler(charsetId);
+            stringHandler(L"\033"); // String terminator
         };
         auto& termOutput = _pDispatch->_termOutput;
         termOutput.SoftReset();
