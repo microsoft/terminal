@@ -314,7 +314,7 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
         break;
     case SelectionExpansion::Word:
     {
-        start = buffer.GetWordStart2(start, _wordDelimiters, false);
+        start = buffer.GetWordStart(start, _wordDelimiters, false);
 
         // GH#5099: We round to the nearest cell boundary,
         //   so we would normally prematurely expand to the next word
@@ -326,7 +326,7 @@ std::pair<til::point, til::point> Terminal::_ExpandSelectionAnchors(std::pair<ti
         {
             bufferSize.DecrementInExclusiveBounds(end);
         }
-        end = buffer.GetWordEnd2(end, _wordDelimiters, false);
+        end = buffer.GetWordEnd(end, _wordDelimiters, false);
         break;
     }
     case SelectionExpansion::Char:
@@ -437,9 +437,9 @@ void Terminal::ExpandSelectionToWord()
         const auto& buffer = _activeBuffer();
         auto selection{ _selection.write() };
         wil::hide_name _selection;
-        selection->start = buffer.GetWordStart2(selection->start, _wordDelimiters, false);
+        selection->start = buffer.GetWordStart(selection->start, _wordDelimiters, false);
         selection->pivot = selection->start;
-        selection->end = buffer.GetWordEnd2(selection->end, _wordDelimiters, false);
+        selection->end = buffer.GetWordEnd(selection->end, _wordDelimiters, false);
 
         // if we're targeting both endpoints, instead just target "end"
         if (WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::Start) && WI_IsFlagSet(_selectionEndpoint, SelectionEndpoint::End))
@@ -853,13 +853,13 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     case SelectionDirection::Left:
     {
         auto nextPos = pos;
-        nextPos = buffer.GetWordStart2(nextPos, _wordDelimiters, true);
+        nextPos = buffer.GetWordStart(nextPos, _wordDelimiters, true);
         if (nextPos == pos)
         {
             // didn't move because we're already at the beginning of a word,
             // so move to the beginning of the previous word
             buffer.GetSize().DecrementInExclusiveBounds(nextPos);
-            nextPos = buffer.GetWordStart2(nextPos, _wordDelimiters, true);
+            nextPos = buffer.GetWordStart(nextPos, _wordDelimiters, true);
         }
         pos = nextPos;
         break;
@@ -868,24 +868,24 @@ void Terminal::_MoveByWord(SelectionDirection direction, til::point& pos)
     {
         const auto mutableViewportEndExclusive = _GetMutableViewport().BottomInclusiveRightExclusive();
         auto nextPos = pos;
-        nextPos = buffer.GetWordEnd2(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
+        nextPos = buffer.GetWordEnd(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
         if (nextPos == pos)
         {
             // didn't move because we're already at the end of a word,
             // so move to the end of the next word
             buffer.GetSize().IncrementInExclusiveBounds(nextPos);
-            nextPos = buffer.GetWordEnd2(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
+            nextPos = buffer.GetWordEnd(nextPos, _wordDelimiters, true, mutableViewportEndExclusive);
         }
         pos = nextPos;
         break;
     }
     case SelectionDirection::Up:
         _MoveByChar(direction, pos);
-        pos = buffer.GetWordStart2(pos, _wordDelimiters, true);
+        pos = buffer.GetWordStart(pos, _wordDelimiters, true);
         break;
     case SelectionDirection::Down:
         _MoveByChar(direction, pos);
-        pos = buffer.GetWordEnd2(pos, _wordDelimiters, true);
+        pos = buffer.GetWordEnd(pos, _wordDelimiters, true);
         break;
     }
 }
