@@ -1,5 +1,7 @@
 aci
 allcolors
+Beenden
+Benutzerdefiniert
 breadcrumb
 breadcrumbs
 ccmp
@@ -11,6 +13,7 @@ colorbrewer
 commandlines
 consvc
 copyable
+Datei
 dcs
 deselection
 diffing
@@ -45,6 +48,7 @@ notwrapped
 NTMTo
 overlined
 perlw
+Personnalisé
 postmodern
 Powerline
 ptys
@@ -65,6 +69,7 @@ rubyw
 runtimes
 servicebus
 slnt
+Speichern
 stakeholders
 subpage
 sustainability

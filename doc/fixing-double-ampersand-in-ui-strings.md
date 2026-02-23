@@ -280,7 +280,7 @@ When adding new UI strings:
 
 3. **For menu accelerators, place `&` before the letter**
    - `&Save`, `&Open`, `&Exit`
-   - Displays as: <u>S</u>ave, <u>O</u>pen, <u>E</u>xit
+   - Displays as: **S**ave (S underlined), **O**pen (O underlined), **E**xit (E underlined)
 
 4. **To show a literal ampersand in menus, use `&&`**
    - This is rare, but valid when you actually want to display `&`
