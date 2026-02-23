@@ -331,8 +331,6 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
         winrt::Microsoft::UI::Xaml::Controls::ImageIcon icon{};
         icon.Source(bitmapSource);
-        icon.Width(32);
-        icon.Height(32);
         return icon;
     }
 }
