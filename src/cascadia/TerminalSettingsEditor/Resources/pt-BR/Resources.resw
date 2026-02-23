@@ -2717,6 +2717,14 @@
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>Sim, limpar o cache</value>
   </data>
+  <data name="Nav_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Pesquisar por configurações</value>
+    <comment>Placeholder text for the main search box in the settings editor.</comment>
+  </data>
+  <data name="Search_NoResults" xml:space="preserve">
+    <value>Nenhum resultado para "{}"</value>
+    <comment>{Locked="{}"} Displayed when no results were found for a given query. "{}" will be replaced with the query.</comment>
+  </data>
   <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
     <value>Digite para filtrar ícones</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>

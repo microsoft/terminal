@@ -2721,6 +2721,14 @@
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>Υėŝ, ςŀёãř ŧнę сǻςнэ !!! !!!</value>
   </data>
+  <data name="Nav_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Ѕέãřсђ ƒøř ѕеτťιñģś !!! !!!</value>
+    <comment>Placeholder text for the main search box in the settings editor.</comment>
+  </data>
+  <data name="Search_NoResults" xml:space="preserve">
+    <value>Пô ŕзŝųļтş ƒοř "{}" !!! !!!</value>
+    <comment>{Locked="{}"} Displayed when no results were found for a given query. "{}" will be replaced with the query.</comment>
+  </data>
   <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
     <value>Тÿρě ţθ ƒíŀŧēŗ īçōйš !!! !!!</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
