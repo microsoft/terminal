@@ -236,7 +236,7 @@ Do **NOT** change `&&` in these cases:
 
 The ColorPickupFlyout had two localization problems:
 
-1. **Custom button** - Hardcoded `Content="Custom"` prevented showing "Benutzerdefiniert" (German), "Personnalisé" (French), etc.
+1. **Custom button** - Hardcoded `Content="Custom"` prevented showing "Benutzerdefiniert" (German), the French translation, etc.
 2. **OK button** - Hardcoded `Content="OK"` and missing resource entries in translation files
 
 ### Files Changed
