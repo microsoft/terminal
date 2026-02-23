@@ -244,6 +244,9 @@
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>リセット</value>
   </data>
+  <data name="OkButton.Content" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="RenameTabText" xml:space="preserve">
     <value>タブ名を変更</value>
   </data>

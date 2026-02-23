@@ -246,6 +246,9 @@
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Zurücksetzen</value>
   </data>
+  <data name="OkButton.Content" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="RenameTabText" xml:space="preserve">
     <value>Registerkarte umbenennen</value>
   </data>

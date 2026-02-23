@@ -243,6 +243,9 @@
   <data name="TabColorClearButton.Content" xml:space="preserve">
     <value>Сбросить</value>
   </data>
+  <data name="OkButton.Content" xml:space="preserve">
+    <value>OK</value>
+  </data>
   <data name="RenameTabText" xml:space="preserve">
     <value>Переименовать вкладку</value>
   </data>

@@ -113,7 +113,6 @@
                               Grid.Column="1"
                               HorizontalAlignment="Stretch"
                               Click="ShowColorPickerButton_Click"
-                              Content="Custom"
                               IsChecked="False" />
             </StackPanel>
         </StackPanel>
@@ -138,7 +137,6 @@
                     MinWidth="130"
                     HorizontalAlignment="Right"
                     Click="CustomColorButton_Click"
-                    Content="OK"
                     Style="{ThemeResource AccentButtonStyle}" />
         </StackPanel>
     </StackPanel>
