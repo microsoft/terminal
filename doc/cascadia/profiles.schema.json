@@ -302,12 +302,12 @@
       "description": "Contains both a light and dark color scheme for the Terminal to use, depending on the theme of the application.",
       "properties": {
         "light": {
-          "default": "Campbell",
+          "default": "Ottosson",
           "description": "Name of the scheme to use when the app is using light theme",
           "type": "string"
         },
         "dark": {
-          "default": "Campbell",
+          "default": "Ottosson",
           "description": "Name of the scheme to use when the app is using dark theme",
           "type": "string"
         }
@@ -2860,7 +2860,7 @@
           ]
         },
         "colorScheme": {
-          "default": "Campbell",
+          "default": "Ottosson",
           "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
           "oneOf": [
             {

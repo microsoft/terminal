@@ -433,8 +433,8 @@ namespace winrt::Microsoft::Terminal::Settings
         }
         else
         {
-            const auto campbellSpan = CampbellColorTable();
-            std::transform(campbellSpan.begin(), campbellSpan.end(), colorTable.begin(), [](auto&& color) {
+            const auto s = DefaultColorTable();
+            std::transform(s.begin(), s.end(), colorTable.begin(), [](auto&& color) {
                 return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
             });
             span = colorTable;

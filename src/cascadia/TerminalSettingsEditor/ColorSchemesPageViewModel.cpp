@@ -167,8 +167,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Delete scheme from settings model
         _settings.GlobalSettings().RemoveColorScheme(name);
 
-        // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
-        _settings.UpdateColorSchemeReferences(name, L"Campbell");
+        // This ensures that the JSON is updated with "Ottosson", because the color scheme was deleted
+        _settings.UpdateColorSchemeReferences(name, L"Ottosson");
 
         // If we're not on this page, switch back to this page
         if (CurrentPage() != ColorSchemesSubPage::Base)

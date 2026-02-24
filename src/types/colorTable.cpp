@@ -8,23 +8,23 @@
 using namespace Microsoft::Console;
 using namespace std::string_view_literals;
 
-static constexpr std::array<til::color, 16> campbellColorTable{
-    til::color{ 0x0C, 0x0C, 0x0C },
-    til::color{ 0xC5, 0x0F, 0x1F },
-    til::color{ 0x13, 0xA1, 0x0E },
-    til::color{ 0xC1, 0x9C, 0x00 },
-    til::color{ 0x00, 0x37, 0xDA },
-    til::color{ 0x88, 0x17, 0x98 },
-    til::color{ 0x3A, 0x96, 0xDD },
-    til::color{ 0xCC, 0xCC, 0xCC },
-    til::color{ 0x76, 0x76, 0x76 },
-    til::color{ 0xE7, 0x48, 0x56 },
-    til::color{ 0x16, 0xC6, 0x0C },
-    til::color{ 0xF9, 0xF1, 0xA5 },
-    til::color{ 0x3B, 0x78, 0xFF },
-    til::color{ 0xB4, 0x00, 0x9E },
-    til::color{ 0x61, 0xD6, 0xD6 },
-    til::color{ 0xF2, 0xF2, 0xF2 },
+static constexpr std::array<til::color, 16> defaultColorTable{
+    til::color{ 0x00, 0x00, 0x00, },
+    til::color{ 0xbe, 0x2c, 0x21, },
+    til::color{ 0x3f, 0xae, 0x3a, },
+    til::color{ 0xbe, 0x9a, 0x4a, },
+    til::color{ 0x20, 0x4d, 0xbe, },
+    til::color{ 0xbb, 0x54, 0xbe, },
+    til::color{ 0x00, 0xa7, 0xb2, },
+    til::color{ 0xbe, 0xbe, 0xbe, },
+    til::color{ 0x80, 0x80, 0x80, },
+    til::color{ 0xff, 0x3e, 0x30, },
+    til::color{ 0x58, 0xea, 0x51, },
+    til::color{ 0xff, 0xc9, 0x44, },
+    til::color{ 0x2f, 0x6a, 0xff, },
+    til::color{ 0xfc, 0x74, 0xff, },
+    til::color{ 0x00, 0xe1, 0xf0, },
+    til::color{ 0xff, 0xff, 0xff, },
 };
 
 static constexpr std::array<til::color, 16> vt340ColorTable{
@@ -214,9 +214,9 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "yellowgreen"sv, til::color{ 154, 205, 50 } }
 };
 
-std::span<const til::color> Utils::CampbellColorTable() noexcept
+std::span<const til::color> Utils::DefaultColorTable() noexcept
 {
-    return std::span{ campbellColorTable };
+    return std::span{ defaultColorTable };
 }
 
 // Function Description:
@@ -233,9 +233,9 @@ void Utils::InitializeColorTable(const std::span<COLORREF> table) noexcept
 
 void Utils::InitializeANSIColorTable(const std::span<COLORREF> table) noexcept
 {
-    if (table.size() >= campbellColorTable.size())
+    if (table.size() >= defaultColorTable.size())
     {
-        std::copy_n(campbellColorTable.begin(), campbellColorTable.size(), table.begin());
+        std::copy_n(defaultColorTable.begin(), defaultColorTable.size(), table.begin());
     }
 }
 

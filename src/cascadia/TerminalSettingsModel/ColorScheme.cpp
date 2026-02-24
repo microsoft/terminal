@@ -55,7 +55,7 @@ ColorScheme::ColorScheme(const winrt::hstring& name) noexcept :
     _Name{ name },
     _Origin{ OriginTag::User }
 {
-    const auto table = Utils::CampbellColorTable();
+    const auto table = Utils::DefaultColorTable();
     std::copy_n(table.data(), table.size(), _table.data());
 }
 

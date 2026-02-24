@@ -44,8 +44,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
         INHERITABLE_SETTING(Model::IAppearanceConfig, float, Opacity, 1.0f);
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, DarkColorSchemeName, L"Campbell");
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, LightColorSchemeName, L"Campbell");
+        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, DarkColorSchemeName, L"Ottosson");
+        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, LightColorSchemeName, L"Ottosson");
 
 #define APPEARANCE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
