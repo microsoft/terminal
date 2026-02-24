@@ -502,7 +502,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Method Description:
     // - Navigates to the page corresponding to the given nav tag. Updates the breadcrumb bar and selected nav view item accordingly.
     // Arguments:
-    // - vm: the nav tag of the page to navigate to. Can be either an hstring for static pages or
+    // - vm: the nav tag of the page to navigate to. Can be either the hstring for static pages or
     //         a view model object (i.e. ProfileViewModel, ColorSchemeViewModel, etc.) for dynamic pages
     // - subPage: the sub page to navigate to, used for pages that have multiple sub pages (i.e. Profile > Appearance/Terminal/Advanced)
     // - elementToFocus: the name of the element to focus on the target page
