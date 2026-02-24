@@ -17,14 +17,14 @@
 #include "device.h"
 #include <filesystem>
 
-typedef enum _SYSTEM_INFORMATION_CLASS {
-    SystemConsoleInformation = 132,
-} SYSTEM_INFORMATION_CLASS;
+static constexpr DWORD SystemConsoleInformation = 132;
 
 typedef struct _SYSTEM_CONSOLE_INFORMATION {
     ULONG DriverLoaded : 1;
     ULONG Spare : 31;
 } SYSTEM_CONSOLE_INFORMATION;
+
+NTSYSCALLAPI NTSTATUS NTAPI NtSetSystemInformation(SYSTEM_INFORMATION_CLASS Class, PVOID Info, ULONG Length);
 #endif // __INSIDE_WINDOWS
 
 #pragma warning(push)
@@ -100,9 +100,13 @@ static wchar_t* _ConsoleHostPath()
 static void _EnsureDriverIsLoaded()
 {
 #ifndef __INSIDE_WINDOWS
-    SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
-    ConsoleInformation.DriverLoaded = TRUE;
-    (void)WinNTControl::NtSetSystemInformation(SystemConsoleInformation, &ConsoleInformation, sizeof(ConsoleInformation));
+    static HANDLE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+    if (auto setSystemInformation{ GetProcAddressByFunctionDeclaration(ntdll, L"NtSetSystemInformation") })
+    {
+        SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
+        ConsoleInformation.DriverLoaded = TRUE;
+        (void)setSystemInformation(static_cast<SYSTEM_INFORMATION_CLASS>(SystemConsoleInformation), &ConsoleInformation, sizeof(ConsoleInformation));
+    }
 #endif // !__INSIDE_WINDOWS
 }
 
