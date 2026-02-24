@@ -6,7 +6,7 @@
 #include "screenInfoUiaProvider.hpp"
 #include "windowUiaProvider.hpp"
 
-#include "../types/IUiaData.h"
+#include "../renderer/inc/IRenderData.hpp"
 #include "../host/renderData.hpp"
 #include "../inc/ServiceLocator.hpp"
 
@@ -18,11 +18,11 @@ try
 {
     _baseWindow = baseWindow;
 
-    Globals& g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-    IUiaData* uiaData = &gci.renderData;
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    Render::IRenderData* renderData = &gci.renderData;
 
-    RETURN_IF_FAILED(WRL::MakeAndInitialize<ScreenInfoUiaProvider>(&_pScreenInfoProvider, uiaData, this));
+    RETURN_IF_FAILED(WRL::MakeAndInitialize<ScreenInfoUiaProvider>(&_pScreenInfoProvider, renderData, this));
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
@@ -31,51 +31,14 @@ try
 }
 CATCH_RETURN();
 
-[[nodiscard]] HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
+ScreenInfoUiaProvider* WindowUiaProvider::GetScreenInfoProvider() const noexcept
 {
-    HRESULT hr = S_OK;
-
-    // ScreenInfoUiaProvider is responsible for signaling selection
-    // changed events and text changed events
-    if (id == UIA_Text_TextSelectionChangedEventId ||
-        id == UIA_Text_TextChangedEventId)
-    {
-        if (_pScreenInfoProvider)
-        {
-            hr = _pScreenInfoProvider->Signal(id);
-        }
-        else
-        {
-            hr = E_POINTER;
-        }
-        return hr;
-    }
-
-    if (_signalEventFiring.find(id) != _signalEventFiring.end() &&
-        _signalEventFiring[id] == true)
-    {
-        return hr;
-    }
-
-    try
-    {
-        _signalEventFiring[id] = true;
-    }
-    CATCH_RETURN();
-
-    hr = UiaRaiseAutomationEvent(this, id);
-    _signalEventFiring[id] = false;
-
-    return hr;
+    return _pScreenInfoProvider.Get();
 }
 
 [[nodiscard]] HRESULT WindowUiaProvider::SetTextAreaFocus()
 {
-    try
-    {
-        return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
-    }
-    CATCH_RETURN();
+    return UiaRaiseAutomationEvent(_pScreenInfoProvider.Get(), UIA_AutomationFocusChangedEventId);
 }
 
 #pragma region IRawElementProviderSimple
@@ -167,7 +130,7 @@ IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_
     RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
     try
     {
-        const HWND hwnd = GetWindowHandle();
+        const auto hwnd = GetWindowHandle();
         return UiaHostProviderFromHwnd(hwnd, ppProvider);
     }
     catch (...)
@@ -183,14 +146,11 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
     *ppProvider = nullptr;
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
         RETURN_IF_FAILED(_pScreenInfoProvider.CopyTo(ppProvider));
-
-        // signal that the focus changed
-        LOG_IF_FAILED(_pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId));
     }
 
     // For the other directions (parent, next, previous) the default of nullptr is correct
@@ -214,7 +174,7 @@ IFACEMETHODIMP WindowUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _baseWindow);
 
-    RECT const rc = _baseWindow->GetWindowRect();
+    const auto rc = _baseWindow->GetWindowRect();
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -240,8 +200,7 @@ IFACEMETHODIMP WindowUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_mayben
 
 IFACEMETHODIMP WindowUiaProvider::SetFocus()
 {
-    RETURN_IF_FAILED(_EnsureValidHwnd());
-    return Signal(UIA_AutomationFocusChangedEventId);
+    return S_OK;
 }
 
 IFACEMETHODIMP WindowUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
@@ -292,19 +251,19 @@ HWND WindowUiaProvider::GetWindowHandle() const
 {
     try
     {
-        HWND const hwnd = GetWindowHandle();
+        const auto hwnd = GetWindowHandle();
         RETURN_HR_IF((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, !(IsWindow(hwnd)));
     }
     CATCH_RETURN();
     return S_OK;
 }
 
-void WindowUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+void WindowUiaProvider::ChangeViewport(const til::inclusive_rect& NewWindow)
 {
     _baseWindow->ChangeViewport(NewWindow);
 }
 
-RECT WindowUiaProvider::GetWindowRect() const noexcept
+til::rect WindowUiaProvider::GetWindowRect() const noexcept
 {
     return _baseWindow->GetWindowRect();
 }

@@ -14,18 +14,14 @@ Author:
 --*/
 
 #pragma once
-#include <deque>
 #include <string>
 #include <string_view>
-#include <memory>
-#include "IInputEvent.hpp"
 
 enum class CodepointWidth : BYTE
 {
+    Ambiguous = 0, // could be narrow or wide depending on the current codepage and font
     Narrow,
     Wide,
-    Ambiguous, // could be narrow or wide depending on the current codepage and font
-    Invalid // not a valid unicode codepoint
 };
 
 [[nodiscard]] std::wstring ConvertToW(const UINT codepage,
@@ -36,14 +32,5 @@ enum class CodepointWidth : BYTE
 
 [[nodiscard]] size_t GetALengthFromW(const UINT codepage,
                                      const std::wstring_view source);
-
-std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch, const unsigned int codepage);
-
-std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch,
-                                                               const short keyState);
-
-std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, const unsigned int codepage);
-
-CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept;
 
 wchar_t Utf16ToUcs2(const std::wstring_view charData);

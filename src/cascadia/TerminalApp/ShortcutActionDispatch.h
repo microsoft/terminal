@@ -4,8 +4,7 @@
 #pragma once
 
 #include "ShortcutActionDispatch.g.h"
-#include "ActionArgs.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../TerminalSettingsModel/AllShortcutActions.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -14,45 +13,22 @@ namespace TerminalAppLocalTests
     class KeyBindingsTests;
 }
 
+#define DECLARE_ACTION(action) til::typed_event<winrt::Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::ActionEventArgs> action;
+
 namespace winrt::TerminalApp::implementation
 {
     struct ShortcutActionDispatch : ShortcutActionDispatchT<ShortcutActionDispatch>
     {
         ShortcutActionDispatch() = default;
 
-        bool DoAction(const ActionAndArgs& actionAndArgs);
+        bool DoAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs);
+        bool DoAction(const winrt::Windows::Foundation::IInspectable& sender,
+                      const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs);
 
-        // clang-format off
-        TYPED_EVENT(CopyText,             TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(PasteText,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(OpenNewTabDropdown,   TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(DuplicateTab,         TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewTab,               TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NewWindow,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(CloseWindow,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(CloseTab,             TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ClosePane,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(SwitchToTab,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(NextTab,              TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(PrevTab,              TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(SplitPane,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(AdjustFontSize,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ResetFontSize,        TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollUp,             TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollDown,           TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollUpPage,         TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ScrollDownPage,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(OpenSettings,         TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ResizePane,           TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(Find,                 TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(MoveFocus,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ToggleRetroEffect,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ToggleFullscreen,     TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(ToggleCommandPalette, TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(SetTabColor,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(OpenTabColorPicker,   TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        TYPED_EVENT(RenameTab,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
-        // clang-format on
+#define ON_ALL_ACTIONS(action) DECLARE_ACTION(action);
+        ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
 
     private:
         friend class TerminalAppLocalTests::SettingsTests;

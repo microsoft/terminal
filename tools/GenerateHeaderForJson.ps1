@@ -2,27 +2,24 @@
 # the contents of that json files as a constexpr string_view in the header.
 
 param (
-    [parameter(Mandatory=$true, Position=0)]
+    [parameter(Mandatory = $true)]
     [string]$JsonFile,
 
-    [parameter(Mandatory=$true, Position=1)]
+    [parameter(Mandatory = $true)]
     [string]$OutPath,
 
-    [parameter(Mandatory=$true, Position=2)]
+    [parameter(Mandatory = $true)]
     [string]$VariableName
 )
 
-# Load the xml files.
-$jsonData = Get-Content $JsonFile
+$fullPath = Resolve-Path $JsonFile
+$jsonData = Get-Content -Raw $JsonFile | ConvertFrom-Json | ConvertTo-Json -Compress -Depth 100
 
-Write-Output "// Copyright (c) Microsoft Corporation" | Out-File -FilePath $OutPath -Encoding ASCII
-Write-Output "// Licensed under the MIT license." | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output "" | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output "// THIS IS AN AUTO-GENERATED FILE" | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output "// Generated from " | Out-File -FilePath $OutPath -Encoding ASCII -Append -NoNewline
-$fullPath = Resolve-Path -Path $JsonFile
-Write-Output $fullPath.Path | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output "constexpr std::string_view $($VariableName){ R`"(" | Out-File -FilePath $OutPath -Encoding ASCII -Append -NoNewline
-Write-Output $jsonData | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output ")`" };" | Out-File -FilePath $OutPath -Encoding ASCII -Append
-
+@(
+    "// Copyright (c) Microsoft Corporation",
+    "// Licensed under the MIT license.",
+    "",
+    "// THIS IS AN AUTO-GENERATED FILE",
+    "// Generated from $($fullPath.Path)",
+    "constexpr std::string_view $VariableName{ R`"#($jsonData)#`" };"
+) | Out-File -FilePath $OutPath -Encoding utf8

@@ -5,8 +5,7 @@
 
 #include "ProcessHandle.h"
 
-#include "..\host\globals.h"
-#include "..\host\telemetry.hpp"
+#include "../host/globals.h"
 
 // Routine Description:
 // - Constructs an instance of the ConsoleProcessHandle Class
@@ -27,20 +26,23 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
                                                  FALSE,
                                                  dwProcessId))),
     _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get())),
-    _shimPolicy(ConsoleShimPolicy::s_CreateInstance(_hProcess.get()))
+    _shimPolicy(_hProcess.get()),
+    _processCreationTime{}
 {
-    if (nullptr != _hProcess.get())
-    {
-        Telemetry::Instance().LogProcessConnected(_hProcess.get());
-    }
 }
 
-CD_CONNECTION_INFORMATION ConsoleProcessHandle::GetConnectionInformation() const
+// Routine Description:
+// - Creates a CD_CONNECTION_INFORMATION (packet) that communicates the
+//   process, input and output handles to the driver as transformed by the
+//   DeviceComm's handle exchanger.
+// Arguments:
+// - deviceComm: IDeviceComm implementation with which to exchange handles.
+CD_CONNECTION_INFORMATION ConsoleProcessHandle::GetConnectionInformation(IDeviceComm* deviceComm) const
 {
     CD_CONNECTION_INFORMATION result = { 0 };
-    result.Process = reinterpret_cast<ULONG_PTR>(this);
-    result.Input = reinterpret_cast<ULONG_PTR>(pInputHandle.get());
-    result.Output = reinterpret_cast<ULONG_PTR>(pOutputHandle.get());
+    result.Process = deviceComm->PutHandle(this);
+    result.Input = deviceComm->PutHandle(pInputHandle.get());
+    result.Output = deviceComm->PutHandle(pOutputHandle.get());
     return result;
 }
 
@@ -58,4 +60,30 @@ const ConsoleProcessPolicy ConsoleProcessHandle::GetPolicy() const
 const ConsoleShimPolicy ConsoleProcessHandle::GetShimPolicy() const
 {
     return _shimPolicy;
+}
+
+// Routine Description:
+// - Retrieves the raw process handle
+const HANDLE ConsoleProcessHandle::GetRawHandle() const
+{
+    return _hProcess.get();
+}
+
+// Routine Description:
+// - Retrieves the process creation time (currently used in telemetry traces)
+// - The creation time is lazily populated on first call
+const FILETIME ConsoleProcessHandle::GetProcessCreationTime() const
+{
+    if (_processCreationTime.dwHighDateTime == 0 && _processCreationTime.dwLowDateTime == 0 && _hProcess != nullptr)
+    {
+        FILETIME ftDummyTime = { 0 };
+
+        ::GetProcessTimes(_hProcess.get(),
+                          &_processCreationTime,
+                          &ftDummyTime,
+                          &ftDummyTime,
+                          &ftDummyTime);
+    }
+
+    return _processCreationTime;
 }

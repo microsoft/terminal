@@ -124,7 +124,7 @@ There's a few areas to study here.
 
 #### Communicating the launch
 For the parameters passing, I see a few options:
-1. `conhost.exe` can look up the package registration for `wt.exe` and call an entrypoint with arguments. This could be adapted to instead look up which package is registered as the default one instead of `wt.exe` for third party hosts. We would have to build provisions into the OS to select this, or use some sort of publically documented registry key mechanism. Somewhat gross.
+1. `conhost.exe` can look up the package registration for `wt.exe` and call an entrypoint with arguments. This could be adapted to instead look up which package is registered as the default one instead of `wt.exe` for third party hosts. We would have to build provisions into the OS to select this, or use some sort of publicly documented registry key mechanism. Somewhat gross.
 1. `conhost.exe` can call the execution alias with parameters. WSL distro launchers use this.
 1. We can define a protocol handler for these sorts of connections and let `wt.exe` register for it. Protocol handlers are already well supported and understood both by classic applications and by packaged/modern applications on Windows. They must have provisions to communicate at least some semblance of argument data as well. This is the route I'd probably prefer. `ms-term://incoming/<session-id>` or something like that. The receiving `wt.exe` can contact the manager process (or set one up if it is the first) and negotiate receiving the session that was specified into a new tab.
 

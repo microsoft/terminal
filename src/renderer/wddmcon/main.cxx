@@ -16,7 +16,7 @@ HINSTANCE g_hInstance;
 #define REGSTR_VALUE_DISPLAY_INIT_DELAY  L"DisplayInitDelay"
 #define REGSTR_VALUE_FONT_SIZE  L"FontSize"
 
-#define SafeRelease(p) if (p) { (p)->Release(); (p) = NULL;}
+#define SafeRelease(p) if (p) { (p)->Release(); (p) = nullptr;}
 
 typedef struct tagWDDMCONSOLECONTEXT {
     // Console state
@@ -73,7 +73,7 @@ ReleaseDeviceResources(
     {
         // To ensure the swap chain goes away we must unbind any views from the
         // D3D pipeline
-        pCtx->pD3DDeviceContext->OMSetRenderTargets(0, NULL, NULL);
+        pCtx->pD3DDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
     }
     SafeRelease(pCtx->pD3DDeviceContext);
 
@@ -90,31 +90,31 @@ WDDMConDestroy(
     _In_ HANDLE hDisplay
     )
 {
-    if (hDisplay != NULL) {
-        PWDDMCONSOLECONTEXT pCtx = (PWDDMCONSOLECONTEXT)hDisplay;
+    if (hDisplay != nullptr) {
+        const auto pCtx = static_cast<PWDDMCONSOLECONTEXT>(hDisplay);
         ReleaseDeviceResources(pCtx);
         SafeRelease(pCtx->pDWriteTextFormat);
         SafeRelease(pCtx->pDWriteFactory);
         SafeRelease(pCtx->pD2DFactory);
 
-        RtlFreeHeap(RtlProcessHeap(), 0, (PVOID)pCtx->pwszGlyphRunAccel);
-        RtlFreeHeap(RtlProcessHeap(), 0, (PVOID)pCtx);
+        free(pCtx->pwszGlyphRunAccel);
+        free(pCtx);
     }
 }
 
 HRESULT
 ReadSettings(
     _Inout_ PWDDMCONSOLECONTEXT pCtx
-    )
+    ) noexcept
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     DWORD Error = ERROR_SUCCESS;
-    HKEY hKey = NULL;
-    DWORD ValueType = REG_NONE;
+    HKEY hKey = nullptr;
+    auto ValueType = REG_NONE;
     DWORD ValueSize = 0;
     DWORD ValueData = 0;
 
-    if (pCtx == NULL) {
+    if (pCtx == nullptr) {
         hr = E_INVALIDARG;
     }
 
@@ -135,9 +135,9 @@ ReadSettings(
 
         Error = RegQueryValueEx(hKey,
                                 REGSTR_VALUE_DISPLAY_INIT_DELAY,
-                                NULL,
+                                nullptr,
                                 &ValueType,
-                                (PBYTE)&ValueData,
+                                reinterpret_cast<PBYTE>(&ValueData),
                                 &ValueSize);
 
         if ((Error == ERROR_SUCCESS) &&
@@ -150,20 +150,20 @@ ReadSettings(
 
         Error = RegQueryValueEx(hKey,
                                 REGSTR_VALUE_FONT_SIZE,
-                                NULL,
+                                nullptr,
                                 &ValueType,
-                                (PBYTE)&ValueData,
+                                reinterpret_cast<PBYTE>(&ValueData),
                                 &ValueSize);
 
         if ((Error == ERROR_SUCCESS) &&
             (ValueType == REG_DWORD) &&
             (ValueSize == sizeof(ValueData)) &&
             (ValueData > 0)) {
-            pCtx->FontSize = (float)ValueData;
+            pCtx->FontSize = static_cast<float>(ValueData);
         }
     }
 
-    if (hKey != NULL) {
+    if (hKey != nullptr) {
         RegCloseKey(hKey);
     }
 
@@ -173,23 +173,23 @@ ReadSettings(
 HRESULT
 CreateTextLayout(
     _In_ PWDDMCONSOLECONTEXT pCtx,
-    _In_reads_(StringLength) WCHAR *String,
+    _In_reads_(StringLength) const wchar_t *String,
     _In_ size_t StringLength,
     _Out_ IDWriteTextLayout **ppTextLayout
-    )
+    ) noexcept
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
-    if (pCtx == NULL) {
+    if (pCtx == nullptr) {
         hr = E_INVALIDARG;
     }
 
     if (SUCCEEDED(hr)) {
         hr = pCtx->pDWriteFactory->CreateTextLayout(String,
-                                                    static_cast<UINT32>(StringLength),
+                                                    gsl::narrow_cast<UINT32>(StringLength),
                                                     pCtx->pDWriteTextFormat,
-                                                    (float)pCtx->DisplayMode.Width,
-                                                    pCtx->LineHeight != 0 ? pCtx->LineHeight : (float)pCtx->DisplayMode.Height,
+                                                    static_cast<float>(pCtx->DisplayMode.Width),
+                                                    pCtx->LineHeight != 0 ? pCtx->LineHeight : static_cast<float>(pCtx->DisplayMode.Height),
                                                     ppTextLayout);
     }
 
@@ -250,21 +250,21 @@ CreateDeviceResources(
         ReleaseDeviceResources(pCtx);
     }
 
-    HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&pCtx->pDXGIFactory2));
+    auto hr = CreateDXGIFactory1(IID_PPV_ARGS(&pCtx->pDXGIFactory2));
 
-    if (SUCCEEDED(hr)) {  
+    if (SUCCEEDED(hr)) {
         hr = pCtx->pDXGIFactory2->QueryInterface(IID_PPV_ARGS(&pCtx->pDXGIFactoryDWM));
     }
 
-    if (SUCCEEDED(hr)) {  
+    if (SUCCEEDED(hr)) {
         hr = pCtx->pDXGIFactory2->EnumAdapters1(0, &pCtx->pDXGIAdapter1);
     }
 
     if (SUCCEEDED(hr)) {
-        DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-                            D3D11_CREATE_DEVICE_SINGLETHREADED;
+        const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
+                                  D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-        D3D_FEATURE_LEVEL FeatureLevels[] = {
+        static constexpr D3D_FEATURE_LEVEL FeatureLevels[] = {
             D3D_FEATURE_LEVEL_11_1,
             D3D_FEATURE_LEVEL_11_0,
             D3D_FEATURE_LEVEL_10_1,
@@ -274,13 +274,13 @@ CreateDeviceResources(
 
         hr = D3D11CreateDevice(pCtx->pDXGIAdapter1,
                                D3D_DRIVER_TYPE_UNKNOWN,
-                               NULL,
+                               nullptr,
                                DeviceFlags,
-                               FeatureLevels,
+                               &FeatureLevels[0],
                                ARRAYSIZE(FeatureLevels),
                                D3D11_SDK_VERSION,
                                &pCtx->pD3DDevice,
-                               NULL,
+                               nullptr,
                                &pCtx->pD3DDeviceContext);
     }
 
@@ -289,7 +289,7 @@ CreateDeviceResources(
     }
 
     if (SUCCEEDED(hr)) {
-        DXGI_MODE_DESC currentmode = {0};
+        const DXGI_MODE_DESC currentmode = {0};
         hr = pCtx->pDXGIOutput->FindClosestMatchingMode(&currentmode,
                                                         &pCtx->DisplayMode,
                                                         pCtx->pD3DDevice);
@@ -298,8 +298,8 @@ CreateDeviceResources(
     if (fCreateSwapChain) {
         if (SUCCEEDED(hr)) {
             D3D11_VIEWPORT viewport;
-            viewport.Width = (FLOAT)pCtx->DisplayMode.Width;
-            viewport.Height = (FLOAT)pCtx->DisplayMode.Height;
+            viewport.Width = static_cast<FLOAT>(pCtx->DisplayMode.Width);
+            viewport.Height = static_cast<FLOAT>(pCtx->DisplayMode.Height);
             viewport.TopLeftX = 0;
             viewport.TopLeftY = 0;
             viewport.MinDepth = 0;
@@ -309,7 +309,7 @@ CreateDeviceResources(
 
         if (SUCCEEDED(hr)) {
             DXGI_SWAP_CHAIN_DESC SwapChainDesc = { 0 };
-            DXGI_SAMPLE_DESC LocalSampleDesc = { 1, 0 };
+            const DXGI_SAMPLE_DESC LocalSampleDesc = { 1, 0 };
 
             SwapChainDesc.BufferDesc.Width = 0;
             SwapChainDesc.BufferDesc.Height = 0;
@@ -322,7 +322,7 @@ CreateDeviceResources(
             SwapChainDesc.SampleDesc = LocalSampleDesc;
             SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
             SwapChainDesc.BufferCount = 2;
-            SwapChainDesc.OutputWindow = NULL;
+            SwapChainDesc.OutputWindow = nullptr;
             SwapChainDesc.Windowed = FALSE;
             SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
             SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_NONPREROTATED;
@@ -338,8 +338,7 @@ CreateDeviceResources(
         }
 
         if (SUCCEEDED(hr)) {
-
-            D2D1_RENDER_TARGET_PROPERTIES props =
+            const auto props =
                 D2D1::RenderTargetProperties(
                 D2D1_RENDER_TARGET_TYPE_DEFAULT,
                 D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
@@ -375,15 +374,12 @@ WDDMConCreate(
     _In_ HANDLE *phDisplay
     )
 {
-    HRESULT hr = S_OK;
-    IDWriteTextLayout *pTextLayout = NULL;
+    auto hr = S_OK;
+    IDWriteTextLayout *pTextLayout = nullptr;
     DWRITE_TEXT_METRICS TextMetrics = {};
-    PWDDMCONSOLECONTEXT pCtx =
-        (PWDDMCONSOLECONTEXT)RtlAllocateHeap(RtlProcessHeap(),
-                                             0,
-                                             sizeof(WDDMCONSOLECONTEXT));
+    const auto pCtx = static_cast<PWDDMCONSOLECONTEXT>(malloc(sizeof(WDDMCONSOLECONTEXT)));
 
-    if (pCtx == NULL) {
+    if (pCtx == nullptr) {
         hr = E_OUTOFMEMORY;
     } else {
         RtlZeroMemory(pCtx, sizeof(WDDMCONSOLECONTEXT));
@@ -411,7 +407,7 @@ WDDMConCreate(
 
     if (SUCCEEDED(hr)) {
         hr = pCtx->pDWriteFactory->CreateTextFormat(FONT_FACE,
-                                                    NULL,
+                                                    nullptr,
                                                     DWRITE_FONT_WEIGHT_NORMAL,
                                                     DWRITE_FONT_STYLE_NORMAL,
                                                     DWRITE_FONT_STRETCH_NORMAL,
@@ -448,21 +444,20 @@ WDDMConCreate(
 #pragma warning(disable : 4996) // GetDesktopDpi is deprecated.
         pCtx->pD2DFactory->GetDesktopDpi(&pCtx->DpiX, &pCtx->DpiY);
 #pragma warning(pop)
-        float MaxWidth  = pTextLayout->GetMaxWidth();
-        float MaxHeight = pTextLayout->GetMaxHeight();
-        pCtx->GlyphWidth = (float)(ULONG)(pCtx->GlyphWidth);
-        pCtx->LineHeight = (float)(ULONG)(pCtx->LineHeight);
-        pCtx->DisplaySize.Width = (ULONG)(MaxWidth / pCtx->GlyphWidth);
-        pCtx->DisplaySize.Height = (ULONG)(MaxHeight / pCtx->LineHeight) + 1;
+        const auto MaxWidth  = pTextLayout->GetMaxWidth();
+        const auto MaxHeight = pTextLayout->GetMaxHeight();
+        pCtx->GlyphWidth = floor(pCtx->GlyphWidth);
+        pCtx->LineHeight = floor(pCtx->LineHeight);
+        pCtx->DisplaySize.Width = static_cast<ULONG>(MaxWidth / pCtx->GlyphWidth);
+        pCtx->DisplaySize.Height = static_cast<ULONG>(MaxHeight / pCtx->LineHeight) + 1;
         pCtx->DisplaySize.Width -= CONSOLE_MARGIN * 2;
         pCtx->DisplaySize.Height -= CONSOLE_MARGIN * 2;
     }
 
     if (SUCCEEDED(hr)) {
-        pCtx->pwszGlyphRunAccel = (WCHAR*)RtlAllocateHeap(RtlProcessHeap(),
-                                                          0,
-                                                          sizeof(WCHAR) * (pCtx->DisplaySize.Width + 1));
-        if (pCtx->pwszGlyphRunAccel == NULL) {
+        const size_t width = pCtx->DisplaySize.Width;
+        pCtx->pwszGlyphRunAccel = static_cast<WCHAR*>(malloc(sizeof(WCHAR) * (width + 1)));
+        if (pCtx->pwszGlyphRunAccel == nullptr) {
             hr = E_OUTOFMEMORY;
         }
     }
@@ -470,8 +465,8 @@ WDDMConCreate(
     SafeRelease(pTextLayout);
 
     if (SUCCEEDED(hr)) {
-        *phDisplay = (HANDLE)pCtx;
-    } else if (pCtx != NULL) {
+        *phDisplay = pCtx;
+    } else if (pCtx != nullptr) {
         WDDMConDestroy(pCtx);
     }
 
@@ -501,13 +496,13 @@ WDDMConBeginUpdateDisplayBatch(
     _In_ HANDLE hDisplay
     )
 {
-    HRESULT hr = S_OK;
-    PWDDMCONSOLECONTEXT pCtx = NULL;
+    auto hr = S_OK;
+    PWDDMCONSOLECONTEXT pCtx = nullptr;
 
-    if (hDisplay == NULL) {
+    if (hDisplay == nullptr) {
         hr = E_INVALIDARG;
     } else {
-        pCtx = (PWDDMCONSOLECONTEXT)hDisplay;
+        pCtx = static_cast<PWDDMCONSOLECONTEXT>(hDisplay);
     }
 
     if (SUCCEEDED(hr) && pCtx->fInD2DBatch) {
@@ -534,13 +529,13 @@ WDDMConEndUpdateDisplayBatch(
     _In_ HANDLE hDisplay
     )
 {
-    HRESULT hr = S_OK;
-    PWDDMCONSOLECONTEXT pCtx = NULL;
+    auto hr = S_OK;
+    PWDDMCONSOLECONTEXT pCtx = nullptr;
 
-    if (hDisplay == NULL) {
+    if (hDisplay == nullptr) {
         hr = E_INVALIDARG;
     } else {
-        pCtx = (PWDDMCONSOLECONTEXT)hDisplay;
+        pCtx = static_cast<PWDDMCONSOLECONTEXT>(hDisplay);
     }
 
     if (SUCCEEDED(hr) && !pCtx->fInD2DBatch) {
@@ -568,28 +563,28 @@ HRESULT
 WINAPI
 WDDMConUpdateDisplay(
     _In_ HANDLE hDisplay,
-    _In_ CD_IO_ROW_INFORMATION *pRowInformation,
+    _In_ const CD_IO_ROW_INFORMATION *pRowInformation,
     _In_ BOOLEAN fInvalidate
     )
 {
-    HRESULT hr = S_OK;
-    PWDDMCONSOLECONTEXT pCtx = NULL;
+    auto hr = S_OK;
+    PWDDMCONSOLECONTEXT pCtx = nullptr;
 
-    if (hDisplay == NULL || pRowInformation == NULL) {
+    if (hDisplay == nullptr || pRowInformation == nullptr) {
         hr = E_INVALIDARG;
     } else {
-        pCtx = (PWDDMCONSOLECONTEXT)hDisplay;
+        pCtx = static_cast<PWDDMCONSOLECONTEXT>(hDisplay);
     }
-    
+
     // To prevent an infinite loop, we need to limit the number of times we try to render.
     // WDDMCon is used typically in bring-up scenarios, especially ones with unstable graphics drivers.
-    // As such without the limit, an unstable graphics device can cause us to get stuck here 
+    // As such without the limit, an unstable graphics device can cause us to get stuck here
     // and hang console subsystem activities indefinitely.
     ULONG RenderAttempts = 0;
-    
+
 ReRender:
     ULONG ColumnIndex = 0;
-    float LineY = 0.0f;
+    auto LineY = 0.0f;
     if (SUCCEEDED(hr) && pCtx->fOutputEnabled) {
         if (SUCCEEDED(hr) && !pCtx->fHaveDeviceResources) {
             hr = CreateDeviceResources(pCtx, TRUE);
@@ -604,15 +599,15 @@ ReRender:
         }
 
         while (SUCCEEDED(hr)) {
-            IDWriteTextLayout *pTextLayout = NULL;
+            IDWriteTextLayout *pTextLayout = nullptr;
             if (fInvalidate ||
                 (memcmp(&pRowInformation->New[ColumnIndex],
                         &pRowInformation->Old[ColumnIndex],
                         sizeof(CD_IO_CHARACTER)) != 0)) {
-                PCD_IO_CHARACTER pCharacter = &pRowInformation->New[ColumnIndex];
-                float CharacterOrigin = (ColumnIndex + CONSOLE_MARGIN) * pCtx->GlyphWidth;
-                ULONG ColumnIndexStart = ColumnIndex;
-                ULONG ColumnIndexReadAhead = ColumnIndex + 1;
+                const auto* const pCharacter = &pRowInformation->New[ColumnIndex];
+                const auto CharacterOrigin = (ColumnIndex + CONSOLE_MARGIN) * pCtx->GlyphWidth;
+                const auto ColumnIndexStart = ColumnIndex;
+                auto ColumnIndexReadAhead = ColumnIndex + 1;
                 ULONG GlyphRunLength;
 
                 pCtx->pwszGlyphRunAccel[ColumnIndex] = pRowInformation->New[ColumnIndex].Character;
@@ -644,26 +639,26 @@ ReRender:
                 ColumnIndex = ColumnIndexReadAhead - 1;
 
                 if (SUCCEEDED(hr)) {
-                    D2D1_RECT_F GlyphRectangle = D2D1::RectF(CharacterOrigin,
-                                                             LineY,
-                                                             CharacterOrigin + pCtx->GlyphWidth * GlyphRunLength,
-                                                             LineY + pCtx->LineHeight);
-                    D2D1_POINT_2F Origin = D2D1::Point2F(CharacterOrigin, LineY);
-    
+                    auto GlyphRectangle = D2D1::RectF(CharacterOrigin,
+                                                      LineY,
+                                                      CharacterOrigin + pCtx->GlyphWidth * GlyphRunLength,
+                                                      LineY + pCtx->LineHeight);
+                    const auto Origin = D2D1::Point2F(CharacterOrigin, LineY);
+
                     if (ColumnIndexStart == 0) {
                         GlyphRectangle.left = 0.0f;
                     }
 
-                    if ((UINT)pRowInformation->Index == 0) {
+                    if (static_cast<UINT>(pRowInformation->Index) == 0) {
                         GlyphRectangle.top = 0.0f;
                     }
 
                     if (ColumnIndex == pCtx->DisplaySize.Width - 1) {
-                        GlyphRectangle.right = (float)pCtx->DisplayMode.Width;
+                        GlyphRectangle.right = static_cast<float>(pCtx->DisplayMode.Width);
                     }
 
-                    if ((UINT)pRowInformation->Index == pCtx->DisplaySize.Height - 1) {
-                        GlyphRectangle.bottom = (float)pCtx->DisplayMode.Height;
+                    if (static_cast<UINT>(pRowInformation->Index) == pCtx->DisplaySize.Height - 1) {
+                        GlyphRectangle.bottom = static_cast<float>(pCtx->DisplayMode.Height);
                     }
 
                     pCtx->pD2DColorBrush->SetColor(
@@ -696,13 +691,14 @@ ReRender:
             }
         }
 
-        if (FAILED(hr) && pCtx != NULL && pCtx->fHaveDeviceResources) {
+        if (FAILED(hr) && pCtx != nullptr && pCtx->fHaveDeviceResources) {
             ReleaseDeviceResources(pCtx);
             RenderAttempts++;
-            
+
             if (RenderAttempts < MAX_RENDER_ATTEMPTS)
             {
                 hr = S_OK;
+#pragma warning(suppress : 26438 26448)
                 goto ReRender;
             }
         }
@@ -717,15 +713,15 @@ WINAPI
 WDDMConGetDisplaySize(
     _In_ HANDLE hDisplay,
     _In_ CD_IO_DISPLAY_SIZE *pDisplaySize
-    )
+    ) noexcept
 {
-    HRESULT hr = S_OK;
-    PWDDMCONSOLECONTEXT pCtx = NULL;
+    auto hr = S_OK;
+    PWDDMCONSOLECONTEXT pCtx = nullptr;
 
-    if (hDisplay == NULL) {
+    if (hDisplay == nullptr) {
         hr = E_INVALIDARG;
     } else {
-        pCtx = (PWDDMCONSOLECONTEXT)hDisplay;
+        pCtx = static_cast<PWDDMCONSOLECONTEXT>(hDisplay);
     }
 
     if (SUCCEEDED(hr)) {
@@ -742,13 +738,13 @@ WDDMConEnableDisplayAccess(
     _In_ BOOLEAN fOutputEnabled
     )
 {
-    HRESULT hr = S_OK;
-    PWDDMCONSOLECONTEXT pCtx = NULL;
+    auto hr = S_OK;
+    PWDDMCONSOLECONTEXT pCtx = nullptr;
 
-    if (hDisplay == NULL) {
+    if (hDisplay == nullptr) {
         hr = E_INVALIDARG;
     } else {
-        pCtx = (PWDDMCONSOLECONTEXT)hDisplay;
+        pCtx = static_cast<PWDDMCONSOLECONTEXT>(hDisplay);
     }
 
     if (SUCCEEDED(hr) &&

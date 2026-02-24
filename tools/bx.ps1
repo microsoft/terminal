@@ -2,7 +2,7 @@
 # in this directory. Parses the solution's .metaproj file looking for the
 # project file in this directory, to be able to get the project's name.
 
-$projects = Get-Childitem -Path .\ -Filter *.vcxproj -File
+$projects = Get-ChildItem -Path * -Include *.vcxproj,*.wapproj
 if ($projects.length -eq 0)
 {
     exit -1
@@ -11,11 +11,11 @@ $projectPath = $projects.FullName
 
 
 # Parse the solution's metaproj file.
-[xml]$Metaproj = Get-Content "$env:OPENCON\OpenConsole.sln.metaproj"
+[xml]$Metaproj = Get-Content "$env:OPENCON\OpenConsole.slnx.metaproj"
 
 $targets = $Metaproj.Project.Target
 
-# Most projects are in OpenConsole.sln.metaproj as "<project>.*proj.metaproj".
+# Most projects are in OpenConsole.slnx.metaproj as "<project>.*proj.metaproj".
 # We'll filter to search for these first and foremost.
 $msBuildCondition = "'%(ProjectReference.Identity)' == '$projectPath.metaproj'"
 
@@ -25,7 +25,7 @@ $msBuildCondition = "'%(ProjectReference.Identity)' == '$projectPath.metaproj'"
 $matchingTargets = $targets | Where-Object { $_.MSBuild.Condition -eq $msBuildCondition }
 
 # If we didn't find a target, it's possible that the project didn't have a
-# .metaproj in OpenConsole.sln.metaproj. Try filtering again, but leave off the
+# .metaproj in OpenConsole.slnx.metaproj. Try filtering again, but leave off the
 # .metaproj extension.
 if ($matchingTargets.length -eq 0)
 {

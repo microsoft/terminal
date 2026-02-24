@@ -9,21 +9,21 @@
 using namespace Microsoft::Console::Types;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
+SAFEARRAY* BuildIntSafeArray(std::span<const int> data)
 {
-    SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
+    auto psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
     if (psa != nullptr)
     {
-        for (size_t i = 0; i < data.size(); i++)
+        LONG lIndex{ 0 };
+        for (auto val : data)
         {
-            LONG lIndex = 0;
-            if (FAILED(SizeTToLong(i, &lIndex)) ||
-                FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&(data.at(i)))))
+            if (FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&val)))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;
                 break;
             }
+            ++lIndex;
         }
     }
 
@@ -31,7 +31,7 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 }
 
 #pragma warning(suppress : 26434) // WRL RuntimeClassInitialize base is a no-op and we need this for MakeAndInitialize
-HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ std::wstring_view wordDelimiters) noexcept
+HRESULT ScreenInfoUiaProviderBase::RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ std::wstring_view wordDelimiters) noexcept
 try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pData);
@@ -42,29 +42,6 @@ try
     return S_OK;
 }
 CATCH_RETURN();
-
-[[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID eventId)
-{
-    HRESULT hr = S_OK;
-    // check to see if we're already firing this particular event
-    if (_signalFiringMapping.find(eventId) != _signalFiringMapping.end() &&
-        _signalFiringMapping[eventId] == true)
-    {
-        return hr;
-    }
-
-    try
-    {
-        _signalFiringMapping[eventId] = true;
-    }
-    CATCH_RETURN();
-
-    IRawElementProviderSimple* pProvider = this;
-    hr = UiaRaiseAutomationEvent(pProvider, eventId);
-    _signalFiringMapping[eventId] = false;
-
-    return hr;
-}
 
 #pragma region IRawElementProviderSimple
 
@@ -87,7 +64,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
     RETURN_HR_IF(E_INVALIDARG, ppInterface == nullptr);
     *ppInterface = nullptr;
 
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
     if (patternId == UIA_TextPatternId)
     {
         hr = QueryInterface(IID_PPV_ARGS(ppInterface));
@@ -191,7 +168,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
     const std::array<int, 2> rId{ UiaAppendRuntimeId, -1 };
 
-    const std::basic_string_view<int> span{ rId.data(), rId.size() };
+    const std::span<const int> span{ rId.data(), rId.size() };
     // BuildIntSafeArray is a custom function to hide the SafeArray creation
     *ppRuntimeId = BuildIntSafeArray(span);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);
@@ -208,10 +185,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_resul
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
+IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus() noexcept
 {
     UiaTracing::TextProvider::SetFocus(*this);
-    return Signal(UIA_AutomationFocusChangedEventId);
+    return S_OK;
 }
 
 #pragma endregion
@@ -220,27 +197,25 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
+    *ppRetVal = nullptr;
+
     _LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
-
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
-    *ppRetVal = nullptr;
-    HRESULT hr = S_OK;
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // make a safe array
+    auto hr = S_OK;
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
-    if (*ppRetVal == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
+    RETURN_HR_IF_NULL(E_OUTOFMEMORY, *ppRetVal);
 
     WRL::ComPtr<UiaTextRangeBase> range;
     if (!_pData->IsSelectionActive())
     {
         // return a degenerate range at the cursor position
-        const Cursor& cursor = _getTextBuffer().GetCursor();
+        const auto& cursor = _getTextBuffer().GetCursor();
         hr = CreateTextRange(this, cursor, _wordDelimiters, &range);
     }
     else
@@ -272,26 +247,25 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
+    *ppRetVal = nullptr;
+
     _LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
-
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // make a safe array
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
-    if (*ppRetVal == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
+    RETURN_HR_IF_NULL(E_OUTOFMEMORY, *ppRetVal);
 
     WRL::ComPtr<UiaTextRangeBase> range;
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     const auto viewport = bufferSize.ConvertToOrigin(_getViewport());
 
-    const COORD start{ viewport.Left(), viewport.Top() };
-    const COORD end{ viewport.Left(), viewport.BottomExclusive() };
+    const til::point start{ viewport.Left(), viewport.Top() };
+    const til::point end{ viewport.Left(), viewport.BottomExclusive() };
 
     auto hr = CreateTextRange(this, start, end, _wordDelimiters, &range);
     if (FAILED(hr))
@@ -368,7 +342,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ Suppo
 
 #pragma endregion
 
-const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const noexcept
+til::size ScreenInfoUiaProviderBase::_getScreenBufferCoords() const noexcept
 {
     return _getTextBuffer().GetSize().Dimensions();
 }
@@ -378,7 +352,7 @@ const TextBuffer& ScreenInfoUiaProviderBase::_getTextBuffer() const noexcept
     return _pData->GetTextBuffer();
 }
 
-const Viewport ScreenInfoUiaProviderBase::_getViewport() const noexcept
+Viewport ScreenInfoUiaProviderBase::_getViewport() const noexcept
 {
     return _pData->GetViewport();
 }

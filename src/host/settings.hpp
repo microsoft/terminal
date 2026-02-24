@@ -18,16 +18,23 @@ Revision History:
 --*/
 #pragma once
 
-#include "../buffer/out/TextAttribute.hpp"
-
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
 #include "ConsoleArguments.hpp"
-#include "../inc/conattrs.hpp"
+#include "../renderer/inc/RenderSettings.hpp"
+
+enum class SettingsTextMeasurementMode : DWORD
+{
+    Graphemes,
+    Wcswidth,
+    Console,
+};
 
 class Settings
 {
+    using RenderSettings = Microsoft::Console::Render::RenderSettings;
+
 public:
     Settings();
 
@@ -40,20 +47,14 @@ public:
 
     CONSOLE_STATE_INFO CreateConsoleStateInfo() const;
 
-    DWORD GetVirtTermLevel() const;
-    void SetVirtTermLevel(const DWORD dwVirtTermLevel);
+    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
+    const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+
+    DWORD GetDefaultVirtTermLevel() const;
+    void SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel);
 
     bool IsAltF4CloseAllowed() const;
     void SetAltF4CloseAllowed(const bool fAllowAltF4Close);
-
-    bool IsReturnOnNewlineAutomatic() const;
-    void SetAutomaticReturnOnNewline(const bool fAutoReturnOnNewline);
-
-    bool IsGridRenderingAllowedWorldwide() const;
-    void SetGridRenderingAllowedWorldwide(const bool fGridRenderingAllowed);
-
-    bool IsScreenReversed() const;
-    void SetScreenReversed(const bool fScreenReversed);
 
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
@@ -106,24 +107,24 @@ public:
     WORD GetReserved() const;
     void SetReserved(const WORD wReserved);
 
-    COORD GetScreenBufferSize() const;
-    void SetScreenBufferSize(const COORD dwScreenBufferSize);
+    til::size GetScreenBufferSize() const;
+    void SetScreenBufferSize(const til::size dwScreenBufferSize);
 
-    COORD GetWindowSize() const;
-    void SetWindowSize(const COORD dwWindowSize);
+    til::size GetWindowSize() const;
+    void SetWindowSize(const til::size dwWindowSize);
 
     bool IsWindowSizePixelsValid() const;
-    COORD GetWindowSizePixels() const;
-    void SetWindowSizePixels(const COORD dwWindowSizePixels);
+    til::size GetWindowSizePixels() const;
+    void SetWindowSizePixels(const til::size dwWindowSizePixels);
 
-    COORD GetWindowOrigin() const;
-    void SetWindowOrigin(const COORD dwWindowOrigin);
+    til::size GetWindowOrigin() const;
+    void SetWindowOrigin(const til::size dwWindowOrigin);
 
     DWORD GetFont() const;
     void SetFont(const DWORD dwFont);
 
-    COORD GetFontSize() const;
-    void SetFontSize(const COORD dwFontSize);
+    til::size GetFontSize() const;
+    void SetFontSize(const til::size dwFontSize);
 
     UINT GetFontFamily() const;
     void SetFontFamily(const UINT uFontFamily);
@@ -159,37 +160,36 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    std::basic_string_view<COLORREF> Get16ColorTable() const;
-    std::basic_string_view<COLORREF> Get256ColorTable() const;
-    void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
+    void SetColorTableEntry(const size_t index, const COLORREF color);
     COLORREF GetColorTableEntry(const size_t index) const;
+    void SetLegacyColorTableEntry(const size_t index, const COLORREF color);
+    COLORREF GetLegacyColorTableEntry(const size_t index) const;
 
-    COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;
-
-    void SetCursorColor(const COLORREF CursorColor) noexcept;
     void SetCursorType(const CursorType cursorType) noexcept;
 
     bool GetInterceptCopyPaste() const noexcept;
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
-    COLORREF GetDefaultForegroundColor() const noexcept;
-    void SetDefaultForegroundColor(const COLORREF defaultForeground) noexcept;
-
-    COLORREF GetDefaultBackgroundColor() const noexcept;
-    void SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept;
+    void CalculateDefaultColorIndices() noexcept;
+    void SaveDefaultRenderSettings() noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
+    std::wstring_view GetAnswerbackMessage() const noexcept;
+
+    DWORD GetMSAADelay() const noexcept;
+    DWORD GetUIADelay() const noexcept;
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
-
-    COLORREF CalculateDefaultForeground() const noexcept;
-    COLORREF CalculateDefaultBackground() const noexcept;
-    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
+    SettingsTextMeasurementMode GetTextMeasurementMode() const noexcept;
+    void SetTextMeasurementMode(SettingsTextMeasurementMode mode) noexcept;
+    bool GetEnableBuiltinGlyphs() const noexcept;
 
 private:
+    RenderSettings _renderSettings;
+
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;
     WORD _wFillAttribute;
@@ -227,26 +227,22 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
-    bool _fAutoReturnOnNewline;
-    bool _fRenderGridWorldwide;
-    bool _fScreenReversed;
+    DWORD _msaaDelay = 100;
+    DWORD _uiaDelay = 25;
+    SettingsTextMeasurementMode _textMeasurement = SettingsTextMeasurementMode::Graphemes;
     bool _fUseDx;
     bool _fCopyColor;
-
-    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
+    bool _fEnableBuiltinGlyphs = true;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
 
-    // Technically a COLORREF, but using INVALID_COLOR as "Invert Colors"
-    unsigned int _CursorColor;
     CursorType _CursorType;
 
     bool _fInterceptCopyPaste;
 
-    COLORREF _DefaultForeground;
-    COLORREF _DefaultBackground;
-    bool _TerminalScrolling;
+    bool _TerminalScrolling = true;
+    WCHAR _answerbackMessage[32] = {};
     friend class RegistrySerialization;
 };

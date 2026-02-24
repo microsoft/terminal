@@ -1,20 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-
-import "../TerminalPage.idl";
-import "../ShortcutActionDispatch.idl";
-import "../IDirectKeyListener.idl";
+import "TerminalWindow.idl";
 
 namespace TerminalApp
 {
-    enum LaunchMode
-    {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
-    };
-
-    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
+    // See IDialogPresenter and TerminalPage's DialogPresenter for more
+    // information.
+    [default_interface] runtimeclass AppLogic
     {
         AppLogic();
 
@@ -25,39 +17,22 @@ namespace TerminalApp
         // registered?" when it definitely is.
         void Create();
 
-        Boolean IsUwp();
-        void RunAsUwp();
-        Boolean IsElevated();
+        Boolean IsRunningElevated();
+        Boolean CanDragDrop();
 
-        Int32 SetStartupCommandline(String[] commands);
-        String ParseCommandlineMessage { get; };
-        Boolean ShouldExitEarly { get; };
+        ContentManager ContentManager { get; };
 
-        void LoadSettings();
-        Windows.UI.Xaml.UIElement GetRoot();
+        Boolean HasSettingsStartupActions();
 
-        String Title { get; };
+        void ReloadSettings();
+        void ReloadSettingsThrottled();
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
 
-        String ApplicationDisplayName { get; };
-        String ApplicationVersion { get; };
+        TerminalWindow CreateNewWindow();
 
-        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
-        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
-        Windows.UI.Xaml.ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
-        Boolean GetShowTabsInTitlebar();
-        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
-        void TitlebarClicked();
-        void WindowCloseButtonClicked();
+        IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
-        // See IDialogPresenter and TerminalPage's DialogPresenter for more
-        // information.
-        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+        event Windows.Foundation.TypedEventHandler<Object, SettingsLoadEventArgs> SettingsChanged;
 
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
-        event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
-        event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
-        event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
     }
 }

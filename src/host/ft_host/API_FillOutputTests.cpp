@@ -45,7 +45,7 @@ class FillOutputTests
 
     TEST_METHOD(WriteNarrowGlyphAscii)
     {
-        HANDLE hConsole = GetStdOutputHandle();
+        auto hConsole = GetStdOutputHandle();
         DWORD charsWritten = 0;
         VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterA(hConsole,
                                                                 'a',
@@ -55,7 +55,7 @@ class FillOutputTests
         VERIFY_ARE_EQUAL(1u, charsWritten);
 
         // test a box drawing character
-        const UINT previousCodepage = GetConsoleOutputCP();
+        const auto previousCodepage = GetConsoleOutputCP();
         VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(CP_USA));
 
         charsWritten = 0;
@@ -70,7 +70,7 @@ class FillOutputTests
 
     TEST_METHOD(WriteNarrowGlyphUnicode)
     {
-        HANDLE hConsole = GetStdOutputHandle();
+        auto hConsole = GetStdOutputHandle();
         DWORD charsWritten = 0;
         VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterW(hConsole,
                                                                 L'a',
@@ -82,7 +82,7 @@ class FillOutputTests
 
     TEST_METHOD(WriteWideGlyphUnicode)
     {
-        HANDLE hConsole = GetStdOutputHandle();
+        auto hConsole = GetStdOutputHandle();
         DWORD charsWritten = 0;
         VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterW(hConsole,
                                                                 L'\x304F',
@@ -98,7 +98,7 @@ class FillOutputTests
         // this is because the wrap registry key is not set.
         // TODO GH #2859: Get/Set Registry Key for Wrap
 
-        HANDLE hConsole = GetStdOutputHandle();
+        auto hConsole = GetStdOutputHandle();
         DWORD charsWritten = 0;
 
         CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
@@ -118,7 +118,7 @@ class FillOutputTests
                                                   nullptr));
 
         // Verify wrap occurred
-        std::unique_ptr<wchar_t[]> bufferText = std::make_unique<wchar_t[]>(consoleWidth);
+        auto bufferText = std::make_unique<wchar_t[]>(consoleWidth);
         DWORD readSize = 0;
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(hConsole,
                                                                 bufferText.get(),

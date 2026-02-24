@@ -1,0 +1,287 @@
+:: Complete matrix of SGR parameters available, but transposed
+:: This definition is like SGR but for each row, all attributes are applied
+:: per foreground color instead of incrementing on the attributes
+:: ForEach(fg in Foreground) { ForEach(a in Attribute) { a;fm }} instead of
+:: ForEach(a in Attribute) { ForEach(fg in Foreground) { a;fm }}
+:: Requires 147 columns
+__DATA__
+:: Select Graphic Rendition (SGR) parameters
+__TABLE__
+SET "UTF8.REQUIRED=#TRUE#"
+:: The test text
+REM SET "CELL= ЯMB "
+SET "CELL= gYw "
+SET "STUBHEAD=tSGR"
+:: Alignment properties for the cells and headers
+REM SET "ALIGN.CELL=C"
+REM SET "ALIGN.BOXHEAD=R"
+REM SET "ALIGN.STUB=L"
+REM SET "ALIGN.STUBHEAD=C"
+:: Separator characters for cells and headers
+REM SET "SEPARATOR.STUB= "
+REM SET "SEPARATOR.STUB=│"
+REM SET "SEPARATOR.BOXHEAD= "
+REM SET "SEPARATOR.BOXHEAD=─"
+REM SET "SEPARATOR.COL= "
+REM SET "SEPARATOR.COL=╎"
+REM SET "SEPARATOR.STUBHEAD_BOXHEAD= "
+SET "SEPARATOR.STUBHEAD_BOXHEAD=│"
+REM SET "SEPARATOR.STUBHEAD_BOXHEAD=▓▓"
+REM SET "SEPARATOR.STUBHEAD_STUB= "
+SET "SEPARATOR.STUBHEAD_STUB=─"
+REM SET "SEPARATOR.STUBHEAD_STUB=▓"
+REM SET "SEPARATOR.INTERSECT= "
+REM SET "SEPARATOR.INTERSECT=┼"
+SET "SEPARATOR.INTERSECT=┘"
+REM SET "SEPARATOR.INTERSECT=▓▒▒░"
+REM SET "SEPARATOR.BOXHEAD_BODY= "
+REM SET "SEPARATOR.BOXHEAD_BODY=─"
+REM SET "SEPARATOR.BOXHEAD_BODY=░"
+REM SET "SEPARATOR.STUB_BODY= "
+REM SET "SEPARATOR.STUB_BODY=│"
+REM SET "SEPARATOR.STUB_BODY=░░"
+REM SET "SEPARATOR.BOXHEADERS= "
+REM SET "SEPARATOR.BOXHEADERS=╎"
+REM SET "SEPARATOR.CELL= "
+REM SET "SEPARATOR.CELL=╎"
+__TABLE:END__
+
+:: Background
+__COLS__
+#NUL#
+1m
+2m
+3m
+4m
+5m
+6m
+7m
+8m
+9m
+21m
+#SPC#
+40m
+100m
+41m
+101m
+42m
+102m
+43m
+103m
+44m
+104m
+45m
+105m
+46m
+106m
+47m
+107m
+__COLS:END__
+
+:: [Intensity;][Attribute;]Foreground
+__ROWS__
+#NUL#
+1m
+2m
+3m
+4m
+5m
+6m
+7m
+8m
+9m
+21m
+#SPC#
+30m
+1;30m
+2;30m
+3;30m
+4;30m
+5;30m
+6;30m
+7;30m
+8;30m
+9;30m
+21;30m
+#SPC#
+90m
+1;90m
+2;90m
+3;90m
+4;90m
+5;90m
+6;90m
+7;90m
+8;90m
+9;90m
+21;90m
+#SPC#
+31m
+1;31m
+2;31m
+3;31m
+4;31m
+5;31m
+6;31m
+7;31m
+8;31m
+9;31m
+21;31m
+#SPC#
+91m
+1;91m
+2;91m
+3;91m
+4;91m
+5;91m
+6;91m
+7;91m
+8;91m
+9;91m
+21;91m
+#SPC#
+32m
+1;32m
+2;32m
+3;32m
+4;32m
+5;32m
+6;32m
+7;32m
+8;32m
+9;32m
+21;32m
+#SPC#
+92m
+1;92m
+2;92m
+3;92m
+4;92m
+5;92m
+6;92m
+7;92m
+8;92m
+9;92m
+21;92m
+#SPC#
+33m
+1;33m
+2;33m
+3;33m
+4;33m
+5;33m
+6;33m
+7;33m
+8;33m
+9;33m
+21;33m
+#SPC#
+93m
+1;93m
+2;93m
+3;93m
+4;93m
+5;93m
+6;93m
+7;93m
+8;93m
+9;93m
+21;93m
+#SPC#
+34m
+1;34m
+2;34m
+3;34m
+4;34m
+5;34m
+6;34m
+7;34m
+8;34m
+9;34m
+21;34m
+#SPC#
+94m
+1;94m
+2;94m
+3;94m
+4;94m
+5;94m
+6;94m
+7;94m
+8;94m
+9;94m
+21;94m
+#SPC#
+35m
+1;35m
+2;35m
+3;35m
+4;35m
+5;35m
+6;35m
+7;35m
+8;35m
+9;35m
+21;35m
+#SPC#
+95m
+1;95m
+2;95m
+3;95m
+4;95m
+5;95m
+6;95m
+7;95m
+8;95m
+9;95m
+21;95m
+#SPC#
+36m
+1;36m
+2;36m
+3;36m
+4;36m
+5;36m
+6;36m
+7;36m
+8;36m
+9;36m
+21;36m
+#SPC#
+96m
+1;96m
+2;96m
+3;96m
+4;96m
+5;96m
+6;96m
+7;96m
+8;96m
+9;96m
+21;96m
+#SPC#
+37m
+1;37m
+2;37m
+3;37m
+4;37m
+5;37m
+6;37m
+7;37m
+8;37m
+9;37m
+21;37m
+#SPC#
+97m
+1;97m
+2;97m
+3;97m
+4;97m
+5;97m
+6;97m
+7;97m
+8;97m
+9;97m
+21;97m
+__ROWS:END__
+__DATA:END__

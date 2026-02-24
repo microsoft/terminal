@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <vector>
 #include "gdirenderer.hpp"
 
 #include "../inc/unicode.hpp"
@@ -10,6 +9,15 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+
+// This is an excerpt of GDI's FontHasWesternScript() as
+// used by InternalTextOut() which is part of ExtTextOutW().
+bool GdiEngine::FontHasWesternScript(HDC hdc)
+{
+    WORD glyphs[4];
+    return (GetGlyphIndicesW(hdc, L"dMr\"", 4, glyphs, GGI_MARK_NONEXISTING_GLYPHS) == 4) &&
+           (glyphs[0] != 0xFFFF && glyphs[1] != 0xFFFF && glyphs[2] != 0xFFFF && glyphs[3] != 0xFFFF);
+}
 
 // Routine Description:
 // - Prepares internal structures for a painting operation.
@@ -41,15 +49,20 @@ using namespace Microsoft::Console::Render;
     _psInvalidData.hdc = GetDC(_hwndTargetWindow);
     RETURN_HR_IF_NULL(E_FAIL, _psInvalidData.hdc);
 
+    // We need the advanced graphics mode in order to set a transform.
+    SetGraphicsMode(_psInvalidData.hdc, GM_ADVANCED);
+
     // Signal that we're starting to paint.
     _fPaintStarted = true;
 
     _psInvalidData.fErase = TRUE;
-    _psInvalidData.rcPaint = _rcInvalid;
+    _psInvalidData.rcPaint = _rcInvalid.to_win32_rect();
 
 #if DBG
     _debugContext = GetDC(_debugWindow);
 #endif
+
+    _lastFontType = FontType::Undefined;
 
     return S_OK;
 }
@@ -65,17 +78,34 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT GdiEngine::ScrollFrame() noexcept
 {
     // If we don't have any scrolling to do, return early.
-    RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
+    RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.width && 0 == _szInvalidScroll.height);
 
     // If we have an inverted cursor, we have to see if we have to clean it before we scroll to prevent
     // left behind cursor copies in the scrolled region.
     if (cursorInvertRects.size() > 0)
     {
-        for (RECT r : cursorInvertRects)
+        // We first need to apply the transform that was active at the time the cursor
+        // was rendered otherwise we won't be clearing the right area of the display.
+        // We don't need to do this if it was an identity transform though.
+        const auto identityTransform = cursorInvertTransform == IDENTITY_XFORM;
+        if (!identityTransform)
+        {
+            LOG_HR_IF(E_FAIL, !SetWorldTransform(_hdcMemoryContext, &cursorInvertTransform));
+            LOG_HR_IF(E_FAIL, !SetWorldTransform(_psInvalidData.hdc, &cursorInvertTransform));
+        }
+
+        for (const auto& r : cursorInvertRects)
         {
             // Clean both the in-memory and actual window context.
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &r)));
+            LOG_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
+            LOG_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &r)));
+        }
+
+        // If we've applied a transform, then we need to reset it.
+        if (!identityTransform)
+        {
+            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_hdcMemoryContext, nullptr, MWT_IDENTITY));
+            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_psInvalidData.hdc, nullptr, MWT_IDENTITY));
         }
 
         cursorInvertRects.clear();
@@ -83,34 +113,34 @@ using namespace Microsoft::Console::Render;
 
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
-    COORD const coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    const auto coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
-    SIZE szGutter;
-    szGutter.cx = _szMemorySurface.cx % coordFontSize.X;
-    szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
+    til::size szGutter;
+    szGutter.width = _szMemorySurface.width % coordFontSize.width;
+    szGutter.height = _szMemorySurface.height % coordFontSize.height;
 
-    RECT rcScrollLimit = { 0 };
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cx, szGutter.cx, &rcScrollLimit.right));
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cy, szGutter.cy, &rcScrollLimit.bottom));
+    RECT rcScrollLimit{};
+    RETURN_IF_FAILED(LongSub(_szMemorySurface.width, szGutter.width, &rcScrollLimit.right));
+    RETURN_IF_FAILED(LongSub(_szMemorySurface.height, szGutter.height, &rcScrollLimit.bottom));
 
     // Scroll real window and memory buffer in-sync.
     LOG_LAST_ERROR_IF(!ScrollWindowEx(_hwndTargetWindow,
-                                      _szInvalidScroll.cx,
-                                      _szInvalidScroll.cy,
+                                      _szInvalidScroll.width,
+                                      _szInvalidScroll.height,
                                       &rcScrollLimit,
                                       &rcScrollLimit,
                                       nullptr,
                                       nullptr,
                                       0));
 
-    RECT rcUpdate = { 0 };
-    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate)));
+    til::rect rcUpdate;
+    LOG_HR_IF(E_FAIL, !(ScrollDC(_hdcMemoryContext, _szInvalidScroll.width, _szInvalidScroll.height, &rcScrollLimit, &rcScrollLimit, nullptr, rcUpdate.as_win32_rect())));
 
     LOG_IF_FAILED(_InvalidCombine(&rcUpdate));
 
     // update invalid rect for the remainder of paint functions
-    _psInvalidData.rcPaint = _rcInvalid;
+    _psInvalidData.rcPaint = _rcInvalid.to_win32_rect();
 
     return S_OK;
 }
@@ -126,11 +156,11 @@ using namespace Microsoft::Console::Render;
     RECT rcClient;
     RETURN_HR_IF(E_FAIL, !(GetClientRect(hwnd, &rcClient)));
 
-    SIZE const szClient = _GetRectSize(&rcClient);
+    const auto szClient = _GetRectSize(&rcClient);
 
     // Only do work if the existing memory surface is a different size from the client area.
     // Return quickly if they're the same.
-    RETURN_HR_IF(S_OK, _szMemorySurface.cx == szClient.cx && _szMemorySurface.cy == szClient.cy);
+    RETURN_HR_IF(S_OK, _szMemorySurface.width == szClient.width && _szMemorySurface.height == szClient.height);
 
     wil::unique_hdc hdcRealWindow(GetDC(_hwndTargetWindow));
     RETURN_HR_IF_NULL(E_FAIL, hdcRealWindow.get());
@@ -143,7 +173,7 @@ using namespace Microsoft::Console::Render;
         RETURN_HR_IF_NULL(E_FAIL, hdcTemp.get());
 
         // Make the new bitmap we'll use going forward with the new size.
-        wil::unique_hbitmap hbitmapNew(CreateCompatibleBitmap(hdcRealWindow.get(), szClient.cx, szClient.cy));
+        wil::unique_hbitmap hbitmapNew(CreateCompatibleBitmap(hdcRealWindow.get(), szClient.width, szClient.height));
         RETURN_HR_IF_NULL(E_FAIL, hbitmapNew.get());
 
         // Select it into the DC, but hold onto the junky one pixel bitmap (made by default) to give back when we need to Delete.
@@ -152,7 +182,7 @@ using namespace Microsoft::Console::Render;
         hbitmapNew.release(); // if SelectBitmap worked, GDI took ownership. Detach from smart object.
 
         // Blt from the DC/bitmap we're already holding onto into the new one.
-        RETURN_HR_IF(E_FAIL, !(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY)));
+        RETURN_HR_IF(E_FAIL, !(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.width, _szMemorySurface.height, _hdcMemoryContext, 0, 0, SRCCOPY)));
 
         // Put the junky bitmap back into the temp DC and get our new one out.
         hbitmapNew.reset(SelectBitmap(hdcTemp.get(), hbitmapOnePixelJunk.get()));
@@ -168,7 +198,7 @@ using namespace Microsoft::Console::Render;
     }
     else
     {
-        _hbitmapMemorySurface = CreateCompatibleBitmap(hdcRealWindow.get(), szClient.cx, szClient.cy);
+        _hbitmapMemorySurface = CreateCompatibleBitmap(hdcRealWindow.get(), szClient.width, szClient.height);
         RETURN_HR_IF_NULL(E_FAIL, _hbitmapMemorySurface);
 
         wil::unique_hbitmap hOldBitmap(SelectBitmap(_hdcMemoryContext, _hbitmapMemorySurface)); // DC has a default junk bitmap, take it and delete it.
@@ -194,15 +224,15 @@ using namespace Microsoft::Console::Render;
 
     LOG_IF_FAILED(_FlushBufferLines());
 
-    POINT const pt = _GetInvalidRectPoint();
-    SIZE const sz = _GetInvalidRectSize();
+    const auto pt = _GetInvalidRectPoint();
+    const auto sz = _GetInvalidRectSize();
 
-    LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
+    LOG_HR_IF(E_FAIL, !(BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.width, sz.height, _hdcMemoryContext, pt.x, pt.y, SRCCOPY)));
     WHEN_DBG(_DebugBltAll());
 
-    _rcInvalid = { 0 };
+    _rcInvalid = {};
     _fInvalidRectUsed = false;
-    _szInvalidScroll = { 0 };
+    _szInvalidScroll = {};
 
     LOG_HR_IF(E_FAIL, !(GdiFlush()));
     LOG_HR_IF(E_FAIL, !(ReleaseDC(_hwndTargetWindow, _psInvalidData.hdc)));
@@ -258,6 +288,13 @@ using namespace Microsoft::Console::Render;
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]] HRESULT GdiEngine::PaintBackground() noexcept
 {
+    // We need to clear the cursorInvertRects at the start of a paint cycle so
+    // we don't inadvertently retain the invert region from the last paint after
+    // the cursor is hidden. If we don't, the ScrollFrame method may attempt to
+    // clean up a cursor that is no longer there, and instead leave a bunch of
+    // "ghost" cursor instances on the screen.
+    cursorInvertRects.clear();
+
     if (_psInvalidData.fErase)
     {
         RETURN_IF_FAILED(_PaintBackgroundColor(&_psInvalidData.rcPaint));
@@ -284,10 +321,9 @@ using namespace Microsoft::Console::Render;
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                                 const COORD coord,
-                                                 const bool trimLeft,
-                                                 const bool /*lineWrapped*/) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(const std::span<const Cluster> clusters,
+                                                 const til::point coord,
+                                                 const bool trimLeft) noexcept
 {
     try
     {
@@ -296,18 +332,20 @@ using namespace Microsoft::Console::Render;
         // Exit early if there are no lines to draw.
         RETURN_HR_IF(S_OK, 0 == cchLine);
 
-        POINT ptDraw = { 0 };
-        RETURN_IF_FAILED(_ScaleByFont(&coord, &ptDraw));
+        const auto ptDraw = coord * _GetFontSize();
 
         const auto pPolyTextLine = &_pPolyText[_cPolyText];
 
-        auto pwsPoly = std::make_unique<wchar_t[]>(cchLine);
-        RETURN_IF_NULL_ALLOC(pwsPoly);
+        auto& polyString = _polyStrings.emplace_back();
+        polyString.reserve(cchLine);
 
-        COORD const coordFontSize = _GetFontSize();
+        const auto coordFontSize = _GetFontSize();
 
-        auto rgdxPoly = std::make_unique<int[]>(cchLine);
-        RETURN_IF_NULL_ALLOC(rgdxPoly);
+        auto& polyWidth = _polyWidths.emplace_back();
+        polyWidth.reserve(cchLine);
+
+        // If we have a soft font, we only use the character's lower 7 bits.
+        const auto softFontCharMask = _lastFontType == FontType::Soft ? L'\x7F' : ~0;
 
         // Sum up the total widths the entire line/run is expected to take while
         // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
@@ -316,13 +354,14 @@ using namespace Microsoft::Console::Render;
         // Convert data from clusters into the text array and the widths array.
         for (size_t i = 0; i < cchLine; i++)
         {
-            const auto& cluster = clusters.at(i);
+            const auto& cluster = til::at(clusters, i);
 
-            // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
-            // So replace anything complicated with a replacement character for drawing purposes.
-            pwsPoly[i] = cluster.GetTextAsSingle();
-            rgdxPoly[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
-            cchCharWidths += rgdxPoly[i];
+            const auto text = cluster.GetText();
+            polyString += text;
+            polyString.back() &= softFontCharMask;
+            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.width);
+            cchCharWidths += polyWidth.back();
+            polyWidth.resize(polyWidth.size() + text.size() - 1);
         }
 
         // Detect and convert for raster font...
@@ -331,7 +370,7 @@ using namespace Microsoft::Console::Render;
             // dispatch conversion into our codepage
 
             // Find out the bytes required
-            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, nullptr, 0, nullptr, nullptr);
+            const auto cbRequired = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, nullptr, 0, nullptr, nullptr);
 
             if (cbRequired != 0)
             {
@@ -339,45 +378,51 @@ using namespace Microsoft::Console::Render;
                 auto psConverted = std::make_unique<char[]>(cbRequired);
 
                 // Attempt conversion to current codepage
-                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
+                const auto cbConverted = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
 
                 // If successful...
                 if (cbConverted != 0)
                 {
                     // Now we have to convert back to Unicode but using the system ANSI codepage. Find buffer size first.
-                    int const cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, nullptr, 0);
+                    const auto cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, nullptr, 0);
 
                     if (cchRequired != 0)
                     {
-                        auto pwsConvert = std::make_unique<wchar_t[]>(cchRequired);
+                        std::pmr::wstring polyConvert(cchRequired, UNICODE_NULL, &_pool);
 
                         // Then do the actual conversion.
-                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, pwsConvert.get(), cchRequired);
+                        const auto cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, polyConvert.data(), cchRequired);
 
                         if (cchConverted != 0)
                         {
                             // If all successful, use this instead.
-                            pwsPoly.swap(pwsConvert);
+                            polyString.swap(polyConvert);
                         }
                     }
                 }
             }
         }
 
-        pPolyTextLine->lpstr = pwsPoly.release();
-        pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
+        // If the line rendition is double height, we need to adjust the top or bottom
+        // of the clipping rect to clip half the height of the rendered characters.
+        const auto halfHeight = coordFontSize.height >> 1;
+        const auto topOffset = _currentLineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
+        const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
+
+        pPolyTextLine->lpstr = polyString.data();
+        pPolyTextLine->n = gsl::narrow<UINT>(polyString.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
-        pPolyTextLine->rcl.top = pPolyTextLine->y;
-        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
-        pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
-        pPolyTextLine->pdx = rgdxPoly.release();
+        pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
+        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (til::CoordType)cchCharWidths;
+        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.height - bottomOffset;
+        pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
         {
-            pPolyTextLine->rcl.left += coordFontSize.X;
+            pPolyTextLine->rcl.left += coordFontSize.width;
         }
 
         _cPolyText++;
@@ -401,29 +446,56 @@ using namespace Microsoft::Console::Render;
 // - S_OK or E_FAIL if GDI failed.
 [[nodiscard]] HRESULT GdiEngine::_FlushBufferLines() noexcept
 {
-    HRESULT hr = S_OK;
+    auto hr = S_OK;
 
     if (_cPolyText > 0)
     {
-        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
+        for (size_t i = 0; i != _cPolyText; ++i)
         {
-            hr = E_FAIL;
+            const auto& t = _pPolyText[i];
+
+            // The following if/else replicates the essentials of how ExtTextOutW() without ETO_IGNORELANGUAGE works.
+            // See InternalTextOut().
+            //
+            // Unlike the original, we don't check for `GetTextCharacterExtra(hdc) != 0`,
+            // because we don't ever call SetTextCharacterExtra() anyways.
+            //
+            // GH#12294:
+            // Additionally we set ss.fOverrideDirection to TRUE, because we need to present RTL
+            // text in logical order in order to be compatible with applications like `vim -H`.
+            if (_fontHasWesternScript && ScriptIsComplex(t.lpstr, t.n, SIC_COMPLEX) == S_FALSE)
+            {
+                if (!ExtTextOutW(_hdcMemoryContext, t.x, t.y, t.uiFlags | ETO_IGNORELANGUAGE, &t.rcl, t.lpstr, t.n, t.pdx))
+                {
+                    hr = E_FAIL;
+                    break;
+                }
+            }
+            else
+            {
+                SCRIPT_STATE ss{};
+                ss.fOverrideDirection = TRUE;
+
+                SCRIPT_STRING_ANALYSIS ssa;
+                hr = ScriptStringAnalyse(_hdcMemoryContext, t.lpstr, t.n, 0, -1, SSA_GLYPHS | SSA_FALLBACK, 0, nullptr, &ss, t.pdx, nullptr, nullptr, &ssa);
+                if (FAILED(hr))
+                {
+                    break;
+                }
+
+                hr = ScriptStringOut(ssa, t.x, t.y, t.uiFlags, &t.rcl, 0, 0, FALSE);
+                std::ignore = ScriptStringFree(&ssa);
+                if (FAILED(hr))
+                {
+                    break;
+                }
+            }
         }
 
-        for (size_t iPoly = 0; iPoly < _cPolyText; iPoly++)
-        {
-            if (nullptr != _pPolyText[iPoly].lpstr)
-            {
-                delete[] _pPolyText[iPoly].lpstr;
-                _pPolyText[iPoly].lpstr = nullptr;
-            }
+        _polyStrings.clear();
+        _polyWidths.clear();
 
-            if (nullptr != _pPolyText[iPoly].pdx)
-            {
-                delete[] _pPolyText[iPoly].pdx;
-                _pPolyText[iPoly].pdx = nullptr;
-            }
-        }
+        ZeroMemory(_pPolyText, sizeof(_pPolyText));
 
         _cPolyText = 0;
     }
@@ -435,68 +507,222 @@ using namespace Microsoft::Console::Render;
 // - Draws up to one line worth of grid lines on top of characters.
 // Arguments:
 // - lines - Enum defining which edges of the rectangle to draw
-// - color - The color to use for drawing the edges.
+// - gridlineColor - The color to use for drawing the gridlines.
+// - underlineColor - The color to use for drawing the underlines.
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF gridlineColor, const COLORREF underlineColor, const size_t cchLine, const til::point coordTarget) noexcept
+try
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
     // Convert the target from characters to pixels.
-    POINT ptTarget;
-    RETURN_IF_FAILED(_ScaleByFont(&coordTarget, &ptTarget));
-    // Set the brush color as requested and save the previous brush to restore at the end.
-    wil::unique_hbrush hbr(CreateSolidBrush(color));
+    const auto ptTarget = coordTarget * _GetFontSize();
+
+    // Create a brush with the gridline color, and apply it.
+    wil::unique_hbrush hbr(CreateSolidBrush(gridlineColor));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
-
-    wil::unique_hbrush hbrPrev(SelectBrush(_hdcMemoryContext, hbr.get()));
-    RETURN_HR_IF_NULL(E_FAIL, hbrPrev.get());
-    hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
-
-    // On exit, be sure we try to put the brush back how it was originally.
-    auto restoreBrushOnExit = wil::scope_exit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
+    const auto prevBrush = wil::SelectObject(_hdcMemoryContext, hbr.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevBrush.get());
 
     // Get the font size so we know the size of the rectangle lines we'll be inscribing.
-    COORD const coordFontSize = _GetFontSize();
+    const auto fontWidth = _GetFontSize().width;
+    const auto fontHeight = _GetFontSize().height;
+    const auto widthOfAllCells = fontWidth * gsl::narrow_cast<til::CoordType>(cchLine);
 
-    // For each length of the line, inscribe the various lines as specified by the enum
-    for (size_t i = 0; i < cchLine; i++)
+    const auto DrawLine = [=](const til::CoordType x, const til::CoordType y, const til::CoordType w, const til::CoordType h) {
+        return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
+    };
+    const auto DrawStrokedLine = [&](const til::CoordType x, const til::CoordType y, const til::CoordType w) {
+        RETURN_HR_IF(E_FAIL, !MoveToEx(_hdcMemoryContext, x, y, nullptr));
+        RETURN_HR_IF(E_FAIL, !LineTo(_hdcMemoryContext, x + w, y));
+        return S_OK;
+    };
+    const auto DrawCurlyLine = [&](const til::CoordType begX, const til::CoordType y, const til::CoordType width) {
+        const auto period = _lineMetrics.curlyLinePeriod;
+        const auto halfPeriod = period / 2;
+        const auto controlPointOffset = _lineMetrics.curlyLineControlPointOffset;
+
+        // To ensure proper continuity of the wavy line between cells of different line color
+        // this code starts/ends the line earlier/later than it should and then clips it.
+        // Clipping in GDI is expensive, but it was the easiest approach.
+        // I've noticed that subtracting -1px prevents missing pixels when GDI draws. They still
+        // occur at certain (small) font sizes, but I couldn't figure out how to prevent those.
+        const auto lineStart = ((begX - 1) / period) * period;
+        const auto lineEnd = begX + width;
+
+        IntersectClipRect(_hdcMemoryContext, begX, ptTarget.y, begX + width, ptTarget.y + fontHeight);
+        const auto restoreRegion = wil::scope_exit([&]() {
+            // Luckily no one else uses clip regions. They're weird to use.
+            SelectClipRgn(_hdcMemoryContext, nullptr);
+        });
+
+        // You can assume that each cell has roughly 5 POINTs on average. 128 POINTs is 1KiB.
+        til::small_vector<POINT, 128> points;
+
+        // This is the start point of the Bézier curve.
+        points.emplace_back(lineStart, y);
+
+        for (auto x = lineStart; x < lineEnd; x += period)
+        {
+            points.emplace_back(x + halfPeriod, y - controlPointOffset);
+            points.emplace_back(x + halfPeriod, y + controlPointOffset);
+            points.emplace_back(x + period, y);
+        }
+
+        const auto cpt = gsl::narrow_cast<DWORD>(points.size());
+        RETURN_HR_IF(E_FAIL, !PolyBezier(_hdcMemoryContext, points.data(), cpt));
+        return S_OK;
+    };
+
+    if (lines.test(GridLines::Left))
     {
-        if (lines & GridLines::Top)
+        auto x = ptTarget.x;
+        for (size_t i = 0; i < cchLine; i++, x += fontWidth)
         {
-            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, coordFontSize.X, 1, PATCOPY)));
+            RETURN_HR_IF(E_FAIL, !DrawLine(x, ptTarget.y, _lineMetrics.gridlineWidth, fontHeight));
         }
+    }
 
-        if (lines & GridLines::Left)
+    if (lines.test(GridLines::Right))
+    {
+        // NOTE: We have to subtract the stroke width from the cell width
+        // to ensure the x coordinate remains inside the clipping rectangle.
+        auto x = ptTarget.x + fontWidth - _lineMetrics.gridlineWidth;
+        for (size_t i = 0; i < cchLine; i++, x += fontWidth)
         {
-            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, 1, coordFontSize.Y, PATCOPY)));
+            RETURN_HR_IF(E_FAIL, !DrawLine(x, ptTarget.y, _lineMetrics.gridlineWidth, fontHeight));
         }
+    }
 
-        // NOTE: Watch out for inclusive/exclusive rectangles here.
-        // We have to remove 1 from the font size for the bottom and right lines to ensure that the
-        // starting point remains within the clipping rectangle.
-        // For example, if we're drawing a letter at 0,0 and the font size is 8x16....
-        // The bottom left corner inclusive is at 0,15 which is Y (0) + Font Height (16) - 1 = 15.
-        // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
+    if (lines.test(GridLines::Top))
+    {
+        const auto y = ptTarget.y;
+        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
+    }
 
-        if (lines & GridLines::Bottom)
-        {
-            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y + coordFontSize.Y - 1, coordFontSize.X, 1, PATCOPY)));
-        }
+    if (lines.test(GridLines::Bottom))
+    {
+        // NOTE: We have to subtract the stroke width from the cell height
+        // to ensure the y coordinate remains inside the clipping rectangle.
+        const auto y = ptTarget.y + fontHeight - _lineMetrics.gridlineWidth;
+        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
+    }
 
-        if (lines & GridLines::Right)
-        {
-            RETURN_HR_IF(E_FAIL, !(PatBlt(_hdcMemoryContext, ptTarget.x + coordFontSize.X - 1, ptTarget.y, 1, coordFontSize.Y, PATCOPY)));
-        }
+    if (lines.test(GridLines::Strikethrough))
+    {
+        const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
+        RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));
+    }
 
-        // Move to the next character in this run.
-        ptTarget.x += coordFontSize.X;
+    DWORD underlinePenType = PS_SOLID;
+    if (lines.test(GridLines::DottedUnderline))
+    {
+        underlinePenType = PS_DOT;
+    }
+    else if (lines.test(GridLines::DashedUnderline))
+    {
+        underlinePenType = PS_DASH;
+    }
+
+    DWORD underlineWidth = _lineMetrics.underlineWidth;
+    if (lines.any(GridLines::DoubleUnderline, GridLines::CurlyUnderline))
+    {
+        underlineWidth = _lineMetrics.doubleUnderlineWidth;
+    }
+
+    const LOGBRUSH brushProp{ .lbStyle = BS_SOLID, .lbColor = underlineColor };
+    wil::unique_hpen hpen(ExtCreatePen(underlinePenType | PS_GEOMETRIC | PS_ENDCAP_FLAT, underlineWidth, &brushProp, 0, nullptr));
+
+    // Apply the pen.
+    const auto prevPen = wil::SelectObject(_hdcMemoryContext, hpen.get());
+    RETURN_HR_IF_NULL(E_FAIL, prevPen.get());
+
+    if (lines.test(GridLines::Underline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DoubleUnderline))
+    {
+        RETURN_IF_FAILED(DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.doubleUnderlinePosTop, widthOfAllCells));
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.doubleUnderlinePosBottom, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::CurlyUnderline))
+    {
+        return DrawCurlyLine(ptTarget.x, ptTarget.y + _lineMetrics.curlyLineCenter, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DottedUnderline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
+    }
+    else if (lines.test(GridLines::DashedUnderline))
+    {
+        return DrawStrokedLine(ptTarget.x, ptTarget.y + _lineMetrics.underlineCenter, widthOfAllCells);
     }
 
     return S_OK;
 }
+CATCH_RETURN();
+
+[[nodiscard]] HRESULT GdiEngine::PaintImageSlice(const ImageSlice& imageSlice,
+                                                 const til::CoordType targetRow,
+                                                 const til::CoordType viewportLeft) noexcept
+try
+{
+    LOG_IF_FAILED(_FlushBufferLines());
+    LOG_IF_FAILED(ResetLineTransform());
+
+    const auto& imagePixels = imageSlice.Pixels();
+    if (_imageMask.size() < imagePixels.size())
+    {
+        _imageMask.resize(imagePixels.size());
+    }
+
+    const auto srcCellSize = imageSlice.CellSize();
+    const auto dstCellSize = _GetFontSize();
+    const auto srcWidth = imageSlice.PixelWidth();
+    const auto srcHeight = srcCellSize.height;
+    const auto dstWidth = srcWidth * dstCellSize.width / srcCellSize.width;
+    const auto dstHeight = dstCellSize.height;
+    const auto x = (imageSlice.ColumnOffset() - viewportLeft) * dstCellSize.width;
+    const auto y = targetRow * dstCellSize.height;
+
+    auto bitmapInfo = BITMAPINFO{
+        .bmiHeader = {
+            .biSize = sizeof(BITMAPINFOHEADER),
+            .biWidth = srcWidth,
+            .biHeight = -srcHeight,
+            .biPlanes = 1,
+            .biBitCount = 32,
+            .biCompression = BI_RGB,
+        }
+    };
+
+    auto allOpaque = true;
+    auto allTransparent = true;
+    for (size_t i = 0; i < imagePixels.size(); i++)
+    {
+        const auto opaque = til::at(imagePixels, i).rgbReserved != 0;
+        allOpaque &= opaque;
+        allTransparent &= !opaque;
+        til::at(_imageMask, i) = (opaque ? 0 : 0xFFFFFF);
+    }
+
+    if (allOpaque)
+    {
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+    }
+    else if (!allTransparent)
+    {
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, _imageMask.data(), &bitmapInfo, DIB_RGB_COLORS, SRCAND);
+        StretchDIBits(_hdcMemoryContext, x, y, dstWidth, dstHeight, 0, 0, srcWidth, srcHeight, imagePixels.data(), &bitmapInfo, DIB_RGB_COLORS, SRCPAINT);
+    }
+
+    return S_OK;
+}
+CATCH_RETURN();
 
 // Routine Description:
 // - Draws the cursor on the screen
@@ -513,26 +739,26 @@ using namespace Microsoft::Console::Render;
     }
     LOG_IF_FAILED(_FlushBufferLines());
 
-    COORD const coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+    const auto coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.width == 0 || coordFontSize.height == 0);
 
     // First set up a block cursor the size of the font.
     RECT rcBoundaries;
-    RETURN_IF_FAILED(LongMult(options.coordCursor.X, coordFontSize.X, &rcBoundaries.left));
-    RETURN_IF_FAILED(LongMult(options.coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.X, &rcBoundaries.right));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.Y, &rcBoundaries.bottom));
+    rcBoundaries.left = options.coordCursor.x * coordFontSize.width;
+    rcBoundaries.top = options.coordCursor.y * coordFontSize.height;
+    rcBoundaries.right = rcBoundaries.left + coordFontSize.width;
+    rcBoundaries.bottom = rcBoundaries.top + coordFontSize.height;
 
     // If we're double-width cursor, make it an extra font wider.
     if (options.fIsDoubleWidth)
     {
-        RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.X, &rcBoundaries.right));
+        rcBoundaries.right = rcBoundaries.right + coordFontSize.width;
     }
 
     // Make a set of RECTs to paint.
     cursorInvertRects.clear();
 
-    RECT rcInvert = rcBoundaries;
+    auto rcInvert = rcBoundaries;
     // depending on the cursorType, add rects to that set
     switch (options.cursorType)
     {
@@ -540,14 +766,14 @@ using namespace Microsoft::Console::Render;
     {
         // Now adjust the cursor height
         // enforce min/max cursor height
-        ULONG ulHeight = options.ulCursorHeightPercent;
+        auto ulHeight = options.ulCursorHeightPercent;
         ulHeight = std::max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
         ulHeight = std::min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
 
-        ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+        ulHeight = MulDiv(coordFontSize.height, ulHeight, 100); // divide by 100 because percent.
 
         // Reduce the height of the top to be relative to the bottom by the height we want.
-        RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+        rcInvert.top = rcInvert.bottom - ulHeight;
 
         cursorInvertRects.push_back(rcInvert);
     }
@@ -555,7 +781,7 @@ using namespace Microsoft::Console::Render;
 
     case CursorType::VerticalBar:
         LONG proposedWidth;
-        RETURN_IF_FAILED(LongAdd(rcInvert.left, options.cursorPixelWidth, &proposedWidth));
+        proposedWidth = rcInvert.left + options.cursorPixelWidth;
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
@@ -564,23 +790,36 @@ using namespace Microsoft::Console::Render;
         break;
 
     case CursorType::Underscore:
-        RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
+        rcInvert.top = rcInvert.bottom + -1;
         cursorInvertRects.push_back(rcInvert);
         break;
+
+    case CursorType::DoubleUnderscore:
+    {
+        RECT top, bottom;
+        top = bottom = rcBoundaries;
+        bottom.top = bottom.bottom + -1;
+        top.top = top.bottom + -3;
+        top.bottom = top.top + 1;
+
+        cursorInvertRects.push_back(top);
+        cursorInvertRects.push_back(bottom);
+    }
+    break;
 
     case CursorType::EmptyBox:
     {
         RECT top, left, right, bottom;
         top = left = right = bottom = rcBoundaries;
-        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
-        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-        RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
-        RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+        top.bottom = top.top + 1;
+        bottom.top = bottom.bottom + -1;
+        left.right = left.left + 1;
+        right.left = right.right + -1;
 
-        RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
-        RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
-        RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
-        RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+        top.left = top.left + 1;
+        bottom.left = bottom.left + 1;
+        top.right = top.right + -1;
+        bottom.right = bottom.right + -1;
 
         cursorInvertRects.push_back(top);
         cursorInvertRects.push_back(left);
@@ -596,11 +835,18 @@ using namespace Microsoft::Console::Render;
     default:
         return E_NOTIMPL;
     }
+
+    // Prepare the appropriate line transform for the current row.
+    LOG_IF_FAILED(PrepareLineTransform(options.lineRendition, 0, options.viewportLeft));
+    auto resetLineTransform = wil::scope_exit([&]() {
+        LOG_IF_FAILED(ResetLineTransform());
+    });
+
     // Either invert all the RECTs, or paint them.
     if (options.fUseColor)
     {
-        HBRUSH hCursorBrush = CreateSolidBrush(options.cursorColor);
-        for (RECT r : cursorInvertRects)
+        auto hCursorBrush = CreateSolidBrush(options.cursorColor);
+        for (auto r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(FillRect(_hdcMemoryContext, &r, hCursorBrush)));
         }
@@ -610,9 +856,17 @@ using namespace Microsoft::Console::Render;
     }
     else
     {
-        for (RECT r : cursorInvertRects)
+        // Save the current line transform in case we need to reapply these
+        // inverted rects to hide the cursor in the ScrollFrame method.
+        cursorInvertTransform = _currentLineTransform;
+
+        for (auto r : cursorInvertRects)
         {
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
+            // Make sure the cursor is always readable (see gh-3647)
+            const auto PrevObject = SelectObject(_hdcMemoryContext, GetStockObject(LTGRAY_BRUSH));
+            const auto Result = PatBlt(_hdcMemoryContext, r.left, r.top, r.right - r.left, r.bottom - r.top, PATINVERT);
+            SelectObject(_hdcMemoryContext, PrevObject);
+            RETURN_HR_IF(E_FAIL, !Result);
         }
     }
 
@@ -627,12 +881,11 @@ using namespace Microsoft::Console::Render;
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]] HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSelection(const til::rect& rect) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
-    RECT pixelRect = { 0 };
-    RETURN_IF_FAILED(_ScaleByFont(&rect, &pixelRect));
+    const auto pixelRect = rect.scale_up(_GetFontSize()).to_win32_rect();
 
     RETURN_HR_IF(E_FAIL, !InvertRect(_hdcMemoryContext, &pixelRect));
 
@@ -727,7 +980,7 @@ void GdiEngine::_DebugBltAll() const
 {
     if (_fDebug)
     {
-        BitBlt(_debugContext, 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY);
+        BitBlt(_debugContext, 0, 0, _szMemorySurface.width, _szMemorySurface.height, _hdcMemoryContext, 0, 0, SRCCOPY);
         Sleep(100);
     }
 }

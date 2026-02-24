@@ -29,28 +29,30 @@ class OutputCellIterator final
 public:
     using iterator_category = std::input_iterator_tag;
     using value_type = OutputCellView;
-    using difference_type = ptrdiff_t;
+    using difference_type = til::CoordType;
     using pointer = OutputCellView*;
     using reference = OutputCellView&;
 
+    OutputCellIterator() = default;
     OutputCellIterator(const wchar_t& wch, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const wchar_t& wch, const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0) noexcept;
-    OutputCellIterator(const std::wstring_view utf16Text);
-    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute);
-    OutputCellIterator(const std::basic_string_view<WORD> legacyAttributes, const bool unused) noexcept;
-    OutputCellIterator(const std::basic_string_view<CHAR_INFO> charInfos) noexcept;
-    OutputCellIterator(const std::basic_string_view<OutputCell> cells);
+    OutputCellIterator(const std::wstring_view utf16Text) noexcept;
+    OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute& attribute, const size_t fillLimit = 0) noexcept;
+    OutputCellIterator(const std::span<const WORD> legacyAttributes) noexcept;
+    OutputCellIterator(const std::span<const CHAR_INFO> charInfos) noexcept;
+    OutputCellIterator(const std::span<const OutputCell> cells);
     ~OutputCellIterator() = default;
 
     OutputCellIterator& operator=(const OutputCellIterator& it) = default;
 
     operator bool() const noexcept;
 
-    ptrdiff_t GetCellDistance(OutputCellIterator other) const noexcept;
-    ptrdiff_t GetInputDistance(OutputCellIterator other) const noexcept;
-    friend ptrdiff_t operator-(OutputCellIterator one, OutputCellIterator two) = delete;
+    size_t Position() const noexcept;
+    til::CoordType GetCellDistance(OutputCellIterator other) const noexcept;
+    til::CoordType GetInputDistance(OutputCellIterator other) const noexcept;
+    friend til::CoordType operator-(OutputCellIterator one, OutputCellIterator two) = delete;
 
     OutputCellIterator& operator++();
     OutputCellIterator operator++(int);
@@ -86,12 +88,13 @@ private:
     };
     Mode _mode;
 
-    std::basic_string_view<WORD> _legacyAttrs;
+    std::span<const WORD> _legacyAttrs;
 
     std::variant<
         std::wstring_view,
-        std::basic_string_view<CHAR_INFO>,
-        std::basic_string_view<OutputCell>,
+        std::span<const WORD>,
+        std::span<const CHAR_INFO>,
+        std::span<const OutputCell>,
         std::monostate>
         _run;
 
@@ -99,15 +102,9 @@ private:
 
     bool _TryMoveTrailing() noexcept;
 
-    static OutputCellView s_GenerateView(const std::wstring_view view);
-
-    static OutputCellView s_GenerateView(const std::wstring_view view,
-                                         const TextAttribute attr);
-
-    static OutputCellView s_GenerateView(const std::wstring_view view,
-                                         const TextAttribute attr,
-                                         const TextAttributeBehavior behavior);
-
+    static OutputCellView s_GenerateView(const std::wstring_view view) noexcept;
+    static OutputCellView s_GenerateView(const std::wstring_view view, const TextAttribute attr) noexcept;
+    static OutputCellView s_GenerateView(const std::wstring_view view, const TextAttribute attr, const TextAttributeBehavior behavior) noexcept;
     static OutputCellView s_GenerateView(const wchar_t& wch) noexcept;
     static OutputCellView s_GenerateViewLegacyAttr(const WORD& legacyAttr) noexcept;
     static OutputCellView s_GenerateView(const TextAttribute& attr) noexcept;

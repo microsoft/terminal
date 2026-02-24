@@ -13,7 +13,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+C_DEFINES               = $(C_DEFINES)
 
 # -------------------------------------
 # Compiler Settings
@@ -28,9 +28,6 @@ MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201
 
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
-# Defines IME and Codepage support
-W32_SB                  = 1
-
 # -------------------------------------
 # Sources, Headers, and Libraries
 # -------------------------------------
@@ -43,6 +40,10 @@ SOURCES = \
     ..\InteractivityFactory.cpp \
     ..\ServiceLocator.cpp \
     ..\VtApiRedirection.cpp \
+    ..\EventSynthesis.cpp \
+    ..\RemoteConsoleControl.cpp \
+    ..\HostSignalInputThread.cpp \
+    ..\PseudoConsoleWindowAccessibilityProvider.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

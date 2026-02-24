@@ -1,0 +1,61 @@
+:: Compact display of foreground over background colors
+:: Requires 76 columns
+
+__DATA__
+__TABLE__
+SET "UTF8.REQUIRED=#TRUE#"
+:: Definition strings
+SET "CELL=gYw"
+REM SET "STUBHEAD=BG\FG"
+:: Separators
+SET "SEPARATOR.BOXHEAD_BODY=─"
+SET "SEPARATOR.STUB_BODY=│"
+SET "SEPARATOR.CELL= "
+SET "SEPARATOR.INTERSECT=┌"
+REM SET "SEPARATOR.CELL_INTERSECT=┬"
+SET "SEPARATOR.CELL_INTERSECT=┼"
+REM SET "SEPARATOR.CELL_INTERSECT=┴"
+__TABLE:END__
+
+__COLS__
+#NUL#
+30m
+31m
+32m
+33m
+34m
+35m
+36m
+37m
+39m
+90m
+91m
+92m
+93m
+94m
+95m
+96m
+97m
+__COLS:END__
+
+__ROWS__
+#NUL#
+40m
+41m
+42m
+43m
+44m
+45m
+46m
+47m
+49m
+100m
+101m
+102m
+103m
+104m
+105m
+106m
+107m
+__ROWS:END__
+__DATA:END__

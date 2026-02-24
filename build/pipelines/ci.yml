@@ -2,7 +2,9 @@ trigger:
   batch: true
   branches:
     include:
-      - master
+      - main
+      - feature/*
+      - gh-readonly-queue/*
   paths:
     exclude:
       - doc/*
@@ -12,7 +14,8 @@ trigger:
 pr:
   branches:
     include:
-      - master
+      - main
+      - feature/*
   paths:
     exclude:
       - doc/*
@@ -27,42 +30,80 @@ variables:
 #     0.0.1904.0900
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
-stages:
-  - stage: Audit_x64
-    displayName: Audit Mode
-    dependsOn: []
-    condition: succeeded()
-    jobs:
-      - template: ./templates/build-console-audit-job.yml
-        parameters:
-          platform: x64
-  - stage: Build_x64
-    displayName: Build x64
-    dependsOn: []
-    condition: succeeded()
-    jobs:
-      - template: ./templates/build-console-ci.yml
-        parameters:
-          platform: x64
-  - stage: Build_x86
-    displayName: Build x86
-    dependsOn: []
-    jobs:
-      - template: ./templates/build-console-ci.yml
-        parameters:
-          platform: x86
-  - stage: Build_ARM64
-    displayName: Build ARM64
-    dependsOn: []
-    condition: not(eq(variables['Build.Reason'], 'PullRequest'))
-    jobs:
-      - template: ./templates/build-console-ci.yml
-        parameters:
-          platform: ARM64
-  - stage: Scripts
-    displayName: Code Health Scripts
-    dependsOn: []
-    condition: succeeded()
-    jobs:
-      - template: ./templates/check-formatting.yml
+parameters:
+  - name: auditMode
+    displayName: "Build in Audit Mode (x64)"
+    type: boolean
+    default: true
+  - name: runTests
+    displayName: "Run Tests"
+    type: boolean
+    default: true
+  - name: buildPlatforms
+    type: object
+    default:
+      - x64
+      - x86
+      - arm64
 
+stages:
+  - ${{ if eq(parameters.auditMode, true) }}:
+    - stage: Audit_x64
+      displayName: Audit Mode
+      dependsOn: []
+      jobs:
+        - template: ./templates-v2/job-build-project.yml
+          parameters:
+            pool:
+              ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
+                name: SHINE-INT-L
+              ${{ else }}:
+                name: SHINE-OSS-L
+            buildPlatforms: [x64]
+            buildConfigurations: [AuditMode]
+            buildEverything: true
+            keepAllExpensiveBuildOutputs: false
+
+  - stage: CodeHealth
+    displayName: Code Health
+    dependsOn: []
+    jobs:
+      - template: ./templates-v2/job-check-code-format.yml
+
+  - ${{ each platform in parameters.buildPlatforms }}:
+    - stage: Build_${{ platform }}
+      displayName: Build ${{ platform }}
+      dependsOn: []
+      jobs:
+        - template: ./templates-v2/job-build-project.yml
+          parameters:
+            pool:
+              ${{ if eq(variables['System.CollectionId'], 'cb55739e-4afe-46a3-970f-1b49d8ee7564') }}:
+                name: SHINE-INT-L
+              ${{ else }}:
+                name: SHINE-OSS-L
+            buildPlatforms:
+              - ${{ platform }}
+            buildConfigurations: [Release]
+            buildEverything: true
+            keepAllExpensiveBuildOutputs: false
+            ${{ if eq(parameters.runTests, true) }}:
+              # Copy the appx files into the bin drop because the LocalTests need them
+              afterBuildSteps:
+                - pwsh: |-
+                    $deps = ./build/scripts/Get-DependenciesFromAppxRecipe.ps1 -Path "$(Terminal.BinDir)/TestHostApp/TestHostApp.build.appxrecipe"
+                    $dir = New-Item -Type Directory "$(Terminal.BinDir)/_testDeps"
+                    $deps | Copy-Item -Destination $dir -Verbose
+
+    - ${{ if eq(parameters.runTests, true) }}:
+      - stage: Test_${{ platform }}
+        displayName: Test ${{ platform }}
+        dependsOn:
+          - Build_${{ platform }}
+        condition: succeeded()
+        jobs:
+          - template: ./templates-v2/job-test-project.yml
+            parameters:
+              platform: ${{ platform }}
+              # The tests might be run more than once; log one artifact per attempt.
+              outputArtifactStem: -$(System.JobAttempt)

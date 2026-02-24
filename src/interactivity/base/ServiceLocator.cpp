@@ -3,7 +3,11 @@
 
 #include "precomp.h"
 
-#include "..\inc\ServiceLocator.hpp"
+// MidiAudio
+#include <mmeapi.h>
+#include <dsound.h>
+
+#include "../inc/ServiceLocator.hpp"
 
 #include "InteractivityFactory.hpp"
 
@@ -17,13 +21,11 @@ using namespace Microsoft::Console::Interactivity;
 std::unique_ptr<IInteractivityFactory> ServiceLocator::s_interactivityFactory;
 std::unique_ptr<IConsoleControl> ServiceLocator::s_consoleControl;
 std::unique_ptr<IConsoleInputThread> ServiceLocator::s_consoleInputThread;
+std::unique_ptr<IConsoleWindow> ServiceLocator::s_consoleWindow;
 std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
-std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
-std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
-
-IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
+void (*ServiceLocator::s_oneCoreTeardownFunction)() = nullptr;
 
 Globals ServiceLocator::s_globals;
 
@@ -34,16 +36,41 @@ wil::unique_hwnd ServiceLocator::s_pseudoWindow = nullptr;
 
 #pragma region Public Methods
 
+void ServiceLocator::SetOneCoreTeardownFunction(void (*pfn)()) noexcept
+{
+    FAIL_FAST_IF(nullptr != s_oneCoreTeardownFunction);
+    s_oneCoreTeardownFunction = pfn;
+}
+
 void ServiceLocator::RundownAndExit(const HRESULT hr)
 {
-    // MSFT:15506250
-    // In VT I/O Mode, a client application might die before we've rendered
-    //      the last bit of text they've emitted. So give the VtRenderer one
-    //      last chance to paint before it is killed.
-    if (s_globals.pRender)
+    // The TriggerTeardown() call below depends on the render thread being able to acquire the
+    // console lock, so that it can safely progress with flushing the last frame. Since there's no
+    // coming back from this function (it's [[noreturn]]), it's safe to unlock the console here.
+    auto& gci = s_globals.getConsoleInformation();
+    while (gci.IsConsoleLocked())
     {
-        s_globals.pRender->TriggerTeardown();
+        gci.UnlockConsole();
     }
+
+    // MSFT:40146639
+    //   The premise of this function is that 1 thread enters and 0 threads leave alive.
+    //   We need to prevent anyone from calling us until we actually ExitProcess(),
+    //   so that we don't TriggerTeardown() twice. LockConsole() can't be used here,
+    //   because doing so would prevent the render thread from progressing.
+    static std::atomic<bool> locked;
+    if (locked.exchange(true, std::memory_order_relaxed))
+    {
+        // If we reach this point, another thread is already in the process of exiting.
+        // There's a lot of ways to suspend ourselves until we exit, one of which is "sleep forever".
+        Sleep(INFINITE);
+    }
+
+    // By locking the console, we ensure no background tasks are accessing the
+    // classes we're going to destruct down below (for instance: CursorBlinker).
+    s_globals.getConsoleInformation().LockConsole();
+
+    gci.GetVtIo()->Shutdown();
 
     // A History Lesson from MSFT: 13576341:
     // We introduced RundownAndExit to give services that hold onto important handles
@@ -62,19 +89,28 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
-    if (s_inputServices.get() != nullptr)
+    if (s_oneCoreTeardownFunction)
     {
-        s_inputServices.reset(nullptr);
+        s_oneCoreTeardownFunction();
     }
 
-    TerminateProcess(GetCurrentProcess(), hr);
+    // MSFT:40226902 - HOTFIX shutdown on OneCore, by leaking the renderer, thereby
+    // reducing the change for existing race conditions to turn into deadlocks.
+#ifndef NDEBUG
+    delete s_globals.pRender;
+    s_globals.pRender = nullptr;
+
+    s_consoleWindow.reset(nullptr);
+#endif
+
+    ExitProcess(hr);
 }
 
 #pragma region Creation Methods
 
 [[nodiscard]] NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleInputThread)
     {
@@ -86,11 +122,11 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
         {
             status = ServiceLocator::LoadInteractivityFactory();
         }
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateConsoleInputThread(s_consoleInputThread);
 
-            if (NT_SUCCESS(status))
+            if (SUCCEEDED_NTSTATUS(status))
             {
                 *thread = s_consoleInputThread.get();
             }
@@ -104,9 +140,27 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 #pragma region Set Methods
 
+[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control)
+{
+    if (s_consoleControl)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_HANDLE);
+    }
+    else if (!control)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_PARAMETER);
+    }
+    else
+    {
+        s_consoleControl = std::move(control);
+    }
+
+    return STATUS_SUCCESS;
+}
+
 [[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_consoleWindow)
     {
@@ -118,7 +172,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     }
     else
     {
-        s_consoleWindow = window;
+        s_consoleWindow.reset(window);
     }
 
     return status;
@@ -130,12 +184,12 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 IConsoleWindow* ServiceLocator::LocateConsoleWindow()
 {
-    return s_consoleWindow;
+    return s_consoleWindow.get();
 }
 
 IConsoleControl* ServiceLocator::LocateConsoleControl()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_consoleControl)
     {
@@ -144,7 +198,7 @@ IConsoleControl* ServiceLocator::LocateConsoleControl()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateConsoleControl(s_consoleControl);
         }
@@ -162,7 +216,7 @@ IConsoleInputThread* ServiceLocator::LocateConsoleInputThread()
 
 IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_highDpiApi)
     {
@@ -171,7 +225,7 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateHighDpiApi(s_highDpiApi);
         }
@@ -184,7 +238,7 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 
 IWindowMetrics* ServiceLocator::LocateWindowMetrics()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_windowMetrics)
     {
@@ -193,7 +247,7 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateWindowMetrics(s_windowMetrics);
         }
@@ -204,31 +258,9 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
     return s_windowMetrics.get();
 }
 
-IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
-{
-    NTSTATUS status = STATUS_SUCCESS;
-
-    if (!s_accessibilityNotifier)
-    {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            status = s_interactivityFactory->CreateAccessibilityNotifier(s_accessibilityNotifier);
-        }
-    }
-
-    LOG_IF_NTSTATUS_FAILED(status);
-
-    return s_accessibilityNotifier.get();
-}
-
 ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (!s_systemConfigurationProvider)
     {
@@ -237,7 +269,7 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             status = s_interactivityFactory->CreateSystemConfigurationProvider(s_systemConfigurationProvider);
         }
@@ -248,28 +280,6 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
     return s_systemConfigurationProvider.get();
 }
 
-IInputServices* ServiceLocator::LocateInputServices()
-{
-    NTSTATUS status = STATUS_SUCCESS;
-
-    if (!s_inputServices)
-    {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            status = s_interactivityFactory->CreateInputServices(s_inputServices);
-        }
-    }
-
-    LOG_IF_NTSTATUS_FAILED(status);
-
-    return s_inputServices.get();
-}
-
 Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
@@ -278,12 +288,13 @@ Globals& ServiceLocator::LocateGlobals()
 // Method Description:
 // - Retrieves the pseudo console window, or attempts to instantiate one.
 // Arguments:
-// - <none>
+// - owner: (defaults to 0 `HWND_DESKTOP`) the HWND that should be the initial
+//   owner of the pseudo window.
 // Return Value:
 // - a reference to the pseudoconsole window.
 HWND ServiceLocator::LocatePseudoWindow()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
     if (!s_pseudoWindowInitialized)
     {
         if (s_interactivityFactory.get() == nullptr)
@@ -291,19 +302,50 @@ HWND ServiceLocator::LocatePseudoWindow()
             status = ServiceLocator::LoadInteractivityFactory();
         }
 
-        if (NT_SUCCESS(status))
+        if (SUCCEEDED_NTSTATUS(status))
         {
             HWND hwnd;
             status = s_interactivityFactory->CreatePseudoWindow(hwnd);
             s_pseudoWindow.reset(hwnd);
         }
+
         s_pseudoWindowInitialized = true;
     }
     LOG_IF_NTSTATUS_FAILED(status);
     return s_pseudoWindow.get();
 }
 
-#pragma endregion
+void ServiceLocator::SetPseudoWindowOwner(HWND owner)
+{
+    auto status = STATUS_SUCCESS;
+    if (!s_interactivityFactory)
+    {
+        status = ServiceLocator::LoadInteractivityFactory();
+    }
+
+    if (s_interactivityFactory)
+    {
+        static_cast<InteractivityFactory*>(s_interactivityFactory.get())->SetOwner(owner);
+    }
+
+    LOG_IF_NTSTATUS_FAILED(status);
+}
+
+void ServiceLocator::SetPseudoWindowVisibility(bool showOrHide)
+{
+    auto status = STATUS_SUCCESS;
+    if (!s_interactivityFactory)
+    {
+        status = ServiceLocator::LoadInteractivityFactory();
+    }
+
+    if (s_interactivityFactory)
+    {
+        static_cast<InteractivityFactory*>(s_interactivityFactory.get())->SetVisibility(showOrHide);
+    }
+
+    LOG_IF_NTSTATUS_FAILED(status);
+}
 
 #pragma endregion
 
@@ -311,7 +353,7 @@ HWND ServiceLocator::LocatePseudoWindow()
 
 [[nodiscard]] NTSTATUS ServiceLocator::LoadInteractivityFactory()
 {
-    NTSTATUS status = STATUS_SUCCESS;
+    auto status = STATUS_SUCCESS;
 
     if (s_interactivityFactory.get() == nullptr)
     {

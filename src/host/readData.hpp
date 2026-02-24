@@ -20,8 +20,11 @@ Revision History:
 
 #pragma once
 
+#include "inputReadHandleData.h"
 #include "../server/IWaitRoutine.h"
 #include "../server/WaitTerminationReason.h"
+
+class InputBuffer;
 
 class ReadData : public IWaitRoutine
 {
@@ -29,19 +32,9 @@ public:
     ReadData(_In_ InputBuffer* const pInputBuffer,
              _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData);
 
-    virtual ~ReadData();
+    ~ReadData() override;
 
-    ReadData(const ReadData&) = delete;
     ReadData(ReadData&&);
-    ReadData& operator=(const ReadData&) & = delete;
-    ReadData& operator=(ReadData&&) & = delete;
-
-    virtual bool Notify(const WaitTerminationReason TerminationReason,
-                        const bool fIsUnicode,
-                        _Out_ NTSTATUS* const pReplyStatus,
-                        _Out_ size_t* const pNumBytes,
-                        _Out_ DWORD* const pControlKeyState,
-                        _Out_ void* const pOutputData) = 0;
 
     InputBuffer* GetInputBuffer() const;
     INPUT_READ_HANDLE_DATA* GetInputReadHandleData() const;

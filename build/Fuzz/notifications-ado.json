@@ -1,0 +1,34 @@
+{
+  "config": {
+    "base_url": "https://dev.azure.com/microsoft/os",
+    "auth_token": "INSERT_PAT_HERE",
+    "project": "OpenConsole",
+    "type": "Bug",
+    "unique_fields": [
+      "Microsoft.VSTS.Common.CustomString03"
+    ],
+    "comment": "<a href='{{ input_url }}'>This input</a> caused the <a href='{{ target_url }}'>fuzz target</a> {{ report.executable }} to crash. The faulting input SHA256 hash is {{ report.input_sha256 }} <br>",
+    "ado_fields": {
+      "System.AssignedTo": "INSERT_ASSIGNED_HERE",
+      "System.Tags": "OneFuzz",
+      "System.AreaPath": "OS\\WDX\\DXP\\WinDev\\Terminal",
+      "OSG.Watson.Telemetry14DaysInMarketHits": "1",
+      "System.IterationPath": "OS\\Future",
+      "Microsoft.VSTS.Common.CustomString01": "{{ job.project }}",
+      "Microsoft.VSTS.Common.CustomString02": "{{ job.name }}",
+      "Microsoft.VSTS.Common.CustomString03": "{{ report.minimized_stack_function_lines_sha256}}",
+      "System.Title": "[Fuzzing] - {{ report.crash_site }}",
+      "Microsoft.VSTS.CMMI.HowFound": "Security: Fuzzing",
+      "OSG.SecurityImpact": "Security Triage Requested",
+      "OSG.SDLSeverity": "Moderate",
+      "Microsoft.VSTS.TCM.ReproSteps": "The fuzzing target ({{ job.project }} {{ job.name }} {{ job.build }}) reported a crash. <br> {%if report.asan_log %} AddressSanitizer reported the following details: <br> <pre> {{ report.asan_log }} </pre> {% else %} Faulting call stack: <ul> {% for item in report.call_stack %} <li> {{ item }} </li> {% endfor %} </ul> <br> {% endif %} You can reproduce the issue remotely in OneFuzz by running the following command: <pre> {{ repro_cmd }} </pre>"
+    },
+    "on_duplicate": {
+      "set_state": {"Resolved": "Active", "Closed": "Active"},
+      "ado_fields": {
+        "System.IterationPath": "OS\\Future"
+      },
+      "increment": ["OSG.Watson.Telemetry14DaysInMarketHits"]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass AboutDialog : Windows.UI.Xaml.Controls.ContentDialog, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        AboutDialog();
+
+        String ApplicationDisplayName { get; };
+        String ApplicationVersion { get; };
+
+        Boolean CheckingForUpdates { get; };
+        Boolean UpdatesAvailable { get; };
+    }
+}

@@ -15,6 +15,12 @@ Author(s):
 
 namespace Microsoft::Console::Utils
 {
+    struct Pipe
+    {
+        wil::unique_hfile server;
+        wil::unique_hfile client;
+    };
+
     // Function Description:
     // - Returns -1, 0 or +1 to indicate the sign of the passed-in value.
     template<typename T>
@@ -24,6 +30,10 @@ namespace Microsoft::Console::Utils
     }
 
     bool IsValidHandle(const HANDLE handle) noexcept;
+    bool HandleWantsOverlappedIo(HANDLE handle) noexcept;
+    Pipe CreatePipe(DWORD bufferSize);
+    Pipe CreateOverlappedPipe(DWORD openMode, DWORD bufferSize);
+    HRESULT GetOverlappedResultSameThread(const OVERLAPPED* overlapped, DWORD* bytesTransferred) noexcept;
 
     // Function Description:
     // - Clamps a long in between `min` and `SHRT_MAX`
@@ -39,33 +49,37 @@ namespace Microsoft::Console::Utils
                                              static_cast<long>(SHRT_MAX)));
     }
 
-    std::wstring GuidToString(const GUID guid);
-    GUID GuidFromString(const std::wstring wstr);
+    std::wstring GuidToString(const GUID& guid);
+    std::wstring GuidToPlainString(const GUID& guid);
+    GUID GuidFromString(_Null_terminated_ const wchar_t* str);
+    GUID GuidFromPlainString(_Null_terminated_ const wchar_t* str);
     GUID CreateGuid();
 
     std::string ColorToHexString(const til::color color);
     til::color ColorFromHexString(const std::string_view wstr);
+    std::optional<til::color> ColorFromXTermColor(const std::wstring_view wstr) noexcept;
+    std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
+    til::color ColorFromHLS(const int h, const int l, const int s) noexcept;
+    std::tuple<int, int, int> ColorToHLS(const til::color color) noexcept;
+    til::color ColorFromRGB100(const int r, const int g, const int b) noexcept;
+    std::tuple<int, int, int> ColorToRGB100(const til::color color) noexcept;
 
-    void InitializeCampbellColorTable(const gsl::span<COLORREF> table);
-    void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
-    void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
-    void Initialize256ColorTable(const gsl::span<COLORREF> table);
+    bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
+    bool StringToUint(const std::wstring_view wstr, unsigned int& value);
+    std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
 
-    // Function Description:
-    // - Fill the alpha byte of the colors in a given color table with the given value.
-    // Arguments:
-    // - table: a color table
-    // - newAlpha: the new value to use as the alpha for all the entries in that table.
-    // Return Value:
-    // - <none>
-    constexpr void SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept
+    enum FilterOption
     {
-        const auto shiftedAlpha = newAlpha << 24;
-        for (auto& color : table)
-        {
-            WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
-        }
-    }
+        None = 0,
+        // Convert CR+LF and LF-only line endings to CR-only.
+        CarriageReturnNewline = 1u << 0,
+        // For security reasons, remove most control characters.
+        ControlCodes = 1u << 1,
+    };
+
+    DEFINE_ENUM_FLAG_OPERATORS(FilterOption)
+
+    std::wstring FilterStringForPaste(const std::wstring_view wstr, const FilterOption option);
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {
@@ -94,34 +108,30 @@ namespace Microsoft::Console::Utils
         return value;
     }
 
-    GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
+    GUID CreateV5Uuid(const GUID& namespaceGuid, const std::span<const std::byte> name);
 
-    // Method Description:
-    // - Base case provided to handle the last argument to CoalesceOptionals<T...>()
-    template<typename T>
-    T CoalesceOptionals(const T& base)
-    {
-        return base;
-    }
+    bool CanUwpDragDrop();
+    bool IsRunningElevated();
 
-    // Method Description:
-    // - Base case provided to throw an assertion if you call CoalesceOptionals(opt, opt, opt)
-    template<typename T>
-    T CoalesceOptionals(const std::optional<T>& base)
-    {
-        static_assert(false, "CoalesceOptionals must be passed a base non-optional value to be used if all optionals are empty");
-        return T{};
-    }
+    // This function is only ever used by the ConPTY connection in
+    // TerminalConnection. However, that library does not have a good system of
+    // tests set up. Since this function has a plethora of edge cases that would
+    // be beneficial to have tests for, we're hosting it in this lib, so it can
+    // be easily tested.
+    std::tuple<std::wstring, std::wstring> MangleStartingDirectoryForWSL(std::wstring_view commandLine,
+                                                                         std::wstring_view startingDirectory);
 
-    // Method Description:
-    // - Returns the value from the first populated optional, or a base value if none were populated.
-    template<typename T, typename... Ts>
-    T CoalesceOptionals(const std::optional<T>& t1, Ts&&... t2)
-    {
-        // Initially, I wanted to check "has_value" and short-circuit out so that we didn't
-        // evaluate value_or for every single optional, but has_value/value emits exception handling
-        // code that value_or doesn't. Less exception handling is cheaper than calling value_or a
-        // few more times.
-        return t1.value_or(CoalesceOptionals(std::forward<Ts>(t2)...));
-    }
+    // Similar to MangleStartingDirectoryForWSL, this function is only ever used
+    // in TerminalPage::_PasteFromClipboardHandler, but putting it here makes
+    // testing easier.
+    std::wstring_view TrimPaste(std::wstring_view textView) noexcept;
+
+    const wchar_t* FindActionableControlCharacter(const wchar_t* beg, const size_t len) noexcept;
+
+    // Same deal, but in TerminalPage::_evaluatePathForCwd
+    std::wstring EvaluateStartingDirectory(std::wstring_view cwd, std::wstring_view startingDirectory);
+
+    bool IsWindows11() noexcept;
+
+    bool IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept;
 }

@@ -1,0 +1,109 @@
+trigger: none
+pr: none
+schedules:
+  - cron: "0 3 * * 2-6" # Run at 03:00 UTC Tuesday through Saturday (After the work day in Pacific, Mon-Fri)
+    displayName: "Nightly Localization Build"
+    branches:
+      include:
+        - main
+    always: false # only run if there's code changes!
+
+
+parameters:
+  - name: targetBranch
+    type: string
+    default: "automated/loc-update"
+  - name: submitToTouchdown
+    displayName: Send New Strings to Touchdown
+    type: boolean
+    default: true
+  - name: checkInLocOutputs
+    displayName: Submit Pull Request
+    type: boolean
+    default: true
+
+pool:
+  vmImage: windows-latest
+
+resources:
+  repositories:
+  - repository: self
+    type: git
+    ref: main
+
+steps:
+
+- checkout: self
+  clean: true
+  submodules: false
+  fetchDepth: 1 # Don't need a deep checkout for loc files!
+  fetchTags: false # Tags still result in depth > 1 fetch; we don't need them here
+  persistCredentials: true
+
+- pwsh: |-
+    Install-Module PSGitHub -Scope CurrentUser -Force
+    git config --local user.email "consvc@microsoft.com"
+    git config --local user.name "Console Service Bot"
+    git config --local core.autocrlf true
+  displayName: Prepare git submission environment
+
+- task: MicrosoftTDBuild.tdbuild-task.tdbuild-task.TouchdownBuildTask@5
+  displayName: 'Touchdown Build - 7105, PRODEXT'
+  inputs:
+    teamId: 7105
+    FederatedIdentityTDBuildServiceConnection: $(TouchdownServiceConnection)
+    authType: FederatedIdentityTDBuild
+    resourceFilePath: |
+     **\en-US\*.resw
+     build\StoreSubmission\Stable\PDPs\en-us\PDP.xml
+     build\StoreSubmission\Preview\PDPs\en-us\PDP.xml
+    outputDirectoryRoot: LocOutput
+    appendRelativeDir: true
+    pseudoSetting: Included
+    localizationTarget: ${{ parameters.submitToTouchdown }}
+
+- pwsh: |-
+    $Files = Get-ChildItem LocOutput -R -Include 'ContextMenu.resw','Resources.resw','PDP.xml' | ? FullName -Like '*en-US\*\*.*'
+    $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+
+    & tar.exe -c -f LocOutputMunged.tar -C LocOutput .
+    & tar.exe -x -v -f LocOutputMunged.tar
+    rm -r -fo LocOutput
+    & ./build/scripts/Copy-ContextMenuResourcesToCascadiaPackage.ps1
+    & ./build/scripts/Generate-PseudoLocalizations.ps1
+  displayName: Move Loc files to the right places
+
+- publish: LocOutputMunged.tar
+  artifact: loc-outputs
+  displayName: Publish Loc Outputs for inspection
+
+- ${{ if eq(parameters.checkInLocOutputs, true) }}:
+  - pwsh: |-
+      git add **/*.resw
+      git add build/StoreSubmission/**/*.xml
+      git status
+      git diff --quiet --cached --exit-code
+      If ($LASTEXITCODE -Ne 0) {
+        $Now = Get-Date
+        git commit -m "Localization Updates - $Now"
+        git push origin HEAD:refs/heads/${{parameters.targetBranch}} -f
+        Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]1"
+      } Else {
+        Write-Host "##vso[task.setvariable variable=ChangesPushedToRepo]0"
+      }
+    displayName: git commit and push
+
+  - pwsh: |-
+      Import-Module PSGitHub
+      $BaseBranch = "$(Build.SourceBranch)" -Replace "^refs/heads/",""
+      Write-Host "Preparing PR against $BaseBranch"
+      $PSDefaultParameterValues['*GitHub*:Owner'] = "microsoft"
+      $PSDefaultParameterValues['*GitHub*:RepositoryName'] = "terminal"
+      $PSDefaultParameterValues['*GitHub*:Token'] = ("$(GithubPullRequestToken)" | ConvertTo-SecureString -AsPlainText -Force)
+      $existingPr = Get-GitHubPullRequest -HeadBranch "${{parameters.targetBranch}}" -BaseBranch $BaseBranch
+      If ($null -Eq $existingPr) {
+        $Now = Get-Date
+        New-GitHubPullRequest -Head "${{parameters.targetBranch}}" -Base $BaseBranch -Title "Localization Updates - $BaseBranch - $Now" -Verbose
+      }
+    displayName: Publish pull request
+    condition: and(eq(variables['ChangesPushedToRepo'], '1'), succeeded())

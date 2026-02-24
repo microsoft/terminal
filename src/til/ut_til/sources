@@ -15,16 +15,29 @@ DLLDEF                  =
 SOURCES = \
     $(SOURCES) \
     BaseTests.cpp \
-    BitmapTests.cpp \
+    CoalesceTests.cpp \
     ColorTests.cpp \
+    EnumSetTests.cpp \
+    EnvTests.cpp \
+    HashTests.cpp \
+    MathTests.cpp \
+    mutex.cpp \
     OperatorTests.cpp \
     PointTests.cpp \
-    MathTests.cpp \
     RectangleTests.cpp \
+    ReplaceTests.cpp \
+    RunLengthEncodingTests.cpp \
     SizeTests.cpp \
-    SomeTests.cpp \
+    SmallVectorTests.cpp \
+    StaticMapTests.cpp \
+    string.cpp \
     u8u16convertTests.cpp \
+    UnicodeTests.cpp \
     DefaultResource.rc \
+
+# These tests are disabled because of a missing symbol.
+#    SPSCTests.cpp \
+#    throttled_func.cpp \
 
 INCLUDES = \
     .. \

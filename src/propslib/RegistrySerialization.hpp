@@ -80,21 +80,10 @@ public:
 
     typedef struct _RegPropertyMap
     {
-        _RegPropertyType const propertyType;
+        _RegPropertyType propertyType;
         PCWSTR pwszValueName;
-        DWORD const dwFieldOffset;
-        size_t const cbFieldSize;
-        _RegPropertyMap(
-            _RegPropertyType const propertyType,
-            PCWSTR pwszValueName,
-            DWORD const dwFieldOffset,
-            size_t const cbFieldSize) :
-            propertyType(propertyType),
-            pwszValueName(pwszValueName),
-            dwFieldOffset(dwFieldOffset),
-            cbFieldSize(cbFieldSize){};
-
-        _RegPropertyMap& operator=(const _RegPropertyMap&) { return *this; }
+        DWORD dwFieldOffset;
+        size_t cbFieldSize;
     } RegPropertyMap;
 
     static const RegPropertyMap s_PropertyMappings[];

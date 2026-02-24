@@ -88,7 +88,7 @@ namespace Conhost.UIA.Tests.Common
             {
                 sldl.CopyDataBlock(WinConP.NT_CONSOLE_PROPS_SIG, out ppDataBlock);
 
-                // The marshaler doesn't like using the existing instance that we made above because it's a value type and
+                // The marshaller doesn't like using the existing instance that we made above because it's a value type and
                 // there are potential string pointers here. Give it the type instead and it can handle setting everything up.
                 props = (WinConP.NT_CONSOLE_PROPS)Marshal.PtrToStructure(ppDataBlock, typeof(WinConP.NT_CONSOLE_PROPS));
             }

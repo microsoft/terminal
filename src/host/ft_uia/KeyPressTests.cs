@@ -1,4 +1,4 @@
-﻿//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------
 // <copyright file="KeyPressTests.cs" company="Microsoft">
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
@@ -30,6 +30,7 @@ namespace Conhost.UIA.Tests
         public TestContext TestContext { get; set; }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void VerifyCtrlKeysBash()
         {
             using (RegistryHelper reg = new RegistryHelper())
@@ -69,6 +70,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void VerifyCtrlCBash()
         {
             using (RegistryHelper reg = new RegistryHelper())

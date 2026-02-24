@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    NOTE! This file gets written-over entirely by the release builds.
+    Any build logic in this file must be optional and only apply to non-release builds.
+  -->
+
+  <ImportGroup Condition="'$(MSBuildCacheEnabled)' == 'true'">
+    <Import Project="$(MSBuildCachePackageRoot)\build\$(MSBuildCachePackageName).targets" />
+    <Import Project="$(MSBuildCacheSharedCompilationPackageRoot)\build\Microsoft.MSBuildCache.SharedCompilation.targets" />
+  </ImportGroup>
+</Project>

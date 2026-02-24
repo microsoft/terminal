@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -27,7 +27,7 @@
     <ClCompile Include="..\WinNTControl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\DeviceComm.cpp">
+    <ClCompile Include="..\ConDrvDeviceComm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ObjectHeader.cpp">
@@ -70,6 +70,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ProcessPolicy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ConsoleShimPolicy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -137,5 +140,11 @@
     <ClInclude Include="..\ProcessPolicy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\ConsoleShimPolicy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>

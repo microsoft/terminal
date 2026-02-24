@@ -1,11 +1,30 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "ShortcutActionDispatch.idl";
+import "TerminalTabStatus.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass Tab : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass Tab : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Title { get; };
-        String IconPath { get; };
+        String Icon { get; };
+        Boolean ReadOnly { get; };
+        Microsoft.Terminal.Settings.Model.TabCloseButtonVisibility CloseButtonVisibility { get; set; };
+
+        Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
+        Windows.UI.Xaml.FrameworkElement Content { get; };
+
+        // May be Null
+        TerminalTabStatus TabStatus { get; };
+
+        UInt32 TabViewIndex;
+        UInt32 TabViewNumTabs;
+
+        void Focus(Windows.UI.Xaml.FocusState focusState);
+        void Close();
+        void Shutdown();
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

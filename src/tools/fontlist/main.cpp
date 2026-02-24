@@ -3,7 +3,7 @@
 
 #include <windows.h>
 #include <windowsx.h>
-#include <wil\result.h>
+#include <wil/result.h>
 
 int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nFontType, LPARAM lParam);
 int AddFont(
@@ -74,7 +74,7 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nF
     UINT i;
     LPCWSTR pwszFace = pelf->elfLogFont.lfFaceName;
 
-    BOOL const fIsEastAsianCP = IsEastAsianCP(GetACP());
+    const auto fIsEastAsianCP = IsEastAsianCP(GetACP());
 
     LPCWSTR pwszCharSet;
 

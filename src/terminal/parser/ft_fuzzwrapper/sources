@@ -38,6 +38,12 @@ C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTIN
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+USE_STD_CPP20           = 1
+
+# -------------------------------------
 # Sources, Headers, and Libraries
 # -------------------------------------
 
@@ -54,5 +60,7 @@ INCLUDES = \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\ntdll.lib \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
     $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \
+    $(OBJ_PATH)\..\..\..\types\lib\$(O)\ConTypes.lib \

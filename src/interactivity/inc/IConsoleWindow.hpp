@@ -23,20 +23,13 @@ namespace Microsoft::Console::Types
     class IConsoleWindow
     {
     public:
-        virtual ~IConsoleWindow() = 0;
-
-        virtual BOOL EnableBothScrollBars() = 0;
-        virtual int UpdateScrollBar(_In_ bool isVertical,
-                                    _In_ bool isAltBuffer,
-                                    _In_ UINT pageSize,
-                                    _In_ int maxSize,
-                                    _In_ int viewportPosition) = 0;
+        virtual ~IConsoleWindow() = default;
 
         virtual bool IsInFullscreen() const = 0;
 
         virtual void SetIsFullscreen(const bool fFullscreenEnabled) = 0;
 
-        virtual void ChangeViewport(const SMALL_RECT NewWindow) = 0;
+        virtual void ChangeViewport(const til::inclusive_rect& NewWindow) = 0;
 
         virtual void CaptureMouse() = 0;
         virtual BOOL ReleaseMouse() = 0;
@@ -46,10 +39,10 @@ namespace Microsoft::Console::Types
         // Pass null.
         virtual void SetOwner() = 0;
 
-        virtual BOOL GetCursorPosition(_Out_ LPPOINT lpPoint) = 0;
-        virtual BOOL GetClientRectangle(_Out_ LPRECT lpRect) = 0;
-        virtual int MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints, _In_ UINT cPoints) = 0;
-        virtual BOOL ConvertScreenToClient(_Inout_ LPPOINT lpPoint) = 0;
+        virtual BOOL GetCursorPosition(_Out_ til::point* lpPoint) = 0;
+        virtual BOOL GetClientRectangle(_Out_ til::rect* lpRect) = 0;
+        virtual BOOL MapRect(_Inout_ til::rect* lpRect) = 0;
+        virtual BOOL ConvertScreenToClient(_Inout_ til::point* lpPoint) = 0;
 
         virtual BOOL SendNotifyBeep() const = 0;
 
@@ -57,7 +50,7 @@ namespace Microsoft::Console::Types
 
         virtual BOOL PostUpdateWindowSize() const = 0;
 
-        virtual void UpdateWindowSize(const COORD coordSizeInChars) = 0;
+        virtual void UpdateWindowSize(const til::size coordSizeInChars) = 0;
         virtual void UpdateWindowText() = 0;
 
         virtual void HorizontalScroll(const WORD wScrollCommand,
@@ -65,10 +58,7 @@ namespace Microsoft::Console::Types
         virtual void VerticalScroll(const WORD wScrollCommand,
                                     const WORD wAbsoluteChange) = 0;
 
-        [[nodiscard]] virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT UiaSetTextAreaFocus() = 0;
-        virtual RECT GetWindowRect() const noexcept = 0;
+        virtual til::rect GetWindowRect() const noexcept = 0;
     };
-
-    inline IConsoleWindow::~IConsoleWindow() {}
 }

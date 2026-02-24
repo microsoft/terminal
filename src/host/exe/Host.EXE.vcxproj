@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -7,10 +7,15 @@
     <ProjectName>Host.EXE</ProjectName>
     <TargetName>OpenConsole</TargetName>
     <ConfigurationType>Application</ConfigurationType>
+    <VersionInfoFileDescription>Console Window and PTY Host (Open Source)</VersionInfoFileDescription>
+    <PgoTarget>true</PgoTarget>
   </PropertyGroup>
-  <Import Project="..\..\common.build.pre.props" />
+  <Import Project="$(SolutionDir)common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="CConsoleHandoff.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -18,7 +23,8 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="..\exemain.cpp" />
+    <ClCompile Include="CConsoleHandoff.cpp" />
+    <ClCompile Include="exemain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj">
@@ -39,14 +45,11 @@
     <ProjectReference Include="..\..\renderer\base\lib\base.vcxproj">
       <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\renderer\dx\lib\dx.vcxproj">
-      <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
+    <ProjectReference Include="..\..\renderer\atlas\atlas.vcxproj">
+      <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\renderer\gdi\lib\gdi.vcxproj">
       <Project>{1c959542-bac2-4e55-9a6d-13251914cbb9}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\renderer\vt\lib\vt.vcxproj">
-      <Project>{990f2657-8580-4828-943f-5dd657d11842}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\server\lib\server.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820262}</Project>
@@ -80,12 +83,15 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AllowIsolation>true</AllowIsolation>
+      <AdditionalDependencies>winmm.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>icu.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 </Project>

@@ -6,7 +6,7 @@
 #include "ObjectHeader.h"
 #include "ObjectHandle.h"
 
-#include "..\host\inputReadHandleData.h"
+#include "../host/inputReadHandleData.h"
 
 ConsoleObjectHeader::ConsoleObjectHeader() :
     _ulOpenCount(0),
@@ -39,8 +39,8 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
     try
     {
         // Allocate all necessary state.
-        std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(amDesired,
-                                                                                             ulShareMode);
+        auto pHandleData = std::make_unique<ConsoleHandleData>(amDesired,
+                                                               ulShareMode);
 
         // Check the share mode.
         if (((pHandleData->IsReadAllowed()) && (_ulOpenCount > _ulReadShareCount)) ||

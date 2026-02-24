@@ -1,0 +1,22 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    delegate void AddNewArgs(Guid profile);
+
+    runtimeclass AddProfilePageNavigationState
+    {
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings;
+        void RequestAddNew();
+        void RequestDuplicate(Guid profile);
+        event AddNewArgs AddNew;
+    };
+
+    [default_interface] runtimeclass AddProfile : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        AddProfile();
+        AddProfilePageNavigationState State { get; };
+        Boolean IsProfileSelected { get; };
+    }
+}

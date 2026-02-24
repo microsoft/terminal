@@ -283,3 +283,6 @@ MSG*.bin
 profiles.json
 *.metaproj
 *.swp
+
+# MSBuildCache
+/MSBuildCacheLogs/

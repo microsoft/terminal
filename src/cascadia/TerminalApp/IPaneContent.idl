@@ -1,0 +1,63 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    enum BuildStartupKind
+    {
+        None,
+        Content,
+        MovePane,
+        Persist,
+    };
+
+    runtimeclass BellEventArgs
+    {
+        Boolean FlashTaskbar { get; };
+    };
+
+    interface IPaneContent
+    {
+        Windows.UI.Xaml.FrameworkElement GetRoot();
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        Windows.Foundation.Size MinimumSize { get; };
+
+        String Title { get; };
+        UInt64 TaskbarState { get; };
+        UInt64 TaskbarProgress { get; };
+        Boolean ReadOnly { get; };
+        String Icon { get; };
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
+
+        Microsoft.Terminal.Settings.Model.INewContentArgs GetNewTerminalArgs(BuildStartupKind kind);
+
+        void Focus(Windows.UI.Xaml.FocusState reason);
+
+        void Close();
+
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> CloseRequested;
+
+        event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, BellEventArgs> BellRequested;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TabColorChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TaskbarProgressChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> FocusRequested;
+    };
+
+
+    enum PaneSnapDirection
+    {
+        Width,
+        Height
+    };
+
+    interface ISnappable
+    {
+        Single SnapDownToGrid(PaneSnapDirection direction, Single sizeToSnap);
+        Windows.Foundation.Size GridUnitSize { get; };
+    };
+}

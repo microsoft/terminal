@@ -5,7 +5,7 @@
 
 #include "uiaTextRange.hpp"
 #include "screenInfoUiaProvider.hpp"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
@@ -13,13 +13,13 @@ using namespace Microsoft::WRL;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 // degenerate range constructor.
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData, _In_ IRawElementProviderSimple* const pProvider, _In_ const std::wstring_view wordDelimiters) noexcept
 {
     return UiaTextRangeBase::RuntimeClassInitialize(pData, pProvider, wordDelimiters);
 }
 
 // degenerate range at cursor position
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const Cursor& cursor,
                                              const std::wstring_view wordDelimiters) noexcept
@@ -28,10 +28,10 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 }
 
 // specific endpoint range
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
-                                             const COORD start,
-                                             const COORD end,
+                                             const til::point start,
+                                             const til::point end,
                                              bool blockRange,
                                              const std::wstring_view wordDelimiters) noexcept
 {
@@ -39,7 +39,7 @@ HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
-HRESULT UiaTextRange::RuntimeClassInitialize(_In_ IUiaData* pData,
+HRESULT UiaTextRange::RuntimeClassInitialize(_In_ Render::IRenderData* pData,
                                              _In_ IRawElementProviderSimple* const pProvider,
                                              const UiaPoint point,
                                              const std::wstring_view wordDelimiters)
@@ -60,14 +60,6 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     *ppRetVal = nullptr;
     RETURN_IF_FAILED(MakeAndInitialize<UiaTextRange>(ppRetVal, *this));
 
-#if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
-    OutputDebugString(L"Clone\n");
-    std::wstringstream ss;
-    ss << _id << L" cloned to " << (static_cast<UiaTextRangeBase*>(*ppRetVal))->_id;
-    std::wstring str = ss.str();
-    OutputDebugString(str.c_str());
-    OutputDebugString(L"\n");
-#endif
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgClone apiMsg;
@@ -77,20 +69,14 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
+void UiaTextRange::_TranslatePointToScreen(til::point& clientPoint) const
 {
-    auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
-    provider->ChangeViewport(NewWindow);
+    ClientToScreen(_getWindowHandle(), clientPoint.as_win32_point());
 }
 
-void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
+void UiaTextRange::_TranslatePointFromScreen(til::point& screenPoint) const
 {
-    ClientToScreen(_getWindowHandle(), clientPoint);
-}
-
-void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
-{
-    ScreenToClient(_getWindowHandle(), screenPoint);
+    ScreenToClient(_getWindowHandle(), screenPoint.as_win32_point());
 }
 
 HWND UiaTextRange::_getWindowHandle() const

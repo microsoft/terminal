@@ -45,6 +45,7 @@ Options:
     -x, --xterm    : Set the colors using VT sequences. Used for setting the colors in WSL.
                      Only works in Windows versions >= 17048.
     -t, --terminal : Output the colors in JSON format for copying into a Windows Terminal settings file.
+    -a, --allcolors: Output extended color table. best for >110 column terminals
 ```
 
 ## Included Schemes

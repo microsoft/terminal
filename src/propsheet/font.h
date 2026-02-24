@@ -72,7 +72,7 @@ typedef struct tagFACENODE
 
 #pragma warning(pop)
 
-#define TM_IS_TT_FONT(x) (((x)&TMPF_TRUETYPE) == TMPF_TRUETYPE)
+#define TM_IS_TT_FONT(x) (((x) & TMPF_TRUETYPE) == TMPF_TRUETYPE)
 #define IS_BOLD(w) ((w) >= FW_SEMIBOLD)
 #define SIZE_EQUAL(s1, s2) (((s1).X == (s2).X) && ((s1).Y == (s2).Y))
 #define POINTS_PER_INCH 72
@@ -109,7 +109,7 @@ BOOL DoFontEnum(
                                                 _Out_writes_(cchFaceName) PWSTR pszFaceName,
                                                 const size_t cchFaceName);
 
-bool IsFontSizeCustom(__in PCWSTR pwszFaceName, __in const SHORT sSize);
-void CreateSizeForAllTTFonts(__in const SHORT sSize);
+bool IsFontSizeCustom(__in PCWSTR pwszFaceName, const __in SHORT sSize);
+void CreateSizeForAllTTFonts(const __in SHORT sSize);
 
 #endif /* !FONT_H */

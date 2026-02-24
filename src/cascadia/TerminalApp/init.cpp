@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <LibraryResources.h>
+#include <WilErrorReporting.h>
 
 // Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
@@ -19,6 +19,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hInstDll);
         TraceLoggingRegister(g_hTerminalAppProvider);
+        Microsoft::Console::ErrorReporting::EnableFallbackFailureReporting(g_hTerminalAppProvider);
         break;
     case DLL_PROCESS_DETACH:
         if (g_hTerminalAppProvider)

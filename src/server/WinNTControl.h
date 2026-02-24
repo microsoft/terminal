@@ -35,16 +35,16 @@ public:
 private:
     WinNTControl();
 
-    WinNTControl(WinNTControl const&) = delete;
-    void operator=(WinNTControl const&) = delete;
+    WinNTControl(const WinNTControl&) = delete;
+    void operator=(const WinNTControl&) = delete;
 
     static WinNTControl& GetInstance();
 
     wil::unique_hmodule const _NtDllDll;
 
     typedef NTSTATUS(NTAPI* PfnNtOpenFile)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PIO_STATUS_BLOCK, ULONG, ULONG);
-    PfnNtOpenFile const _NtOpenFile;
-
     typedef NTSTATUS(NTAPI* PfnNtSetSystemInformation)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG);
-    PfnNtSetSystemInformation const _NtSetSystemInformation;
+
+    const PfnNtOpenFile _NtOpenFile;
+    const PfnNtSetSystemInformation _NtSetSystemInformation;
 };

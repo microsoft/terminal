@@ -58,6 +58,8 @@ Revision History:
 // unused 16
 #define IDS_TOOLTIP_OPACITY          17
 #define IDS_TOOLTIP_INTERCEPT_COPY_PASTE    18
+#define IDS_TERMINAL_HANDOFF_DEFAULT 19
+#define IDS_TERMINAL_HANDOFF_CONHOST 20
 // clang-format on
 
 void MakeAltRasterFont(
@@ -173,7 +175,7 @@ void Undo(HWND hControlWindow);
 //
 // Macros
 //
-#define AttrToRGB(Attr) (gpStateInfo->ColorTable[(Attr)&0x0F])
+#define AttrToRGB(Attr) (gpStateInfo->ColorTable[(Attr) & 0x0F])
 #define ScreenTextColor(pStateInfo) \
     (AttrToRGB(LOBYTE(pStateInfo->ScreenAttributes) & 0x0F))
 #define ScreenBkColor(pStateInfo) \
@@ -194,13 +196,9 @@ void Undo(HWND hControlWindow);
 
   #define DBGFONTS(_params_)
   #define DBGFONTS2(_params_)
-  #define DBGCHARS(_params_)
-  #define DBGOUTPUT(_params_)
 #else
   #define DBGFONTS(_params_)
   #define DBGFONTS2(_params_)
-  #define DBGCHARS(_params_)
-  #define DBGOUTPUT(_params_)
 #endif
 // clang-format on
 

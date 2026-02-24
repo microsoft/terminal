@@ -27,49 +27,74 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
-#pragma pack(push, 1)
+enum class UnderlineStyle
+{
+    NoUnderline = 0U,
+    SinglyUnderlined = 1U,
+    DoublyUnderlined = 2U,
+    CurlyUnderlined = 3U,
+    DottedUnderlined = 4U,
+    DashedUnderlined = 5U,
+    Max = DashedUnderlined
+};
+
+// We only need a few bits, but uint8_t apparently doesn't satisfy std::has_unique_object_representations_v
+enum class MarkKind : uint16_t
+{
+    None = 0,
+    Prompt = 1,
+    Command = 2,
+    Output = 3,
+};
 
 class TextAttribute final
 {
 public:
     constexpr TextAttribute() noexcept :
-        _wAttrLegacy{ 0 },
+        _attrs{ CharacterAttributes::Normal },
         _foreground{},
         _background{},
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _hyperlinkId{ 0 },
+        _underlineColor{},
+        _markKind{ MarkKind::None }
     {
     }
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
-        _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _attrs{ gsl::narrow_cast<WORD>(wLegacyAttr & USED_META_ATTRS) },
+        _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
+        _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
+        _hyperlinkId{ 0 },
+        _underlineColor{},
+        _markKind{ MarkKind::None }
     {
-        // If we're given lead/trailing byte information with the legacy color, strip it.
-        WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
     }
 
     constexpr TextAttribute(const COLORREF rgbForeground,
-                            const COLORREF rgbBackground) noexcept :
-        _wAttrLegacy{ 0 },
+                            const COLORREF rgbBackground,
+                            const COLORREF rgbUnderline = INVALID_COLOR) noexcept :
+        _attrs{ CharacterAttributes::Normal },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _hyperlinkId{ 0 },
+        _underlineColor{ rgbUnderline },
+        _markKind{ MarkKind::None }
+    {
+    }
+
+    constexpr TextAttribute(const CharacterAttributes attrs, const TextColor foreground, const TextColor background, const uint16_t hyperlinkId, const TextColor underlineColor) noexcept :
+        _attrs{ attrs },
+        _foreground{ foreground },
+        _background{ background },
+        _hyperlinkId{ hyperlinkId },
+        _underlineColor{ underlineColor },
+        _markKind{ MarkKind::None }
     {
     }
 
     static void SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept;
-    static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
-    std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::basic_string_view<COLORREF> colorTable,
-                                                     const COLORREF defaultFgColor,
-                                                     const COLORREF defaultBgColor,
-                                                     const bool reverseScreenMode = false) const noexcept;
-
-    bool IsLeadingByte() const noexcept;
-    bool IsTrailingByte() const noexcept;
     bool IsTopHorizontalDisplayed() const noexcept;
     bool IsBottomHorizontalDisplayed() const noexcept;
     bool IsLeftVerticalDisplayed() const noexcept;
@@ -80,15 +105,20 @@ public:
 
     void Invert() noexcept;
 
-    friend constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept;
-    friend constexpr bool operator==(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend constexpr bool operator!=(const TextAttribute& attr, const WORD& legacyAttr) noexcept;
-    friend constexpr bool operator==(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
-    friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
+    inline bool operator==(const TextAttribute& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextAttribute)) == 0;
+    }
 
+    inline bool operator!=(const TextAttribute& other) const noexcept
+    {
+        return memcmp(this, &other, sizeof(TextAttribute)) != 0;
+    }
+
+    bool IsBold(const bool intenseIsBold) const noexcept;
     bool IsLegacy() const noexcept;
-    bool IsBold() const noexcept;
+    bool IsIntense() const noexcept;
+    bool IsFaint() const noexcept;
     bool IsItalic() const noexcept;
     bool IsBlinking() const noexcept;
     bool IsInvisible() const noexcept;
@@ -96,22 +126,47 @@ public:
     bool IsUnderlined() const noexcept;
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
+    bool IsProtected() const noexcept;
 
-    void SetBold(bool isBold) noexcept;
-    void SetItalics(bool isItalic) noexcept;
+    void SetIntense(bool isIntense) noexcept;
+    void SetFaint(bool isFaint) noexcept;
+    void SetItalic(bool isItalic) noexcept;
     void SetBlinking(bool isBlinking) noexcept;
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
-    void SetUnderline(bool isUnderlined) noexcept;
-    void SetOverline(bool isOverlined) noexcept;
+    void SetUnderlineStyle(const UnderlineStyle underlineStyle) noexcept;
+    void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
+    void SetProtected(bool isProtected) noexcept;
 
-    ExtendedAttributes GetExtendedAttributes() const noexcept;
+    constexpr void SetCharacterAttributes(const CharacterAttributes attrs) noexcept
+    {
+        _attrs = attrs;
+    }
+    constexpr CharacterAttributes GetCharacterAttributes() const noexcept
+    {
+        return _attrs;
+    }
+
+    constexpr void SetMarkAttributes(const MarkKind attrs) noexcept
+    {
+        _markKind = attrs;
+    }
+    constexpr MarkKind GetMarkAttributes() const noexcept
+    {
+        return _markKind;
+    }
+
+    bool IsHyperlink() const noexcept;
 
     TextColor GetForeground() const noexcept;
     TextColor GetBackground() const noexcept;
+    uint16_t GetHyperlinkId() const noexcept;
+    TextColor GetUnderlineColor() const noexcept;
+    UnderlineStyle GetUnderlineStyle() const noexcept;
     void SetForeground(const TextColor foreground) noexcept;
     void SetBackground(const TextColor background) noexcept;
+    void SetUnderlineColor(const TextColor color) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
     void SetIndexedForeground(const BYTE fgIndex) noexcept;
@@ -119,9 +174,12 @@ public:
     void SetIndexedForeground256(const BYTE fgIndex) noexcept;
     void SetIndexedBackground256(const BYTE bgIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
+    void SetHyperlinkId(uint16_t id) noexcept;
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
+    void SetDefaultUnderlineColor() noexcept;
+    void SetDefaultRenditionAttributes() noexcept;
 
     bool BackgroundIsDefault() const noexcept;
 
@@ -137,33 +195,36 @@ public:
         // global ^ local == false: the foreground attribute is the visible foreground, so we care about the backgrounds being identical
         const auto checkForeground = (inverted != IsReverseVideo());
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
-               // crossed out, doubly and singly underlined have a visual representation
-               WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // styled underline and crossed out have a visual representation
+               !IsUnderlined() && WI_IsFlagClear(_attrs, CharacterAttributes::CrossedOut) &&
+               // hyperlinks have a visual representation
+               !IsHyperlink() &&
                // all other attributes do not have a visual representation
-               (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
+               _attrs == other._attrs &&
                ((checkForeground && _foreground == other._foreground) ||
                 (!checkForeground && _background == other._background)) &&
-               _extendedAttrs == other._extendedAttrs;
+               IsHyperlink() == other.IsHyperlink();
     }
 
     constexpr bool IsAnyGridLineEnabled() const noexcept
     {
-        return WI_IsAnyFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_UNDERSCORE);
+        return WI_IsAnyFlagSet(_attrs, CharacterAttributes::TopGridline | CharacterAttributes::LeftGridline | CharacterAttributes::RightGridline | CharacterAttributes::BottomGridline);
+    }
+    constexpr bool HasAnyVisualAttributes() const noexcept
+    {
+        return GetCharacterAttributes() != CharacterAttributes::Normal || GetHyperlinkId() != 0;
     }
 
 private:
-    static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
-    {
-        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
-    }
+    static std::array<TextColor, 16> s_legacyForegroundColorMap;
+    static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 
-    static BYTE s_legacyDefaultForeground;
-    static BYTE s_legacyDefaultBackground;
-
-    WORD _wAttrLegacy;
-    TextColor _foreground;
-    TextColor _background;
-    ExtendedAttributes _extendedAttrs;
+    CharacterAttributes _attrs; // sizeof: 2, alignof: 2
+    uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
+    TextColor _foreground; // sizeof: 4, alignof: 1
+    TextColor _background; // sizeof: 4, alignof: 1
+    TextColor _underlineColor; // sizeof: 4, alignof: 1
+    MarkKind _markKind; // sizeof: 2, alignof: 1
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -173,13 +234,6 @@ private:
 #endif
 };
 
-#pragma pack(pop)
-// 2 for _wAttrLegacy
-// 4 for _foreground
-// 4 for _background
-// 1 for _extendedAttrs
-static_assert(sizeof(TextAttribute) <= 11 * sizeof(BYTE), "We should only need 11B for an entire TextColor. Any more than that is just waste");
-
 enum class TextAttributeBehavior
 {
     Stored, // use contained text attribute
@@ -187,23 +241,10 @@ enum class TextAttributeBehavior
     StoredOnly, // only use the contained text attribute and skip the insertion of anything else
 };
 
-constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return a._wAttrLegacy == b._wAttrLegacy &&
-           a._foreground == b._foreground &&
-           a._background == b._background &&
-           a._extendedAttrs == b._extendedAttrs;
-}
-
-constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept
-{
-    return !(a == b);
-}
-
 #ifdef UNIT_TESTING
 
 #define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format( \
-    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
+    L## #attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX
 {
@@ -216,11 +257,11 @@ namespace WEX
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
             {
                 return WEX::Common::NoThrowString().Format(
-                    L"{FG:%s,BG:%s,bold:%d,wLegacy:(0x%04x)}",
+                    L"{FG:%s,BG:%s,intense:%d,attrs:(0x%02x)}",
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
-                    attr.IsBold(),
-                    attr._wAttrLegacy);
+                    attr.IsIntense(),
+                    static_cast<DWORD>(attr._attrs));
             }
         };
     }

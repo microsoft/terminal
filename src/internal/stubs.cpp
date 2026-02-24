@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\inc\conint.h"
+#include "../inc/conint.h"
 
 using namespace Microsoft::Console::Internal;
 
@@ -19,10 +19,6 @@ using namespace Microsoft::Console::Internal;
 {
     fIsWrongWayBlocked = false;
     return S_OK;
-}
-
-void EdpPolicy::AuditClipboard(const std::wstring_view /*destinationName*/) noexcept
-{
 }
 
 [[nodiscard]] HRESULT Theming::TrySetDarkMode(HWND /*hwnd*/) noexcept

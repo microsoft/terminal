@@ -32,11 +32,11 @@ HRESULT
 WINAPI
 WDDMConGetDisplaySize(
     _In_ HANDLE hDisplay,
-    _In_ CD_IO_DISPLAY_SIZE* pDisplaySize);
+    _In_ CD_IO_DISPLAY_SIZE* pDisplaySize) noexcept;
 
 HRESULT
 WINAPI
 WDDMConUpdateDisplay(
     _In_ HANDLE hDisplay,
-    _In_ CD_IO_ROW_INFORMATION* pRowInformation,
+    _In_ const CD_IO_ROW_INFORMATION* pRowInformation,
     _In_ BOOLEAN fInvalidate);

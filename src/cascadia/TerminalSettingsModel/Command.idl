@@ -1,0 +1,59 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "AllShortcutActions.h"
+
+import "ActionArgs.idl";
+import "Profile.idl";
+import "ColorScheme.idl";
+import "TerminalWarnings.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum ShortcutAction
+    {
+        Invalid = 0, // treat Invalid as unbound actions
+
+        // When adding a new action, add them to AllShortcutActions.h!
+        #define ON_ALL_ACTIONS(action) action,
+        ALL_SHORTCUT_ACTIONS
+        INTERNAL_SHORTCUT_ACTIONS
+        #undef ON_ALL_ACTIONS
+    };
+
+    runtimeclass ActionAndArgs {
+        ActionAndArgs();
+        ActionAndArgs(ShortcutAction action, IActionArgs args);
+
+        static String Serialize(IVector<ActionAndArgs> args);
+        static IVector<ActionAndArgs> Deserialize(String content);
+
+        IActionArgs Args;
+        ShortcutAction Action;
+    };
+
+    runtimeclass Command : ISettingsModelObject
+    {
+        Command();
+        static Command NewUserCommand();
+        static Command CopyAsUserCommand(Command originalCmd);
+
+        String Name;
+        Boolean HasName();
+        String LanguageNeutralName { get; };
+        String ID { get; };
+        void GenerateID();
+
+        String Description { get; };
+
+        ActionAndArgs ActionAndArgs;
+
+        IMediaResource Icon;
+
+        Boolean HasNestedCommands { get; };
+        Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
+
+        static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
+        static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories, String iconPath);
+    }
+}

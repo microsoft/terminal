@@ -14,7 +14,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 HANDLE ConsoleInputThread::Start()
 {
     HANDLE hThread = nullptr;
-    DWORD dwThreadId = (DWORD)-1;
+    auto dwThreadId = (DWORD)-1;
 
     hThread = CreateThread(nullptr,
                            0,
@@ -27,6 +27,10 @@ HANDLE ConsoleInputThread::Start()
     {
         _hThread = hThread;
         _dwThreadId = dwThreadId;
+        if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+        {
+            LOG_IF_FAILED(func(hThread, L"Win32 Window Message Input Thread"));
+        }
     }
 
     return hThread;

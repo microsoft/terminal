@@ -1,75 +1,91 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- IRenderData.hpp
-
-Abstract:
-- This serves as the interface defining all information needed to render to the screen.
-
-Author(s):
-- Michael Niksa (MiNiksa) 17-Nov-2015
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
-#include "../../host/conimeinfo.h"
 #include "../../buffer/out/TextAttribute.hpp"
-#include "../../types/IBaseData.h"
+#include "../../renderer/inc/FontInfo.hpp"
+#include "../../types/inc/viewport.hpp"
 
 class Cursor;
+class TextBuffer;
 
 namespace Microsoft::Console::Render
 {
-    struct RenderOverlay final
+    class Renderer;
+
+    struct CompositionRange
     {
-        // This is where the data is stored
-        const TextBuffer& buffer;
-
-        // This is where the top left of the stored buffer should be overlayed on the screen
-        // (relative to the current visible viewport)
-        const COORD origin;
-
-        // This is the area of the buffer that is actually used for overlay.
-        // Anything outside of this is considered empty by the overlay and shouldn't be used
-        // for painting purposes.
-        const Microsoft::Console::Types::Viewport region;
+        size_t len; // The number of chars in Composition::text that this .attr applies to
+        TextAttribute attr;
     };
 
-    class IRenderData : public Microsoft::Console::Types::IBaseData
+    struct Composition
+    {
+        std::wstring text;
+        til::small_vector<CompositionRange, 2> attributes;
+        size_t cursorPos = 0;
+    };
+
+    // Technically this entire block of definitions is specific to the Renderer class,
+    // but defining it here allows us to use the TimerDuration definition for IRenderData.
+    struct TimerHandle
+    {
+        explicit operator bool() const noexcept
+        {
+            return id != SIZE_T_MAX;
+        }
+
+        size_t id = SIZE_T_MAX;
+    };
+    using TimerRepr = ULONGLONG;
+    using TimerDuration = std::chrono::duration<TimerRepr, std::ratio<1, 10000000>>;
+    using TimerCallback = std::function<void(Renderer&, TimerHandle)>;
+
+    class IRenderData
     {
     public:
-        ~IRenderData() = 0;
-        IRenderData(const IRenderData&) = default;
-        IRenderData(IRenderData&&) = default;
-        IRenderData& operator=(const IRenderData&) = default;
-        IRenderData& operator=(IRenderData&&) = default;
+        virtual ~IRenderData() = default;
 
-        virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
+        // This block used to be IBaseData.
+        virtual Microsoft::Console::Types::Viewport GetViewport() noexcept = 0;
+        virtual til::point GetTextBufferEndPosition() const noexcept = 0;
+        virtual TextBuffer& GetTextBuffer() const noexcept = 0;
+        virtual const FontInfo& GetFontInfo() const noexcept = 0;
+        virtual std::span<const til::point_span> GetSearchHighlights() const noexcept = 0;
+        virtual const til::point_span* GetSearchHighlightFocused() const noexcept = 0;
+        virtual std::span<const til::point_span> GetSelectionSpans() const noexcept = 0;
+        virtual void LockConsole() noexcept = 0;
+        virtual void UnlockConsole() noexcept = 0;
 
-        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
-
-        virtual COORD GetCursorPosition() const noexcept = 0;
-        virtual bool IsCursorVisible() const noexcept = 0;
-        virtual bool IsCursorOn() const noexcept = 0;
-        virtual ULONG GetCursorHeight() const noexcept = 0;
-        virtual CursorType GetCursorStyle() const noexcept = 0;
+        // This block used to be the original IRenderData.
+        virtual TimerDuration GetBlinkInterval() noexcept = 0; // Return ::zero() or ::max() for no blink.
         virtual ULONG GetCursorPixelWidth() const noexcept = 0;
-        virtual COLORREF GetCursorColor() const noexcept = 0;
-        virtual bool IsCursorDoubleWidth() const = 0;
+        virtual bool IsGridLineDrawingAllowed() noexcept = 0;
+        virtual std::wstring_view GetConsoleTitle() const noexcept = 0;
+        virtual std::wstring GetHyperlinkUri(uint16_t id) const = 0;
+        virtual std::wstring GetHyperlinkCustomId(uint16_t id) const = 0;
+        virtual std::vector<size_t> GetPatternId(const til::point location) const = 0;
 
-        virtual bool IsScreenReversed() const noexcept = 0;
+        // This block used to be IUiaData.
+        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
+        virtual bool IsSelectionActive() const = 0;
+        virtual bool IsBlockSelection() const = 0;
+        virtual void ClearSelection() = 0;
+        virtual void SelectNewRegion(const til::point coordStart, const til::point coordEnd) = 0;
+        virtual til::point GetSelectionAnchor() const noexcept = 0;
+        virtual til::point GetSelectionEnd() const noexcept = 0;
+        virtual bool IsUiaDataInitialized() const noexcept = 0;
 
-        virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
+        // Ideally this would not be stored on an interface, however ideally IRenderData should not be an interface in the first place.
+        // This is because we should have only 1 way how to represent render data across the codebase anyway, and it should
+        // be by-value in a struct so that we can snapshot it and release the terminal lock as quickly as possible.
+        const Composition& GetActiveComposition() const noexcept
+        {
+            return !snippetPreview.text.empty() ? snippetPreview : tsfPreview;
+        }
 
-        virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
-        virtual const std::wstring GetConsoleTitle() const noexcept = 0;
-
-    protected:
-        IRenderData() = default;
+        Composition tsfPreview;
+        Composition snippetPreview;
     };
-
-    // See docs/virtual-dtors.md for an explanation of why this is weird.
-    inline IRenderData::~IRenderData() {}
 }

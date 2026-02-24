@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <!-- This project has no PGO, but the build will fail if the target doesn't exist. -->
+  <Target Name="MergePGOCounts" />
+
+</Project>

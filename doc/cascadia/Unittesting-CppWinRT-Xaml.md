@@ -86,7 +86,7 @@ project from our `TerminalAppLib` project:
     duplicate type definitions)-->
 
     <Reference Include="Microsoft.Terminal.Settings">
-      <HintPath>$(SolutionDir)$(Platform)\$(Configuration)\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -122,7 +122,7 @@ dir to your `AdditionalLibraryDirectories`, and adding the lib to your
   <ItemDefinitionGroup>
     <Link>
       <!-- Manually link with the TerminalAppLib.lib we've built. -->
-      <AdditionalLibraryDirectories>$(SolutionDir)\$(Platform)\$(Configuration)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OpenConsoleCommonOutDir)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 
       <AdditionalDependencies>TerminalAppLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -166,7 +166,7 @@ should be working just the same as before.
 Now that you have a static library project, you can start building your unittest
 dll. Start by creating a new directory for your unittest code, and creating a
 `.vcxproj` for a TAEF unittest dll. For the Terminal solution, we use the TAEF
-nuget package `Taef.Redist.Wlk`.
+nuget package `Microsoft.Taef`.
 
 ### Referencing your C++/WinRT static lib
 
@@ -260,15 +260,15 @@ this:
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(SolutionDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
 
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 ```
 
-Again, verify the correct paths to your dependant C++/WinRT dlls, as they may be
+Again, verify the correct paths to your dependent C++/WinRT dlls, as they may be
 different than the above
 
 #### Activating the manifest from TAEF
@@ -380,7 +380,7 @@ Here's the AppxManifest we're using:
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.26100.0" />
     <PackageDependency Name="Microsoft.VCLibs.140.00.Debug" MinVersion="14.0.27023.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
     <PackageDependency Name="Microsoft.VCLibs.140.00.Debug.UWPDesktop" MinVersion="14.0.27027.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
   </Dependencies>
@@ -446,9 +446,9 @@ before. The complete `PostBuildEvent` now looks like this:
 
         (xcopy /Y &quot;$(SolutionDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
 
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -517,7 +517,7 @@ This is because of a few key lines we already put in the appxmanifest:
 
 ```xml
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.26100.0" />
     <PackageDependency Name="Microsoft.VCLibs.140.00.Debug" MinVersion="14.0.27023.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
     <PackageDependency Name="Microsoft.VCLibs.140.00.Debug.UWPDesktop" MinVersion="14.0.27027.1" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
   </Dependencies>

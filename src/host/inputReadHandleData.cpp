@@ -20,7 +20,7 @@ bool INPUT_READ_HANDLE_DATA::IsInputPending() const
 
 bool INPUT_READ_HANDLE_DATA::IsMultilineInput() const
 {
-    FAIL_FAST_IF(!_isInputPending); // we shouldn't have multiline input without a pending input.
+    assert(_isInputPending); // we shouldn't have multiline input without a pending input.
     return _isMultilineInput;
 }
 
@@ -60,7 +60,7 @@ void INPUT_READ_HANDLE_DATA::IncrementReadCount()
 
 void INPUT_READ_HANDLE_DATA::DecrementReadCount()
 {
-    const size_t prevCount = _readCount.fetch_sub(1);
+    const auto prevCount = _readCount.fetch_sub(1);
     FAIL_FAST_IF(prevCount == 0); // we just underflowed, that's a programming error.
 }
 

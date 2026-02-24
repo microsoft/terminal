@@ -1,18 +1,38 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../Command.idl";
+import "Tab.idl";
+import "HighlightedTextControl.idl";
+import "FilteredCommand.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.Grid
+    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
     {
         CommandPalette();
 
-        Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
+        String NoMatchesText { get; };
+        String SearchBoxPlaceholderText { get; };
+        String PrefixCharacter { get; };
+        String ControlName { get; };
+        String ParentCommandName { get; };
+        String ParsedCommandLineText { get; };
 
-        void SetActions(Windows.Foundation.Collections.IVector<Command> actions);
+        Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 
-        void SetDispatch(ShortcutActionDispatch dispatch);
+        void SetTabs(Windows.Foundation.Collections.IObservableVector<Tab> tabs, Windows.Foundation.Collections.IObservableVector<Tab> mruTabs);
+
+        void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
+
+        void SelectNextItem(Boolean moveDown);
+
+        void EnableCommandPaletteMode(Microsoft.Terminal.Settings.Model.CommandPaletteLaunchMode launchMode);
+        void EnableTabSwitcherMode(UInt32 startIdx, Microsoft.Terminal.Settings.Model.TabSwitcherMode tabSwitcherMode);
+        void EnableTabSearchMode();
+
+        event Windows.Foundation.TypedEventHandler<CommandPalette, Tab> SwitchToTabRequested;
+        event Windows.Foundation.TypedEventHandler<CommandPalette, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
+        event Windows.Foundation.TypedEventHandler<CommandPalette, String> CommandLineExecutionRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;
     }
 }

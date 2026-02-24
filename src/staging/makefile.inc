@@ -1,0 +1,3 @@
+$(OBJ_PATH)\$(O)\TilFeatureStaging.h: ..\features.xml
+	set BUILDMSG=Building til::feature flag header...
+	powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy ByPass -Command ..\..\tools\Generate-FeatureStagingHeader.ps1 "$**" -Branding WindowsInbox -Branch $(BUILDBRANCH) -OutputPath "$@"

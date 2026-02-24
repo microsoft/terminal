@@ -1,8 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    
-    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
     <RootNamespace>Microsoft.Terminal.Wpf</RootNamespace>
     <AssemblyName>Microsoft.Terminal.Wpf</AssemblyName>
     <UseWpf>true</UseWpf>
@@ -15,6 +14,12 @@
     <Version>0.1</Version>
   </PropertyGroup>
   
+  <PropertyGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>true</DelaySign>
+    <AssemblyOriginatorKeyFile>..\..\..\build\config\272MSSharedLibSN2048.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json">
       <Visible>true</Visible>
@@ -29,15 +34,35 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Install an empty one for CSPROJ projects as they don't PGO. -->
+  <Target Name="MergePGOCounts" />
+
   <Target Name="CollectNativePackContents">
     <ItemGroup>
-      <None Include="$(RepoBinPath)\Win32\$(Configuration)\PublicTerminalCore.dll">
+      <None Include="$(RepoBinPath)\Win32\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll">
         <Pack>true</Pack>
         <PackagePath>runtimes\win-x86\native\</PackagePath>
       </None>
-      <None Include="$(RepoBinPath)\x64\$(Configuration)\PublicTerminalCore.dll">
+      <None Include="$(RepoBinPath)\x64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll">
         <Pack>true</Pack>
         <PackagePath>runtimes\win-x64\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\ARM64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-arm64\native\</PackagePath>
+      </None>
+
+      <None Include="$(RepoBinPath)\Win32\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x86\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\x64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x64\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\ARM64\$(Configuration)\Microsoft.Terminal.Control\Microsoft.Terminal.Control.pdb">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-arm64\native\</PackagePath>
       </None>
     </ItemGroup>
   </Target>

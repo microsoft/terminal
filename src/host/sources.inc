@@ -13,12 +13,6 @@
 
 
 # -------------------------------------
-# Preprocessor Settings
-# -------------------------------------
-
-C_DEFINES               = $(C_DEFINES) -DFE_IME
-
-# -------------------------------------
 # Compiler Settings
 # -------------------------------------
 
@@ -38,7 +32,6 @@ TARGET_DESTINATION      = retail
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # Defines IME and Codepage support
-W32_SB                  = 1
 
 
 # -------------------------------------
@@ -52,8 +45,6 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
-    ..\CursorBlinker.cpp   \
-    ..\popup.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
     ..\VtIo.cpp   \
@@ -75,13 +66,10 @@ SOURCES = \
     ..\outputStream.cpp \
     ..\stream.cpp    \
     ..\dbcs.cpp      \
-    ..\convarea.cpp  \
     ..\screenInfo.cpp \
-    ..\ScreenBufferRenderTarget.cpp \
     ..\_output.cpp   \
     ..\_stream.cpp   \
     ..\utils.cpp     \
-    ..\telemetry.cpp \
     ..\tracing.cpp   \
     ..\registry.cpp  \
     ..\settings.cpp  \
@@ -93,25 +81,20 @@ SOURCES = \
     ..\writeData.cpp \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
-    ..\utf8ToWideCharParser.cpp \
-    ..\conareainfo.cpp \
-    ..\conimeinfo.cpp \
-    ..\conattrs.cpp \
+    ..\AccessibilityNotifier.cpp \
     ..\ConsoleArguments.cpp \
-    ..\CommandNumberPopup.cpp \
-    ..\CommandListPopup.cpp \
-    ..\CopyFromCharPopup.cpp \
-    ..\CopyToCharPopup.cpp \
 
 
 # -------------------------------------
 # Sources, Headers, and Libraries
 # -------------------------------------
 
+!if "$(USE_CLANG)" != "1"
 PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 PRECOMPILED_PCH         = precomp.pch
 PRECOMPILED_OBJ         = precomp.obj
+!endif
 
 INCLUDES = \
     $(INCLUDES); \
@@ -141,6 +124,7 @@ CRTLIBS = \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-core-commandlinetoargv-l1.lib \
     $(ONECORE_INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
@@ -150,8 +134,8 @@ TARGETLIBS = \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\dxgi.lib \
     $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3d11.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-mm-playsound-l1.lib \
+    $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-imm-l1.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
-    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-edputil-policy-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-draw-l1.lib \
@@ -177,10 +161,15 @@ TARGETLIBS = \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-winstamin-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uxtheme-themes-l1.lib \
+    $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-dataobject-l1.lib \
     $(ONECORESHELL_INTERNAL_LIB_VPATH_L)\api-ms-win-shell-namespace-l1.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-uiacore-l1.lib \
+    $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-usp10-l1.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_PATH)\ntdll.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
     $(WINCORE_OBJ_PATH)\console\conint\$(O)\conint.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\buffer\out\lib\$(O)\conbufferout.lib \
@@ -189,10 +178,11 @@ TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\terminal\input\lib\$(O)\ConTermInput.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\parser\lib\$(O)\ConTermParser.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\audio\midi\lib\$(O)\ConAudioMidi.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
-    $(WINCORE_OBJ_PATH)\console\open\src\renderer\vt\lib\$(O)\ConRenderVt.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\atlas\$(O)\ConRenderAtlas.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\server\lib\$(O)\ConServer.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\win32\lib\$(O)\ConInteractivityWin32Lib.lib \
@@ -200,17 +190,23 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
 
 DELAYLOAD = \
-    PROPSYS.dll; \
     D2D1.dll; \
+    D3D11.dll; \
     DWrite.dll; \
     DXGI.dll; \
-    D3D11.dll; \
     OLEAUT32.dll; \
+    PROPSYS.dll; \
+    icu.dll; \
+    api-ms-win-core-com-l1.dll; \
+    api-ms-win-core-registry-l2.dll; \
     api-ms-win-mm-playsound-l1.dll; \
+    ext-ms-win-imm-l1.dll; \
+    api-ms-win-shcore-obsolete-l1.dll; \
     api-ms-win-shcore-scaling-l1.dll; \
+    api-ms-win-shell-dataobject-l1.dll; \
     api-ms-win-shell-namespace-l1.dll; \
     ext-ms-win-dwmapi-ext-l1.dll; \
-    ext-ms-win-edputil-policy-l1.dll; \
+    ext-ms-win-usp10-l1.dll; \
     ext-ms-win-gdi-dc-l1.dll; \
     ext-ms-win-gdi-dc-create-l1.dll; \
     ext-ms-win-gdi-draw-l1.dll; \
@@ -236,12 +232,10 @@ DELAYLOAD = \
     ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \
     ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
     ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
+    ext-ms-win-rtcore-ntuser-winstamin-l1.dll; \
+    ext-ms-win-rtcore-ntuser-syscolors-l1.dll; \
     ext-ms-win-shell-shell32-l1.dll; \
     ext-ms-win-uiacore-l1.dll; \
     ext-ms-win-uxtheme-themes-l1.dll; \
 
 DLOAD_ERROR_HANDLER = kernelbase
-
-# Add /d2:-notypeopt to disable optimization bug caused by LKG9. Bug #25439646
-USER_C_FLAGS=/d2notypeopt $(USER_C_FLAGS)
-LINKER_FLAGS=/d2:-notypeopt $(LINKER_FLAGS)

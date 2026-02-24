@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 using System;
@@ -236,11 +236,11 @@ namespace VTApp
                         break;
                     case 'e':
                         Console.Write(CSI);
-                        Console.Write("4m");
+                        Console.Write("53m");
                         break;
                     case 'd':
                         Console.Write(CSI);
-                        Console.Write("24m");
+                        Console.Write("55m");
                         break;
                     case 'r':
                         Console.Write(CSI);
@@ -260,7 +260,7 @@ namespace VTApp
                         break;
                     case '9':
                         Console.Write(CSI);
-                        Console.Write("1;37;43;4m");
+                        Console.Write("1;37;43;53m");
                         break;
                     case '(':
                         Console.Write(CSI);
@@ -287,15 +287,7 @@ namespace VTApp
 
                             if (Pinvoke.GetConsoleMode(hCon, out mode))
                             {
-                                if ((mode & Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0)
-                                {
-                                    mode &= ~Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-                                }
-                                else
-                                {
-                                    mode |= Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-                                }
-
+                                mode ^= Pinvoke.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
                                 Pinvoke.SetConsoleMode(hCon, mode);
                             }
                             break;
@@ -307,14 +299,7 @@ namespace VTApp
                             int mode;
                             if (Pinvoke.GetConsoleMode(hCon, out mode))
                             {
-                                if ((mode & Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT) != 0)
-                                {
-                                    mode &= ~Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT;
-                                }
-                                else
-                                {
-                                    mode |= Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT;
-                                }
+                                mode ^=  Pinvoke.ENABLE_VIRTUAL_TERMINAL_INPUT;
                                 mode &= ~Pinvoke.ENABLE_PROCESSED_INPUT;
                                 Pinvoke.SetConsoleMode(hCon, mode);
                             }

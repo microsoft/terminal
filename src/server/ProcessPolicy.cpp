@@ -5,7 +5,7 @@
 
 #include "ProcessPolicy.h"
 
-#include "..\inc\conint.h"
+#include "../inc/conint.h"
 
 // Routine Description:
 // - Constructs a new instance of the process policy class.
@@ -20,9 +20,7 @@ ConsoleProcessPolicy::ConsoleProcessPolicy(const bool fCanReadOutputBuffer,
 
 // Routine Description:
 // - Destructs an instance of the process policy class.
-ConsoleProcessPolicy::~ConsoleProcessPolicy()
-{
-}
+ConsoleProcessPolicy::~ConsoleProcessPolicy() = default;
 
 // Routine Description:
 // - Opens the process token for the given handle and resolves the application model policies
@@ -35,13 +33,13 @@ ConsoleProcessPolicy::~ConsoleProcessPolicy()
 ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(const HANDLE hProcess)
 {
     // If we cannot determine the policy status, then we block access by default.
-    bool fCanReadOutputBuffer = false;
-    bool fCanWriteInputBuffer = false;
+    auto fCanReadOutputBuffer = false;
+    auto fCanWriteInputBuffer = false;
 
     wil::unique_handle hToken;
     if (LOG_IF_WIN32_BOOL_FALSE(OpenProcessToken(hProcess, TOKEN_READ, &hToken)))
     {
-        bool fIsWrongWayBlocked = true;
+        auto fIsWrongWayBlocked = true;
 
         // First check AppModel Policy:
         LOG_IF_FAILED(Microsoft::Console::Internal::ProcessPolicy::CheckAppModelPolicy(hToken.get(), fIsWrongWayBlocked));

@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- adaptDispatch.hpp
+- InteractDispatch.hpp
 
 Abstract:
 - This serves as the Windows Console API-specific implementation of the
@@ -16,25 +16,26 @@ Author(s):
 
 #include "DispatchTypes.hpp"
 #include "IInteractDispatch.hpp"
-#include "conGetSet.hpp"
+#include "../../host/outputStream.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
     class InteractDispatch : public IInteractDispatch
     {
     public:
-        InteractDispatch(std::unique_ptr<ConGetSet> pConApi);
-
-        bool WriteInput(std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-        bool WriteCtrlKey(const KeyEvent& event) override;
-        bool WriteString(const std::wstring_view string) override;
-        bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
-        bool MoveCursor(const size_t row, const size_t col) override;
+        InteractDispatch();
 
         bool IsVtInputEnabled() const override;
 
+        void WriteInput(const std::span<const INPUT_RECORD>& inputEvents) override;
+        void WriteCtrlKey(const INPUT_RECORD& event) override;
+        void WriteString(std::wstring_view string) override;
+        void WriteStringRaw(std::wstring_view string) override;
+        void WindowManipulation(DispatchTypes::WindowManipulationType function, VTParameter parameter1, VTParameter parameter2) override;
+        void MoveCursor(VTInt row, VTInt col) override;
+        void FocusChanged(bool focused) override;
+
     private:
-        std::unique_ptr<ConGetSet> _pConApi;
+        ConhostInternalGetSet _api;
     };
 }

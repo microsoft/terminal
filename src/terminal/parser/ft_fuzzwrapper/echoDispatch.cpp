@@ -17,8 +17,3 @@ void EchoDispatch::PrintString(const std::wstring_view string)
     const std::wstring nullTermString(string); // string_view not guaranteed null terminated, but wprintf needs it.
     wprintf(L"PrintString: \"%s\" (%zd chars)\r\n", nullTermString.data(), nullTermString.size());
 }
-
-void EchoDispatch::Execute(const wchar_t wchControl)
-{
-    wprintf(L"Execute: 0x%x\r\n", wchControl);
-}

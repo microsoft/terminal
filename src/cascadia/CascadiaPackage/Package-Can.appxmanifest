@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:uap4="http://schemas.microsoft.com/appx/manifest/uap/windows10/4"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:uap17="http://schemas.microsoft.com/appx/manifest/uap/windows10/17"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:virtualization="http://schemas.microsoft.com/appx/manifest/virtualization/windows10"
+  IgnorableNamespaces="uap mp rescap uap3 uap17 desktop6 virtualization">
+
+  <Identity
+    Name="Microsoft.WindowsTerminalCanary"
+    Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    Version="0.0.1.0" />
+
+  <Properties>
+    <DisplayName>ms-resource:AppStoreNameCan</DisplayName>
+    <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
+    <Logo>Images\StoreLogo.png</Logo>
+    <!-- Older versions of Windows 10 respect this -->
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
+    <!-- Newer versions of Windows 10 plus all versions of Windows 11 respect this -->
+    <virtualization:RegistryWriteVirtualization>
+      <virtualization:ExcludedKeys>
+        <virtualization:ExcludedKey>HKEY_CURRENT_USER\Console\%%Startup</virtualization:ExcludedKey>
+      </virtualization:ExcludedKeys>
+    </virtualization:RegistryWriteVirtualization>
+    <uap17:UpdateWhileInUse>defer</uap17:UpdateWhileInUse>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="EN-US" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="$targetentrypoint$">
+      <uap:VisualElements
+        DisplayName="ms-resource:AppNameCan"
+        Description="ms-resource:AppDescriptionCan"
+        BackgroundColor="transparent"
+        Square150x150Logo="Images\Square150x150Logo.png"
+        Square44x44Logo="Images\Square44x44Logo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Images\Wide310x150Logo.png"
+          Square71x71Logo="Images\SmallTile.png"
+          Square310x310Logo="Images\LargeTile.png"
+          ShortName="ms-resource:AppShortNameCan">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo"/>
+            <uap:ShowOn Tile="wide310x150Logo"/>
+            <uap:ShowOn Tile="square310x310Logo"/>
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
+      </uap:VisualElements>
+
+      <Extensions>
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="wt.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="wt.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtensionHost">
+          <uap3:AppExtensionHost>
+            <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
+          </uap3:AppExtensionHost>
+        </uap3:Extension>
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask
+            TaskId="StartTerminalOnLoginTask"
+            Enabled="false"
+            DisplayName="ms-resource:AppNameCan" />
+        </uap5:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.console.host"
+                Id="OpenConsole-Can"
+                DisplayName="OpenConsole Canary"
+                Description="Console host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{A854D02A-F2FE-44A5-BB24-D03F4CF830D4}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
+                Id="Terminal-Can"
+                DisplayName="Terminal Canary"
+                Description="Terminal host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>{1706609C-A4CE-4C0D-B7D2-C19BF66398A5}</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <com:Extension Category="windows.comInterface">
+            <com:ComInterface>
+                <com:ProxyStub Id="1D1852F4-ADAD-42B6-9A43-9437AAAD7717" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
+                <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="1D1852F4-ADAD-42B6-9A43-9437AAAD7717"/>
+                <com:Interface Id="6F23DA90-15C5-4203-9DB0-64E73F1B1B00" ProxyStubClsid="1D1852F4-ADAD-42B6-9A43-9437AAAD7717"/> <!-- ITerminalHandoff3 -->
+                <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="1D1852F4-ADAD-42B6-9A43-9437AAAD7717"/>
+            </com:ComInterface>
+        </com:Extension>
+        <com:Extension Category="windows.comServer">
+            <com:ComServer>
+                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
+                    <com:Class Id="A854D02A-F2FE-44A5-BB24-D03F4CF830D4"/>
+                </com:ExeServer>
+                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
+                    <com:Class Id="1706609C-A4CE-4C0D-B7D2-C19BF66398A5"/>
+                </com:ExeServer>
+                <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
+                    <com:Class Id="6119575F-6918-4392-AF16-C2C627AF9416" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
+                </com:SurrogateServer>
+            </com:ComServer>
+        </com:Extension>
+        <desktop4:Extension Category="windows.fileExplorerContextMenus">
+            <desktop4:FileExplorerContextMenus>
+                <desktop5:ItemType Type="Directory">
+                    <desktop5:Verb Id="OpenTerminalCan" Clsid="6119575F-6918-4392-AF16-C2C627AF9416" />
+                </desktop5:ItemType>
+                <desktop5:ItemType Type="Directory\Background">
+                  <desktop5:Verb Id="OpenTerminalCan" Clsid="6119575F-6918-4392-AF16-C2C627AF9416" />
+                </desktop5:ItemType>
+            </desktop4:FileExplorerContextMenus>
+        </desktop4:Extension>
+
+      </Extensions>
+
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
+    <rescap:Capability Name="appLicensing" />
+  </Capabilities>
+
+  <mp:PhoneIdentity
+    PhoneProductId="348ff861-8d83-47b2-a740-15f8a096dcae"
+    PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+</Package>

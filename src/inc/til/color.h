@@ -8,17 +8,44 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // color is a universal integral 8bpp RGBA (0-255) color type implicitly convertible to/from
     // a number of other color types.
 #pragma warning(push)
-    // we can't depend on GSL here (some libraries use BLOCK_GSL), so we use static_cast for explicit narrowing
-#pragma warning(disable : 26472)
+    // we can't depend on GSL here, so we use static_cast for explicit narrowing
+#pragma warning(disable : 26472) // Don't use a static_cast for arithmetic conversions. Use brace initialization, gsl::narrow_cast or gsl::narrow (type.1).
+#pragma warning(disable : 26495) // Variable 'til::color::<unnamed-tag>::abgr' is uninitialized. Always initialize a member variable (type.6).
     struct color
     {
-        uint8_t r, g, b, a;
+        // Clang (10) has no trouble optimizing the COLORREF conversion operator, below, to a
+        // simple 32-bit load with mask (!) even though it's a series of bit shifts across
+        // multiple struct members.
+        // CL (19.24) doesn't make the same optimization decision, and it emits three 8-bit loads
+        // and some shifting.
+        // In any case, the optimization only applies at -O2 (clang) and above.
+        // Here, we leverage the spec-legality of using unions for type conversions and the
+        // overlap of four uint8_ts and a uint32_t to make the conversion very obvious to
+        // both compilers.
+#pragma warning(push)
+        // CL will complain about the both nameless and anonymous struct.
+#pragma warning(disable : 4201)
+        union
+        {
+            struct
+            {
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ // Clang, GCC
+                uint8_t a, b, g, r;
+#else
+                uint8_t r, g, b, a;
+#endif
+            };
+            uint32_t abgr;
+        };
+#pragma warning(pop)
 
         constexpr color() noexcept :
             r{ 0 },
             g{ 0 },
             b{ 0 },
-            a{ 0 } {}
+            a{ 0 }
+        {
+        }
 
         constexpr color(uint8_t _r, uint8_t _g, uint8_t _b) noexcept :
             r{ _r },
@@ -40,21 +67,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 #ifdef _WINDEF_
         constexpr color(COLORREF c) :
-            r{ static_cast<uint8_t>(c & 0xFF) },
-            g{ static_cast<uint8_t>((c & 0xFF00) >> 8) },
-            b{ static_cast<uint8_t>((c & 0xFF0000) >> 16) },
-            a{ 255 }
+            abgr{ static_cast<uint32_t>(c | 0xFF000000u) }
         {
         }
 
-        operator COLORREF() const noexcept
+        constexpr operator COLORREF() const noexcept
         {
-            return static_cast<COLORREF>(r) | (static_cast<COLORREF>(g) << 8) | (static_cast<COLORREF>(b) << 16);
+            return static_cast<COLORREF>(abgr & 0x00FFFFFFu);
         }
 #endif
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing integral R, G, B, A (case sensitive.)
+        // - Converting constructor for any other color structure type containing integral R, G, B, A (case-sensitive.)
         // Notes:
         // - This and all below conversions make use of std::enable_if and a default parameter to disambiguate themselves.
         //   enable_if will result in an <error-type> if the constraint within it is not met, which will make this
@@ -69,7 +93,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing integral r, g, b, a (case sensitive.)
+        // - Converting constructor for any other color structure type containing integral r, g, b, a (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().r)> && std::is_integral_v<decltype(std::declval<TOther>().a)>, int> /*sentinel*/ = 0) :
             r{ static_cast<uint8_t>(other.r) },
@@ -80,7 +104,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing floating-point R, G, B, A (case sensitive.)
+        // - Converting constructor for any other color structure type containing floating-point R, G, B, A (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().R)> && std::is_floating_point_v<decltype(std::declval<TOther>().A)>, float> /*sentinel*/ = 1.0f) :
             r{ static_cast<uint8_t>(other.R * 255.0f) },
@@ -91,7 +115,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Method Description:
-        // - Converting constructor for any other color structure type containing floating-point r, g, b, a (case sensitive.)
+        // - Converting constructor for any other color structure type containing floating-point r, g, b, a (case-sensitive.)
         template<typename TOther>
         constexpr color(const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().r)> && std::is_floating_point_v<decltype(std::declval<TOther>().a)>, float> /*sentinel*/ = 1.0f) :
             r{ static_cast<uint8_t>(other.r * 255.0f) },
@@ -111,6 +135,26 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
+        // source-over alpha blending/composition.
+        // `this` (source/top) will be blended "over" `destination` (bottom).
+        // `this` and `destination` are expected to be in straight alpha.
+        // See https://en.wikipedia.org/wiki/Alpha_compositing#Description
+        constexpr color layer_over(const color& destination) const
+        {
+            const auto aInverse = (255 - a) / 255.0f;
+            const auto resultA = a + destination.a * aInverse;
+            const auto resultR = (r * a + destination.r * destination.a * aInverse) / resultA;
+            const auto resultG = (g * a + destination.g * destination.a * aInverse) / resultA;
+            const auto resultB = (b * a + destination.b * destination.a * aInverse) / resultA;
+
+            return {
+                static_cast<uint8_t>(resultR + 0.5f),
+                static_cast<uint8_t>(resultG + 0.5f),
+                static_cast<uint8_t>(resultB + 0.5f),
+                static_cast<uint8_t>(resultA + 0.5f),
+            };
+        }
+
 #ifdef D3DCOLORVALUE_DEFINED
         constexpr operator D3DCOLORVALUE() const
         {
@@ -124,20 +168,41 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Windows::UI::Color() const
+        constexpr operator winrt::Windows::UI::Color() const
         {
-            winrt::Windows::UI::Color ret;
-            ret.R = r;
-            ret.G = g;
-            ret.B = b;
-            ret.A = a;
-            return ret;
+            return { a, r, g, b };
         }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+        constexpr color(const winrt::Microsoft::Terminal::Core::Color& coreColor) :
+            color(coreColor.R, coreColor.G, coreColor.B, coreColor.A)
+        {
+        }
+
+        constexpr operator winrt::Microsoft::Terminal::Core::Color() const noexcept
+        {
+            return { r, g, b, a };
+        }
+#endif
+
+        // Helper for converting a hue [0, 1) to an RGB value.
+        // Credit to https://www.chilliant.com/rgb2hsv.html
+        static til::color from_hue(float hue)
+        {
+            const float R = abs(hue * 6 - 3) - 1;
+            const float G = 2 - abs(hue * 6 - 2);
+            const float B = 2 - abs(hue * 6 - 4);
+            return color{
+                base::saturated_cast<uint8_t>(255.f * std::clamp(R, 0.f, 1.f)),
+                base::saturated_cast<uint8_t>(255.f * std::clamp(G, 0.f, 1.f)),
+                base::saturated_cast<uint8_t>(255.f * std::clamp(B, 0.f, 1.f))
+            };
+        }
+
         constexpr bool operator==(const til::color& other) const
         {
-            return r == other.r && g == other.g && b == other.b && a == other.a;
+            return abgr == other.abgr;
         }
 
         constexpr bool operator!=(const til::color& other) const
@@ -147,29 +212,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         std::wstring to_string() const
         {
-            std::wstringstream wss;
-            wss << L"Color " << ToHexString(false);
-            return wss.str();
+            return ToHexString(false);
         }
+
         std::wstring ToHexString(const bool omitAlpha = false) const
         {
-            std::wstringstream wss;
-            wss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
-            // Force the compiler to promote from byte to int. Without it, the
-            // stringstream will try to write the components as chars
-            if (!omitAlpha)
+            auto str = fmt::format(FMT_COMPILE(L"#{:02X}{:02X}{:02X}{:02X}"), r, g, b, a);
+            if (omitAlpha)
             {
-                wss << std::setw(2) << static_cast<int>(a);
+                str.resize(7);
             }
-            wss << std::setw(2) << static_cast<int>(r);
-            wss << std::setw(2) << static_cast<int>(g);
-            wss << std::setw(2) << static_cast<int>(b);
-
-            return wss.str();
+            return str;
         }
     };
 #pragma warning(pop)
 }
+
+static_assert(sizeof(til::color) == sizeof(uint32_t));
 
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution

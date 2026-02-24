@@ -1,25 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- By default, binplace our output under the bin/ directory in the root of
-       the project. The other non-cppwinrt projects are binplaced there as well.
-       However, Cascadia projects want to be built into an appx, and the wapproj
-       that consumes them will complain if you do this. So they'll set
-       NoOutputRedirection before including this props file.
-  -->
-  <PropertyGroup Condition="'$(NoOutputRedirection)'!='true'">
-    <OutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutputPath>
+       the project. -->
+  <PropertyGroup>
+    <!-- We're controlling the output paths manually; do not let the rest of VS override them. -->
+    <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
+
     <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <!-- C++/WinRT projects get their own project-specific output directories. -->
+    <OutDir Condition="'$(OpenConsoleCppWinRTProject)'=='true'">$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <OutputPath>$(OutDir)</OutputPath>
+
     <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntermediateOutputPath>$(IntDir)</IntermediateOutputPath>
+
+    <!-- Both pairs of OutDir/OutputPath and IntDir/IntermediateOutputPath must be set;
+         different parts of the project infrastructure use them (without rhyme or reason.) -->
   </PropertyGroup>
+
   <PropertyGroup>
     <!-- This one is always set so that non-redirected projects can depend on it. -->
     <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OpenConsoleCommonOutDir>
   </PropertyGroup>
 
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-
   <ItemGroup Label="ProjectConfigurations">
-  <ProjectConfiguration Include="AuditMode|Win32">
+    <ProjectConfiguration Include="AuditMode|Win32">
       <Configuration>AuditMode</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
@@ -35,12 +40,20 @@
       <Configuration>AuditMode</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|Win32">
+      <Configuration>Fuzzing</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|x64">
+      <Configuration>Fuzzing</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="AuditMode|ARM64">
@@ -55,18 +68,46 @@
       <Configuration>Release</Configuration>
       <Platform>ARM64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Fuzzing|ARM64">
+      <Configuration>Fuzzing</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
 
   <PropertyGroup Label="Globals">
-    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.22621.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion Condition="'$(WindowsTargetPlatformMinVersion)' == ''">10.0.18362.0</WindowsTargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup>
+    <!--
+      We don't need to use HybridCRT for Fuzzing, so just skip it entirely.
+      Fuzzing requires the address sanitizer runtime library plus the fuzzing
+      harness. They're probably not compatible.
+
+      Audit, however, *does* require linking components built in Release mode...
+    -->
+    <ConfigurationSupportsHybridCRT Condition="'$(Configuration)'=='Fuzzing'">false</ConfigurationSupportsHybridCRT>
+    <ConfigurationSupportsHybridCRT Condition="'$(ConfigurationSupportsHybridCRT)'==''">true</ConfigurationSupportsHybridCRT>
   </PropertyGroup>
 
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
+    <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
+    <!--
+      We must set this to True for projects that do not contain any ClCompile entries.
+      The Link task guesses whether to enable CFG based on ClCompile->ControlFlowGuard.
+      Without any ClCompile entries, there's nothing to guess!
+      This impacts our dll projects that only link a lib.
+    -->
+    <LinkControlFlowGuard>true</LinkControlFlowGuard>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -76,65 +117,116 @@
       <TreatSpecificWarningsAsErrors>4189;4100;4242;4389;4244</TreatSpecificWarningsAsErrors>
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
       <TreatWarningAsError>true</TreatWarningAsError>
-      <!-- disable warning on nameless structs (4201) -->
-      <DisableSpecificWarnings>4201;4312;4467;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!--
+        C4201: nonstandard extension used: nameless struct/union
+          Conhost code uses a lot of nameless structs/unions.
+        C4312: 'type cast': conversion from 'A' to 'B' of greater size
+          Conhost code converts DWORDs to HANDLEs for instance.
+        C4467: usage of ATL attributes is deprecated
+          Conhost code still uses ATL.
+        C26445: Do not assign std::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
+          Even for MSVC v19.32 this is actually far from true. Copying (as opposed to referencing) larger
+          than register-sized structures is fairly expensive. Example: https://godbolt.org/z/oPco88PaP
+        C26434: Method 'A' hides a non-virtual method 'B' (c.128).
+        C26456: Operator 'A' hides a non-virtual operator 'B' (c.128)
+          I think these rules are for when you fully bought into OOP?
+          We didn't and it breaks WRL and large parts of conhost code.
+        C26478: Don't use std::move on constant variables. (es.56).
+          This diagnostic is broken in VS 17.7 which our CI currently uses. It's fixed in 17.8.
+        C26494: Variable 'index' is uninitialized. Always initialize an object (type. 5).
+          This diagnostic is broken in VS 17.7 which our CI currently uses. It's fixed in 17.8.
+      -->
+      <DisableSpecificWarnings>4201;4312;4467;5105;26434;26445;26456;26478;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\gsl\include;$(SolutionDir)\dep\wil\include;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\fmt\include;$(SolutionDir)\oss\dynamic_bitset;$(SolutionDir)\oss\libpopcnt;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\inc;$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\oss\chromium;$(SolutionDir)\oss\interval_tree;$(SolutionDir)\oss\pcg\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalOptions>/std:c++17 /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ConformanceMode>true</ConformanceMode>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <!--
+        Conformance options that are off by default at the time of writing:
+          /Zc:__cplusplus    Enable the __cplusplus macro to report the supported standard.
+          /Zc:__STDC__       Enable the __STDC__ macro to report the C standard is supported.
+          /Zc:enumTypes      Enable Standard C++ rules for enum type deduction.
+          /Zc:inline         Remove unreferenced functions or data if they're COMDAT or have internal linkage only.
+          /Zc:templateScope  Enforce Standard C++ template parameter shadowing rules.
+          /Zc:throwingNew    Assume operator new throws on failure.
+        /diagnostics:caret   Places ^^^^^ under the exact location of the issue. The default only shows the line number.
+      -->
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:__cplusplus /Zc:__STDC__ /Zc:enumTypes /Zc:inline /Zc:templateScope /Zc:throwingNew /diagnostics:caret</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
-      <ProgramDatabaseFile>$(OutDir)$(TargetName)FullPDB.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
+      <!-- Force full debugging info (not fastlink) in all configurations.
+           Our "App container" or WinRT projects already do this in Release,
+           and it can only help in debug. -->
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Work around the Windows Store platform not specifying a TargetMachine for static libraries -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
   </ItemDefinitionGroup>
 
   <!-- For Debug ONLY -->
   <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
-    <LinkIncremental>false</LinkIncremental>
+    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;DBG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SetChecksum>false</SetChecksum>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
 
   <!-- For Release ONLY -->
-  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode' Or '$(Configuration)'=='Fuzzing'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
 
-  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode' Or '$(Configuration)'=='Fuzzing'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/debugtype:cv,fixup %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
+
+  <!-- Install an empty one for projects that won't have one.
+       The following import will override it when it needs to happen. -->
+  <Target Name="MergePGOCounts" />
 
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
@@ -149,8 +241,6 @@
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <CAExcludePath>$(CAExcludePath);$(SolutionDir)\dep;$(SolutionDir)\oss;$(SolutionDir)\packages</CAExcludePath>
-    <OpenConsoleVcpkgConfiguration>Release</OpenConsoleVcpkgConfiguration>
-    <OpenConsoleTppVcpkgConfiguration>Release</OpenConsoleTppVcpkgConfiguration>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='AuditMode'">
     <ClCompile>
@@ -158,11 +248,55 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
-  <!-- Sanity check: Make sure the user followed the README and initialized git submodules. -->
-  <Target Name="EnsureSubmodulesExist" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references git submodule(s) that are missing on this computer. Use `git submodule update --init --recursive` to download them.  For more information, see https://github.com/microsoft/terminal#building-the-code. </ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\dep\wil') Or !Exists('$(SolutionDir)\dep\gsl')" Text="$([System.String]::Format('$(ErrorText)'))" />
-  </Target>
+  <PropertyGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <OCClangArchitectureName Condition="'$(Platform)'=='x64'">x86_64</OCClangArchitectureName>
+    <OCClangArchitectureName Condition="'$(Platform)'=='Win32'">i386</OCClangArchitectureName>
+    <OCClangArchitectureName Condition="'$(Platform)'=='x86'">i386</OCClangArchitectureName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <ClCompile>
+      <!-- Enable all the ASAN and Coverage flags! -->
+      <AdditionalOptions>/fsanitize=address /fsanitize-coverage=inline-bool-flag /fsanitize-coverage=edge /fsanitize-coverage=trace-cmp /fsanitize-coverage=trace-div %(AdditionalOptions)</AdditionalOptions>
+      <!-- The fuzzer requires a static CRT -->
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>FUZZING_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>libsancov.lib;clang_rt.asan_dynamic-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)..\build\rules\Branding.targets" />
+
+  <PropertyGroup Label="vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+
+    <!-- Set this here so that it doesn't get overwritten with "uwp" -->
+    <VcpkgOSTarget>windows</VcpkgOSTarget>
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+
+    <!-- BODGY - work around DD#2302065. vcpkg now validates target triplets, and is *case-sensitive* -->
+    <VcpkgPlatformTarget Condition="'$(Platform)'=='ARM64'">arm64</VcpkgPlatformTarget>
+
+    <VcpkgAdditionalInstallOptions>--x-feature=terminal</VcpkgAdditionalInstallOptions>
+    <VcpkgAdditionalInstallOptions Condition="'$(Configuration)'=='Fuzzing'">$(VcpkgAdditionalInstallOptions) --overlay-triplets=$(SolutionDir)\dep\vcpkg-overlay-triplets\fuzzing</VcpkgAdditionalInstallOptions>
+    <!--
+      Since we link everything statically, we don't need to copy anything.
+      This saves running a powershell script for every project.
+    -->
+    <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
+    <VcpkgInstalledDir>$(SolutionDir)\obj\$(Platform)\vcpkg</VcpkgInstalledDir>
+    <VcpkgInstalledDir Condition="'$(Configuration)'=='Fuzzing'">$(SolutionDir)\obj\$(Platform)\vcpkg-fuzzing</VcpkgInstalledDir>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VCPKG_ROOT)</VcpkgRoot>
+    <!-- VsInstallRoot is set by Visual Studio and MSBuild -->
+    <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VsInstallRoot)\VC\vcpkg</VcpkgRoot>
+    <VcpkgRoot Condition="'$(VcpkgRoot)'=='' or !Exists('$(VcpkgRoot)\vcpkg.exe')">$(SolutionDir)\dep\vcpkg</VcpkgRoot>
+
+    <CAExcludePath>$(CAExcludePath);$(VcpkgInstalledDir)</CAExcludePath>
+
+    <!-- For now, don't allow global-per-user installs of vcpkg -->
+    <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
+  </PropertyGroup>
+
+  <Import Project="$(VcpkgRoot)/scripts/buildsystems/msbuild/vcpkg.props" Condition="'$(MSBuildProjectExtension)'=='.vcxproj'" />
 </Project>

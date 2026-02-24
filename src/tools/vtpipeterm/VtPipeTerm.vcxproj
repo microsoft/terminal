@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{814DBDDE-894E-4327-A6E1-740504850098}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -7,15 +7,19 @@
     <ProjectName>VtPipeTerm</ProjectName>
     <TargetName>VtPipeTerm</TargetName>
     <ConfigurationType>Application</ConfigurationType>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="..\..\common.build.pre.props" />
-  <ItemGroup>
-    <ClInclude Include="VtConsole.hpp" />
-  </ItemGroup>
+  <Import Project="..\..\common.nugetversions.props" />
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="VtConsole.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\winconpty\lib\winconptylib.vcxproj">
+      <Project>{58a03bb2-df5a-4b66-91a0-7ef3ba01269a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -29,4 +33,5 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.post.props" />
   <Import Project="..\..\common.build.tests.props" />
+  <Import Project="..\..\common.nugetversions.targets" />
 </Project>

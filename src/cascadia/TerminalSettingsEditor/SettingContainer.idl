@@ -1,0 +1,41 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass SettingContainer : Windows.UI.Xaml.Controls.ContentControl
+    {
+        SettingContainer();
+
+        void SetExpanded(Boolean expanded);
+
+        IInspectable Header;
+        static Windows.UI.Xaml.DependencyProperty HeaderProperty { get; };
+
+        String HelpText;
+        static Windows.UI.Xaml.DependencyProperty HelpTextProperty { get; };
+
+        String FontIconGlyph;
+        static Windows.UI.Xaml.DependencyProperty FontIconGlyphProperty { get; };
+
+        IInspectable CurrentValue;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueProperty { get; };
+
+        Windows.UI.Xaml.DataTemplate CurrentValueTemplate;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueTemplateProperty { get; };
+
+        String CurrentValueAccessibleName;
+        static Windows.UI.Xaml.DependencyProperty CurrentValueAccessibleNameProperty { get; };
+
+        Boolean HasSettingValue;
+        static Windows.UI.Xaml.DependencyProperty HasSettingValueProperty { get; };
+
+        IInspectable SettingOverrideSource;
+        static Windows.UI.Xaml.DependencyProperty SettingOverrideSourceProperty { get; };
+
+        Boolean StartExpanded;
+        static Windows.UI.Xaml.DependencyProperty StartExpandedProperty { get; };
+
+        event Windows.Foundation.TypedEventHandler<SettingContainer, Object> ClearSettingValue;
+    };
+}

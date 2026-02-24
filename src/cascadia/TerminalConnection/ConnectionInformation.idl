@@ -1,0 +1,17 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ITerminalConnection.idl";
+
+namespace Microsoft.Terminal.TerminalConnection
+{
+    [default_interface] runtimeclass ConnectionInformation
+    {
+        ConnectionInformation(String className, Windows.Foundation.Collections.ValueSet settings);
+        String ClassName { get; };
+        Windows.Foundation.Collections.ValueSet Settings { get; };
+
+        static ITerminalConnection CreateConnection(ConnectionInformation info);
+    }
+
+}

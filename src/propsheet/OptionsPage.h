@@ -14,6 +14,6 @@ Author(s):
 
 #pragma once
 
-void ToggleV2OptionsControls(__in const HWND hDlg);
+void ToggleV2OptionsControls(const __in HWND hDlg);
 INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam);
 void InitializeCursorSize(const HWND hOptionsDlg);

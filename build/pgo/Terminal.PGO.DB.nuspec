@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.Internal.Windows.Terminal.PGODatabase</id>
+    <version>0</version>
+    <title>Windows Terminal PGO Database</title>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Windows Terminal PGO Database</description>
+  </metadata>
+  <files>
+    <!-- The target directories for pgd files need to remain as is.  PGO optimization pass will rely on this exact directory layout. -->
+    <file src="x64\*.pgd" target="tools\x64"/>
+    <file src="arm64\*.pgd" target="tools\arm64"/>
+  </files>
+</package>

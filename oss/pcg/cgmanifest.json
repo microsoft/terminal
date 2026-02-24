@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/component-detection-manifest.json",
+  "Registrations": [
+    {
+      "component": {
+        "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/imneme/pcg-cpp",
+          "commitHash": "ffd522e7188bef30a00c74dc7eb9de5faff90092"
+        }
+      }
+    }
+  ],
+  "Version": 1
+}

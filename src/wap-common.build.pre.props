@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup Condition="'$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '15.0'">
-    <VisualStudioVersion>15.0</VisualStudioVersion>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '17.0'">
+    <VisualStudioVersion>17.0</VisualStudioVersion>
   </PropertyGroup>
 
   <ItemGroup Label="ProjectConfigurations">
@@ -31,6 +31,29 @@
     </ProjectConfiguration>
   </ItemGroup>
 
+  <!--
+    VS 16.10 contains a regression, which causes our solution to fail loading.
+
+    In Visual Studio you'll see:
+      Visual Studio ran into an unexpected problem with one or more projects.
+      You may need to reload affected projects or the solution to prevent further problems.
+      [Open log file] [Reload faulted project(s)]
+
+    The log file points to the following error:
+      System.InvalidOperationException: There is no project properties provider for "Persistence = AssemblyReference".
+
+    This error is caused by the following lines in our Microsoft.UI.Xaml dependency:
+      https://github.com/microsoft/microsoft-ui-xaml/blob/v2.5.0/build/NuSpecs/MUXControls-Nuget-Native.targets#L9-L11
+
+    See _DevDiv_ work item MSFT:1328040.
+  -->
+  <ItemGroup>
+    <ProjectCapability Include="AssemblyReferences" />
+  </ItemGroup>
+
+  <!-- Install an empty one for WAP projects as they don't PGO. -->
+  <Target Name="MergePGOCounts" />
+
   <PropertyGroup>
     <WapProjPath Condition="'$(WapProjPath)'==''">$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\</WapProjPath>
     <!-- Turn off the 6+MB Windows.winmd that's emitted into our package
@@ -40,8 +63,8 @@
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.props" />
 
   <PropertyGroup>
-    <TargetPlatformVersion>10.0.17134.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.17134.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion>10.0.22621.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <DefaultLanguage>en-US</DefaultLanguage>
   </PropertyGroup>
 

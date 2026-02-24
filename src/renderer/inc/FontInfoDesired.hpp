@@ -20,25 +20,37 @@ Author(s):
 
 #include "FontInfoBase.hpp"
 #include "FontInfo.hpp"
+#include "CSSLengthPercentage.h"
 
 class FontInfoDesired : public FontInfoBase
 {
 public:
-    FontInfoDesired(const std::wstring_view faceName,
+    FontInfoDesired(const std::wstring_view& faceName,
                     const unsigned char family,
                     const unsigned int weight,
-                    const COORD coordSizeDesired,
-                    const unsigned int uiCodePage);
+                    const float fontSize,
+                    const unsigned int uiCodePage) noexcept;
+    FontInfoDesired(const FontInfo& fiFont) noexcept;
 
-    FontInfoDesired(const FontInfo& fiFont);
+    bool operator==(const FontInfoDesired& other) = delete;
 
-    COORD GetEngineSize() const;
-    bool IsDefaultRasterFont() const;
+    void SetCellSize(const CSSLengthPercentage& cellWidth, const CSSLengthPercentage& cellHeight) noexcept;
+    void SetEnableBuiltinGlyphs(bool builtinGlyphs) noexcept;
+    void SetEnableColorGlyphs(bool colorGlyphs) noexcept;
 
-    friend bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);
+    const CSSLengthPercentage& GetCellWidth() const noexcept;
+    const CSSLengthPercentage& GetCellHeight() const noexcept;
+    bool GetEnableBuiltinGlyphs() const noexcept;
+    bool GetEnableColorGlyphs() const noexcept;
+    float GetFontSize() const noexcept;
+    til::size GetEngineSize() const noexcept;
+    bool IsDefaultRasterFont() const noexcept;
 
 private:
-    COORD _coordSizeDesired;
+    til::size _coordSizeDesired;
+    float _fontSize;
+    CSSLengthPercentage _cellWidth;
+    CSSLengthPercentage _cellHeight;
+    bool _builtinGlyphs = false;
+    bool _colorGlyphs = true;
 };
-
-bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);

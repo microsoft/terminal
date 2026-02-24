@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Perceptual Color Nudging</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        html {
+            background-color: #0c0c0c;
+            color: #cccccc;
+            font-family: "Cascadia Code", "Cascadia Mono", monospace;
+        }
+
+        body {
+            display: flex;
+            margin: 0;
+            white-space: nowrap;
+            min-height: 100vh;
+        }
+
+        body>div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        form,
+        h2 {
+            margin: 1rem;
+        }
+
+        p,
+        pre {
+            margin: 0.5rem;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table td {
+            padding: 0.5rem;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div style="flex: 2; align-items: flex-start; background-color: #0c0c0c">
+        <form>
+            <input id="background-color" name="background-color" type="color" value="#0c0c0c" />
+            <label for="background-color">background color</label>
+        </form>
+        <table>
+            <tr>
+                <td>Input</td>
+                <td>WCAG21:<br>APCA:</td>
+                <td id="stats-input"></td>
+            </tr>
+            <tr>
+                <td>&Delta;E2000<br>(ConEmu)</td>
+                <td>WCAG21:<br>APCA:</td>
+                <td id="stats-cielab"></td>
+            </tr>
+            <tr>
+                <td>&Delta;EOK</td>
+                <td>WCAG21:<br>APCA:</td>
+                <td id="stats-oklab"></td>
+            </tr>
+        </table>
+    </div>
+    <div id="input" style="flex: 1">
+        <h2>Input</h2>
+        <pre style="font-size: 8pt">&#29483;</pre>
+        <pre style="font-size: 10pt">&#29483;</pre>
+        <pre style="font-size: 12pt">&#29483;</pre>
+        <pre style="font-size: 14pt">&#29483;</pre>
+        <pre style="font-size: 16pt">&#29483;</pre>
+        <pre style="font-size: 32pt">&#29483;</pre>
+        <pre style="font-size: 64pt">&#29483;</pre>
+    </div>
+    <div id="cielab" style="flex: 1">
+        <h2>&Delta;E2000 (ConEmu)</h2>
+        <pre style="font-size: 8pt">&#29483;</pre>
+        <pre style="font-size: 10pt">&#29483;</pre>
+        <pre style="font-size: 12pt">&#29483;</pre>
+        <pre style="font-size: 14pt">&#29483;</pre>
+        <pre style="font-size: 16pt">&#29483;</pre>
+        <pre style="font-size: 32pt">&#29483;</pre>
+        <pre style="font-size: 64pt">&#29483;</pre>
+    </div>
+    <div id="oklab" style="flex: 1">
+        <h2>&Delta;EOK</h2>
+        <pre style="font-size: 8pt">&#29483;</pre>
+        <pre style="font-size: 10pt">&#29483;</pre>
+        <pre style="font-size: 12pt">&#29483;</pre>
+        <pre style="font-size: 14pt">&#29483;</pre>
+        <pre style="font-size: 16pt">&#29483;</pre>
+        <pre style="font-size: 32pt">&#29483;</pre>
+        <pre style="font-size: 64pt">&#29483;</pre>
+    </div>
+    <script type="module">
+        import Color from "https://cdn.jsdelivr.net/npm/colorjs.io@0.4.3/+esm";
+
+        window.Color = Color;
+
+        const input = document.getElementById("input");
+        const cielab = document.getElementById("cielab");
+        const oklab = document.getElementById("oklab");
+
+        const statsInput = document.getElementById("stats-input");
+        const statsCielab = document.getElementById("stats-cielab");
+        const statsOklab = document.getElementById("stats-oklab");
+
+        let backgroundColor = new Color("#0c0c0c");
+        let foregroundColor = new Color("#0c0c0c");
+        let foregroundColorRange = null;
+        let previousSecsIntegral = -1;
+
+        function saturate(val) {
+            return val < 0 ? 0 : val > 1 ? 1 : val;
+        }
+
+        function clipToSrgb(color) {
+            return color.to("srgb").toGamut({ method: "clip" });
+        }
+
+        function nudgeCielab(backgroundColor, foregroundColor) {
+            const backgroundCielab = backgroundColor.to("lab-d65");
+            const foregroundCielab = foregroundColor.to("lab-d65");
+
+            const de1 = Color.deltaE(foregroundColor, backgroundCielab, "2000");
+            if (de1 >= 12.0) {
+                return foregroundColor;
+            }
+
+            for (let i = 0; i <= 1; i++) {
+                const step = (i == 0) ? 5.0 : -5.0;
+                foregroundCielab.l += step;
+
+                while (((i == 0) && foregroundCielab.l <= 100) || (i == 1 && foregroundCielab.l >= 0)) {
+                    const de2 = Color.deltaE(foregroundCielab, backgroundCielab, "2000");
+                    if (de2 >= 20.0) {
+                        return clipToSrgb(foregroundCielab);
+                    }
+                    foregroundCielab.l += step;
+                }
+            }
+        }
+
+        function nudgeOklab(backgroundColor, foregroundColor) {
+            const backgroundOklab = backgroundColor.to("oklab");
+            const foregroundOklab = foregroundColor.to("oklab");
+            const deltaSquared = {
+                l: (backgroundOklab.l - foregroundOklab.l) ** 2,
+                a: (backgroundOklab.a - foregroundOklab.a) ** 2,
+                b: (backgroundOklab.b - foregroundOklab.b) ** 2,
+            };
+            const distance = deltaSquared.l + deltaSquared.a + deltaSquared.b;
+
+            if (distance >= 0.25) {
+                return foregroundColor;
+            }
+
+            let deltaL = Math.sqrt(0.25 - deltaSquared.a - deltaSquared.b);
+            if (foregroundOklab.l < backgroundOklab.l)
+            {
+                deltaL = -deltaL;
+            }
+
+            foregroundOklab.l = backgroundOklab.l + deltaL;
+            if (foregroundOklab.l < 0 || foregroundOklab.l > 1)
+            {
+                foregroundOklab.l = backgroundOklab.l - deltaL;
+            }
+
+            return clipToSrgb(foregroundOklab);
+        }
+
+        function contrastStringLevels(num, level0, level1) {
+            const str = num.toFixed(1);
+            if (num < level0) {
+                return `<span style="color:crimson">${str}</span>`;
+            }
+            if (num < level1) {
+                return `<span style="color:coral">${str}</span>`;
+            }
+            return str;
+        }
+
+        function contrastString(foregroundColor) {
+            const contrastWCAG21 = contrastStringLevels(foregroundColor.contrast(backgroundColor, "WCAG21"), 3, 4.5);
+            const contrastAPCA = contrastStringLevels(Math.abs(foregroundColor.contrast(backgroundColor, "APCA")), 45, 60);
+            return `${contrastWCAG21}<br/>${contrastAPCA}`;
+        }
+
+        function animate(time) {
+            const timeScale = time / 1000;
+            const secsIntegral = Math.trunc(timeScale);
+            const secsFractional = timeScale % 1;
+
+            if (previousSecsIntegral != secsIntegral) {
+                const foregroundColorTarget = new Color("srgb", backgroundColor.coords.map(c => saturate(c + Math.random() - 0.5)));
+                foregroundColorRange = foregroundColor.range(foregroundColorTarget, { space: "srgb" });
+                previousSecsIntegral = secsIntegral;
+            }
+
+            foregroundColor = foregroundColorRange(secsFractional);
+            input.style.color = foregroundColor.toString({ inGamut: false });
+
+            const foregroundCielabNudged = nudgeCielab(backgroundColor, foregroundColor);
+            const foregroundOklabNudged = nudgeOklab(backgroundColor, foregroundColor);
+
+            cielab.style.color = foregroundCielabNudged;
+            oklab.style.color = foregroundOklabNudged;
+
+            statsInput.innerHTML = contrastString(foregroundColor);
+            statsCielab.innerHTML = contrastString(foregroundCielabNudged);
+            statsOklab.innerHTML = contrastString(foregroundOklabNudged);
+
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+
+        document.getElementById("background-color").addEventListener("input", event => {
+            backgroundColor = new Color(event.target.value);
+            document.documentElement.style.backgroundColor = backgroundColor;
+        }, false);
+
+        document.documentElement.style.backgroundColor = backgroundColor;
+    </script>
+</body>
+
+</html>

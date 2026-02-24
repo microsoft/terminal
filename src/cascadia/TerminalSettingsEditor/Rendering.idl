@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "RenderingViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
+    {
+        Rendering();
+        RenderingViewModel ViewModel { get; };
+    }
+}

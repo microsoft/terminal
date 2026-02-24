@@ -9,7 +9,7 @@
 #include "globals.h"
 #include "srvinit.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -19,16 +19,16 @@ class InitTests
     TEST_CLASS(InitTests);
 
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd317756(v=vs.85).aspx
-    static UINT const s_uiOEMJapaneseCP = 932;
-    static UINT const s_uiOEMSimplifiedChineseCP = 936;
-    static UINT const s_uiOEMKoreanCP = 949;
-    static UINT const s_uiOEMTraditionalChineseCP = 950;
+    static const UINT s_uiOEMJapaneseCP = 932;
+    static const UINT s_uiOEMSimplifiedChineseCP = 936;
+    static const UINT s_uiOEMKoreanCP = 949;
+    static const UINT s_uiOEMTraditionalChineseCP = 950;
 
-    static LANGID const s_langIdJapanese = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
-    static LANGID const s_langIdSimplifiedChinese = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
-    static LANGID const s_langIdKorean = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
-    static LANGID const s_langIdTraditionalChinese = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
-    static LANGID const s_langIdEnglish = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+    static const LANGID s_langIdJapanese = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+    static const LANGID s_langIdSimplifiedChinese = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
+    static const LANGID s_langIdKorean = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
+    static const LANGID s_langIdTraditionalChinese = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
+    static const LANGID s_langIdEnglish = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
 
     // This test exists to ensure the continued behavior of the code in the Windows loader.
     // See the LOAD BEARING CODE comment inside GetConsoleLangId or the investigation results in MSFT: 9808579 for more detail.
@@ -56,7 +56,7 @@ class InitTests
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiOutputCP", outputCP));
 
         LANGID langId = 0;
-        NTSTATUS const status = GetConsoleLangId(outputCP, &langId);
+        const auto status = GetConsoleLangId(outputCP, &langId);
 
         if (s_uiOEMJapaneseCP == ServiceLocator::LocateGlobals().uiWindowsCP ||
             s_uiOEMSimplifiedChineseCP == ServiceLocator::LocateGlobals().uiWindowsCP ||

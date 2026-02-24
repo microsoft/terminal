@@ -14,6 +14,7 @@ Author(s):
 
 #pragma once
 
+#include "../../buffer/out/LineRendition.hpp"
 #include "../../inc/conattrs.hpp"
 
 namespace Microsoft::Console::Render
@@ -21,8 +22,14 @@ namespace Microsoft::Console::Render
     struct CursorOptions
     {
         // Character cell in the grid to draw at
-        // This is relative to the viewport, not the buffer.
-        COORD coordCursor;
+        // This is relative to the top of the viewport, not the buffer
+        til::point coordCursor;
+
+        // Left offset of the viewport, which may alter the horizontal position
+        til::CoordType viewportLeft;
+
+        // Line rendition of the current row, which can affect the cursor width
+        LineRendition lineRendition;
 
         // For an underscore type _ cursor, how tall it should be as a % of cell height
         ULONG ulCursorHeightPercent;
@@ -42,9 +49,14 @@ namespace Microsoft::Console::Render
         // Color to use for drawing instead of the default
         COLORREF cursorColor;
 
+        // The other kind of on/off state for the cursor, because VtEngine needs it to handle \x1b[?25l/h.
+        bool isVisible;
         // Is the cursor currently visually visible?
         // If the cursor has blinked off, this is false.
         // if the cursor has blinked on, this is true.
         bool isOn;
+
+        // Is the cursor within the viewport of the renderer?
+        bool inViewport;
     };
 }

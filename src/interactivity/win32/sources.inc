@@ -28,7 +28,6 @@ MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # Defines IME and Codepage support
-W32_SB                  = 1
 
 # -------------------------------------
 # Sources, Headers, and Libraries
@@ -38,21 +37,18 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\AccessibilityNotifier.cpp \
     ..\clipboard.cpp \
     ..\ConsoleControl.cpp \
     ..\ConsoleInputThread.cpp \
     ..\consoleKeyInfo.cpp \
     ..\find.cpp \
     ..\icon.cpp \
-    ..\InputServices.cpp \
     ..\menu.cpp \
     ..\screenInfoUiaProvider.cpp \
     ..\SystemConfigurationProvider.cpp \
     ..\UiaTextRange.cpp \
     ..\window.cpp \
     ..\windowdpiapi.cpp \
-    ..\windowime.cpp \
     ..\windowio.cpp \
     ..\WindowMetrics.cpp \
     ..\windowproc.cpp \
@@ -63,4 +59,5 @@ INCLUDES = \
     ..; \
 
 TARGETLIBS = \
+    $(TARGETLIBS) \
     $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib  \

@@ -17,25 +17,25 @@ Revision History:
 
 #pragma once
 
+#include "AccessibilityNotifier.h"
+#include "ApiRoutines.h"
+#include "ConsoleArguments.hpp"
 #include "selection.hpp"
 #include "server.h"
-#include "ConsoleArguments.hpp"
-#include "ApiRoutines.h"
 
-#include "..\renderer\inc\IRenderData.hpp"
-#include "..\renderer\inc\IRenderEngine.hpp"
-#include "..\renderer\inc\IRenderer.hpp"
-#include "..\renderer\inc\IFontDefaultList.hpp"
-
-#include "..\server\DeviceComm.h"
+#include "../propslib/DelegationConfig.hpp"
+#include "../renderer/base/Renderer.hpp"
+#include "../server/DeviceComm.h"
+#include "../tsf/Handle.h"
 
 #include <TraceLoggingProvider.h>
-#include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 
 class Globals
 {
 public:
+    Globals();
+
     UINT uiOEMCP = GetOEMCP();
     UINT uiWindowsCP = GetACP();
     HINSTANCE hInstance;
@@ -45,12 +45,12 @@ public:
 
     CONSOLE_INFORMATION& getConsoleInformation();
 
-    DeviceComm* pDeviceComm;
+    IDeviceComm* pDeviceComm{ nullptr };
 
     wil::unique_event_nothrow hInputEvent;
 
-    SHORT sVerticalScrollSize;
-    SHORT sHorizontalScrollSize;
+    int sVerticalScrollSize;
+    int sHorizontalScrollSize;
 
     int dpi = USER_DEFAULT_SCREEN_DPI;
     ULONG cursorPixelWidth = 1;
@@ -60,19 +60,23 @@ public:
     DWORD dwInputThreadId;
 
     std::vector<wchar_t> WordDelimiters;
-
-    Microsoft::Console::Render::IRenderer* pRender;
-
+    Microsoft::Console::Render::Renderer* pRender;
+    Microsoft::Console::TSF::Handle tsf;
+    Microsoft::Console::AccessibilityNotifier accessibilityNotifier;
     Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
 
-    ApiRoutines api;
+    IApiRoutines* api;
 
-#ifdef UNIT_TESTING
-    void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);
-#endif
+    bool handoffTarget = false;
+
+    DelegationConfig::DelegationPair delegationPair;
+    wil::unique_hfile handoffInboxConsoleHandle;
+    wil::unique_threadpool_wait handoffInboxConsoleExitWait;
+    bool defaultTerminalMarkerCheckRequired = false;
 
 private:
     CONSOLE_INFORMATION ciConsoleInformation;
+    ApiRoutines defaultApiRoutines;
 };

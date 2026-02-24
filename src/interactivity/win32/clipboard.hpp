@@ -20,7 +20,7 @@ Revision History:
 
 #include "precomp.h"
 
-#include "..\..\host\screenInfo.hpp"
+#include "../../host/screenInfo.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {
@@ -29,19 +29,22 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         static Clipboard& Instance();
 
-        void Copy(_In_ bool const fAlsoCopyFormatting = false);
-        void StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
-                         const size_t cchData);
+        void CopyText(const std::wstring& text);
+        void Copy(_In_ const bool fAlsoCopyFormatting = false);
         void Paste();
+        void PasteDrop(HDROP drop);
 
     private:
-        std::deque<std::unique_ptr<IInputEvent>> TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
-                                                                 const size_t cchData);
+        static wil::unique_close_clipboard_call _openClipboard(HWND hwnd);
+        static void _copyToClipboard(UINT format, const void* src, size_t bytes);
+        static void _copyToClipboardRegisteredFormat(const wchar_t* format, const void* src, size_t bytes);
 
-        void StoreSelectionToClipboard(_In_ bool const fAlsoCopyFormatting);
+        void StringPaste(_In_reads_(cchData) PCWCHAR pwchData, const size_t cchData);
+        InputEventQueue TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
+                                        const size_t cchData,
+                                        const bool bracketedPaste = false);
 
-        void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ bool const copyFormatting);
-        void CopyToSystemClipboard(std::string stringToPlaceOnClip, LPCWSTR lpszFormat);
+        void StoreSelectionToClipboard(_In_ const bool fAlsoCopyFormatting);
 
         bool FilterCharacterOnPaste(_Inout_ WCHAR* const pwch);
 

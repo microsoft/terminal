@@ -15,6 +15,8 @@ Author(s):
 
 #pragma once
 
+// Manually include til after we include Windows.Foundation to give it winrt superpowers
+#define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
@@ -26,14 +28,8 @@ Author(s):
 #endif
 
 #include <WexTestClass.h>
-#include <json.h>
+#include <json/json.h>
 #include "consoletaeftemplates.hpp"
-
-// Common includes for most tests:
-#include "../../inc/argb.h"
-#include "../../inc/conattrs.hpp"
-#include "../../types/inc/utils.hpp"
-#include "../../inc/DefaultSettings.h"
 
 // Are you thinking about adding WinRT things here? If so, you probably want to
 // add your test to TerminalApp.LocalTests, not TerminalApp.UnitTests. The
@@ -42,8 +38,21 @@ Author(s):
 // need to be added to the LocalTests.
 
 // These however are okay, for some _basic_ winrt things:
-#include <unknwn.h>
+#include <Unknwn.h>
 #include <hstring.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/windows.ui.core.h>
+#include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.Text.h>
+
+#include <winrt/Microsoft.Terminal.Core.h>
+
+#include "winrtTaefTemplates.hpp"
+
+// Manually include til after we include Windows.Foundation to give it winrt superpowers
+#include "til.h"
+
+// Common includes for most tests:
+#include "../../inc/conattrs.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../../inc/DefaultSettings.h"

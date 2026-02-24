@@ -3,9 +3,11 @@
 
 #include "precomp.h"
 
+#include "../../types/inc/IInputEvent.hpp"
+
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 // This class is intended to test boundary conditions for:
@@ -17,6 +19,7 @@ class BufferTests
     END_TEST_CLASS()
 
     TEST_METHOD(TestSetConsoleActiveScreenBufferInvalid);
+    TEST_METHOD(TestCookedReadBufferReferenceCount);
 
     TEST_METHOD(TestCookedReadOnNonShareableScreenBuffer);
 
@@ -83,6 +86,40 @@ void BufferTests::TestCookedReadOnNonShareableScreenBuffer()
     VERIFY_IS_TRUE(IsConsoleStillRunning());
 }
 
+// This test ensures that COOKED_READ_DATA properly holds onto the screen buffer it is
+// reading from for the whole duration of the read. It's important that we hold a handle
+// to the main instead of the alt buffer even if this cooked read targets the latter,
+// because alt buffers are fake SCREEN_INFORMATION objects that are owned by the main buffer.
+void BufferTests::TestCookedReadBufferReferenceCount()
+{
+    static constexpr int loops = 5;
+
+    const auto in = GetStdInputHandle();
+    const auto out = GetStdOutputHandle();
+
+    DWORD inMode = 0;
+    GetConsoleMode(out, &inMode);
+    inMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT;
+    SetConsoleMode(out, inMode);
+
+    INPUT_RECORD newlines[loops];
+    DWORD written = 0;
+    std::fill_n(&newlines[0], loops, SynthesizeKeyEvent(true, 1, L'\r', 0, L'\r', 0));
+    WriteConsoleInputW(in, &newlines[0], loops, &written);
+
+    for (int i = 0; i < loops; ++i)
+    {
+        VERIFY_SUCCEEDED(WriteConsoleW(out, L"\033[?1049h", 8, nullptr, nullptr));
+
+        wchar_t buffer[16];
+        DWORD read = 0;
+        VERIFY_SUCCEEDED(ReadConsoleW(in, &buffer[0], _countof(buffer), &read, nullptr));
+        VERIFY_ARE_EQUAL(2u, read);
+
+        VERIFY_SUCCEEDED(WriteConsoleW(out, L"\033[?1049l", 8, nullptr, nullptr));
+    }
+}
+
 void BufferTests::TestWritingInactiveScreenBuffer()
 {
     bool useVtOutput;
@@ -121,8 +158,8 @@ void BufferTests::TestWritingInactiveScreenBuffer()
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(handle, alternative.data(), gsl::narrow<DWORD>(alternative.size()), &written, nullptr));
     VERIFY_ARE_EQUAL(alternative.size(), written);
 
-    std::unique_ptr<wchar_t[]> primaryBuffer = std::make_unique<wchar_t[]>(primary.size());
-    std::unique_ptr<wchar_t[]> alternativeBuffer = std::make_unique<wchar_t[]>(alternative.size());
+    auto primaryBuffer = std::make_unique<wchar_t[]>(primary.size());
+    auto alternativeBuffer = std::make_unique<wchar_t[]>(alternative.size());
 
     Log::Comment(L"Read the first line out of the main/visible screen buffer. It should contain the first thing we wrote.");
     DWORD read = 0;
@@ -183,7 +220,7 @@ void BufferTests::ScrollLargeBufferPerformance()
     const auto now = std::chrono::steady_clock::now();
 
     // Scroll the buffer 1 line up several times
-    for (int i = 0; i != count; ++i)
+    for (auto i = 0; i != count; ++i)
     {
         ScrollConsoleScreenBuffer(Out, &Rect, nullptr, { 0, -1 }, &CharInfo);
     }
@@ -225,7 +262,7 @@ void BufferTests::ChafaGifPerformance()
     DWORD res_size;
 
     // NOTE: providing g_hInstance is important, NULL might not work
-    HMODULE hModule = (HMODULE)&__ImageBase;
+    auto hModule = (HMODULE)&__ImageBase;
 
     res = FindResource(hModule, MAKEINTRESOURCE(CHAFA_CONTENT), RT_RCDATA);
     if (!res)

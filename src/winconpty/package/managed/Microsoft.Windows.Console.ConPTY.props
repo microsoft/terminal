@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- C# uses normalizes PlatformTarget, whereas C++ does not normalize Platform -->
+    <ConptyNativePlatform Condition="'$(ConptyNativePlatform)'==''">$(PlatformTarget)</ConptyNativePlatform>
+    <ConptyNativePlatform Condition="'$(ConptyNativePlatform)'==''">$(Platform)</ConptyNativePlatform>
+    <ConptyNativePlatform Condition="'$(ConptyNativePlatform)'=='Win32'">x86</ConptyNativePlatform>
+
+    <!-- x86 can run on x64 and ARM64, so needs to ship all three OpenConsoles. -->
+    <ConptyRequiresx86Host   Condition="'$(ConptyNativePlatform)' == 'x86'">true</ConptyRequiresx86Host>
+    <ConptyRequiresx64Host   Condition="'$(ConptyNativePlatform)' == 'x86'">true</ConptyRequiresx64Host>
+    <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'x86'">true</ConptyRequiresARM64Host>
+
+    <!-- x64 can only run on x64 and ARM64, so needs to ship only two OpenConsoles. -->
+    <!-- ConptyRequiresx86Host not set -->
+    <ConptyRequiresx64Host   Condition="'$(ConptyNativePlatform)' == 'x64'">true</ConptyRequiresx64Host>
+    <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'x64'">true</ConptyRequiresARM64Host>
+
+    <!-- ARM64 can only run on ARM64, so only needs to ship the final OpenConsole. -->
+    <!-- ConptyRequiresx86Host not set -->
+    <!-- ConptyRequiresx64Host not set -->
+    <ConptyRequiresARM64Host Condition="'$(ConptyNativePlatform)' == 'ARM64'">true</ConptyRequiresARM64Host>
+  </PropertyGroup>
+</Project>

@@ -5,7 +5,6 @@
 
 #include "textBufferTextIterator.hpp"
 
-#include "CharRow.hpp"
 #include "Row.hpp"
 
 #pragma hdrstop
@@ -26,7 +25,8 @@ TextBufferTextIterator::TextBufferTextIterator(const TextBufferCellIterator& cel
 // Return Value:
 // - Read only UTF-16 text data
 // TODO GH 2682, fix design so this doesn't have to be suppressed.
-[[gsl::suppress(26434)]] const std::wstring_view TextBufferTextIterator::operator*() const noexcept
+GSL_SUPPRESS(26434)
+const std::wstring_view TextBufferTextIterator::operator*() const noexcept
 {
     return _view.Chars();
 }
@@ -36,7 +36,8 @@ TextBufferTextIterator::TextBufferTextIterator(const TextBufferCellIterator& cel
 // Return Value:
 // - Read only UTF-16 text data
 // TODO GH 2682, fix design so this doesn't have to be suppressed.
-[[gsl::suppress(26434)]] const std::wstring_view* TextBufferTextIterator::operator->() const noexcept
+GSL_SUPPRESS(26434)
+const std::wstring_view* TextBufferTextIterator::operator->() const noexcept
 {
     return &_view.Chars();
 }

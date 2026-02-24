@@ -3,12 +3,17 @@
 # - Common Project Configuration
 # -------------------------------------
 
+# Pull our dependencies from vcpkg. This includes gsl - if you run into errors
+# from a missing gsl or fmt, make sure you go build .../console/vcpkg first.
+
+!include $(PROJECT_ROOT)\core\console\vcpkg\consume.inc
+
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -D__INSIDE_WINDOWS -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # CRT Configuration
@@ -16,6 +21,9 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 
 USE_UNICRT              = 1
 USE_MSVCRT              = 1
+NO_WCHAR_T              = 1 # use native wchar_t
+USE_CXX17_STD_BYTE      = 1 # Windows disables std::byte by default...
+
 
 USE_STL                 = 1
 STL_VER                 = STL_VER_CURRENT
@@ -25,7 +33,9 @@ USE_NATIVE_EH           = 1
 # Compiler Settings
 # -------------------------------------
 
+USE_STD_CPP20           = 1
 MSC_WARNING_LEVEL       = /W4 /WX
+USER_C_FLAGS            = $(USER_C_FLAGS) /Zc:preprocessor /fp:contract /utf-8
 
 # -------------------------------------
 # Common Console Includes and Libraries
@@ -33,14 +43,15 @@ MSC_WARNING_LEVEL       = /W4 /WX
 CONSOLE_SRC_PATH        = $(PROJECT_ROOT)\core\console\open\src
 CONSOLE_OBJ_PATH        = $(WINCORE_OBJ_PATH)\console\open\src
 
+USER_C_FLAGS            = $(USER_C_FLAGS) /FI$(CONSOLE_OBJ_PATH)\staging\$(O)\TilFeatureStaging.h
+
 INCLUDES= \
     $(INCLUDES); \
     $(CONSOLE_SRC_PATH)\inc; \
     $(CONSOLE_SRC_PATH)\..\..\inc; \
-    $(CONSOLE_SRC_PATH)\..\oss\dynamic_bitset; \
-    $(CONSOLE_SRC_PATH)\..\oss\libpopcnt; \
     $(CONSOLE_SRC_PATH)\..\oss\chromium; \
-    $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
+    $(CONSOLE_SRC_PATH)\..\oss\interval_tree; \
+    $(CONSOLE_SRC_PATH)\..\oss\pcg\include; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \

@@ -1,0 +1,2732 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
+    <value>Новый пустой профиль</value>
+    <comment>Button label that creates a new profile with default settings.</comment>
+  </data>
+  <data name="AddProfile_Duplicate.Header" xml:space="preserve">
+    <value>Дублировать профиль</value>
+    <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
+  </data>
+  <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
+    <value>Дублировать</value>
+    <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
+  </data>
+  <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
+    <value>Эта цветовая схема является частью встроенных параметров или установленным расширением</value>
+  </data>
+  <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
+    <value>Чтобы внести изменения в эту цветовую схему, необходимо создать ее копию.</value>
+  </data>
+  <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
+    <value>Создать копию</value>
+    <comment>This is a call to action; the user can click the button to make a copy of the current color scheme.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefault.Header" xml:space="preserve">
+    <value>Настроить цветовую схему по умолчанию</value>
+    <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefault.HelpText" xml:space="preserve">
+    <value>Применить эту цветовую схему ко всем профилям по умолчанию. Отдельные профили по-прежнему могут выбирать свои собственные цветовые схемы.</value>
+    <comment>A description explaining how this control changes the user's default color scheme.</comment>
+  </data>
+  <data name="ColorScheme_Rename.Header" xml:space="preserve">
+    <value>Переименовать цветовую схему</value>
+    <comment>This is the header for a control that allows the user to rename the currently selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_Background.Text" xml:space="preserve">
+    <value>Фон</value>
+    <comment>This is the header for a control that lets the user select the background color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Black.Text" xml:space="preserve">
+    <value>Черный</value>
+    <comment>This is the header for a control that lets the user select the black color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Blue.Text" xml:space="preserve">
+    <value>Синий</value>
+    <comment>This is the header for a control that lets the user select the blue color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightBlack.Text" xml:space="preserve">
+    <value>Ярко-черный</value>
+    <comment>This is the header for a control that lets the user select the bright black color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightBlue.Text" xml:space="preserve">
+    <value>Ярко-синий</value>
+    <comment>This is the header for a control that lets the user select the bright blue color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightCyan.Text" xml:space="preserve">
+    <value>Ярко-голубой</value>
+    <comment>This is the header for a control that lets the user select the bright cyan color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightGreen.Text" xml:space="preserve">
+    <value>Ярко-зеленый</value>
+    <comment>This is the header for a control that lets the user select the bright green color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightPurple.Text" xml:space="preserve">
+    <value>Ярко-сиреневый</value>
+    <comment>This is the header for a control that lets the user select the bright purple color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightRed.Text" xml:space="preserve">
+    <value>Ярко-красный</value>
+    <comment>This is the header for a control that lets the user select the bright red color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightWhite.Text" xml:space="preserve">
+    <value>Ярко-белый</value>
+    <comment>This is the header for a control that lets the user select the bright white color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_BrightYellow.Text" xml:space="preserve">
+    <value>Ярко-желтый</value>
+    <comment>This is the header for a control that lets the user select the bright yellow color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_CursorColor.Text" xml:space="preserve">
+    <value>Цвет курсора</value>
+    <comment>This is the header for a control that lets the user select the text cursor's color displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Cyan.Text" xml:space="preserve">
+    <value>Голубой</value>
+    <comment>This is the header for a control that lets the user select the cyan color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Foreground.Text" xml:space="preserve">
+    <value>Передний план</value>
+    <comment>This is the header for a control that lets the user select the foreground color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Green.Text" xml:space="preserve">
+    <value>Зеленый</value>
+    <comment>This is the header for a control that lets the user select the green color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Purple.Text" xml:space="preserve">
+    <value>Лиловый</value>
+    <comment>This is the header for a control that lets the user select the purple color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_SelectionBackground.Text" xml:space="preserve">
+    <value>Фон выделенного фрагмента</value>
+    <comment>This is the header for a control that lets the user select the background color for selected text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Red.Text" xml:space="preserve">
+    <value>Красный</value>
+    <comment>This is the header for a control that lets the user select the red color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_White.Text" xml:space="preserve">
+    <value>Белый</value>
+    <comment>This is the header for a control that lets the user select the white color for text displayed on the screen.</comment>
+  </data>
+  <data name="ColorScheme_Yellow.Text" xml:space="preserve">
+    <value>Желтый</value>
+    <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
+  </data>
+  <data name="Globals_Language.Header" xml:space="preserve">
+    <value>Язык (требуется перезапуск)</value>
+    <comment>The header for a control allowing users to choose the app's language.</comment>
+  </data>
+  <data name="Globals_Language.HelpText" xml:space="preserve">
+    <value>Выбор языка отображения для приложения. Это переопределит язык интерфейса Windows по умолчанию.</value>
+    <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
+  </data>
+  <data name="Globals_LanguageDefault" xml:space="preserve">
+    <value>По умолчанию</value>
+    <comment>The app contains a control allowing users to choose the app's language. If this value is chosen, the language preference list of the system settings is used instead.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.Header" xml:space="preserve">
+    <value>Режим ввода IME по умолчанию</value>
+    <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
+  </data>
+  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+    <value>Сообщает IME, какой язык нужно использовать по умолчанию. Для языков, которые применяют IME и не используют латинские символы по умолчанию, этот параметр можно использовать для принудительного ввода на английском языке при запуске.</value>
+  </data>
+  <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
+  <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
+    <value>Буквенно-цифровой полуширинный (английский)</value>
+  </data>
+  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
+    <value>Всегда отображать вкладки</value>
+    <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
+  </data>
+  <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
+    <value>Если этот параметр отключен, панель вкладок будет отображаться при создании новой вкладки. Невозможно отключить, если включен параметр "Скрыть заголовок окна".</value>
+    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
+  </data>
+  <data name="Globals_NewTabPosition.Header" xml:space="preserve">
+    <value>Расположение вновь созданных вкладок</value>
+    <comment>Header for a control to select position of newly created tabs.</comment>
+  </data>
+  <data name="Globals_NewTabPosition.HelpText" xml:space="preserve">
+    <value>Указывает место отображения новых вкладок в строке вкладок</value>
+    <comment>A description for what the "Position of newly created tabs" setting does.</comment>
+  </data>
+  <data name="Globals_NewTabPositionAfterLastTab.Content" xml:space="preserve">
+    <value>После последней вкладки</value>
+    <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the last tab.</comment>
+  </data>
+  <data name="Globals_NewTabPositionAfterCurrentTab.Content" xml:space="preserve">
+    <value>После текущей вкладки</value>
+    <comment>An option to choose from for the "Position of newly created tabs" setting. When selected new tab appears after the current tab.</comment>
+  </data>
+  <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
+    <value>Автоматически копировать выделенный фрагмент в буфер обмена</value>
+    <comment>Header for a control to toggle whether selected text should be copied to the clipboard automatically, or not.</comment>
+  </data>
+  <data name="Globals_DetectURLs.Header" xml:space="preserve">
+    <value>Автоматически определять URL-адреса и делать их доступными для нажатия</value>
+    <comment>Header for a control to toggle whether the terminal should automatically detect URLs and make them clickable, or not.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.Header" xml:space="preserve">
+    <value>URL-адрес по умолчанию, используемый для действия "Поиск в Интернете"</value>
+    <comment>Header for a control to set the query URL when using the "search web" action.</comment>
+  </data>
+  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+    <value>Заполнитель "%s" будет заменен поисковым запросом.</value>
+    <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
+  </data>
+  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
+    <value>Удалить конечный пробел в прямоугольном выделении</value>
+    <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
+  </data>
+  <data name="Globals_TrimPaste.Header" xml:space="preserve">
+    <value>Удалить конечный пробел при вставке</value>
+    <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
+  </data>
+  <data name="Globals_DefaultProfile.Header" xml:space="preserve">
+    <value>Профиль по умолчанию</value>
+    <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
+  </data>
+  <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
+    <value>Профиль, который открывается при нажатии значка "+" или при вводе сочетания клавиш новой вкладки.</value>
+    <comment>A description for what the default profile is and when it's used.</comment>
+  </data>
+  <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
+    <value>Приложение терминала по умолчанию</value>
+    <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
+  </data>
+  <data name="Globals_DefaultTerminal.HelpText" xml:space="preserve">
+    <value>Приложение терминала, запускаемое при запуске приложения командной строки без существующего сеанса, например из меню "Пуск" или из диалогового окна "Выполнить".</value>
+    <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
+    <value>API графики</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+    <value>Direct3D 11 отличается более высокой производительностью и расширенной функциональностью, но Direct2D стабильнее. По умолчанию используется параметр "Автоматически": выбирается API, лучше всего подходящий к графическому оборудованию. Если возникают серьезные проблемы, попробуйте использовать Direct2D.</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
+    <value>Автоматически</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct2d.Text" xml:space="preserve">
+    <value>Direct2D</value>
+  </data>
+  <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
+    <value>Direct3D 11</value>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
+    <value>Отключить аннулирование частичной цепочки буферов</value>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+    <value>По умолчанию система отрисовки текста использует цепочку буферов FLIP_SEQUENTIAL и объявляет "грязные" прямоугольники с помощью API Present1. Когда этот параметр включен, будет использоваться цепочка буферов FLIP_DISCARD, а "грязные" прямоугольники не будут объявляться. Выбор зависит от оборудования и от ряда других факторов.</value>
+    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
+    <value>Использовать программную отрисовку (WARP)</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+  </data>
+  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, терминал будет использовать программный растеризатор (WARP). Этот параметр должен быть отключен почти при любых обстоятельствах.</value>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
+  </data>
+  <data name="Globals_TextMeasurement.Header" xml:space="preserve">
+    <value>Режим измерения текста</value>
+    <comment>This text is shown next to a list of choices.</comment>
+  </data>
+  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+    <value>Это меняет способ группирования входящего текста в ячейки. Параметр "Кластеры Grapheme" — это самый современный и правильный для Unicode способ сделать это, в то время как "wcswidth" является распространенным подходом в UNIX, а "Консоль Windows" повторяет способ работы в Windows. Изменение этого параметра требует перезапуска терминала Windows и применяется только к приложениям, запущенным из него.</value>
+  </data>
+  <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
+    <value>Кластеры Grapheme</value>
+    <comment>The default choice between multiple graphics APIs.</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
+    <value>wcswidth</value>
+    <comment>{Locked="wcswidth"}</comment>
+  </data>
+  <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
+    <value>Консоль Windows</value>
+  </data>
+  <data name="Globals_InitialCols.Text" xml:space="preserve">
+    <value>Столбцы</value>
+    <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
+  </data>
+  <data name="Globals_InitialRows.Text" xml:space="preserve">
+    <value>Строки</value>
+    <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
+  </data>
+  <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Начальные столбцы</value>
+    <comment>Name for a control to choose the number of columns in the terminal's text grid.</comment>
+  </data>
+  <data name="Globals_InitialRowsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Начальные строки</value>
+    <comment>Name for a control to choose the number of rows in the terminal's text grid.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Положение по X</value>
+    <comment>Name for a control to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Введите значение координаты X.</value>
+    <comment>Tooltip for the control that allows the user to choose the X coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosXBox.PlaceholderText" xml:space="preserve">
+    <value>X</value>
+    <comment>The string to be displayed when there is no current value in the x-coordinate number box.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Положение по Y</value>
+    <comment>Name for a control to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Введите значение координаты Y.</value>
+    <comment>Tooltip for the control that allows the user to choose the Y coordinate of the terminal's starting position.</comment>
+  </data>
+  <data name="Globals_InitialPosYBox.PlaceholderText" xml:space="preserve">
+    <value>Y</value>
+    <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
+  </data>
+  <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
+    <value>Разрешить системе Windows принимать решение</value>
+    <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
+  </data>
+  <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Если этот параметр включен, используется стандартное системное положение запуска.</value>
+    <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
+  </data>
+  <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
+    <value>При запуске терминала</value>
+    <comment>Header for a control to select how the terminal should load its first window.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreference.HelpText" xml:space="preserve">
+    <value>Что должно отображаться при создании первого терминала.</value>
+  </data>
+  <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
+    <value>Открыть вкладку с профилем по умолчанию</value>
+    <comment>An option to choose from for the "First window preference" setting. Open the default profile.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedWindowLayout.Content" xml:space="preserve">
+    <value>Открыть окна из предыдущего сеанса</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayoutAndContent.Content" xml:space="preserve">
+    <value>Восстановить макет окна и содержимое</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session and preserve the content.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
+    <value>Восстановить макет окна</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
+  </data>
+  <data name="Globals_LaunchParameters.Header" xml:space="preserve">
+    <value>Параметры запуска</value>
+    <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
+  </data>
+  <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
+    <value>Параметры, управляющие запуском терминала</value>
+    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
+  </data>
+  <data name="Globals_LaunchModeSetting.Text" xml:space="preserve">
+    <value>Режим запуска</value>
+    <comment>Header for a control to select what mode to launch the terminal in.</comment>
+  </data>
+  <data name="Globals_LaunchModeSetting.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Как терминал будет отображаться при запуске. Фокус будет скрывать вкладки и заголовок окна.</value>
+    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
+  </data>
+  <data name="Globals_LaunchModeDefault.Content" xml:space="preserve">
+    <value>По умолчанию</value>
+    <comment>An option to choose from for the "launch mode" setting. Default option.</comment>
+  </data>
+  <data name="Globals_LaunchModeFullscreen.Content" xml:space="preserve">
+    <value>На весь экран</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app in a full screen state.</comment>
+  </data>
+  <data name="Globals_LaunchModeMaximized.Content" xml:space="preserve">
+    <value>Развернуто</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app maximized (covers the whole screen).</comment>
+  </data>
+  <data name="Globals_WindowingBehavior.Header" xml:space="preserve">
+    <value>Поведение нового экземпляра</value>
+    <comment>Header for a control to select how new app instances are handled.</comment>
+  </data>
+  <data name="Globals_WindowingBehavior.HelpText" xml:space="preserve">
+    <value>Управляет способом присоединения новых экземпляров терминала к существующим окнам.</value>
+    <comment>A description for what the "windowing behavior" setting does. Presented near "Globals_WindowingBehavior.Header".</comment>
+  </data>
+  <data name="Globals_WindowingBehaviorUseNew.Content" xml:space="preserve">
+    <value>Создать окно</value>
+    <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances create a new window.</comment>
+  </data>
+  <data name="Globals_WindowingBehaviorUseAnyExisting.Content" xml:space="preserve">
+    <value>Присоединять к последнему использованному окну</value>
+    <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window.</comment>
+  </data>
+  <data name="Globals_WindowingBehaviorUseExisting.Content" xml:space="preserve">
+    <value>Присоединять к последнему использованному окну на этом рабочем столе</value>
+    <comment>An option to choose from for the "windowing behavior" setting. When selected, new instances open in the most recently used window on this virtual desktop.</comment>
+  </data>
+  <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
+    <value>Скрыть заголовок окна (требуется перезапуск)</value>
+    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
+  </data>
+  <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
+    <value>Если этот параметр отключен, строка заголовка будет отображаться над вкладками.</value>
+    <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
+  </data>
+  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
+    <value>Использовать акриловый материал в строке вкладки</value>
+    <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
+  </data>
+  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
+    <value>Использовать название активного терминала в качестве названия приложения</value>
+    <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
+  </data>
+  <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
+    <value>Если этот параметр отключен, строка заголовка будет иметь значение "Terminal".</value>
+    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
+  </data>
+  <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
+    <value>Привязка изменения размера окно к сетке символов</value>
+    <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
+  </data>
+  <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
+    <value>Если этот параметр отключен, размер окна будет плавно изменен.</value>
+    <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
+    <value>Запускать при запуске компьютера</value>
+    <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
+    <value>Автоматически запускать терминал при входе в Windows.</value>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
+  </data>
+  <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
+    <value>По центру</value>
+    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Text".</comment>
+  </data>
+  <data name="Globals_CenterOnLaunch.Text" xml:space="preserve">
+    <value>По центру при запуске</value>
+    <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
+  </data>
+  <data name="Globals_CenterOnLaunch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Если этот параметр включен, окно будет помещено в центр экрана при запуске.</value>
+    <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
+  </data>
+  <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
+    <value>Поверх остальных окон</value>
+    <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>
+  </data>
+  <data name="Profile_ForceVTInput.Header" xml:space="preserve">
+    <value>Использовать устаревшую входную кодировку</value>
+    <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
+  </data>
+  <data name="Profile_AllowKittyKeyboardMode.Header" xml:space="preserve">
+    <value>Разрешить протокол клавиатуры Kitty</value>
+    <comment>{Locked="Kitty"}Kitty is a moniker and its Keyboard Protocol is a protocol specification.</comment>
+  </data>
+  <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
+    <value>Разрешить DECRQCRA (Request Checksum of Rectangular Area)</value>
+    <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
+  </data>
+  <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
+    <value>Разрешить OSC 52 (Manipulate Selection Data) запись в буфер обмена</value>
+    <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
+  <data name="Globals_AllowHeadless.Header" xml:space="preserve">
+    <value>Разрешить запуск терминала Windows в фоновом режиме</value>
+    <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.Header" xml:space="preserve">
+    <value>Включить функции отладки</value>
+    <comment>Header for a control to toggle debug features.</comment>
+  </data>
+  <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
+    <value>Терминал всегда будет верхним окном рабочего стола.</value>
+    <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
+  </data>
+  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+    <value>Некоторые входные данные клавиатуры в некоторых приложениях могут перестать работать правильно, если этот параметр включен.</value>
+    <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
+  </data>
+  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+    <value>Это позволяет выполнять такие действия, как глобальный вызов и режим землетрясения, даже если ни одно окно не открыто.</value>
+    <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
+  </data>
+  <data name="Globals_TabWidthMode.Header" xml:space="preserve">
+    <value>Режим ширины вкладки</value>
+    <comment>Header for a control to choose how wide the tabs are.</comment>
+  </data>
+  <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
+    <value>В компактном режиме неактивные вкладки будут свернуты до размера значка.</value>
+    <comment>A description for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
+  </data>
+  <data name="Globals_TabWidthModeCompact.Content" xml:space="preserve">
+    <value>компакт</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, unselected tabs collapse to show only their icon. The selected tab adjusts to display the content within the tab.</comment>
+  </data>
+  <data name="Globals_TabWidthModeEqual.Content" xml:space="preserve">
+    <value>Равно</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, each tab has the same width.</comment>
+  </data>
+  <data name="Globals_TabWidthModeTitleLength.Content" xml:space="preserve">
+    <value>Длина названия</value>
+    <comment>An option to choose from for the "tab width mode" setting. When selected, each tab adjusts its width to the content within the tab.</comment>
+  </data>
+  <data name="Globals_Theme.Header" xml:space="preserve">
+    <value>Тема приложения</value>
+    <comment>Header for a control to choose the theme colors used in the app.</comment>
+  </data>
+  <data name="Globals_ThemeDark.Content" xml:space="preserve">
+    <value>Темная тема</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app.</comment>
+  </data>
+  <data name="Globals_ThemeSystem.Content" xml:space="preserve">
+    <value>Использовать тему Windows</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system.</comment>
+  </data>
+  <data name="Globals_ThemeLight.Content" xml:space="preserve">
+    <value>Светлая тема</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app.</comment>
+  </data>
+  <data name="Globals_ThemeDarkLegacy.Content" xml:space="preserve">
+    <value>Темная (устаревшая)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in dark theme and darker colors are used throughout the app. This is an older version of the "dark" theme</comment>
+  </data>
+  <data name="Globals_ThemeSystemLegacy.Content" xml:space="preserve">
+    <value>Использовать тему Windows (устаревшая)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app uses the theme selected in the Windows operating system. This is an older version of the "Use Windows theme" theme</comment>
+  </data>
+  <data name="Globals_ThemeLightLegacy.Content" xml:space="preserve">
+    <value>Светлая (устаревшая)</value>
+    <comment>An option to choose from for the "theme" setting. When selected, the app is in light theme and lighter colors are used throughout the app. This is an older version of the "light" theme</comment>
+  </data>
+  <data name="Globals_WordDelimiters.Header" xml:space="preserve">
+    <value>Разделители слов</value>
+    <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
+  </data>
+  <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
+    <value>Эти символы будут использоваться при двойном щелчке текста в терминале или активации режима пометки.</value>
+    <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
+  </data>
+  <data name="Nav_Appearance.Content" xml:space="preserve">
+    <value>Оформление</value>
+    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
+  </data>
+  <data name="Nav_ColorSchemes.Content" xml:space="preserve">
+    <value>Цветовые схемы</value>
+    <comment>Header for the "color schemes" menu item. This navigates to a page that lets you see and modify schemes of colors that can be used by the terminal.</comment>
+  </data>
+  <data name="Nav_Interaction.Content" xml:space="preserve">
+    <value>Взаимодействие</value>
+    <comment>Header for the "interaction" menu item. This navigates to a page that lets you see and modify settings related to the user's mouse and touch interactions with the app.</comment>
+  </data>
+  <data name="Nav_Compatibility.Content" xml:space="preserve">
+    <value>Совместимость</value>
+    <comment>Header for the "compatibility" menu item. This navigates to a page that lets you see and modify settings related to compatibility with command line scenarios.</comment>
+  </data>
+  <data name="Nav_Launch.Content" xml:space="preserve">
+    <value>Запуск</value>
+    <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
+  </data>
+  <data name="Nav_OpenJSON.Content" xml:space="preserve">
+    <value>Открытие файла JSON</value>
+    <comment>Header for a menu item. This opens the JSON file that is used to log the app's settings.</comment>
+  </data>
+  <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
+    <value>По умолчанию</value>
+    <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
+  </data>
+  <data name="Nav_Rendering.Content" xml:space="preserve">
+    <value>Отрисовка</value>
+    <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
+  </data>
+  <data name="Nav_Actions.Content" xml:space="preserve">
+    <value>Действия</value>
+    <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
+  </data>
+  <data name="Nav_EditAction.Content" xml:space="preserve">
+    <value>Изменить действие...</value>
+    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
+  </data>
+  <data name="Nav_Extensions.Content" xml:space="preserve">
+    <value>Расширения</value>
+    <comment>Header for the "extensions" menu item. This navigates to a page that lets you see and modify extensions for the app.</comment>
+  </data>
+  <data name="Profile_OpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Прозрачность фона</value>
+    <comment>Name for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
+  </data>
+  <data name="Profile_Opacity.Header" xml:space="preserve">
+    <value>Прозрачность фона</value>
+    <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
+  </data>
+  <data name="Profile_Opacity.HelpText" xml:space="preserve">
+    <value>Задает прозрачность окна.</value>
+    <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
+  </data>
+  <data name="Profile_Advanced.Header" xml:space="preserve">
+    <value>Расширенная</value>
+    <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
+  </data>
+  <data name="Profile_Terminal.Header" xml:space="preserve">
+    <value>Эмуляция терминала</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the capabilities of the terminal.</comment>
+  </data>
+  <data name="Profile_AltGrAliasing.Header" xml:space="preserve">
+    <value>Псевдоним AltGr</value>
+    <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
+  </data>
+  <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
+    <value>По умолчанию Windows рассматривать CTRL+ALT как псевдоним для AltGr. Этот параметр переопределит Windows по умолчанию.</value>
+    <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
+  </data>
+  <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Сглаживание текста</value>
+    <comment>Name for a control to select the graphical anti-aliasing format of text.</comment>
+  </data>
+  <data name="Profile_AntialiasingMode.Header" xml:space="preserve">
+    <value>Сглаживание текста</value>
+    <comment>Header for a control to select the graphical anti-aliasing format of text.</comment>
+  </data>
+  <data name="Profile_AntialiasingMode.HelpText" xml:space="preserve">
+    <value>Управляет тем, как текст сглаживается в обработчике.</value>
+    <comment>A description for what the "antialiasing mode" setting does. Presented near "Profile_AntialiasingMode.Header".</comment>
+  </data>
+  <data name="Profile_AntialiasingModeAliased.Content" xml:space="preserve">
+    <value>С псевдонимом</value>
+    <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer does not use antialiasing techniques.</comment>
+  </data>
+  <data name="Profile_AntialiasingModeClearType.Content" xml:space="preserve">
+    <value>ClearType</value>
+    <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer uses a "ClearType" antialiasing technique. {Locked="ClearType"}</comment>
+  </data>
+  <data name="Profile_AntialiasingModeGrayscale.Content" xml:space="preserve">
+    <value>Оттенки серого</value>
+    <comment>An option to choose from for the "text antialiasing" setting. When selected, the app's text renderer uses a grayscale antialiasing technique.</comment>
+  </data>
+  <data name="Profile_Appearance.Header" xml:space="preserve">
+    <value>Оформление</value>
+    <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
+  </data>
+  <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Путь к фоновому изображению</value>
+    <comment>Name for a control to determine the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImage.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Путь к фоновому изображению</value>
+    <comment>Name for a control to determine the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImage.Header" xml:space="preserve">
+    <value>Путь к фоновому изображению</value>
+    <comment>Header for a control to determine the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImage.HelpText" xml:space="preserve">
+    <value>Расположение файла изображения, используемое в фоновом режиме окна.</value>
+    <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Выравнивание фонового изображения</value>
+    <comment>Name for a control to choose the visual alignment of the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignment.Header" xml:space="preserve">
+    <value>Выравнивание фонового изображения</value>
+    <comment>Header for a control to choose the visual alignment of the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignment.HelpText" xml:space="preserve">
+    <value>Выбор способа выравнивания фонового изображения по границам окна.</value>
+    <comment>A description for what the "background image alignment" setting does. Presented near "Profile_BackgroundImageAlignment".</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentBottom.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Снизу</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentBottomLeft.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Снизу слева</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentBottomRight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Снизу справа</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentCenter.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>По центру</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentLeft.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Слева</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentRight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Справа</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentTop.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сверху</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentTopLeft.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сверху слева</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentTopRight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сверху справа</value>
+    <comment>This is the formal name for a visual alignment.</comment>
+  </data>
+  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
+    <value>Открыть...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_AddFontAxisButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Добавить новую ось шрифта</value>
+  </data>
+  <data name="Profile_AddNewFontAxis.Text" xml:space="preserve">
+    <value>Добавить</value>
+    <comment>Button label that adds a new font axis for the current font.</comment>
+  </data>
+  <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Добавить новую функцию шрифта</value>
+  </data>
+  <data name="Profile_DeleteFontKeyValuePairButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
+    <value>Добавить</value>
+    <comment>Button label that adds a new font feature for the current font.</comment>
+  </data>
+  <data name="Profile_BackgroundImageOpacitySlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Прозрачность фонового изображения</value>
+    <comment>Name for a control to choose the opacity of the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
+    <value>Непрозрачность фонового изображения</value>
+    <comment>Header for a control to choose the opacity of the image presented on the background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
+    <value>Задает прозрачность фонового изображения.</value>
+    <comment>A description for what the "background image opacity" setting does. Presented near "Profile_BackgroundImageOpacity".</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchMode.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Режим растяжения фонового изображения</value>
+    <comment>Name for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchMode.Header" xml:space="preserve">
+    <value>Режим растяжения фонового изображения</value>
+    <comment>Header for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchMode.HelpText" xml:space="preserve">
+    <value>Выбор размера фонового изображения для заполнения окна.</value>
+    <comment>A description for what the "background image stretch mode" setting does. Presented near "Profile_BackgroundImageStretchMode".</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchModeFill.Content" xml:space="preserve">
+    <value>Заливка</value>
+    <comment>An option to choose from for the "background image stretch mode" setting. When selected, the image is resized to fill the destination dimensions. The aspect ratio is not preserved.</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchModeNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "background image stretch mode" setting. When selected, the image preserves its original size.</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchModeUniform.Content" xml:space="preserve">
+    <value>Униформа</value>
+    <comment>An option to choose from for the "background image stretch mode" setting. When selected,the image is resized to fit in the destination dimensions while it preserves its native aspect ratio.</comment>
+  </data>
+  <data name="Profile_BackgroundImageStretchModeUniformToFill.Content" xml:space="preserve">
+    <value>Однородная заливка</value>
+    <comment>An option to choose from for the "background image stretch mode" setting. When selected, the content is resized to fill the destination dimensions while it preserves its native aspect ratio. But if the aspect ratio of the destination differs, the image is clipped to fit in the space (to fill the space)</comment>
+  </data>
+  <data name="Profile_CloseOnExit.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Поведение завершения профиля</value>
+    <comment>Name for a control to select the behavior of a terminal session (a profile) when it closes.</comment>
+  </data>
+  <data name="Profile_CloseOnExit.Header" xml:space="preserve">
+    <value>Действие закрытия профиля</value>
+    <comment>Header for a control to select the behavior of a terminal session (a profile) when it closes.</comment>
+  </data>
+  <data name="Profile_CloseOnExitAlways.Content" xml:space="preserve">
+    <value>Закрывать при завершении, отказе или сбое процесса</value>
+    <comment>An option to choose from for the "profile termination behavior" (or "close on exit") setting. When selected, the terminal closes if the process exits in a controlled (exit) or uncontrolled (fail or crash) scenario.</comment>
+  </data>
+  <data name="Profile_CloseOnExitGraceful.Content" xml:space="preserve">
+    <value>Закрывать только при успешном завершении процесса</value>
+    <comment>An option to choose from for the "profile termination behavior" (or "close on exit") setting. When selected, the terminal closes if the process exits in a controlled scenario successfully.</comment>
+  </data>
+  <data name="Profile_CloseOnExitNever.Content" xml:space="preserve">
+    <value>Никогда не закрывать автоматически</value>
+    <comment>An option to choose from for the "profile termination behavior" (or "close on exit") setting. When selected, the terminal never closes, even if the process exits in a controlled or uncontrolled scenario. The user would have to manually close the terminal.</comment>
+  </data>
+  <data name="Profile_CloseOnExitAutomatic.Content" xml:space="preserve">
+    <value>Автоматически</value>
+    <comment>An option to choose from for the "profile termination behavior" (or "close on exit") setting. When selected, the terminal closes if the process exits in a controlled scenario successfully and the process was launched by Windows Terminal.</comment>
+  </data>
+  <data name="Profile_ColorScheme.Header" xml:space="preserve">
+    <value>Цветовая схема</value>
+    <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
+  </data>
+  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
+    <value>Разверните, чтобы переопределить фон переднего плана, фон и выделенный фрагмент.</value>
+    <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
+  </data>
+  <data name="Profile_Commandline.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Командная строка</value>
+    <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
+  </data>
+  <data name="Profile_Commandline.Header" xml:space="preserve">
+    <value>Командная строка</value>
+    <comment>Header for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
+  </data>
+  <data name="Profile_CommandlineBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Командная строка</value>
+    <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
+  </data>
+  <data name="Profile_Commandline.HelpText" xml:space="preserve">
+    <value>Исполняемый файл, используемый в профиле.</value>
+    <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
+  </data>
+  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+    <value>Открыть...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_CursorHeight.Header" xml:space="preserve">
+    <value>Высота курсора</value>
+    <comment>Header for a control to determine the height of the text cursor.</comment>
+  </data>
+  <data name="Profile_CursorHeight.HelpText" xml:space="preserve">
+    <value>Устанавливает процентную высоту курсора, начиная снизу. Работает только с винтажной формой курсора.</value>
+    <comment>A description for what the "cursor height" setting does. Presented near "Profile_CursorHeight".</comment>
+  </data>
+  <data name="Profile_CursorShape.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Фигура курсора</value>
+    <comment>Name for a control to select the shape of the text cursor.</comment>
+  </data>
+  <data name="Profile_CursorShape.Header" xml:space="preserve">
+    <value>Форма курсора</value>
+    <comment>Header for a control to select the shape of the text cursor.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsNever.Content" xml:space="preserve">
+    <value>Никогда</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will never adjust the text colors.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsIndexed.Content" xml:space="preserve">
+    <value>Только для цветов в цветовой схеме</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsAlways.Content" xml:space="preserve">
+    <value>Всегда</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColorsAutomatic.Content" xml:space="preserve">
+    <value>Автоматически</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table if and only if high contrast mode is enabled.</comment>
+  </data>
+  <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
+    <value>Вертикальная линия (┃)</value>
+    <comment>{Locked="┃"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a vertical bar. The character in the parentheses is used to show what it looks like.</comment>
+  </data>
+  <data name="Profile_CursorShapeEmptyBox.Content" xml:space="preserve">
+    <value>Пустое поле ( ▯ )</value>
+    <comment>{Locked="▯"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like an empty box. The character in the parentheses is used to show what it looks like.</comment>
+  </data>
+  <data name="Profile_CursorShapeFilledBox.Content" xml:space="preserve">
+    <value>Заполненный квадратик ( █ )</value>
+    <comment>{Locked="█"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a filled box. The character in the parentheses is used to show what it looks like.</comment>
+  </data>
+  <data name="Profile_CursorShapeUnderscore.Content" xml:space="preserve">
+    <value>Подчеркивание ( ▁ )</value>
+    <comment>{Locked="▁"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like an underscore. The character in the parentheses is used to show what it looks like.</comment>
+  </data>
+  <data name="Profile_CursorShapeVintage.Content" xml:space="preserve">
+    <value>Ретро ( ▃ )</value>
+    <comment>{Locked="▃"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a thick underscore. This is the vintage and classic look of a cursor for terminals. The character in the parentheses is used to show what it looks like.</comment>
+  </data>
+  <data name="Profile_CursorShapeDoubleUnderscore.Content" xml:space="preserve">
+    <value>Двойное подчеркивание ( ‗ )</value>
+    <comment>{Locked="‗"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a stacked set of two underscores. The character in the parentheses is used to show what it looks like.</comment>
+  </data>
+  <data name="Profile_FontFace.Header" xml:space="preserve">
+    <value>Начертание шрифта</value>
+    <comment>Header for a control to select the font for text in the app.</comment>
+  </data>
+  <data name="Profile_FontFaceBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Начертание шрифта</value>
+    <comment>Name for a control to select the font for text in the app.</comment>
+  </data>
+  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+    <value>Вы можете использовать несколько шрифтов, разделив их запятой ASCII.</value>
+  </data>
+  <data name="Profile_FontSize.Header" xml:space="preserve">
+    <value>Размер шрифта</value>
+    <comment>Header for a control to determine the size of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontSizeBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Размер шрифта</value>
+    <comment>Name for a control to determine the size of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontSize.HelpText" xml:space="preserve">
+    <value>Размер шрифта в точках.</value>
+    <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
+  </data>
+  <data name="Profile_LineHeight.Header" xml:space="preserve">
+    <value>Высота строки</value>
+    <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_CellWidth.Header" xml:space="preserve">
+    <value>Ширина ячейки</value>
+    <comment>Header for a control that sets the text character width.</comment>
+  </data>
+  <data name="Profile_LineHeightBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Высота строки</value>
+    <comment>Header for a control that sets the text line height.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Ширина ячейки</value>
+    <comment>Header for a control that sets the text character width.</comment>
+  </data>
+  <data name="Profile_LineHeight.HelpText" xml:space="preserve">
+    <value>Переопределить высоту строки терминала. Измеряется как кратное размеру шрифта. Значение по умолчанию зависит от вашего шрифта и обычно составляет около 1,2.</value>
+    <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
+  </data>
+  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+    <value>Переопределите ширину ячейки терминала. Измеряется как кратное размеру шрифта. Значение по умолчанию зависит от шрифта и обычно около 0,6.</value>
+    <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
+  </data>
+  <data name="Profile_LineHeightBox.PlaceholderText" xml:space="preserve">
+    <value>1,2</value>
+    <comment>"1.2" is a decimal number.</comment>
+  </data>
+  <data name="Profile_CellWidthBox.PlaceholderText" xml:space="preserve">
+    <value>0,6</value>
+    <comment>"0.6" is a decimal number.</comment>
+  </data>
+  <data name="Profile_EnableBuiltinGlyphs.Header" xml:space="preserve">
+    <value>Встроенные глифы</value>
+    <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
+  </data>
+  <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, терминал рисует собственные глифы для элементов блока и символов рисования прямоугольников вместо использования шрифта.</value>
+    <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.Header" xml:space="preserve">
+    <value>Полноцветные эмодзи</value>
+    <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
+  </data>
+  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+    <value>Если эта функция включена, эмодзи отображаются в полноцветном режиме.</value>
+    <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
+  </data>
+  <data name="Profile_FontWeightComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Насыщенность шрифта</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontWeightSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Насыщенность шрифта</value>
+    <comment>Name for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontWeight.Header" xml:space="preserve">
+    <value>Насыщенность</value>
+    <comment>Header for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontWeight.HelpText" xml:space="preserve">
+    <value>Устанавливает вес (легкость или тяжесть штрихов) для заданного шрифта.</value>
+    <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
+  </data>
+  <data name="Profile_FontAxes.Header" xml:space="preserve">
+    <value>Переменные оси шрифта</value>
+    <comment>Header for a control to allow editing the font axes.</comment>
+  </data>
+  <data name="Profile_FontAxesAvailable.Text" xml:space="preserve">
+    <value>Добавление или удаление осей для заданного шрифта.</value>
+    <comment>A description for what the "font axes" setting does. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontAxesUnavailable.Text" xml:space="preserve">
+    <value>В выбранном шрифте нет переменных осей.</value>
+    <comment>A description provided when the font axes setting is disabled. Presented near "Profile_FontAxes".</comment>
+  </data>
+  <data name="Profile_FontFeatures.Header" xml:space="preserve">
+    <value>Компоненты шрифта</value>
+    <comment>Header for a control to allow editing the font features.</comment>
+  </data>
+  <data name="Profile_FontFeaturesAvailable.Text" xml:space="preserve">
+    <value>Добавление или удаление компонентов шрифта для данного шрифта.</value>
+    <comment>A description for what the "font features" setting does. Presented near "Profile_FontFeatures".</comment>
+  </data>
+  <data name="Profile_FontFeaturesUnavailable.Text" xml:space="preserve">
+    <value>В выбранном шрифте нет компонентов.</value>
+    <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
+  </data>
+  <data name="Profile_Hidden.Header" xml:space="preserve">
+    <value>Скрытие профиля из выпадающего списка</value>
+    <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
+  </data>
+  <data name="Profile_Hidden.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, профиль не будет отображаться в списке профилей. Используется для скрытия профилей по умолчанию и динамического создания профилей, которые при этом остаются в файле настроек.</value>
+    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
+  </data>
+  <data name="Profile_Elevate.Header" xml:space="preserve">
+    <value>Запустить этот профиль от имени администратора</value>
+    <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
+  </data>
+  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, профиль будет автоматически открываться в Администратор терминала. Если текущее окно уже запущено от имени администратора, оно откроется в этом окне.</value>
+    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
+  </data>
+  <data name="Profile_HistorySize.Header" xml:space="preserve">
+    <value>Размер журнала</value>
+    <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
+  </data>
+  <data name="Profile_HistorySizeBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Размер журнала</value>
+    <comment>Name for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
+  </data>
+  <data name="Profile_HistorySize.HelpText" xml:space="preserve">
+    <value>Количество строк над отображаемыми в окне, к которым вы можете вернуться прокручиванием.</value>
+    <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
+  </data>
+  <data name="Profile_Icon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Значок</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+  </data>
+  <data name="Profile_Icon.Header" xml:space="preserve">
+    <value>Значок</value>
+    <comment>Header for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+  </data>
+  <data name="IconPicker_ImagePathBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Значок</value>
+    <comment>Name for a control to determine what icon can be used. This is not necessarily a file path, but can be one. It's usually used for images.</comment>
+  </data>
+  <data name="IconPicker_EmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Значок</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
+  </data>
+  <data name="Profile_Icon.HelpText" xml:space="preserve">
+    <value>Расположение эмодзи или файла изображения для значка, используемого в профиле.</value>
+    <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
+  </data>
+  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
+    <value>Открыть...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_Padding.Header" xml:space="preserve">
+    <value>Внутренние поля</value>
+    <comment>Header for a control to determine the amount of space between text in a terminal and the edge of the window. The space can be any combination of the top, bottom, left, and right side of the window.</comment>
+  </data>
+  <data name="Profile_Padding.HelpText" xml:space="preserve">
+    <value>Задание заполнения текста в окне.</value>
+    <comment>A description for what the "padding" setting does. Presented near "Profile_Padding".</comment>
+  </data>
+  <data name="Profile_RetroTerminalEffect.Header" xml:space="preserve">
+    <value>Ретро-эффекты терминала</value>
+    <comment>Header for a control to toggle classic CRT display effects, which gives the terminal a retro look.</comment>
+  </data>
+  <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
+    <value>Показывать эффекты терминалов в стиле ретро, такие как светящийся текст и линии сканирования.</value>
+    <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect". "Retro" is a common English prefix that suggests a nostalgic, dated appearance.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColors.Header" xml:space="preserve">
+    <value>Автоматическая регулировка освещенности неразличимого текста</value>
+    <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColors.HelpText" xml:space="preserve">
+    <value>Автоматически повышает яркость или затемняет текст, чтобы сделать его более заметным. Даже если этот параметр включен, он будет действовать только в при слабой контрастности сочетания цветов переднего плана и фона.</value>
+    <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
+  </data>
+  <data name="Profile_ScrollbarVisibility.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Видимость полосы прокрутки</value>
+    <comment>Name for a control to select the visibility of the scrollbar in a session.</comment>
+  </data>
+  <data name="Profile_ScrollbarVisibility.Header" xml:space="preserve">
+    <value>Видимость полосы прокрутки</value>
+    <comment>Header for a control to select the visibility of the scrollbar in a session.</comment>
+  </data>
+  <data name="Profile_ScrollbarVisibilityHidden.Content" xml:space="preserve">
+    <value>Скрыто</value>
+    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is hidden.</comment>
+  </data>
+  <data name="Profile_ScrollbarVisibilityVisible.Content" xml:space="preserve">
+    <value>Видимы</value>
+    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is visible but may dynamically shrink.</comment>
+  </data>
+  <data name="Profile_ScrollbarVisibilityAlways.Content" xml:space="preserve">
+    <value>Всегда</value>
+    <comment>An option to choose from for the "scrollbar visibility" setting. When selected, the scrollbar is always visible.</comment>
+  </data>
+  <data name="Profile_SnapOnInput.Header" xml:space="preserve">
+    <value>Прокрутка для ввода при печати</value>
+    <comment>Header for a control to toggle if keyboard input should automatically scroll to where the input was placed.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Начальный каталог</value>
+    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.Header" xml:space="preserve">
+    <value>Запуск каталога</value>
+    <comment>Header for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Начальный каталог</value>
+    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
+    <value>Каталог, запускаемый профилем при загрузке.</value>
+    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
+  </data>
+  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+    <value>Открыть...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="Profile_StartingDirectoryUseParentCheckbox.Content" xml:space="preserve">
+    <value>Использовать каталог родительского процесса</value>
+    <comment>A supplementary setting to the "starting directory" setting. "Parent" refers to the parent process of the current process.</comment>
+  </data>
+  <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Если этот параметр включен, этот профиль будет запускаться в каталоге, из которого был запущен Терминал.</value>
+    <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
+  </data>
+  <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
+    <value>Подавление изменения названия</value>
+    <comment>Header for a control to toggle changes in the app title.</comment>
+  </data>
+  <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
+    <value>Игнорировать запросы приложений на изменение названия (OSC 2).</value>
+    <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
+  </data>
+  <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Название вкладки</value>
+    <comment>Name for a control to determine the title of the tab. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_TabTitle.Header" xml:space="preserve">
+    <value>Заголовок вкладки</value>
+    <comment>Header for a control to determine the title of the tab. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_TabTitle.HelpText" xml:space="preserve">
+    <value>Заменяет имя профиля в качестве заголовка для передачи в оболочку при запуске.</value>
+    <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
+  </data>
+  <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
+    <value>Внешний вид без фокуса</value>
+    <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
+  </data>
+  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
+    <value>Создать внешний вид</value>
+    <comment>Button label that adds an unfocused appearance for this profile.</comment>
+  </data>
+  <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Button label that deletes the unfocused appearance for this profile.</comment>
+  </data>
+  <data name="Profile_UseAcrylic.Header" xml:space="preserve">
+    <value>Включить акриловый материал</value>
+    <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
+  </data>
+  <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
+    <value>Применяет прозрачную текстуру к фону окна.</value>
+    <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
+  </data>
+  <data name="Profile_UseDesktopImage.Content" xml:space="preserve">
+    <value>Использовать рисунки рабочего стола</value>
+    <comment>A supplementary setting to the "background image" setting. When enabled, the OS desktop wallpaper is used as the background image. Presented near "Profile_BackgroundImage".</comment>
+  </data>
+  <data name="Profile_UseDesktopImage.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Используйте фоновое изображение рабочего стола в качестве фонового изображения терминала.</value>
+    <comment>A description for what the supplementary "use desktop image" setting does. Presented near "Profile_UseDesktopImage".</comment>
+  </data>
+  <data name="Settings_ResetSettingsButton.Content" xml:space="preserve">
+    <value>Отменить изменения</value>
+    <comment>Text label for a destructive button that discards the changes made to the settings.</comment>
+  </data>
+  <data name="Settings_ResetSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить все несохраненные параметры.</value>
+    <comment>A description for what the "discard changes" button does. Presented near "Settings_ResetSettingsButton".</comment>
+  </data>
+  <data name="Settings_SaveSettingsButton.Content" xml:space="preserve">
+    <value>Сохранить</value>
+    <comment>Text label for the confirmation button that saves the changes made to the settings.</comment>
+  </data>
+  <data name="Settings_UnsavedSettingsWarning.Text" xml:space="preserve">
+    <value>⚠ Есть несохраненные изменения</value>
+    <comment>{Locked="⚠"} A disclaimer that appears when the unsaved changes to the settings are present.</comment>
+  </data>
+  <data name="Nav_AddNewProfile.Content" xml:space="preserve">
+    <value>Добавить новый профиль</value>
+    <comment>Header for the "add new" menu item. This navigates to the page where users can add a new profile.</comment>
+  </data>
+  <data name="Nav_Profiles.Content" xml:space="preserve">
+    <value>Профили</value>
+    <comment>Header for the "profiles" menu items. This acts as a divider to introduce profile-related menu items.</comment>
+  </data>
+  <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
+    <value>Фокус</value>
+    <comment>An option to choose from for the "launch mode" setting. Focus mode is a mode designed to help you focus.</comment>
+  </data>
+  <data name="Globals_LaunchModeMaximizedFocus.Content" xml:space="preserve">
+    <value>Развернутый фокус</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app maximized and in focus mode.</comment>
+  </data>
+  <data name="Globals_LaunchModeMaximizedFullscreen.Content" xml:space="preserve">
+    <value>Развернутый полноэкранный режим</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app maximized and in full screen.</comment>
+  </data>
+  <data name="Globals_LaunchModeFullscreenFocus.Content" xml:space="preserve">
+    <value>Полноэкранная фокусировка</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app in full screen and in focus mode.</comment>
+  </data>
+  <data name="Globals_LaunchModeMaximizedFullscreenFocus.Content" xml:space="preserve">
+    <value>Развернутая полноэкранная фокусировка</value>
+    <comment>An option to choose from for the "launch mode" setting. Opens the app maximized in full screen and in focus mode.</comment>
+  </data>
+  <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Стиль уведомления колокольчиком</value>
+    <comment>Name for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
+  </data>
+  <data name="Profile_BellStyle.Header" xml:space="preserve">
+    <value>Стиль уведомления звонка</value>
+    <comment>Header for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
+  </data>
+  <data name="Profile_BellStyle.HelpText" xml:space="preserve">
+    <value>Управляет тем, что происходит, когда приложение выдает символ BEL.</value>
+    <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
+  </data>
+  <data name="Profile_ReloadEnvVars.Header" xml:space="preserve">
+    <value>Запустить это приложение с новым блоком среды.</value>
+    <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
+  </data>
+  <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, Терминал будет создавать новый блок среды при создании новых вкладок или панелей с этим профилем. Если этот параметр отключен, вкладка или панель будет наследовать переменные, с которыми запущен Терминал.</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
+    <value>Отображать меню при щелчке правой кнопкой мыши</value>
+    <comment>This controls how a right-click behaves in the terminal</comment>
+  </data>
+  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, терминал отображает меню правой кнопкой мыши. Если этот параметр отключен, при нажатии правой кнопкой мыши будет скопироваться выделенный текст (или вставить, если нет выделенного фрагмента).</value>
+    <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
+  </data>
+  <data name="Profile_ShowMarks.Header" xml:space="preserve">
+    <value>Отображать метки на полосе прокрутки</value>
+    <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
+  </data>
+  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, Терминал будет отображать метки на полосе прокрутки при поиске текста или при включенной интеграции оболочки.</value>
+    <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.Header" xml:space="preserve">
+    <value>Автоматически помечать запросы при нажатии клавиши ВВОД</value>
+    <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
+  </data>
+  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, Терминал автоматически добавляет метку, указывающую позицию конца команды при нажатии клавиши ВВОД.</value>
+    <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.Header" xml:space="preserve">
+    <value>Экспериментальная функция: изменение положения курсора щелчками мыши</value>
+    <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
+  </data>
+  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, при щелчке внутри запроса курсор перемещается в эту позицию. Для правильного выполнения этой операции необходимо включить интеграцию оболочки в вашей оболочке.</value>
+    <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
+  </data>
+  <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
+    <value>Звук</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, an audible cue is used to notify the user.</comment>
+  </data>
+  <data name="Profile_BellStyleNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, notifications are silenced.</comment>
+  </data>
+  <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
+    <value>Черный</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightBold.Content" xml:space="preserve">
+    <value>Полужирный</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightCustom.Content" xml:space="preserve">
+    <value>Настраиваемый</value>
+    <comment>This is an entry that allows the user to select their own font weight value outside of the simplified list of options.</comment>
+  </data>
+  <data name="Profile_FontWeightExtra-black.Content" xml:space="preserve">
+    <value>Сверхжирный</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightExtra-bold.Content" xml:space="preserve">
+    <value>Жирный</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightExtra-light.Content" xml:space="preserve">
+    <value>Сверхсветлый</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightLight.Content" xml:space="preserve">
+    <value>Светлый</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightMedium.Content" xml:space="preserve">
+    <value>Средний</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightNormal.Content" xml:space="preserve">
+    <value>Обычный</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightSemi-bold.Content" xml:space="preserve">
+    <value>Плотный</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightSemi-light.Content" xml:space="preserve">
+    <value>Полусветлый</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontWeightThin.Content" xml:space="preserve">
+    <value>Тонкий</value>
+    <comment>This is the formal name for a font weight.</comment>
+  </data>
+  <data name="Profile_FontFeature_rlig" xml:space="preserve">
+    <value>Обязательные лигатуры</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_locl" xml:space="preserve">
+    <value>Локализованные формы</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ccmp" xml:space="preserve">
+    <value>Композиция/декомпозиция</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_calt" xml:space="preserve">
+    <value>Контекстные варианты</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_liga" xml:space="preserve">
+    <value>Стандартные лигатуры</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_clig" xml:space="preserve">
+    <value>Контекстные лигатуры</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rvrn" xml:space="preserve">
+    <value>Обязательные варианты</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_kern" xml:space="preserve">
+    <value>Кернинг</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mark" xml:space="preserve">
+    <value>Расположение метки</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_mkmk" xml:space="preserve">
+    <value>Расположение между метками</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_dist" xml:space="preserve">
+    <value>Расстояние</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_aalt" xml:space="preserve">
+    <value>Доступ ко всем вариантам</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_case" xml:space="preserve">
+    <value>Формы с учетом регистра</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_dnom" xml:space="preserve">
+    <value>Знаменатель</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_fina" xml:space="preserve">
+    <value>Терминальные формы</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_frac" xml:space="preserve">
+    <value>Дроби</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_init" xml:space="preserve">
+    <value>Инициальные формы</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_medi" xml:space="preserve">
+    <value>Медиальные формы</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_numr" xml:space="preserve">
+    <value>Числитель</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_ordn" xml:space="preserve">
+    <value>Порядковые номера</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_rclt" xml:space="preserve">
+    <value>Обязательные контекстные варианты</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_sinf" xml:space="preserve">
+    <value>Научные подстрочные символы</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_subs" xml:space="preserve">
+    <value>Подстрочный</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_sups" xml:space="preserve">
+    <value>Надстрочный</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_zero" xml:space="preserve">
+    <value>Перечеркнутый нуль</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Profile_FontFeature_abvm" xml:space="preserve">
+    <value>Расположение метки над базой</value>
+    <comment>This is the formal name for a font feature.</comment>
+  </data>
+  <data name="Globals_LaunchSize.Header" xml:space="preserve">
+    <value>Размер для запуска</value>
+    <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
+  </data>
+  <data name="Globals_LaunchSize.HelpText" xml:space="preserve">
+    <value>Количество строк или столбцов, отображаемых в окне при первой загрузке. Измеряется знаками.</value>
+    <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
+  </data>
+  <data name="Globals_LaunchPosition.Text" xml:space="preserve">
+    <value>Положение запуска</value>
+    <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
+  </data>
+  <data name="Globals_LaunchPosition.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Начальное положение окна терминала при запуске. При запуске в развернутом полноэкранном режиме или с включенным параметром "По центру при запуске" эта настройка используется для выбора целевого монитора.</value>
+    <comment>A description for what the "X position" and "Y position" settings do. Presented near "Globals_LaunchPosition.Header".</comment>
+  </data>
+  <data name="Profile_BellStyleAll.Content" xml:space="preserve">
+    <value>Все</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a combination of the other bell styles is used to notify the user.</comment>
+  </data>
+  <data name="Profile_BellStyleTaskbar.Content" xml:space="preserve">
+    <value>Мигающая панель задач</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the taskbar is flashed.</comment>
+  </data>
+  <data name="Profile_BellStyleWindow.Content" xml:space="preserve">
+    <value>Мигающее окно</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
+  </data>
+  <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
+    <value>Добавить новую</value>
+    <comment>Button label that creates a new color scheme.</comment>
+  </data>
+  <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
+    <value>Удалить цветовую схему</value>
+    <comment>Button label that deletes the selected color scheme.</comment>
+  </data>
+  <data name="ColorScheme_Name.Header" xml:space="preserve">
+    <value>Имя</value>
+    <comment>The name of the color scheme. Used as a label on the name control.</comment>
+  </data>
+  <data name="ColorScheme_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Название цветовой схемы.</value>
+    <comment>Supplementary text (tooltip) for the control used to select a color scheme that is under view.</comment>
+  </data>
+  <data name="Profile_DeleteButton.Text" xml:space="preserve">
+    <value>Удалить профиль</value>
+    <comment>Button label that deletes the current profile that is being viewed.</comment>
+  </data>
+  <data name="Profile_Name.HelpText" xml:space="preserve">
+    <value>Имя профиля, отображаемого в раскрывающемся списке.</value>
+    <comment>A description for what the "name" setting does. Presented near "Profile_Name".</comment>
+  </data>
+  <data name="Profile_Name.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Название</value>
+    <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
+  </data>
+  <data name="Profile_Name.Header" xml:space="preserve">
+    <value>Имя</value>
+    <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
+  </data>
+  <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
+    <value>Прозрачность</value>
+    <comment>Header for a group of settings related to transparency, including the acrylic material background of the app.</comment>
+  </data>
+  <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
+    <value>Фоновое изображение</value>
+    <comment>Header for a group of settings that control the image presented on the background of the app. Presented near "Profile_BackgroundImage" and other keys starting with "Profile_BackgroundImage".</comment>
+  </data>
+  <data name="Profile_CursorHeader.Text" xml:space="preserve">
+    <value>Курсор</value>
+    <comment>Header for a group of settings that control the appearance of the cursor. Presented near "Profile_CursorHeight" and other keys starting with "Profile_Cursor".</comment>
+  </data>
+  <data name="Profile_AdditionalSettingsHeader.Text" xml:space="preserve">
+    <value>Дополнительные параметры</value>
+    <comment>Header for the buttons that navigate to additional settings for the profile.</comment>
+  </data>
+  <data name="Profile_TextHeader.Text" xml:space="preserve">
+    <value>Текст</value>
+    <comment>Header for a group of settings that control the appearance of text in the app.</comment>
+  </data>
+  <data name="Globals_WarningsHeader.Text" xml:space="preserve">
+    <value>Предупреждения</value>
+    <comment>Header for a group of settings that control the warnings in the app.</comment>
+  </data>
+  <data name="Profile_WindowHeader.Text" xml:space="preserve">
+    <value>Окно</value>
+    <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
+  </data>
+  <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Откройте settings.json файл. ALT+ЩЕЛЧОК открыть файл defaults.json.</value>
+    <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
+  </data>
+  <data name="ColorScheme_DeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Да, удалить цветовую схему</value>
+    <comment>Button label for positive confirmation of deleting a color scheme (presented with "ColorScheme_DeleteConfirmationMessage")</comment>
+  </data>
+  <data name="ColorScheme_DeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Вы действительно хотите удалить эту цветовую схему?</value>
+    <comment>A confirmation message displayed when the user intends to delete a color scheme.</comment>
+  </data>
+  <data name="RenameAccept.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Принять переименование</value>
+    <comment>Text label for a button that can be used to confirm a rename operation during the renaming process.</comment>
+  </data>
+  <data name="RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить переименования</value>
+    <comment>Text label for a button that can be used to cancel a rename operation during the renaming process.</comment>
+  </data>
+  <data name="ColorSchemesDisclaimer.Text" xml:space="preserve">
+    <value>Определенные здесь схемы можно применить к вашим профилям в разделе "Оформление" страниц параметров профиля.</value>
+    <comment>A disclaimer presented at the top of a page. "Appearances" should match Profile_Appearance.Header.</comment>
+  </data>
+  <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
+    <value>Заданные здесь параметры будут применены ко всем профилям, если только они не переопределяются параметрами профиля.</value>
+    <comment>A disclaimer presented at the top of a page. See "Nav_ProfileDefaults.Content" for a description on what the defaults layer does in the app.</comment>
+  </data>
+  <data name="Profile_DeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Да, удалить профиль</value>
+    <comment>Button label for positive confirmation of deleting a profile (presented with "Profile_DeleteConfirmationMessage")</comment>
+  </data>
+  <data name="Profile_DeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Вы действительно хотите удалить этот профиль?</value>
+    <comment>A confirmation message displayed when the user intends to delete a profile.</comment>
+  </data>
+  <data name="Settings_SaveSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Сохранить все несохраненные параметры.</value>
+    <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>
+  </data>
+  <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
+    <value>Стиль интерфейса переключателя вкладок</value>
+    <comment>Header for a control to choose how the tab switcher operates.</comment>
+  </data>
+  <data name="Globals_TabSwitcherMode.HelpText" xml:space="preserve">
+    <value>Выбирает, какой интерфейс будет использоваться при переключении вкладок с помощью клавиатуры.</value>
+    <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
+  </data>
+  <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Отдельное окно, в порядке использования (самое недавнее - первым)</value>
+    <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is shown in most recently used order.</comment>
+  </data>
+  <data name="Globals_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>Отдельное окно, в порядке размещения на полосе вкладок</value>
+    <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is shown in the order of the tabs at the top of the app.</comment>
+  </data>
+  <data name="Globals_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Традиционная навигация, без открытия отдельных окон</value>
+    <comment>An option to choose from for the "tab switcher mode" setting. The tab switcher overlay is hidden and does not appear in a separate window.</comment>
+  </data>
+  <data name="Globals_CopyFormat.Header" xml:space="preserve">
+    <value>Текстовые форматы для копирования в буфер обмена</value>
+    <comment>Header for a control to select the format of copied text.</comment>
+  </data>
+  <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
+    <value>Только неформатированный текст</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store only plain text data.</comment>
+  </data>
+  <data name="Globals_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store only HTML data.</comment>
+  </data>
+  <data name="Globals_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store only RTF data.</comment>
+  </data>
+  <data name="Globals_CopyFormatAll.Content" xml:space="preserve">
+    <value>Оба формата, HTML и RTF</value>
+    <comment>An option to choose from for the "copy formatting" setting. Store both HTML and RTF data.</comment>
+  </data>
+  <data name="ColorScheme_RenameErrorTip.Subtitle" xml:space="preserve">
+    <value>Выберите другое имя.</value>
+    <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the subtitle and provides guidance to fix the issue.</comment>
+  </data>
+  <data name="ColorScheme_RenameErrorTip.Title" xml:space="preserve">
+    <value>Это имя цветовой схемы уже используется.</value>
+    <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
+  </data>
+  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
+    <value>Автоматически переводить фокус на панель при наведении указателя мыши</value>
+    <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
+  </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Изменение размера шрифта терминала с помощью прокрутки при удерживании клавиши CTRL</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Настройте прозрачность терминала путем прокрутки при нажатых клавишах CTRL и SHIFT</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
+  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
+    <value>Анимация панели</value>
+    <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
+  </data>
+  <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
+    <value>Всегда отображать значок в области уведомлений</value>
+    <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
+  </data>
+  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
+    <value>Скрывать терминал в области уведомлений, когда он свернут</value>
+    <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
+  </data>
+  <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
+    <value>Восстановить унаследованное значение.</value>
+    <comment>This button will remove a user's customization from a given setting, restoring it to the value that the profile inherited. This is a text label on a button.</comment>
+  </data>
+  <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
+    <value>Цвета</value>
+    <comment>A header for the grouping of colors in the color scheme.</comment>
+  </data>
+  <data name="SettingContainer_OverrideMessageFragmentExtension" xml:space="preserve">
+    <value>Сбросить до значения из: {}</value>
+    <comment>{} is replaced by the name of another profile or generator. This is a text label on a button that is dynamically generated and provides more context in the {}.</comment>
+  </data>
+  <data name="Profile_FontFaceShowAllFonts.Content" xml:space="preserve">
+    <value>Показать все шрифты</value>
+    <comment>A supplementary setting to the "font face" setting. Toggling this control updates the font face control to show all of the fonts installed.</comment>
+  </data>
+  <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Если этот параметр включен, отобразятся все установленные шрифты в приведенном выше списке. В противном случае будет показан только список моноширинных шрифтов.</value>
+    <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
+  </data>
+  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Создать внешний вид</value>
+    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
+  </data>
+  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавление настроек внешнего вида профиля, когда он не используется. Эти параметры будут применяться к профилю, когда он не активен.</value>
+    <comment>A description for what the create unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Удалить внешний вид</value>
+    <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удаление настроек внешнего вида для неактивного профиля.</value>
+    <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Actions_Disclaimer.Content" xml:space="preserve">
+    <value>Подробнее о действиях</value>
+    <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
+  </data>
+  <data name="Actions_DeleteButton2.Text" xml:space="preserve">
+    <value>Удалить действие</value>
+    <comment>Button label that deletes the selected action.</comment>
+  </data>
+  <data name="Actions_Name.Text" xml:space="preserve">
+    <value>Имя действия</value>
+    <comment>Label for the text box that edits the action name.</comment>
+  </data>
+  <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
+    <value>Имя действия</value>
+    <comment>Placeholder text for the text box where the user can edit the action name.</comment>
+  </data>
+  <data name="Actions_ShortcutAction.Text" xml:space="preserve">
+    <value>Тип действия</value>
+    <comment>Label for the combo box that edits the action type.</comment>
+  </data>
+  <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Настраиваемые сочетания клавиш</value>
+    <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_CommandDetails.Text" xml:space="preserve">
+    <value>Детали команды</value>
+    <comment>Label for the list of editable command details for the current command. This includes the command name and the shortcut action type.</comment>
+  </data>
+  <data name="Actions_Arguments.Text" xml:space="preserve">
+    <value>Дополнительные аргументы</value>
+    <comment>Label for the list of editable arguments for the currently selected action.</comment>
+  </data>
+  <data name="Actions_Keybindings.Text" xml:space="preserve">
+    <value>Настраиваемые сочетания клавиш</value>
+    <comment>Label for the list of editable keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_AddKeyChord.Text" xml:space="preserve">
+    <value>Добавить настраиваемое сочетание клавиш</value>
+    <comment>Button label that adds a keybinding to the current action.</comment>
+  </data>
+  <data name="Actions_AdditionalKeyChords" xml:space="preserve">
+    <value>и еще {}</value>
+    <comment>Text that will be read out by a screen reader indicating that additional keybindings exist for this command. {} will be replaced by the number of additional keybindings.</comment>
+  </data>
+  <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Да, удалить привязку клавиши</value>
+    <comment>Button label that confirms deletion of a key binding entry.</comment>
+  </data>
+  <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Вы действительно хотите удалить эту привязку ключа?</value>
+    <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Да, удалить действие</value>
+    <comment>Button label that confirms deletion of an action.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Вы действительно хотите удалить это действие?</value>
+    <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
+  </data>
+  <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
+    <value>Недопустимое сочетание клавиш. Введите допустимое сочетание клавиш.</value>
+    <comment>Error message displayed when an invalid key chord is input by the user.</comment>
+  </data>
+  <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
+    <value>Да</value>
+    <comment>Button label that confirms the deletion of a conflicting key binding to allow the current key binding to be registered.</comment>
+  </data>
+  <data name="Actions_RenameConflictConfirmationMessage" xml:space="preserve">
+    <value>Предоставленное сочетание клавиш уже используется следующим действием:</value>
+    <comment>Error message displayed when a key chord that is already in use is input by the user. The name of the conflicting key chord is displayed after this message.</comment>
+  </data>
+  <data name="Actions_RenameConflictConfirmationQuestion" xml:space="preserve">
+    <value>Хотите перезаписать его?</value>
+    <comment>Confirmation message displayed when a key chord that is already in use is input by the user. This is intended to ask the user if they wish to delete the conflicting key binding, and assign the current key chord (or binding) instead. This is presented in the context of Actions_RenameConflictConfirmationMessage. The subject of this sentence is the object of that one.</comment>
+  </data>
+  <data name="Actions_UnnamedCommandName" xml:space="preserve">
+    <value>&lt;команда без имени&gt;</value>
+    <comment>{Locked="&lt;"} {Locked="&gt;"} The text shown when referring to a command that is unnamed.</comment>
+  </data>
+  <data name="Actions_AcceptButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Принять</value>
+    <comment>Text label for a button that can be used to accept changes to a key binding entry.</comment>
+  </data>
+  <data name="Actions_CancelButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Отменить</value>
+    <comment>Text label for a button that can be used to cancel changes to a key binding entry</comment>
+  </data>
+  <data name="Actions_DeleteButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Text label for a button that can be used to delete a key binding entry.</comment>
+  </data>
+  <data name="Actions_EditButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Изменить</value>
+    <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
+  </data>
+  <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
+    <value>Добавить</value>
+    <comment>Button label that creates a new action on the actions page.</comment>
+  </data>
+  <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Действие</value>
+    <comment>Label for a control that sets the action of a key binding.</comment>
+  </data>
+  <data name="Actions_NullEnumValue" xml:space="preserve">
+    <value>Использовать глобальный параметр</value>
+    <comment>An option to choose from for nullable enums. Clears the enum value.</comment>
+  </data>
+  <data name="Actions_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+    <comment>An option to choose from for the "copy format". Copies content in HTML format.</comment>
+  </data>
+  <data name="Actions_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+    <comment>An option to choose from for the "copy format". Copies content in Rich Text Format (RTF).</comment>
+  </data>
+  <data name="Actions_SplitDirectionAuto.Content" xml:space="preserve">
+    <value>Автоматически</value>
+    <comment>An option to choose from for the "split direction". Automatically determines the split direction.</comment>
+  </data>
+  <data name="Actions_SplitDirectionUp.Content" xml:space="preserve">
+    <value>Вверх</value>
+    <comment>An option to choose from for the "split direction". Splits upward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionRight.Content" xml:space="preserve">
+    <value>Вправо</value>
+    <comment>An option to choose from for the "split direction". Splits to the right.</comment>
+  </data>
+  <data name="Actions_SplitDirectionDown.Content" xml:space="preserve">
+    <value>Вниз</value>
+    <comment>An option to choose from for the "split direction". Splits downward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionLeft.Content" xml:space="preserve">
+    <value>Слева</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitDirectionVertical.Content" xml:space="preserve">
+    <value>Вертикальный формат</value>
+    <comment>An option to choose from for the "split direction". Splits vertically.</comment>
+  </data>
+  <data name="Actions_SplitDirectionHorizontal.Content" xml:space="preserve">
+    <value>По горизонтали</value>
+    <comment>An option to choose from for the "split direction". Splits horizontally.</comment>
+  </data>
+  <data name="Actions_SplitTypeManual.Content" xml:space="preserve">
+    <value>Вручную</value>
+    <comment>An option to choose from for the "split type". Creates a manual split.</comment>
+  </data>
+  <data name="Actions_SplitTypeDuplicate.Content" xml:space="preserve">
+    <value>Дублировать</value>
+    <comment>An option to choose from for the "split type". Creates a split by duplicating the current session.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "resize direction". None option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionLeft.Content" xml:space="preserve">
+    <value>Слева</value>
+    <comment>An option to choose from for the "resize direction". Left option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionRight.Content" xml:space="preserve">
+    <value>Вправо</value>
+    <comment>An option to choose from for the "resize direction". Right option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionUp.Content" xml:space="preserve">
+    <value>Вверх</value>
+    <comment>An option to choose from for the "resize direction". Up option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionDown.Content" xml:space="preserve">
+    <value>Вниз</value>
+    <comment>An option to choose from for the "resize direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "focus direction". None option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionLeft.Content" xml:space="preserve">
+    <value>Слева</value>
+    <comment>An option to choose from for the "focus direction". Left option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionRight.Content" xml:space="preserve">
+    <value>Вправо</value>
+    <comment>An option to choose from for the "focus direction". Right option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionUp.Content" xml:space="preserve">
+    <value>Вверх</value>
+    <comment>An option to choose from for the "focus direction". Up option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionDown.Content" xml:space="preserve">
+    <value>Вниз</value>
+    <comment>An option to choose from for the "focus direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPrevious.Content" xml:space="preserve">
+    <value>Назад</value>
+    <comment>An option to choose from for the "focus direction". Previous option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPreviousInOrder.Content" xml:space="preserve">
+    <value>Предыдущий по порядку</value>
+    <comment>An option to choose from for the "focus direction". Previous in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNextInOrder.Content" xml:space="preserve">
+    <value>Следующий по порядку</value>
+    <comment>An option to choose from for the "focus direction". Next in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionFirst.Content" xml:space="preserve">
+    <value>Первый</value>
+    <comment>An option to choose from for the "focus direction". First option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionParent.Content" xml:space="preserve">
+    <value>Родитель</value>
+    <comment>An option to choose from for the "focus direction". Parent option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionChild.Content" xml:space="preserve">
+    <value>Ребенок</value>
+    <comment>An option to choose from for the "focus direction". Child option.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsFile.Content" xml:space="preserve">
+    <value>Файл параметров</value>
+    <comment>An option to choose from for the "settings target". Targets the settings file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDefaultsFile.Content" xml:space="preserve">
+    <value>Файл параметров по умолчанию</value>
+    <comment>An option to choose from for the "settings target". Targets the defaults file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetAllFiles.Content" xml:space="preserve">
+    <value>Все файлы</value>
+    <comment>An option to choose from for the "settings target". Targets all files.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsUI.Content" xml:space="preserve">
+    <value>Пользовательский интерфейс параметров</value>
+    <comment>An option to choose from for the "settings target". Targets the settings UI.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDirectory.Content" xml:space="preserve">
+    <value>Каталог</value>
+    <comment>An option to choose from for the "settings target". Targets the directory.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "move tab direction". No movement.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>Вперед (вправо)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward (right).</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>Назад (влево)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward (left).</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
+    <value>Назад</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionNext.Content" xml:space="preserve">
+    <value>Далее</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the next mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionFirst.Content" xml:space="preserve">
+    <value>Первый</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the first mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionLast.Content" xml:space="preserve">
+    <value>Последний</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the last mark.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeAction.Content" xml:space="preserve">
+    <value>Действие</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in action mode.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeCommandLine.Content" xml:space="preserve">
+    <value>Командная строка</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in command line mode.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "suggestions source". No suggestions source.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceTasks.Content" xml:space="preserve">
+    <value>Задачи</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from tasks.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceSnippets.Content" xml:space="preserve">
+    <value>Фрагменты</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from snippets.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceCommandHistory.Content" xml:space="preserve">
+    <value>Запоминание команд</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from command history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceDirectoryHistory.Content" xml:space="preserve">
+    <value>Журнал каталогов</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from directory history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceQuickFix.Content" xml:space="preserve">
+    <value>Быстрые исправления</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from quick fixes.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceAll.Content" xml:space="preserve">
+    <value>Все</value>
+    <comment>An option to choose from for the "suggestions source". Includes all suggestion sources.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "find match direction". No direction selected.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNext.Content" xml:space="preserve">
+    <value>Далее</value>
+    <comment>An option to choose from for the "find match direction". Finds the next match.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionPrev.Content" xml:space="preserve">
+    <value>Назад</value>
+    <comment>An option to choose from for the "find match direction". Finds the previous match.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorAny.Content" xml:space="preserve">
+    <value>Все</value>
+    <comment>An option to choose from for the "desktop behavior". Applies to any desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorToCurrent.Content" xml:space="preserve">
+    <value>К текущему</value>
+    <comment>An option to choose from for the "desktop behavior". Moves to the current desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorOnCurrent.Content" xml:space="preserve">
+    <value>На текущем</value>
+    <comment>An option to choose from for the "desktop behavior". Stays on the current desktop.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorAny.Content" xml:space="preserve">
+    <value>Все</value>
+    <comment>An option to choose from for the "monitor behavior". Applies to any monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToCurrent.Content" xml:space="preserve">
+    <value>К текущему</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the current monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToMouse.Content" xml:space="preserve">
+    <value>К мыши</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the monitor where the mouse is located.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScreen.Content" xml:space="preserve">
+    <value>Экран</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the screen.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScrollback.Content" xml:space="preserve">
+    <value>Прокрутка</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeAll.Content" xml:space="preserve">
+    <value>Все</value>
+    <comment>An option to choose from for the "clear buffer type". Clears both the screen and the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionPrev.Content" xml:space="preserve">
+    <value>Назад</value>
+    <comment>An option to choose from for the "select output direction". Selects the previous output.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionNext.Content" xml:space="preserve">
+    <value>Далее</value>
+    <comment>An option to choose from for the "select output direction". Selects the next output.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Последние использованные</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs based on most recently used order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>По порядку</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs in sequential order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Отключено</value>
+    <comment>An option to choose from for the "tab switcher mode". Disables tab switching.</comment>
+  </data>
+  <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Без цвета</value>
+    <comment>Label for a button directing the user to opt out of choosing a color.</comment>
+  </data>
+  <data name="Actions_Browse.Content" xml:space="preserve">
+    <value>Открыть...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
+  <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Введите нужное сочетание клавиш.</value>
+    <comment>Help text directing users how to use the "KeyChordListener" control. Pressing a keyboard shortcut will be recorded by this control.</comment>
+  </data>
+  <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.LocalizedControlType" xml:space="preserve">
+    <value>прослушиватель сочетаний клавиш</value>
+    <comment>The control type for a control that awaits keyboard input and records it.</comment>
+  </data>
+  <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Сочетание клавиш</value>
+    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+  </data>
+  <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
+    <value>Форматирование текста</value>
+    <comment>Header for a control to how text is formatted</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Стиль броского текста</value>
+    <comment>Name for a control to select how "intense" text is formatted (bold, bright, both or none)</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyle.Header" xml:space="preserve">
+    <value>Стиль броского текста</value>
+    <comment>Header for a control to select how "intense" text is formatted (bold, bright, both or none)</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will not be rendered differently</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleBold.Content" xml:space="preserve">
+    <value>Полужирный шрифт</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as bold text</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleBright.Content" xml:space="preserve">
+    <value>Яркие цвета</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered in a brighter color</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleAll.Content" xml:space="preserve">
+    <value>Полужирный шрифт с яркими цветами</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as both bold text and in a brighter color</comment>
+  </data>
+  <data name="Globals_AutoHideWindow.Header" xml:space="preserve">
+    <value>Автоматически скрывать окно</value>
+    <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the terminal will be hidden as soon as you switch to another window.</comment>
+  </data>
+  <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, терминал будет скрыт при переключении на другое окно.</value>
+    <comment>A description for what the "Automatically hide window" setting does.</comment>
+  </data>
+  <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
+    <value>по умолчанию</value>
+    <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
+  </data>
+  <data name="ColorScheme_SetAsDefaultButton.Content" xml:space="preserve">
+    <value>Использовать по умолчанию</value>
+    <comment>Text label for a button that, when invoked, sets the selected color scheme as the default scheme to use.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
+    <value>Предупреждать при закрытии нескольких вкладок</value>
+    <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
+    <value>Предупреждать, если параметр "Служба сенсорной клавиатуры и панели рукописного ввода" отключен</value>
+  </data>
+  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+    <value>Предупреждать при вставке более 5 КиБ</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
+    <value>Предупреждать при вставке новых строк</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>Если ваша оболочка не поддерживает режим "вставки в квадратных скобках", рекомендуется присвоить этому параметру значение "Всегда" по соображениям безопасности.</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>Только если "вставка в квадратных скобках" отключена</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>Всегда</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>Никогда</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Settings_PortableModeNote.Text" xml:space="preserve">
+    <value>Терминал Windows работает в переносном режиме.</value>
+    <comment>A disclaimer that indicates that Terminal is running in a mode that saves settings to a different folder.</comment>
+  </data>
+  <data name="Settings_PortableModeInfoLinkTextRun.Text" xml:space="preserve">
+    <value>Дополнительные сведения.</value>
+    <comment>A hyperlink displayed near Settings_PortableModeNote.Text that the user can follow for more information.</comment>
+  </data>
+  <data name="Profile_MissingFontFaces.Header" xml:space="preserve">
+    <value>Отсутствующие шрифты:</value>
+    <comment>This is a label that is followed by a list of missing fonts.</comment>
+  </data>
+  <data name="Profile_ProportionalFontFaces.Header" xml:space="preserve">
+    <value>Шрифты, кроме моноширинных:</value>
+    <comment>This is a label that is followed by a list of proportional fonts.</comment>
+  </data>
+  <data name="Profile_BellSoundPreviewDefault" xml:space="preserve">
+    <value>Системный звук по умолчанию</value>
+    <comment>The value shown for the default value for bell sound.</comment>
+  </data>
+  <data name="Profile_BellSoundPreviewMultiple" xml:space="preserve">
+    <value>Несколько звуков</value>
+    <comment>The value shown for when the "bell sound" setting is set to multiple values.</comment>
+  </data>
+  <data name="Profile_BellSound.Header" xml:space="preserve">
+    <value>Звон колокольчика</value>
+    <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
+  </data>
+  <data name="Profile_BellSound.HelpText" xml:space="preserve">
+    <value>Указывает, какой звук воспроизводится, когда приложение генерирует символ BEL (колокольчик). В "Стиле уведомлений колокольчика" должен быть включен параметр "Слышно".</value>
+    <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
+  </data>
+  <data name="Profile_AddBellSound.Text" xml:space="preserve">
+    <value>Добавить звук</value>
+    <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
+  </data>
+  <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
+    <value>Если определено несколько звуков, один из них выбирается случайным образом при получения символа BEL (колокольчик).</value>
+    <comment>{Locked="BEL"} Text block displayed near "Profile_BellSound".</comment>
+  </data>
+  <data name="Profile_BellSoundNotFound" xml:space="preserve">
+    <value>⚠️ Файл не найден</value>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Воспроизвести звук</value>
+    <comment>Tooltip for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Tooltip for a button that deletes the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundAudioPreview.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Воспроизвести звук</value>
+    <comment>Screen reader name for a button that plays the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_BellSoundDelete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Screen reader name for a button that deletes the selected sound when pressed.</comment>
+  </data>
+  <data name="Profile_TabColor.Header" xml:space="preserve">
+    <value>Цвет вкладки</value>
+    <comment>Header for a control to determine the color of the tab.</comment>
+  </data>
+  <data name="Profile_Foreground.Header" xml:space="preserve">
+    <value>Передний план</value>
+    <comment>Header for a control to determine the foreground color of text.</comment>
+  </data>
+  <data name="Profile_Background.Header" xml:space="preserve">
+    <value>Фон</value>
+    <comment>Header for a control to determine the background color of text.</comment>
+  </data>
+  <data name="Profile_SelectionBackground.Header" xml:space="preserve">
+    <value>Фон выделенного фрагмента</value>
+    <comment>Header for a control to determine the background color of selected text.</comment>
+  </data>
+  <data name="Profile_CursorColor.Header" xml:space="preserve">
+    <value>Цвет курсора</value>
+    <comment>Header for a control to determine the color of the cursor.</comment>
+  </data>
+  <data name="Profile_Foreground.HelpText" xml:space="preserve">
+    <value>Переопределяет цвет переднего плана из цветовой схемы.</value>
+    <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
+  </data>
+  <data name="Profile_CursorColor.HelpText" xml:space="preserve">
+    <value>Переопределяет цвет курсора из цветовой схемы.</value>
+    <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
+  </data>
+  <data name="Profile_Background.HelpText" xml:space="preserve">
+    <value>Переопределяет цвет фона из цветовой схемы.</value>
+    <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
+  </data>
+  <data name="Profile_SelectionBackground.HelpText" xml:space="preserve">
+    <value>Переопределяет цвет фона выделения из цветовой схемы.</value>
+    <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
+  </data>
+  <data name="NullableColorPicker_MoreColorsButton.Content" xml:space="preserve">
+    <value>Другие цвета...</value>
+    <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
+  </data>
+  <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Использовать цвет схемы</value>
+    <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_Foreground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Использовать цвет схемы</value>
+    <comment>Label for a button directing the user to use the foreground color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_Background_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Использовать цвет схемы</value>
+    <comment>Label for a button directing the user to use the background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_SelectionBackground_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Использовать цвет схемы</value>
+    <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
+  </data>
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>Использовать цвет темы</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
+  </data>
+  <data name="IconPicker_IconTypeNone" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon set.</comment>
+  </data>
+  <data name="IconPicker_IconTypeImage" xml:space="preserve">
+    <value>Файл</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set as the icon.</comment>
+  </data>
+  <data name="IconPicker_IconTypeEmoji" xml:space="preserve">
+    <value>Эмодзи</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set as the  icon.</comment>
+  </data>
+  <data name="IconPicker_IconTypeFontIcon" xml:space="preserve">
+    <value>Встроенный значок</value>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set as the icon.</comment>
+  </data>
+  <data name="IconPicker_EmojiBox.PlaceholderText" xml:space="preserve">
+    <value>Используйте клавиши Win + "точка", чтобы открыть средство выбора эмодзи</value>
+    <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
+  </data>
+  <data name="IconPicker_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Тип значка</value>
+    <comment>Accessible name for a control allowing the user to select the type of icon they would like to use.</comment>
+  </data>
+  <data name="IconPicker_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Значок</value>
+    <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
+  </data>
+  <data name="Nav_NewTabMenu.Content" xml:space="preserve">
+    <value>Меню “Новая вкладка”</value>
+    <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
+  </data>
+  <data name="NewTabMenuEntry_Separator.Text" xml:space="preserve">
+    <value>&lt;Разделитель&gt;</value>
+    <comment>{Locked="&lt;"}, {Locked="&gt;"} Text label for an entry that represents a visual separator in a list.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfiles.Text" xml:space="preserve">
+    <value>&lt;Оставшиеся профили&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted.</comment>
+  </data>
+  <data name="NewTabMenuEntry_RemainingProfilesItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;Оставшиеся профили&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for an entry that represents inserting any remaining profiles that have not been inserted. Should match "NewTabMenuEntry_RemainingProfiles.Text".</comment>
+  </data>
+  <data name="NewTabMenu_AddProfile.Header" xml:space="preserve">
+    <value>Профиль</value>
+    <comment>Header for a control that adds a terminal profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.Header" xml:space="preserve">
+    <value>Сопоставитель профилей</value>
+    <comment>Header for a control that adds a terminal profile matcher to the new tab menu. This entry adds profiles that match the given parameters.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.Header" xml:space="preserve">
+    <value>Оставшиеся профили</value>
+    <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
+    <value>Добавить группу профилей, соответствующих хотя бы одному из определенных свойств регулярного выражения</value>
+    <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
+    <value>Может быть только одна запись "оставшиеся профили"</value>
+    <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparator.Header" xml:space="preserve">
+    <value>Разделитель</value>
+    <comment>Header for a control that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder.Header" xml:space="preserve">
+    <value>Папка</value>
+    <comment>Header for a control that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Name.Header" xml:space="preserve">
+    <value>Имя профиля (регулярное выражение)</value>
+    <comment>Header for a text box used to define a regex for the names of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Source.Header" xml:space="preserve">
+    <value>Источник профиля (регулярное выражение)</value>
+    <comment>Header for a text box used to define a regex for the sources of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Commandline.Header" xml:space="preserve">
+    <value>Командная строка (регулярное выражение)</value>
+    <comment>Header for a text box used to define a regex for the commandlines of profiles to add.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfilesTextBlock.Text" xml:space="preserve">
+    <value>Добавить сопоставитель профилей</value>
+    <comment>Label for a button confirming to add the profile matcher to the new tab menu as an entry.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolder_FolderName.PlaceholderText" xml:space="preserve">
+    <value>Имя папки</value>
+    <comment>Placeholder text for a text box control used to set the name of the folder.</comment>
+  </data>
+  <data name="NewTabMenu_DeleteMultipleTextBlock.Text" xml:space="preserve">
+    <value>Удалить выбранные записи</value>
+    <comment>Label for a button that can be used to delete any new tab menu entries that are currently selected</comment>
+  </data>
+  <data name="NewTabMenu_MoveToFolderTextBlock.Text" xml:space="preserve">
+    <value>Переместить выбранные записи в папку...</value>
+    <comment>Label for a button that can be used to move any new tab menu entries that are currently selected into an existing folder</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.Title" xml:space="preserve">
+    <value>Переместить в папку</value>
+    <comment>Title displayed on a content dialog directing the user to pick a folder to move the selected entries to.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.PrimaryButtonText" xml:space="preserve">
+    <value>ОК</value>
+    <comment>Button label for the folder picker content dialog. Used as confirmation to pick the selected folder.</comment>
+  </data>
+  <data name="NewTabMenu_FolderPickerDialog.SecondaryButtonText" xml:space="preserve">
+    <value>Отменить</value>
+    <comment>Text label for the secondary button on the folder picker content dialog. When clicked, the operation of picking a folder is cancelled by the user.</comment>
+  </data>
+  <data name="NewTabMenu_RootFolderName" xml:space="preserve">
+    <value>&lt;root&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"} Text label for the name of the "root" folder. This is used to allow the user to select the root as a destination folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderTextBlock.Text" xml:space="preserve">
+    <value>Текущие свойства папки</value>
+    <comment>Header for a group of controls that can be used to modify the current folder entry's properties.</comment>
+  </data>
+  <data name="NewTabMenu_AddEntriesTextBlock.Text" xml:space="preserve">
+    <value>Добавить запись</value>
+    <comment>Header for a group of controls that can be used to add an entry to the new tab menu</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderName.Header" xml:space="preserve">
+    <value>Имя папки</value>
+    <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.Header" xml:space="preserve">
+    <value>Значок папки</value>
+    <comment>Header for a control that allows the user to modify the icon of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Значок папки</value>
+    <comment>Name for a control to that allows the user to modify the icon of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
+    <value>Разрешить встраивание</value>
+    <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderInlining.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, если папка содержит только одну запись, запись будет отображаться напрямую, а папка не будет отображаться.</value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.Header" xml:space="preserve">
+    <value>Разрешить пустое</value>
+    <comment>Header for a control that allows the current folder entry to be empty.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, папка не содержит записей, она будет отображаться. В противном случае папка не будет отображаться.</value>
+    <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
+  </data>
+  <data name="NewTabMenu_ActionNotFound" xml:space="preserve">
+    <value>Идентификатор действия не найден</value>
+    <comment>Displayed text for an entry who's action identifier wasn't found. The action ID is presented in the format "Action ID not found: &lt;actionID&gt;"</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Переместить вверх</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переместить вверх</value>
+    <comment>Accessible name for a button that reorders the entry to be moved up when clicked. Should match "NewTabMenuEntry_ReorderUp.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Переместить вниз</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Изменить папку</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip".</comment>
+  </data>
+  <data name="NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Переместить вниз</value>
+    <comment>Accessible name for a button that reorders the entry to be moved down when clicked. Should match "NewTabMenuEntry_ReorderDown.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Изменить папку</value>
+    <comment>Accessible name for a button that begins editing the folder when clicked. Should match "NewTabMenuEntry_EditFolder.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name".</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip"</comment>
+  </data>
+  <data name="NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Удалить</value>
+    <comment>Accessible name for a button that deletes the entry when clicked. Should match "NewTabMenuEntry_Delete.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name"</comment>
+  </data>
+  <data name="NewTabMenu_AddProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавить выбранный профиль</value>
+    <comment>Tooltip for a button that adds the selected profile to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddSeparatorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавить разделитель</value>
+    <comment>Tooltip for a button that adds a separator to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddFolderButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавить папку</value>
+    <comment>Tooltip for a button that adds a folder to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenu_AddRemainingProfilesButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Добавить оставшиеся профили</value>
+    <comment>Tooltip for a button that adds an entry that represents the remaining profiles to the new tab menu.</comment>
+  </data>
+  <data name="NewTabMenuEntry_SeparatorItem.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>&lt;Разделитель&gt;</value>
+    <comment>{Locked="&lt;"}{Locked="&gt;"}Accessible name for an entry that represents a visual separator in a list. Should match "NewTabMenuEntry_Separator.Text".</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.Header" xml:space="preserve">
+    <value>Ответ на ENQ (Request Terminal Status)</value>
+    <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+    <value>Ответ, который отправляется при получении последовательности управления ENQ.</value>
+    <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
+  </data>
+  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+    <value>Это полезно для устранения неполадок и разработки терминала.</value>
+    <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
+  </data>
+  <data name="Profile_RainbowSuggestions.Header" xml:space="preserve">
+    <value>Экспериментальная функция: показывать предлагаемые входные данные в цветах радуги</value>
+    <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
+    <value>Экспериментальная функция: добавление привязок к ключам для изменения цвета выбранного текста</value>
+    <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
+  </data>
+  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+    <value>Эти привязки ключей могут выделять указанным цветом выбранный текст или все вхождения выбранного текста.</value>
+    <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
+  </data>
+  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+    <value>Разрешить использование акрилового материала в несфокусированных окнах</value>
+    <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
+  </data>
+  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+    <value>Отображать экран в заголовке, когда Терминал Windows от имени администратора</value>
+    <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+    <value>Показывать вкладки в полноэкранном режиме</value>
+    <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
+  </data>
+  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+    <value>Если этот параметр включен, панель вкладок будет отображаться, когда приложение будет полноэкранным.</value>
+    <comment>A description for what the "show tabs in full screen" setting does.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Преобразование пути</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.Header" xml:space="preserve">
+    <value>Преобразование пути</value>
+    <comment>Name for a control to select how file and directory paths are translated.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+    <value>Управляет преобразованием путей к файлам и каталогам во время операций перетаскивания.</value>
+    <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
+    <value>Нет</value>
+    <comment>An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
+    <value>WSL (C:\ -&gt; /mnt/c)</value>
+    <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
+    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
+    <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
+    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
+    <value>MinGW (C:\ -&gt; C:/)</value>
+    <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
+  </data>
+  <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
+    <value>Профиль больше не обнаруживается</value>
+  </data>
+  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+    <value>Похоже, этот автоматически обнаруженный профиль удален. Внесенные вами изменения сохранены, но их нельзя использовать до переустановки.</value>
+  </data>
+  <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
+    <value>Первоисточник</value>
+  </data>
+  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+    <value>Указывает программное обеспечение, которое изначально создало этот профиль.</value>
+  </data>
+  <data name="Profile_TabTitleNone" xml:space="preserve">
+    <value>Нет</value>
+    <comment>Text displayed when the tab title is not defined.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
+    <value>Автоматическая загрузка отключена в разделе "Приложения запуска" Windows параметрах.</value>
+    <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
+  </data>
+  <data name="Globals_StartOnUserLogin_UnavailableByPolicy" xml:space="preserve">
+    <value>Этот параметр управляется политикой предприятия и не может быть изменен здесь.</value>
+    <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
+  </data>
+  <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
+    <value>Активные расширения</value>
+  </data>
+  <data name="Extensions_ModifiedProfilesHeader.Text" xml:space="preserve">
+    <value>Измененные профили</value>
+  </data>
+  <data name="Extensions_AddedProfilesHeader.Text" xml:space="preserve">
+    <value>Добавленные профили</value>
+  </data>
+  <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
+    <value>Добавленные цветовые схемы</value>
+  </data>
+  <data name="Extensions_DisclaimerHyperlink.Content" xml:space="preserve">
+    <value>Узнайте больше о расширениях</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Перейти к профилю</value>
+  </data>
+  <data name="Extensions_NavigateToProfileButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Перейти к профилю</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Перейти к цветовой схеме</value>
+  </data>
+  <data name="Extensions_NavigateToColorSchemeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Перейти к цветовой схеме</value>
+  </data>
+  <data name="Extensions_ScopeUser" xml:space="preserve">
+    <value>Текущий пользователь</value>
+    <comment>Label for the installation scope of an extension.</comment>
+  </data>
+  <data name="Extensions_ScopeSystem" xml:space="preserve">
+    <value>Все пользователи</value>
+    <comment>Label for the installation scope of an extension</comment>
+  </data>
+  <data name="Extensions_Scope.Header" xml:space="preserve">
+    <value>Объем</value>
+    <comment>Header for the installation scope of the extension</comment>
+  </data>
+  <data name="NewInfoBadgeTextBlock.Text" xml:space="preserve">
+    <value>НОВОЕ</value>
+    <comment>Text is used on an info badge for new navigation items. Must be all caps.</comment>
+  </data>
+  <data name="NewTabMenu_AddMatchProfiles_Help.Content" xml:space="preserve">
+    <value>Подробнее о регулярных выражениях</value>
+  </data>
+  <data name="Appearance_BackgroundImageNone" xml:space="preserve">
+    <value>Нет</value>
+    <comment>Text displayed when the background image path is not defined.</comment>
+  </data>
+  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
+    <value>Нет</value>
+    <comment>Text displayed when the answerback message is not defined.</comment>
+  </data>
+  <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
+    <value>Восстановить параметры по умолчанию</value>
+  </data>
+  <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
+    <value>Очистить кэш</value>
+  </data>
+  <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
+    <value>В кэше хранятся данные, связанные с сохраненными сеансами и автоматически созданными профилями.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
+    <value>Сбросить</value>
+  </data>
+  <data name="Settings_ResetApplicationStateButton.Content" xml:space="preserve">
+    <value>Ясно</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageBody.Text" xml:space="preserve">
+    <value>Это действие применяется немедленно и не может быть отменено.</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageBody.Text" xml:space="preserve">
+    <value>Это действие применяется немедленно и не может быть отменено.</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>Действительно сбросить параметры?</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationMessageHeader.Text" xml:space="preserve">
+    <value>Действительно очистить кэш?</value>
+  </data>
+  <data name="Settings_ResetToDefaultSettingsConfirmationButton.Content" xml:space="preserve">
+    <value>Да, сбросить параметры</value>
+  </data>
+  <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
+    <value>Да, очистить кэш</value>
+  </data>
+  <data name="Nav_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>Поиск параметров</value>
+    <comment>Placeholder text for the main search box in the settings editor.</comment>
+  </data>
+  <data name="Search_NoResults" xml:space="preserve">
+    <value>Нет результатов для "{}"</value>
+    <comment>{Locked="{}"} Displayed when no results were found for a given query. "{}" will be replaced with the query.</comment>
+  </data>
+  <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
+    <value>Введите текст для фильтрации значков</value>
+    <comment>Placeholder text for a text box to filter and select an icon.</comment>
+  </data>
+</root>

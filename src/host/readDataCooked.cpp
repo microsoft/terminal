@@ -3,20 +3,22 @@
 
 #include "precomp.h"
 #include "readDataCooked.hpp"
-#include "dbcs.h"
+
+#include "alias.h"
+#include "history.h"
+#include "resource.h"
 #include "stream.h"
-#include "misc.h"
 #include "_stream.h"
-#include "inputBuffer.hpp"
-#include "cmdline.h"
-#include "../types/inc/GlyphWidth.hpp"
-#include "../types/inc/convert.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#define COOKED_READ_DEBUG 0
 
-#define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
+#if COOKED_READ_DEBUG
+#include <til/colorbrewer.h>
+#endif
 
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::VtIo;
 
 // Routine Description:
 // - Constructs cooked read data class to hold context across key presses while a user is modifying their 'input line'.
@@ -24,271 +26,159 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - pInputBuffer - Buffer that data will be read from.
 // - pInputReadHandleData - Context stored across calls from the same input handle to return partial data appropriately.
 // - screenInfo - Output buffer that will be used for 'echoing' the line back to the user so they can see/manipulate it
-// - BufferSize -
-// - BytesRead -
-// - CurrentPosition -
-// - BufPtr -
-// - BackupLimit -
 // - UserBufferSize - The byte count of the buffer presented by the client
 // - UserBuffer - The buffer that was presented by the client for filling with input data on read conclusion/return from server/host.
-// - OriginalCursorPosition -
-// - NumberOfVisibleChars
 // - CtrlWakeupMask - Special client parameter to interrupt editing, end the wait, and return control to the client application
-// - CommandHistory -
-// - Echo -
-// - InsertMode -
-// - Processed -
-// - Line -
-// - pTempHandle - A handle to the output buffer to prevent it from being destroyed while we're using it to present 'edit line' text.
 // - initialData - any text data that should be prepopulated into the buffer
-// Return Value:
-// - THROW: Throws E_INVALIDARG for invalid pointers.
+// - pClientProcess - Attached process handle object
 COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                    SCREEN_INFORMATION& screenInfo,
                                    _In_ size_t UserBufferSize,
-                                   _In_ PWCHAR UserBuffer,
+                                   _In_ char* UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
-                                   _In_ CommandHistory* CommandHistory,
-                                   const std::wstring_view exeName,
-                                   const std::string_view initialData) :
+                                   _In_ const std::wstring_view exeName,
+                                   _In_ const std::wstring_view initialData,
+                                   _In_ ConsoleProcessHandle* const pClientProcess) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _screenInfo{ screenInfo },
-    _bytesRead{ 0 },
-    _currentPosition{ 0 },
-    _userBufferSize{ UserBufferSize },
-    _userBuffer{ UserBuffer },
-    _tempHandle{ nullptr },
+    _userBuffer{ UserBuffer, UserBufferSize },
     _exeName{ exeName },
-    _pdwNumBytes{ nullptr },
-
-    _commandHistory{ CommandHistory },
-    _controlKeyState{ 0 },
+    _processHandle{ pClientProcess },
+    _history{ CommandHistory::s_Find(pClientProcess) },
     _ctrlWakeupMask{ CtrlWakeupMask },
-    _visibleCharCount{ 0 },
-    _originalCursorPosition{ -1, -1 },
-    _beforeDialogCursorPosition{ 0, 0 },
-
-    _echoInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
-    _lineInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
-    _processedInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
-    _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
-    _unicode{ false }
+    _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() }
 {
 #ifndef UNIT_TESTING
-    THROW_IF_FAILED(screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output,
-                                                                GENERIC_WRITE,
-                                                                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                _tempHandle));
+    // The screen buffer instance is basically a reference counted HANDLE given out to the user.
+    // We need to ensure that it stays alive for the duration of the read.
+    // Coincidentally this serves another important purpose: It checks whether we're allowed to read from
+    // the given buffer in the first place. If it's missing the FILE_SHARE_READ flag, we can't read from it.
+    //
+    // GH#16158: It's important that we hold a handle to the main instead of the alt buffer
+    // even if this cooked read targets the latter, because alt buffers are fake
+    // SCREEN_INFORMATION objects that are owned by the main buffer.
+    THROW_IF_FAILED(_screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, _tempHandle));
 #endif
-
-    // to emulate OS/2 KbdStringIn, we read into our own big buffer
-    // (256 bytes) until the user types enter.  then return as many
-    // chars as will fit in the user's buffer.
-    _bufferSize = std::max(UserBufferSize, LINE_INPUT_BUFFER_SIZE);
-    _buffer = std::make_unique<byte[]>(_bufferSize);
-    _backupLimit = reinterpret_cast<wchar_t*>(_buffer.get());
-    _bufPtr = reinterpret_cast<wchar_t*>(_buffer.get());
-
-    // Initialize the user's buffer to spaces. This is done so that
-    // moving in the buffer via cursor doesn't do strange things.
-    std::fill_n(_bufPtr, _bufferSize / sizeof(wchar_t), UNICODE_SPACE);
 
     if (!initialData.empty())
     {
-        memcpy_s(_bufPtr, _bufferSize, initialData.data(), initialData.size());
+        // The console API around `nInitialChars` in `CONSOLE_READCONSOLE_CONTROL` is pretty weird.
+        // The way it works is that cmd.exe does a ReadConsole() with a `dwCtrlWakeupMask` that includes \t,
+        // so when you press tab it can autocomplete the prompt based on the available file names.
+        // The weird part is that it's not us who then prints the autocompletion. It's cmd.exe which calls WriteConsoleW().
+        // It then initiates another ReadConsole() where the `nInitialChars` is the amount of chars it wrote via WriteConsoleW().
+        //
+        // In other words, `nInitialChars` is a "trust me bro, I just wrote that in the buffer" API.
+        // This unfortunately means that the API is inherently broken: ReadConsole() visualizes control
+        // characters like Ctrl+X as "^X" and WriteConsoleW() doesn't and so the column counts don't match.
+        // Solving these issues is technically possible, but it's also quite difficult to do so correctly.
+        //
+        // But unfortunately (or fortunately) the initial implementation (from the 1990s up to 2023) looked something like that:
+        //   cursor = cursor.GetPosition();
+        //   cursor.x -= initialData.size();
+        //   while (cursor.x < 0)
+        //   {
+        //       cursor.x += textBuffer.Width();
+        //       cursor.y -= 1;
+        //   }
+        //
+        // In other words, it assumed that the number of code units in the initial data corresponds 1:1 to
+        // the column count. This meant that the API never supported tabs for instance (nor wide glyphs).
+        //
+        //
+        // The new implementation is a lot more complex to be a little more correct.
+        // It replicates part of the _redisplay() logic to layout the text at various
+        // starting positions until it finds one that matches the current cursor position.
 
-        _bytesRead += initialData.size();
+        const auto cursorPos = _getViewportCursorPosition();
+        const auto size = _screenInfo.GetVtPageArea().Dimensions();
 
-        const size_t cchInitialData = initialData.size() / sizeof(wchar_t);
-        VisibleCharCount() = cchInitialData;
-        _bufPtr += cchInitialData;
-        _currentPosition = cchInitialData;
+        // Guess the initial cursor position based on the string length, assuming that 1 char = 1 column.
+        const auto columnRemainder = gsl::narrow_cast<til::CoordType>((initialData.size() % size.width));
+        const auto bestGuessColumn = (cursorPos.x - columnRemainder + size.width) % size.width;
 
-        OriginalCursorPosition() = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-        OriginalCursorPosition().X -= (SHORT)_currentPosition;
+        std::wstring line;
+        LayoutResult res;
+        til::CoordType bestDistance = til::CoordTypeMax;
+        til::CoordType bestColumnBegin = 0;
+        til::CoordType bestNewlineCount = 0;
 
-        const SHORT sScreenBufferSizeX = screenInfo.GetBufferSize().Width();
-        while (OriginalCursorPosition().X < 0)
+        line.reserve(size.width);
+
+        // We're given an "end position" and a string and we need to find its starting position.
+        // The problem is that a wide glyph that doesn't fit into the last column of a row gets padded with a whitespace
+        // and then written on the next line. Because of this, multiple starting positions can result in the same end
+        // position and this prevents us from simply laying out the text backwards from the end position.
+        // To solve this, we do a brute force search for the best starting position that ends at the end position.
+        // The search is centered around `bestGuessColumn` with offsets 0, 1, -1, 2, -2, 3, -3, ...
+        for (til::CoordType i = 0, attempts = 2 * size.width; i <= attempts; i++)
         {
-            OriginalCursorPosition().X += sScreenBufferSizeX;
-            OriginalCursorPosition().Y -= 1;
+            // Hilarious bit-trickery that no one can read. But it works. Check it out in a debugger.
+            // The idea is to use bits 1:31 as the value (i >> 1) and bit 0 (i & 1) as a trigger to bit-flip the value.
+            // A bit-flipped positive number is negative, but offset by 1, so we add 1 at the end. Fun!
+            const auto offset = ((i >> 1) ^ ((i & 1) - 1)) + 1;
+            const auto columnBegin = bestGuessColumn + offset;
+
+            if (columnBegin < 0 || columnBegin >= size.width)
+            {
+                continue;
+            }
+
+            til::CoordType newlineCount = 0;
+            res.column = columnBegin;
+
+            for (size_t beg = 0; beg < initialData.size();)
+            {
+                line.clear();
+                res = _layoutLine(line, initialData, beg, res.column, size.width);
+                beg = res.offset;
+
+                if (res.column >= size.width)
+                {
+                    res.column = 0;
+                    newlineCount += 1;
+                }
+            }
+
+            const auto distance = abs(res.column - cursorPos.x);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestColumnBegin = columnBegin;
+                bestNewlineCount = newlineCount;
+            }
+            if (distance == 0)
+            {
+                break;
+            }
         }
+
+        auto originInViewport = cursorPos;
+        originInViewport.x = bestColumnBegin;
+        originInViewport.y = originInViewport.y - bestNewlineCount;
+
+        if (originInViewport.y < 0)
+        {
+            originInViewport = {};
+        }
+
+        // We can't mark the buffer as dirty because this messes up the cursor position for cmd
+        // somehow when the prompt is longer than the viewport height. I haven't investigated
+        // why that happens, but it works decently well enough that it's not too important.
+        _buffer.assign(initialData);
+        _bufferDirtyBeg = _buffer.size();
+        _bufferCursor = _buffer.size();
+
+        _originInViewport = originInViewport;
+        _pagerPromptEnd = cursorPos;
+        _pagerHeight = std::min(size.height, bestNewlineCount + 1);
     }
-
-    // TODO MSFT:11285829 find a better way to manage the lifetime of this object in relation to gci
 }
 
-// Routine Description:
-// - Destructs a read data class.
-// - Decrements count of readers waiting on the given handle.
-COOKED_READ_DATA::~COOKED_READ_DATA()
+const SCREEN_INFORMATION* COOKED_READ_DATA::GetScreenBuffer() const noexcept
 {
-    CommandLine::Instance().EndAllPopups();
-}
-
-gsl::span<wchar_t> COOKED_READ_DATA::SpanWholeBuffer()
-{
-    return gsl::make_span(_backupLimit, (_bufferSize / sizeof(wchar_t)));
-}
-
-gsl::span<wchar_t> COOKED_READ_DATA::SpanAtPointer()
-{
-    auto wholeSpan = SpanWholeBuffer();
-    return wholeSpan.subspan(_bufPtr - _backupLimit);
-}
-
-bool COOKED_READ_DATA::HasHistory() const noexcept
-{
-    return _commandHistory != nullptr;
-}
-
-CommandHistory& COOKED_READ_DATA::History() noexcept
-{
-    return *_commandHistory;
-}
-
-const size_t& COOKED_READ_DATA::VisibleCharCount() const noexcept
-{
-    return _visibleCharCount;
-}
-
-size_t& COOKED_READ_DATA::VisibleCharCount() noexcept
-{
-    return _visibleCharCount;
-}
-
-SCREEN_INFORMATION& COOKED_READ_DATA::ScreenInfo() noexcept
-{
-    return _screenInfo;
-}
-
-const COORD& COOKED_READ_DATA::OriginalCursorPosition() const noexcept
-{
-    return _originalCursorPosition;
-}
-
-COORD& COOKED_READ_DATA::OriginalCursorPosition() noexcept
-{
-    return _originalCursorPosition;
-}
-
-COORD& COOKED_READ_DATA::BeforeDialogCursorPosition() noexcept
-{
-    return _beforeDialogCursorPosition;
-}
-
-bool COOKED_READ_DATA::IsEchoInput() const noexcept
-{
-    return _echoInput;
-}
-
-bool COOKED_READ_DATA::IsInsertMode() const noexcept
-{
-    return _insertMode;
-}
-
-void COOKED_READ_DATA::SetInsertMode(const bool mode) noexcept
-{
-    _insertMode = mode;
-}
-
-bool COOKED_READ_DATA::IsUnicode() const noexcept
-{
-    return _unicode;
-}
-
-// Routine Description:
-// - gets the size of the user buffer
-// Return Value:
-// - the size of the user buffer in bytes
-size_t COOKED_READ_DATA::UserBufferSize() const noexcept
-{
-    return _userBufferSize;
-}
-
-// Routine Description:
-// - gets a pointer to the beginning of the prompt storage
-// Return Value:
-// - pointer to the first char in the internal prompt storage array
-wchar_t* COOKED_READ_DATA::BufferStartPtr() noexcept
-{
-    return _backupLimit;
-}
-
-// Routine Description:
-// - gets a pointer to where the next char will be inserted into the prompt storage
-// Return Value:
-// - pointer to the current insertion point of the prompt storage array
-wchar_t* COOKED_READ_DATA::BufferCurrentPtr() noexcept
-{
-    return _bufPtr;
-}
-
-// Routine Description:
-// - Set the location of the next char insert into the prompt storage to be at
-// ptr. ptr must point into a valid portion of the internal prompt storage array
-// Arguments:
-// - ptr - the new char insertion location
-void COOKED_READ_DATA::SetBufferCurrentPtr(wchar_t* ptr) noexcept
-{
-    _bufPtr = ptr;
-}
-
-// Routine Description:
-// - gets the number of bytes read so far into the prompt buffer
-// Return Value:
-// - the number of bytes read
-const size_t& COOKED_READ_DATA::BytesRead() const noexcept
-{
-    return _bytesRead;
-}
-
-// Routine Description:
-// - gets the number of bytes read so far into the prompt buffer
-// Return Value:
-// - the number of bytes read
-size_t& COOKED_READ_DATA::BytesRead() noexcept
-{
-    return _bytesRead;
-}
-
-// Routine Description:
-// - gets the index for the current insertion point of the prompt
-// Return Value:
-// - the index of the current insertion point
-const size_t& COOKED_READ_DATA::InsertionPoint() const noexcept
-{
-    return _currentPosition;
-}
-
-// Routine Description:
-// - gets the index for the current insertion point of the prompt
-// Return Value:
-// - the index of the current insertion point
-size_t& COOKED_READ_DATA::InsertionPoint() noexcept
-{
-    return _currentPosition;
-}
-
-// Routine Description:
-// - sets the number of bytes that will be reported when this read block completes its read
-// Arguments:
-// - count - the number of bytes to report
-void COOKED_READ_DATA::SetReportedByteCount(const size_t count) noexcept
-{
-    FAIL_FAST_IF_NULL(_pdwNumBytes);
-    *_pdwNumBytes = count;
-}
-
-// Routine Description:
-// - resets the prompt to be as if it was erased
-void COOKED_READ_DATA::Erase() noexcept
-{
-    _bufPtr = _backupLimit;
-    _bytesRead = 0;
-    _currentPosition = 0;
-    _visibleCharCount = 0;
+    return &_screenInfo;
 }
 
 // Routine Description:
@@ -299,7 +189,7 @@ void COOKED_READ_DATA::Erase() noexcept
 // - It may be called more than once.
 // Arguments:
 // - TerminationReason - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
-//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise 0.
+//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise, 0.
 // - fIsUnicode - Whether to convert the final data to A (using Console Input CP) at the end or treat everything as Unicode (UCS-2)
 // - pReplyStatus - The status code to return to the client application that originally called the API (before it was queued to wait)
 // - pNumBytes - The number of bytes of data that the server/driver will need to transmit back to the client process
@@ -313,23 +203,14 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
                               _Out_ NTSTATUS* const pReplyStatus,
                               _Out_ size_t* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState,
-                              _Out_ void* const /*pOutputData*/)
+                              _Out_ void* const /*pOutputData*/) noexcept
+try
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
-    // this routine should be called by a thread owning the same
-    // lock on the same console as we're reading from.
-    FAIL_FAST_IF(!gci.IsConsoleLocked());
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     *pNumBytes = 0;
     *pControlKeyState = 0;
-
     *pReplyStatus = STATUS_SUCCESS;
-
-    FAIL_FAST_IF(_pInputReadHandleData->IsInputPending());
-
-    // this routine should be called by a thread owning the same lock on the same console as we're reading from.
-    FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
     // if ctrl-c or ctrl-break was seen, terminate read.
     if (WI_IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
@@ -350,7 +231,6 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // We must see if we were woken up because the handle is being closed. If
     // so, we decrement the read count. If it goes to zero, we wake up the
     // close thread. Otherwise, we wake up any other thread waiting for data.
-
     if (WI_IsFlagSet(TerminationReason, WaitTerminationReason::HandleClosing))
     {
         *pReplyStatus = STATUS_ALERTED;
@@ -358,71 +238,23 @@ bool COOKED_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         return true;
     }
 
-    // If we get to here, this routine was called either by the input thread
-    // or a write routine. Both of these callers grab the current console
-    // lock.
-
-    // MSFT:13994975 This is REALLY weird.
-    // When we're doing cooked reading for popups, we come through this method
-    //   twice. Once when we press F7 to bring up the popup, then again when we
-    //   press enter to input the selected command.
-    // The first time, there is no popup, and we go to CookedRead. We pass into
-    //   CookedRead `pNumBytes`, which is passed to us as the address of the
-    //   stack variable dwNumBytes, in ConsoleWaitBlock::Notify.
-    // CookedRead sets this->_pdwNumBytes to that value, and starts the popup,
-    //   which returns all the way up, and pops the ConsoleWaitBlock::Notify
-    //   stack frame containing the address we're pointing at.
-    // Then on the second time  through this function, we hit this if block,
-    //   because there is a popup to get input from.
-    // However, pNumBytes is now the address of a different stack frame, and not
-    //   necessarily the same as before (presumably not at all). The
-    //   Callback would try and write the number of bytes read to the
-    //   value in _pdwNumBytes, and then we'd return up to ConsoleWaitBlock::Notify,
-    //   who's dwNumBytes had nothing in it.
-    // To fix this, when we hit this with a popup, we're going to make sure to
-    //   refresh the value of _pdwNumBytes to the current address we want to put
-    //   the out value into.
-    // It's still really weird, but limits the potential fallout of changing a
-    //   piece of old spaghetti code.
-    if (_commandHistory)
-    {
-        if (CommandLine::Instance().HasPopup())
-        {
-            // (see above comment, MSFT:13994975)
-            // Make sure that the popup writes the dwNumBytes to the right place
-            if (pNumBytes)
-            {
-                _pdwNumBytes = pNumBytes;
-            }
-
-            auto& popup = CommandLine::Instance().GetPopup();
-            *pReplyStatus = popup.Process(*this);
-            if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE ||
-                (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
-            {
-                *pReplyStatus = S_OK;
-                gci.SetCookedReadData(nullptr);
-                return true;
-            }
-            return false;
-        }
-    }
-
-    *pReplyStatus = Read(fIsUnicode, *pNumBytes, *pControlKeyState);
-    if (*pReplyStatus != CONSOLE_STATUS_WAIT)
+    if (Read(fIsUnicode, *pNumBytes, *pControlKeyState))
     {
         gci.SetCookedReadData(nullptr);
         return true;
     }
-    else
-    {
-        return false;
-    }
-}
 
-bool COOKED_READ_DATA::AtEol() const noexcept
+    return false;
+}
+NT_CATCH_RETURN()
+
+void COOKED_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) noexcept
 {
-    return _bytesRead == (_currentPosition * 2);
+    // See the comment in WaitBlock.cpp for more information.
+    if (_userBuffer.data() == oldBuffer)
+    {
+        _userBuffer = { static_cast<char*>(newBuffer), _userBuffer.size() };
+    }
 }
 
 // Routine Description:
@@ -435,765 +267,1471 @@ bool COOKED_READ_DATA::AtEol() const noexcept
 // - numBytes - On in, the number of bytes available in the client
 // buffer. On out, the number of bytes consumed in the client buffer.
 // - controlKeyState - For some types of reads, this is the modifier key state with the last button press.
-[[nodiscard]] HRESULT COOKED_READ_DATA::Read(const bool isUnicode,
-                                             size_t& numBytes,
-                                             ULONG& controlKeyState) noexcept
+bool COOKED_READ_DATA::Read(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState)
 {
     controlKeyState = 0;
 
-    NTSTATUS Status = _readCharInputLoop(isUnicode, numBytes);
+    _readCharInputLoop();
 
-    // if the read was completed (status != wait), free the cooked read
-    // data.  also, close the temporary output handle that was opened to
-    // echo the characters read.
-    if (Status != CONSOLE_STATUS_WAIT)
-    {
-        Status = _handlePostCharInputLoop(isUnicode, numBytes, controlKeyState);
-    }
+    // NOTE: Don't call _flushBuffer in a wil::scope_exit/defer.
+    // It may throw and throwing during an ongoing exception is a bad idea.
+    _redisplay();
 
-    return Status;
-}
-
-void COOKED_READ_DATA::ProcessAliases(DWORD& lineCount)
-{
-    Alias::s_MatchAndCopyAliasLegacy(_backupLimit,
-                                     _bytesRead,
-                                     _backupLimit,
-                                     _bufferSize,
-                                     _bytesRead,
-                                     _exeName,
-                                     lineCount);
-}
-
-// Routine Description:
-// - This method handles the various actions that occur on the edit line like pressing keys left/right/up/down, paging, and
-//   the final ENTER key press that will end the wait and finally return the data.
-// Arguments:
-// - pCookedReadData - Pointer to cooked read data information (edit line, client buffer, etc.)
-// - wch - The most recently pressed/retrieved character from the input buffer (keystroke)
-// - keyState - Modifier keys/state information with the pressed key/character
-// - status - The return code to pass to the client
-// Return Value:
-// - true if read is completed. false if we need to keep waiting and be called again with the user's next keystroke.
-bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
-                                    const DWORD keyState,
-                                    NTSTATUS& status)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    size_t NumSpaces = 0;
-    SHORT ScrollY = 0;
-    size_t NumToWrite;
-    WCHAR wch = wchOrig;
-    bool fStartFromDelim;
-
-    status = STATUS_SUCCESS;
-    if (_bytesRead >= (_bufferSize - (2 * sizeof(WCHAR))) && wch != UNICODE_CARRIAGERETURN && wch != UNICODE_BACKSPACE)
+    if (_state == State::Accumulating)
     {
         return false;
     }
 
-    if (_ctrlWakeupMask != 0 && wch < L' ' && (_ctrlWakeupMask & (1 << wch)))
-    {
-        *_bufPtr = wch;
-        _bytesRead += sizeof(WCHAR);
-        _bufPtr += 1;
-        _currentPosition += 1;
-        _controlKeyState = keyState;
-        return true;
-    }
-
-    if (wch == EXTKEY_ERASE_PREV_WORD)
-    {
-        wch = UNICODE_BACKSPACE;
-    }
-
-    if (AtEol())
-    {
-        // If at end of line, processing is relatively simple. Just store the character and write it to the screen.
-        if (wch == UNICODE_BACKSPACE2)
-        {
-            wch = UNICODE_BACKSPACE;
-        }
-
-        if (wch != UNICODE_BACKSPACE || _bufPtr != _backupLimit)
-        {
-            fStartFromDelim = IsWordDelim(_bufPtr[-1]);
-
-            bool loop = true;
-            while (loop)
-            {
-                loop = false;
-                if (_echoInput)
-                {
-                    NumToWrite = sizeof(WCHAR);
-                    status = WriteCharsLegacy(_screenInfo,
-                                              _backupLimit,
-                                              _bufPtr,
-                                              &wch,
-                                              &NumToWrite,
-                                              &NumSpaces,
-                                              _originalCursorPosition.X,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                              &ScrollY);
-                    if (NT_SUCCESS(status))
-                    {
-                        _originalCursorPosition.Y += ScrollY;
-                    }
-                    else
-                    {
-                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
-                    }
-                }
-
-                _visibleCharCount += NumSpaces;
-                if (wch == UNICODE_BACKSPACE && _processedInput)
-                {
-                    _bytesRead -= sizeof(WCHAR);
-                    // clang-format off
-#pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
-                    // clang-format on
-                    *_bufPtr = (WCHAR)' ';
-                    _bufPtr -= 1;
-                    _currentPosition -= 1;
-
-                    // Repeat until it hits the word boundary
-                    if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
-                        _bufPtr != _backupLimit &&
-                        fStartFromDelim ^ !IsWordDelim(_bufPtr[-1]))
-                    {
-                        loop = true;
-                    }
-                }
-                else
-                {
-                    *_bufPtr = wch;
-                    _bytesRead += sizeof(WCHAR);
-                    _bufPtr += 1;
-                    _currentPosition += 1;
-                }
-            }
-        }
-    }
-    else
-    {
-        bool CallWrite = true;
-        const SHORT sScreenBufferSizeX = _screenInfo.GetBufferSize().Width();
-
-        // processing in the middle of the line is more complex:
-
-        // calculate new cursor position
-        // store new char
-        // clear the current command line from the screen
-        // write the new command line to the screen
-        // update the cursor position
-
-        if (wch == UNICODE_BACKSPACE && _processedInput)
-        {
-            // for backspace, use writechars to calculate the new cursor position.
-            // this call also sets the cursor to the right position for the
-            // second call to writechars.
-
-            if (_bufPtr != _backupLimit)
-            {
-                fStartFromDelim = IsWordDelim(_bufPtr[-1]);
-
-                bool loop = true;
-                while (loop)
-                {
-                    loop = false;
-                    // we call writechar here so that cursor position gets updated
-                    // correctly.  we also call it later if we're not at eol so
-                    // that the remainder of the string can be updated correctly.
-
-                    if (_echoInput)
-                    {
-                        NumToWrite = sizeof(WCHAR);
-                        status = WriteCharsLegacy(_screenInfo,
-                                                  _backupLimit,
-                                                  _bufPtr,
-                                                  &wch,
-                                                  &NumToWrite,
-                                                  nullptr,
-                                                  _originalCursorPosition.X,
-                                                  WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                  nullptr);
-                        if (!NT_SUCCESS(status))
-                        {
-                            RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed %x", status);
-                        }
-                    }
-                    _bytesRead -= sizeof(WCHAR);
-                    _bufPtr -= 1;
-                    _currentPosition -= 1;
-                    memmove(_bufPtr,
-                            _bufPtr + 1,
-                            _bytesRead - (_currentPosition * sizeof(WCHAR)));
-                    {
-                        PWCHAR buf = (PWCHAR)((PBYTE)_backupLimit + _bytesRead);
-                        *buf = (WCHAR)' ';
-                    }
-                    NumSpaces = 0;
-
-                    // Repeat until it hits the word boundary
-                    if (wchOrig == EXTKEY_ERASE_PREV_WORD &&
-                        _bufPtr != _backupLimit &&
-                        fStartFromDelim ^ !IsWordDelim(_bufPtr[-1]))
-                    {
-                        loop = true;
-                    }
-                }
-            }
-            else
-            {
-                CallWrite = false;
-            }
-        }
-        else
-        {
-            // store the char
-            if (wch == UNICODE_CARRIAGERETURN)
-            {
-                _bufPtr = (PWCHAR)((PBYTE)_backupLimit + _bytesRead);
-                *_bufPtr = wch;
-                _bufPtr += 1;
-                _bytesRead += sizeof(WCHAR);
-                _currentPosition += 1;
-            }
-            else
-            {
-                bool fBisect = false;
-
-                if (_echoInput)
-                {
-                    if (CheckBisectProcessW(_screenInfo,
-                                            _backupLimit,
-                                            _currentPosition + 1,
-                                            sScreenBufferSizeX - _originalCursorPosition.X,
-                                            _originalCursorPosition.X,
-                                            TRUE))
-                    {
-                        fBisect = true;
-                    }
-                }
-
-                if (_insertMode)
-                {
-                    memmove(_bufPtr + 1,
-                            _bufPtr,
-                            _bytesRead - (_currentPosition * sizeof(WCHAR)));
-                    _bytesRead += sizeof(WCHAR);
-                }
-                *_bufPtr = wch;
-                _bufPtr += 1;
-                _currentPosition += 1;
-
-                // calculate new cursor position
-                if (_echoInput)
-                {
-                    NumSpaces = RetrieveNumberOfSpaces(_originalCursorPosition.X,
-                                                       _backupLimit,
-                                                       _currentPosition - 1);
-                    if (NumSpaces > 0 && fBisect)
-                        NumSpaces--;
-                }
-            }
-        }
-
-        if (_echoInput && CallWrite)
-        {
-            COORD CursorPosition;
-
-            // save cursor position
-            CursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
-            CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
-
-            // clear the current command line from the screen
-            // clang-format off
-#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "Not sure why prefast doesn't like this call.")
-            // clang-format on
-            DeleteCommandLine(*this, FALSE);
-
-            // write the new command line to the screen
-            NumToWrite = _bytesRead;
-
-            DWORD dwFlags = WC_DESTRUCTIVE_BACKSPACE | WC_ECHO;
-            if (wch == UNICODE_CARRIAGERETURN)
-            {
-                dwFlags |= WC_KEEP_CURSOR_VISIBLE;
-            }
-            status = WriteCharsLegacy(_screenInfo,
-                                      _backupLimit,
-                                      _backupLimit,
-                                      _backupLimit,
-                                      &NumToWrite,
-                                      &_visibleCharCount,
-                                      _originalCursorPosition.X,
-                                      dwFlags,
-                                      &ScrollY);
-            if (!NT_SUCCESS(status))
-            {
-                RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
-                _bytesRead = 0;
-                return true;
-            }
-
-            // update cursor position
-            if (wch != UNICODE_CARRIAGERETURN)
-            {
-                if (CheckBisectProcessW(_screenInfo,
-                                        _backupLimit,
-                                        _currentPosition + 1,
-                                        sScreenBufferSizeX - _originalCursorPosition.X,
-                                        _originalCursorPosition.X,
-                                        TRUE))
-                {
-                    if (CursorPosition.X == (sScreenBufferSizeX - 1))
-                    {
-                        CursorPosition.X++;
-                    }
-                }
-
-                // adjust cursor position for WriteChars
-                _originalCursorPosition.Y += ScrollY;
-                CursorPosition.Y += ScrollY;
-                status = AdjustCursorPosition(_screenInfo, CursorPosition, TRUE, nullptr);
-                if (!NT_SUCCESS(status))
-                {
-                    _bytesRead = 0;
-                    return true;
-                }
-            }
-        }
-    }
-
-    // in cooked mode, enter (carriage return) is converted to
-    // carriage return linefeed (0xda).  carriage return is always
-    // stored at the end of the buffer.
-    if (wch == UNICODE_CARRIAGERETURN)
-    {
-        if (_processedInput)
-        {
-            if (_bytesRead < _bufferSize)
-            {
-                *_bufPtr = UNICODE_LINEFEED;
-                if (_echoInput)
-                {
-                    NumToWrite = sizeof(WCHAR);
-                    status = WriteCharsLegacy(_screenInfo,
-                                              _backupLimit,
-                                              _bufPtr,
-                                              _bufPtr,
-                                              &NumToWrite,
-                                              nullptr,
-                                              _originalCursorPosition.X,
-                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                              nullptr);
-                    if (!NT_SUCCESS(status))
-                    {
-                        RIPMSG1(RIP_WARNING, "WriteCharsLegacy failed 0x%x", status);
-                    }
-                }
-                _bytesRead += sizeof(WCHAR);
-                _bufPtr++;
-                _currentPosition += 1;
-            }
-        }
-        // reset the cursor back to 25% if necessary
-        if (_lineInput)
-        {
-            if (_insertMode != gci.GetInsertMode())
-            {
-                // Make cursor small.
-                LOG_IF_FAILED(CommandLine::Instance().ProcessCommandLine(*this, VK_INSERT, 0));
-            }
-
-            status = STATUS_SUCCESS;
-            return true;
-        }
-    }
-
-    return false;
+    _handlePostCharInputLoop(isUnicode, numBytes, controlKeyState);
+    return true;
 }
 
-// Routine Description:
-// - Writes string to current position in prompt line. can overwrite text to the right of the cursor.
-// Arguments:
-// - wstr - the string to write
-// Return Value:
-// - The number of chars written
-size_t COOKED_READ_DATA::Write(const std::wstring_view wstr)
+// Printing wide glyphs at the end of a row results in a forced line wrap and a padding whitespace to be inserted.
+// When the text buffer resizes these padding spaces may vanish and the _distanceCursor and _distanceEnd measurements become inaccurate.
+// To fix this, this function is called before a resize and will clear the input line. Afterward, RedrawAfterResize() will restore it.
+void COOKED_READ_DATA::EraseBeforeResize()
 {
-    auto end = wstr.end();
-    const size_t charsRemaining = (_bufferSize / sizeof(wchar_t)) - (_bufPtr - _backupLimit);
-    if (wstr.size() > charsRemaining)
+    // If we've already erased the buffer, we don't need to do it again.
+    if (_redrawPending)
     {
-        end = std::next(wstr.begin(), charsRemaining);
+        return;
     }
 
-    std::copy(wstr.begin(), end, _bufPtr);
-    const size_t charsInserted = end - wstr.begin();
-    size_t bytesInserted = charsInserted * sizeof(wchar_t);
-    _currentPosition += charsInserted;
-    _bytesRead += bytesInserted;
-
-    if (IsEchoInput())
+    // If we don't have an origin, we've never had user input, and consequently there's nothing to erase.
+    if (!_originInViewport)
     {
-        size_t NumSpaces = 0;
-        SHORT ScrollY = 0;
-
-        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(ScreenInfo(),
-                                                      _backupLimit,
-                                                      _bufPtr,
-                                                      _bufPtr,
-                                                      &bytesInserted,
-                                                      &NumSpaces,
-                                                      OriginalCursorPosition().X,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                      &ScrollY));
-        OriginalCursorPosition().Y += ScrollY;
-        VisibleCharCount() += NumSpaces;
+        return;
     }
-    _bufPtr += charsInserted;
 
-    return charsInserted;
+    _redrawPending = true;
+
+    // Position the cursor the start of the prompt before reflow.
+    // Then, after reflow, we'll be able to ask the buffer where it went (the new origin).
+    // This uses the buffer APIs directly, so that we don't emit unnecessary VT into ConPTY's output.
+    auto& textBuffer = _screenInfo.GetTextBuffer();
+    auto& cursor = textBuffer.GetCursor();
+    auto cursorPos = *_originInViewport;
+    _screenInfo.GetVtPageArea().ConvertFromOrigin(&cursorPos);
+    cursor.SetPosition(cursorPos);
 }
 
-// Routine Description:
-// - saves data in the prompt buffer to the outgoing user buffer
-// Arguments:
-// - cch - the number of chars to write to the user buffer
-// Return Value:
-// - the number of bytes written to the user buffer
-size_t COOKED_READ_DATA::SavePromptToUserBuffer(const size_t cch)
+// The counter-part to EraseBeforeResize().
+void COOKED_READ_DATA::RedrawAfterResize()
 {
-    size_t bytesToWrite = 0;
-    const HRESULT hr = SizeTMult(cch, sizeof(wchar_t), &bytesToWrite);
-    if (FAILED(hr))
+    if (!_redrawPending)
     {
-        return 0;
+        return;
     }
 
-    memmove(_userBuffer, _backupLimit, bytesToWrite);
+    _redrawPending = false;
 
-    if (!IsUnicode())
+    // Get the new cursor position after the reflow, since it may have changed.
+    if (_originInViewport)
     {
-        try
+        _originInViewport = _getViewportCursorPosition();
+    }
+
+    // Ensure that we don't use any scroll sequences or try to clear previous pager contents.
+    // They have all been erased with the CSI J above.
+    _pagerHeight = 0;
+
+    // Ensure that the entire buffer content is rewritten after the above CSI J.
+    _bufferDirtyBeg = 0;
+    _dirty = !_buffer.empty();
+
+    // Let _redisplay() know to inject a CSI J at the start of the output.
+    // This ensures we fully erase the previous contents, that are now in disarray.
+    _clearPending = true;
+
+    _redisplay();
+}
+
+void COOKED_READ_DATA::SetInsertMode(bool insertMode) noexcept
+{
+    _insertMode = insertMode;
+}
+
+bool COOKED_READ_DATA::IsEmpty() const noexcept
+{
+    return _buffer.empty() && _popups.empty();
+}
+
+bool COOKED_READ_DATA::PresentingPopup() const noexcept
+{
+    return !_popups.empty();
+}
+
+til::point_span COOKED_READ_DATA::GetBoundaries() noexcept
+{
+    const auto viewport = _screenInfo.GetViewport();
+    const auto virtualViewport = _screenInfo.GetVtPageArea();
+
+    static constexpr til::point min;
+    const til::point max{ viewport.RightInclusive(), viewport.BottomInclusive() };
+
+    // Convert from VT-viewport-relative coordinate space back to the console one.
+    auto beg = _getOriginInViewport();
+    virtualViewport.ConvertFromOrigin(&beg);
+
+    // Since the pager may be longer than the viewport is tall, we need to clamp the coordinates to still remain within
+    // the current viewport (the pager doesn't write outside of the viewport, since that's not supported by VT).
+    auto end = _pagerPromptEnd;
+    end.y -= _pagerContentTop;
+    end = std::clamp(end, min, max);
+    end.y += beg.y;
+
+    return { beg, end };
+}
+
+// _wordPrev and _wordNext implement the classic Windows word-wise cursor movement algorithm, as traditionally used by
+// conhost, notepad, Visual Studio and other "old" applications. If you look closely you can see how they're the exact
+// same "skip 1 char, skip x, skip not-x", but since the "x" between them is different (non-words for _wordPrev and
+// words for _wordNext) it results in the inconsistent feeling that these have compared to more modern algorithms.
+// TODO: GH#15787
+size_t COOKED_READ_DATA::_wordPrev(const std::wstring_view& chars, size_t position)
+{
+    if (position != 0)
+    {
+        --position;
+        while (position != 0 && chars[position] == L' ')
         {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const std::wstring wstr = ConvertToW(gci.CP, { reinterpret_cast<char*>(_userBuffer), cch });
-            const size_t copyAmount = std::min(wstr.size(), _userBufferSize / sizeof(wchar_t));
-            std::copy_n(wstr.begin(), copyAmount, _userBuffer);
-            return copyAmount * sizeof(wchar_t);
+            --position;
         }
-        CATCH_LOG();
-    }
-    return bytesToWrite;
-}
 
-// Routine Description:
-// - saves data in the prompt buffer as pending input
-// Arguments:
-// - index - the index of what wchar to start the saving
-// - multiline - whether the pending input should be saved as multiline or not
-void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline)
-{
-    INPUT_READ_HANDLE_DATA& inputReadHandleData = *GetInputReadHandleData();
-    const std::wstring_view pending{ _backupLimit + index,
-                                     BytesRead() / sizeof(wchar_t) - index };
-    if (multiline)
-    {
-        inputReadHandleData.SaveMultilinePendingInput(pending);
-    }
-    else
-    {
-        inputReadHandleData.SavePendingInput(pending);
-    }
-}
-
-// Routine Description:
-// - saves data in the prompt buffer as pending input
-// Arguments:
-// - isUnicode - Treat as UCS-2 unicode or use Input CP to convert when done.
-// - numBytes - On in, the number of bytes available in the client
-// buffer. On out, the number of bytes consumed in the client buffer.
-// Return Value:
-// - Status code that indicates success, wait, etc.
-[[nodiscard]] NTSTATUS COOKED_READ_DATA::_readCharInputLoop(const bool isUnicode, size_t& numBytes) noexcept
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    while (_bytesRead < _bufferSize)
-    {
-        wchar_t wch = UNICODE_NULL;
-        bool commandLineEditingKeys = false;
-        DWORD keyState = 0;
-
-        // This call to GetChar may block.
-        Status = GetChar(_pInputBuffer,
-                         &wch,
-                         true,
-                         &commandLineEditingKeys,
-                         nullptr,
-                         &keyState);
-        if (!NT_SUCCESS(Status))
+        const auto dc = DelimiterClass(chars[position]);
+        while (position != 0 && DelimiterClass(chars[position - 1]) == dc)
         {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                _bytesRead = 0;
-            }
+            --position;
+        }
+    }
+    return position;
+}
+
+size_t COOKED_READ_DATA::_wordNext(const std::wstring_view& chars, size_t position)
+{
+    if (position < chars.size())
+    {
+        ++position;
+        const auto dc = DelimiterClass(chars[position - 1]);
+        while (position != chars.size() && dc == DelimiterClass(chars[position]))
+        {
+            ++position;
+        }
+        while (position != chars.size() && chars[position] == L' ')
+        {
+            ++position;
+        }
+    }
+    return position;
+}
+
+// Reads text off of the InputBuffer and dispatches it to the current popup or otherwise into the _buffer contents.
+void COOKED_READ_DATA::_readCharInputLoop()
+{
+    while (_state == State::Accumulating)
+    {
+        const auto hasPopup = !_popups.empty();
+        auto charOrVkey = UNICODE_NULL;
+        auto commandLineEditingKeys = false;
+        auto popupKeys = false;
+        const auto pCommandLineEditingKeys = hasPopup ? nullptr : &commandLineEditingKeys;
+        const auto pPopupKeys = hasPopup ? &popupKeys : nullptr;
+        DWORD modifiers = 0;
+
+        const auto status = GetChar(_pInputBuffer, &charOrVkey, true, pCommandLineEditingKeys, pPopupKeys, &modifiers);
+        if (status == CONSOLE_STATUS_WAIT)
+        {
             break;
         }
+        THROW_IF_NTSTATUS_FAILED(status);
 
-        // we should probably set these up in GetChars, but we set them
-        // up here because the debugger is multi-threaded and calls
-        // read before outputting the prompt.
-
-        if (_originalCursorPosition.X == -1)
+        if (hasPopup)
         {
-            _originalCursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
+            const auto wch = static_cast<wchar_t>(popupKeys ? 0 : charOrVkey);
+            const auto vkey = static_cast<uint16_t>(popupKeys ? charOrVkey : 0);
+            _popupHandleInput(wch, vkey, modifiers);
+        }
+        else
+        {
+            if (commandLineEditingKeys)
+            {
+                _handleVkey(charOrVkey, modifiers);
+            }
+            else
+            {
+                _handleChar(charOrVkey, modifiers);
+            }
+        }
+    }
+}
+
+// Handles character input for _readCharInputLoop() when no popups exist.
+void COOKED_READ_DATA::_handleChar(wchar_t wch, const DWORD modifiers)
+{
+    // All paths in this function modify the buffer.
+
+    if (_ctrlWakeupMask != 0 && wch < L' ' && (_ctrlWakeupMask & (1 << wch)))
+    {
+        // The old implementation (all the way since the 90s) overwrote the character at the current cursor position with the given wch.
+        // But simultaneously it incremented the buffer length, which would have only worked if it was written at the end of the buffer.
+        // Press tab past the "f" in the string "foo" and you'd get "f\to " (a trailing whitespace; the initial contents of the buffer back then).
+        // It's unclear whether the original intention was to write at the end of the buffer at all times or to implement an insert mode.
+        // I went with insert mode.
+        //
+        // The old implementation also failed to clear the end of the prompt if you pressed tab in the middle of it.
+        // You can reproduce this issue by launching cmd in an old conhost build and writing "<command that doesn't exist> foo",
+        // moving your cursor to the space past the <command> and pressing tab. Nothing will happen but the "foo" will be inaccessible.
+        // I've now fixed this behavior by adding an additional Replace() before the _flushBuffer() call that removes the tail end.
+        //
+        // It is important that we don't actually print that character out though, as it's only for the calling application to see.
+        // That's why we flush the contents before the insertion and then ensure that the _flushBuffer() call in Read() exits early.
+        _replace(_bufferCursor, npos, nullptr, 0);
+        _redisplay();
+        _replace(_bufferCursor, 0, &wch, 1);
+        _dirty = false;
+
+        _controlKeyState = modifiers;
+        _transitionState(State::DoneWithWakeupMask);
+        return;
+    }
+
+    switch (wch)
+    {
+    case UNICODE_CARRIAGERETURN:
+    {
+        // NOTE: Don't append newlines to the buffer just yet! See _handlePostCharInputLoop for more information.
+        _setCursorPosition(npos);
+        _transitionState(State::DoneWithCarriageReturn);
+        return;
+    }
+    case EXTKEY_ERASE_PREV_WORD: // Ctrl+Backspace
+    case UNICODE_BACKSPACE:
+        if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT))
+        {
+            const auto cursor = _bufferCursor;
+            const auto pos = wch == EXTKEY_ERASE_PREV_WORD ? _wordPrev(_buffer, cursor) : TextBuffer::GraphemePrev(_buffer, cursor);
+            _replace(pos, cursor - pos, nullptr, 0);
+            return;
+        }
+        // If processed mode is disabled, control characters like backspace are treated like any other character.
+        break;
+    default:
+        break;
+    }
+
+    size_t remove = 0;
+    if (!_insertMode)
+    {
+        // TODO GH#15875: If the input grapheme is >1 char, then this will replace >1 grapheme
+        // --> We should accumulate input text as much as possible and then call _processInput with wstring_view.
+        const auto cursor = _bufferCursor;
+        remove = TextBuffer::GraphemeNext(_buffer, cursor) - cursor;
+    }
+
+    _replace(_bufferCursor, remove, &wch, 1);
+}
+
+// Handles non-character input for _readCharInputLoop() when no popups exist.
+void COOKED_READ_DATA::_handleVkey(uint16_t vkey, DWORD modifiers)
+{
+    const auto ctrlPressed = WI_IsAnyFlagSet(modifiers, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+    const auto altPressed = WI_IsAnyFlagSet(modifiers, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+
+    switch (vkey)
+    {
+    case VK_ESCAPE:
+        if (!_buffer.empty())
+        {
+            _replace(0, npos, nullptr, 0);
+        }
+        break;
+    case VK_HOME:
+        if (_bufferCursor > 0)
+        {
+            if (ctrlPressed)
+            {
+                _replace(0, _bufferCursor, nullptr, 0);
+            }
+            _setCursorPosition(0);
+        }
+        break;
+    case VK_END:
+        if (_bufferCursor < _buffer.size())
+        {
+            if (ctrlPressed)
+            {
+                _replace(_bufferCursor, npos, nullptr, 0);
+            }
+            _setCursorPosition(npos);
+        }
+        break;
+    case VK_LEFT:
+        if (_bufferCursor != 0)
+        {
+            if (ctrlPressed)
+            {
+                _setCursorPosition(_wordPrev(_buffer, _bufferCursor));
+            }
+            else
+            {
+                _setCursorPosition(TextBuffer::GraphemePrev(_buffer, _bufferCursor));
+            }
+        }
+        break;
+    case VK_F1:
+    case VK_RIGHT:
+        if (_bufferCursor != _buffer.size())
+        {
+            if (ctrlPressed && vkey == VK_RIGHT)
+            {
+                _setCursorPosition(_wordNext(_buffer, _bufferCursor));
+            }
+            else
+            {
+                _setCursorPosition(TextBuffer::GraphemeNext(_buffer, _bufferCursor));
+            }
+        }
+        else if (_history)
+        {
+            // Traditionally pressing right at the end of an input line would paste characters from the previous command.
+            const auto cmd = _history->GetLastCommand();
+            const auto bufferSize = _buffer.size();
+            const auto cmdSize = cmd.size();
+            size_t bufferBeg = 0;
+            size_t cmdBeg = 0;
+
+            // We cannot just check if the cmd is longer than the _buffer, because we want to copy graphemes,
+            // not characters and there's no correlation between the number of graphemes and their byte length.
+            while (cmdBeg < cmdSize)
+            {
+                const auto cmdEnd = TextBuffer::GraphemeNext(cmd, cmdBeg);
+
+                if (bufferBeg >= bufferSize)
+                {
+                    _replace(npos, 0, cmd.data() + cmdBeg, cmdEnd - cmdBeg);
+                    break;
+                }
+
+                bufferBeg = TextBuffer::GraphemeNext(_buffer, bufferBeg);
+                cmdBeg = cmdEnd;
+            }
+        }
+        break;
+    case VK_INSERT:
+        _insertMode = !_insertMode;
+        _screenInfo.SetCursorDBMode(_insertMode != ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode());
+        break;
+    case VK_DELETE:
+        if (_bufferCursor < _buffer.size())
+        {
+            const auto beg = _bufferCursor;
+            const auto end = TextBuffer::GraphemeNext(_buffer, beg);
+            _replace(beg, end - beg, nullptr, 0);
+        }
+        break;
+    case VK_UP:
+    case VK_F5:
+        if (_history && !_history->AtFirstCommand())
+        {
+            _replace(_history->Retrieve(CommandHistory::SearchDirection::Previous));
+        }
+        break;
+    case VK_DOWN:
+        if (_history && !_history->AtLastCommand())
+        {
+            _replace(_history->Retrieve(CommandHistory::SearchDirection::Next));
+        }
+        break;
+    case VK_PRIOR:
+        if (_history && !_history->AtFirstCommand())
+        {
+            _replace(_history->RetrieveNth(0));
+        }
+        break;
+    case VK_NEXT:
+        if (_history && !_history->AtLastCommand())
+        {
+            _replace(_history->RetrieveNth(INT_MAX));
+        }
+        break;
+    case VK_F2:
+        if (_history)
+        {
+            _popupPush(PopupKind::CopyToChar);
+        }
+        break;
+    case VK_F3:
+        if (_history)
+        {
+            const auto last = _history->GetLastCommand();
+            if (last.size() > _bufferCursor)
+            {
+                const auto count = last.size() - _bufferCursor;
+                _replace(_bufferCursor, npos, last.data() + _bufferCursor, count);
+            }
+        }
+        break;
+    case VK_F4:
+        // Historically the CopyFromChar popup was constrained to only work when a history exists,
+        // but I don't see why that should be. It doesn't depend on _history at all.
+        _popupPush(PopupKind::CopyFromChar);
+        break;
+    case VK_F6:
+        // Don't ask me why but F6 is an alias for ^Z.
+        _handleChar(0x1a, modifiers);
+        break;
+    case VK_F7:
+        if (!ctrlPressed && !altPressed)
+        {
+            if (_history && _history->GetNumberOfCommands())
+            {
+                _popupPush(PopupKind::CommandList);
+            }
+        }
+        else if (altPressed)
+        {
+            if (_history)
+            {
+                _history->Empty();
+                _history->Flags |= CommandHistory::CLE_ALLOCATED;
+            }
+        }
+        break;
+    case VK_F8:
+        if (_history)
+        {
+            CommandHistory::Index index = 0;
+            const auto cursorPos = _bufferCursor;
+            const auto prefix = std::wstring_view{ _buffer }.substr(0, cursorPos);
+            if (_history->FindMatchingCommand(prefix, _history->LastDisplayed, index, CommandHistory::MatchOptions::None))
+            {
+                _replace(_history->RetrieveNth(index));
+                _setCursorPosition(cursorPos);
+            }
+        }
+        break;
+    case VK_F9:
+        if (_history && _history->GetNumberOfCommands())
+        {
+            _popupPush(PopupKind::CommandNumber);
+        }
+        break;
+    case VK_F10:
+        // Alt+F10 clears the aliases for specifically cmd.exe.
+        if (altPressed)
+        {
+            Alias::s_ClearCmdExeAliases();
+        }
+        break;
+    default:
+        assert(false); // Unrecognized VK. Fix or don't call this function?
+        break;
+    }
+}
+
+// Handles any tasks that need to be completed after the read input loop finishes,
+// like handling doskey aliases and converting the input to non-UTF16.
+void COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState)
+{
+    auto writer = _userBuffer;
+    auto buffer = std::move(_buffer);
+    std::wstring_view input{ buffer };
+    size_t lineCount = 1;
+
+    if (_state == State::DoneWithCarriageReturn)
+    {
+        static constexpr std::wstring_view cr{ L"\r" };
+        static constexpr std::wstring_view crlf{ L"\r\n" };
+        const auto newlineSuffix = WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) ? crlf : cr;
+        std::wstring alias;
+
+        // Here's why we can't easily use _flushBuffer() to handle newlines:
+        //
+        // A carriage return (enter key) will increase the _distanceEnd by up to viewport-width many columns,
+        // since it increases the Y distance between the start and end by 1 (it's a newline after all).
+        // This will make _flushBuffer() think that the new _buffer is way longer than the old one and so
+        // _erase() ends up not erasing the tail end of the prompt, even if the new prompt is actually shorter.
+        //
+        // If you were to break this (remove this code and then append \r\n in _handleChar())
+        // you can reproduce the issue easily if you do this:
+        // * Run cmd.exe
+        // * Write "echo hello" and press Enter
+        // * Write "foobar foo bar" (don't press Enter)
+        // * Press F7, select "echo hello" and press Enter
+        //
+        // It'll print "hello" but the previous prompt will say "echo hello bar" because the _distanceEnd
+        // ended up being well over 14 leading it to believe that "bar" got overwritten during WriteCharsLegacy().
+
+        WriteCharsLegacy(_screenInfo, newlineSuffix, nullptr);
+
+        if (WI_IsFlagSet(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
+        {
+            if (_history)
+            {
+                auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+                LOG_IF_FAILED(_history->Add(input, WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+            }
+
+            Tracing::s_TraceCookedRead(_processHandle, input);
+            alias = Alias::s_MatchAndCopyAlias(input, _exeName, lineCount);
         }
 
-        if (commandLineEditingKeys)
+        if (!alias.empty())
         {
-            // TODO: this is super weird for command line popups only
-            _unicode = isUnicode;
+            buffer = std::move(alias);
+        }
+        else
+        {
+            buffer.append(newlineSuffix);
+        }
 
-            _pdwNumBytes = &numBytes;
+        input = std::wstring_view{ buffer };
 
-            Status = CommandLine::Instance().ProcessCommandLine(*this, wch, keyState);
-            if (Status == CONSOLE_STATUS_READ_COMPLETE || Status == CONSOLE_STATUS_WAIT)
+        // doskey aliases may result in multiple lines of output (for instance `doskey test=echo foo$Techo bar$Techo baz`).
+        // We need to emit them as multiple cooked reads as well, so that each read completes at a \r\n.
+        if (lineCount > 1)
+        {
+            // ProcessAliases() is supposed to end each line with \r\n. If it doesn't we might as well fail-fast.
+            const auto firstLineEnd = input.find(UNICODE_LINEFEED) + 1;
+            input = input.substr(0, std::min(input.size(), firstLineEnd));
+        }
+    }
+
+    const auto inputSizeBefore = input.size();
+    _pInputBuffer->Consume(isUnicode, input, writer);
+
+    if (lineCount > 1)
+    {
+        // This is a continuation of the above identical if condition.
+        // We've truncated the `input` slice and now we need to restore it.
+        const auto inputSizeAfter = input.size();
+        const auto amountConsumed = inputSizeBefore - inputSizeAfter;
+        input = std::wstring_view{ buffer };
+        input = input.substr(std::min(input.size(), amountConsumed));
+        GetInputReadHandleData()->SaveMultilinePendingInput(input);
+    }
+    else if (!input.empty())
+    {
+        GetInputReadHandleData()->SavePendingInput(input);
+    }
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.Flags |= CONSOLE_IGNORE_NEXT_KEYUP;
+
+    // If we previously called SetCursorDBMode() with true,
+    // this will ensure that the cursor returns to its normal look.
+    _screenInfo.SetCursorDBMode(false);
+
+    numBytes = _userBuffer.size() - writer.size();
+    controlKeyState = _controlKeyState;
+}
+
+void COOKED_READ_DATA::_transitionState(State state) noexcept
+{
+    assert(_state == State::Accumulating);
+    _state = state;
+}
+
+til::point COOKED_READ_DATA::_getViewportCursorPosition() const noexcept
+{
+    const auto& textBuffer = _screenInfo.GetTextBuffer();
+    const auto& cursor = textBuffer.GetCursor();
+    auto cursorPos = cursor.GetPosition();
+
+    _screenInfo.GetVtPageArea().ConvertToOrigin(&cursorPos);
+    cursorPos.x = std::max(0, cursorPos.x);
+    cursorPos.y = std::max(0, cursorPos.y);
+    return cursorPos;
+}
+
+// Some applications initiate a read on stdin and _then_ print the prompt prefix to stdout.
+// While that's not correct (because it's a race condition), we can make it significantly
+// less bad by delaying the calculation of the origin until we actually need it.
+// This turns it from a race between application and terminal into a race between
+// application and user, which is much less likely to hit.
+til::point COOKED_READ_DATA::_getOriginInViewport() noexcept
+{
+    if (!_originInViewport)
+    {
+        _originInViewport.emplace(_getViewportCursorPosition());
+    }
+    return *_originInViewport;
+}
+
+void COOKED_READ_DATA::_replace(size_t offset, size_t remove, const wchar_t* input, size_t count)
+{
+    const auto size = _buffer.size();
+    offset = std::min(offset, size);
+    remove = std::min(remove, size - offset);
+
+    // Nothing to do. Avoid marking it as dirty.
+    if (remove == 0 && count == 0)
+    {
+        return;
+    }
+
+    _buffer.replace(offset, remove, input, count);
+    _bufferCursor = offset + count;
+    _bufferDirtyBeg = std::min(_bufferDirtyBeg, offset);
+    _dirty = true;
+}
+
+void COOKED_READ_DATA::_replace(const std::wstring_view& str)
+{
+    _buffer.assign(str);
+    _bufferCursor = _buffer.size();
+    _bufferDirtyBeg = 0;
+    _dirty = true;
+}
+
+void COOKED_READ_DATA::_setCursorPosition(size_t position) noexcept
+{
+    _bufferCursor = std::min(position, _buffer.size());
+    _dirty = true;
+}
+
+std::wstring_view COOKED_READ_DATA::_slice(size_t from, size_t to) const noexcept
+{
+    to = std::min(to, _buffer.size());
+    from = std::min(from, to);
+    return std::wstring_view{ _buffer.data() + from, to - from };
+}
+
+// Draws the contents of _buffer onto the screen.
+//
+// By using the _dirty flag we avoid redrawing the buffer unless needed.
+// This turns the amortized time complexity of _readCharInputLoop() from O(n^2) (n(n+1)/2 redraws) into O(n).
+// Without this, pasting text would otherwise quickly turn into "accidentally quadratic" meme material.
+//
+// NOTE: Don't call _flushBuffer() after appending newlines to the buffer! See _handlePostCharInputLoop for more information.
+void COOKED_READ_DATA::_redisplay()
+{
+    if (!_dirty || WI_IsFlagClear(_pInputBuffer->InputMode, ENABLE_ECHO_INPUT))
+    {
+        return;
+    }
+
+    const auto size = _screenInfo.GetVtPageArea().Dimensions();
+    auto originInViewport = _getOriginInViewport();
+    auto originInViewportFinal = originInViewport;
+    til::point cursorPositionFinal;
+    til::point pagerPromptEnd;
+    std::vector<Line> lines;
+
+    // FYI: This loop does not loop. It exists because goto is considered evil
+    // and if MSVC says that then that must be true.
+    for (;;)
+    {
+        cursorPositionFinal = { originInViewport.x, 0 };
+
+        // Construct the first line manually so that it starts at the correct horizontal position.
+        LayoutResult res{ .column = cursorPositionFinal.x };
+        lines.emplace_back(std::wstring{}, 0, cursorPositionFinal.x, cursorPositionFinal.x);
+
+        // Split the buffer into 3 segments, so that we can find the row/column coordinates of
+        // the cursor within the buffer, as well as the start of the dirty parts of the buffer.
+        const size_t offsets[]{
+            0,
+            std::min(_bufferDirtyBeg, _bufferCursor),
+            std::max(_bufferDirtyBeg, _bufferCursor),
+            npos,
+        };
+
+        for (int i = 0; i < 3; i++)
+        {
+            const auto& segment = til::safe_slice_abs(_buffer, offsets[i], offsets[i + 1]);
+            if (segment.empty())
             {
-                break;
+                continue;
             }
-            if (!NT_SUCCESS(Status))
+
+            const auto dirty = offsets[i] >= _bufferDirtyBeg;
+
+            // Layout the _buffer contents into lines.
+            for (size_t beg = 0; beg < segment.size();)
             {
-                if (Status == CONSOLE_STATUS_WAIT_NO_BLOCK)
+                if (res.column >= size.width)
                 {
-                    Status = CONSOLE_STATUS_WAIT;
+                    lines.emplace_back();
+                }
+
+                auto& line = lines.back();
+                res = _layoutLine(line.text, segment, beg, line.columns, size.width);
+                line.columns = res.column;
+
+                if (!dirty)
+                {
+                    line.dirtyBegOffset = line.text.size();
+                    line.dirtyBegColumn = res.column;
+                }
+
+                beg = res.offset;
+            }
+
+            // If this segment ended at the cursor offset, we got our cursor position in rows/columns.
+            if (offsets[i + 1] == _bufferCursor)
+            {
+                cursorPositionFinal = { res.column, gsl::narrow_cast<til::CoordType>(lines.size() - 1) };
+            }
+        }
+
+        pagerPromptEnd = { res.column, gsl::narrow_cast<til::CoordType>(lines.size() - 1) };
+
+        // If the content got a little shorter than it was before, we need to erase the tail end.
+        // If the last character on a line got removed, we'll skip this code because `remaining`
+        // will be negative, and instead we'll erase it later when we append "  \r" to the lines.
+        // If entire lines got removed, then we'll fix this later when comparing against _pagerContentEnd.y.
+        if (pagerPromptEnd.y <= _pagerPromptEnd.y)
+        {
+            const auto endX = _pagerPromptEnd.y == pagerPromptEnd.y ? _pagerPromptEnd.x : size.width;
+            const auto remaining = endX - pagerPromptEnd.x;
+
+            if (remaining > 0)
+            {
+                auto& line = lines.back();
+
+                // CSI K may be expensive, so use spaces if we can.
+                if (remaining <= 16)
+                {
+                    line.text.append(remaining, L' ');
+                    line.columns += remaining;
                 }
                 else
                 {
-                    _bytesRead = 0;
+                    // CSI K doesn't change the cursor position, so we don't modify .columns.
+                    line.text.append(L"\x1b[K");
                 }
-                break;
             }
+        }
+
+        // Render the popups, if there are any.
+        if (!_popups.empty())
+        {
+            auto& popup = _popups.front();
+
+            // Ensure that the popup is not considered part of the prompt line. That is, if someone double-clicks
+            // to select the last word in the prompt, it should not select the first word in the popup.
+            auto& lastLine = lines.back();
+            lastLine.text.append(L"\r\n");
+            lastLine.columns = size.width;
+
+            switch (popup.kind)
+            {
+            case PopupKind::CopyToChar:
+                _popupDrawPrompt(lines, size.width, ID_CONSOLE_MSGCMDLINEF2, {}, {});
+                break;
+            case PopupKind::CopyFromChar:
+                _popupDrawPrompt(lines, size.width, ID_CONSOLE_MSGCMDLINEF4, {}, {});
+                break;
+            case PopupKind::CommandNumber:
+                _popupDrawPrompt(lines, size.width, ID_CONSOLE_MSGCMDLINEF9, {}, { popup.commandNumber.buffer.data(), CommandNumberMaxInputLength });
+                break;
+            case PopupKind::CommandList:
+                _popupDrawCommandList(lines, size, popup);
+                break;
+            default:
+                assert(false);
+            }
+
+            // Put the cursor at the end of the contents. This ensures we scroll all the way down.
+            cursorPositionFinal.x = lines.back().columns;
+            cursorPositionFinal.y = gsl::narrow_cast<til::CoordType>(lines.size()) - 1;
+        }
+        // If the cursor is at a delay-wrapped position, wrap it explicitly.
+        // This ensures that the cursor is always "after" the insertion position.
+        // We don't need to do this when popups are present, because they're not supposed to end in a newline.
+        else if (cursorPositionFinal.x >= size.width)
+        {
+            cursorPositionFinal.x = 0;
+            cursorPositionFinal.y++;
+
+            // If the cursor is at the end of the buffer we must always show it after the last character.
+            // Since VT uses delayed EOL wrapping, we must write at least 1 more character to force the
+            // potential delayed line wrap at the end of the prompt, on the last line.
+            // We append an extra line to get the lineCount for scrolling right.
+            if (_bufferCursor == _buffer.size())
+            {
+                auto& line = lines.emplace_back();
+
+                // This mirrors the `if (pagerPromptEnd.y <= _pagerPromptEnd.y)` above. We need to repeat this here,
+                // because if we append another line then we also need to repeat the "delete to end" logic.
+                // The best way to see this code kick in is if you have a prompt like this:
+                //   +----------+
+                //   |C:\> foo  | <-- end the line in >=1 spaces
+                //   |bar_      | <-- start the line with a word >2 characters
+                //   +----------+
+                // Then put the cursor at the end (where the "_" is) and press Ctrl+Backspace.
+                auto remaining = (_pagerPromptEnd.y - pagerPromptEnd.y) * size.width + _pagerPromptEnd.x - pagerPromptEnd.x;
+
+                // Here we ensure that we force a EOL wrap no matter what. At a minimum this will result in " \r".
+                remaining = std::max(1, remaining);
+
+                // CSI K may be expensive, so use spaces if we can.
+                if (remaining <= 16)
+                {
+                    line.text.append(remaining, L' ');
+                    line.text.push_back(L'\r');
+                }
+                else
+                {
+                    line.text.append(L" \r\x1b[K");
+                }
+            }
+        }
+
+        // Usually we'll be on a "prompt> ..." line and behave like a regular single-line-editor.
+        // But once the entire viewport is full of text, we need to behave more like a pager (= scrolling, etc.).
+        // This code retries the layout process if needed, because then the cursor starts at origin {0, 0}.
+        if (gsl::narrow_cast<til::CoordType>(lines.size()) > size.height && originInViewportFinal.x != 0)
+        {
+            lines.clear();
+            _bufferDirtyBeg = 0;
+            originInViewport.x = 0;
+            originInViewportFinal = {};
+            continue;
+        }
+
+        break;
+    }
+
+    const auto lineCount = gsl::narrow_cast<til::CoordType>(lines.size());
+    const auto pagerHeight = std::min(lineCount, size.height);
+
+    // If the contents of the prompt are longer than the remaining number of lines in the viewport,
+    // we need to reduce originInViewportFinal.y towards 0 to account for that. In other words,
+    // as the viewport fills itself with text the _originInViewport will slowly move towards 0.
+    originInViewportFinal.y = std::min(originInViewportFinal.y, size.height - pagerHeight);
+
+    auto pagerContentTop = _pagerContentTop;
+    // If the cursor is above the viewport, we go up...
+    pagerContentTop = std::min(pagerContentTop, cursorPositionFinal.y);
+    // and if the cursor is below it, we go down.
+    pagerContentTop = std::max(pagerContentTop, cursorPositionFinal.y - size.height + 1);
+    // The value may be out of bounds, because the above min/max doesn't ensure this on its own.
+    pagerContentTop = std::clamp(pagerContentTop, 0, lineCount - pagerHeight);
+
+    // Transform the recorded position from the lines vector coordinate space into VT screen space.
+    // Due to the above scrolling of pagerTop, cursorPosition should now always be within the viewport.
+    // dirtyBegPosition however could be outside of it.
+    cursorPositionFinal.y += originInViewportFinal.y - pagerContentTop;
+
+    std::wstring output;
+
+    if (_clearPending)
+    {
+        _clearPending = false;
+        _appendCUP(output, originInViewport);
+        output.append(L"\x1b[J");
+    }
+
+    // Backup the attributes (DECSC) and disable the cursor when opening a popup (DECTCEM).
+    // Restore the attributes (DECRC) reenable the cursor when closing them (DECTCEM).
+    if (const auto popupOpened = !_popups.empty(); _popupOpened != popupOpened)
+    {
+        wchar_t buf[] =
+            // Back/restore cursor position & attributes (commonly supported)
+            L"\u001b7"
+            // Show/hide cursor (commonly supported)
+            "\u001b[?25l"
+            // The popup code uses XTPUSHSGR (CSI # {) / XTPOPSGR (CSI # }) to draw the popups in the popup-colors,
+            // while properly restoring the previous VT attributes. On terminals that support them, the following
+            // won't do anything. On other terminals however, it'll reset the attributes to default.
+            // This is important as the first thing the popup drawing code uses CSI K to erase the previous contents
+            // and CSI m to reset the attributes on terminals that don't support XTPUSHSGR/XTPOPSGR. In order for
+            // the first CSI K to behave as if there had a previous CSI m, we must emit an initial CSI m here.
+            // (rarely supported)
+            "\x1b[#{\x1b[m\x1b[#}";
+
+        buf[1] = popupOpened ? '7' : '8';
+        buf[7] = popupOpened ? 'l' : 'h';
+
+        // When the popup closes we skip the XTPUSHSGR/XTPOPSGR sequence. This is crucial because we
+        // use DECRC to restore the cursor position and attributes with a widely supported sequence.
+        // If we emitted that XTPUSHSGR/XTPOPSGR sequence it would reset the attributes again.
+        const size_t len = popupOpened ? 19 : 8;
+
+        output.append(buf, len);
+        _popupOpened = popupOpened;
+    }
+
+    // If we have so much text that it doesn't fit into the viewport (origin == {0,0}),
+    // then we can scroll the existing contents of the pager and only write what got newly uncovered.
+    //
+    // The check for origin == {0,0} is important because it ensures that we "own" the entire viewport and
+    // that scrolling our contents doesn't scroll away the user's output that may still be in the viewport.
+    // (Anything below the origin is assumed to belong to us.)
+    if (const auto delta = pagerContentTop - _pagerContentTop; delta != 0 && originInViewport == til::point{})
+    {
+        const auto deltaAbs = abs(delta);
+        til::CoordType beg = 0;
+        til::CoordType end = pagerHeight;
+
+        // Let's say the viewport is 10 lines tall. Scenarios:
+        // * We had 2 lines (_pagerContentTop == 0, _pagerHeight == 2),
+        //   and now it's 11 lines (pagerContentTop == 1, pagerHeight == 11).
+        //   --> deltaAbs == 1
+        //   --> Scroll ✔️
+        // * We had 2 lines (_pagerContentTop == 0, _pagerHeight == 2),
+        //   and now it's 12 lines (pagerContentTop == 2, pagerHeight == 12).
+        //   --> deltaAbs == 2
+        //   --> Scroll ❌
+        //
+        // The same applies when going from 11/12 lines back to 2. It appears scrolling
+        // makes sense if the delta is smaller than the current or previous pagerHeight.
+        if (deltaAbs < std::min(_pagerHeight, pagerHeight))
+        {
+            beg = delta >= 0 ? pagerHeight - deltaAbs : 0;
+            end = delta >= 0 ? pagerHeight : deltaAbs;
+            const auto cmd = delta >= 0 ? L'S' : L'T';
+            fmt::format_to(std::back_inserter(output), FMT_COMPILE(L"\x1b[{}{}"), deltaAbs, cmd);
         }
         else
         {
-            if (ProcessInput(wch, keyState, Status))
+            // We may not be scrolling with VT, because we're scrolling by more rows than the pagerHeight.
+            // Since no one is now clearing the scrolled in rows for us anymore, we need to do it ourselves.
+            auto& lastLine = lines.at(pagerHeight - 1 + pagerContentTop);
+            if (lastLine.columns < size.width)
             {
-                CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-                gci.Flags |= CONSOLE_IGNORE_NEXT_KEYUP;
-                break;
+                lastLine.text.append(L"\x1b[K");
+            }
+        }
+
+        // Mark each row that has been uncovered by the scroll as dirty.
+        for (auto i = beg; i < end; i++)
+        {
+            auto& line = lines.at(i + pagerContentTop);
+            line.dirtyBegOffset = 0;
+            line.dirtyBegColumn = 0;
+        }
+    }
+
+    bool anyDirty = false;
+    for (til::CoordType i = 0; i < pagerHeight; i++)
+    {
+        const auto& line = lines.at(i + pagerContentTop);
+        anyDirty = line.dirtyBegOffset < line.text.size();
+        if (anyDirty)
+        {
+            break;
+        }
+    }
+
+    til::point writeCursorPosition{ -1, -1 };
+
+    if (anyDirty)
+    {
+#if COOKED_READ_DEBUG
+        static size_t debugColorIndex = 0;
+        const auto color = til::colorbrewer::dark2[++debugColorIndex % std::size(til::colorbrewer::dark2)];
+        fmt::format_to(std::back_inserter(output), FMT_COMPILE(L"\x1b[48;2;{};{};{}m"), GetRValue(color), GetGValue(color), GetBValue(color));
+#endif
+
+        for (til::CoordType i = 0; i < pagerHeight; i++)
+        {
+            const auto row = std::min(originInViewport.y + i, size.height - 1);
+
+            // If the last write left the cursor at the end of a line, the next write will start at the beginning of the next line.
+            // This avoids needless calls to _appendCUP. The reason it's here and not at the end of the loop is similar to how
+            // delay-wrapping in VT works: The line wrap only occurs after writing 1 more character than fits on the line.
+            if (writeCursorPosition.x >= size.width)
+            {
+                writeCursorPosition.x = 0;
+                writeCursorPosition.y = row;
+            }
+
+            const auto& line = lines.at(i + pagerContentTop);
+
+            // Skip lines that aren't marked as dirty.
+            // We use dirtyBegColumn instead of dirtyBegOffset to test for dirtiness, because a line that has 1 column
+            // of space for layout and was asked to fit a wide glyph will have no text, but still be "dirty".
+            // This ensures that we get the initial starting position of the _appendCUP below right.
+            if (line.dirtyBegColumn >= size.width)
+            {
+                continue;
+            }
+
+            // Position the cursor wherever the dirty part of the line starts.
+            if (const til::point pos{ line.dirtyBegColumn, row }; writeCursorPosition != pos)
+            {
+                writeCursorPosition = pos;
+                _appendCUP(output, pos);
+            }
+
+            output.append(line.text, line.dirtyBegOffset);
+            writeCursorPosition.x = line.columns;
+        }
+
+#if COOKED_READ_DEBUG
+        output.append(L"\x1b[m");
+#endif
+    }
+
+    // Clear any lines that we previously filled and are now empty.
+    {
+        const auto pagerHeightPrevious = std::min(_pagerHeight, size.height);
+
+        if (pagerHeight < pagerHeightPrevious)
+        {
+            const auto row = std::min(originInViewport.y + pagerHeight, size.height - 1);
+            _appendCUP(output, { 0, row });
+            output.append(L"\x1b[K");
+
+            for (til::CoordType i = pagerHeight + 1; i < pagerHeightPrevious; i++)
+            {
+                output.append(L"\x1b[E\x1b[K");
             }
         }
     }
-    return Status;
+
+    _appendCUP(output, cursorPositionFinal);
+    WriteCharsVT(_screenInfo, output);
+
+    _originInViewport = originInViewportFinal;
+    _pagerPromptEnd = pagerPromptEnd;
+    _pagerContentTop = pagerContentTop;
+    _pagerHeight = pagerHeight;
+    _bufferDirtyBeg = _buffer.size();
+    _dirty = false;
 }
 
-// Routine Description:
-// - handles any tasks that need to be completed after the read input loop finishes
-// Arguments:
-// - isUnicode - Treat as UCS-2 unicode or use Input CP to convert when done.
-// - numBytes - On in, the number of bytes available in the client
-// buffer. On out, the number of bytes consumed in the client buffer.
-// - controlKeyState - For some types of reads, this is the modifier key state with the last button press.
-// Return Value:
-// - Status code that indicates success, out of memory, etc.
-[[nodiscard]] NTSTATUS COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t& numBytes, ULONG& controlKeyState) noexcept
+COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& output, const std::wstring_view& input, const size_t inputOffset, const til::CoordType columnBegin, const til::CoordType columnLimit) const
 {
-    DWORD LineCount = 1;
+    const auto& textBuffer = _screenInfo.GetTextBuffer();
+    const auto beg = input.data();
+    const auto end = beg + input.size();
+    auto it = beg + std::min(inputOffset, input.size());
+    auto column = std::min(columnBegin, columnLimit);
 
-    if (_echoInput)
+    output.reserve(output.size() + columnLimit - column);
+
+    while (it != end && column < columnLimit)
     {
-        // Figure out where real string ends (at carriage return or end of buffer).
-        PWCHAR StringPtr = _backupLimit;
-        size_t StringLength = _bytesRead;
-        bool FoundCR = false;
-        for (size_t i = 0; i < (_bytesRead / sizeof(WCHAR)); i++)
+        const auto nextControlChar = std::find_if(it, end, [](const auto& wch) { return wch < L' '; });
+        if (it != nextControlChar)
         {
-            if (*StringPtr++ == UNICODE_CARRIAGERETURN)
+            std::wstring_view text{ it, nextControlChar };
+            til::CoordType cols = 0;
+            const auto len = textBuffer.FitTextIntoColumns(text, columnLimit - column, cols);
+
+            output.append(text, 0, len);
+            column += cols;
+            it += len;
+
+            if (it != nextControlChar)
             {
-                StringLength = i * sizeof(WCHAR);
-                FoundCR = true;
+                // The only reason that not all text could be fit into the line is if the last character was a wide glyph.
+                // In that case we want to return the columnLimit, to indicate that the row is full and a line wrap is required,
+                // BUT DON'T want to pad the line with a whitespace to actually fill the line to the columnLimit.
+                // This is because copying the prompt contents (Ctrl-A, Ctrl-C) should not copy any trailing padding whitespace.
+                //
+                // Thanks to this lie, the _redisplay() code will not use a CRLF sequence or similar to move to the next line,
+                // as it thinks that this row has naturally wrapped. This causes it to print the wide glyph on the preceding line
+                // which causes the terminal to insert the padding whitespace for us.
+                column = columnLimit;
+                break;
+            }
+
+            if (column >= columnLimit)
+            {
                 break;
             }
         }
 
-        if (FoundCR)
+        const auto nextPlainChar = std::find_if(it, end, [](const auto& wch) { return wch >= L' '; });
+        for (; it != nextPlainChar; ++it)
         {
-            if (_commandHistory)
+            const auto wch = *it;
+            wchar_t buf[8];
+            til::CoordType len = 0;
+
+            if (wch == UNICODE_TAB)
             {
-                // add to command line recall list if we have a history list.
-                CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-                LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, StringLength / sizeof(wchar_t) },
-                                                   WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+                const auto remaining = columnLimit - column;
+                len = std::min(8 - (column & 7), remaining);
+                std::fill_n(&buf[0], len, L' ');
+            }
+            else
+            {
+                buf[0] = L'^';
+                buf[1] = wch + L'@';
+                len = 2;
             }
 
-            // check for alias
-            ProcessAliases(LineCount);
+            if (column + len > columnLimit)
+            {
+                // Unlike above with regular text we can't avoid padding the line with whitespace, because a string
+                // like "^A" is not a wide glyph, and so we cannot trick the terminal to insert the padding for us.
+                output.append(columnLimit - column, L' ');
+                column = columnLimit;
+                goto outerLoopExit;
+            }
+
+            output.append(buf, len);
+            column += len;
+
+            if (column >= columnLimit)
+            {
+                goto outerLoopExit;
+            }
         }
     }
 
-    bool fAddDbcsLead = false;
-    size_t NumBytes = 0;
-    // at this point, a->NumBytes contains the number of bytes in
-    // the UNICODE string read.  UserBufferSize contains the converted
-    // size of the app's buffer.
-    if (_bytesRead > _userBufferSize || LineCount > 1)
+outerLoopExit:
+    return {
+        .offset = static_cast<size_t>(it - beg),
+        .column = column,
+    };
+}
+
+void COOKED_READ_DATA::_appendCUP(std::wstring& output, til::point pos)
+{
+    fmt::format_to(std::back_inserter(output), FMT_COMPILE(L"\x1b[{};{}H"), pos.y + 1, pos.x + 1);
+}
+
+void COOKED_READ_DATA::_appendPopupAttr(std::wstring& output) const
+{
+    VtIo::FormatAttributes(output, _screenInfo.GetPopupAttributes());
+}
+
+void COOKED_READ_DATA::_popupPush(const PopupKind kind)
+try
+{
+    auto& popup = _popups.emplace_back(kind);
+    _dirty = true;
+
+    switch (kind)
     {
-        if (LineCount > 1)
+    case PopupKind::CommandNumber:
+        popup.commandNumber.buffer.fill(' ');
+        popup.commandNumber.bufferSize = 0;
+        break;
+    case PopupKind::CommandList:
+        popup.commandList.top = -1;
+        popup.commandList.height = 10;
+        popup.commandList.selected = _history->LastDisplayed;
+        break;
+    default:
+        break;
+    }
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    _popupsDone();
+}
+
+// Dismisses all current popups at once. Right now we don't need support for just dismissing the topmost popup.
+// In fact, there's only a single situation right now where there can be >1 popup:
+// Pressing F7 followed by F9 (CommandNumber on top of CommandList).
+void COOKED_READ_DATA::_popupsDone()
+{
+    _popups.clear();
+    _dirty = true;
+}
+
+void COOKED_READ_DATA::_popupHandleInput(wchar_t wch, uint16_t vkey, DWORD modifiers)
+{
+    if (_popups.empty())
+    {
+        assert(false); // Don't call this function.
+        return;
+    }
+
+    auto& popup = _popups.back();
+    switch (popup.kind)
+    {
+    case PopupKind::CopyToChar:
+        _popupHandleCopyToCharInput(popup, wch, vkey, modifiers);
+        break;
+    case PopupKind::CopyFromChar:
+        _popupHandleCopyFromCharInput(popup, wch, vkey, modifiers);
+        break;
+    case PopupKind::CommandNumber:
+        _popupHandleCommandNumberInput(popup, wch, vkey, modifiers);
+        break;
+    case PopupKind::CommandList:
+        _popupHandleCommandListInput(popup, wch, vkey, modifiers);
+        break;
+    default:
+        break;
+    }
+}
+
+void COOKED_READ_DATA::_popupHandleCopyToCharInput(Popup& /*popup*/, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
+{
+    if (vkey)
+    {
+        if (vkey == VK_ESCAPE)
         {
-            PWSTR Tmp;
-            if (!isUnicode)
-            {
-                if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-                {
-                    fAddDbcsLead = true;
-                    std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                    _userBuffer++;
-                    _userBufferSize -= sizeof(wchar_t);
-                }
-
-                NumBytes = 0;
-                for (Tmp = _backupLimit;
-                     *Tmp != UNICODE_LINEFEED && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                     Tmp++)
-                {
-                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-
-            // clang-format off
-#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
-            // clang-format on
-            for (Tmp = _backupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
-            {
-                FAIL_FAST_IF(!(Tmp < (_backupLimit + _bytesRead)));
-            }
-
-            numBytes = (ULONG)(Tmp - _backupLimit + 1) * sizeof(*Tmp);
-        }
-        else
-        {
-            if (!isUnicode)
-            {
-                PWSTR Tmp;
-
-                if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-                {
-                    fAddDbcsLead = true;
-                    std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                    _userBuffer++;
-                    _userBufferSize -= sizeof(wchar_t);
-                }
-                NumBytes = 0;
-                size_t NumToWrite = _bytesRead;
-                for (Tmp = _backupLimit;
-                     NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                     Tmp++, NumToWrite -= sizeof(WCHAR))
-                {
-                    NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-                }
-            }
-            numBytes = _userBufferSize;
-        }
-
-        __analysis_assume(numBytes <= _userBufferSize);
-        memmove(_userBuffer, _backupLimit, numBytes);
-
-        INPUT_READ_HANDLE_DATA* const pInputReadHandleData = GetInputReadHandleData();
-        const std::wstring_view pending{ _backupLimit + (numBytes / sizeof(wchar_t)), (_bytesRead - numBytes) / sizeof(wchar_t) };
-        if (LineCount > 1)
-        {
-            pInputReadHandleData->SaveMultilinePendingInput(pending);
-        }
-        else
-        {
-            pInputReadHandleData->SavePendingInput(pending);
+            _popupsDone();
         }
     }
     else
     {
-        if (!isUnicode)
+        // See PopupKind::CopyToChar for more information about this code.
+        const auto cmd = _history->GetLastCommand();
+        const auto cursor = _bufferCursor;
+        const auto idx = cmd.find(wch, cursor);
+
+        if (idx != decltype(cmd)::npos)
         {
-            PWSTR Tmp;
-
-            if (_pInputBuffer->IsReadPartialByteSequenceAvailable())
-            {
-                fAddDbcsLead = true;
-                std::unique_ptr<IInputEvent> event = GetInputBuffer()->FetchReadPartialByteSequence(false);
-                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                *_userBuffer = static_cast<char>(pKeyEvent->GetCharData());
-                _userBuffer++;
-                _userBufferSize -= sizeof(wchar_t);
-
-                if (_userBufferSize == 0)
-                {
-                    numBytes = 1;
-                    return STATUS_SUCCESS;
-                }
-            }
-            NumBytes = 0;
-            size_t NumToWrite = _bytesRead;
-            for (Tmp = _backupLimit;
-                 NumToWrite && _userBufferSize / sizeof(WCHAR) > NumBytes;
-                 Tmp++, NumToWrite -= sizeof(WCHAR))
-            {
-                NumBytes += IsGlyphFullWidth(*Tmp) ? 2 : 1;
-            }
+            // When we enter this if condition it's guaranteed that _bufferCursor must be
+            // smaller than idx, which in turn implies that it's smaller than cmd.size().
+            // As such, calculating length is safe and str.size() == length.
+            const auto count = idx - cursor;
+            _replace(cursor, count, cmd.data() + cursor, count);
         }
 
-        numBytes = _bytesRead;
-
-        if (numBytes > _userBufferSize)
-        {
-            return STATUS_BUFFER_OVERFLOW;
-        }
-
-        memmove(_userBuffer, _backupLimit, numBytes);
+        _popupsDone();
     }
-    controlKeyState = _controlKeyState;
+}
 
-    if (!isUnicode)
+void COOKED_READ_DATA::_popupHandleCopyFromCharInput(Popup& /*popup*/, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
+{
+    if (vkey)
     {
-        // if ansi, translate string.
-        std::unique_ptr<char[]> tempBuffer;
-        try
+        if (vkey == VK_ESCAPE)
         {
-            tempBuffer = std::make_unique<char[]>(NumBytes);
-        }
-        catch (...)
-        {
-            return STATUS_NO_MEMORY;
-        }
-
-        std::unique_ptr<IInputEvent> partialEvent;
-        numBytes = TranslateUnicodeToOem(_userBuffer,
-                                         gsl::narrow<ULONG>(numBytes / sizeof(wchar_t)),
-                                         tempBuffer.get(),
-                                         gsl::narrow<ULONG>(NumBytes),
-                                         partialEvent);
-
-        if (partialEvent.get())
-        {
-            GetInputBuffer()->StoreReadPartialByteSequence(std::move(partialEvent));
-        }
-
-        if (numBytes > _userBufferSize)
-        {
-            return STATUS_BUFFER_OVERFLOW;
-        }
-
-        memmove(_userBuffer, tempBuffer.get(), numBytes);
-        if (fAddDbcsLead)
-        {
-            numBytes++;
+            _popupsDone();
         }
     }
-    return STATUS_SUCCESS;
+    else
+    {
+        // See PopupKind::CopyFromChar for more information about this code.
+        const auto cursor = _bufferCursor;
+        auto idx = _buffer.find(wch, cursor);
+        idx = std::min(idx, _buffer.size());
+        _replace(cursor, idx - cursor, nullptr, 0);
+        _popupsDone();
+    }
+}
+
+void COOKED_READ_DATA::_popupHandleCommandNumberInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD /*modifiers*/)
+{
+    if (vkey)
+    {
+        if (vkey == VK_ESCAPE)
+        {
+            _popupsDone();
+        }
+    }
+    else
+    {
+        if (wch == UNICODE_CARRIAGERETURN)
+        {
+            popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = L'\0';
+            _replace(_history->RetrieveNth(std::stoi(popup.commandNumber.buffer.data())));
+            _popupsDone();
+        }
+        else if (wch >= L'0' && wch <= L'9')
+        {
+            if (popup.commandNumber.bufferSize < CommandNumberMaxInputLength)
+            {
+                popup.commandNumber.buffer[popup.commandNumber.bufferSize++] = wch;
+                _dirty = true;
+            }
+        }
+        else if (wch == UNICODE_BACKSPACE)
+        {
+            if (popup.commandNumber.bufferSize > 0)
+            {
+                popup.commandNumber.buffer[--popup.commandNumber.bufferSize] = L' ';
+                _dirty = true;
+            }
+        }
+    }
+}
+
+void COOKED_READ_DATA::_popupHandleCommandListInput(Popup& popup, const wchar_t wch, const uint16_t vkey, const DWORD modifiers)
+{
+    auto& cl = popup.commandList;
+
+    if (wch == UNICODE_CARRIAGERETURN)
+    {
+        _replace(_history->RetrieveNth(cl.selected));
+        _popupsDone();
+        _handleChar(UNICODE_CARRIAGERETURN, modifiers);
+        return;
+    }
+
+    switch (vkey)
+    {
+    case VK_ESCAPE:
+        _popupsDone();
+        return;
+    case VK_F9:
+        _popupPush(PopupKind::CommandNumber);
+        return;
+    case VK_DELETE:
+        _history->Remove(cl.selected);
+        if (_history->GetNumberOfCommands() <= 0)
+        {
+            _popupsDone();
+            return;
+        }
+        break;
+    case VK_LEFT:
+    case VK_RIGHT:
+        _replace(_history->RetrieveNth(cl.selected));
+        _popupsDone();
+        return;
+    case VK_UP:
+        if (WI_IsFlagSet(modifiers, SHIFT_PRESSED))
+        {
+            _history->Swap(cl.selected, cl.selected - 1);
+        }
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
+        cl.selected--;
+        break;
+    case VK_DOWN:
+        if (WI_IsFlagSet(modifiers, SHIFT_PRESSED))
+        {
+            _history->Swap(cl.selected, cl.selected + 1);
+        }
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
+        cl.selected++;
+        break;
+    case VK_HOME:
+        cl.selected = 0;
+        break;
+    case VK_END:
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
+        cl.selected = INT_MAX;
+        break;
+    case VK_PRIOR:
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
+        cl.selected -= cl.height;
+        break;
+    case VK_NEXT:
+        // _popupDrawCommandList() clamps all values to valid ranges in `cl`.
+        cl.selected += cl.height;
+        break;
+    default:
+        return;
+    }
+
+    _dirty = true;
+}
+
+void COOKED_READ_DATA::_popupDrawPrompt(std::vector<Line>& lines, const til::CoordType width, const UINT id, const std::wstring_view& prefix, const std::wstring_view& suffix) const
+{
+    std::wstring str;
+    str.append(prefix);
+    _LoadString(id, str);
+    str.append(suffix);
+
+    std::wstring line;
+    line.append(L"\x1b[#{\x1b[K");
+    _appendPopupAttr(line);
+    const auto res = _layoutLine(line, str, 0, 0, width);
+    line.append(L"\x1b[m\x1b[#}");
+
+    lines.emplace_back(std::move(line), 0, 0, res.column);
+}
+
+void COOKED_READ_DATA::_popupDrawCommandList(std::vector<Line>& lines, const til::size size, Popup& popup) const
+{
+    assert(popup.kind == PopupKind::CommandList);
+
+    auto& cl = popup.commandList;
+    const auto historySize = _history->GetNumberOfCommands();
+    const auto indexWidth = gsl::narrow_cast<til::CoordType>(fmt::formatted_size(FMT_COMPILE(L"{}"), historySize));
+
+    // The popup is half the height of the viewport, but at least 1 and at most 20 lines.
+    // Unless of course the history size is less than that. We also reserve 1 additional line
+    // of space in case the user presses F9 which will open the "Enter command number:" popup.
+    const auto height = std::min(historySize, std::min(size.height / 2 - 1, 20));
+    if (height < 1)
+    {
+        return;
+    }
+
+    // cl.selected may be out of bounds after a page up/down, etc., so we need to clamp it.
+    cl.selected = std::clamp(cl.selected, 0, historySize - 1);
+
+    // If it hasn't been initialized it yet, center the selected item.
+    if (cl.top < 0)
+    {
+        cl.top = std::max(0, cl.selected - height / 2);
+    }
+
+    // If the selection is above the viewport, we go up...
+    cl.top = std::min(cl.top, cl.selected);
+    // and if the selection is below it, we go down.
+    cl.top = std::max(cl.top, cl.selected - height + 1);
+    // The value may be out of bounds, because the above min/max doesn't ensure this on its own.
+    cl.top = std::clamp(cl.top, 0, historySize - height);
+
+    // We also need to update the height for future page up/down movements.
+    cl.height = height;
+
+    // Calculate the position of the █ track in the scrollbar among all the ▒.
+    // The position is offset by +1 because at off == 0 we draw the ▲.
+    // We add historyMax/2 to round the division result to the nearest value.
+    const auto historyMax = historySize - 1;
+    const auto trackPositionMax = height - 3;
+    const auto trackPosition = historyMax <= 0 ? 0 : 1 + (trackPositionMax * cl.selected + historyMax / 2) / historyMax;
+    const auto stackedCommandNumberPopup = _popups.size() == 2 && _popups.back().kind == PopupKind::CommandNumber;
+
+    for (til::CoordType off = 0; off < height; ++off)
+    {
+        const auto index = cl.top + off;
+        const auto str = _history->GetNth(index);
+        const auto selected = index == cl.selected && !stackedCommandNumberPopup;
+
+        std::wstring line;
+        line.append(L"\x1b[#{\x1b[K");
+        _appendPopupAttr(line);
+
+        wchar_t scrollbarChar = L' ';
+        if (historySize > height)
+        {
+            if (off == 0)
+            {
+                scrollbarChar = L'▴';
+            }
+            else if (off == height - 1)
+            {
+                scrollbarChar = L'▾';
+            }
+            else
+            {
+                scrollbarChar = off == trackPosition ? L'█' : L'▒';
+            }
+        }
+        line.push_back(scrollbarChar);
+
+        if (selected)
+        {
+            line.push_back(L'▸');
+        }
+        else
+        {
+            line.append(L"\x1b[m\x1b[#} ");
+        }
+
+        fmt::format_to(std::back_inserter(line), FMT_COMPILE(L"{:{}}: "), index, indexWidth);
+
+        _layoutLine(line, str, 0, indexWidth + 4, size.width);
+
+        if (selected)
+        {
+            line.append(L"\x1b[m\x1b[#}");
+        }
+
+        line.append(L"\r\n");
+        lines.emplace_back(std::move(line), 0, 0, size.width);
+    }
+
+    if (stackedCommandNumberPopup)
+    {
+        const std::wstring_view suffix{ _popups.back().commandNumber.buffer.data(), CommandNumberMaxInputLength };
+        _popupDrawPrompt(lines, size.width - 1, ID_CONSOLE_MSGCMDLINEF9, L"╰", suffix);
+    }
+    else
+    {
+        // Remove the \r\n we added to the last line, as we don't want to have an empty line at the end.
+        auto& lastLine = lines.back();
+        lastLine.text.erase(lastLine.text.size() - 2);
+    }
 }

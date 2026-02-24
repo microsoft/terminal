@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -46,7 +46,7 @@ class HistoryTests
     TEST_METHOD(AllocateAndFreeOneApp)
     {
         const std::wstring app{ L"testapp1.exe" };
-        const HANDLE handle = _MakeHandle(0);
+        const auto handle = _MakeHandle(0);
 
         const auto history = CommandHistory::s_Allocate(app, handle);
         VERIFY_IS_NOT_NULL(history);
@@ -82,7 +82,7 @@ class HistoryTests
 
     TEST_METHOD(EnsureHistoryRestoredAfterClientLeavesAndRejoins)
     {
-        const HANDLE h = _MakeHandle(0);
+        const auto h = _MakeHandle(0);
         Log::Comment(L"Allocate a history and fill it with items.");
         auto history = CommandHistory::s_Allocate(_manyApps[0], h);
         VERIFY_IS_NOT_NULL(history);
@@ -145,15 +145,15 @@ class HistoryTests
 
         Log::Comment(L"Retrieve items/order.");
         std::vector<std::wstring> commandsStored;
-        for (SHORT i = 0; i < (SHORT)history->GetNumberOfCommands(); i++)
+        for (CommandHistory::Index i = 0; i < history->GetNumberOfCommands(); i++)
         {
             commandsStored.emplace_back(history->GetNth(i));
         }
 
         Log::Comment(L"Reallocate larger and ensure items and order are preserved.");
-        history->Realloc(_manyHistoryItems.size());
+        history->Realloc((CommandHistory::Index)_manyHistoryItems.size());
         VERIFY_ARE_EQUAL(s_BufferSize, history->GetNumberOfCommands());
-        for (SHORT i = 0; i < (SHORT)commandsStored.size(); i++)
+        for (CommandHistory::Index i = 0; i < (CommandHistory::Index)commandsStored.size(); i++)
         {
             VERIFY_ARE_EQUAL(String(commandsStored[i].data()), String(history->GetNth(i).data()));
         }
@@ -163,7 +163,7 @@ class HistoryTests
         {
             VERIFY_SUCCEEDED(history->Add(_manyHistoryItems[j], false));
         }
-        VERIFY_ARE_EQUAL(_manyHistoryItems.size(), history->GetNumberOfCommands());
+        VERIFY_ARE_EQUAL((CommandHistory::Index)_manyHistoryItems.size(), history->GetNumberOfCommands());
     }
 
     TEST_METHOD(ReallocDown)
@@ -179,14 +179,14 @@ class HistoryTests
 
         Log::Comment(L"Retrieve items/order.");
         std::vector<std::wstring> commandsStored;
-        for (SHORT i = 0; i < (SHORT)history->GetNumberOfCommands(); i++)
+        for (CommandHistory::Index i = 0; i < history->GetNumberOfCommands(); i++)
         {
             commandsStored.emplace_back(history->GetNth(i));
         }
 
         Log::Comment(L"Reallocate smaller and ensure items and order are preserved. Items at end of list should be trimmed.");
         history->Realloc(5);
-        for (SHORT i = 0; i < 5; i++)
+        for (CommandHistory::Index i = 0; i < 5; i++)
         {
             VERIFY_ARE_EQUAL(String(commandsStored[i].data()), String(history->GetNth(i).data()));
         }
@@ -201,7 +201,7 @@ class HistoryTests
         VERIFY_SUCCEEDED(history->Add(L"dir", false));
         VERIFY_SUCCEEDED(history->Add(L"dir", false));
 
-        VERIFY_ARE_EQUAL(1ul, history->GetNumberOfCommands());
+        VERIFY_ARE_EQUAL(1, history->GetNumberOfCommands());
     }
 
     TEST_METHOD(AddSequentialNoDuplicates)
@@ -213,7 +213,7 @@ class HistoryTests
         VERIFY_SUCCEEDED(history->Add(L"dir", true));
         VERIFY_SUCCEEDED(history->Add(L"dir", true));
 
-        VERIFY_ARE_EQUAL(1ul, history->GetNumberOfCommands());
+        VERIFY_ARE_EQUAL(1, history->GetNumberOfCommands());
     }
 
     TEST_METHOD(AddNonsequentialDuplicates)
@@ -226,7 +226,7 @@ class HistoryTests
         VERIFY_SUCCEEDED(history->Add(L"cd", false));
         VERIFY_SUCCEEDED(history->Add(L"dir", false));
 
-        VERIFY_ARE_EQUAL(3ul, history->GetNumberOfCommands());
+        VERIFY_ARE_EQUAL(3, history->GetNumberOfCommands());
     }
 
     TEST_METHOD(AddNonsequentialNoDuplicates)
@@ -239,7 +239,7 @@ class HistoryTests
         VERIFY_SUCCEEDED(history->Add(L"cd", false));
         VERIFY_SUCCEEDED(history->Add(L"dir", true));
 
-        VERIFY_ARE_EQUAL(2ul, history->GetNumberOfCommands());
+        VERIFY_ARE_EQUAL(2, history->GetNumberOfCommands());
     }
 
 private:
@@ -267,7 +267,7 @@ private:
     };
 
     static constexpr UINT s_NumberOfBuffers = 4;
-    static constexpr UINT s_BufferSize = 10;
+    static constexpr CommandHistory::Index s_BufferSize = 10;
 
     HANDLE _MakeHandle(size_t index)
     {

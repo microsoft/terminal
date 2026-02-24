@@ -5,7 +5,7 @@
 
 #include "precomp.h"
 
-#include "..\..\server\ProcessHandle.h"
+#include "../../server/ProcessHandle.h"
 
 #pragma hdrstop
 

@@ -19,10 +19,16 @@ class Settings;
 
 namespace Microsoft::Console::Interactivity
 {
+    struct IconInfo
+    {
+        std::wstring path;
+        int index = 0;
+    };
+
     class ISystemConfigurationProvider
     {
     public:
-        virtual ~ISystemConfigurationProvider() = 0;
+        virtual ~ISystemConfigurationProvider() = default;
 
         virtual bool IsCaretBlinkingEnabled() = 0;
 
@@ -36,14 +42,7 @@ namespace Microsoft::Console::Interactivity
                                          _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
                                          _Inout_ PDWORD pdwTitleLength,
                                          _In_ PCWSTR pwszCurrDir,
-                                         _In_ PCWSTR pwszAppName) = 0;
-
-    protected:
-        ISystemConfigurationProvider(){};
-
-        ISystemConfigurationProvider(ISystemConfigurationProvider const&) = delete;
-        ISystemConfigurationProvider& operator=(ISystemConfigurationProvider const&) = delete;
+                                         _In_ PCWSTR pwszAppName,
+                                         _Inout_opt_ IconInfo* iconInfo) = 0;
     };
-
-    inline ISystemConfigurationProvider::~ISystemConfigurationProvider() {}
 }

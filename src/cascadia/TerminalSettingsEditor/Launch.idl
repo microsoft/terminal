@@ -1,0 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+import "LaunchViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Launch : Windows.UI.Xaml.Controls.Page
+    {
+        Launch();
+        LaunchViewModel ViewModel { get; };
+    }
+}

@@ -1,28 +1,23 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
 #include "EchoConnection.h"
 #include <sstream>
 
-// We have to define GSL here, not PCH
-// because TelnetConnection has a conflicting GSL implementation.
-#include <gsl/gsl>
-
 #include "EchoConnection.g.cpp"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    EchoConnection::EchoConnection() noexcept
-    {
-    }
+    EchoConnection::EchoConnection() noexcept = default;
 
     void EchoConnection::Start() noexcept
     {
     }
 
-    void EchoConnection::WriteInput(hstring const& data)
+    void EchoConnection::WriteInput(const winrt::array_view<const char16_t> buffer)
     {
+        const auto data = winrt_array_to_wstring_view(buffer);
         std::wstringstream prettyPrint;
         for (const auto& wch : data)
         {
@@ -39,7 +34,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 prettyPrint << wch;
             }
         }
-        _TerminalOutputHandlers(prettyPrint.str());
+        TerminalOutput.raise(winrt_wstring_to_array_view(prettyPrint.str()));
     }
 
     void EchoConnection::Resize(uint32_t /*rows*/, uint32_t /*columns*/) noexcept

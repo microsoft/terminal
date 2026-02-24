@@ -1,5 +1,6 @@
 //
 //    Copyright (C) Microsoft.  All rights reserved.
+//    Licensed under the MIT license.
 //
 #ifndef _NTCON_
 #define _NTCON_

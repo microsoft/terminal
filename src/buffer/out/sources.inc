@@ -29,26 +29,20 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
-    ..\AttrRow.cpp \
-    ..\AttrRowIterator.cpp \
     ..\cursor.cpp    \
+    ..\ImageSlice.cpp \
     ..\OutputCell.cpp \
     ..\OutputCellIterator.cpp \
     ..\OutputCellRect.cpp \
     ..\OutputCellView.cpp \
     ..\Row.cpp \
-    ..\RowCellIterator.cpp \
     ..\TextColor.cpp \
     ..\TextAttribute.cpp \
-    ..\TextAttributeRun.cpp \
     ..\textBuffer.cpp \
     ..\textBufferCellIterator.cpp \
     ..\textBufferTextIterator.cpp \
-    ..\CharRow.cpp \
-    ..\CharRowCell.cpp \
-    ..\CharRowCellReference.cpp \
-    ..\UnicodeStorage.cpp \
-	..\search.cpp \
+    ..\search.cpp \
+    ..\UTextAdapter.cpp \
 
 INCLUDES= \
     $(INCLUDES); \

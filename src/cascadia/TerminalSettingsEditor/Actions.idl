@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ActionsViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Actions : Windows.UI.Xaml.Controls.Page
+    {
+        Actions();
+        ActionsViewModel ViewModel { get; };
+    }
+}

@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{CA5CAD1A-9333-4D05-B12A-1905CBF112F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -7,25 +7,12 @@
     <ProjectName>UnitTests_TerminalApp</ProjectName>
     <TargetName>Terminal.App.Unit.Tests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
-    <!-- We'll manage our own OutDir/IntDir -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-  </PropertyGroup>
-
-  <PropertyGroup>
-  <!-- Manually change our outdir to be in a subdirectory. We don't really want
-    to put our output in the bin root, because if we do, we'll copy
-    TerminalApp.winmd to the bin root, and then every subsequent mdmerge step
-    (in _any_ cppwinrt project) will automatically try to pick up
-    TerminalApp.winmd as a dependency (which is just wrong). This MUST be done
-    before importing common.build.pre.props -->
-    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)\src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)\src\common.nugetversions.props" />
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -34,27 +21,19 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="ColorHelperTests.cpp" />
-    <ClCompile Include="JsonTests.cpp" />
     <ClCompile Include="JsonUtilsTests.cpp" />
-    <ClCompile Include="DynamicProfileTests.cpp" />
+    <ClCompile Include="FzfTests.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
-    you want to use jsoncpp -->
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\TerminalApp\ColorHelper.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
 
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\TerminalAppLib.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Microsoft.Terminal.Settings.ModelLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\propslib\propslib.vcxproj" />
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->
@@ -62,14 +41,20 @@
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)src\inc;$(OpenConsoleDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\Generated Files";"$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!--
+      SettingsModelLib contains a DllMain that we need to force the use of.
+      If you don't have this, then you'll see an error like
+      "(init.obj) : error LNK2005: DllMain already defined in MSVCRTD.lib(dll_dllmain_stub.obj)"
+      -->
+      <AdditionalOptions Condition="'$(Platform)'=='Win32'">%(AdditionalOptions) /INCLUDE:_DllMain@12</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Platform)'!='Win32'">%(AdditionalOptions) /INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 
@@ -84,14 +69,7 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
-
-  <PropertyGroup>
-    <_CppWinrtBinRoot>&quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\&quot;</_CppWinrtBinRoot>
-    <!-- From Microsoft.UI.Xaml.targets -->
-    <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
-    <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
-  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
 
   <ItemDefinitionGroup>
     <PreBuildEvent>
@@ -121,9 +99,5 @@
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-
-  <!-- Import this set of targets that fixes a VS bug that manifests when using
-  the TerminalAppLib project -->
-  <Import Project="../TerminalApp/FixVisualStudioBug.targets" />
 
 </Project>

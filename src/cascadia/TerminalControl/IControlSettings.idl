@@ -1,0 +1,81 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IControlAppearance.idl";
+import "EventArgs.idl";
+
+namespace Microsoft.Terminal.Control
+{
+    enum ScrollbarState
+    {
+        Visible = 0,
+        Hidden,
+        Always
+    };
+
+    enum TextAntialiasingMode
+    {
+        Grayscale = 0,
+        Cleartype,
+        Aliased
+    };
+
+    enum PathTranslationStyle
+    {
+        None = 0,
+        WSL,
+        Cygwin,
+        MSYS2,
+        MinGW,
+    };
+
+    // Class Description:
+    // TerminalSettings encapsulates all settings that control the
+    //      TermControl's behavior. In these settings there is both the entirety
+    //      of the Core ITerminalSettings interface, and any additional settings
+    //      for specifically the control.
+    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings,
+                               Microsoft.Terminal.Control.IControlAppearance
+    {
+        Boolean EnableUnfocusedAcrylic { get; };
+        Guid SessionId { get; };
+        ScrollbarState ScrollState { get; };
+
+        String FontFace { get; };
+        Single FontSize { get; };
+        Windows.UI.Text.FontWeight FontWeight { get; };
+        String Padding { get; };
+        Windows.Foundation.Collections.IMap<String, Single> FontFeatures { get; };
+        Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
+        Boolean EnableBuiltinGlyphs { get; };
+        Boolean EnableColorGlyphs { get; };
+        String CellWidth { get; };
+        String CellHeight { get; };
+
+        Boolean CopyOnSelect { get; };
+        Microsoft.Terminal.Control.CopyFormat CopyFormatting { get; };
+        Boolean FocusFollowMouse { get; };
+        Boolean ScrollToZoom { get; };
+        Boolean ScrollToChangeOpacity { get; };
+
+        String Commandline { get; };
+        String StartingDirectory { get; };
+
+        TextAntialiasingMode AntialiasingMode { get; };
+
+        // Experimental Settings
+        Microsoft.Terminal.Control.GraphicsAPI GraphicsAPI { get; };
+        Boolean DisablePartialInvalidation { get; };
+        Boolean SoftwareRendering { get; };
+        Microsoft.Terminal.Control.TextMeasurement TextMeasurement { get; };
+        Microsoft.Terminal.Control.DefaultInputScope DefaultInputScope { get; };
+        Boolean ShowMarks { get; };
+        Boolean UseBackgroundImageForWindow { get; };
+        Boolean RightClickContextMenu { get; };
+        Boolean RepositionCursorWithMouse { get; };
+
+        PathTranslationStyle PathTranslationStyle { get; };
+
+        // NOTE! When adding something here, make sure to update ControlProperties.h too!
+    };
+}

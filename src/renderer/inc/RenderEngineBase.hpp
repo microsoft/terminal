@@ -24,30 +24,38 @@ namespace Microsoft::Console::Render
     class RenderEngineBase : public IRenderEngine
     {
     public:
-        ~RenderEngineBase() = 0;
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept override;
+        [[nodiscard]] HRESULT InvalidateHighlight(std::span<const til::point_span> highlights, const TextBuffer& buffer) noexcept override;
+        [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
 
-    protected:
-        RenderEngineBase();
-        RenderEngineBase(const RenderEngineBase&) = default;
-        RenderEngineBase(RenderEngineBase&&) = default;
-        RenderEngineBase& operator=(const RenderEngineBase&) = default;
-        RenderEngineBase& operator=(RenderEngineBase&&) = default;
+        [[nodiscard]] HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept override;
 
-    public:
-        [[nodiscard]] HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept override;
+        [[nodiscard]] HRESULT NotifyNewText(const std::wstring_view newText) noexcept override;
 
-        [[nodiscard]] HRESULT UpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT UpdateSoftFont(const std::span<const uint16_t> bitPattern,
+                                             const til::size cellSize,
+                                             const size_t centeringHint) noexcept override;
 
-        [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
+        [[nodiscard]] HRESULT PrepareRenderInfo(RenderFrameInfo info) noexcept override;
+
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const til::CoordType targetRow,
+                                                   const til::CoordType viewportLeft) noexcept override;
+
+        [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice,
+                                              const til::CoordType targetRow,
+                                              const til::CoordType viewportLeft) noexcept override;
+
+        [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
 
         void WaitUntilCanRender() noexcept override;
+        void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept override;
 
     protected:
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept = 0;
+        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept = 0;
 
-        bool _titleChanged;
+        bool _titleChanged = false;
         std::wstring _lastFrameTitle;
     };
-
-    inline Microsoft::Console::Render::RenderEngineBase::~RenderEngineBase() {}
 }

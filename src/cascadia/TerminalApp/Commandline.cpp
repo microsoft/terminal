@@ -27,8 +27,8 @@ const std::vector<std::string>& Commandline::Args() const
 void Commandline::AddArg(const std::wstring& nextArg)
 {
     // Attempt to convert '\;' in the arg to just '\', removing the escaping
-    std::wstring modifiedArg{ nextArg };
-    size_t pos = modifiedArg.find(EscapedDelimiter, 0);
+    auto modifiedArg{ nextArg };
+    auto pos = modifiedArg.find(EscapedDelimiter, 0);
     while (pos != std::string::npos)
     {
         modifiedArg.replace(pos, EscapedDelimiter.length(), Delimiter);

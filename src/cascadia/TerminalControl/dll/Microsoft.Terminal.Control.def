@@ -1,0 +1,23 @@
+EXPORTS
+  ; WinRT ABI
+  DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
+  DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
+
+  ; Flat C ABI
+  AvoidBuggyTSFConsoleFlags
+  CreateTerminal
+  DestroyTerminal
+  TerminalCalculateResize
+  TerminalDpiChanged
+  TerminalGetSelection
+  TerminalIsSelectionActive
+  TerminalRegisterScrollCallback
+  TerminalRegisterWriteCallback
+  TerminalSendCharEvent
+  TerminalSendKeyEvent
+  TerminalSendOutput
+  TerminalSetFocused
+  TerminalSetTheme
+  TerminalTriggerResize
+  TerminalTriggerResizeWithDimension
+  TerminalUserScroll

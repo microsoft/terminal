@@ -13,7 +13,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\inc\IHighDpiApi.hpp"
+#include "../inc/IHighDpiApi.hpp"
 
 // Uncomment to build ConFans or other down-level build scenarios.
 // #define CON_DPIAPI_INDIRECT
@@ -31,16 +31,16 @@ typedef enum DPI_AWARENESS
     DPI_AWARENESS_PER_MONITOR_AWARE = 2
 } DPI_AWARENESS;
 
-#define DPI_AWARENESS_CONTEXT_UNAWARE ((DPI_AWARENESS_CONTEXT)-1)
-#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE ((DPI_AWARENESS_CONTEXT)-2)
-#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE ((DPI_AWARENESS_CONTEXT)-3)
+#define DPI_AWARENESS_CONTEXT_UNAWARE ((DPI_AWARENESS_CONTEXT) - 1)
+#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE ((DPI_AWARENESS_CONTEXT) - 2)
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE ((DPI_AWARENESS_CONTEXT) - 3)
 
 #endif
 
 // This type is being defined in RS2 but is percolating through the
 // tree. Def it here if it hasn't collided with our branch yet.
 #ifndef DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
-#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT) - 4)
 #endif
 
 namespace Microsoft::Console::Interactivity::Win32
@@ -51,19 +51,16 @@ namespace Microsoft::Console::Interactivity::Win32
         // IHighDpi Interface
         BOOL SetProcessDpiAwarenessContext();
         [[nodiscard]] HRESULT SetProcessPerMonitorDpiAwareness();
-        BOOL EnablePerMonitorDialogScaling();
 
         // Module-internal Functions
         BOOL SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext);
-        BOOL EnableChildWindowDpiMessage(const HWND hwnd,
-                                         const BOOL fEnable);
         BOOL AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
                                       const DWORD dwStyle,
                                       const BOOL bMenu,
                                       const DWORD dwExStyle,
                                       const UINT dpi);
 
-        int GetWindowDPI(const HWND hwnd);
+        int GetDpiForWindow(const HWND hwnd);
         int GetSystemMetricsForDpi(const int nIndex,
                                    const UINT dpi);
 

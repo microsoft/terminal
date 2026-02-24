@@ -47,7 +47,7 @@ namespace Microsoft::Console::Interactivity::Win32
         WindowUiaProvider& operator=(WindowUiaProvider&&) = delete;
 
     public:
-        [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id);
+        ScreenInfoUiaProvider* GetScreenInfoProvider() const noexcept;
         [[nodiscard]] virtual HRESULT SetTextAreaFocus();
 
         // IRawElementProviderSimple methods
@@ -73,24 +73,11 @@ namespace Microsoft::Console::Interactivity::Win32
                                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
         virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
 
-        RECT GetWindowRect() const noexcept;
+        til::rect GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow);
+        void ChangeViewport(const til::inclusive_rect& NewWindow);
 
     protected:
-        // this is used to prevent the object from
-        // signaling an event while it is already in the
-        // process of signalling another event.
-        // This fixes a problem with JAWS where it would
-        // call a public method that calls
-        // UiaRaiseAutomationEvent to signal something
-        // happened, which JAWS then detects the signal
-        // and calls the same method in response,
-        // eventually overflowing the stack.
-        // We aren't using this as a cheap locking
-        // mechanism for multi-threaded code.
-        std::unordered_map<EVENTID, bool> _signalEventFiring;
-
         [[nodiscard]] HRESULT _EnsureValidHwnd() const;
 
         const OLECHAR* AutomationIdPropertyName = L"Console Window";

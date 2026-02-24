@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "InteractionViewModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Interaction : Windows.UI.Xaml.Controls.Page
+    {
+        Interaction();
+        InteractionViewModel ViewModel { get; };
+
+        IInspectable CurrentWarnAboutMultiLinePaste;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> WarnAboutMultiLinePasteList { get; };
+    }
+}

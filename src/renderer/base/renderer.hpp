@@ -1,147 +1,183 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
-- Renderer.hpp
-
-Abstract:
-- This is the definition of our renderer.
-- It provides interfaces for the console application to notify when various portions of the console state have changed and need to be redrawn.
-- It requires a data interface to fetch relevant console structures required for drawing and a drawing engine target for output.
-
-Author(s):
-- Michael Niksa (MiNiksa) 17-Nov-2015
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
-#include "../inc/IRenderer.hpp"
-#include "../inc/IRenderEngine.hpp"
-#include "../inc/IRenderData.hpp"
-
-#include "thread.hpp"
-
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../buffer/out/CharRow.hpp"
+#include "../inc/IRenderEngine.hpp"
+#include "../inc/RenderSettings.hpp"
 
 namespace Microsoft::Console::Render
 {
-    class Renderer sealed : public IRenderer
+    enum class InhibitionSource
+    {
+        Client, // E.g. VT sequences
+        Host, // E.g. because the window is out of focus
+        User, // The user turned it off
+    };
+
+    class Renderer
     {
     public:
-        Renderer(IRenderData* pData,
-                 _In_reads_(cEngines) IRenderEngine** const pEngine,
-                 const size_t cEngines,
-                 std::unique_ptr<IRenderThread> thread);
+        Renderer(RenderSettings& renderSettings, IRenderData* pData);
+        ~Renderer();
 
-        [[nodiscard]] static HRESULT s_CreateInstance(IRenderData* pData,
-                                                      _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                                      const size_t cEngines,
-                                                      _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
+        IRenderData* GetRenderData() const noexcept;
 
-        [[nodiscard]] static HRESULT s_CreateInstance(IRenderData* pData,
-                                                      _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
+        TimerHandle RegisterTimer(const char* description, TimerCallback routine);
+        bool IsTimerRunning(TimerHandle handle) const;
+        TimerDuration GetTimerInterval(TimerHandle handle) const;
+        void StartTimer(TimerHandle handle, TimerDuration delay);
+        void StartRepeatingTimer(TimerHandle handle, TimerDuration interval);
+        void StopTimer(TimerHandle handle);
 
-        virtual ~Renderer() override;
+        void NotifyPaintFrame() noexcept;
+        void SynchronizedOutputChanged() noexcept;
+        void AllowCursorVisibility(InhibitionSource source, bool enable) noexcept;
+        void AllowCursorBlinking(InhibitionSource source, bool enable) noexcept;
+        void TriggerSystemRedraw(const til::rect* const prcDirtyClient);
+        void TriggerRedraw(const Microsoft::Console::Types::Viewport& region);
+        void TriggerRedraw(const til::point* const pcoord);
+        void TriggerRedrawAll(const bool backgroundChanged = false, const bool frameChanged = false);
+        void TriggerTeardown() noexcept;
 
-        [[nodiscard]] HRESULT PaintFrame();
+        void TriggerSelection();
+        void TriggerSearchHighlight(const std::vector<til::point_span>& oldHighlights);
+        void TriggerScroll();
+        void TriggerScroll(const til::point* const pcoordDelta);
 
-        void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
-        void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
-        void TriggerRedraw(const COORD* const pcoord) override;
-        void TriggerRedrawCursor(const COORD* const pcoord) override;
-        void TriggerRedrawAll() override;
-        void TriggerTeardown() override;
+        void TriggerTitleChange();
 
-        void TriggerSelection() override;
-        void TriggerScroll() override;
-        void TriggerScroll(const COORD* const pcoordDelta) override;
-
-        void TriggerCircling() override;
-        void TriggerTitleChange() override;
+        void TriggerNewTextNotification(const std::wstring_view newText);
 
         void TriggerFontChange(const int iDpi,
                                const FontInfoDesired& FontInfoDesired,
-                               _Out_ FontInfo& FontInfo) override;
+                               _Out_ FontInfo& FontInfo);
+
+        void UpdateSoftFont(const std::span<const uint16_t> bitPattern,
+                            const til::size cellSize,
+                            const size_t centeringHint);
 
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
                                               const FontInfoDesired& FontInfoDesired,
-                                              _Out_ FontInfo& FontInfo) override;
+                                              _Out_ FontInfo& FontInfo);
 
-        bool IsGlyphWideByFont(const std::wstring_view glyph) override;
+        bool IsGlyphWideByFont(const std::wstring_view glyph);
 
-        void EnablePainting() override;
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
-        void WaitUntilCanRender() override;
+        void EnablePainting();
 
-        void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
+        void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+        void RemoveRenderEngine(_In_ IRenderEngine* const pEngine);
 
+        void SetBackgroundColorChangedCallback(std::function<void()> pfn);
+        void SetFrameColorChangedCallback(std::function<void()> pfn);
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
-        void ResetErrorStateAndResume();
+
+        void UpdateHyperlinkHoveredId(uint16_t id) noexcept;
+        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
 
     private:
-        std::deque<IRenderEngine*> _rgpEngines;
+        struct TimerRoutine
+        {
+            const char* description = nullptr;
+            TimerRepr interval = 0; // Timers with a 0 interval are marked for deletion.
+            TimerRepr next = 0;
+            TimerCallback routine;
+        };
 
-        IRenderData* _pData; // Non-ownership pointer
+        // Caches some essential information about the active composition.
+        // This allows us to properly invalidate it between frames, etc.
+        struct CompositionCache
+        {
+            til::point absoluteOrigin;
+            TextAttribute baseAttribute;
+        };
 
-        std::unique_ptr<IRenderThread> _pThread;
-        bool _destructing = false;
+        static GridLineSet s_GetGridlines(const TextAttribute& textAttribute) noexcept;
+        static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
-        void _NotifyPaintFrame();
+        // Base rendering loop
+        static DWORD WINAPI s_renderThread(void*) noexcept;
+        DWORD _renderThread() noexcept;
+        void _waitUntilCanRender() noexcept;
 
+        // Timer handling
+        void _startTimer(TimerHandle handle, TimerRepr delay, TimerRepr interval);
+        DWORD _calculateTimerMaxWait() noexcept;
+        void _waitUntilTimerOrRedraw() noexcept;
+        void _tickTimers() noexcept;
+        static TimerRepr _timerInstant() noexcept;
+        static TimerRepr _timerSaturatingAdd(TimerRepr a, TimerRepr b) noexcept;
+        static TimerRepr _timerSaturatingSub(TimerRepr a, TimerRepr b) noexcept;
+        static DWORD _timerToMillis(TimerRepr t) noexcept;
+
+        // Actual rendering
+        [[nodiscard]] HRESULT PaintFrame();
+        [[nodiscard]] HRESULT _PaintFrame() noexcept;
         [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine) noexcept;
-
+        void _disablePainting() noexcept;
+        void _synchronizeWithOutput() noexcept;
         bool _CheckViewportAndScroll();
-
+        void _scheduleRenditionBlink();
         [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
-
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-
-        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
-                                      TextBufferCellIterator it,
-                                      const COORD target,
-                                      const bool lineWrapped);
-
-        static IRenderEngine::GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
-
-        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
-                                              const TextAttribute textAttribute,
-                                              const size_t cchLine,
-                                              const COORD coordTarget);
-
+        void _PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine, TextBufferCellIterator it, const til::point target);
+        void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, const TextAttribute textAttribute, const size_t cchLine, const til::point coordTarget);
+        bool _isHoveredHyperlink(const TextAttribute& textAttribute) const noexcept;
         void _PaintSelection(_In_ IRenderEngine* const pEngine);
         void _PaintCursor(_In_ IRenderEngine* const pEngine);
-
-        void _PaintOverlays(_In_ IRenderEngine* const pEngine);
-        void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
-
-        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool isSettingDefaultBrushes);
-
+        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool usingSoftFont, const bool isSettingDefaultBrushes);
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
-
-        SMALL_RECT _srViewportPrevious;
-
-        static constexpr float _shrinkThreshold = 0.8f;
-        std::vector<Cluster> _clusterBuffer;
-
-        std::vector<SMALL_RECT> _GetSelectionRects() const;
         void _ScrollPreviousSelection(const til::point delta);
-        std::vector<SMALL_RECT> _previousSelection;
-
         [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
-
-        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
+        bool _isInHoveredInterval(til::point coordTarget) const noexcept;
+        void _updateCursorInfo();
+        void _invalidateCurrentCursor() const;
+        void _invalidateOldComposition();
+        void _prepareNewComposition();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
 
-        // Helper functions to diagnose issues with painting and layout.
-        // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
-        bool _fDebug = false;
+        // Constructor parameters, weakly referenced
+        RenderSettings& _renderSettings;
+        IRenderData* _pData = nullptr; // Non-ownership pointer
 
+        // Base render loop & timer management
+        wil::srwlock _threadMutex;
+        wil::unique_handle _thread;
+        wil::slim_event_manual_reset _enable;
+        std::atomic<bool> _redraw;
+        std::atomic<bool> _threadKeepRunning{ false };
+        til::small_vector<IRenderEngine*, 2> _engines;
+        til::small_vector<TimerRoutine, 4> _timers;
+        size_t _nextTimerId = 0;
+
+        static constexpr size_t _firstSoftFontChar = 0xEF20;
+        size_t _lastSoftFontChar = 0;
+
+        uint16_t _hyperlinkHoveredId = 0;
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
+
+        CursorOptions _currentCursorOptions{};
+        TimerHandle _cursorBlinker;
+        uint64_t _cursorBufferMutationId = 0;
+        uint64_t _cursorCursorMutationId = 0; // Stupid name, but it's _cursor related and stores the cursor mutation id.
+        til::enumset<InhibitionSource, uint8_t> _cursorVisibilityInhibitors{ InhibitionSource::Host };
+        til::enumset<InhibitionSource, uint8_t> _cursorBlinkingInhibitors;
+        bool _cursorBlinkerOn = false;
+
+        TimerHandle _renditionBlinker;
+
+        Microsoft::Console::Types::Viewport _viewport;
+        std::optional<CompositionCache> _compositionCache;
+        std::vector<Cluster> _clusterBuffer;
+        std::function<void()> _pfnBackgroundColorChanged;
+        std::function<void()> _pfnFrameColorChanged;
         std::function<void()> _pfnRendererEnteredErrorState;
+        bool _isSynchronizingOutput = false;
+        bool _forceUpdateViewport = false;
 
-#ifdef UNIT_TESTING
-        friend class ConptyOutputTests;
-#endif
+        til::point_span _lastSelectionPaintSpan{};
+        size_t _lastSelectionPaintSize{};
+        std::vector<til::rect> _lastSelectionRectsByViewport{};
     };
 }

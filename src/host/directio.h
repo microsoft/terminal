@@ -17,23 +17,21 @@ Revision History:
 #pragma once
 
 #include "conapi.h"
-#include "inputBuffer.hpp"
 
 class SCREEN_INFORMATION;
 
-[[nodiscard]] HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
-                                                     _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                     _Out_ size_t& eventsWritten,
-                                                     const bool append) noexcept;
+[[nodiscard]] HRESULT ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
+                                                   std::span<CHAR_INFO> targetBuffer,
+                                                   const Microsoft::Console::Types::Viewport& requestRectangle,
+                                                   Microsoft::Console::Types::Viewport& readRectangle) noexcept;
+
+[[nodiscard]] HRESULT WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
+                                                    std::span<const CHAR_INFO> buffer,
+                                                    til::CoordType bufferStride,
+                                                    const Microsoft::Console::Types::Viewport& requestRectangle,
+                                                    Microsoft::Console::Types::Viewport& writtenRectangle) noexcept;
 
 [[nodiscard]] NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
                                                  _In_ PCONSOLE_API_MSG Message,
                                                  _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                                  _In_ PCONSOLE_CREATESCREENBUFFER_MSG a);
-
-[[nodiscard]] NTSTATUS DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
-                                                       _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                       _Out_ size_t& eventsWritten);
-
-[[nodiscard]] NTSTATUS DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const pInputBuffer,
-                                                            _In_ KeyEvent key);

@@ -14,31 +14,32 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\terminal\parser\StateMachine.hpp"
+#include "../terminal/parser/StateMachine.hpp"
 
 namespace Microsoft::Console
 {
+    namespace VirtualTerminal
+    {
+        enum class DeviceAttribute : uint64_t;
+    }
+
     class VtInputThread
     {
     public:
-        VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor);
+        explicit VtInputThread(_In_ wil::unique_hfile hPipe);
 
         [[nodiscard]] HRESULT Start();
-        static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
-        void DoReadInput(const bool throwOnFail);
+        void CaptureNextCursorPositionReport() const noexcept;
+        til::enumset<VirtualTerminal::DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
 
     private:
-        [[nodiscard]] HRESULT _HandleRunInput(const std::string_view u8Str);
-        DWORD _InputThread();
+        static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
+        void _InputThread();
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
-        DWORD _dwThreadId;
-
-        bool _exitRequested;
-        HRESULT _exitResult;
+        DWORD _dwThreadId = 0;
 
         std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
-        til::u8state _u8State;
     };
 }

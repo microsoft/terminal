@@ -5,6 +5,10 @@
 
 #include "OutputCellView.hpp"
 
+// BODGY: Misdiagnosis in MSVC 17.11: Referencing global constants in the member
+// initializer list leads to this warning. Can probably be removed in the future.
+#pragma warning(disable : 26493) // Don't use C-style casts (type.4).)
+
 // Routine Description:
 // - Constructs a read-only view of data formatted as a single output buffer cell
 // Arguments:
@@ -29,7 +33,8 @@ OutputCellView::OutputCellView(const std::wstring_view view,
 // - Reference to UTF-16 character data
 // C26445 - suppressed to enable the `TextBufferTextIterator::operator->` method which needs a non-temporary memory location holding the wstring_view.
 // TODO: GH 2681 - remove this suppression by reconciling the probably bad design of the iterators that leads to this being required.
-[[gsl::suppress(26445)]] const std::wstring_view& OutputCellView::Chars() const noexcept
+GSL_SUPPRESS(26445)
+const std::wstring_view& OutputCellView::Chars() const noexcept
 {
     return _view;
 }
@@ -38,22 +43,9 @@ OutputCellView::OutputCellView(const std::wstring_view view,
 // - Reports how many columns we expect the Chars() text data to consume
 // Return Value:
 // - Count of column cells on the screen
-size_t OutputCellView::Columns() const noexcept
+til::CoordType OutputCellView::Columns() const noexcept
 {
-    if (DbcsAttr().IsSingle())
-    {
-        return 1;
-    }
-    else if (DbcsAttr().IsLeading())
-    {
-        return 2;
-    }
-    else if (DbcsAttr().IsTrailing())
-    {
-        return 1;
-    }
-
-    return 1;
+    return DbcsAttr() == DbcsAttribute::Leading ? 2 : 1;
 }
 
 // Routine Description:

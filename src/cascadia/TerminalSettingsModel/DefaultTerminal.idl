@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    runtimeclass DefaultTerminal : Windows.Foundation.IStringable
+    {
+        String Name { get; };
+        String Author { get; };
+        String Version { get; };
+        String Icon { get; };
+    }
+}

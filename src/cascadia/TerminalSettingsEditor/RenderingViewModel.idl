@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass RenderingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        RenderingViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        IInspectable CurrentGraphicsAPI;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> GraphicsAPIList { get; };
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DisablePartialInvalidation);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
+    }
+}

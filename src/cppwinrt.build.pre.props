@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <!-- this will trigger the use of a project-specific out dir -->
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+  </PropertyGroup>
 
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" />
-
   <PropertyGroup Label="Globals">
-    <!-- 17134 is RS4, 17763 is RS5, 18362 is 19H1 -->
-    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.18362.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion Condition="'$(WindowsTargetPlatformMinVersion)' == ''">10.0.18362.0</WindowsTargetPlatformMinVersion>
     <CppWinRTEnabled>true</CppWinRTEnabled>
     <CppWinRTOptimized>true</CppWinRTOptimized>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <MinimumVisualStudioVersion>17.0</MinimumVisualStudioVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
   </PropertyGroup>
 
@@ -22,29 +22,35 @@
        at the winmd we build to generate type info.
        In general, cppwinrt projects all want this.
   -->
-  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='false'">
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true'">
     <MinimalCoreWin>true</MinimalCoreWin>
     <AppContainerApplication>true</AppContainerApplication>
     <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
+    <UseCrtSDKReference Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReference> <!-- The SDK reference breaks the Hybrid CRT -->
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='true'">
+    <!-- Some of our projects include the cppwinrt build options to
+         just build cppwinrt things, but don't want the store bits
+         in full swing. MinimalCoreWin != false means "don't let me
+         use win32 APIs"
+    -->
+    <MinimalCoreWin>false</MinimalCoreWin>
   </PropertyGroup>
 
   <!-- This is magic that tells msbuild to link against the Desktop platform
        instead of the App platform. This you definitely want, because we're not
        building a true universal "app", we're building a desktop application
-       with xaml. APIs like CreatePseudoConsole won't always be linkable without Desktop platform,
-       but we now carry our own copy of them in the winconpty library which works everywhere.
-       For future reference, _VC_Target_Library_Platform can be configured to say which CRT to link against.
-       Now that this doesn't say anything, the implicit is 'Store' which links against the App CRT.
-       The alternative is 'Desktop' which links against the usual CRT redistributable.
+       with xaml.
        Linking against the App CRT will require the VCRT forwarders to be dropped next to the final binary for
        desktop situations, but it will let non-desktop situations work since there is no redist off desktop.
        The forwarders can be found at https://github.com/microsoft/vcrt-forwarders and are already included
        in our CascadiaPackage project.
   -->
   <PropertyGroup>
+    <!-- We have to use the Desktop platform for Hybrid CRT to work. -->
+    <_VC_Target_Library_Platform>Desktop</_VC_Target_Library_Platform>
     <_NoWinAPIFamilyApp>true</_NoWinAPIFamilyApp>
-    <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
   </PropertyGroup>
 
   <PropertyGroup Label="Configuration">
@@ -56,26 +62,29 @@
   <!-- Overrides for common build settings -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- C++/WinRT hardcodes pch.h -->
+      <!-- C++/WinRT hard-codes pch.h -->
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
 
-      <!-- All new code should be in non-permissive mode. Big objects for C++/WinRT. -->
-      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase-</AdditionalOptions>
-      <DisableSpecificWarnings>28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <!-- Big objects for C++/WinRT. -->
+      <AdditionalOptions>%(AdditionalOptions) /bigobj</AdditionalOptions>
+      <DisableSpecificWarnings>5104;28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
 
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+
+      <PreprocessorDefinitions>WINRT_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem Condition="'%(SubSystem)'==''">Console</SubSystem>
-      <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
+      <GenerateWindowsMetadata>$(CppWinRTGenerateWindowsMetadata)</GenerateWindowsMetadata>
+      <GenerateWindowsMetadata Condition="'%(GenerateWindowsMetadata)'==''">true</GenerateWindowsMetadata>
     </Link>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\cascadia\WinRTUtils\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\cascadia\WinRTUtils\inc;$(OpenConsoleDir)src\cascadia\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -89,9 +98,8 @@
       <PreprocessorDefinitions>_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>$(ProjectName).def</ModuleDefinitionFile>
+      <ModuleDefinitionFile Condition="Exists('$(ProjectName).def')">$(ProjectName).def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
 
 </Project>
-

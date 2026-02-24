@@ -12,7 +12,7 @@
 # Preprocessor Settings
 # -------------------------------------
 
-C_DEFINES               = $(C_DEFINES) -DBUILD_ONECORE_INTERACTIVITY
+C_DEFINES               = $(C_DEFINES)
 
 # -------------------------------------
 # Build System Settings
@@ -30,7 +30,6 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 SOURCES= \
     ..\terminalInput.cpp \
     ..\mouseInput.cpp \
-    ..\mouseInputState.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

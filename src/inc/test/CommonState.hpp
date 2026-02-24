@@ -20,26 +20,22 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #pragma once
 
-#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
-
-#include "precomp.h"
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
-#include "../buffer/out/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 class CommonState
 {
 public:
-    static const SHORT s_csWindowWidth = 80;
-    static const SHORT s_csWindowHeight = 80;
-    static const SHORT s_csBufferWidth = 80;
-    static const SHORT s_csBufferHeight = 300;
+    static const til::CoordType s_csWindowWidth = 80;
+    static const til::CoordType s_csWindowHeight = 80;
+    static const til::CoordType s_csBufferWidth = 80;
+    static const til::CoordType s_csBufferHeight = 300;
 
     CommonState() :
         m_heap(GetProcessHeap()),
         m_hrTextBufferInfo(E_FAIL),
-        m_pFontInfo(nullptr),
+        m_pFontInfo{ L"Consolas", 0, 0, { 8, 12 }, 0 },
         m_backupTextBufferInfo(),
         m_readHandle(nullptr)
     {
@@ -65,45 +61,47 @@ public:
         m_readHandle.reset(nullptr);
     }
 
-    void PrepareGlobalFont()
+    void PrepareGlobalFont(const til::size coordFontSize = { 8, 12 })
     {
-        COORD coordFontSize;
-        coordFontSize.X = 8;
-        coordFontSize.Y = 12;
-        m_pFontInfo = new FontInfo(L"Consolas", 0, 0, coordFontSize, 0);
+        m_pFontInfo = { L"Consolas", 0, 0, coordFontSize, 0 };
     }
 
-    void CleanupGlobalFont()
+    void PrepareGlobalScreenBuffer(const til::CoordType viewWidth = s_csWindowWidth,
+                                   const til::CoordType viewHeight = s_csWindowHeight,
+                                   const til::CoordType bufferWidth = s_csBufferWidth,
+                                   const til::CoordType bufferHeight = s_csBufferHeight)
     {
-        if (m_pFontInfo != nullptr)
-        {
-            delete m_pFontInfo;
-        }
-    }
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        til::size coordWindowSize;
+        coordWindowSize.width = viewWidth;
+        coordWindowSize.height = viewHeight;
 
-    void PrepareGlobalScreenBuffer(const short viewWidth = s_csWindowWidth,
-                                   const short viewHeight = s_csWindowHeight,
-                                   const short bufferWidth = s_csBufferWidth,
-                                   const short bufferHeight = s_csBufferHeight)
-    {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        COORD coordWindowSize;
-        coordWindowSize.X = viewWidth;
-        coordWindowSize.Y = viewHeight;
-
-        COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        til::size coordScreenBufferSize;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
-                                                           *m_pFontInfo,
+                                                           m_pFontInfo,
                                                            coordScreenBufferSize,
                                                            TextAttribute{},
                                                            TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
                                                            uiCursorSize,
                                                            &gci.pCurrentScreenBuffer));
+
+        // If we have a renderer, we need to call EnablePainting to initialize
+        // the viewport. If not, we mark the text buffer as inactive so that it
+        // doesn't try to trigger a redraw on a nonexistent renderer.
+        if (g.pRender)
+        {
+            g.pRender->EnablePainting();
+        }
+        else
+        {
+            gci.pCurrentScreenBuffer->_textBuffer->SetAsActiveBuffer(false);
+        }
     }
 
     void CleanupGlobalScreenBuffer()
@@ -124,7 +122,7 @@ public:
         delete gci.pInputBuffer;
     }
 
-    void PrepareCookedReadData(const std::string_view initialData = {})
+    void PrepareCookedReadData(const std::wstring_view initialData = {})
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
@@ -133,9 +131,9 @@ public:
                                               0,
                                               nullptr,
                                               0,
-                                              nullptr,
                                               L"",
-                                              initialData);
+                                              initialData,
+                                              nullptr);
         gci.SetCookedReadData(readData);
     }
 
@@ -147,13 +145,14 @@ public:
     }
 
     void PrepareNewTextBufferInfo(const bool useDefaultAttributes = false,
-                                  const short bufferWidth = s_csBufferWidth,
-                                  const short bufferHeight = s_csBufferHeight)
+                                  const til::CoordType bufferWidth = s_csBufferWidth,
+                                  const til::CoordType bufferHeight = s_csBufferHeight)
     {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        COORD coordScreenBufferSize;
-        coordScreenBufferSize.X = bufferWidth;
-        coordScreenBufferSize.Y = bufferHeight;
+        Globals& g = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        til::size coordScreenBufferSize;
+        coordScreenBufferSize.width = bufferWidth;
+        coordScreenBufferSize.height = bufferHeight;
 
         UINT uiCursorSize = 12;
 
@@ -166,7 +165,8 @@ public:
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
                                                                                   initialAttributes,
                                                                                   uiCursorSize,
-                                                                                  gci.pCurrentScreenBuffer->GetRenderTarget());
+                                                                                  true,
+                                                                                  g.pRender);
             if (textBuffer.get() == nullptr)
             {
                 m_hrTextBufferInfo = E_OUTOFMEMORY;
@@ -176,6 +176,18 @@ public:
                 m_hrTextBufferInfo = S_OK;
             }
             gci.pCurrentScreenBuffer->_textBuffer.swap(textBuffer);
+
+            // If we have a renderer, we need to call EnablePainting to initialize
+            // the viewport. If not, we mark the text buffer as inactive so that it
+            // doesn't try to trigger a redraw on a nonexistent renderer.
+            if (g.pRender)
+            {
+                g.pRender->EnablePainting();
+            }
+            else
+            {
+                gci.pCurrentScreenBuffer->_textBuffer->SetAsActiveBuffer(false);
+            }
         }
         catch (...)
         {
@@ -195,35 +207,52 @@ public:
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some assorted text that doesn't consume the whole row
-        const SHORT cRowsToFill = 4;
+        const til::CoordType cRowsToFill = 4;
 
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-        for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
+        for (til::CoordType iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW& row = textBuffer.GetRowByOffset(iRow);
-            FillRow(&row);
-        }
+            ROW& row = textBuffer.GetMutableRowByOffset(iRow);
 
-        textBuffer.GetCursor().SetYPosition(cRowsToFill);
-    }
+            // fill a row
+            // - Each row is populated with L"AB\u304bC\u304dDE      "
+            // - 7 characters, 6 spaces. 13 total
+            // - The characters take up first 9 columns. (The wide glyphs take up 2 columns each)
+            // - か = \x304b, き = \x304d
 
-    void FillTextBufferBisect()
-    {
-        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        // fill with some text that fills the whole row and has bisecting double byte characters
-        const SHORT cRowsToFill = s_csBufferHeight;
+            uint16_t column = 0;
+            for (const auto& ch : std::wstring_view{ L"AB\u304bC\u304dDE      " })
+            {
+                const uint16_t width = ch >= 0x80 ? 2 : 1;
+                row.ReplaceCharacters(column, width, { &ch, 1 });
+                column += width;
+            }
 
-        VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
+            // A = bright red on dark gray
+            // This string starts at index 0
+            auto Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
+            row.SetAttrToEnd(0, Attr);
 
-        TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
+            // BかC = dark gold on bright blue
+            // This string starts at index 1
+            Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+            row.SetAttrToEnd(1, Attr);
 
-        for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
-        {
-            ROW& row = textBuffer.GetRowByOffset(iRow);
-            FillBisect(&row);
+            // き = bright white on dark purple
+            // This string starts at index 5
+            Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE);
+            row.SetAttrToEnd(5, Attr);
+
+            // DE = black on dark green
+            // This string starts at index 7
+            Attr = TextAttribute(BACKGROUND_GREEN);
+            row.SetAttrToEnd(7, Attr);
+
+            // odd rows forced a wrap
+            row.SetWrapForced(iRow & 1);
         }
 
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
@@ -237,101 +266,7 @@ public:
 private:
     HANDLE m_heap;
     HRESULT m_hrTextBufferInfo;
-    FontInfo* m_pFontInfo;
+    FontInfo m_pFontInfo;
     std::unique_ptr<TextBuffer> m_backupTextBufferInfo;
     std::unique_ptr<INPUT_READ_HANDLE_DATA> m_readHandle;
-
-    void FillRow(ROW* pRow)
-    {
-        // fill a row
-        // 9 characters, 6 spaces. 15 total
-        // か = \x304b
-        // き = \x304d
-        const PCWSTR pwszText = L"AB"
-                                L"\x304b\x304b"
-                                L"C"
-                                L"\x304d\x304d"
-                                L"DE      ";
-        const size_t length = wcslen(pwszText);
-
-        std::vector<DbcsAttribute> attrs(length, DbcsAttribute());
-        // set double-byte/double-width attributes
-        attrs[2].SetLeading();
-        attrs[3].SetTrailing();
-        attrs[5].SetLeading();
-        attrs[6].SetTrailing();
-
-        CharRow& charRow = pRow->GetCharRow();
-        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
-
-        // set some colors
-        TextAttribute Attr = TextAttribute(0);
-        pRow->GetAttrRow().Reset(Attr);
-        // A = bright red on dark gray
-        // This string starts at index 0
-        Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
-        pRow->GetAttrRow().SetAttrToEnd(0, Attr);
-
-        // BかC = dark gold on bright blue
-        // This string starts at index 1
-        Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-        pRow->GetAttrRow().SetAttrToEnd(1, Attr);
-
-        // き = bright white on dark purple
-        // This string starts at index 5
-        Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE);
-        pRow->GetAttrRow().SetAttrToEnd(5, Attr);
-
-        // DE = black on dark green
-        // This string starts at index 7
-        Attr = TextAttribute(BACKGROUND_GREEN);
-        pRow->GetAttrRow().SetAttrToEnd(7, Attr);
-
-        // odd rows forced a wrap
-        if (pRow->GetId() % 2 != 0)
-        {
-            pRow->GetCharRow().SetWrapForced(true);
-        }
-        else
-        {
-            pRow->GetCharRow().SetWrapForced(false);
-        }
-    }
-
-    void FillBisect(ROW* pRow)
-    {
-        const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
-        // length 80 string of text with bisecting characters at the beginning and end.
-        // positions of き(\x304d) are at 0, 27-28, 39-40, 67-68, 79
-        PWCHAR pwszText =
-            L"\x304d"
-            L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            L"\x304d\x304d"
-            L"0123456789"
-            L"\x304d\x304d"
-            L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            L"\x304d\x304d"
-            L"0123456789"
-            L"\x304d";
-        const size_t length = wcslen(pwszText);
-
-        std::vector<DbcsAttribute> attrs(length, DbcsAttribute());
-        // set double-byte/double-width attributes
-        attrs[0].SetTrailing();
-        attrs[27].SetLeading();
-        attrs[28].SetTrailing();
-        attrs[39].SetLeading();
-        attrs[40].SetTrailing();
-        attrs[67].SetLeading();
-        attrs[68].SetTrailing();
-        attrs[79].SetLeading();
-
-        CharRow& charRow = pRow->GetCharRow();
-        OverwriteColumns(pwszText, pwszText + length, attrs.cbegin(), charRow.begin());
-
-        // everything gets default attributes
-        pRow->GetAttrRow().Reset(gci.GetActiveOutputBuffer().GetAttributes());
-
-        pRow->GetCharRow().SetWrapForced(true);
-    }
 };

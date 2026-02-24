@@ -3,16 +3,12 @@
 
 #pragma once
 
-// Custom window messages
-#define CM_UPDATE_TITLE (WM_USER)
-
-#include <wil/resource.h>
-
 template<typename T>
 class BaseWindow
 {
 public:
-    virtual ~BaseWindow() = 0;
+    static constexpr UINT CM_UPDATE_TITLE = WM_USER + 0;
+
     static T* GetThisFromHandle(HWND const window) noexcept
     {
         return reinterpret_cast<T*>(GetWindowLongPtr(window, GWLP_USERDATA));
@@ -30,7 +26,7 @@ public:
             WINRT_ASSERT(!that->_window);
             that->_window = wil::unique_hwnd(window);
 
-            return that->_OnNcCreate(wparam, lparam);
+            return that->OnNcCreate(wparam, lparam);
         }
         else if (T* that = GetThisFromHandle(window))
         {
@@ -40,7 +36,7 @@ public:
         return DefWindowProc(window, message, wparam, lparam);
     }
 
-    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+    [[nodiscard]] LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
         switch (message)
         {
@@ -48,13 +44,6 @@ public:
         {
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
-
-        case WM_DESTROY:
-        {
-            PostQuitMessage(0);
-            return 0;
-        }
-
         case WM_SIZE:
         {
             UINT width = LOWORD(lparam);
@@ -68,19 +57,19 @@ public:
                 if (_minimized)
                 {
                     _minimized = false;
-                    OnRestore();
+                    static_cast<T*>(this)->OnRestore();
                 }
 
                 // We always need to fire the resize event, even when we're transitioning from minimized.
                 // We might be transitioning directly from minimized to maximized, and we'll need
                 // to trigger any size-related content changes.
-                OnResize(width, height);
+                static_cast<T*>(this)->OnResize(width, height);
                 break;
             case SIZE_MINIMIZED:
                 if (!_minimized)
                 {
                     _minimized = true;
-                    OnMinimize();
+                    static_cast<T*>(this)->OnMinimize();
                 }
                 break;
             default:
@@ -103,7 +92,7 @@ public:
     [[nodiscard]] LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
     {
         _inDpiChange = true;
-        const HWND hWndStatic = GetWindow(hWnd, GW_CHILD);
+        const auto hWndStatic = GetWindow(hWnd, GW_CHILD);
         if (hWndStatic != nullptr)
         {
             const UINT uDpi = HIWORD(wParam);
@@ -119,10 +108,6 @@ public:
         return 0;
     }
 
-    virtual void OnResize(const UINT width, const UINT height) = 0;
-    virtual void OnMinimize() = 0;
-    virtual void OnRestore() = 0;
-
     RECT GetWindowRect() const noexcept
     {
         RECT rc = { 0 };
@@ -135,6 +120,11 @@ public:
         return _window.get();
     }
 
+    UINT GetCurrentDpi() const noexcept
+    {
+        return ::GetDpiForWindow(_window.get());
+    }
+
     float GetCurrentDpiScale() const noexcept
     {
         const auto dpi = ::GetDpiForWindow(_window.get());
@@ -143,13 +133,13 @@ public:
     }
 
     //// Gets the physical size of the client area of the HWND in _window
-    SIZE GetPhysicalSize() const noexcept
+    til::size GetPhysicalSize() const noexcept
     {
         RECT rect = {};
         GetClientRect(_window.get(), &rect);
         const auto windowsWidth = rect.right - rect.left;
         const auto windowsHeight = rect.bottom - rect.top;
-        return SIZE{ windowsWidth, windowsHeight };
+        return { windowsWidth, windowsHeight };
     }
 
     //// Gets the logical (in DIPs) size of a physical size specified by the parameter physicalSize
@@ -161,12 +151,12 @@ public:
     //// See also:
     ////   https://docs.microsoft.com/en-us/windows/desktop/LearnWin32/dpi-and-device-independent-pixels
     ////   https://docs.microsoft.com/en-us/windows/desktop/hidpi/high-dpi-desktop-application-development-on-windows#per-monitor-and-per-monitor-v2-dpi-awareness
-    winrt::Windows::Foundation::Size GetLogicalSize(const SIZE physicalSize) const noexcept
+    winrt::Windows::Foundation::Size GetLogicalSize(const til::size physicalSize) const noexcept
     {
         const auto scale = GetCurrentDpiScale();
         // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
-        const auto logicalWidth = (physicalSize.cx / scale) + 0.5f;
-        const auto logicalHeight = (physicalSize.cy / scale) + 0.5f;
+        const auto logicalWidth = (physicalSize.width / scale) + 0.5f;
+        const auto logicalHeight = (physicalSize.height / scale) + 0.5f;
         return winrt::Windows::Foundation::Size(logicalWidth, logicalHeight);
     }
 
@@ -207,13 +197,17 @@ protected:
 
     bool _minimized = false;
 
+    void _setupUserData()
+    {
+        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(static_cast<T*>(this)));
+    }
     // Method Description:
     // - This method is called when the window receives the WM_NCCREATE message.
     // Return Value:
     // - The value returned from the window proc.
-    virtual [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
+    [[nodiscard]] LRESULT OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
     {
-        SetWindowLongPtr(_window.get(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+        _setupUserData();
 
         EnableNonClientDpiScaling(_window.get());
         _currentDpi = GetDpiForWindow(_window.get());
@@ -221,8 +215,3 @@ protected:
         return DefWindowProc(_window.get(), WM_NCCREATE, wParam, lParam);
     };
 };
-
-template<typename T>
-inline BaseWindow<T>::~BaseWindow()
-{
-}

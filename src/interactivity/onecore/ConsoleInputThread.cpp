@@ -9,33 +9,32 @@
 
 #include "ConIoSrv.h"
 
-#include "..\..\host\input.h"
+#include "../../host/input.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
-    Globals& globals = ServiceLocator::LocateGlobals();
-    ConIoSrvComm* const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
+    auto& globals = ServiceLocator::LocateGlobals();
+    const auto Server = ConIoSrvComm::GetConIoSrvComm();
 
-    NTSTATUS Status = Server->Connect();
+    auto Status = Server->Connect();
 
-    if (NT_SUCCESS(Status))
+    if (SUCCEEDED_NTSTATUS(Status))
     {
-        USHORT DisplayMode = Server->GetDisplayMode();
+        const auto DisplayMode = Server->GetDisplayMode();
 
         if (DisplayMode != CIS_DISPLAY_MODE_NONE)
         {
             // Create and set the console window.
-            ConsoleWindow* const wnd = new (std::nothrow) ConsoleWindow();
-            Status = NT_TESTNULL(wnd);
+            static ConsoleWindow wnd;
 
-            if (NT_SUCCESS(Status))
+            if (SUCCEEDED_NTSTATUS(Status))
             {
-                LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(wnd));
+                LOG_IF_FAILED(ServiceLocator::SetConsoleWindowInstance(&wnd));
 
                 // The console's renderer should be created before we get here.
                 FAIL_FAST_IF_NULL(globals.pRender);
@@ -45,13 +44,14 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                 case CIS_DISPLAY_MODE_BGFX:
                     Status = Server->InitializeBgfx();
                     break;
-
                 case CIS_DISPLAY_MODE_DIRECTX:
                     Status = Server->InitializeWddmCon();
                     break;
+                default:
+                    break;
                 }
 
-                if (NT_SUCCESS(Status))
+                if (SUCCEEDED_NTSTATUS(Status))
                 {
                     globals.getConsoleInformation().GetActiveOutputBuffer().RefreshFontWithRenderer();
                 }
@@ -59,7 +59,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
                 globals.ntstatusConsoleInputInitStatus = Status;
                 globals.hConsoleInputInitEvent.SetEvent();
 
-                if (NT_SUCCESS(Status))
+                if (SUCCEEDED_NTSTATUS(Status))
                 {
                     try
                     {
@@ -89,7 +89,7 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
     {
         // If we get an access denied and couldn't connect to the coniosrv in CSRSS.exe.
         // that's OK. We're likely inside an AppContainer in a TAEF /runas:uap test.
-        // We don't want AppContainered things to have access to the hardware devices directly
+        // We don't want things in an AppContainer to have access to the hardware devices directly
         // like coniosrv in CSRSS offers, so we "succeeded" and will let the IO thread know it
         // can continue.
         if (STATUS_ACCESS_DENIED == Status)
@@ -106,17 +106,16 @@ DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 
 // Routine Description:
 // - Starts the OneCore-specific console input thread.
-HANDLE ConsoleInputThread::Start()
+HANDLE ConsoleInputThread::Start() noexcept
 {
-    HANDLE hThread = nullptr;
-    DWORD dwThreadId = (DWORD)-1;
+    auto dwThreadId = gsl::narrow_cast<DWORD>(-1);
 
-    hThread = CreateThread(nullptr,
-                           0,
-                           ConsoleInputThreadProcOneCore,
-                           _pConIoSrvComm,
-                           0,
-                           &dwThreadId);
+    const auto hThread = CreateThread(nullptr,
+                                      0,
+                                      ConsoleInputThreadProcOneCore,
+                                      nullptr,
+                                      0,
+                                      &dwThreadId);
     if (hThread)
     {
         _hThread = hThread;
@@ -124,9 +123,4 @@ HANDLE ConsoleInputThread::Start()
     }
 
     return hThread;
-}
-
-ConIoSrvComm* ConsoleInputThread::GetConIoSrvComm()
-{
-    return _pConIoSrvComm;
 }

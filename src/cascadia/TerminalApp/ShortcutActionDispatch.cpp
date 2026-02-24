@@ -3,11 +3,20 @@
 
 #include "pch.h"
 #include "ShortcutActionDispatch.h"
+#include "WtExeUtils.h"
 
 #include "ShortcutActionDispatch.g.cpp"
 
 using namespace winrt::Microsoft::Terminal;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
+
+#define ACTION_CASE(action)              \
+    case ShortcutAction::action:         \
+    {                                    \
+        action.raise(sender, eventArgs); \
+        break;                           \
+    }
 
 namespace winrt::TerminalApp::implementation
 {
@@ -18,176 +27,58 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - actionAndArgs: the ShortcutAction and associated args to raise an event for.
     // Return Value:
-    // - true if we handled the event was handled, else false.
-    bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
+    // - true if the event was handled, else false.
+    bool ShortcutActionDispatch::DoAction(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const ActionAndArgs& actionAndArgs)
     {
+        if (!actionAndArgs)
+        {
+            return false;
+        }
+
         const auto& action = actionAndArgs.Action();
         const auto& args = actionAndArgs.Args();
-        auto eventArgs = args ? winrt::make_self<ActionEventArgs>(args) :
-                                winrt::make_self<ActionEventArgs>();
+        auto eventArgs = args ? ActionEventArgs{ args } :
+                                ActionEventArgs{};
 
         switch (action)
         {
-        case ShortcutAction::CopyText:
-        {
-            _CopyTextHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::PasteText:
-        {
-            _PasteTextHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::OpenNewTabDropdown:
-        {
-            _OpenNewTabDropdownHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::DuplicateTab:
-        {
-            _DuplicateTabHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::OpenSettings:
-        {
-            _OpenSettingsHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::NewTab:
-        {
-            _NewTabHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::NewWindow:
-        {
-            _NewWindowHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::CloseWindow:
-        {
-            _CloseWindowHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::CloseTab:
-        {
-            _CloseTabHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ClosePane:
-        {
-            _ClosePaneHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::ScrollUp:
-        {
-            _ScrollUpHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollDown:
-        {
-            _ScrollDownHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollUpPage:
-        {
-            _ScrollUpPageHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ScrollDownPage:
-        {
-            _ScrollDownPageHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::NextTab:
-        {
-            _NextTabHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::PrevTab:
-        {
-            _PrevTabHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::SplitVertical:
-        case ShortcutAction::SplitHorizontal:
-        case ShortcutAction::SplitPane:
-        {
-            _SplitPaneHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::SwitchToTab:
-        {
-            _SwitchToTabHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::ResizePane:
-        {
-            _ResizePaneHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::MoveFocus:
-        {
-            _MoveFocusHandlers(*this, *eventArgs);
-            break;
-        }
-
-        case ShortcutAction::AdjustFontSize:
-        {
-            _AdjustFontSizeHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::Find:
-        {
-            _FindHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ResetFontSize:
-        {
-            _ResetFontSizeHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleRetroEffect:
-        {
-            _ToggleRetroEffectHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleFullscreen:
-        {
-            _ToggleFullscreenHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::ToggleCommandPalette:
-        {
-            _ToggleCommandPaletteHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::SetTabColor:
-        {
-            _SetTabColorHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::OpenTabColorPicker:
-        {
-            _OpenTabColorPickerHandlers(*this, *eventArgs);
-            break;
-        }
-        case ShortcutAction::RenameTab:
-        {
-            _RenameTabHandlers(*this, *eventArgs);
-            break;
-        }
+#define ON_ALL_ACTIONS(id) ACTION_CASE(id);
+            ALL_SHORTCUT_ACTIONS
+            INTERNAL_SHORTCUT_ACTIONS
+#undef ON_ALL_ACTIONS
         default:
             return false;
         }
-        return eventArgs->Handled();
+        const auto handled = eventArgs.Handled();
+
+        if (handled)
+        {
+#if defined(WT_BRANDING_RELEASE)
+            constexpr uint8_t branding = 3;
+#elif defined(WT_BRANDING_PREVIEW)
+            constexpr uint8_t branding = 2;
+#elif defined(WT_BRANDING_CANARY)
+            constexpr uint8_t branding = 1;
+#else
+            constexpr uint8_t branding = 0;
+#endif
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "ActionDispatched",
+                TraceLoggingDescription("Event emitted when an action was successfully performed"),
+                TraceLoggingValue(static_cast<int>(actionAndArgs.Action()), "Action"),
+                TraceLoggingValue(branding, "Branding"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+        }
+
+        return handled;
     }
 
+    bool ShortcutActionDispatch::DoAction(const ActionAndArgs& actionAndArgs)
+    {
+        return DoAction(nullptr, actionAndArgs);
+    }
 }

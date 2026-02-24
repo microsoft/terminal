@@ -17,71 +17,48 @@ Revision History:
 
 #pragma once
 
-#include <WinConTypes.h>
-#include "TextAttribute.hpp"
 #include "textBuffer.hpp"
-#include "../types/IUiaData.h"
+#include "../renderer/inc/IRenderData.hpp"
 
-// This used to be in find.h.
-#define SEARCH_STRING_LENGTH (80)
+enum class SearchFlag : unsigned int
+{
+    None = 0,
+
+    CaseInsensitive = 1 << 0,
+    RegularExpression = 1 << 1,
+};
+
+DEFINE_ENUM_FLAG_OPERATORS(SearchFlag);
 
 class Search final
 {
 public:
-    enum class Direction
-    {
-        Forward,
-        Backward
-    };
+    Search() = default;
 
-    enum class Sensitivity
-    {
-        CaseInsensitive,
-        CaseSensitive
-    };
+    bool IsStale(const Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags) const noexcept;
+    void Reset(Microsoft::Console::Render::IRenderData& renderData, const std::wstring_view& needle, SearchFlag flags, bool reverse);
 
-    Search(Microsoft::Console::Types::IUiaData& uiaData,
-           const std::wstring& str,
-           const Direction dir,
-           const Sensitivity sensitivity);
+    void MoveToPoint(til::point anchor) noexcept;
+    void MovePastPoint(til::point anchor) noexcept;
+    void FindNext(bool reverse) noexcept;
 
-    Search(Microsoft::Console::Types::IUiaData& uiaData,
-           const std::wstring& str,
-           const Direction dir,
-           const Sensitivity sensitivity,
-           const COORD anchor);
+    const til::point_span* GetCurrent() const noexcept;
+    bool SelectCurrent() const;
 
-    bool FindNext();
-    void Select() const;
-    void Color(const TextAttribute attr) const;
-
-    std::pair<COORD, COORD> GetFoundLocation() const noexcept;
+    const std::vector<til::point_span>& Results() const noexcept;
+    std::vector<til::point_span>&& ExtractResults() noexcept;
+    ptrdiff_t CurrentMatch() const noexcept;
+    bool IsOk() const noexcept;
 
 private:
-    wchar_t _ApplySensitivity(const wchar_t wch) const noexcept;
-    bool _FindNeedleInHaystackAt(const COORD pos, COORD& start, COORD& end) const;
-    bool _CompareChars(const std::wstring_view one, const std::wstring_view two) const noexcept;
-    void _UpdateNextPosition();
+    // _renderData is a pointer so that Search() is constexpr default constructable.
+    Microsoft::Console::Render::IRenderData* _renderData = nullptr;
+    std::wstring _needle;
+    SearchFlag _flags{};
+    uint64_t _lastMutationId = 0;
 
-    void _IncrementCoord(COORD& coord) const noexcept;
-    void _DecrementCoord(COORD& coord) const noexcept;
-
-    static COORD s_GetInitialAnchor(Microsoft::Console::Types::IUiaData& uiaData, const Direction dir);
-
-    static std::vector<std::vector<wchar_t>> s_CreateNeedleFromString(const std::wstring& wstr);
-
-    bool _reachedEnd = false;
-    COORD _coordNext = { 0 };
-    COORD _coordSelStart = { 0 };
-    COORD _coordSelEnd = { 0 };
-
-    const COORD _coordAnchor;
-    const std::vector<std::vector<wchar_t>> _needle;
-    const Direction _direction;
-    const Sensitivity _sensitivity;
-    Microsoft::Console::Types::IUiaData& _uiaData;
-
-#ifdef UNIT_TESTING
-    friend class SearchTests;
-#endif
+    bool _ok{ false };
+    std::vector<til::point_span> _results;
+    ptrdiff_t _index = 0;
+    ptrdiff_t _step = 0;
 };

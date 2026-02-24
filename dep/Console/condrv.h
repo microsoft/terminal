@@ -1,6 +1,7 @@
 /*++
 
 Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the MIT license.
 
 Module Name:
 
@@ -157,8 +158,8 @@ typedef struct _CD_IO_DISPLAY_SIZE {
 } CD_IO_DISPLAY_SIZE, *PCD_IO_DISPLAY_SIZE;
 
 typedef struct _CD_IO_CHARACTER {
-    WCHAR Character; 
-    USHORT Atribute;
+    WCHAR Character;
+    USHORT Attribute;
 } CD_IO_CHARACTER, *PCD_IO_CHARACTER;
 
 typedef struct _CD_IO_ROW_INFORMATION {
@@ -173,6 +174,11 @@ typedef struct _CD_IO_CURSOR_INFORMATION {
     ULONG Height;
     BOOLEAN IsVisible;
 } CD_IO_CURSOR_INFORMATION, *PCD_IO_CURSOR_INFORMATION;
+
+typedef struct _CD_IO_FONT_SIZE {
+    ULONG Width;
+    ULONG Height;
+} CD_IO_FONT_SIZE, *PCD_IO_FONT_SIZE;
 
 #define IOCTL_CONDRV_READ_IO \
     CTL_CODE(FILE_DEVICE_CONSOLE, 1, METHOD_OUT_DIRECT, FILE_ANY_ACCESS)
@@ -212,3 +218,6 @@ typedef struct _CD_IO_CURSOR_INFORMATION {
 
 #define IOCTL_CONDRV_LAUNCH_SERVER \
     CTL_CODE(FILE_DEVICE_CONSOLE, 13, METHOD_NEITHER, FILE_ANY_ACCESS)
+
+#define IOCTL_CONDRV_GET_FONT_SIZE \
+    CTL_CODE(FILE_DEVICE_CONSOLE, 14, METHOD_NEITHER, FILE_ANY_ACCESS)

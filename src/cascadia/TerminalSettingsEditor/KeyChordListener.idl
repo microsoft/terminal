@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass KeyChordListener : Windows.UI.Xaml.Controls.UserControl
+    {
+        KeyChordListener();
+
+        Microsoft.Terminal.Control.KeyChord Keys;
+        static Windows.UI.Xaml.DependencyProperty KeysProperty { get; };
+    }
+}

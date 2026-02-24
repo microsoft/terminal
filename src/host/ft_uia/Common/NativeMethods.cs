@@ -330,25 +330,25 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
     /// <summary>
     /// The definitions within this file match the winconp.h file that is generated from wincon.w
-    /// Please see \windows\published\main\wincon.w
+    /// Please see /windows/published/main/wincon.w
     /// </summary>
     public static class WinConP
     {
         private static readonly Guid PKEY_Console_FormatId = new Guid(0x0C570607, 0x0396, 0x43DE, new byte[] { 0x9D, 0x61, 0xE3, 0x21, 0xD7, 0xDF, 0x50, 0x26 });
 
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_ForceV2 = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 1 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_WrapText = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 2 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_FilterOnPaste = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 3 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CtrlKeysDisabled = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 4 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_LineSelection = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 5 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_WindowTransparency = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 6 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_TrimZeros = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 7 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorType = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 8 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorColor = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 9 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_InterceptCopyPaste = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 10 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_DefaultForeground = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 11 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_DefaultBackground = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 12 };
-        public static readonly Wtypes.PROPERTYKEY PKEY_Console_TerminalScrolling = new Wtypes.PROPERTYKEY() { fmtid = PKEY_Console_FormatId, pid = 13 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_ForceV2 = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 1 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_WrapText = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 2 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_FilterOnPaste = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 3 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CtrlKeysDisabled = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 4 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_LineSelection = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 5 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_WindowTransparency = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 6 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_TrimZeros = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 7 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorType = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 8 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_CursorColor = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 9 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_InterceptCopyPaste = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 10 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_DefaultForeground = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 11 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_DefaultBackground = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 12 };
+        public static readonly Wtypes.PROPERTYKEY PKEY_Console_TerminalScrolling = new Wtypes.PROPERTYKEY { fmtid = PKEY_Console_FormatId, pid = 13 };
 
         public static readonly uint NT_CONSOLE_PROPS_SIG = 0xA0000002;
         public static readonly uint NT_FE_CONSOLE_PROPS_SIG = 0xA0000004;

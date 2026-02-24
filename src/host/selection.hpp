@@ -20,15 +20,15 @@ Revision History:
 
 #include "input.h"
 
-#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
-#include "..\interactivity\inc\IConsoleWindow.hpp"
+#include "../interactivity/inc/IConsoleWindow.hpp"
+#include "til/generational.h"
 
 class Selection
 {
 public:
     ~Selection() = default;
 
-    std::vector<SMALL_RECT> GetSelectionRects() const;
+    std::span<const til::point_span> GetSelectionSpans() const;
 
     void ShowSelection();
     void HideSelection();
@@ -47,22 +47,22 @@ public:
     // navigation.
 
     void InitializeMarkSelection();
-    void InitializeMouseSelection(const COORD coordBufferPos);
+    void InitializeMouseSelection(const til::point coordBufferPos);
 
-    void SelectNewRegion(const COORD coordStart, const COORD coordEnd);
+    void SelectNewRegion(const til::point coordStart, const til::point coordEnd);
     void SelectAll();
 
-    void ExtendSelection(_In_ COORD coordBufferPos);
-    void AdjustSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd);
+    void ExtendSelection(_In_ til::point coordBufferPos);
+    void AdjustSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd);
 
     void ClearSelection();
     void ClearSelection(const bool fStartingNewSelection);
-    void ColorSelection(const SMALL_RECT& srRect, const TextAttribute attr);
-    void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
+    void ColorSelection(const til::rect& srRect, const TextAttribute attr);
+    void ColorSelection(const til::point coordSelectionStart, const til::point coordSelectionEnd, const TextAttribute attr);
 
     // delete these or we can accidentally get copies of the singleton
-    Selection(Selection const&) = delete;
-    void operator=(Selection const&) = delete;
+    Selection(const Selection&) = delete;
+    void operator=(const Selection&) = delete;
 
 protected:
     Selection();
@@ -98,18 +98,18 @@ public:
     void CheckAndSetAlternateSelection();
 
     // calculation functions
-    [[nodiscard]] static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
-    void GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, _Out_opt_ COORD* const pcoordValidEnd) const;
-    static bool s_IsWithinBoundaries(const COORD coordPosition, const COORD coordStart, const COORD coordEnd);
+    [[nodiscard]] static bool s_GetInputLineBoundaries(_Out_opt_ til::point* const pcoordInputStart, _Out_opt_ til::point* const pcoordInputEnd);
+    void GetValidAreaBoundaries(_Out_opt_ til::point* const pcoordValidStart, _Out_opt_ til::point* const pcoordValidEnd) const;
+    static bool s_IsWithinBoundaries(const til::point coordPosition, const til::point coordStart, const til::point coordEnd);
 
 private:
     // key handling
     bool _HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo);
     bool _HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKeyInfo);
-    COORD WordByWordSelection(const bool fPrevious,
-                              const Microsoft::Console::Types::Viewport& bufferSize,
-                              const COORD coordAnchor,
-                              const COORD coordSelPoint) const;
+    til::point WordByWordSelection(const bool fPrevious,
+                                   const Microsoft::Console::Types::Viewport& bufferSize,
+                                   const til::point coordAnchor,
+                                   const til::point coordSelPoint) const;
 
     // -------------------------------------------------------------------------------------------------------
     // selection state (selectionState.cpp)
@@ -126,12 +126,13 @@ public:
     bool IsMouseButtonDown() const;
 
     DWORD GetPublicSelectionFlags() const noexcept;
-    COORD GetSelectionAnchor() const noexcept;
-    SMALL_RECT GetSelectionRectangle() const noexcept;
+    til::point GetSelectionAnchor() const noexcept;
+    std::pair<til::point, til::point> GetSelectionAnchors() const noexcept;
+    til::inclusive_rect GetSelectionRectangle() const noexcept;
 
     void SetLineSelection(const bool fLineSelectionOn);
 
-    bool ShouldAllowMouseDragSelection(const COORD mousePosition) const noexcept;
+    bool ShouldAllowMouseDragSelection(const til::point mousePosition) const noexcept;
 
     // TODO: these states likely belong somewhere else
     void MouseDown();
@@ -152,30 +153,39 @@ private:
     // TODO: console selection mode should be in here
     // TODO: consider putting word delims in here
 
-    // -- State/Flags --
-    // This replaces/deprecates CONSOLE_SELECTION_INVERTED on gci->SelectionFlags
-    bool _fSelectionVisible;
+    struct SelectionData
+    {
+        // -- State/Flags --
+        // This replaces/deprecates CONSOLE_SELECTION_INVERTED on gci->SelectionFlags
+        bool fSelectionVisible{ false };
 
-    bool _fLineSelection; // whether to use line selection or block selection
-    bool _fUseAlternateSelection; // whether the user has triggered the alternate selection method
-    bool _allowMouseDragSelection; // true if the dragging the mouse should change the selection
+        bool fLineSelection{ true }; // whether to use line selection or block selection
+        bool fUseAlternateSelection{ false }; // whether the user has triggered the alternate selection method
+        bool allowMouseDragSelection{ true }; // true if the dragging the mouse should change the selection
 
-    // Flags for this DWORD are defined in wincon.h. Search for def:CONSOLE_SELECTION_IN_PROGRESS, etc.
-    DWORD _dwSelectionFlags;
+        // Flags for this DWORD are defined in wincon.h. Search for def:CONSOLE_SELECTION_IN_PROGRESS, etc.
+        DWORD dwSelectionFlags{ 0 };
 
-    // -- Current Selection Data --
-    // Anchor is the point the selection was started from (and will be one of the corners of the rectangle).
-    COORD _coordSelectionAnchor;
-    // Rectangle is the area inscribing the selection. It is extended to screen edges in a particular way for line selection.
-    SMALL_RECT _srSelectionRect;
+        // -- Current Selection Data --
+        // Anchor is the point the selection was started from (and will be one of the corners of the rectangle).
+        til::point coordSelectionAnchor{};
+        // Rectangle is the area inscribing the selection. It is extended to screen edges in a particular way for line selection.
+        til::inclusive_rect srSelectionRect{};
 
-    // -- Saved Cursor Data --
-    // Saved when a selection is started for restoration later. Position is in character coordinates, not pixels.
-    COORD _coordSavedCursorPosition;
-    ULONG _ulSavedCursorSize;
-    bool _fSavedCursorVisible;
-    COLORREF _savedCursorColor;
-    CursorType _savedCursorType;
+        // -- Saved Cursor Data --
+        // Saved when a selection is started for restoration later. Position is in character coordinates, not pixels.
+        til::point coordSavedCursorPosition{};
+        ULONG ulSavedCursorSize{ 0 };
+        bool fSavedCursorVisible{ false };
+        CursorType savedCursorType{ CursorType::Legacy };
+    };
+    til::generational<SelectionData> _d{};
+
+    mutable std::vector<til::point_span> _lastSelectionSpans;
+    mutable til::generation_t _lastSelectionGeneration;
+
+    void _ExtendSelection(SelectionData* d, _In_ til::point coordBufferPos);
+    void _RegenerateSelectionSpans() const;
 
 #ifdef UNIT_TESTING
     friend class SelectionTests;

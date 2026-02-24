@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    This file contains targets that override behavior in Microsoft.UI.Xaml and
+    related packages.
+
+    For example: All XAML needs is a reference to WebView2; it does not need the
+    DLL and it does not need for us to copy the WinMD into the output folder. It
+    also doesn't require the WebView2 loader since we're not actually using
+    WebView2. Therefore, we can get away with *not including the WebView2
+    package* and only adding a reference to its winmd.
+  -->
+  <ItemGroup>
+    <Reference Include="$(WebView2PackageRoot)\lib\Microsoft.Web.WebView2.Core.winmd" />
+  </ItemGroup>
+</Project>

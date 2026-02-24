@@ -1,0 +1,487 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Command.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum ArgTypeHint
+    {
+        None = 0,
+        FilePath,
+        FolderPath,
+        ColorScheme,
+        SplitSize
+    };
+
+    struct ArgDescriptor
+    {
+        String Name;
+        String Type;
+        Boolean Required;
+        ArgTypeHint TypeHint;
+    };
+
+    interface IActionArgsDescriptorAccess
+    {
+        Windows.Foundation.Collections.IVectorView<ArgDescriptor> GetArgDescriptors();
+        IInspectable GetArgAt(UInt32 index);
+        void SetArgAt(UInt32 index, Object value);
+    };
+
+    interface IActionArgs
+    {
+        Boolean Equals(IActionArgs other);
+        String GenerateName();
+        String GenerateName(Windows.ApplicationModel.Resources.Core.ResourceContext context);
+        IActionArgs Copy();
+        UInt64 Hash();
+    };
+
+    interface IActionEventArgs
+    {
+        Boolean Handled;
+        IActionArgs ActionArgs { get; };
+    };
+
+    enum ResizeDirection
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
+    enum FocusDirection
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down,
+        Previous,
+        PreviousInOrder,
+        NextInOrder,
+        First,
+        Parent,
+        Child
+    };
+
+    enum SplitDirection
+    {
+        Automatic = 0,
+        Up,
+        Right,
+        Down,
+        Left
+    };
+
+    enum SplitType
+    {
+        Manual = 0,
+        Duplicate = 1
+    };
+
+    enum SettingsTarget
+    {
+        SettingsFile = 0,
+        DefaultsFile,
+        AllFiles,
+        SettingsUI,
+        Directory
+    };
+
+    enum MoveTabDirection
+    {
+        None = 0,
+        Forward,
+        Backward
+    };
+
+    enum FindMatchDirection
+    {
+        None = 0,
+        Next,
+        Previous
+    };
+
+    enum SelectOutputDirection
+    {
+        Previous = 0,
+        Next,
+    };
+
+    enum CommandPaletteLaunchMode
+    {
+        Action = 0,
+        CommandLine
+    };
+
+    enum TabSwitcherMode
+    {
+        MostRecentlyUsed,
+        InOrder,
+        Disabled,
+    };
+
+    enum DesktopBehavior
+    {
+        Any,
+        ToCurrent,
+        OnCurrent,
+    };
+
+    enum MonitorBehavior
+    {
+        Any,
+        ToCurrent,
+        ToMouse,
+    };
+
+    [flags]
+    enum SuggestionsSource
+    {
+        Tasks = 0x1,
+        CommandHistory = 0x2,
+        DirectoryHistory = 0x4,
+        QuickFixes = 0x8,
+        All = 0xffffffff,
+    };
+
+    interface INewContentArgs {
+        String Type { get; };
+        Boolean Equals(INewContentArgs other);
+        UInt64 Hash();
+        INewContentArgs Copy();
+        String GenerateName();
+        String GenerateName(Windows.ApplicationModel.Resources.Core.ResourceContext context);
+    };
+
+    runtimeclass BaseContentArgs : [default] INewContentArgs {
+        BaseContentArgs();
+        BaseContentArgs(String type);
+    };
+
+    runtimeclass NewTerminalArgs : INewContentArgs, IActionArgsDescriptorAccess {
+        NewTerminalArgs();
+        NewTerminalArgs(Int32 profileIndex);
+
+        String Commandline;
+        String StartingDirectory;
+        String TabTitle;
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor;
+        String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        Guid SessionId;
+        Boolean AppendCommandLine;
+
+        // We use IReference<> to treat some args as nullable where null means
+        // "use the inherited value". See ProfileIndex,
+        // SuppressApplicationTitle, Elevate. Strings that behave this way just
+        // use `null` as "use the inherited value".
+
+        // ProfileIndex can be null (for "use the default"), so this needs to be
+        // a IReference, so it's nullable
+        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+        Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
+        String ColorScheme;
+        // This needs to be an optional so that the default value (null) does
+        // not modify whatever the profile's value is (either true or false)
+        Windows.Foundation.IReference<Boolean> Elevate;
+        // Similarly with ReloadEnvironmentVariables
+        Windows.Foundation.IReference<Boolean> ReloadEnvironmentVariables;
+
+        UInt64 ContentId{ get; set; };
+
+        String ToCommandline();
+    };
+
+    [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
+    {
+        ActionEventArgs();
+        ActionEventArgs(IActionArgs args);
+    };
+
+    [default_interface] runtimeclass CopyTextArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        CopyTextArgs();
+        Boolean DismissSelection { get; };
+        Boolean SingleLine { get; };
+        Boolean WithControlSequences { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
+    };
+
+    [default_interface] runtimeclass NewTabArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        NewTabArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
+    };
+
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        MovePaneArgs(UInt32 tabIndex, String Window);
+        UInt32 TabIndex;
+        String Window;
+    };
+
+    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SwitchToTabArgs(UInt32 tabIndex);
+        UInt32 TabIndex;
+    };
+
+    [default_interface] runtimeclass ResizePaneArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        ResizeDirection ResizeDirection { get; };
+    };
+
+    [default_interface] runtimeclass MoveFocusArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        MoveFocusArgs(FocusDirection direction);
+        FocusDirection FocusDirection { get; };
+    };
+
+    [default_interface] runtimeclass SwapPaneArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SwapPaneArgs(FocusDirection direction);
+        FocusDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        Single Delta { get; };
+    };
+
+    [default_interface] runtimeclass SendInputArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SendInputArgs(String input);
+
+        String Input { get; };
+    };
+
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, Single size, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitDirection split, INewContentArgs contentArgs);
+        SplitPaneArgs(SplitType splitMode);
+
+        SplitDirection SplitDirection { get; };
+        INewContentArgs ContentArgs { get; };
+        SplitType SplitMode { get; };
+        Single SplitSize { get; };
+    };
+
+    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        OpenSettingsArgs(SettingsTarget target);
+        SettingsTarget Target { get; };
+    };
+
+    [default_interface] runtimeclass SetFocusModeArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SetFocusModeArgs(Boolean isFocusMode);
+        Boolean IsFocusMode { get; };
+    };
+
+    [default_interface] runtimeclass SetFullScreenArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SetFullScreenArgs(Boolean isFullScreen);
+        Boolean IsFullScreen { get; };
+    };
+
+    [default_interface] runtimeclass SetMaximizedArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SetMaximizedArgs(Boolean isMaximized);
+        Boolean IsMaximized { get; };
+    };
+
+    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SetColorSchemeArgs(String name);
+        String SchemeName { get; };
+    };
+
+    [default_interface] runtimeclass SetTabColorArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SetTabColorArgs(Windows.UI.Color tabColor);
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
+    };
+
+    [default_interface] runtimeclass RenameTabArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        RenameTabArgs(String title);
+        String Title { get; };
+    };
+
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        ExecuteCommandlineArgs(String commandline);
+        String Commandline;
+    };
+
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        CloseOtherTabsArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        CloseTabsAfterArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        CloseTabArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        MoveTabArgs(String window, MoveTabDirection direction);
+        MoveTabDirection Direction { get; };
+        String Window { get; };
+    };
+
+    [default_interface] runtimeclass ScrollUpArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+    [default_interface] runtimeclass ScrollDownArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+
+    [default_interface] runtimeclass ScrollToMarkArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        Microsoft.Terminal.Control.ScrollToMarkDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass AddMarkArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> Color { get; };
+    };
+
+    [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass SuggestionsArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SuggestionsArgs();
+        SuggestionsArgs(SuggestionsSource source, Boolean useCommandline);
+        SuggestionsSource Source { get; };
+        Boolean UseCommandline { get; };
+    };
+
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        FindMatchArgs(FindMatchDirection direction);
+        FindMatchDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass SaveSnippetArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SaveSnippetArgs();
+        SaveSnippetArgs(String Name, String Commandline, String KeyChord);
+        String Name;
+        String Commandline;
+        String KeyChord;
+    };
+
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        NewWindowArgs(INewContentArgs contentArgs);
+        INewContentArgs ContentArgs { get; };
+    };
+
+    [default_interface] runtimeclass PrevTabArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        PrevTabArgs();
+        PrevTabArgs(TabSwitcherMode SwitcherMode);
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass NextTabArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        NextTabArgs();
+        NextTabArgs(TabSwitcherMode SwitcherMode);
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass RenameWindowArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        RenameWindowArgs(String name);
+        String Name { get; };
+    };
+
+    [default_interface] runtimeclass SearchForTextArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        String QueryUrl { get; };
+    };
+
+    [default_interface] runtimeclass GlobalSummonArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        String Name { get; };
+        DesktopBehavior Desktop { get; };
+        MonitorBehavior Monitor { get; };
+        Boolean ToggleVisibility { get; };
+        UInt32 DropdownDuration { get; };
+    };
+
+    [default_interface] runtimeclass FocusPaneArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        FocusPaneArgs(UInt32 Id);
+        UInt32 Id { get; };
+    };
+
+    [default_interface] runtimeclass ExportBufferArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        ExportBufferArgs(String path);
+        String Path { get; };
+    };
+
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
+        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
+    };
+
+    [default_interface] runtimeclass AdjustOpacityArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        AdjustOpacityArgs();
+        Int32 Opacity { get; };
+        Boolean Relative { get; };
+    };
+
+    [default_interface] runtimeclass ColorSelectionArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        Microsoft.Terminal.Control.SelectionColor Foreground;
+        Microsoft.Terminal.Control.SelectionColor Background;
+        Microsoft.Terminal.Core.MatchMode MatchMode { get; };
+    };
+
+    [default_interface] runtimeclass SelectCommandArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SelectCommandArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+    [default_interface] runtimeclass SelectOutputArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SelectOutputArgs(SelectOutputDirection direction);
+        SelectOutputDirection Direction { get; };
+    }
+
+
+}

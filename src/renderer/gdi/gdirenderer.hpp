@@ -14,7 +14,8 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\RenderEngineBase.hpp"
+#include "../inc/RenderEngineBase.hpp"
+#include "../inc/FontResource.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -26,14 +27,12 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
 
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
-        [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(std::span<const til::rect> selections) noexcept override;
+        [[nodiscard]] HRESULT InvalidateScroll(const til::point* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSystem(const til::rect* const prcDirtyClient) noexcept override;
+        [[nodiscard]] HRESULT Invalidate(const til::rect* const psrRegion) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const til::rect* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
@@ -41,37 +40,50 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const til::CoordType targetRow,
+                                                   const til::CoordType viewportLeft) noexcept override;
+
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                              const COORD coord,
-                                              const bool trimLeft,
-                                              const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
-                                                   const COLORREF color,
+        [[nodiscard]] HRESULT PaintBufferLine(const std::span<const Cluster> clusters,
+                                              const til::point coord,
+                                              const bool trimLeft) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLineSet lines,
+                                                   const COLORREF gridlineColor,
+                                                   const COLORREF underlineColor,
                                                    const size_t cchLine,
-                                                   const COORD coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
+                                                   const til::point coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintImageSlice(const ImageSlice& imageSlice,
+                                              const til::CoordType targetRow,
+                                              const til::CoordType viewportLeft) noexcept override;
+        [[nodiscard]] HRESULT PaintSelection(const til::rect& rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const RenderSettings& renderSettings,
                                                    const gsl::not_null<IRenderData*> pData,
+                                                   const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                          _Out_ FontInfo& FontInfo) noexcept override;
+        [[nodiscard]] HRESULT UpdateSoftFont(const std::span<const uint16_t> bitPattern,
+                                             const til::size cellSize,
+                                             const size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
-        [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
+        [[nodiscard]] HRESULT UpdateViewport(const til::inclusive_rect& srNewViewport) noexcept override;
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
-        [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(std::span<const til::rect>& area) noexcept override;
+        [[nodiscard]] HRESULT GetFontSize(_Out_ til::size* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
         HWND _hwndTargetWindow;
@@ -80,14 +92,36 @@ namespace Microsoft::Console::Render
                                                             const int nIndex,
                                                             const LONG dwNewLong) noexcept;
 
+        static bool FontHasWesternScript(HDC hdc);
+
         bool _fPaintStarted;
 
+        til::rect _invalidCharacters;
         PAINTSTRUCT _psInvalidData;
         HDC _hdcMemoryContext;
         bool _isTrueTypeFont;
         UINT _fontCodepage;
-        HFONT _hfont;
+
+        enum class FontType : uint8_t
+        {
+            // Indices for _hfonts array below
+            Default,
+            Bold,
+            Italic,
+            BoldItalic,
+
+            // The number of fonts in _hfonts array below
+            FontCount,
+
+            // Other
+            Undefined = FontCount,
+            Soft
+        };
+
+        std::array<HFONT, static_cast<size_t>(FontType::FontCount)> _hfonts{};
+
         TEXTMETRICW _tmFontMetrics;
+        FontResource _softFont;
 
         static const size_t s_cPolyTextCache = 80;
         POLYTEXTW _pPolyText[s_cPolyTextCache];
@@ -95,55 +129,83 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _FlushBufferLines() noexcept;
 
         std::vector<RECT> cursorInvertRects;
+        XFORM cursorInvertTransform;
 
-        COORD _coordFontLast;
+        struct LineMetrics
+        {
+            int gridlineWidth;
+            int underlineCenter;
+            int underlineWidth;
+            int doubleUnderlinePosTop;
+            int doubleUnderlinePosBottom;
+            int doubleUnderlineWidth;
+            int strikethroughOffset;
+            int strikethroughWidth;
+            int curlyLineCenter;
+            int curlyLinePeriod;
+            int curlyLineControlPointOffset;
+        };
+
+        LineMetrics _lineMetrics;
+        til::size _coordFontLast;
         int _iCurrentDpi;
 
         static const int s_iBaseDpi = USER_DEFAULT_SCREEN_DPI;
 
-        SIZE _szMemorySurface;
+        til::size _szMemorySurface;
         HBITMAP _hbitmapMemorySurface;
         [[nodiscard]] HRESULT _PrepareMemoryBitmap(const HWND hwnd) noexcept;
 
-        SIZE _szInvalidScroll;
-        RECT _rcInvalid;
+        til::size _szInvalidScroll;
+        til::rect _rcInvalid;
         bool _fInvalidRectUsed;
 
         COLORREF _lastFg;
         COLORREF _lastBg;
 
-        [[nodiscard]] HRESULT _InvalidCombine(const RECT* const prc) noexcept;
-        [[nodiscard]] HRESULT _InvalidOffset(const POINT* const ppt) noexcept;
+        FontType _lastFontType;
+        bool _fontHasWesternScript = false;
+
+        XFORM _currentLineTransform;
+        LineRendition _currentLineRendition;
+
+        // Memory pooling to save alloc/free work to the OS for things
+        // frequently created and dropped.
+        // It's important the pool is first so it can be given to the others on construction.
+        std::pmr::unsynchronized_pool_resource _pool;
+        std::pmr::vector<std::pmr::wstring> _polyStrings;
+        std::pmr::vector<std::pmr::vector<int>> _polyWidths;
+
+        std::vector<DWORD> _imageMask;
+
+        [[nodiscard]] HRESULT _InvalidCombine(const til::rect* const prc) noexcept;
+        [[nodiscard]] HRESULT _InvalidOffset(const til::point* const ppt) noexcept;
         [[nodiscard]] HRESULT _InvalidRestrict() noexcept;
 
-        [[nodiscard]] HRESULT _InvalidateRect(const RECT* const prc) noexcept;
+        [[nodiscard]] HRESULT _InvalidateRect(const til::rect* const prc) noexcept;
 
         [[nodiscard]] HRESULT _PaintBackgroundColor(const RECT* const prc) noexcept;
 
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
 
-        [[nodiscard]] HRESULT _ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const noexcept;
-        [[nodiscard]] HRESULT _ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const noexcept;
-        [[nodiscard]] HRESULT _ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const noexcept;
-
         static int s_ScaleByDpi(const int iPx, const int iDpi);
         static int s_ShrinkByDpi(const int iPx, const int iDpi);
 
-        POINT _GetInvalidRectPoint() const;
-        SIZE _GetInvalidRectSize() const;
-        SIZE _GetRectSize(const RECT* const pRect) const;
+        til::point _GetInvalidRectPoint() const;
+        til::size _GetInvalidRectSize() const;
+        til::size _GetRectSize(const RECT* const pRect) const;
 
-        void _OrRect(_In_ RECT* const pRectExisting, const RECT* const pRectToOr) const;
+        void _OrRect(_In_ til::rect* const pRectExisting, const til::rect* const pRectToOr) const;
 
         bool _IsFontTrueType() const;
 
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
                                                _Out_ FontInfo& Font,
                                                const int iDpi,
-                                               _Inout_ wil::unique_hfont& hFont) noexcept;
+                                               _Inout_ std::array<wil::unique_hfont, static_cast<size_t>(FontType::FontCount)>& hFonts) noexcept;
 
-        COORD _GetFontSize() const;
+        til::size _GetFontSize() const;
         bool _IsMinimized() const;
         bool _IsWindowValid() const;
 
@@ -160,5 +222,12 @@ namespace Microsoft::Console::Render
         void _CreateDebugWindow();
         HDC _debugContext;
 #endif
+    };
+
+    constexpr XFORM IDENTITY_XFORM = { 1, 0, 0, 1 };
+
+    inline bool operator==(const XFORM& lhs, const XFORM& rhs) noexcept
+    {
+        return ::memcmp(&lhs, &rhs, sizeof(XFORM)) == 0;
     };
 }
