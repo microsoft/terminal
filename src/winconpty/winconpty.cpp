@@ -101,7 +101,7 @@ static wchar_t* _ConsoleHostPath()
 static void _EnsureDriverIsLoaded() noexcept
 {
 #ifndef __INSIDE_WINDOWS
-    static HMODULE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+    HMODULE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
     if (auto setSystemInformation{ GetProcAddressByFunctionDeclaration(ntdll, NtSetSystemInformation) })
     {
         SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
