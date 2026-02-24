@@ -16,8 +16,6 @@ Revision History:
 
 #pragma once
 
-#include "../NT/ntexapi_h.h"
-
 class WinNTControl
 {
 public:
@@ -28,7 +26,7 @@ public:
                                              _In_ ULONG ShareAccess,
                                              _In_ ULONG OpenOptions);
 
-    [[nodiscard]] static NTSTATUS NtSetSystemInformation(_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
+    [[nodiscard]] static NTSTATUS NtSetSystemInformation(_In_ DWORD SystemInformationClass,
                                                          _In_reads_bytes_opt_(SystemInformationLength) PVOID SystemInformation,
                                                          _In_ ULONG SystemInformationLength);
 
@@ -43,7 +41,7 @@ private:
     wil::unique_hmodule const _NtDllDll;
 
     typedef NTSTATUS(NTAPI* PfnNtOpenFile)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PIO_STATUS_BLOCK, ULONG, ULONG);
-    typedef NTSTATUS(NTAPI* PfnNtSetSystemInformation)(SYSTEM_INFORMATION_CLASS, PVOID, ULONG);
+    typedef NTSTATUS(NTAPI* PfnNtSetSystemInformation)(DWORD, PVOID, ULONG);
 
     const PfnNtOpenFile _NtOpenFile;
     const PfnNtSetSystemInformation _NtSetSystemInformation;

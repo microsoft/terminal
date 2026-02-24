@@ -16,6 +16,15 @@
 #else
 #include "device.h"
 #include <filesystem>
+
+typedef enum _SYSTEM_INFORMATION_CLASS {
+    SystemConsoleInformation = 132,
+} SYSTEM_INFORMATION_CLASS;
+
+typedef struct _SYSTEM_CONSOLE_INFORMATION {
+    ULONG DriverLoaded : 1;
+    ULONG Spare : 31;
+} SYSTEM_CONSOLE_INFORMATION, *PSYSTEM_CONSOLE_INFORMATION;
 #endif // __INSIDE_WINDOWS
 
 #pragma warning(push)
@@ -88,19 +97,13 @@ static wchar_t* _ConsoleHostPath()
     return consoleHostPath.get();
 }
 
-static bool _EnsureDriverIsLoaded()
+static void _EnsureDriverIsLoaded()
 {
-#ifdef __INSIDE_WINDOWS
-    return true;
-#else
-    static bool loaded{ []() {
-        SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
-        ConsoleInformation.DriverLoaded = TRUE;
-        (void)WinNTControl::NtSetSystemInformation(SystemConsoleInformation, &ConsoleInformation, sizeof(ConsoleInformation));
-        return true;
-    }() };
-    return loaded;
-#endif // __INSIDE_WINDOWS
+#ifndef __INSIDE_WINDOWS
+    SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
+    ConsoleInformation.DriverLoaded = TRUE;
+    (void)WinNTControl::NtSetSystemInformation(SystemConsoleInformation, &ConsoleInformation, sizeof(ConsoleInformation));
+#endif // !__INSIDE_WINDOWS
 }
 
 static bool _HandleIsValid(HANDLE h) noexcept
@@ -124,8 +127,6 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
         return E_INVALIDARG;
     }
 
-    _EnsureDriverIsLoaded();
-
     // CreateProcessAsUserW expects the token to be either valid or null.
     if (hToken == INVALID_HANDLE_VALUE)
     {
@@ -133,7 +134,12 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     }
 
     wil::unique_handle serverHandle;
-    RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
+    if (FAILED(CreateServerHandle(serverHandle.addressof(), TRUE)))
+    {
+        // Try again after loading ConDrv.
+        _EnsureDriverIsLoaded();
+        RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
+    }
 
     // The hPtyReference we create here is used when the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute is processed.
     // This ensures that conhost's client processes inherit the correct (= our) console handle.

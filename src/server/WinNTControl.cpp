@@ -51,7 +51,7 @@ WinNTControl& WinNTControl::GetInstance()
     CATCH_RETURN();
 }
 
-[[nodiscard]] NTSTATUS WinNTControl::NtSetSystemInformation(_In_ SYSTEM_INFORMATION_CLASS SystemInformationClass,
+[[nodiscard]] NTSTATUS WinNTControl::NtSetSystemInformation(_In_ DWORD SystemInformationClass,
                                                             _In_reads_bytes_opt_(SystemInformationLength) PVOID SystemInformation,
                                                             _In_ ULONG SystemInformationLength)
 {
