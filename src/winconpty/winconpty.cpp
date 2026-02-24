@@ -100,8 +100,8 @@ static wchar_t* _ConsoleHostPath()
 static void _EnsureDriverIsLoaded()
 {
 #ifndef __INSIDE_WINDOWS
-    static HANDLE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
-    if (auto setSystemInformation{ GetProcAddressByFunctionDeclaration(ntdll, L"NtSetSystemInformation") })
+    static HMODULE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+    if (auto setSystemInformation{ GetProcAddressByFunctionDeclaration(ntdll, NtSetSystemInformation) })
     {
         SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
         ConsoleInformation.DriverLoaded = TRUE;
