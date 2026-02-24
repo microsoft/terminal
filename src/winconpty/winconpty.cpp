@@ -19,7 +19,8 @@
 
 static constexpr DWORD SystemConsoleInformation = 132;
 
-typedef struct _SYSTEM_CONSOLE_INFORMATION {
+typedef struct _SYSTEM_CONSOLE_INFORMATION
+{
     ULONG DriverLoaded : 1;
     ULONG Spare : 31;
 } SYSTEM_CONSOLE_INFORMATION;
@@ -97,7 +98,7 @@ static wchar_t* _ConsoleHostPath()
     return consoleHostPath.get();
 }
 
-static void _EnsureDriverIsLoaded()
+static void _EnsureDriverIsLoaded() noexcept
 {
 #ifndef __INSIDE_WINDOWS
     static HMODULE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
@@ -105,7 +106,7 @@ static void _EnsureDriverIsLoaded()
     {
         SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
         ConsoleInformation.DriverLoaded = TRUE;
-        (void)setSystemInformation(static_cast<SYSTEM_INFORMATION_CLASS>(SystemConsoleInformation), &ConsoleInformation, sizeof(ConsoleInformation));
+        std::ignore = setSystemInformation(static_cast<SYSTEM_INFORMATION_CLASS>(SystemConsoleInformation), &ConsoleInformation, sizeof(ConsoleInformation));
     }
 #endif // !__INSIDE_WINDOWS
 }
