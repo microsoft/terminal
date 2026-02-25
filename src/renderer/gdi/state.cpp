@@ -672,7 +672,7 @@ GdiEngine::~GdiEngine()
         // To be entirely honest this sounds like a mistake to me. From what I can tell a "roundtrip" issue did
         // in fact occur but only because someone mistakenly constructed the "new desired font info" from the
         // previous "actual font info", which is inherently incorrect, because CreateFontIndirect is a lossy
-        // process. The correct fix would've been to fill the new "desired font info" based on the previous
+        // process. The correct fix would have been to fill the new "desired font info" based on the previous
         // "desired font info" instead. In any case, changing this constant now without understanding the
         // entire system behind it (I certainly don't) would probably just exchange one bug with another.
         lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
