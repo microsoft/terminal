@@ -189,9 +189,6 @@ namespace Microsoft::Console::Render
         static const ULONG s_ulMinCursorHeightPercent = 25;
         static const ULONG s_ulMaxCursorHeightPercent = 100;
 
-        static int s_ScaleByDpi(const int iPx, const int iDpi);
-        static int s_ShrinkByDpi(const int iPx, const int iDpi);
-
         til::point _GetInvalidRectPoint() const;
         til::size _GetInvalidRectSize() const;
         til::size _GetRectSize(const RECT* const pRect) const;

@@ -71,30 +71,6 @@ using namespace Microsoft::Console::Render;
 }
 
 // Routine Description:
-// - Scales the given pixel measurement up from the typical system DPI (generally 96) to whatever the given DPI is.
-// Arguments:
-// - iPx - Pixel length measurement.
-// - iDpi - Given DPI scalar value
-// Return Value:
-// - Pixel measurement scaled against the given DPI scalar.
-int GdiEngine::s_ScaleByDpi(const int iPx, const int iDpi)
-{
-    return MulDiv(iPx, iDpi, s_iBaseDpi);
-}
-
-// Routine Description:
-// - Shrinks the given pixel measurement down from whatever the given DPI is to the typical system DPI (generally 96).
-// Arguments:
-// - iPx - Pixel measurement scaled against the given DPI.
-// - iDpi - Given DPI for pixel scaling
-// Return Value:
-// - Pixel length measurement.
-int GdiEngine::s_ShrinkByDpi(const int iPx, const int iDpi)
-{
-    return MulDiv(iPx, s_iBaseDpi, iDpi);
-}
-
-// Routine Description:
 // - Uses internal invalid structure to determine the top left pixel point of the invalid frame to be painted.
 // Arguments:
 // - <none>
