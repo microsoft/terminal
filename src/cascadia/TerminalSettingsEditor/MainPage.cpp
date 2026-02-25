@@ -1192,7 +1192,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto& indexEntry{ chosenResult->SearchIndexEntry() };
             const auto& navigationArg{ chosenResult->NavigationArg() };
             const auto& subpage{ indexEntry.Entry->SubPage };
-            const auto& elementToFocus{ indexEntry.Entry->ElementName };
+            const hstring elementToFocus{ indexEntry.Entry->ElementName };
             _Navigate(navigationArg, subpage, elementToFocus);
             SettingsSearchBox().Text(L"");
         }
