@@ -623,18 +623,18 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     const auto horizontalShift = static_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
 
     const auto appendVerticalLines = [&](const GridLineRange& r, FontDecorationPosition pos) {
+        // Vertical lines are always gridlines, and gridlines are always rendered in the foreground color
+        const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
         const auto from = r.from * scaledCellWidth;
         const auto to = r.to * scaledCellWidth;
         auto x = from + pos.position;
-
-        const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
+        auto c = r.from;
 
         D2D1_POINT_2F point0{ 0, cellCenter };
         D2D1_POINT_2F point1{ 0, cellCenter + cellHeight };
         const f32 w = pos.height;
         const f32 hw = w * 0.5f;
 
-        auto c = r.from;
         for (; x < to; x += cellWidth, c += 1 << horizontalShift)
         {
             const auto brush = _brushWithColor(colors[c]);

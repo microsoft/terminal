@@ -1777,6 +1777,8 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
     const i32 clipBottom = row->lineRendition == LineRendition::DoubleHeightTop ? rowBottom : p.s->targetSize.y;
 
     const auto appendVerticalLines = [&](const GridLineRange& r, FontDecorationPosition pos) {
+        // Vertical lines are always gridlines, and gridlines are always rendered in the foreground color
+        const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
         const auto textCellWidth = cellSize.x << horizontalShift;
         const auto offset = pos.position << horizontalShift;
         const auto width = static_cast<u16>(pos.height << horizontalShift);
@@ -1784,8 +1786,6 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         auto c = r.from;
         auto posX = c * cellSize.x + offset;
         const auto end = r.to * cellSize.x;
-
-        const auto colors = &p.foregroundBitmap[p.colorBitmapRowStride * y];
 
         for (; posX < end; posX += textCellWidth, c += 1 << horizontalShift)
         {
@@ -1798,6 +1798,7 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         }
     };
     const auto appendHorizontalLine = [&](const GridLineRange& r, FontDecorationPosition pos, ShadingType shadingType, const std::span<const u32>& colorBitmap) {
+        const auto colors = &colorBitmap[p.colorBitmapRowStride * y];
         const auto offset = pos.position << verticalShift;
         const auto height = static_cast<u16>(pos.height << verticalShift);
 
@@ -1805,8 +1806,6 @@ void BackendD3D::_drawGridlines(const RenderingPayload& p, u16 y)
         i32 rb = rt + height;
         rt = clamp(rt, clipTop, clipBottom);
         rb = clamp(rb, clipTop, clipBottom);
-
-        const auto colors = &colorBitmap[p.colorBitmapRowStride * y];
 
         if (rt < rb)
         {
