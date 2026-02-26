@@ -684,11 +684,6 @@ try
         {
             _api.s.write()->misc.write()->foregroundColor = fg;
         }
-
-        if (textAttributes.GetUnderlineColor().IsDefault() && fg != _api.s->misc->underlineColor)
-        {
-            _api.s.write()->misc.write()->underlineColor = ul;
-        }
     }
 
     return S_OK;
