@@ -8,6 +8,7 @@
 #include "ExtensionsViewModel.g.cpp"
 #include "FragmentProfileViewModel.g.cpp"
 #include "ExtensionPackageTemplateSelector.g.cpp"
+#include "NavConstants.h"
 
 #include "..\WinRTUtils\inc\Utils.h"
 
@@ -35,9 +36,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::ExtensionsViewModel>();
+
+        // The extensions are loaded asynchronously as a part of the VM ctor.
+        // However, there's a chance that they aren't done loading yet.
+        // Calling LoadExtensions() ensures they're loaded by the time we try to display them, and it won't do anything if they're already loaded.
         auto vmImpl = get_self<ExtensionsViewModel>(_ViewModel);
+        vmImpl->LoadExtensions();
         vmImpl->ExtensionPackageIdentifierTemplateSelector(_extensionPackageIdentifierTemplateSelector);
-        vmImpl->LazyLoadExtensions();
+
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         if (vmImpl->IsExtensionView())
         {
@@ -90,10 +97,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ExtensionsViewModel::ExtensionsViewModel(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM) :
         _settings{ settings },
-        _colorSchemesPageVM{ colorSchemesPageVM },
-        _extensionsLoaded{ false }
+        _colorSchemesPageVM{ colorSchemesPageVM }
     {
         UpdateSettings(settings, colorSchemesPageVM);
+        _LoadExtensionsAsync();
 
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
@@ -213,7 +220,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentExtensionPackage = nullptr;
 
         // The extension packages may not be loaded yet because we want to wait until we actually navigate to the page to do so.
-        // In that case, omit "updating" them. They'll get the proper references when we lazy load them.
+        // In that case, omit "updating" them. They'll get the proper references when we load them.
         if (_extensionPackages)
         {
             for (const auto& extPkg : _extensionPackages)
@@ -223,139 +230,146 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void ExtensionsViewModel::LazyLoadExtensions()
+    safe_void_coroutine ExtensionsViewModel::_LoadExtensionsAsync()
     {
-        if (_extensionsLoaded)
+        auto weakThis = get_weak();
+        co_await winrt::resume_background();
+        if (auto strongThis = weakThis.get())
         {
-            return;
+            strongThis->LoadExtensions();
         }
-        std::vector<Model::ExtensionPackage> extensions = wil::to_vector(_settings.Extensions());
+    }
 
-        // these vectors track components all extensions successfully added
-        std::vector<Editor::ExtensionPackageViewModel> extensionPackages;
-        std::vector<Editor::FragmentProfileViewModel> profilesModifiedTotal;
-        std::vector<Editor::FragmentProfileViewModel> profilesAddedTotal;
-        std::vector<Editor::FragmentColorSchemeViewModel> colorSchemesAddedTotal;
-        for (const auto& extPkg : extensions)
-        {
-            auto extPkgVM = winrt::make_self<ExtensionPackageViewModel>(extPkg, _settings);
-            for (const auto& fragExt : extPkg.FragmentsView())
+    void ExtensionsViewModel::LoadExtensions()
+    {
+        std::call_once(_extensionsLoaded, [this]() {
+            std::vector<Model::ExtensionPackage> extensions = wil::to_vector(_settings.Extensions());
+
+            // these vectors track components all extensions successfully added
+            std::vector<Editor::ExtensionPackageViewModel> extensionPackages;
+            std::vector<Editor::FragmentProfileViewModel> profilesModifiedTotal;
+            std::vector<Editor::FragmentProfileViewModel> profilesAddedTotal;
+            std::vector<Editor::FragmentColorSchemeViewModel> colorSchemesAddedTotal;
+            for (const auto& extPkg : extensions)
             {
-                const auto extensionEnabled = GetExtensionState(fragExt.Source(), _settings);
-
-                // these vectors track everything the current extension attempted to bring in
-                std::vector<Editor::FragmentProfileViewModel> currentProfilesModified;
-                std::vector<Editor::FragmentProfileViewModel> currentProfilesAdded;
-                std::vector<Editor::FragmentColorSchemeViewModel> currentColorSchemesAdded;
-
-                if (fragExt.ModifiedProfilesView())
+                auto extPkgVM = winrt::make_self<ExtensionPackageViewModel>(extPkg, _settings);
+                for (const auto& fragExt : extPkg.FragmentsView())
                 {
-                    for (const auto&& entry : fragExt.ModifiedProfilesView())
-                    {
-                        // Ensure entry successfully modifies a profile before creating and registering the object
-                        if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
-                        {
-                            auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
-                            currentProfilesModified.push_back(vm);
-                            if (extensionEnabled)
-                            {
-                                profilesModifiedTotal.push_back(vm);
-                            }
-                        }
-                    }
-                }
+                    const auto extensionEnabled = GetExtensionState(fragExt.Source(), _settings);
 
-                if (fragExt.NewProfilesView())
-                {
-                    for (const auto&& entry : fragExt.NewProfilesView())
-                    {
-                        // Ensure entry successfully points to a profile before creating and registering the object.
-                        // The profile may have been removed by the user.
-                        if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
-                        {
-                            auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
-                            currentProfilesAdded.push_back(vm);
-                            if (extensionEnabled)
-                            {
-                                profilesAddedTotal.push_back(vm);
-                            }
-                        }
-                    }
-                }
+                    // these vectors track everything the current extension attempted to bring in
+                    std::vector<Editor::FragmentProfileViewModel> currentProfilesModified;
+                    std::vector<Editor::FragmentProfileViewModel> currentProfilesAdded;
+                    std::vector<Editor::FragmentColorSchemeViewModel> currentColorSchemesAdded;
 
-                if (fragExt.ColorSchemesView())
-                {
-                    for (const auto&& entry : fragExt.ColorSchemesView())
+                    if (fragExt.ModifiedProfilesView())
                     {
-                        for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
+                        for (const auto&& entry : fragExt.ModifiedProfilesView())
                         {
-                            if (schemeVM.Name() == entry.ColorSchemeName())
+                            // Ensure entry successfully modifies a profile before creating and registering the object
+                            if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
                             {
-                                auto vm = winrt::make<FragmentColorSchemeViewModel>(entry, fragExt, schemeVM);
-                                currentColorSchemesAdded.push_back(vm);
+                                auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
+                                currentProfilesModified.push_back(vm);
                                 if (extensionEnabled)
                                 {
-                                    colorSchemesAddedTotal.push_back(vm);
+                                    profilesModifiedTotal.push_back(vm);
                                 }
                             }
                         }
                     }
-                }
 
-                // sort the lists linguistically for nicer presentation
-                std::sort(currentProfilesModified.begin(), currentProfilesModified.end(), FragmentProfileViewModel::SortAscending);
-                std::sort(currentProfilesAdded.begin(), currentProfilesAdded.end(), FragmentProfileViewModel::SortAscending);
-                std::sort(currentColorSchemesAdded.begin(), currentColorSchemesAdded.end(), FragmentColorSchemeViewModel::SortAscending);
-
-                extPkgVM->FragmentExtensions().Append(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
-                extPkgVM->PropertyChanged([&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
-                    const auto viewModelProperty{ args.PropertyName() };
-                    if (viewModelProperty == L"Enabled")
+                    if (fragExt.NewProfilesView())
                     {
-                        // If the extension was enabled/disabled,
-                        // check if any of its fragments modified profiles, added profiles, or added color schemes.
-                        // Only notify what was affected!
-                        bool hasModifiedProfiles = false;
-                        bool hasAddedProfiles = false;
-                        bool hasAddedColorSchemes = false;
-                        for (const auto& fragExtVM : sender.as<ExtensionPackageViewModel>()->FragmentExtensions())
+                        for (const auto&& entry : fragExt.NewProfilesView())
                         {
-                            const auto profilesModified = fragExtVM.ProfilesModified();
-                            const auto profilesAdded = fragExtVM.ProfilesAdded();
-                            const auto colorSchemesAdded = fragExtVM.ColorSchemesAdded();
-                            hasModifiedProfiles |= profilesModified && profilesModified.Size() > 0;
-                            hasAddedProfiles |= profilesAdded && profilesAdded.Size() > 0;
-                            hasAddedColorSchemes |= colorSchemesAdded && colorSchemesAdded.Size() > 0;
-                        }
-                        if (hasModifiedProfiles)
-                        {
-                            _NotifyChanges(L"ProfilesModified");
-                        }
-                        if (hasAddedProfiles)
-                        {
-                            _NotifyChanges(L"ProfilesAdded");
-                        }
-                        if (hasAddedColorSchemes)
-                        {
-                            _NotifyChanges(L"ColorSchemesAdded");
+                            // Ensure entry successfully points to a profile before creating and registering the object.
+                            // The profile may have been removed by the user.
+                            if (const auto& deducedProfile = _settings.FindProfile(entry.ProfileGuid()))
+                            {
+                                auto vm = winrt::make<FragmentProfileViewModel>(entry, fragExt, deducedProfile);
+                                currentProfilesAdded.push_back(vm);
+                                if (extensionEnabled)
+                                {
+                                    profilesAddedTotal.push_back(vm);
+                                }
+                            }
                         }
                     }
-                });
+
+                    if (fragExt.ColorSchemesView())
+                    {
+                        for (const auto&& entry : fragExt.ColorSchemesView())
+                        {
+                            for (const auto& schemeVM : _colorSchemesPageVM.AllColorSchemes())
+                            {
+                                if (schemeVM.Name() == entry.ColorSchemeName())
+                                {
+                                    auto vm = winrt::make<FragmentColorSchemeViewModel>(entry, fragExt, schemeVM);
+                                    currentColorSchemesAdded.push_back(vm);
+                                    if (extensionEnabled)
+                                    {
+                                        colorSchemesAddedTotal.push_back(vm);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // sort the lists linguistically for nicer presentation
+                    std::sort(currentProfilesModified.begin(), currentProfilesModified.end(), FragmentProfileViewModel::SortAscending);
+                    std::sort(currentProfilesAdded.begin(), currentProfilesAdded.end(), FragmentProfileViewModel::SortAscending);
+                    std::sort(currentColorSchemesAdded.begin(), currentColorSchemesAdded.end(), FragmentColorSchemeViewModel::SortAscending);
+
+                    extPkgVM->FragmentExtensions().Append(winrt::make<FragmentExtensionViewModel>(fragExt, currentProfilesModified, currentProfilesAdded, currentColorSchemesAdded));
+                    extPkgVM->PropertyChanged([&](const IInspectable& sender, const PropertyChangedEventArgs& args) {
+                        const auto viewModelProperty{ args.PropertyName() };
+                        if (viewModelProperty == L"Enabled")
+                        {
+                            // If the extension was enabled/disabled,
+                            // check if any of its fragments modified profiles, added profiles, or added color schemes.
+                            // Only notify what was affected!
+                            bool hasModifiedProfiles = false;
+                            bool hasAddedProfiles = false;
+                            bool hasAddedColorSchemes = false;
+                            for (const auto& fragExtVM : sender.as<ExtensionPackageViewModel>()->FragmentExtensions())
+                            {
+                                const auto profilesModified = fragExtVM.ProfilesModified();
+                                const auto profilesAdded = fragExtVM.ProfilesAdded();
+                                const auto colorSchemesAdded = fragExtVM.ColorSchemesAdded();
+                                hasModifiedProfiles |= profilesModified && profilesModified.Size() > 0;
+                                hasAddedProfiles |= profilesAdded && profilesAdded.Size() > 0;
+                                hasAddedColorSchemes |= colorSchemesAdded && colorSchemesAdded.Size() > 0;
+                            }
+                            if (hasModifiedProfiles)
+                            {
+                                _NotifyChanges(L"ProfilesModified");
+                            }
+                            if (hasAddedProfiles)
+                            {
+                                _NotifyChanges(L"ProfilesAdded");
+                            }
+                            if (hasAddedColorSchemes)
+                            {
+                                _NotifyChanges(L"ColorSchemesAdded");
+                            }
+                        }
+                    });
+                }
+                extensionPackages.push_back(*extPkgVM);
             }
-            extensionPackages.push_back(*extPkgVM);
-        }
 
-        // sort the lists linguistically for nicer presentation
-        std::sort(extensionPackages.begin(), extensionPackages.end(), ExtensionPackageViewModel::SortAscending);
-        std::sort(profilesModifiedTotal.begin(), profilesModifiedTotal.end(), FragmentProfileViewModel::SortAscending);
-        std::sort(profilesAddedTotal.begin(), profilesAddedTotal.end(), FragmentProfileViewModel::SortAscending);
-        std::sort(colorSchemesAddedTotal.begin(), colorSchemesAddedTotal.end(), FragmentColorSchemeViewModel::SortAscending);
+            // sort the lists linguistically for nicer presentation
+            std::sort(extensionPackages.begin(), extensionPackages.end(), ExtensionPackageViewModel::SortAscending);
+            std::sort(profilesModifiedTotal.begin(), profilesModifiedTotal.end(), FragmentProfileViewModel::SortAscending);
+            std::sort(profilesAddedTotal.begin(), profilesAddedTotal.end(), FragmentProfileViewModel::SortAscending);
+            std::sort(colorSchemesAddedTotal.begin(), colorSchemesAddedTotal.end(), FragmentColorSchemeViewModel::SortAscending);
 
-        _extensionPackages = single_threaded_observable_vector<Editor::ExtensionPackageViewModel>(std::move(extensionPackages));
-        _profilesModifiedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesModifiedTotal));
-        _profilesAddedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesAddedTotal));
-        _colorSchemesAddedView = single_threaded_observable_vector<Editor::FragmentColorSchemeViewModel>(std::move(colorSchemesAddedTotal));
-        _extensionsLoaded = true;
+            _extensionPackages = single_threaded_observable_vector<Editor::ExtensionPackageViewModel>(std::move(extensionPackages));
+            _profilesModifiedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesModifiedTotal));
+            _profilesAddedView = single_threaded_observable_vector<Editor::FragmentProfileViewModel>(std::move(profilesAddedTotal));
+            _colorSchemesAddedView = single_threaded_observable_vector<Editor::FragmentColorSchemeViewModel>(std::move(colorSchemesAddedTotal));
+        });
     }
 
     Windows::UI::Xaml::DataTemplate ExtensionsViewModel::CurrentExtensionPackageIdentifierTemplate() const
@@ -451,6 +465,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // The enabled state of the extension has changed, notify the UI
             _NotifyChanges(L"Enabled");
         }
+    }
+
+    hstring ExtensionPackageViewModel::DisplayName() const noexcept
+    {
+        // Fragment extensions may not have a DisplayName, so fall back to Source
+        const auto displayName = _package.DisplayName();
+        return displayName.empty() ? _package.Source() : displayName;
+    }
+
+    hstring ExtensionPackageViewModel::Icon() const noexcept
+    {
+        // Fragment extensions may not have an Icon, so fall back to the extensions nav icon glyph
+        const auto icon = _package.Icon();
+        return icon.empty() ? NavTagIconMap[extensionsTag] : icon;
     }
 
     hstring ExtensionPackageViewModel::Scope() const noexcept

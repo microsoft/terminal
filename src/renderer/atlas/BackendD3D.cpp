@@ -6,8 +6,11 @@
 
 #include <til/unicode.h>
 
+#if TIL_FEATURE_CONHOSTATLASENGINECUSTOMSHADERS_ENABLED
 #include <custom_shader_ps.h>
 #include <custom_shader_vs.h>
+#endif
+
 #include <shader_ps.h>
 #include <shader_vs.h>
 
@@ -362,6 +365,9 @@ void BackendD3D::_d2dRenderTargetUpdateFontSettings(const RenderingPayload& p) c
 
 void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
 {
+    UNREFERENCED_PARAMETER(p);
+
+#if TIL_FEATURE_CONHOSTATLASENGINECUSTOMSHADERS_ENABLED
     _customRenderTargetView.reset();
     _customOffscreenTexture.reset();
     _customOffscreenTextureView.reset();
@@ -527,6 +533,7 @@ void BackendD3D::_recreateCustomShader(const RenderingPayload& p)
         _customShaderPerfTickMod = freq * 1000;
         _customShaderSecsPerPerfTick = 1.0f / freq;
     }
+#endif
 }
 
 void BackendD3D::_recreateCustomRenderTargetView(const RenderingPayload& p)
@@ -2301,6 +2308,9 @@ void BackendD3D::_debugDumpRenderTarget(const RenderingPayload& p)
 
 void BackendD3D::_executeCustomShader(RenderingPayload& p)
 {
+    UNREFERENCED_PARAMETER(p);
+
+#if TIL_FEATURE_CONHOSTATLASENGINECUSTOMSHADERS_ENABLED
     {
         // See the comment in _recreateCustomShader() which initializes the two members below and explains what they do.
         const auto now = queryPerfCount();
@@ -2382,6 +2392,7 @@ void BackendD3D::_executeCustomShader(RenderingPayload& p)
     // With custom shaders, everything might be invalidated, so we have to
     // indirectly disable Present1() and its dirty rects this way.
     p.dirtyRectInPx = { 0, 0, p.s->targetSize.x, p.s->targetSize.y };
+#endif
 }
 
 TIL_FAST_MATH_END

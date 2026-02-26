@@ -71,7 +71,9 @@ sustainability
 sxn
 Tencent
 toolset
+Uids
 UEFI
+UIDs
 uiatextrange
 und
 vsdevcmd

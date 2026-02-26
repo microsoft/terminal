@@ -360,7 +360,10 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     // (If we didn't make one, it should be no problem to release the empty unique_ptr.)
     heapConnectMessage.release();
 
-    LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(hThread, L"Console Driver Message IO Thread"));
+    }
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     // See MSFT:19918626

@@ -49,6 +49,7 @@
     X(bool, TrimBlockSelection, true)                                                                             \
     X(bool, SuppressApplicationTitle)                                                                             \
     X(bool, ForceVTInput, false)                                                                                  \
+    X(bool, AllowKittyKeyboardMode, true)                                                                         \
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, AutoMarkPrompts)                                                                                      \

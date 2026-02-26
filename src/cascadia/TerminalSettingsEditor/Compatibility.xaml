@@ -26,13 +26,15 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Allow Headless  -->
-        <local:SettingContainer x:Uid="Globals_AllowHeadless">
+        <local:SettingContainer x:Name="AllowHeadless"
+                                x:Uid="Globals_AllowHeadless">
             <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Text Measurement  -->
-        <local:SettingContainer x:Uid="Globals_TextMeasurement">
+        <local:SettingContainer x:Name="TextMeasurement"
+                                x:Uid="Globals_TextMeasurement">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
@@ -50,14 +52,16 @@
         </local:SettingContainer>
 
         <!--  Debug Features  -->
-        <local:SettingContainer x:Uid="Globals_DebugFeaturesEnabled"
+        <local:SettingContainer x:Name="DebugFeaturesEnabled"
+                                x:Uid="Globals_DebugFeaturesEnabled"
                                 Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
             <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
         <!--  Reset Application State  -->
-        <local:SettingContainer x:Uid="Settings_ResetApplicationState">
+        <local:SettingContainer x:Name="ResetApplicationState"
+                                x:Uid="Settings_ResetApplicationState">
             <Button x:Uid="Settings_ResetApplicationStateButton"
                     Style="{StaticResource DeleteButtonStyle}">
                 <Button.Flyout>
@@ -78,7 +82,8 @@
         </local:SettingContainer>
 
         <!--  Reset to Default Settings  -->
-        <local:SettingContainer x:Uid="Settings_ResetToDefaultSettings">
+        <local:SettingContainer x:Name="ResetToDefaultSettings"
+                                x:Uid="Settings_ResetToDefaultSettings">
             <Button x:Uid="Settings_ResetToDefaultSettingsButton"
                     Style="{StaticResource DeleteButtonStyle}">
                 <Button.Flyout>

@@ -75,7 +75,8 @@
                         CornerRadius="{StaticResource ControlCornerRadius}" />
             </Border>
 
-            <local:Appearances Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
+            <local:Appearances x:Name="DefaultAppearanceView"
+                               Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
                                SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
 
@@ -85,12 +86,12 @@
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
 
                 <!--  Opacity  -->
-                <local:SettingContainer x:Name="OpacityContainer"
+                <local:SettingContainer x:Name="Opacity"
                                         x:Uid="Profile_Opacity"
                                         ClearSettingValue="{x:Bind Profile.ClearOpacity}"
                                         HasSettingValue="{x:Bind Profile.HasOpacity, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.OpacityOverrideSource, Mode=OneWay}">
-                    <StackPanel x:Name="OpacityControl">
+                    <StackPanel>
                         <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -107,12 +108,12 @@
                 </local:SettingContainer>
 
                 <!--  Use Acrylic  -->
-                <local:SettingContainer x:Uid="Profile_UseAcrylic"
+                <local:SettingContainer x:Name="UseAcrylic"
+                                        x:Uid="Profile_UseAcrylic"
                                         ClearSettingValue="{x:Bind Profile.ClearUseAcrylic}"
                                         HasSettingValue="{x:Bind Profile.HasUseAcrylic, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.UseAcrylicOverrideSource, Mode=OneWay}">
-                    <ToggleSwitch x:Name="UseAcrylicToggleSwitch"
-                                  IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
+                    <ToggleSwitch IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
@@ -124,7 +125,8 @@
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
 
                 <!--  Padding  -->
-                <local:SettingContainer x:Uid="Profile_Padding"
+                <local:SettingContainer x:Name="Padding"
+                                        x:Uid="Profile_Padding"
                                         ClearSettingValue="{x:Bind Profile.ClearPadding}"
                                         CurrentValue="{x:Bind Profile.Padding, Mode=OneWay}"
                                         HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
@@ -191,7 +193,8 @@
                 </local:SettingContainer>
 
                 <!--  Scrollbar Visibility  -->
-                <local:SettingContainer x:Uid="Profile_ScrollbarVisibility"
+                <local:SettingContainer x:Name="ScrollbarVisibility"
+                                        x:Uid="Profile_ScrollbarVisibility"
                                         ClearSettingValue="{x:Bind Profile.ClearScrollState}"
                                         HasSettingValue="{x:Bind Profile.HasScrollState, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.ScrollStateOverrideSource, Mode=OneWay}">
@@ -207,7 +210,10 @@
                             Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                     <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
                                Style="{StaticResource TextBlockSubtitleStyle}" />
-                    <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
+
+                    <!--  Create Unfocused Appearance  -->
+                    <Button x:Name="CreateUnfocusedAppearance"
+                            x:Uid="Profile_CreateUnfocusedAppearanceButton"
                             Margin="8,0,0,0"
                             VerticalAlignment="Bottom"
                             Click="CreateUnfocusedAppearance_Click"
@@ -224,7 +230,10 @@
                             </StackPanel>
                         </Button.Content>
                     </Button>
-                    <Button x:Uid="Profile_DeleteUnfocusedAppearanceButton"
+
+                    <!--  Delete Unfocused Appearance  -->
+                    <Button x:Name="DeleteUnfocusedAppearance"
+                            x:Uid="Profile_DeleteUnfocusedAppearanceButton"
                             Margin="8,0,0,0"
                             VerticalAlignment="Bottom"
                             Click="DeleteUnfocusedAppearance_Click"
@@ -241,7 +250,10 @@
                         </Button.Content>
                     </Button>
                 </StackPanel>
-                <local:Appearances Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
+
+                <!--  Unfocused Appearance  -->
+                <local:Appearances x:Name="UnfocusedAppearanceView"
+                                   Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
                                    SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                    Visibility="{x:Bind Profile.ShowUnfocusedAppearance, Mode=OneWay}"
                                    WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
