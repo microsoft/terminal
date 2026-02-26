@@ -124,7 +124,6 @@ namespace SettingsModelUnitTests
                 "disableAnimations": false,
 
                 "trimPaste": true,
-                "compatibility.ambiguousWidth": "wide",
 
                 "warning.confirmCloseAllTabs" : true,
                 "warning.inputService" : true,

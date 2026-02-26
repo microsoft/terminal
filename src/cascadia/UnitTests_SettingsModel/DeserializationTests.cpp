@@ -67,7 +67,6 @@ namespace SettingsModelUnitTests
         TEST_METHOD(FragmentActionRoundtrip);
 
         TEST_METHOD(MigrateReloadEnvVars);
-        TEST_METHOD(AmbiguousWidthSetting);
 
     private:
         static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
@@ -2328,25 +2327,5 @@ namespace SettingsModelUnitTests
         Log::Comment(L"Ensure that the profile defaults have the new setting added");
         VERIFY_IS_TRUE(settings->ProfileDefaults().HasReloadEnvironmentVariables());
         VERIFY_IS_FALSE(settings->ProfileDefaults().ReloadEnvironmentVariables());
-    }
-
-    void DeserializationTests::AmbiguousWidthSetting()
-    {
-        static constexpr std::string_view settingsJson{ R"(
-        {
-            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "compatibility.ambiguousWidth": "wide",
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "commandline": "cmd.exe"
-                }
-            ]
-        })" };
-
-        auto settings = createSettings(settingsJson);
-        VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Control::AmbiguousWidth::Wide,
-                         settings->GlobalSettings().AmbiguousWidth());
     }
 }

@@ -2409,7 +2409,7 @@
         },
         "compatibility.ambiguousWidth": {
           "default": "narrow",
-          "description": "This controls the width used for East Asian Ambiguous characters.",
+          "description": "Controls the cell width of East Asian Ambiguous characters.",
           "enum": [
             "narrow",
             "wide"

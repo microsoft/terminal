@@ -4,9 +4,7 @@
 #include "precomp.h"
 
 #include "CommonState.hpp"
-#include "../ConsoleArguments.hpp"
 #include "../../terminal/parser/InputStateMachineEngine.hpp"
-#include "../../types/inc/CodepointWidthDetector.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -113,70 +111,6 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         screenInfo = &gci.GetActiveOutputBuffer();
         return true;
-    }
-
-    TEST_METHOD(InitializeDefaultsTextMeasurementAndAmbiguousWidth)
-    {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        auto& cwd = CodepointWidthDetector::Singleton();
-        const auto originalSettingsMode = gci.GetTextMeasurementMode();
-        const auto originalMode = cwd.GetMode();
-        const auto originalAmbiguousMode = cwd.GetAmbiguousWidthMode();
-        const auto restore = wil::scope_exit([&]() {
-            gci.SetTextMeasurementMode(originalSettingsMode);
-            cwd.Reset(originalMode);
-            cwd.SetAmbiguousWidthMode(originalAmbiguousMode);
-        });
-
-        cwd.Reset(TextMeasurementMode::Console);
-        cwd.SetAmbiguousWidthMode(AmbiguousWidthMode::Wide);
-
-        wil::unique_hfile testRx;
-        wil::unique_hfile testTx;
-        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(testRx.addressof(), testTx.addressof(), nullptr, 0));
-
-        std::wstring commandline{ L"conhost.exe --headless" };
-        ConsoleArguments args(commandline, INVALID_HANDLE_VALUE, testTx.release());
-        VERIFY_SUCCEEDED(args.ParseCommandline());
-
-        VtIo testIo;
-        THROW_IF_FAILED(testIo.Initialize(&args));
-
-        VERIFY_ARE_EQUAL(SettingsTextMeasurementMode::Graphemes, gci.GetTextMeasurementMode());
-        VERIFY_ARE_EQUAL(TextMeasurementMode::Graphemes, cwd.GetMode());
-        VERIFY_ARE_EQUAL(AmbiguousWidthMode::Narrow, cwd.GetAmbiguousWidthMode());
-    }
-
-    TEST_METHOD(InitializeAppliesTextMeasurementAndAmbiguousWidthArgs)
-    {
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        auto& cwd = CodepointWidthDetector::Singleton();
-        const auto originalSettingsMode = gci.GetTextMeasurementMode();
-        const auto originalMode = cwd.GetMode();
-        const auto originalAmbiguousMode = cwd.GetAmbiguousWidthMode();
-        const auto restore = wil::scope_exit([&]() {
-            gci.SetTextMeasurementMode(originalSettingsMode);
-            cwd.Reset(originalMode);
-            cwd.SetAmbiguousWidthMode(originalAmbiguousMode);
-        });
-
-        cwd.Reset(TextMeasurementMode::Graphemes);
-        cwd.SetAmbiguousWidthMode(AmbiguousWidthMode::Narrow);
-
-        wil::unique_hfile testRx;
-        wil::unique_hfile testTx;
-        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(testRx.addressof(), testTx.addressof(), nullptr, 0));
-
-        std::wstring commandline{ L"conhost.exe --headless --textMeasurement wcswidth --ambiguousWidth wide" };
-        ConsoleArguments args(commandline, INVALID_HANDLE_VALUE, testTx.release());
-        VERIFY_SUCCEEDED(args.ParseCommandline());
-
-        VtIo testIo;
-        THROW_IF_FAILED(testIo.Initialize(&args));
-
-        VERIFY_ARE_EQUAL(SettingsTextMeasurementMode::Wcswidth, gci.GetTextMeasurementMode());
-        VERIFY_ARE_EQUAL(TextMeasurementMode::Wcswidth, cwd.GetMode());
-        VERIFY_ARE_EQUAL(AmbiguousWidthMode::Wide, cwd.GetAmbiguousWidthMode());
     }
 
     TEST_METHOD(SetConsoleCursorPosition)

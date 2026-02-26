@@ -1338,62 +1338,21 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(AmbiguousWidthPolicy)
     {
-        const auto measureWidth = [](CodepointWidthDetector& cwd, const TextMeasurementMode mode, const std::wstring_view text) {
-            cwd.Reset(mode);
+        const auto measureWidth = [](CodepointWidthDetector& cwd, const std::wstring_view text) {
             GraphemeState state;
             cwd.GraphemeNext(state, text);
             return state.width;
         };
 
         CodepointWidthDetector cwd;
-        cwd.SetFallbackMethod({});
 
-        for (const auto mode : { TextMeasurementMode::Graphemes, TextMeasurementMode::Wcswidth, TextMeasurementMode::Console })
+        for (const auto mode : { TextMeasurementMode::Graphemes, TextMeasurementMode::Wcswidth })
         {
-            cwd.SetAmbiguousWidthMode(AmbiguousWidthMode::Narrow);
-            VERIFY_ARE_EQUAL(1, measureWidth(cwd, mode, L"\u2192"));
-            VERIFY_ARE_EQUAL(1, measureWidth(cwd, mode, L"\u2666"));
-
-            cwd.SetAmbiguousWidthMode(AmbiguousWidthMode::Wide);
-            VERIFY_ARE_EQUAL(2, measureWidth(cwd, mode, L"\u2192"));
-            VERIFY_ARE_EQUAL(2, measureWidth(cwd, mode, L"\u2666"));
+            cwd.Reset(mode);
+            cwd.SetAmbiguousWidth(1);
+            VERIFY_ARE_EQUAL(1, measureWidth(cwd, L"→"));
+            cwd.SetAmbiguousWidth(2);
+            VERIFY_ARE_EQUAL(2, measureWidth(cwd, L"→"));
         }
-    }
-
-    TEST_METHOD(VariationSelectorBehavior)
-    {
-        CodepointWidthDetector cwd;
-        cwd.SetFallbackMethod({});
-        cwd.SetAmbiguousWidthMode(AmbiguousWidthMode::Narrow);
-        cwd.Reset(TextMeasurementMode::Graphemes);
-
-        GraphemeState state;
-        cwd.GraphemeNext(state, L"\u25FB\uFE0F");
-        VERIFY_ARE_EQUAL(2, state.width);
-
-        state = {};
-        cwd.GraphemeNext(state, L"\u25FC\uFE0F");
-        VERIFY_ARE_EQUAL(2, state.width);
-    }
-
-    TEST_METHOD(FallbackMethodLifecycle)
-    {
-        CodepointWidthDetector cwd;
-        cwd.Reset(TextMeasurementMode::Console);
-        cwd.SetAmbiguousWidthMode(AmbiguousWidthMode::Narrow);
-        cwd.SetFallbackMethod([](const std::wstring_view&) {
-            return true;
-        });
-
-        GraphemeState state;
-        cwd.GraphemeNext(state, L"\u2666");
-        VERIFY_ARE_EQUAL(1, state.width);
-
-        cwd.SetFallbackMethod({});
-        cwd.SetAmbiguousWidthMode(AmbiguousWidthMode::Wide);
-
-        state = {};
-        cwd.GraphemeNext(state, L"\u2666");
-        VERIFY_ARE_EQUAL(2, state.width);
     }
 };

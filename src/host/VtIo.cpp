@@ -29,11 +29,12 @@ using namespace Microsoft::Console::Interactivity;
     if (pArgs->InConptyMode())
     {
         // Honestly, no idea where else to put this.
-        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        SettingsTextMeasurementMode settingsMode = SettingsTextMeasurementMode::Graphemes;
-        TextMeasurementMode mode = TextMeasurementMode::Graphemes;
         if (const auto& textMeasurement = pArgs->GetTextMeasurement(); !textMeasurement.empty())
         {
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            SettingsTextMeasurementMode settingsMode = SettingsTextMeasurementMode::Graphemes;
+            TextMeasurementMode mode = TextMeasurementMode::Graphemes;
+
             if (textMeasurement == L"wcswidth")
             {
                 settingsMode = SettingsTextMeasurementMode::Wcswidth;
@@ -45,23 +46,14 @@ using namespace Microsoft::Console::Interactivity;
                 mode = TextMeasurementMode::Console;
             }
 
+            gci.SetTextMeasurementMode(settingsMode);
+            CodepointWidthDetector::Singleton().Reset(mode);
         }
-        gci.SetTextMeasurementMode(settingsMode);
-        CodepointWidthDetector::Singleton().Reset(mode);
 
-        AmbiguousWidthMode ambiguousMode = AmbiguousWidthMode::Narrow;
-        if (const auto& ambiguousWidth = pArgs->GetAmbiguousWidth(); !ambiguousWidth.empty())
+        if (pArgs->GetAmbiguousIsWide())
         {
-            if (ambiguousWidth == L"narrow")
-            {
-                ambiguousMode = AmbiguousWidthMode::Narrow;
-            }
-            else if (ambiguousWidth == L"wide")
-            {
-                ambiguousMode = AmbiguousWidthMode::Wide;
-            }
+            CodepointWidthDetector::Singleton().SetAmbiguousWidth(2);
         }
-        CodepointWidthDetector::Singleton().SetAmbiguousWidthMode(ambiguousMode);
 
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetSignalHandle());
     }

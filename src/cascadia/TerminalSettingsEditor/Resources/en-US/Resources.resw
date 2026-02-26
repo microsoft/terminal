@@ -373,16 +373,18 @@
   </data>
   <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
     <value>Ambiguous width</value>
-    <comment>This text is shown next to a list of choices.</comment>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
   <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
-    <value>Sets the width used for East Asian Ambiguous characters. "Narrow" (default) prioritizes compatibility, while "Wide" prioritizes readability with many CJK fonts. In "Wide" mode, applications that compute character widths independently (for example, PSReadLine or readline-based applications) may show cursor movement or Backspace behavior that does not fully match the display.</value>
+    <value>Sets the width used for East Asian Ambiguous characters. "Narrow" (default) prioritizes compatibility, while "Wide" prioritizes readability with many CJK fonts. In "Wide" mode, some applications may not work correctly and cause erratic cursor movement. Changing this setting requires a restart of Windows Terminal and it only applies to applications launched from within it.</value>
   </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
     <value>Narrow</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
   <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
     <value>Wide</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columns</value>

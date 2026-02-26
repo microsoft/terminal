@@ -16,12 +16,6 @@ enum class TextMeasurementMode
     Console,
 };
 
-enum class AmbiguousWidthMode
-{
-    Narrow,
-    Wide,
-};
-
 // NOTE: The same GraphemeState instance should be passed for a series of GraphemeNext *or* GraphemePrev calls,
 // but NOT between GraphemeNext *and* GraphemePrev ("exclusive OR"). They're also not reusable when the
 // CodepointWidthDetector::_legacy flag changes. Different functions treat these members differently.
@@ -62,9 +56,9 @@ struct CodepointWidthDetector
     bool GraphemePrev(GraphemeState& s, const std::wstring_view& str) noexcept;
 
     TextMeasurementMode GetMode() const noexcept;
-    AmbiguousWidthMode GetAmbiguousWidthMode() const noexcept;
+    int GetAmbiguousWidth() const noexcept;
+    void SetAmbiguousWidth(int width) noexcept;
     void SetFallbackMethod(std::function<bool(const std::wstring_view&)> pfnFallback) noexcept;
-    void SetAmbiguousWidthMode(AmbiguousWidthMode mode) noexcept;
     void Reset(TextMeasurementMode mode) noexcept;
 
 private:
@@ -74,11 +68,10 @@ private:
     bool _graphemePrevWcswidth(GraphemeState& s, const std::wstring_view& str) const noexcept;
     bool _graphemeNextConsole(GraphemeState& s, const std::wstring_view& str) noexcept;
     bool _graphemePrevConsole(GraphemeState& s, const std::wstring_view& str) noexcept;
-    int _resolveAmbiguousWidth() const noexcept;
     __declspec(noinline) int _checkFallbackViaCache(char32_t codepoint) noexcept;
 
     std::unordered_map<char32_t, int> _fallbackCache;
     std::function<bool(const std::wstring_view&)> _pfnFallbackMethod;
     TextMeasurementMode _mode = TextMeasurementMode::Graphemes;
-    AmbiguousWidthMode _ambiguousWidthMode = AmbiguousWidthMode::Narrow;
+    int _ambiguousWidth = 1;
 };

@@ -840,11 +840,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
             // Set up the renderer to be used to calculate the width of a glyph,
             //      should we be unable to figure out its width another way.
             CodepointWidthDetector::Singleton().SetFallbackMethod([](const std::wstring_view& glyph) {
-                if (const auto renderer = ServiceLocator::LocateGlobals().pRender)
-                {
-                    return renderer->IsGlyphWideByFont(glyph);
-                }
-                return false;
+                return ServiceLocator::LocateGlobals().pRender->IsGlyphWideByFont(glyph);
             });
         }
     }

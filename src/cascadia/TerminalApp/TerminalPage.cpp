@@ -1482,16 +1482,8 @@ namespace winrt::TerminalApp::implementation
                 return {};
             }
         }();
-        static const auto ambiguousWidth = [&]() -> std::wstring_view {
-            switch (_settings.GlobalSettings().AmbiguousWidth())
-            {
-            case AmbiguousWidth::Narrow:
-                return L"narrow";
-            case AmbiguousWidth::Wide:
-                return L"wide";
-            default:
-                return L"narrow";
-            }
+        static const auto ambiguousIsWide = [&]() -> bool {
+            return _settings.GlobalSettings().AmbiguousWidth() == AmbiguousWidth::Wide;
         }();
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
@@ -1558,9 +1550,9 @@ namespace winrt::TerminalApp::implementation
         {
             valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
         }
-        if (!ambiguousWidth.empty())
+        if (ambiguousIsWide)
         {
-            valueSet.Insert(L"ambiguousWidth", Windows::Foundation::PropertyValue::CreateString(ambiguousWidth));
+            valueSet.Insert(L"ambiguousIsWide", Windows::Foundation::PropertyValue::CreateBoolean(true));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})

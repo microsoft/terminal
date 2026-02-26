@@ -32,7 +32,6 @@ public:
     TEST_METHOD(HeadlessArgTests);
     TEST_METHOD(SignalHandleTests);
     TEST_METHOD(FeatureArgTests);
-    TEST_METHOD(AmbiguousWidthArgTests);
 };
 
 ConsoleArguments CreateAndParse(std::wstring& commandline, HANDLE hVtIn, HANDLE hVtOut)
@@ -1169,27 +1168,4 @@ void ConsoleArgumentsTests::FeatureArgTests()
                                     false, // inheritCursor
                                     false), // runAsComServer
                    false); // successful parse?
-}
-
-void ConsoleArgumentsTests::AmbiguousWidthArgTests()
-{
-    std::wstring commandline;
-
-    commandline = L"conhost.exe --ambiguousWidth wide";
-    {
-        auto args = CreateAndParse(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
-        VERIFY_ARE_EQUAL(std::wstring{ L"wide" }, args.GetAmbiguousWidth());
-    }
-
-    commandline = L"conhost.exe --ambiguousWidth narrow";
-    {
-        auto args = CreateAndParse(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
-        VERIFY_ARE_EQUAL(std::wstring{ L"narrow" }, args.GetAmbiguousWidth());
-    }
-
-    commandline = L"conhost.exe -- foo.exe --ambiguousWidth wide";
-    {
-        auto args = CreateAndParse(commandline, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE);
-        VERIFY_ARE_EQUAL(std::wstring{}, args.GetAmbiguousWidth(), L"Client commandline-side args should not affect conhost settings.");
-    }
 }

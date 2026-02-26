@@ -138,7 +138,8 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
+    const auto inheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) ? L"--inheritcursor " : L"";
+    const auto ambiguousIsWide = (dwFlags & PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE) ? L"--ambiguousIsWide " : L"";
 
     const wchar_t* textMeasurement;
     switch (dwFlags & PSEUDOCONSOLE_GLYPH_WIDTH__MASK)
@@ -157,20 +158,6 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
         break;
     }
 
-    const wchar_t* ambiguousWidth;
-    switch (dwFlags & PSEUDOCONSOLE_AMBIGUOUS_WIDTH__MASK)
-    {
-    case PSEUDOCONSOLE_AMBIGUOUS_WIDTH_NARROW:
-        ambiguousWidth = L"--ambiguousWidth narrow ";
-        break;
-    case PSEUDOCONSOLE_AMBIGUOUS_WIDTH_WIDE:
-        ambiguousWidth = L"--ambiguousWidth wide ";
-        break;
-    default:
-        ambiguousWidth = L"";
-        break;
-    }
-
     const auto conhostPath = _ConsoleHostPath();
 
     // GH4061: Ensure that the path to executable in the format is escaped so C:\Program.exe cannot collide with C:\Program Files
@@ -180,9 +167,9 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
         cmd,
         L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
         conhostPath,
-        bInheritCursor ? L"--inheritcursor " : L"",
+        inheritCursor,
+        ambiguousIsWide,
         textMeasurement,
-        ambiguousWidth,
         size.X,
         size.Y,
         std::bit_cast<uintptr_t>(signalPipeConhostSide.get()),

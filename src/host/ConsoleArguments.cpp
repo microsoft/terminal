@@ -22,7 +22,7 @@ const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 static constexpr std::wstring_view GLYPH_WIDTH{ L"--textMeasurement" };
-static constexpr std::wstring_view AMBIGUOUS_WIDTH{ L"--ambiguousWidth" };
+static constexpr std::wstring_view AMBIGUOUS_IS_WIDE{ L"--ambiguousIsWide" };
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -138,7 +138,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _vtOutHandle = other._vtOutHandle;
         _headless = other._headless;
         _textMeasurement = other._textMeasurement;
-        _ambiguousWidth = other._ambiguousWidth;
+        _ambiguousIsWide = other._ambiguousIsWide;
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
         _signalHandle = other._signalHandle;
@@ -501,9 +501,11 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         {
             hr = s_GetArgumentValue(args, i, &_textMeasurement);
         }
-        else if (arg == AMBIGUOUS_WIDTH)
+        else if (arg == AMBIGUOUS_IS_WIDE)
         {
-            hr = s_GetArgumentValue(args, i, &_ambiguousWidth);
+            _ambiguousIsWide = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
         }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
@@ -628,9 +630,9 @@ const std::wstring& ConsoleArguments::GetTextMeasurement() const
     return _textMeasurement;
 }
 
-const std::wstring& ConsoleArguments::GetAmbiguousWidth() const
+bool ConsoleArguments::GetAmbiguousIsWide() const
 {
-    return _ambiguousWidth;
+    return _ambiguousIsWide;
 }
 
 bool ConsoleArguments::GetForceV1() const
