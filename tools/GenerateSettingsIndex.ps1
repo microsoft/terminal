@@ -18,18 +18,18 @@ param(
 
 # Prohibited UIDs (exact match, case-insensitive by default)
 $ProhibitedUids = @(
-    'Extensions_Scope',
-    'Profile_MissingFontFaces',
-    'Profile_ProportionalFontFaces',
-    'ColorScheme_InboxSchemeDuplicate',
-    'ColorScheme_ColorsHeader',
-    'ColorScheme_Rename'
+    "Extensions_Scope",
+    "Profile_MissingFontFaces",
+    "Profile_ProportionalFontFaces",
+    "ColorScheme_InboxSchemeDuplicate",
+    "ColorScheme_ColorsHeader",
+    "ColorScheme_Rename"
 )
 
 # Prohibited XAML files (already limited to Page root elements)
 $ProhibitedXamlFiles = @(
-    'AISettings.xaml',
-    'Profiles_Base_Orphaned.xaml',
+    "AISettings.xaml",
+    "Profiles_Base_Orphaned.xaml",
     "EditAction.xaml",
     "MainPage.xaml"
 )
@@ -131,10 +131,10 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
     # Load XAML and namespace manager
     [xml]$xml = Get-Content -LiteralPath $xamlFile.FullName
     $xm = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
-    $xm.AddNamespace('local', 'using:Microsoft.Terminal.Settings.Editor')
-    $xm.AddNamespace('x', 'http://schemas.microsoft.com/winfx/2006/xaml')
+    $xm.AddNamespace("local", "using:Microsoft.Terminal.Settings.Editor")
+    $xm.AddNamespace("x", "http://schemas.microsoft.com/winfx/2006/xaml")
 
-    if ($xml.DocumentElement.LocalName -ne 'Page' -and $filename -ne 'Appearances.xaml')
+    if ($xml.DocumentElement.LocalName -ne "Page" -and $filename -ne "Appearances.xaml")
     {
         # Only allow xaml files for Page elements (or Appearances.xaml)
         continue
@@ -142,12 +142,12 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
     # Extract Page x:Class
     # Appearances.xaml: UserControl hosted in Profiles_Appearance.xaml
-    $pageClass = $filename -eq 'Appearances.xaml' ?
-                   'Microsoft::Terminal::Settings::Editor::Profiles_Appearance' :
-                   $xml.DocumentElement.SelectSingleNode('@x:Class', $xm).Value
+    $pageClass = $filename -eq "Appearances.xaml" ?
+                   "Microsoft::Terminal::Settings::Editor::Profiles_Appearance" :
+                   $xml.DocumentElement.SelectSingleNode("@x:Class", $xm).Value
 
     # Convert XAML namespace dots to C++ scope operators
-    $pageClass = ($pageClass -replace '\.', '::')
+    $pageClass = ($pageClass -replace "\.", "::")
     if ($ClassMap.ContainsKey(($pageClass)) -and -not (IsProfileSubPage $pageClass))
     {
         $entries += [pscustomobject]@{
@@ -168,7 +168,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
     }
 
     # Manually register special entries
-    if ($filename -eq 'ColorSchemes.xaml')
+    if ($filename -eq "ColorSchemes.xaml")
     {
         # "add new" button
         $entries += [pscustomobject]@{
@@ -180,7 +180,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             File            = $filename
         }
     }
-    elseif ($filename -eq 'AddProfile.xaml')
+    elseif ($filename -eq "AddProfile.xaml")
     {
         # "add new" button
         $entries += [pscustomobject]@{
@@ -209,11 +209,11 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
         # Extract Name (prefer x:Name over Name)
         $name = $null -ne $settingContainer.Name ? $settingContainer.Name : ""
-        if ($filename -eq 'Appearances.xaml')
+        if ($filename -eq "Appearances.xaml")
         {
             # Profile.Appearance settings need a special prefix for the ElementName.
             # This allows us to bring the element into view at runtime.
-            $name = 'App.' + $name
+            $name = "App." + $name
         }
 
         # Deduce NavigationParam and SubPage
@@ -223,9 +223,9 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         $includeInPartialIndex = $false
         $navigationParam = $ClassMap[$pageClass].NavigationParam
         $subPage = $ClassMap[$pageClass].SubPage ?? "BreadcrumbSubPage::None"
-        if ($pageClass -match 'Editor::NewTabMenu')
+        if ($pageClass -match "Editor::NewTabMenu")
         {
-            if ($settingContainer.Uid -match 'NewTabMenu_CurrentFolder')
+            if ($settingContainer.Uid -match "NewTabMenu_CurrentFolder")
             {
                 $navigationParam = $null # VM param at runtime
                 $subPage = "BreadcrumbSubPage::NewTabMenu_Folder"
@@ -237,16 +237,12 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
                 $includeInPartialIndex = $true
             }
         }
-        elseif ($pageClass -match 'Editor::Profiles_Base' -or
-                $pageClass -match 'Editor::Profiles_Appearance' -or
-                $pageClass -match 'Editor::Profiles_Terminal' -or
-                $pageClass -match 'Editor::Profiles_Advanced')
+        elseif ($pageClass -match "Editor::Profiles_Base" -or (IsProfileSubPage $pageClass))
         {
-            $navigationParam = "GlobalProfile_Nav"
             $includeInBuildIndex = !($name -eq "Name" -or $name -eq "Commandline")
             $includeInPartialIndex = $true
         }
-        elseif ($pageClass -match 'Editor::EditColorScheme')
+        elseif ($pageClass -match "Editor::EditColorScheme")
         {
             $subPage = "BreadcrumbSubPage::ColorSchemes_Edit"
             $includeInBuildIndex = $false
@@ -281,9 +277,9 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
 function FormatEntry($e)
 {
-    $formattedResourceName = "USES_RESOURCE(L`"$($e.ResourceName)`")"
-    $formattedNavigationParam = "L`"$($e.NavigationParam)`"" # null Navigation param resolves to empty string
-    $formattedElementName = "L`"$($e.ElementName)`""
+    $formattedResourceName = 'USES_RESOURCE(L"{0}")' -f $e.ResourceName
+    $formattedNavigationParam = 'L"{0}"' -f $e.NavigationParam # null Navigation param resolves to empty string
+    $formattedElementName = 'L"{0}"' -f $e.ElementName
 
     return "            IndexEntry{{ {0}, {1}, {2}, {3} }}, // {4}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $e.File)
 }
@@ -300,20 +296,16 @@ $profileEntries = @()
 $schemeEntries = @()
 $ntmEntries = @()
 foreach ($e in $entries)
-{    
-    if ($null -eq $e.NavigationParam -and
-        ($e.ParentPage -match 'Profiles_Base' -or
-         $e.ParentPage -match 'Profiles_Appearance' -or
-         $e.ParentPage -match 'Profiles_Terminal' -or
-         $e.ParentPage -match 'Profiles_Advanced'))
+{
+    if ($null -eq $e.NavigationParam -and $e.ParentPage -match "Profiles_")
     {
         $profileEntries += $e
     }
-    elseif ($e.SubPage -eq 'BreadcrumbSubPage::ColorSchemes_Edit')
+    elseif ($e.SubPage -eq "BreadcrumbSubPage::ColorSchemes_Edit")
     {
         $schemeEntries += $e
     }
-    elseif ($e.SubPage -eq 'BreadcrumbSubPage::NewTabMenu_Folder')
+    elseif ($e.SubPage -eq "BreadcrumbSubPage::NewTabMenu_Folder")
     {
         $ntmEntries += $e
     }
@@ -323,8 +315,8 @@ foreach ($e in $entries)
     }
 }
 
-$headerPath = Join-Path $OutputDir 'GeneratedSettingsIndex.g.h'
-$cppPath    = Join-Path $OutputDir 'GeneratedSettingsIndex.g.cpp'
+$headerPath = Join-Path $OutputDir "GeneratedSettingsIndex.g.h"
+$cppPath    = Join-Path $OutputDir "GeneratedSettingsIndex.g.cpp"
 
 $header = @"
 /*++
@@ -346,13 +338,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Navigation argument
         // - the tag used to identify the page to navigate to (i.e. "Launch_Nav")
         // - empty if the NavigationArg is meant to be a view model object at runtime (i.e. profile, ntm folder, etc.)
-        std::wstring_view NavigationArgTag;
+        wil::zwstring_view NavigationArgTag;
 
         // SubPage to navigate to for pages with multiple subpages (i.e. Profiles, New Tab Menu)
         BreadcrumbSubPage SubPage;
         
         // x:Name of the SettingContainer to navigate to on the page (i.e. "DefaultProfile")
-        std::wstring_view ElementName;
+        wil::zwstring_view ElementName;
     };
 
     const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex();
@@ -426,31 +418,31 @@ $(FormatEntries $schemeEntries)
 
     const IndexEntry& PartialProfileIndexEntry()
     {
-        static constexpr IndexEntry entry{ L"", L"", BreadcrumbSubPage::None, L"" };
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::None };
         return entry;
     }
 
     const IndexEntry& PartialNTMFolderIndexEntry()
     {
-        static constexpr IndexEntry entry{ L"", L"", BreadcrumbSubPage::NewTabMenu_Folder, L"" };
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::NewTabMenu_Folder };
         return entry;
     }
 
     const IndexEntry& PartialColorSchemeIndexEntry()
     {
-        static constexpr IndexEntry entry{ L"", L"", BreadcrumbSubPage::ColorSchemes_Edit, L"" };
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::ColorSchemes_Edit };
         return entry;
     }
 
     const IndexEntry& PartialExtensionIndexEntry()
     {
-        static constexpr IndexEntry entry{ L"", L"", BreadcrumbSubPage::Extensions_Extension, L"" };
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::Extensions_Extension };
         return entry;
     }
 
     const IndexEntry& PartialActionIndexEntry()
     {
-        static constexpr IndexEntry entry{ L"", L"", BreadcrumbSubPage::Actions_Edit, L"" };
+        static constexpr IndexEntry entry{ .SubPage = BreadcrumbSubPage::Actions_Edit };
         return entry;
     }
 }
