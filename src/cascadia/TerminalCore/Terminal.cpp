@@ -523,21 +523,15 @@ std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
     }
 
     // Case 2: buffer position may point to an auto-detected hyperlink
-    // GH#18177: Search a wider range to ensure URLs wrapping across multiple lines are fully captured
-    const auto bufferSize = buffer.GetSize();
-    const auto viewportHeight = _GetVisibleViewport().Height();
-    const auto beg = std::max<til::CoordType>(0, bufferPos.y - viewportHeight);
-    const auto end = std::min(bufferSize.BottomInclusive(), bufferPos.y + viewportHeight);
-    const auto patterns = _getPatterns(beg, end);
-
-    // Intervals use half-open ranges, so query with x+1 to
-    // avoid matching past the exclusive end
-    const auto results = patterns.findOverlapping({ bufferPos.x + 1, bufferPos.y }, bufferPos);
-    for (const auto& result : results)
+    // Check cached interval tree (covers visible viewport +/- viewport height)
+    if (const auto results = _patternIntervalTree.findOverlapping({ bufferPos.x + 1, bufferPos.y }, bufferPos); !results.empty())
     {
-        if (result.value == _hyperlinkPatternId)
+        for (const auto& result : results)
         {
-            return buffer.GetPlainText(result.start, result.stop);
+            if (result.value == _hyperlinkPatternId)
+            {
+                return buffer.GetPlainText(result.start, result.stop);
+            }
         }
     }
     return {};
