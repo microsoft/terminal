@@ -479,6 +479,13 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
+        // GH#19874 - Track whether we found at least one pane-spawning action
+        // (NewTab or SplitPane). If _none_ of the startup actions are
+        // pane-spawning, we must not hand off to an elevated instance —
+        // otherwise the loop would skip every action via `continue` and
+        // fall through to `return true`, causing unwanted elevation.
+        bool foundRelevantAction = false;
+
         // Check that there's at least one action that's not just an elevated newTab action.
         for (const auto& action : _startupActions)
         {
@@ -518,6 +525,9 @@ namespace winrt::TerminalApp::implementation
                 continue;
             }
 
+            // We found a pane-spawning action.
+            foundRelevantAction = true;
+
             // It's possible that newTerminalArgs is null here.
             // GetProfileForArgs should be resilient to that.
             const auto profile{ settings.GetProfileForArgs(newTerminalArgs) };
@@ -530,7 +540,11 @@ namespace winrt::TerminalApp::implementation
             // We're going to open at least one tab, so return false.
             return false;
         }
-        return true;
+
+        // GH#19874 - Only hand off if we actually found at least one relevant
+        // pane-spawning action that requested elevation. If there were no
+        // relevant actions at all, don't elevate.
+        return foundRelevantAction;
     }
 
     // Method Description:
