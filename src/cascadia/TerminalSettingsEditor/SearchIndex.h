@@ -15,9 +15,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept;
 
     // Wrapper for IndexEntry objects.
-    // Adds neutral locale, if necessary.
+    // Holds localized display text from entry's ResourceName
     struct LocalizedIndexEntry
     {
+        winrt::hstring DisplayTextLocalized;
         std::optional<winrt::hstring> DisplayTextNeutral = std::nullopt;
         const IndexEntry* Entry = nullptr;
 
