@@ -391,7 +391,7 @@ Microsoft::Console::ICU::unique_utext Microsoft::Console::ICU::UTextFromTextBuff
     FAIL_FAST_IF(status > U_ZERO_ERROR);
 
     rowBeg = std::max<til::CoordType>(0, rowBeg);
-    rowEnd = std::min(textBuffer.GetSize().BottomInclusive(), rowEnd);
+    rowEnd = std::min(textBuffer.GetSize().BottomExclusive(), rowEnd);
 
     ut.providerProperties = (1 << UTEXT_PROVIDER_LENGTH_IS_EXPENSIVE) | (1 << UTEXT_PROVIDER_STABLE_CHUNKS);
     ut.pFuncs = &utextFuncs;
