@@ -372,7 +372,7 @@
     <value>Windows Console</value>
   </data>
   <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
-    <value>Ambiguous width</value>
+    <value>Width of ambiguous characters</value>
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
   <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
