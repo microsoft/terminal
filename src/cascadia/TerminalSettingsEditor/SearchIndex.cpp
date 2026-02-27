@@ -41,8 +41,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     std::array<std::pair<std::optional<winrt::hstring>, int>, 2> LocalizedIndexEntry::GetSearchableFields() const
     {
         // Profile Defaults entries (DisplayTextUid starts with "Profile_") get a higher weight
-        const auto weight = til::starts_with(std::wstring_view{ Entry->DisplayTextUid }, L"Profile_") ? WeightProfileDefaults : WeightDisplayTextLocalized;
-        return { { { std::optional<winrt::hstring>{ Entry->DisplayTextLocalized }, weight },
+        const auto weight = til::starts_with(std::wstring_view{ Entry->ResourceName }, L"Profile_") ? WeightProfileDefaults : WeightDisplayTextLocalized;
+        return { { { std::optional<winrt::hstring>{ DisplayTextLocalized }, weight },
                    { DisplayTextNeutral, WeightDisplayTextNeutral } } };
     }
 
@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             runtimeObjContext = RS_(L"Nav_Actions/Content");
         }
 
-        if (const auto& displayText = searchIndexEntry->Entry->DisplayTextLocalized; !displayText.empty())
+        if (const auto& displayText = searchIndexEntry->DisplayTextLocalized; !displayText.empty())
         {
             // Full index entry (for settings within runtime objects)
             // - primaryText: <displayText>
@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return *_overrideLabel;
         }
-        return _SearchIndexEntry->Entry->DisplayTextLocalized;
+        return _SearchIndexEntry->DisplayTextLocalized;
     }
 
     bool FilteredSearchResult::IsNoResultsPlaceholder() const
@@ -135,9 +135,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return _NavigationArgOverride;
         }
-        else if (_SearchIndexEntry)
+        else if (_SearchIndexEntry && !_SearchIndexEntry->Entry->NavigationArgTag.empty())
         {
-            return _SearchIndexEntry->Entry->NavigationArg;
+            return box_value(hstring{ _SearchIndexEntry->Entry->NavigationArgTag });
         }
         return nullptr;
     }
@@ -253,9 +253,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 LocalizedIndexEntry localizedEntry;
                 localizedEntry.Entry = &entry;
+                localizedEntry.DisplayTextLocalized = GetLibraryResourceString(entry.ResourceName);
                 if (shouldIncludeLanguageNeutralResources)
                 {
-                    localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.DisplayTextUid);
+                    localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.ResourceName);
                 }
                 localizedIndex.emplace_back(std::move(localizedEntry));
             }
