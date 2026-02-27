@@ -3,9 +3,9 @@
   <!-- This file is read by XES, which we use in our Release builds. -->
   <PropertyGroup Label="Version">
     <XesUseOneStoreVersioning>true</XesUseOneStoreVersioning>
-    <XesBaseYearForStoreVersion>2025</XesBaseYearForStoreVersion>
+    <XesBaseYearForStoreVersion>2026</XesBaseYearForStoreVersion>
     <VersionMajor>1</VersionMajor>
-    <VersionMinor>25</VersionMinor>
+    <VersionMinor>26</VersionMinor>
     <VersionInfoProductName>Windows Terminal</VersionInfoProductName>
     <VersionInfoCulture>1033</VersionInfoCulture>
     <!-- The default has a spacing problem -->
