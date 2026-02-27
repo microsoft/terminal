@@ -45,6 +45,13 @@
     <ClInclude Include="Actions.h">
       <DependentUpon>Actions.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ArgsTemplateSelectors.h">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="EditAction.h">
+      <DependentUpon>EditAction.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="AddProfile.h">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
@@ -60,6 +67,10 @@
     </ClInclude>
     <ClInclude Include="NullableColorPicker.h">
       <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="IconPicker.h">
+      <DependentUpon>IconPicker.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="EditColorScheme.h">
@@ -82,6 +93,8 @@
       <DependentUpon>NewTabMenu.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="SearchIndex.h" />
+    <ClInclude Include="NavConstants.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
@@ -162,10 +175,15 @@
     </ClInclude>
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
+    <ClInclude Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h" />
+    <ClInclude Include="../fzf/fzf.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <Page Include="Actions.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="EditAction.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="AddProfile.xaml">
@@ -181,6 +199,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="NullableColorPicker.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="IconPicker.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="EditColorScheme.xaml">
@@ -238,6 +259,13 @@
     <ClCompile Include="Actions.cpp">
       <DependentUpon>Actions.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ArgsTemplateSelectors.cpp">
+      <DependentUpon>ActionsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="EditAction.cpp">
+      <DependentUpon>EditAction.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="AddProfile.cpp">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
@@ -250,6 +278,10 @@
     </ClCompile>
     <ClCompile Include="NullableColorPicker.cpp">
       <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="IconPicker.cpp">
+      <DependentUpon>IconPicker.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="EditColorScheme.cpp">
@@ -274,6 +306,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SearchIndex.cpp" />
     <ClCompile Include="MainPage.cpp">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
@@ -356,6 +389,8 @@
     <ClCompile Include="PreviewConnection.cpp">
       <DependentUpon>PreviewConnection.h</DependentUpon>
     </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.cpp" />
+    <ClCompile Include="../fzf/fzf.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -378,6 +413,10 @@
     </Midl>
     <Midl Include="NullableColorPicker.idl">
       <DependentUpon>NullableColorPicker.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="IconPicker.idl">
+      <DependentUpon>IconPicker.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="EditColorScheme.idl">
@@ -408,6 +447,7 @@
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="SearchIndex.idl" />
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Midl>
@@ -524,4 +564,10 @@
   <!-- This -must- go after cppwinrt.build.post.props because that includes many VS-provided props including appcontainer.common.props, which stomps on what cppwinrt.targets did. -->
   <Import Project="$(OpenConsoleDir)src\common.nugetversions.targets" />
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+  <Target Name="GenerateSettingsIndex"
+          Inputs="@(Page);$(OpenConsoleDir)tools\GenerateSettingsIndex.ps1"
+          Outputs="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h;$(GeneratedFilesDir)GeneratedSettingsIndex.g.cpp"
+          BeforeTargets="ClCompile">
+    <Exec Command="pwsh.exe -NoProfile -ExecutionPolicy Unrestricted &quot;$(OpenConsoleDir)tools\GenerateSettingsIndex.ps1&quot; -SourceDir &quot;$(MSBuildThisFileDirectory).&quot; -OutputDir &quot;$(MSBuildThisFileDirectory)$(GeneratedFilesDir).&quot;" />
+  </Target>
 </Project>

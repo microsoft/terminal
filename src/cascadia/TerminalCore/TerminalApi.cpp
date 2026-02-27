@@ -140,8 +140,7 @@ unsigned int Terminal::GetInputCodePage() const noexcept
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    // Only allow VT clipboard writes when the terminal has focus
-    if (_clipboardOperationsAllowed && _isFocused)
+    if (_clipboardOperationsAllowed && _focused)
     {
         _pfnCopyToClipboard(content);
     }
@@ -250,7 +249,7 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
         auto& tgtCursor = _altBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
-        tgtCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        tgtCursor.SetIsBlinking(myCursor.IsBlinking());
 
         // The new position should match the viewport-relative position of the main buffer.
         auto tgtCursorPos = myCursor.GetPosition();
@@ -308,7 +307,7 @@ void Terminal::UseMainScreenBuffer()
 
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+        mainCursor.SetIsBlinking(altCursor.IsBlinking());
 
         auto tgtCursorPos = altCursor.GetPosition();
         tgtCursorPos.y += _mutableViewport.Top();
@@ -348,11 +347,6 @@ bool Terminal::IsVtInputEnabled() const noexcept
     return false;
 }
 
-void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
-{
-    // This is only needed in conhost. Terminal handles accessibility in another way.
-}
-
 void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
 {
     if (_pfnCompletionsChanged)
@@ -365,7 +359,7 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
 {
     if (_pfnSearchMissingCommand)
     {
-        const auto bufferRow = GetCursorPosition().y;
+        const auto bufferRow = _activeBuffer().GetCursor().GetPosition().y;
         _pfnSearchMissingCommand(command, bufferRow);
     }
 }

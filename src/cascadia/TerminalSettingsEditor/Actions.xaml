@@ -123,7 +123,7 @@
             <Style x:Key="KeyBindingContainerStyle"
                    BasedOn="{StaticResource DefaultListViewItemStyle}"
                    TargetType="ListViewItem">
-                <Setter Property="Padding" Value="4" />
+                <Setter Property="Padding" Value="12,4,4,4" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
             </Style>
@@ -138,24 +138,6 @@
                 <Setter Property="HorizontalAlignment" Value="Right" />
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
-            <x:Int32 x:Key="EditButtonSize">32</x:Int32>
-            <x:Double x:Key="EditButtonIconSize">14</x:Double>
-            <Style x:Key="EditButtonStyle"
-                   BasedOn="{StaticResource DefaultButtonStyle}"
-                   TargetType="Button">
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="VerticalAlignment" Value="Center" />
-                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
-                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
-            </Style>
-            <Style x:Key="AccentEditButtonStyle"
-                   BasedOn="{StaticResource AccentButtonStyle}"
-                   TargetType="Button">
-                <Setter Property="Padding" Value="4" />
-                <Setter Property="VerticalAlignment" Value="Center" />
-                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
-                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
-            </Style>
 
             <!--  Converters & Misc.  -->
             <SolidColorBrush x:Key="ActionContainerBackgroundEditing"
@@ -164,15 +146,9 @@
                              Color="Transparent" />
 
             <!--  Templates  -->
-            <DataTemplate x:Key="KeyBindingTemplate"
-                          x:DataType="local:KeyBindingViewModel">
-                <ListViewItem AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}"
-                              AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                              Background="{x:Bind ContainerBackground, Mode=OneWay}"
-                              GotFocus="{x:Bind ActionGotFocus}"
-                              LostFocus="{x:Bind ActionLostFocus}"
-                              PointerEntered="{x:Bind EnterHoverMode}"
-                              PointerExited="{x:Bind ExitHoverMode}"
+            <DataTemplate x:Key="CommandTemplate"
+                          x:DataType="local:CommandViewModel">
+                <ListViewItem AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}"
                               Style="{StaticResource KeyBindingContainerStyle}">
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
@@ -180,146 +156,41 @@
                             <ColumnDefinition Width="*" />
                             <!--  key chord  -->
                             <ColumnDefinition Width="auto" />
-                            <!--  edit buttons  -->
-                            <!--
-                                This needs to be 112 because that is the width of the row of buttons in edit mode + padding.
-                                3 buttons: 32+32+32
-                                Padding:       8+ 8
-                                This allows the "edit" button to align with the "cancel" button seamlessly
-                            -->
-                            <ColumnDefinition Width="112" />
                         </Grid.ColumnDefinitions>
 
                         <!--  Command Name  -->
                         <TextBlock Grid.Column="0"
                                    FontWeight="Normal"
                                    Style="{StaticResource KeyBindingNameTextBlockStyle}"
-                                   Text="{x:Bind Name, Mode=OneWay}"
-                                   Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}" />
-
-                        <!--  Edit Mode: Action Combo-box  -->
-                        <ComboBox x:Uid="Actions_ActionComboBox"
-                                  Grid.Column="0"
-                                  VerticalAlignment="Center"
-                                  ItemsSource="{x:Bind AvailableActions, Mode=OneWay}"
-                                  SelectedItem="{x:Bind ProposedAction, Mode=TwoWay}"
-                                  Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
-
+                                   Text="{x:Bind DisplayName, Mode=OneWay}" />
                         <!--  Key Chord Text  -->
-                        <Border Grid.Column="1"
-                                Padding="2,0,2,0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Style="{ThemeResource KeyChordBorderStyle}"
-                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
-
-                            <TextBlock FontSize="14"
-                                       Style="{ThemeResource KeyChordTextBlockStyle}"
-                                       Text="{x:Bind KeyChordText, Mode=OneWay}"
-                                       TextWrapping="WrapWholeWords" />
-                        </Border>
-
-                        <!--  Edit Mode: Key Chord Listener  -->
-                        <local:KeyChordListener Grid.Column="1"
-                                                Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
-                                                Style="{StaticResource KeyChordEditorStyle}"
-                                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
-
-                        <!--  Edit Button  -->
-                        <Button x:Uid="Actions_EditButton"
-                                Grid.Column="2"
-                                AutomationProperties.Name="{x:Bind EditButtonName}"
-                                Background="Transparent"
-                                Click="{x:Bind ToggleEditMode}"
-                                GettingFocus="{x:Bind EditButtonGettingFocus}"
-                                LosingFocus="{x:Bind EditButtonLosingFocus}"
-                                Style="{StaticResource EditButtonStyle}"
-                                Visibility="{x:Bind ShowEditButton, Mode=OneWay}">
-                            <Button.Content>
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE70F;" />
-                            </Button.Content>
-                            <Button.Resources>
-                                <ResourceDictionary>
-                                    <ResourceDictionary.ThemeDictionaries>
-                                        <ResourceDictionary x:Key="Light">
-                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                        </ResourceDictionary>
-                                        <ResourceDictionary x:Key="Dark">
-                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                             Color="{StaticResource SystemAccentColor}" />
-                                        </ResourceDictionary>
-                                        <ResourceDictionary x:Key="HighContrast">
-                                            <SolidColorBrush x:Key="ButtonBackground"
-                                                             Color="{ThemeResource SystemColorButtonFaceColor}" />
-                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
-                                                             Color="{ThemeResource SystemColorHighlightColor}" />
-                                            <SolidColorBrush x:Key="ButtonBackgroundPressed"
-                                                             Color="{ThemeResource SystemColorHighlightColor}" />
-                                            <SolidColorBrush x:Key="ButtonForeground"
-                                                             Color="{ThemeResource SystemColorButtonTextColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"
-                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                            <SolidColorBrush x:Key="ButtonForegroundPressed"
-                                                             Color="{ThemeResource SystemColorHighlightTextColor}" />
-                                        </ResourceDictionary>
-                                    </ResourceDictionary.ThemeDictionaries>
-                                </ResourceDictionary>
-                            </Button.Resources>
-                        </Button>
-
-                        <!--  Edit Mode: Buttons  -->
-                        <StackPanel Grid.Column="2"
-                                    Orientation="Horizontal"
-                                    Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
-
-                            <!--  Cancel editing the action  -->
-                            <Button x:Uid="Actions_CancelButton"
-                                    AutomationProperties.Name="{x:Bind CancelButtonName}"
-                                    Click="{x:Bind CancelChanges}"
-                                    Style="{StaticResource EditButtonStyle}">
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE711;" />
-                            </Button>
-
-                            <!--  Accept changes  -->
-                            <Button x:Uid="Actions_AcceptButton"
-                                    Margin="8,0,0,0"
-                                    AutomationProperties.Name="{x:Bind AcceptButtonName}"
-                                    Click="{x:Bind AttemptAcceptChanges}"
-                                    Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
-                                    Style="{StaticResource AccentEditButtonStyle}">
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE8FB;" />
-                            </Button>
-
-                            <!--  Delete the current key binding  -->
-                            <Button x:Uid="Actions_DeleteButton"
-                                    Margin="8,0,0,0"
-                                    AutomationProperties.Name="{x:Bind DeleteButtonName}"
-                                    Style="{StaticResource DeleteSmallButtonStyle}"
-                                    Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsNewlyAdded), Mode=OneWay}">
-                                <Button.Content>
-                                    <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                              Glyph="&#xE74D;" />
-                                </Button.Content>
-                                <Button.Flyout>
-                                    <Flyout FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
-                                        <StackPanel>
-                                            <TextBlock x:Uid="Actions_DeleteConfirmationMessage"
-                                                       Style="{StaticResource CustomFlyoutTextStyle}" />
-                                            <Button x:Uid="Actions_DeleteConfirmationButton"
-                                                    Click="{x:Bind DeleteKeyBinding}" />
-                                        </StackPanel>
-                                    </Flyout>
-                                </Button.Flyout>
-                            </Button>
-                        </StackPanel>
+                        <Grid Grid.Column="1"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Center"
+                              ColumnSpacing="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Padding="8,4,8,4"
+                                    Style="{ThemeResource KeyChordBorderStyle}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(FirstKeyChordText)}">
+                                <TextBlock FontSize="14"
+                                           Style="{ThemeResource KeyChordTextBlockStyle}"
+                                           Text="{x:Bind FirstKeyChordText, Mode=OneWay}"
+                                           TextWrapping="WrapWholeWords" />
+                            </Border>
+                            <Border Grid.Column="1"
+                                    Padding="8,4,8,4"
+                                    Style="{ThemeResource KeyChordBorderStyle}"
+                                    ToolTipService.ToolTip="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(AdditionalKeyChordCountText)}">
+                                <TextBlock FontSize="14"
+                                           Style="{ThemeResource KeyChordTextBlockStyle}"
+                                           Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
+                            </Border>
+                        </Grid>
                     </Grid>
                 </ListViewItem>
             </DataTemplate>
@@ -327,14 +198,17 @@
     </Page.Resources>
 
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-        <StackPanel MaxWidth="600"
-                    HorizontalAlignment="Left"
+        <StackPanel HorizontalAlignment="Stretch"
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
+            <HyperlinkButton x:Uid="Actions_Disclaimer"
+                             Margin="0"
+                             Padding="0"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2341386" />
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
                     Margin="0,12,0,0"
-                    Click="AddNew_Click">
+                    Click="{x:Bind ViewModel.AddNewCommand}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -345,11 +219,13 @@
                 </Button.Content>
             </Button>
 
-            <!--  Keybindings  -->
-            <ListView x:Name="KeyBindingsListView"
-                      ItemTemplate="{StaticResource KeyBindingTemplate}"
-                      ItemsSource="{x:Bind ViewModel.KeyBindingList, Mode=OneWay}"
-                      SelectionMode="None" />
+            <!--  Commands  -->
+            <ListView x:Name="CommandsListView"
+                      Margin="-8,0,0,0"
+                      IsItemClickEnabled="True"
+                      ItemClick="{x:Bind ViewModel.CmdListItemClicked}"
+                      ItemTemplate="{StaticResource CommandTemplate}"
+                      ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}" />
         </StackPanel>
     </Border>
 </Page>

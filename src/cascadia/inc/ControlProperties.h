@@ -49,6 +49,7 @@
     X(bool, TrimBlockSelection, true)                                                                             \
     X(bool, SuppressApplicationTitle)                                                                             \
     X(bool, ForceVTInput, false)                                                                                  \
+    X(bool, AllowKittyKeyboardMode, true)                                                                         \
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, AutoMarkPrompts)                                                                                      \
@@ -80,6 +81,7 @@
     X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
+    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                  \
     X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope::Default)        \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \

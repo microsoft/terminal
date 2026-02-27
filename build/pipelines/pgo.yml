@@ -50,6 +50,7 @@ stages:
           buildEverything: true
           pgoBuildMode: Instrument
           artifactStem: -instrumentation
+          keepAllExpensiveBuildOutputs: false # the ARM64 build agent runs out of memory downloading the artifacts...
 
   - stage: RunPGO
     displayName: Run PGO
@@ -74,7 +75,7 @@ stages:
         parameters:
           jobName: MergePGD
           pool:
-            vmImage: 'windows-2022'
+            vmImage: 'windows-latest'
           buildConfiguration: Release
           buildPlatforms: ${{ parameters.buildPlatforms }}
           artifactStem: -instrumentation
@@ -82,7 +83,7 @@ stages:
       - template: ./templates-v2/job-pgo-build-nuget-and-publish.yml
         parameters:
           pool:
-            vmImage: 'windows-2022'
+            vmImage: 'windows-latest'
           dependsOn: MergePGD
           buildConfiguration: Release
           artifactStem: -instrumentation

@@ -5,7 +5,6 @@
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
 #include "Command.h"
-#include <LibraryResources.h>
 #include <til/io.h>
 
 #include "ActionMap.g.cpp"
@@ -1115,11 +1114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
             const auto inputString{ inArgs ? inArgs.Input() : L"" };
-            auto args = winrt::make_self<SendInputArgs>(
-                winrt::hstring{ fmt::format(FMT_COMPILE(L"{:\x7f^{}}{}"),
-                                            L"",
-                                            numBackspaces,
-                                            inputString) });
+            auto args = winrt::make_self<SendInputArgs>(til::hstring_format(FMT_COMPILE(L"{:\x7f^{}}{}"), L"", numBackspaces, inputString));
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto copy = cmdImpl->Copy();

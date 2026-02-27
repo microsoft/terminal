@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        void PersistState(bool serializeBuffer);
+        void PersistState();
 
         void UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
@@ -111,6 +111,7 @@ namespace winrt::TerminalApp::implementation
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        winrt::Windows::Foundation::Collections::IVector<IPaneContent> Panes() const;
 
         hstring Title();
         void TitlebarClicked();

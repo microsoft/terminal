@@ -114,6 +114,7 @@ public:
 
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
+    bool IsFocused() const noexcept;
 
     RenderSettings& GetRenderSettings() noexcept;
     const RenderSettings& GetRenderSettings() const noexcept;
@@ -126,7 +127,7 @@ public:
 
     std::wstring CurrentCommand() const;
 
-    void SerializeMainBuffer(const wchar_t* destination) const;
+    void SerializeMainBuffer(HANDLE handle) const;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp
@@ -154,7 +155,6 @@ public:
     void UseMainScreenBuffer() override;
 
     bool IsVtInputEnabled() const noexcept override;
-    void NotifyAccessibilityChange(const til::rect& changedRect) noexcept override;
     void NotifyBufferRotation(const int delta) override;
     void NotifyShellIntegrationMark() override;
 
@@ -199,30 +199,25 @@ public:
     void UnlockConsole() noexcept override;
 
     // These methods are defined in TerminalRenderData.cpp
-    til::point GetCursorPosition() const noexcept override;
-    bool IsCursorVisible() const noexcept override;
-    bool IsCursorOn() const noexcept override;
-    ULONG GetCursorHeight() const noexcept override;
+    Microsoft::Console::Render::TimerDuration GetBlinkInterval() noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
-    CursorType GetCursorStyle() const noexcept override;
-    bool IsCursorDoubleWidth() const override;
-    const bool IsGridLineDrawingAllowed() noexcept override;
-    const std::wstring GetHyperlinkUri(uint16_t id) const override;
-    const std::wstring GetHyperlinkCustomId(uint16_t id) const override;
-    const std::vector<size_t> GetPatternId(const til::point location) const override;
+    bool IsGridLineDrawingAllowed() noexcept override;
+    std::wstring GetHyperlinkUri(uint16_t id) const override;
+    std::wstring GetHyperlinkCustomId(uint16_t id) const override;
+    std::vector<size_t> GetPatternId(const til::point viewportPos) const override;
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::span<const til::point_span> GetSelectionSpans() const noexcept override;
     std::span<const til::point_span> GetSearchHighlights() const noexcept override;
     const til::point_span* GetSearchHighlightFocused() const noexcept override;
-    const bool IsSelectionActive() const noexcept override;
-    const bool IsBlockSelection() const noexcept override;
+    bool IsSelectionActive() const noexcept override;
+    bool IsBlockSelection() const noexcept override;
     void ClearSelection() override;
     void SelectNewRegion(const til::point coordStart, const til::point coordEnd) override;
-    const til::point GetSelectionAnchor() const noexcept override;
-    const til::point GetSelectionEnd() const noexcept override;
-    const std::wstring_view GetConsoleTitle() const noexcept override;
-    const bool IsUiaDataInitialized() const noexcept override;
+    til::point GetSelectionAnchor() const noexcept override;
+    til::point GetSelectionEnd() const noexcept override;
+    std::wstring_view GetConsoleTitle() const noexcept override;
+    bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept;
@@ -240,9 +235,6 @@ public:
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
     void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
     void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
-
-    void BlinkCursor() noexcept;
-    void SetCursorOn(const bool isOn) noexcept;
 
     void UpdatePatternsUnderLock();
 
@@ -317,7 +309,7 @@ public:
     UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey) const noexcept;
     til::point SelectionStartForRendering() const;
     til::point SelectionEndForRendering() const;
-    const SelectionEndpoint SelectionEndpointTarget() const noexcept;
+    SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
     TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false) const;
 #pragma endregion
@@ -364,9 +356,11 @@ private:
     mutable til::generation_t _lastSelectionGeneration{};
 
     CursorType _defaultCursorShape = CursorType::Legacy;
+    std::optional<Microsoft::Console::Render::TimerDuration> _cursorBlinkInterval;
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 
+    bool _focused = false;
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
     bool _suppressApplicationTitle = false;
@@ -403,7 +397,6 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
-    bool _selectionIsTargetingUrl = false;
     SelectionEndpoint _selectionEndpoint = SelectionEndpoint::None;
     bool _anchorInactiveSelectionEndpoint = false;
 #pragma endregion
@@ -414,7 +407,6 @@ private:
     til::CoordType _scrollbackLines = 0;
     bool _detectURLs = false;
     bool _clipboardOperationsAllowed = true;
-    bool _isFocused = false;
 
     til::size _altBufferSize;
     std::optional<til::size> _deferredResize;

@@ -13,7 +13,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     {
     public:
         explicit DebugTapConnection(Microsoft::Terminal::TerminalConnection::ITerminalConnection wrappedConnection);
-        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
+        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {};
         ~DebugTapConnection();
         void Start();
         void WriteInput(const winrt::array_view<const char16_t> data);
@@ -31,7 +31,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
     private:
         void _PrintInput(const std::wstring_view data);
-        void _OutputHandler(const std::wstring_view str);
+        void _OutputHandler(const winrt::array_view<const char16_t> str);
 
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::TerminalOutput_revoker _outputRevoker;
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;

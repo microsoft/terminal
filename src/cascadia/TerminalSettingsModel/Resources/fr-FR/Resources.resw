@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Déplacer l’onglet {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Déplacer l’onglet vers la fenêtre « {0} »</value>
@@ -182,10 +182,10 @@
     <value>Déplacer l'onglet vers une nouvelle fenêtre</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>suivant</value>
+    <value>avant (droite)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>précédent</value>
+    <value>arrière (gauche)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Fermer tous les onglets après l’onglet actif</value>
@@ -824,13 +824,13 @@
     <value>Annuler la sélection</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Une ligne</value>
+    <value>Ligne simple</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>Avec des séquences de contrôle</value>
   </data>
   <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
-    <value>Copier la mise en forme</value>
+    <value>Copiez la mise en forme</value>
   </data>
   <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
     <value>Index de l’onglet</value>
@@ -869,7 +869,7 @@
     <value>Nom du schéma</value>
   </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
-    <value>Couleur d’onglet</value>
+    <value>Couleur de l'onglet</value>
   </data>
   <data name="TitleActionArgumentLocalized" xml:space="preserve">
     <value>Titre</value>
@@ -914,7 +914,7 @@
     <value>Superviser</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>Changer la visibilité</value>
+    <value>Activer/désactiver la visibilité</value>
   </data>
   <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
     <value>Durée du menu déroulant</value>
@@ -959,7 +959,7 @@
     <value>Masquer le titre de l’application</value>
   </data>
   <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
-    <value>Modèle de couleurs</value>
+    <value>Jeu de couleurs</value>
   </data>
   <data name="ElevateActionArgumentLocalized" xml:space="preserve">
     <value>Élever</value>

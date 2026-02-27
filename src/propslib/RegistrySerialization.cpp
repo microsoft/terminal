@@ -64,9 +64,9 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMa
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_USEDX,                         SET_FIELD_AND_SIZE(_fUseDx)                      },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_COPYCOLOR,                     SET_FIELD_AND_SIZE(_fCopyColor)                  },
     { _RegPropertyType::Dword,          L"TextMeasurement",                             SET_FIELD_AND_SIZE(_textMeasurement)             },
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
+    { _RegPropertyType::Dword,          L"MSAADelay",                                   SET_FIELD_AND_SIZE(_msaaDelay)                   },
+    { _RegPropertyType::Dword,          L"UIADelay",                                    SET_FIELD_AND_SIZE(_uiaDelay)                    },
     { _RegPropertyType::Boolean,        L"EnableBuiltinGlyphs",                         SET_FIELD_AND_SIZE(_fEnableBuiltinGlyphs)        },
-#endif
 
     // Special cases that are handled manually in Registry::LoadFromRegistry:
     // - CONSOLE_REGISTRY_WINDOWPOS

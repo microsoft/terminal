@@ -584,6 +584,12 @@ constexpr T saturate(auto val)
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
+    // See ConptyCursorPositionMayBeWrong() for details.
+    if (pObj->ConptyCursorPositionMayBeWrong())
+    {
+        pObj->WaitForConptyCursorPositionToBeSynchronized();
+    }
+
     m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);
 
     a->FullscreenSupported = !!ex.bFullscreenSupported;

@@ -54,6 +54,10 @@ public:
     void DeleteColumn(const VTInt /*distance*/) override {} // DECDC
     void SetKeypadMode(const bool /*applicationMode*/) override {} // DECKPAM, DECKPNM
     void SetAnsiMode(const bool /*ansiMode*/) override {} // DECANM
+    void SetKittyKeyboardProtocol(const VTParameter /*flags*/, const VTParameter /*mode*/) noexcept override {} // KKP
+    void QueryKittyKeyboardProtocol() override {} // KKP
+    void PushKittyKeyboardProtocol(const VTParameter /*flags*/) override {} // KKP
+    void PopKittyKeyboardProtocol(const VTParameter /*count*/) override {} // KKP
     void SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override {} // DECSTBM
     void SetLeftRightScrollingMargins(const VTInt /*leftMargin*/, const VTInt /*rightMargin*/) override {} // DECSLRM
     void EnquireAnswerback() override {} // ENQ
@@ -176,9 +180,9 @@ public:
     void RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat /*format*/) override {} // DECRQPSR
     StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/) override { return nullptr; } // DECRSPS
 
-    void PlaySounds(const VTParameters /*parameters*/) override{}; // DECPS
+    void PlaySounds(const VTParameters /*parameters*/) override {}; // DECPS
 
-    void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override{};
+    void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override {};
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning

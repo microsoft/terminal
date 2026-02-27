@@ -41,7 +41,8 @@
 
             <DataTemplate x:Key="FontKeyValuePairTemplate"
                           x:DataType="local:FontKeyValuePair">
-                <Grid ColumnSpacing="8">
+                <Grid AutomationProperties.Name="{x:Bind AutomationName}"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -51,8 +52,10 @@
                                VerticalAlignment="Center"
                                Text="{x:Bind KeyDisplayString}" />
                     <muxc:NumberBox Grid.Column="1"
+                                    AutomationProperties.Name="{x:Bind KeyDisplayString}"
                                     Value="{x:Bind Value, Mode=TwoWay}" />
-                    <Button Grid.Column="2"
+                    <Button x:Uid="Profile_DeleteFontKeyValuePairButton"
+                            Grid.Column="2"
                             Click="DeleteFontKeyValuePair_Click"
                             Style="{StaticResource DeleteButtonStyle}"
                             Tag="{x:Bind (local:FontKeyValuePair)}">
@@ -72,7 +75,8 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <!--  Color Scheme  -->
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
-            <local:SettingContainer x:Uid="Profile_ColorScheme"
+            <local:SettingContainer x:Name="ColorScheme"
+                                    x:Uid="Profile_ColorScheme"
                                     ClearSettingValue="{x:Bind Appearance.ClearColorScheme}"
                                     CurrentValueAccessibleName="{x:Bind Appearance.CurrentColorScheme.Name, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
@@ -197,7 +201,8 @@
                                                FontFamily="Cascadia Code"
                                                Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
                                                Text="{x:Bind Name, Mode=OneWay}"
-                                               TextTrimming="WordEllipsis" />
+                                               TextTrimming="WordEllipsis"
+                                               ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}" />
                                 </Grid>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -280,17 +285,20 @@
                               IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
-            <local:SettingContainer x:Uid="Profile_MissingFontFaces"
+            <local:SettingContainer x:Name="MissingFontFaces"
+                                    x:Uid="Profile_MissingFontFaces"
                                     HelpText="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
                                     Style="{StaticResource SettingContainerErrorStyle}"
                                     Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.MissingFontFaces), Mode=OneWay}" />
-            <local:SettingContainer x:Uid="Profile_ProportionalFontFaces"
+            <local:SettingContainer x:Name="ProportionalFontFaces"
+                                    x:Uid="Profile_ProportionalFontFaces"
                                     HelpText="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
                                     Style="{StaticResource SettingContainerWarningStyle}"
                                     Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.ProportionalFontFaces), Mode=OneWay}" />
 
             <!--  Font Size  -->
-            <local:SettingContainer x:Uid="Profile_FontSize"
+            <local:SettingContainer x:Name="FontSize"
+                                    x:Uid="Profile_FontSize"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontSize}"
                                     HasSettingValue="{x:Bind Appearance.HasFontSize, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontSizeOverrideSource, Mode=OneWay}"
@@ -306,7 +314,8 @@
             </local:SettingContainer>
 
             <!--  Line Height  -->
-            <local:SettingContainer x:Uid="Profile_LineHeight"
+            <local:SettingContainer x:Name="LineHeight"
+                                    x:Uid="Profile_LineHeight"
                                     ClearSettingValue="{x:Bind Appearance.ClearLineHeight}"
                                     HasSettingValue="{x:Bind Appearance.HasLineHeight, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.LineHeightOverrideSource, Mode=OneWay}"
@@ -322,7 +331,8 @@
             </local:SettingContainer>
 
             <!--  Cell Width  -->
-            <local:SettingContainer x:Uid="Profile_CellWidth"
+            <local:SettingContainer x:Name="CellWidth"
+                                    x:Uid="Profile_CellWidth"
                                     ClearSettingValue="{x:Bind Appearance.ClearCellWidth}"
                                     HasSettingValue="{x:Bind Appearance.HasCellWidth, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CellWidthOverrideSource, Mode=OneWay}"
@@ -338,7 +348,8 @@
             </local:SettingContainer>
 
             <!--  Font Weight  -->
-            <local:SettingContainer x:Uid="Profile_FontWeight"
+            <local:SettingContainer x:Name="FontWeight"
+                                    x:Uid="Profile_FontWeight"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontWeight}"
                                     HasSettingValue="{x:Bind Appearance.HasFontWeight, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontWeightOverrideSource, Mode=OneWay}"
@@ -374,7 +385,8 @@
                     </Grid>
                 </StackPanel>
             </local:SettingContainer>
-            <local:SettingContainer x:Uid="Profile_FontAxes"
+            <local:SettingContainer x:Name="FontAxes"
+                                    x:Uid="Profile_FontAxes"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontAxes}"
                                     HasSettingValue="{x:Bind Appearance.HasFontAxes, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontAxesOverrideSource, Mode=OneWay}"
@@ -401,7 +413,8 @@
                     </muxc:DropDownButton>
                 </StackPanel>
             </local:SettingContainer>
-            <local:SettingContainer x:Uid="Profile_FontFeatures"
+            <local:SettingContainer x:Name="FontFeatures"
+                                    x:Uid="Profile_FontFeatures"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontFeatures}"
                                     HasSettingValue="{x:Bind Appearance.HasFontFeatures, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontFeaturesOverrideSource, Mode=OneWay}"
@@ -430,7 +443,8 @@
             </local:SettingContainer>
 
             <!--  Builtin Glyphs  -->
-            <local:SettingContainer x:Uid="Profile_EnableBuiltinGlyphs"
+            <local:SettingContainer x:Name="EnableBuiltinGlyphs"
+                                    x:Uid="Profile_EnableBuiltinGlyphs"
                                     ClearSettingValue="{x:Bind Appearance.ClearEnableBuiltinGlyphs}"
                                     HasSettingValue="{x:Bind Appearance.HasEnableBuiltinGlyphs, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.EnableBuiltinGlyphsOverrideSource, Mode=OneWay}">
@@ -439,7 +453,8 @@
             </local:SettingContainer>
 
             <!--  Color Glyphs  -->
-            <local:SettingContainer x:Uid="Profile_EnableColorGlyphs"
+            <local:SettingContainer x:Name="EnableColorGlyphs"
+                                    x:Uid="Profile_EnableColorGlyphs"
                                     ClearSettingValue="{x:Bind Appearance.ClearEnableColorGlyphs}"
                                     HasSettingValue="{x:Bind Appearance.HasEnableColorGlyphs, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.EnableColorGlyphsOverrideSource, Mode=OneWay}">
@@ -448,7 +463,8 @@
             </local:SettingContainer>
 
             <!--  Retro Terminal Effect  -->
-            <local:SettingContainer x:Uid="Profile_RetroTerminalEffect"
+            <local:SettingContainer x:Name="RetroTerminalEffect"
+                                    x:Uid="Profile_RetroTerminalEffect"
                                     ClearSettingValue="{x:Bind Appearance.ClearRetroTerminalEffect}"
                                     HasSettingValue="{x:Bind Appearance.HasRetroTerminalEffect, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
@@ -457,7 +473,8 @@
             </local:SettingContainer>
 
             <!--  Adjust Indistinguishable Colors  -->
-            <local:SettingContainer x:Uid="Profile_AdjustIndistinguishableColors"
+            <local:SettingContainer x:Name="AdjustIndistinguishableColors"
+                                    x:Uid="Profile_AdjustIndistinguishableColors"
                                     ClearSettingValue="{x:Bind Appearance.ClearAdjustIndistinguishableColors}"
                                     HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}">
@@ -475,7 +492,8 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Cursor Shape  -->
-            <local:SettingContainer x:Uid="Profile_CursorShape"
+            <local:SettingContainer x:Name="CursorShape"
+                                    x:Uid="Profile_CursorShape"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
@@ -487,7 +505,8 @@
             </local:SettingContainer>
 
             <!--  Cursor Height  -->
-            <local:SettingContainer x:Uid="Profile_CursorHeight"
+            <local:SettingContainer x:Name="CursorHeight"
+                                    x:Uid="Profile_CursorHeight"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorHeight}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorHeight, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorHeightOverrideSource, Mode=OneWay}"
@@ -559,7 +578,8 @@
             </local:SettingContainer>
 
             <!--  Background Image Stretch Mode  -->
-            <local:SettingContainer x:Uid="Profile_BackgroundImageStretchMode"
+            <local:SettingContainer x:Name="BackgroundImageStretchMode"
+                                    x:Uid="Profile_BackgroundImageStretchMode"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageStretchMode}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageStretchMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
@@ -572,7 +592,8 @@
             </local:SettingContainer>
 
             <!--  Background Image Alignment  -->
-            <local:SettingContainer x:Uid="Profile_BackgroundImageAlignment"
+            <local:SettingContainer x:Name="BackgroundImageAlignment"
+                                    x:Uid="Profile_BackgroundImageAlignment"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageAlignment}"
                                     CurrentValue="{x:Bind Appearance.BackgroundImageAlignmentCurrentValue, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageAlignment, Mode=OneWay}"
@@ -760,7 +781,8 @@
             </local:SettingContainer>
 
             <!--  Background Image Opacity  -->
-            <local:SettingContainer x:Uid="Profile_BackgroundImageOpacity"
+            <local:SettingContainer x:Name="BackgroundImageOpacity"
+                                    x:Uid="Profile_BackgroundImageOpacity"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageOpacity}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageOpacity, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageOpacityOverrideSource, Mode=OneWay}"
@@ -786,7 +808,8 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Intense is bold, bright  -->
-            <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
+            <local:SettingContainer x:Name="IntenseTextStyle"
+                                    x:Uid="Appearance_IntenseTextStyle"
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">

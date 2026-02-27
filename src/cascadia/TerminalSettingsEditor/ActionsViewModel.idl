@@ -1,60 +1,182 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "EnumEntry.idl";
+import "ColorSchemeViewModel.idl";
+import "MainPage.idl";
+
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass ModifyKeyBindingEventArgs
+    [default_interface] runtimeclass ArgsTemplateSelectors : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        ArgsTemplateSelectors();
+
+        Windows.UI.Xaml.DataTemplate Int32Template;
+        Windows.UI.Xaml.DataTemplate Int32OptionalTemplate;
+        Windows.UI.Xaml.DataTemplate UInt32Template;
+        Windows.UI.Xaml.DataTemplate UInt32OptionalTemplate;
+        Windows.UI.Xaml.DataTemplate FloatTemplate;
+        Windows.UI.Xaml.DataTemplate SplitSizeTemplate;
+        Windows.UI.Xaml.DataTemplate StringTemplate;
+        Windows.UI.Xaml.DataTemplate ColorSchemeTemplate;
+        Windows.UI.Xaml.DataTemplate FilePickerTemplate;
+        Windows.UI.Xaml.DataTemplate FolderPickerTemplate;
+        Windows.UI.Xaml.DataTemplate BoolTemplate;
+        Windows.UI.Xaml.DataTemplate BoolOptionalTemplate;
+        Windows.UI.Xaml.DataTemplate EnumTemplate;
+        Windows.UI.Xaml.DataTemplate FlagTemplate;
+        Windows.UI.Xaml.DataTemplate TerminalCoreColorOptionalTemplate;
+        Windows.UI.Xaml.DataTemplate WindowsUIColorOptionalTemplate;
+    }
+
+    [default_interface] runtimeclass EditAction : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        EditAction();
+        CommandViewModel ViewModel { get; };
+    }
+
+    runtimeclass ModifyKeyChordEventArgs
     {
         Microsoft.Terminal.Control.KeyChord OldKeys { get; };
         Microsoft.Terminal.Control.KeyChord NewKeys { get; };
-        String OldActionName { get; };
-        String NewActionName { get; };
     }
 
-    runtimeclass KeyBindingViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass CommandViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         // Settings Model side
+        String Name;
+        String ID { get; };
+        Boolean IsUserAction { get; };
+        // keybindings
+        IObservableVector<KeyChordViewModel> KeyChordList { get; };
+        // action args
+        ActionArgsViewModel ActionArgsVM { get; };
+
+        // View-model specific
+        String DisplayName { get; };
+        String FirstKeyChordText { get; };
+        String AdditionalKeyChordCountText { get; };
+        String AdditionalKeyChordTooltipText { get; };
+        String DisplayNameAndKeyChordAutomationPropName { get; };
+
+        // UI side (command list page)
+        void Edit_Click();
+
+        // UI side (edit command page)
+        IObservableVector<String> AvailableShortcutActions { get; };
+        Object ProposedShortcutActionName;
+        void Delete_Click();
+        void AddKeybinding_Click();
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeNamesRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateWindowRootRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusContainer;
+
+        // UI side (edit command page, automation property names)
+        String ActionNameTextBoxAutomationPropName { get; };
+        String ShortcutActionComboBoxAutomationPropName { get; };
+        String AdditionalArgumentsControlAutomationPropName { get; };
+    }
+
+    runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
         String Name { get; };
+        String Type { get; };
+        Microsoft.Terminal.Settings.Model.ArgTypeHint TypeHint { get; };
+        Boolean Required { get; };
+        IInspectable Value;
+        IInspectable EnumValue;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> EnumList { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.FlagEntry> FlagList { get; };
+        ColorSchemeViewModel DefaultColorScheme;
+        Windows.Foundation.Collections.IVector<String> ColorSchemeNamesList;
+        IHostedInWindow WindowRoot;
+
+        // unboxing functions
+        String UnboxString(Object value);
+        UInt32 UnboxInt32(Object value);
+        Single UnboxInt32Optional(Object value);
+        UInt32 UnboxUInt32(Object value);
+        Single UnboxUInt32Optional(Object value);
+        Single UnboxFloat(Object value);
+        Boolean UnboxBool(Object value);
+        Windows.Foundation.IReference<Boolean> UnboxBoolOptional(Object value);
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> UnboxTerminalCoreColorOptional(Object value);
+        Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> UnboxWindowsUIColorOptional(Object value);
+
+        // bind back functions
+        void StringBindBack(String newValue);
+        void Int32BindBack(Double newValue);
+        void Int32OptionalBindBack(Double newValue);
+        void UInt32BindBack(Double newValue);
+        void UInt32OptionalBindBack(Double newValue);
+        void FloatBindBack(Double newValue);
+        void BoolOptionalBindBack(Windows.Foundation.IReference<Boolean> newValue);
+        void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
+        void WindowsUIColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
+
+        void BrowseForFile_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+        void BrowseForFolder_Click(IInspectable sender, Windows.UI.Xaml.RoutedEventArgs args);
+
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> ColorSchemeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> ColorSchemeNamesRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> WindowRootRequested;
+    }
+
+    runtimeclass ActionArgsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Boolean HasArgs { get; };
+        IObservableVector<ArgWrapper> ArgValues;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WrapperValueChanged;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateColorSchemeNamesRequested;
+        event Windows.Foundation.TypedEventHandler<Object, ArgWrapper> PropagateWindowRootRequested;
+    }
+
+    runtimeclass KeyChordViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
         String KeyChordText { get; };
 
         // UI side
-        Boolean ShowEditButton { get; };
-        Boolean IsInEditMode { get; };
-        Boolean IsNewlyAdded { get; };
         Microsoft.Terminal.Control.KeyChord ProposedKeys;
-        Object ProposedAction;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
-        String EditButtonName { get; };
+        Boolean IsInEditMode { get; };
+        void ToggleEditMode();
+        void AcceptChanges();
+        void CancelChanges();
+        void DeleteKeyChord();
         String CancelButtonName { get; };
         String AcceptButtonName { get; };
         String DeleteButtonName { get; };
-        Windows.UI.Xaml.Media.Brush ContainerBackground { get; };
 
-        void EnterHoverMode();
-        void ExitHoverMode();
-        void ActionGotFocus();
-        void ActionLostFocus();
-        void EditButtonGettingFocus();
-        void EditButtonLosingFocus();
-        IObservableVector<String> AvailableActions { get; };
-        void ToggleEditMode();
-        void AttemptAcceptChanges();
-        void CancelChanges();
-        void DeleteKeyBinding();
-
-        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, ModifyKeyBindingEventArgs> ModifyKeyBindingRequested;
-        event Windows.Foundation.TypedEventHandler<KeyBindingViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyBindingRequested;
+        event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> AddKeyChordRequested;
+        event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
+        event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyChordRequested;
     }
+
+    enum ActionsSubPage
+    {
+        Base = 0,
+        Edit = 1
+    };
 
     runtimeclass ActionsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ActionsViewModel(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+        void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
-        void OnAutomationPeerAttached();
-        void AddNewKeybinding();
+        void AddNewCommand();
 
-        IObservableVector<KeyBindingViewModel> KeyBindingList { get; };
-        event Windows.Foundation.TypedEventHandler<Object, Object> FocusContainer;
-        event Windows.Foundation.TypedEventHandler<Object, Object> UpdateBackground;
+        ActionsSubPage CurrentPage;
+        Boolean DisplayBadge { get; };
+
+        void AttemptAddOrModifyKeyChord(KeyChordViewModel senderVM, String commandID, Microsoft.Terminal.Control.KeyChord newKeys, Microsoft.Terminal.Control.KeyChord oldKeys);
+        void DeleteKeyChord(Microsoft.Terminal.Control.KeyChord keys);
+        void AddCopiedCommand(Microsoft.Terminal.Settings.Model.Command newCommand);
+        void RegenerateCommandID(Microsoft.Terminal.Settings.Model.Command command);
+
+        CommandViewModel CurrentCommand;
+        IObservableVector<CommandViewModel> CommandList { get; };
+        void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
     }
 }

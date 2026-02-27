@@ -1258,6 +1258,16 @@ TextMeasurementMode CodepointWidthDetector::GetMode() const noexcept
     return _mode;
 }
 
+int CodepointWidthDetector::GetAmbiguousWidth() const noexcept
+{
+    return _ambiguousWidth;
+}
+
+void CodepointWidthDetector::SetAmbiguousWidth(const int width) noexcept
+{
+    _ambiguousWidth = width;
+}
+
 // Method Description:
 // - Sets a function that should be used as the fallback mechanism for
 //      determining a particular glyph's width, should the glyph be an ambiguous

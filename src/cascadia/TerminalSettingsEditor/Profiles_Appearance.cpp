@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Profiles_Appearance.h"
+#include "Appearances.h"
 
 #include "ProfileViewModel.h"
 #include "PreviewConnection.h"
@@ -11,6 +12,8 @@
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
+
+static constexpr std::wstring_view AppearanceSettingPrefix{ L"App." };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -22,18 +25,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Appearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        const auto args = e.Parameter().as<Editor::NavigateToProfileArgs>();
-        _Profile = args.Profile();
-        _windowRoot = args.WindowRoot();
+        const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
+        _Profile = args.ViewModel().as<Editor::ProfileViewModel>();
+        _weakWindowRoot = args.WindowRoot();
+
+        // Settings are stored in Profiles_Appearance and Appearances.
+        // We use the "App." prefix to indicate if it's in Appearances,
+        // and remove it on the way to Appearances object.
+        const auto elementToFocus = args.ElementToFocus();
+        if (elementToFocus.starts_with(AppearanceSettingPrefix))
+        {
+            std::wstring correctedName{ elementToFocus.c_str() };
+            get_self<implementation::Appearances>(DefaultAppearanceView())->BringIntoViewWhenLoaded(hstring{ correctedName.substr(AppearanceSettingPrefix.size()) });
+        }
+        else
+        {
+            BringIntoViewWhenLoaded(elementToFocus);
+        }
 
         if (!_previewControl)
         {
             const auto settings = winrt::get_self<implementation::ProfileViewModel>(_Profile)->TermSettings();
             _previewConnection->DisplayPowerlineGlyphs(_Profile.DefaultAppearance().HasPowerlineCharacters());
             _previewControl = Control::TermControl(settings, settings, *_previewConnection);
+            _previewControl.CursorVisibility(Control::CursorDisplayState::Shown);
             _previewControl.IsEnabled(false);
             _previewControl.AllowFocusWhenDisabled(false);
-            _previewControl.CursorVisibility(Microsoft::Terminal::Control::CursorDisplayState::Shown);
             ControlPreview().Child(_previewControl);
         }
 

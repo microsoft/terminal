@@ -46,20 +46,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool NoProfilesModified() const noexcept { return _profilesModifiedView.Size() == 0; }
         bool NoProfilesAdded() const noexcept { return _profilesAddedView.Size() == 0; }
         bool NoSchemesAdded() const noexcept { return _colorSchemesAddedView.Size() == 0; }
-        bool DisplayBadge() const noexcept;
 
         // Views
-        Windows::Foundation::Collections::IObservableVector<Editor::ExtensionPackageViewModel> ExtensionPackages() const noexcept { return _extensionPackages; }
+        // NOTE: the extensions are being loaded asynchronously in the ctor. _extensionPackages may be null in that brief window of time.
+        Windows::Foundation::Collections::IObservableVector<Editor::ExtensionPackageViewModel> ExtensionPackages() const noexcept { return _extensionPackages ? _extensionPackages : single_threaded_observable_vector<Editor::ExtensionPackageViewModel>(); }
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> ProfilesModified() const noexcept { return _profilesModifiedView; }
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> ProfilesAdded() const noexcept { return _profilesAddedView; }
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> ColorSchemesAdded() const noexcept { return _colorSchemesAddedView; }
 
         // Methods
-        void LazyLoadExtensions();
+        void LoadExtensions();
         void UpdateSettings(const Model::CascadiaSettings& settings, const Editor::ColorSchemesPageViewModel& colorSchemesPageVM);
         void NavigateToProfile(const guid profileGuid);
         void NavigateToColorScheme(const Editor::ColorSchemeViewModel& schemeVM);
-        void MarkAsVisited();
 
         static bool GetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings);
         static void SetExtensionState(hstring extensionSource, const Model::CascadiaSettings& settings, bool enableExt);
@@ -77,8 +76,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesModifiedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentProfileViewModel> _profilesAddedView;
         Windows::Foundation::Collections::IObservableVector<Editor::FragmentColorSchemeViewModel> _colorSchemesAddedView;
-        bool _extensionsLoaded;
+        std::once_flag _extensionsLoaded;
 
+        safe_void_coroutine _LoadExtensionsAsync();
         void _UpdateListViews(bool updateProfilesModified, bool updateProfilesAdded, bool updateColorSchemesAdded);
     };
 
@@ -95,6 +95,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
         Model::ExtensionPackage Package() const noexcept { return _package; }
+        hstring DisplayName() const noexcept;
+        hstring Icon() const noexcept;
         hstring Scope() const noexcept;
         bool Enabled() const;
         void Enabled(bool val);

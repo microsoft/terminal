@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Mover pestaña {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Mover pestaña a la ventana "{0}"</value>
@@ -182,10 +182,10 @@
     <value>Mover pestaña a una nueva ventana</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>adelante</value>
+    <value>hacia delante (derecha)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>atrás</value>
+    <value>hacia atrás (izquierda)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Cerrar todas las pestañas después de la pestaña actual</value>
@@ -824,7 +824,7 @@
     <value>Descartar selección</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Una línea</value>
+    <value>Línea única</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>Con secuencias de control</value>

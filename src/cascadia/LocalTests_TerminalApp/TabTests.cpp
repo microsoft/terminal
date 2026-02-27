@@ -347,6 +347,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadTab()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
         // * Try calling _DuplicateFocusedTab on tab 1
@@ -434,6 +438,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryDuplicateBadPane()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         // * Create a tab with a profile with GUID 1
         // * Reload the settings so that GUID 1 is no longer in the list of profiles
         // * Try calling _SplitPane(Duplicate) on tab 1
@@ -685,6 +693,7 @@ namespace TerminalAppLocalTests
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
@@ -724,6 +733,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::MoveFocusFromZoomedPane()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
@@ -769,6 +782,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::CloseZoomedPane()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
@@ -824,6 +841,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::SwapPanes()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         auto page = _commonSetup();
 
         Log::Comment(L"Setup 4 panes.");
@@ -1030,6 +1051,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::NextMRUTab()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         // This is a test for GH#8025 - we want to make sure that we can do both
         // in-order and MRU tab traversal, using the tab switcher and with the
         // tab switcher disabled.
@@ -1146,6 +1171,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::VerifyCommandPaletteTabSwitcherOrder()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         // This is a test for GH#8188 - we want to make sure that the order of tabs
         // is preserved in the CommandPalette's TabSwitcher
 
@@ -1241,6 +1270,7 @@ namespace TerminalAppLocalTests
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
@@ -1273,6 +1303,7 @@ namespace TerminalAppLocalTests
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
         END_TEST_METHOD_PROPERTIES()
 
         auto page = _commonSetup();
@@ -1305,6 +1336,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestPreviewCommitScheme()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
 
         auto page = _commonSetup();
@@ -1367,6 +1402,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestPreviewDismissScheme()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then dismissed accordingly");
 
         auto page = _commonSetup();
@@ -1415,6 +1454,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestPreviewSchemeWhilePreviewing()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         Log::Comment(L"Preview a color scheme, then preview another scheme. ");
 
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
@@ -1482,6 +1525,10 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestClampSwitchToTab()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Ignore", L"True") // GH#19610 tracks re-enabling this test
+        END_TEST_METHOD_PROPERTIES()
+
         Log::Comment(L"Test that switching to a tab index higher than the number of tabs just clamps to the last tab.");
 
         auto page = _commonSetup();

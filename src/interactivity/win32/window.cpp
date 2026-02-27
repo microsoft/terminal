@@ -24,10 +24,7 @@
 
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/gdi/gdirenderer.hpp"
-
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
 #include "../../renderer/atlas/AtlasEngine.h"
-#endif
 
 #include "../inc/ServiceLocator.hpp"
 #include "../../types/inc/Viewport.hpp"
@@ -67,9 +64,7 @@ Window::~Window()
     // reducing the change for existing race conditions to turn into deadlocks.
 #ifndef NDEBUG
     delete pGdiEngine;
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
     delete pAtlasEngine;
-#endif
 #endif
 }
 
@@ -167,14 +162,11 @@ void Window::_UpdateSystemMetrics() const
 {
     const auto dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
     auto& g = ServiceLocator::LocateGlobals();
-    auto& gci = g.getConsoleInformation();
 
     Scrolling::s_UpdateSystemMetrics();
 
     g.sVerticalScrollSize = dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g.dpi);
     g.sHorizontalScrollSize = dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g.dpi);
-
-    gci.GetCursorBlinker().UpdateSystemMetrics();
 
     const auto sysConfig = ServiceLocator::LocateSystemConfigurationProvider();
 
@@ -211,14 +203,12 @@ void Window::_UpdateSystemMetrics() const
     const auto useDx = pSettings->GetUseDx();
     try
     {
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         if (useDx)
         {
             pAtlasEngine = new AtlasEngine();
             g.pRender->AddRenderEngine(pAtlasEngine);
         }
         else
-#endif
         {
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
@@ -312,14 +302,12 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
             if (pAtlasEngine)
             {
                 const auto hr = pAtlasEngine->SetHwnd(hWnd);
                 status = NTSTATUS_FROM_HRESULT(hr);
             }
             else
-#endif
             {
                 const auto hr = pGdiEngine->SetHwnd(hWnd);
                 status = NTSTATUS_FROM_HRESULT(hr);
@@ -428,12 +416,8 @@ void Window::ChangeViewport(const til::inclusive_rect& NewWindow)
         pSelection->HideSelection();
 
         // Fire off an event to let accessibility apps know we've scrolled.
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier != nullptr)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo.GetViewport().Left() - NewWindow.left,
-                                                      ScreenInfo.GetViewport().Top() - NewWindow.top);
-        }
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.ScrollViewport({ ScreenInfo.GetViewport().Left() - NewWindow.left, ScreenInfo.GetViewport().Top() - NewWindow.top });
 
         // The new window is OK. Store it in screeninfo and refresh screen.
         ScreenInfo.SetViewport(Viewport::FromInclusive(NewWindow), false);
@@ -1356,18 +1340,11 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     if (nullptr == _pUiaProvider)
     {
         LOG_IF_FAILED(WRL::MakeAndInitialize<WindowUiaProvider>(&_pUiaProvider, this));
+        auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+        an.SetUIAProvider(_pUiaProvider->GetScreenInfoProvider());
     }
 
     return _pUiaProvider.Get();
-}
-
-[[nodiscard]] HRESULT Window::SignalUia(_In_ EVENTID id)
-{
-    if (_pUiaProvider != nullptr)
-    {
-        return _pUiaProvider->Signal(id);
-    }
-    return S_FALSE;
 }
 
 [[nodiscard]] HRESULT Window::UiaSetTextAreaFocus()

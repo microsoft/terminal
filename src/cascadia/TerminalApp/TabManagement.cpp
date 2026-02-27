@@ -15,8 +15,6 @@
 #include "../../inc/til/string.h"
 #include <til/io.h>
 
-#include <LibraryResources.h>
-
 #include "TabRowControl.h"
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
@@ -398,12 +396,18 @@ namespace winrt::TerminalApp::implementation
     // - tab: the tab to remove
     winrt::Windows::Foundation::IAsyncAction TerminalPage::_HandleCloseTabRequested(winrt::TerminalApp::Tab tab)
     {
+        winrt::com_ptr<TerminalPage> strong;
+
         if (tab.ReadOnly())
         {
+            const auto weak = get_weak();
+
             auto warningResult = co_await _ShowCloseReadOnlyDialog();
 
+            strong = weak.get();
+
             // If the user didn't explicitly click on close tab - leave
-            if (warningResult != ContentDialogResult::Primary)
+            if (!strong || warningResult != ContentDialogResult::Primary)
             {
                 co_return;
             }
@@ -413,13 +417,11 @@ namespace winrt::TerminalApp::implementation
         auto actions = t->BuildStartupActions(BuildStartupKind::None);
         _AddPreviouslyClosedPaneOrTab(std::move(actions));
 
-        _RemoveTab(tab);
+        tab.Close();
     }
 
-    // Method Description:
-    // - Removes the tab (both TerminalControl and XAML)
-    // Arguments:
-    // - tab: the tab to remove
+    // Removes the tab (both TerminalControl and XAML).
+    // NOTE: Don't call this directly, but rather `tab.Close()`.
     void TerminalPage::_RemoveTab(const winrt::TerminalApp::Tab& tab)
     {
         uint32_t tabIndex{};
@@ -714,10 +716,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (pane->ContainsReadOnly())
         {
+            const auto weak = get_weak();
+
             auto warningResult = co_await _ShowCloseReadOnlyDialog();
 
+            const auto strong = weak.get();
+
             // If the user didn't explicitly click on close tab - leave
-            if (warningResult != ContentDialogResult::Primary)
+            if (!strong || warningResult != ContentDialogResult::Primary)
             {
                 co_return false;
             }
@@ -775,9 +781,13 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto pane{ activeTab->GetActivePane() })
             {
+                const auto weak = get_weak();
                 if (co_await _PaneConfirmCloseReadOnly(pane))
                 {
-                    _HandleClosePaneRequested(pane);
+                    if (const auto strong = weak.get())
+                    {
+                        _HandleClosePaneRequested(pane);
+                    }
                 }
             }
         }
@@ -835,9 +845,22 @@ namespace winrt::TerminalApp::implementation
     // - tabs - tabs to remove
     safe_void_coroutine TerminalPage::_RemoveTabs(const std::vector<winrt::TerminalApp::Tab> tabs)
     {
+        const auto weak = get_weak();
+
         for (auto& tab : tabs)
         {
-            co_await _HandleCloseTabRequested(tab);
+            winrt::Windows::Foundation::IAsyncAction action{ nullptr };
+            if (const auto strong = weak.get())
+            {
+                action = _HandleCloseTabRequested(tab);
+            }
+
+            if (!action)
+            {
+                co_return;
+            }
+
+            co_await action;
         }
     }
     // Method Description:
@@ -921,8 +944,13 @@ namespace winrt::TerminalApp::implementation
         // WinUI asynchronously updates its tab view items, so it may happen that we're given a
         // `TabViewItem` that still contains a `Tab` which has actually already been removed.
         // First we must yield once, to flush out whatever TabView is currently doing.
-        const auto strong = get_strong();
+        const auto weak = get_weak();
         co_await wil::resume_foreground(Dispatcher());
+        const auto strong = weak.get();
+        if (!strong)
+        {
+            co_return;
+        }
 
         const auto tab = _GetTabByTabViewItem(sender);
         if (!tab)

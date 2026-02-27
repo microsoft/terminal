@@ -86,10 +86,8 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         {
         case HostSignals::NotifyApp:
         {
-            auto msg = _ReceiveTypedPacket<HostSignalNotifyAppData>();
-
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId));
-
+            const auto msg = _ReceiveTypedPacket<HostSignalNotifyAppData>();
+            ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(msg.processId);
             break;
         }
         case HostSignals::SetForeground:
@@ -104,10 +102,8 @@ T HostSignalInputThread::_ReceiveTypedPacket()
         }
         case HostSignals::EndTask:
         {
-            auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
-
-            LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->EndTask(msg.processId, msg.eventType, msg.ctrlFlags));
-
+            const auto msg = _ReceiveTypedPacket<HostSignalEndTaskData>();
+            ServiceLocator::LocateConsoleControl()->EndTask(msg.processId, msg.eventType, msg.ctrlFlags);
             break;
         }
         default:
@@ -193,7 +189,10 @@ bool HostSignalInputThread::_GetData(std::span<std::byte> buffer)
                                 &_dwThreadId));
 
     RETURN_LAST_ERROR_IF_NULL(_hThread.get());
-    LOG_IF_FAILED(SetThreadDescription(_hThread.get(), L"Host Signal Handler Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(_hThread.get(), L"Host Signal Handler Thread"));
+    }
 
     return S_OK;
 }

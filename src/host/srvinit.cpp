@@ -11,6 +11,7 @@
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/ConDrvDeviceComm.h"
 #include "../server/DeviceHandle.h"
 #include "../server/IoSorter.h"
 #include "../types/inc/CodepointWidthDetector.hpp"
@@ -71,17 +72,6 @@ try
     {
         Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
         Globals.defaultTerminalMarkerCheckRequired = true;
-    }
-
-    // Create the accessibility notifier early in the startup process.
-    // Only create if we're not in PTY mode.
-    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
-    // for the terminal user interface, so we should set ourselves up to skip all
-    // those notifications and the mathematical calculations required to send those events
-    // for performance reasons.
-    if (!args->InConptyMode())
-    {
-        RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier());
     }
 
     // Removed allocation of scroll buffer here.
@@ -370,7 +360,10 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     // (If we didn't make one, it should be no problem to release the empty unique_ptr.)
     heapConnectMessage.release();
 
-    LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(hThread, L"Console Driver Message IO Thread"));
+    }
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     // See MSFT:19918626

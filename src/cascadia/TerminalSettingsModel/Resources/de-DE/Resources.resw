@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Registerkarte {0} verschieben</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Registerkarte in Fenster "{0}" verschieben</value>
@@ -182,10 +182,10 @@
     <value>Registerkarte in ein neues Fenster verschieben</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>vorwärts</value>
+    <value>vorwärts (rechts)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>rückwärts</value>
+    <value>rückwärts (links)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Alle Registerkarten nach der aktuellen Registerkarte schließen</value>
@@ -824,7 +824,7 @@
     <value>Auswahl schließen</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Eine Zeile</value>
+    <value>Einfache Linie</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>Mit Steuersequenzen</value>
@@ -833,7 +833,7 @@
     <value>Formatierung kopieren</value>
   </data>
   <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Tabindex</value>
+    <value>Registerkartenindex</value>
   </data>
   <data name="WindowActionArgumentLocalized" xml:space="preserve">
     <value>Fenster</value>
@@ -857,7 +857,7 @@
     <value>Ziel</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>Fokusmodus</value>
+    <value>Ist Fokusmodus</value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
     <value>Ist maximiert</value>
@@ -869,7 +869,7 @@
     <value>Schemaname</value>
   </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
-    <value>Registerfarbe</value>
+    <value>Registerkartenfarbe</value>
   </data>
   <data name="TitleActionArgumentLocalized" xml:space="preserve">
     <value>Titel</value>

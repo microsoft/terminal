@@ -161,9 +161,10 @@ namespace Microsoft::Console::VirtualTerminal
     class InputStateMachineEngine : public IStateMachineEngine
     {
     public:
-        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch, const bool lookingForDSR = false);
+        InputStateMachineEngine(std::unique_ptr<IInteractDispatch> pDispatch);
 
-        til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
+        void CaptureNextCursorPositionReport() noexcept;
+        til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) noexcept;
 
         bool EncounteredWin32InputModeSequence() const noexcept override;
 
@@ -191,7 +192,7 @@ namespace Microsoft::Console::VirtualTerminal
     private:
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         std::atomic<uint64_t> _deviceAttributes{ 0 };
-        bool _lookingForDSR = false;
+        std::atomic<bool> _captureNextCursorPositionReport{ false };
         bool _encounteredWin32InputModeSequence = false;
         bool _expectingStringTerminator = false;
         DWORD _mouseButtonState = 0;

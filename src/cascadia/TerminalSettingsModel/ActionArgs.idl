@@ -10,7 +10,8 @@ namespace Microsoft.Terminal.Settings.Model
         None = 0,
         FilePath,
         FolderPath,
-        ColorScheme
+        ColorScheme,
+        SplitSize
     };
 
     struct ArgDescriptor

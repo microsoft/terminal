@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Move tab {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Move tab to window "{0}"</value>
@@ -182,10 +182,10 @@
     <value>Move tab to a new window</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>forward</value>
+    <value>forward (right)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>backward</value>
+    <value>backward (left)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Close all tabs after the current tab</value>
@@ -821,28 +821,28 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Dismiss Selection</value>
+    <value>Dismiss selection</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Single Line</value>
+    <value>Single line</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
-    <value>With Control Sequences</value>
+    <value>With control sequences</value>
   </data>
   <data name="CopyFormattingActionArgumentLocalized" xml:space="preserve">
-    <value>Copy Formatting</value>
+    <value>Copy formatting</value>
   </data>
   <data name="TabIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Tab Index</value>
+    <value>Tab index</value>
   </data>
   <data name="WindowActionArgumentLocalized" xml:space="preserve">
     <value>Window</value>
   </data>
   <data name="ResizeDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Resize Direction</value>
+    <value>Resize direction</value>
   </data>
   <data name="FocusDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Focus Direction</value>
+    <value>Focus direction</value>
   </data>
   <data name="DirectionActionArgumentLocalized" xml:space="preserve">
     <value>Direction</value>
@@ -857,19 +857,19 @@
     <value>Target</value>
   </data>
   <data name="IsFocusModeActionArgumentLocalized" xml:space="preserve">
-    <value>Is Focus Mode</value>
+    <value>Is focus mode</value>
   </data>
   <data name="IsMaximizedActionArgumentLocalized" xml:space="preserve">
-    <value>Is Maximized</value>
+    <value>Is maximized</value>
   </data>
   <data name="IsFullScreenActionArgumentLocalized" xml:space="preserve">
-    <value>Is Full Screen</value>
+    <value>Is full screen</value>
   </data>
   <data name="SchemeNameActionArgumentLocalized" xml:space="preserve">
-    <value>Scheme Name</value>
+    <value>Scheme name</value>
   </data>
   <data name="TabColorActionArgumentLocalized" xml:space="preserve">
-    <value>Tab Color</value>
+    <value>Tab color</value>
   </data>
   <data name="TitleActionArgumentLocalized" xml:space="preserve">
     <value>Title</value>
@@ -881,28 +881,28 @@
     <value>Index</value>
   </data>
   <data name="RowsToScrollActionArgumentLocalized" xml:space="preserve">
-    <value>Rows To Scroll</value>
+    <value>Rows to scroll</value>
   </data>
   <data name="ColorActionArgumentLocalized" xml:space="preserve">
     <value>Color</value>
   </data>
   <data name="LaunchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Launch Mode</value>
+    <value>Launch mode</value>
   </data>
   <data name="NameActionArgumentLocalized" xml:space="preserve">
     <value>Name</value>
   </data>
   <data name="KeyChordActionArgumentLocalized" xml:space="preserve">
-    <value>Key Chord</value>
+    <value>Key chord</value>
   </data>
   <data name="SourceActionArgumentLocalized" xml:space="preserve">
     <value>Source</value>
   </data>
   <data name="UseCommandlineActionArgumentLocalized" xml:space="preserve">
-    <value>Use Commandline</value>
+    <value>Use commandline</value>
   </data>
   <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
-    <value>Switcher Mode</value>
+    <value>Switcher mode</value>
   </data>
   <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
     <value>Query URL</value>
@@ -914,10 +914,10 @@
     <value>Monitor</value>
   </data>
   <data name="ToggleVisibilityActionArgumentLocalized" xml:space="preserve">
-    <value>Toggle Visibility</value>
+    <value>Toggle visibility</value>
   </data>
   <data name="DropdownDurationActionArgumentLocalized" xml:space="preserve">
-    <value>Dropdown Duration</value>
+    <value>Dropdown duration</value>
   </data>
   <data name="IdActionArgumentLocalized" xml:space="preserve">
     <value>Id</value>
@@ -941,39 +941,39 @@
     <value>Background</value>
   </data>
   <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Match Mode</value>
+    <value>Match mode</value>
   </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
-    <value>Starting Directory</value>
+    <value>Starting directory</value>
   </data>
   <data name="TabTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Tab Title</value>
+    <value>Tab title</value>
   </data>
   <data name="ProfileIndexActionArgumentLocalized" xml:space="preserve">
-    <value>Profile Index</value>
+    <value>Profile index</value>
   </data>
   <data name="ProfileActionArgumentLocalized" xml:space="preserve">
     <value>Profile</value>
   </data>
   <data name="SuppressApplicationTitleActionArgumentLocalized" xml:space="preserve">
-    <value>Suppress Application Title</value>
+    <value>Suppress application title</value>
   </data>
   <data name="ColorSchemeActionArgumentLocalized" xml:space="preserve">
-    <value>Color Scheme</value>
+    <value>Color scheme</value>
   </data>
   <data name="ElevateActionArgumentLocalized" xml:space="preserve">
     <value>Elevate</value>
   </data>
   <data name="ReloadEnvironmentVariablesActionArgumentLocalized" xml:space="preserve">
-    <value>Reload Environment Variables</value>
+    <value>Reload environment variables</value>
   </data>
   <data name="SplitDirectionActionArgumentLocalized" xml:space="preserve">
-    <value>Split Direction</value>
+    <value>Split direction</value>
   </data>
   <data name="SplitModeActionArgumentLocalized" xml:space="preserve">
-    <value>Split Mode</value>
+    <value>Split mode</value>
   </data>
   <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
-    <value>Split Size</value>
+    <value>Split size</value>
   </data>
 </root>

@@ -98,6 +98,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
 
     _getTerminalInput().ForceDisableWin32InputMode(settings.ForceVTInput());
+    _getTerminalInput().ForceDisableKittyKeyboardProtocol(!settings.AllowKittyKeyboardMode());
 
     if (settings.TabColor() == nullptr)
     {
@@ -512,51 +513,26 @@ std::wstring Terminal::GetHyperlinkAtViewportPosition(const til::point viewportP
 
 std::wstring Terminal::GetHyperlinkAtBufferPosition(const til::point bufferPos)
 {
+    const auto& buffer = _activeBuffer();
+
     // Case 1: buffer position has a hyperlink stored in the buffer
-    const auto attr = _activeBuffer().GetCellDataAt(bufferPos)->TextAttr();
+    const auto attr = buffer.GetCellDataAt(bufferPos)->TextAttr();
     if (attr.IsHyperlink())
     {
-        return _activeBuffer().GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        return buffer.GetHyperlinkUriFromId(attr.GetHyperlinkId());
     }
 
     // Case 2: buffer position may point to an auto-detected hyperlink
-    // Case 2 - Step 1: get the auto-detected hyperlink
-    std::optional<interval_tree::Interval<til::point, size_t>> result;
-    const auto visibleViewport = _GetVisibleViewport();
-    if (visibleViewport.IsInBounds(bufferPos))
+    // Check cached interval tree (covers visible viewport +/- viewport height)
+    if (const auto results = _patternIntervalTree.findOverlapping({ bufferPos.x + 1, bufferPos.y }, bufferPos); !results.empty())
     {
-        // Hyperlink is in the current view, so let's just get it
-        auto viewportPos = bufferPos;
-        visibleViewport.ConvertToOrigin(&viewportPos);
-        result = GetHyperlinkIntervalFromViewportPosition(viewportPos);
-        if (result.has_value())
+        for (const auto& result : results)
         {
-            result->start = _ConvertToBufferCell(result->start, false);
-            result->stop = _ConvertToBufferCell(result->stop, true);
+            if (result.value == _hyperlinkPatternId)
+            {
+                return buffer.GetPlainText(result.start, result.stop);
+            }
         }
-    }
-    else
-    {
-        // Hyperlink is outside of the current view.
-        // We need to find if there's a pattern at that location.
-        const auto patterns = _getPatterns(bufferPos.y, bufferPos.y);
-
-        // NOTE: patterns is stored with top y-position being 0,
-        //       so we need to cleverly set the y-pos to 0.
-        const til::point viewportPos{ bufferPos.x, 0 };
-        const auto results = patterns.findOverlapping(viewportPos, viewportPos);
-        if (!results.empty())
-        {
-            result = results.front();
-            result->start.y += bufferPos.y;
-            result->stop.y += bufferPos.y;
-        }
-    }
-
-    // Case 2 - Step 2: get the auto-detected hyperlink
-    if (result.has_value() && result->value == _hyperlinkPatternId)
-    {
-        return _activeBuffer().GetPlainText(result->start, result->stop);
     }
     return {};
 }
@@ -577,17 +553,25 @@ uint16_t Terminal::GetHyperlinkIdAtViewportPosition(const til::point viewportPos
 // Arguments:
 // - The position relative to the viewport
 // Return value:
-// - The interval representing the start and end coordinates
+// - The interval representing the start and end coordinates (viewport-relative)
 std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromViewportPosition(const til::point viewportPos)
 {
-    const auto results = _patternIntervalTree.findOverlapping({ viewportPos.x + 1, viewportPos.y }, viewportPos);
+    // GH#18177: The tree stores buffer-absolute coordinates
+    // Convert viewport-relative (y=0 at visible start) to buffer-absolute
+    const auto visStart = _VisibleStartIndex();
+    const til::point bufferPos{ viewportPos.x, viewportPos.y + visStart };
+    const auto results = _patternIntervalTree.findOverlapping({ bufferPos.x + 1, bufferPos.y }, bufferPos);
     if (results.size() > 0)
     {
         for (const auto& result : results)
         {
             if (result.value == _hyperlinkPatternId)
             {
-                return result;
+                // Convert back to viewport-relative coordinates
+                auto interval = result;
+                interval.start.y -= visStart;
+                interval.stop.y -= visStart;
+                return interval;
             }
         }
     }
@@ -784,12 +768,20 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
 // - none
 TerminalInput::OutputType Terminal::FocusChanged(const bool focused)
 {
-    if (_isFocused != focused)
+    if (_focused == focused)
     {
-        _isFocused = focused;
-        return _getTerminalInput().HandleFocus(focused);
+        return {};
     }
-    return {};
+
+    _focused = focused;
+
+    // Recalculate the IRenderData::GetBlinkInterval() on the next call.
+    if (focused)
+    {
+        _cursorBlinkInterval.reset();
+    }
+
+    return _getTerminalInput().HandleFocus(focused);
 }
 
 // Method Description:
@@ -798,11 +790,8 @@ TerminalInput::OutputType Terminal::FocusChanged(const bool focused)
 // - The interval tree containing regions that need to be invalidated
 void Terminal::_InvalidatePatternTree()
 {
-    const auto vis = _VisibleStartIndex();
     _patternIntervalTree.visit_all([&](const PointTree::interval& interval) {
-        const til::point startCoord{ interval.start.x, interval.start.y + vis };
-        const til::point endCoord{ interval.stop.x, interval.stop.y + vis };
-        _InvalidateFromCoords(startCoord, endCoord);
+        _InvalidateFromCoords(interval.start, interval.stop);
     });
 }
 
@@ -1026,6 +1015,11 @@ int Terminal::ViewEndIndex() const noexcept
     return _inAltBuffer() ? _altBufferSize.height - 1 : _mutableViewport.BottomInclusive();
 }
 
+bool Terminal::IsFocused() const noexcept
+{
+    return _focused;
+}
+
 RenderSettings& Terminal::GetRenderSettings() noexcept
 {
     _assertLocked();
@@ -1187,31 +1181,6 @@ void Terminal::SetPlayMidiNoteCallback(std::function<void(const int, const int, 
     _pfnPlayMidiNote.swap(pfn);
 }
 
-void Terminal::BlinkCursor() noexcept
-{
-    if (_selectionMode != SelectionInteractionMode::Mark)
-    {
-        auto& cursor = _activeBuffer().GetCursor();
-        if (cursor.IsBlinkingAllowed() && cursor.IsVisible())
-        {
-            cursor.SetIsOn(!cursor.IsOn());
-        }
-    }
-}
-
-// Method Description:
-// - Sets the cursor to be currently on. On/Off is tracked independently of
-//   cursor visibility (hidden/visible). On/off is controlled by the cursor
-//   blinker. Visibility is usually controlled by the client application. If the
-//   cursor is hidden, then the cursor will remain hidden. If the cursor is
-//   Visible, then it will immediately become visible.
-// Arguments:
-// - isVisible: whether the cursor should be visible
-void Terminal::SetCursorOn(const bool isOn) noexcept
-{
-    _activeBuffer().GetCursor().SetIsOn(isOn);
-}
-
 // Method Description:
 // - Update our internal knowledge about where regex patterns are on the screen
 // - This is called by TerminalControl (through a throttled function) when the visible
@@ -1220,7 +1189,16 @@ void Terminal::SetCursorOn(const bool isOn) noexcept
 void Terminal::UpdatePatternsUnderLock()
 {
     _InvalidatePatternTree();
-    _patternIntervalTree = _getPatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    const auto visStart = _VisibleStartIndex();
+    const auto visEnd = _VisibleEndIndex();
+    const auto viewportHeight = visEnd - visStart;
+
+    // GH#18177: Scan extra rows beyond the viewport so that URLs
+    // wrapping across the viewport boundary are matched in full
+    const auto bufferSize = _activeBuffer().GetSize();
+    const auto beg = std::max<til::CoordType>(0, visStart - viewportHeight);
+    const auto end = std::min(bufferSize.BottomInclusive(), visEnd + viewportHeight);
+    _patternIntervalTree = _getPatterns(beg, end);
     _InvalidatePatternTree();
 }
 
@@ -1309,9 +1287,15 @@ void Terminal::ScrollToSearchHighlight(til::CoordType searchScrollOffset)
     if (_searchHighlightFocused < _searchHighlights.size())
     {
         const auto focused = til::at(_searchHighlights, _searchHighlightFocused);
-        const auto adjustedStart = til::point{ focused.start.x, std::max(0, focused.start.y - searchScrollOffset) };
-        const auto adjustedEnd = til::point{ focused.end.x, std::max(0, focused.end.y - searchScrollOffset) };
-        _ScrollToPoints(adjustedStart, adjustedEnd);
+
+        // Only adjust the y coordinates if "start" is in a row that would be covered by the search box
+        auto adjustedStart = focused.start;
+        const auto firstVisibleRow = _VisibleStartIndex();
+        if (focused.start.y > firstVisibleRow && focused.start.y < firstVisibleRow + searchScrollOffset)
+        {
+            adjustedStart.y = std::max(0, focused.start.y - searchScrollOffset);
+        }
+        _ScrollToPoints(adjustedStart, focused.end);
     }
 }
 
@@ -1429,10 +1413,8 @@ PointTree Terminal::_getPatterns(til::CoordType beg, til::CoordType end) const
         {
             do
             {
-                auto range = ICU::BufferRangeFromMatch(&text, re.get());
-                // PointTree uses half-open ranges and viewport-relative coordinates.
-                range.start.y -= beg;
-                range.end.y -= beg;
+                // PointTree uses half-open ranges and buffer-absolute coordinates.
+                const auto range = ICU::BufferRangeFromMatch(&text, re.get());
                 intervals.push_back(PointTree::interval(range.start, range.end, 0));
             } while (uregex_findNext(re.get(), &status));
         }
@@ -1535,9 +1517,9 @@ std::wstring Terminal::CurrentCommand() const
     return _activeBuffer().CurrentCommand();
 }
 
-void Terminal::SerializeMainBuffer(const wchar_t* destination) const
+void Terminal::SerializeMainBuffer(HANDLE handle) const
 {
-    _mainBuffer->SerializeToPath(destination);
+    _mainBuffer->SerializeTo(handle);
 }
 
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
@@ -1585,7 +1567,7 @@ void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Termi
 // - Returns the position of the cursor relative to the visible viewport
 til::point Terminal::GetViewportRelativeCursorPosition() const noexcept
 {
-    const auto absoluteCursorPosition{ GetCursorPosition() };
+    const auto absoluteCursorPosition{ _activeBuffer().GetCursor().GetPosition() };
     const auto mutableViewport{ _GetMutableViewport() };
     const auto relativeCursorPos = absoluteCursorPosition - mutableViewport.Origin();
     return { relativeCursorPos.x, relativeCursorPos.y + _scrollOffset };

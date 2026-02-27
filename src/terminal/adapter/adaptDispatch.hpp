@@ -97,6 +97,10 @@ namespace Microsoft::Console::VirtualTerminal
         void RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
         void SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
         void SetAnsiMode(const bool ansiMode) override; // DECANM
+        void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept override; // KKP
+        void QueryKittyKeyboardProtocol() override; // KKP
+        void PushKittyKeyboardProtocol(const VTParameter flags) override; // KKP
+        void PopKittyKeyboardProtocol(const VTParameter count) override; // KKP
         void SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
         void SetLeftRightScrollingMargins(const VTInt leftMargin,
@@ -241,7 +245,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::pair<int, int> _GetVerticalMargins(const Page& page, const bool absolute) noexcept;
         std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
         void _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
-        void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
         void _SelectiveEraseRect(const Page& page, const til::rect& eraseRect);
         void _ChangeRectAttributes(const Page& page, const til::rect& changeRect, const ChangeOps& changeOps);

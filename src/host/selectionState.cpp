@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
-
 #include "../types/inc/viewport.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -183,7 +182,6 @@ void Selection::_RestoreDataToCursor(Cursor& cursor) noexcept
     cursor.SetSize(_d->ulSavedCursorSize);
     cursor.SetIsVisible(_d->fSavedCursorVisible);
     cursor.SetType(_d->savedCursorType);
-    cursor.SetIsOn(true);
     cursor.SetPosition(_d->coordSavedCursorPosition);
 }
 

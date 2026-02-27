@@ -319,29 +319,51 @@
                     Visibility="{x:Bind ViewModel.IsFolderView, Mode=OneWay}">
             <TextBlock x:Uid="NewTabMenu_CurrentFolderTextBlock"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-
-            <!--  TODO GH #18281: Icon  -->
-            <!--  Once PR #17965 merges, we can add that kind of control to set an icon  -->
-
             <!--  Name  -->
-            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderName"
-                                    Grid.Row="0"
+            <local:SettingContainer x:Name="CurrentFolderName"
+                                    x:Uid="NewTabMenu_CurrentFolderName"
                                     CurrentValue="{x:Bind ViewModel.CurrentFolderName, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <TextBox Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind ViewModel.CurrentFolderName, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Icon  -->
+            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderIcon"
+                                    CurrentValueAccessibleName="{x:Bind ViewModel.CurrentFolderLocalizedIcon, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                <local:SettingContainer.CurrentValue>
+                    <Grid>
+                        <ContentControl Width="16"
+                                        Height="16"
+                                        Content="{x:Bind ViewModel.CurrentFolderIconPreview, Mode=OneWay}"
+                                        IsTabStop="False"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.CurrentFolderUsingNoIcon), Mode=OneWay}" />
+                        <TextBlock Margin="0,0,0,0"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                   Text="{x:Bind ViewModel.CurrentFolderLocalizedIcon, Mode=OneWay}"
+                                   Visibility="{x:Bind ViewModel.CurrentFolderUsingNoIcon, Mode=OneWay}" />
+                    </Grid>
+                </local:SettingContainer.CurrentValue>
+                <local:SettingContainer.Content>
+                    <local:IconPicker CurrentIconPath="{x:Bind ViewModel.CurrentFolderIconPath, Mode=TwoWay}"
+                                      WindowRoot="{x:Bind WindowRoot, Mode=OneWay}" />
+                </local:SettingContainer.Content>
+            </local:SettingContainer>
+
             <!--  Inlining  -->
-            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderInlining"
-                                    Grid.Row="1">
+            <local:SettingContainer x:Name="CurrentFolderInlining"
+                                    x:Uid="NewTabMenu_CurrentFolderInlining">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderInlining, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
             <!--  Allow Empty  -->
-            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderAllowEmpty"
-                                    Grid.Row="2">
+            <local:SettingContainer x:Name="CurrentFolderAllowEmpty"
+                                    x:Uid="NewTabMenu_CurrentFolderAllowEmpty">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderAllowEmpty, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
@@ -353,7 +375,8 @@
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Add Profile  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddProfile"
+            <local:SettingContainer x:Name="AddProfile"
+                                    x:Uid="NewTabMenu_AddProfile"
                                     FontIconGlyph="&#xE756;"
                                     Style="{StaticResource SettingContainerWithIcon}">
 
@@ -402,7 +425,8 @@
             </local:SettingContainer>
 
             <!--  Add Separator  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddSeparator"
+            <local:SettingContainer x:Name="AddSeparator"
+                                    x:Uid="NewTabMenu_AddSeparator"
                                     FontIconGlyph="&#xE76f;"
                                     Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddSeparatorButton"
@@ -418,7 +442,8 @@
             </local:SettingContainer>
 
             <!--  Add Folder  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddFolder"
+            <local:SettingContainer x:Name="AddFolder"
+                                    x:Uid="NewTabMenu_AddFolder"
                                     FontIconGlyph="&#xF12B;"
                                     Style="{StaticResource SettingContainerWithIcon}">
                 <StackPanel Orientation="Horizontal"
@@ -444,7 +469,8 @@
             </local:SettingContainer>
 
             <!--  Add Match Profiles  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddMatchProfiles"
+            <local:SettingContainer x:Name="AddMatchProfiles"
+                                    x:Uid="NewTabMenu_AddMatchProfiles"
                                     FontIconGlyph="&#xE748;"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
                 <StackPanel Spacing="8">

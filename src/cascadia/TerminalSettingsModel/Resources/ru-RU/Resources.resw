@@ -172,7 +172,7 @@
   </data>
   <data name="MoveTabCommandKey" xml:space="preserve">
     <value>Переместить вкладку {0}</value>
-    <comment>{0} will be replaced with a "forward" / "backward"</comment>
+    <comment>{0} will be replaced with a "forward (right)" / "backward (left)"</comment>
   </data>
   <data name="MoveTabToWindowCommandKey" xml:space="preserve">
     <value>Переместить вкладку в окно "{0}"</value>
@@ -182,10 +182,10 @@
     <value>Переместить вкладку в новое окно</value>
   </data>
   <data name="MoveTabDirectionForward" xml:space="preserve">
-    <value>вперед</value>
+    <value>вперед (вправо)</value>
   </data>
   <data name="MoveTabDirectionBackward" xml:space="preserve">
-    <value>назад</value>
+    <value>назад (влево)</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Закрыть все вкладки после текущей вкладки</value>
@@ -821,10 +821,10 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Закрыть выделение</value>
+    <value>Отменить выбор</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Одна строка</value>
+    <value>Одинарная линия</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>С последовательностями управления</value>
@@ -941,7 +941,7 @@
     <value>Фон</value>
   </data>
   <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Режим соответствия</value>
+    <value>Режим сопоставления</value>
   </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
     <value>Начальный каталог</value>

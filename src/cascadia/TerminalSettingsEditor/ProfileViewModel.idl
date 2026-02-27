@@ -14,12 +14,6 @@ import "ColorSchemesPageViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass NavigateToProfileArgs
-    {
-        ProfileViewModel Profile { get; };
-        IHostedInWindow WindowRoot { get; };
-    }
-
     runtimeclass DeleteProfileEventArgs
     {
         Guid ProfileGuid { get; };
@@ -40,14 +34,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Appearance = 1,
         Terminal = 2,
         Advanced = 3
-    };
-
-    enum IconType
-    {
-        None = 0,
-        FontIcon,
-        Image,
-        Emoji
     };
 
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -107,20 +93,13 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
-        String CurrentEmojiIcon;
-        IInspectable CurrentIconType;
-        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
-        Boolean UsingNoIcon { get; };
-        Boolean UsingBuiltInIcon { get; };
-        Boolean UsingEmojiIcon { get; };
-        Boolean UsingImageIcon { get; };
         String IconPath;
-
-        IInspectable CurrentBuiltInIcon;
-        Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
+        Boolean UsingNoIcon { get; };
 
         String TabTitlePreview { get; };
         String AnswerbackMessagePreview { get; };
+        Windows.UI.Color TabColorPreview { get; };
+        Windows.UI.Color TabThemeColorPreview { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -155,6 +134,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceVTInput);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowKittyKeyboardMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, AnswerbackMessage);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);

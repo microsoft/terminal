@@ -109,50 +109,6 @@ public:
         return iter;
     };
 
-    // Function Description:
-    // - Replaces all escapes with the printable symbol for that escape
-    //   character. This makes log parsing easier for debugging, as the literal
-    //   escapes won't be written to the console output.
-    // Arguments:
-    // - str: the string to escape.
-    // Return Value:
-    // - A modified version of that string with non-printable characters replaced.
-    static std::string ReplaceEscapes(const std::string& str)
-    {
-        std::string escaped = str;
-        auto replaceFn = [&escaped](const std::string& search, const std::string& replace) {
-            size_t pos = escaped.find(search, 0);
-            while (pos != std::string::npos)
-            {
-                escaped.replace(pos, search.length(), replace);
-                pos = escaped.find(search, pos + replace.length());
-            }
-        };
-        replaceFn("\x1b", "^\x5b"); // ESC
-        replaceFn("\x08", "^\x48"); // BS
-        replaceFn("\x0A", "^\x4A"); // LF
-        replaceFn("\x0D", "^\x4D"); // CR
-        return escaped;
-    }
-
-    // Function Description:
-    // - Replaces all escapes with the printable symbol for that escape
-    //   character. This makes log parsing easier for debugging, as the literal
-    //   escapes won't be written to the console output.
-    // Arguments:
-    // - wstr: the string to escape.
-    // Return Value:
-    // - A modified version of that string with non-printable characters replaced.
-    static std::wstring ReplaceEscapes(const std::wstring& wstr)
-    {
-        std::wstring escaped = wstr;
-        std::replace(escaped.begin(), escaped.end(), L'\x1b', L'\x241b'); // ESC
-        std::replace(escaped.begin(), escaped.end(), L'\x08', L'\x2408'); // BS
-        std::replace(escaped.begin(), escaped.end(), L'\x0A', L'\x240A'); // LF
-        std::replace(escaped.begin(), escaped.end(), L'\x0D', L'\x240D'); // CR
-        return escaped;
-    }
-
     template<class... T>
     static bool VerifyLineContains(TextBufferCellIterator& actual, T&&... expectedContent)
     {

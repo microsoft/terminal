@@ -82,8 +82,6 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
 
-        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
-
         void SetOwner();
         BOOL GetCursorPosition(_Out_ til::point* lpPoint);
         BOOL GetClientRectangle(_Out_ til::rect* lpRect);
@@ -112,9 +110,7 @@ namespace Microsoft::Console::Interactivity::Win32
         HWND _hWnd;
 
         Render::GdiEngine* pGdiEngine = nullptr;
-#if TIL_FEATURE_CONHOSTATLASENGINE_ENABLED
         Render::AtlasEngine* pAtlasEngine = nullptr;
-#endif
 
         [[nodiscard]] NTSTATUS _InternalSetWindowSize();
         void _UpdateWindowSize(const til::size sizeNew);
