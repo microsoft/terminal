@@ -204,7 +204,7 @@ public:
     bool IsGridLineDrawingAllowed() noexcept override;
     std::wstring GetHyperlinkUri(uint16_t id) const override;
     std::wstring GetHyperlinkCustomId(uint16_t id) const override;
-    std::vector<size_t> GetPatternId(const til::point location) const override;
+    std::vector<size_t> GetPatternId(const til::point viewportPos) const override;
 
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     std::span<const til::point_span> GetSelectionSpans() const noexcept override;
@@ -397,7 +397,6 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansion _multiClickSelectionMode = SelectionExpansion::Char;
     SelectionInteractionMode _selectionMode = SelectionInteractionMode::None;
-    bool _selectionIsTargetingUrl = false;
     SelectionEndpoint _selectionEndpoint = SelectionEndpoint::None;
     bool _anchorInactiveSelectionEndpoint = false;
 #pragma endregion
