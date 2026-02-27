@@ -3170,12 +3170,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
 
                 std::wstring allPathsString;
+                const auto delimiter{ _core.Settings().DragDropDelimiter() };
                 for (auto& fullPath : fullPaths)
                 {
-                    // Join the paths with spaces
+                    // Join the paths with the delimiter
                     if (!allPathsString.empty())
                     {
-                        allPathsString += L" ";
+                        allPathsString += delimiter;
                     }
 
                     const auto translationStyle{ _core.Settings().PathTranslationStyle() };

@@ -3166,6 +3166,11 @@
             "mingw"
           ],
           "type": "string"
+        },
+        "dragDropDelimiter": {
+          "default": " ",
+          "description": "The delimiter used when dropping multiple files onto the terminal.",
+          "type": "string"
         }
       }
     },
