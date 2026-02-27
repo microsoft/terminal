@@ -377,9 +377,7 @@ private:
     std::wstring _workingDirectory;
     bool _highContrastMode = false;
 
-    // This default fake font value is only used to check if the font is a raster font.
-    // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.
-    FontInfo _fontInfo{ DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false };
+    FontInfo _fontInfo;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the til::point that remains selected when you extend a selection in any direction

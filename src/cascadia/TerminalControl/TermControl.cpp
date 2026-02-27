@@ -2756,6 +2756,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto cellHeight = CSSLengthPercentage::FromString(settings.CellHeight().c_str());
         const auto scrollState = settings.ScrollState();
         const auto padding = settings.Padding();
+        FontInfoDesired desiredFont;
+        FontInfo actualFont;
 
         // Initialize our font information.
         // The font width doesn't terribly matter, we'll only be using the
@@ -2764,9 +2766,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfoDesired desiredFont{ fontFace, 0, fontWeight.Weight, fontSize, CP_UTF8 };
-        desiredFont.SetCellSize(cellWidth, cellHeight);
-        FontInfo actualFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
+        desiredFont.SetFaceName(std::wstring{ std::wstring_view{ fontFace } });
+        desiredFont.SetWeight(fontWeight.Weight);
+        desiredFont.SetFontSizeInPt(fontSize);
+        desiredFont.SetCellWidth(cellWidth);
+        desiredFont.SetCellHeight(cellHeight);
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns
@@ -2780,7 +2784,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
 
         const auto scale = dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-        const auto actualFontSize = actualFont.GetSize();
+        const auto actualFontSize = actualFont.GetCellSizeInPhysicalPx();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.

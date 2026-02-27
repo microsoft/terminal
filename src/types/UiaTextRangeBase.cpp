@@ -1291,7 +1291,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY
 
 til::size UiaTextRangeBase::_getScreenFontSize() const noexcept
 {
-    auto coordRet = _pData->GetFontInfo().GetSize();
+    auto coordRet = _pData->GetFontInfo().GetCellSizeInPhysicalPx();
 
     // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.
     coordRet.width = std::max(coordRet.width, 1);

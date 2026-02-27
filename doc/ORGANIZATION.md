@@ -105,7 +105,6 @@
 	* `Registry.cpp`
 * Connects to our relatively recently extracted renderer LIB to give it data about console state and user prefs
 	* `renderData.cpp`
-	* `renderFontDefaults.cpp`
 * Maintains most of the information about what we should present inside the window on the screen (sizes, dimensions, also holds a text buffer instance and a cursor instance and a selection instance)
 	* `screenInfo.cpp`
 * Handles some aspects of scrolling with the mouse and keyboard

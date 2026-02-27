@@ -368,7 +368,7 @@ void Clipboard::StoreSelectionToClipboard(const bool copyFormatting)
     {
         const auto& fontData = gci.GetActiveOutputBuffer().GetCurrentFont();
         const auto& fontName = fontData.GetFaceName();
-        const auto fontSizePt = fontData.GetUnscaledSize().height * 72 / ServiceLocator::LocateGlobals().dpi;
+        const auto fontSizePt = fontData.GetCellSizeInDIP().height * 72 / ServiceLocator::LocateGlobals().dpi;
         const auto bgColor = renderSettings.GetAttributeColors({}).second;
         const auto isIntenseBold = renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
 

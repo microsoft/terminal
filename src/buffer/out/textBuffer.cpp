@@ -2209,7 +2209,7 @@ std::wstring TextBuffer::GetWithControlSequences(const CopyRequest& req) const
 // Return Value:
 // - string containing the generated HTML. Empty if the copy request is invalid.
 std::string TextBuffer::GenHTML(const CopyRequest& req,
-                                const int fontHeightPoints,
+                                const float fontHeightPoints,
                                 const std::wstring_view fontFaceName,
                                 const COLORREF backgroundColor,
                                 const bool isIntenseBold,
@@ -2245,7 +2245,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
             // even with different font, add monospace as fallback
             fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-family:'{}',monospace;"), til::u16u8(fontFaceName));
 
-            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-size:{}pt;"), fontHeightPoints);
+            fmt::format_to(std::back_inserter(htmlBuilder), FMT_COMPILE("font-size:{}pt;"), lroundf(fontHeightPoints));
 
             // note: MS Word doesn't support padding (in this way at least)
             // todo: customizable padding
@@ -2420,7 +2420,7 @@ std::string TextBuffer::GenHTML(const CopyRequest& req,
 // Return Value:
 // - string containing the generated RTF. Empty if the copy request is invalid.
 std::string TextBuffer::GenRTF(const CopyRequest& req,
-                               const int fontHeightPoints,
+                               const float fontHeightPoints,
                                const std::wstring_view fontFaceName,
                                const COLORREF backgroundColor,
                                const bool isIntenseBold,
@@ -2496,7 +2496,7 @@ std::string TextBuffer::GenRTF(const CopyRequest& req,
 
         // \fsN: specifies font size in half-points. E.g. \fs20 results in a font
         // size of 10 pts. That's why, font size is multiplied by 2 here.
-        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\fs{}"), 2 * fontHeightPoints);
+        fmt::format_to(std::back_inserter(contentBuilder), FMT_COMPILE("\\fs{}"), lroundf(2 * fontHeightPoints));
 
         // Set the background color for the page. But the standard way (\cbN) to do
         // this isn't supported in Word. However, the following control words sequence
