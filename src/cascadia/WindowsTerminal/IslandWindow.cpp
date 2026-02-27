@@ -587,6 +587,45 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         WindowMoved.raise();
         break;
     }
+    case WM_EXITSIZEMOVE:
+    {
+        if (IsQuakeWindow())
+        {
+            const til::rect windowRect{ GetWindowRect() };
+            const auto hmon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
+
+            MONITORINFO monitorInfo{};
+            monitorInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfo(hmon, &monitorInfo);
+
+            UINT dpix = USER_DEFAULT_SCREEN_DPI;
+            UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+            GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+            const auto ncSize = GetTotalNonClientExclusiveSize(dpix);
+            const til::size desktopDimensions{
+                (monitorInfo.rcWork.right - monitorInfo.rcWork.left),
+                (monitorInfo.rcWork.bottom - monitorInfo.rcWork.top)
+            };
+            const auto availableHeight = desktopDimensions.height + ncSize.height;
+            const auto currentHeight = windowRect.height();
+            const auto newPercent = static_cast<float>(currentHeight) / static_cast<float>(availableHeight);
+            const auto clampedPercent = std::clamp(newPercent, 0.1f, 1.0f);
+
+            if (clampedPercent != _quakeWindowSizePercent)
+            {
+                _quakeWindowSizePercent = clampedPercent;
+
+#ifdef _DEBUG
+                OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] WM_EXITSIZEMOVE: New size percent: %.1f%% (height: %d, available: %d)\n",
+                    clampedPercent * 100.0f, currentHeight, availableHeight).c_str());
+#endif
+
+                QuakeWindowSizeChanged.raise(clampedPercent);
+            }
+        }
+        break;
+    }
     case WM_CLOSE:
     {
         // If the user wants to close the app by clicking 'X' button,
@@ -1646,6 +1685,15 @@ void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
     _autoHideWindow = autoHideWindow;
 }
 
+void IslandWindow::SetQuakeWindowSizePercent(float percent) noexcept
+{
+    _quakeWindowSizePercent = std::clamp(percent, 0.1f, 1.0f);
+
+#ifdef _DEBUG
+    OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] Size percent set to: %.1f%%\n", _quakeWindowSizePercent * 100.0f).c_str());
+#endif
+}
+
 // Method Description:
 // - Enter quake mode for the monitor this window is currently on. This involves
 //   resizing it to the top half of the monitor.
@@ -1713,7 +1761,7 @@ til::rect IslandWindow::_getQuakeModeSize(HMONITOR hmon)
     };
     const til::size dimensions{
         availableSpace.width - 2,
-        availableSpace.height / 2
+        static_cast<til::CoordType>(availableSpace.height * _quakeWindowSizePercent)
     };
 
     return { origin, dimensions };

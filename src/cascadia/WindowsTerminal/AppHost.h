@@ -88,6 +88,8 @@ private:
     void _IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable& sender,
                                const winrt::Windows::Foundation::IInspectable& args);
 
+    void _QuakeWindowSizeChanged(float sizePercent);
+
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
@@ -176,6 +178,7 @@ private:
         winrt::event_token DragRegionClicked;
         winrt::event_token WindowVisibilityChanged;
         winrt::event_token MaximizeChanged;
+        winrt::event_token QuakeWindowSizeChanged;
         // LOAD BEARING!!
         //If you add events here, make sure they're revoked in AppHost::_revokeWindowCallbacks
     } _windowCallbacks{};
