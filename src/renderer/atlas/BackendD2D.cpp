@@ -170,6 +170,62 @@ void BackendD2D::_handleSettingsUpdate(const RenderingPayload& p)
         _backgroundBrush->SetExtendModeY(D2D1_EXTEND_MODE_CLAMP);
         _backgroundBrush->SetTransform(&transform);
         _backgroundBitmapGeneration = {};
+
+        {
+            const auto& font = *p.s->font;
+            const auto cellWidth = static_cast<f32>(font.cellSize.x);
+            const auto cellHeight = static_cast<f32>(font.cellSize.y);
+            const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
+            const auto duBottom = static_cast<f32>(font.doubleUnderline[1].position);
+            // The double-underline height is also our target line width.
+            const auto duHeight = static_cast<f32>(font.doubleUnderline[0].height);
+
+            // This gives it the same position and height as our double-underline. There's no particular reason for that, apart from
+            // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
+            // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
+            const auto height = std::max(3.0f, duBottom + duHeight - duTop);
+            const auto position = std::min(duTop, cellHeight - height);
+
+            // The amplitude of the wave needs to account for the stroke width, so that the final height including
+            // antialiasing isn't larger than our target `height`. That's why we calculate `(height - duHeight)`.
+            const auto center = position + 0.5f * height;
+            const auto top = center - (height - duHeight);
+            const auto bottom = center + (height - duHeight);
+            const auto step = roundf(0.5f * height);
+
+            // Calculate the wave over the entire width of the screen.
+            float x = 0;
+            auto screenWidth = cellWidth * p.s->viewportCellCount.x;
+
+            THROW_IF_FAILED(p.d2dFactory->CreatePathGeometry(_curlyLineGeometry.addressof()));
+
+            wil::com_ptr<ID2D1GeometrySink> sink;
+            THROW_IF_FAILED(_curlyLineGeometry->Open(sink.addressof()));
+
+            // This adds complete periods of the wave until we reach the end of the range.
+            sink->BeginFigure({ x, center }, D2D1_FIGURE_BEGIN_HOLLOW);
+            for (D2D1_QUADRATIC_BEZIER_SEGMENT segment; x < screenWidth;)
+            {
+                x += step;
+                segment.point1.x = x;
+                segment.point1.y = top;
+                x += step;
+                segment.point2.x = x;
+                segment.point2.y = center;
+                sink->AddQuadraticBezier(&segment);
+
+                x += step;
+                segment.point1.x = x;
+                segment.point1.y = bottom;
+                x += step;
+                segment.point2.x = x;
+                segment.point2.y = center;
+                sink->AddQuadraticBezier(&segment);
+            }
+            sink->EndFigure(D2D1_FIGURE_END_OPEN);
+
+            THROW_IF_FAILED(sink->Close());
+        }
     }
 
     if (fontChanged || cursorChanged)
@@ -619,6 +675,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
     const auto rowBottom = rowTop + cellHeight;
     const auto cellCenter = row->lineRendition == LineRendition::DoubleHeightTop ? rowBottom : rowTop;
     const auto scaleHorizontal = row->lineRendition != LineRendition::SingleWidth ? 0.5f : 1.0f;
+    const auto scaleVertical = row->lineRendition == LineRendition::DoubleHeightBottom ? 2.f : 1.f;
     const auto scaledCellWidth = cellWidth * scaleHorizontal;
     const auto horizontalShift = static_cast<u8>(row->lineRendition != LineRendition::SingleWidth);
 
@@ -669,63 +726,14 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         const auto colors = &colorBitmap[p.colorBitmapRowStride * y];
         const auto& font = *p.s->font;
 
-        const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
-        const auto duBottom = static_cast<f32>(font.doubleUnderline[1].position);
         // The double-underline height is also our target line width.
         const auto duHeight = static_cast<f32>(font.doubleUnderline[0].height);
 
-        // This gives it the same position and height as our double-underline. There's no particular reason for that, apart from
-        // it being simple to implement and robust against more peculiar fonts with unusually large/small descenders, etc.
-        // We still need to ensure though that it doesn't clip out of the cellHeight at the bottom, which is why `position` has a min().
-        const auto height = std::max(3.0f, duBottom + duHeight - duTop);
-        const auto position = std::min(duTop, cellHeight - height);
-
-        // The amplitude of the wave needs to account for the stroke width, so that the final height including
-        // antialiasing isn't larger than our target `height`. That's why we calculate `(height - duHeight)`.
-        const auto center = cellCenter + position + 0.5f * height;
-        const auto top = center - (height - duHeight);
-        const auto bottom = center + (height - duHeight);
-        const auto step = roundf(0.5f * height);
-        const auto period = 4.0f * step;
-
-        // Calculate the wave over the entire region to be underlined, even if
-        // it has multiple colors in it. That way, when we clip it to render each
-        // color, it is seamless.
-        const auto fullSpanFrom = r.from * scaledCellWidth;
-        const auto fullSpanTo = r.to * scaledCellWidth;
-        // Align the start of the wave to the nearest preceding period boundary.
-        // This ensures that the wave is continuous across color and cell changes.
-        auto x = floorf(fullSpanFrom / period) * period;
-
-        wil::com_ptr<ID2D1PathGeometry> geometry;
-        THROW_IF_FAILED(p.d2dFactory->CreatePathGeometry(geometry.addressof()));
-
-        wil::com_ptr<ID2D1GeometrySink> sink;
-        THROW_IF_FAILED(geometry->Open(sink.addressof()));
-
-        // This adds complete periods of the wave until we reach the end of the range.
-        sink->BeginFigure({ x, center }, D2D1_FIGURE_BEGIN_HOLLOW);
-        for (D2D1_QUADRATIC_BEZIER_SEGMENT segment; x < fullSpanTo;)
-        {
-            x += step;
-            segment.point1.x = x;
-            segment.point1.y = top;
-            x += step;
-            segment.point2.x = x;
-            segment.point2.y = center;
-            sink->AddQuadraticBezier(&segment);
-
-            x += step;
-            segment.point1.x = x;
-            segment.point1.y = bottom;
-            x += step;
-            segment.point2.x = x;
-            segment.point2.y = center;
-            sink->AddQuadraticBezier(&segment);
-        }
-        sink->EndFigure(D2D1_FIGURE_END_OPEN);
-
-        THROW_IF_FAILED(sink->Close());
+        D2D1_MATRIX_3X2_F transform, translateTransform;
+        _renderTarget->GetTransform(&transform);
+        translateTransform = transform;
+        translateTransform.dy = rowBottom - (cellHeight * scaleVertical);
+        _renderTarget->SetTransform(&translateTransform);
 
         for (auto from = r.from; from < r.to;)
         {
@@ -735,13 +743,14 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
                 ;
 
             const auto brush = _brushWithColor(start);
-            const D2D1_RECT_F clipRect{ (from * scaledCellWidth), rowTop, (from + run) * scaledCellWidth, rowBottom };
+            const D2D1_RECT_F clipRect{ (from * scaledCellWidth), 0, (from + run) * scaledCellWidth, cellHeight }; // Translated by rowTop
             _renderTarget->PushAxisAlignedClip(&clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
-            _renderTarget->DrawGeometry(geometry.get(), brush, duHeight, nullptr);
+            _renderTarget->DrawGeometry(_curlyLineGeometry.get(), brush, duHeight, nullptr);
             _renderTarget->PopAxisAlignedClip();
 
             from += run;
         }
+        _renderTarget->SetTransform(&transform);
     };
 
     for (const auto& r : row->gridLineRanges)

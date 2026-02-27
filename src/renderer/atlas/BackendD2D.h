@@ -44,6 +44,7 @@ namespace Microsoft::Console::Render::Atlas
         wil::com_ptr<ID2D1DeviceContext4> _renderTarget4; // Optional. Supported since Windows 10 14393.
         wil::com_ptr<ID2D1StrokeStyle> _dottedStrokeStyle;
         wil::com_ptr<ID2D1StrokeStyle> _dashedStrokeStyle;
+        wil::com_ptr<ID2D1PathGeometry> _curlyLineGeometry;
         wil::com_ptr<ID2D1Bitmap> _backgroundBitmap;
         wil::com_ptr<ID2D1BitmapBrush> _backgroundBrush;
         til::generation_t _backgroundBitmapGeneration;
