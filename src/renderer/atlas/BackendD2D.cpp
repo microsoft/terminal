@@ -728,8 +728,8 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         const f32 w = pos.height;
         const f32 centerY = cellCenter + pos.position + w * 0.5f;
 
-        const D2D1_POINT_2F point0{ r.from * scaledCellWidth, centerY };
-        const D2D1_POINT_2F point1{ r.to * scaledCellWidth, centerY };
+        const D2D1_POINT_2F point0{ 0, centerY };
+        const D2D1_POINT_2F point1{ cellWidth * p.s->viewportCellCount.x, centerY };
         for (auto from = r.from; from < r.to;)
         {
             const auto start = colors[from];
