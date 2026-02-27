@@ -155,7 +155,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             ParentPage      = $pageClass
             NavigationParam = $ClassMap[$pageClass].NavigationParam
             SubPage         = $ClassMap[$pageClass].SubPage
-            ElementName     = $null # No specific element to navigate to for the page itself
+            ElementName     = $null # No specific element to navigate to, for the page itself
             File            = $filename
         }
     }
@@ -340,7 +340,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // - empty if the NavigationArg is meant to be a view model object at runtime (i.e. profile, ntm folder, etc.)
         wil::zwstring_view NavigationArgTag;
 
-        // SubPage to navigate to for pages with multiple subpages (i.e. Profiles, New Tab Menu)
+        // SubPage to navigate to, for pages with multiple subpages (i.e. Profiles, New Tab Menu)
         BreadcrumbSubPage SubPage;
         
         // x:Name of the SettingContainer to navigate to on the page (i.e. "DefaultProfile")
