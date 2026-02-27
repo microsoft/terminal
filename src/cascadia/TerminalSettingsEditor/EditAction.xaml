@@ -136,7 +136,7 @@
             </Style>
             <Style x:Key="KeyChordEditorStyle"
                    TargetType="local:KeyChordListener">
-                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
             <x:Int32 x:Key="EditButtonSize">32</x:Int32>
@@ -157,63 +157,64 @@
                 <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
                 <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
             </Style>
+            <Style x:Key="TextBlockGroupingStyle"
+                   BasedOn="{StaticResource BodyStrongTextBlockStyle}"
+                   TargetType="TextBlock">
+                <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+                <Setter Property="FontSize" Value="16" />
+            </Style>
 
             <!--  Templates  -->
             <DataTemplate x:Key="KeyChordTemplate"
                           x:DataType="local:KeyChordViewModel">
                 <ListViewItem IsTabStop="False"
                               Style="{StaticResource KeyBindingContainerStyle}">
-                    <Grid Padding="2,0,2,0"
+                    <Grid Padding="-4,0,0,0"
                           VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0"
+                                Background="{ThemeResource AppBarItemBackgroundThemeBrush}"
                                 Click="{x:Bind ToggleEditMode}"
-                                Style="{ThemeResource KeyChordBorderStyle}"
                                 Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
                             <TextBlock FontSize="14"
-                                       Style="{ThemeResource KeyChordTextBlockStyle}"
                                        Text="{x:Bind KeyChordText, Mode=OneWay}"
                                        TextWrapping="WrapWholeWords" />
                         </Button>
-                        <Grid Grid.Column="0"
-                              ColumnSpacing="8"
-                              Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <!--  Edit Mode: Key Chord Listener  -->
-                            <local:KeyChordListener Grid.Column="0"
-                                                    Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
-                                                    Style="{StaticResource KeyChordEditorStyle}" />
-
-                            <!--  Cancel editing the action  -->
-                            <Button x:Uid="Actions_CancelButton"
-                                    Grid.Column="1"
-                                    AutomationProperties.Name="{x:Bind CancelButtonName}"
-                                    Click="{x:Bind CancelChanges}"
-                                    Style="{StaticResource EditButtonStyle}">
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE711;" />
-                            </Button>
-
-                            <!--  Accept changes  -->
-                            <Button x:Uid="Actions_AcceptButton"
-                                    Grid.Column="2"
-                                    AutomationProperties.Name="{x:Bind AcceptButtonName}"
-                                    Click="{x:Bind AcceptChanges}"
-                                    Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
-                                    Style="{StaticResource AccentEditButtonStyle}">
-                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
-                                          Glyph="&#xE8FB;" />
-                            </Button>
-                        </Grid>
-                        <Button Grid.Column="1"
+                        <local:KeyChordListener Grid.Column="0"
+                                                Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                Style="{StaticResource KeyChordEditorStyle}"
+                                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
+                        <Button x:Uid="Actions_CancelButton"
+                                Grid.Column="1"
                                 Margin="8,0,0,0"
+                                AutomationProperties.Name="{x:Bind CancelButtonName}"
+                                Click="{x:Bind CancelChanges}"
+                                Style="{StaticResource EditButtonStyle}"
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                      Glyph="&#xE711;" />
+                        </Button>
+
+                        <Button x:Uid="Actions_AcceptButton"
+                                Grid.Column="2"
+                                Margin="8,0,8,0"
+                                AutomationProperties.Name="{x:Bind AcceptButtonName}"
+                                Click="{x:Bind AcceptChanges}"
+                                Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
+                                Style="{StaticResource AccentEditButtonStyle}"
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                      Glyph="&#xE8FB;" />
+                        </Button>
+
+                        <Button Grid.Column="3"
+                                HorizontalAlignment="Left"
                                 AutomationProperties.Name="{x:Bind DeleteButtonName}"
                                 Style="{StaticResource DeleteSmallButtonStyle}">
                             <Button.Content>
@@ -243,13 +244,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="100"
@@ -267,13 +269,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -291,13 +294,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -315,13 +319,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -339,13 +344,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -363,13 +369,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="0.2"
                                     Maximum="1"
@@ -387,7 +394,7 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto"
+                        <ColumnDefinition Width="*"
                                           MinWidth="196" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
@@ -408,13 +415,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <ComboBox Grid.Column="1"
+                              HorizontalAlignment="Stretch"
                               AutomationProperties.Name="{x:Bind Name}"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -482,13 +490,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <ToggleSwitch Grid.Column="1"
+                                  HorizontalAlignment="Left"
                                   AutomationProperties.Name="{x:Bind Name}"
                                   IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}" />
                 </Grid>
@@ -501,13 +510,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <CheckBox Grid.Column="1"
+                              HorizontalAlignment="Left"
                               AutomationProperties.Name="{x:Bind Name}"
                               IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
                               IsThreeState="True" />
@@ -526,13 +536,14 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
                                Text="{x:Bind Name}"
                                TextWrapping="WrapWholeWords" />
                     <ComboBox Grid.Column="1"
+                              HorizontalAlignment="Stretch"
                               AutomationProperties.Name="{x:Bind Name}"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -586,7 +597,7 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
@@ -608,7 +619,7 @@
                       ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                VerticalAlignment="Center"
@@ -646,12 +657,12 @@
 
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
             Margin="{StaticResource SettingStackMargin}">
-        <Grid MaxWidth="600"
-              Margin="{StaticResource SettingStackMargin}"
-              HorizontalAlignment="Left"
-              ColumnSpacing="16"
-              RowSpacing="8">
+        <Grid Margin="{StaticResource SettingStackMargin}"
+              HorizontalAlignment="Stretch">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -659,64 +670,85 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBlock x:Uid="Actions_Name"
+            <TextBlock x:Uid="Actions_CommandDetails"
                        Grid.Row="0"
                        Grid.Column="0"
+                       Grid.ColumnSpan="2"
+                       Margin="0,0,0,12"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource TextBlockGroupingStyle}" />
+            <TextBlock x:Uid="Actions_Name"
+                       Grid.Row="1"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
                        VerticalAlignment="Center" />
             <TextBox x:Name="CommandNameTextBox"
-                     Grid.Row="0"
+                     Grid.Row="1"
                      Grid.Column="1"
-                     Width="300"
-                     HorizontalAlignment="Left"
+                     Margin="0,0,0,8"
+                     HorizontalAlignment="Stretch"
                      AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
                      PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
                      Text="{x:Bind ViewModel.Name, Mode=TwoWay}" />
             <TextBlock x:Uid="Actions_ShortcutAction"
-                       Grid.Row="1"
+                       Grid.Row="2"
                        Grid.Column="0"
+                       Margin="0,0,0,12"
                        VerticalAlignment="Center" />
             <AutoSuggestBox x:Name="ShortcutActionBox"
-                            Grid.Row="1"
+                            Grid.Row="2"
                             Grid.Column="1"
+                            Margin="0,0,0,12"
                             VerticalAlignment="Center"
                             AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
                             GotFocus="ShortcutActionBox_GotFocus"
                             LostFocus="ShortcutActionBox_LostFocus"
                             QuerySubmitted="ShortcutActionBox_QuerySubmitted"
-                            SuggestionChosen="ShortcutActionBox_SuggestionChosen"
                             TextChanged="ShortcutActionBox_TextChanged" />
-            <TextBlock x:Uid="Actions_Arguments"
-                       Grid.Row="2"
+            <TextBlock x:Uid="Actions_Keybindings"
+                       Grid.Row="3"
                        Grid.Column="0"
+                       Grid.ColumnSpan="2"
+                       Margin="0,0,0,12"
                        VerticalAlignment="Center"
+                       Style="{StaticResource TextBlockGroupingStyle}" />
+            <ListView x:Name="KeyChordListView"
+                      x:Uid="Actions_KeyBindingsListView"
+                      Grid.Row="4"
+                      Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      Margin="0,0,0,12"
+                      ItemTemplate="{StaticResource KeyChordTemplate}"
+                      ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
+                      SelectionMode="None">
+                <ListView.Footer>
+                    <Button Margin="0,4,0,0"
+                            Click="{x:Bind ViewModel.AddKeybinding_Click}">
+                        <TextBlock x:Uid="Actions_AddKeyChord" />
+                    </Button>
+                </ListView.Footer>
+            </ListView>
+            <TextBlock x:Uid="Actions_Arguments"
+                       Grid.Row="5"
+                       Grid.Column="0"
+                       Grid.ColumnSpan="2"
+                       Margin="0,0,0,12"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource TextBlockGroupingStyle}"
                        Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}" />
-            <ItemsControl Grid.Row="2"
-                          Grid.Column="1"
+            <ItemsControl Grid.Row="6"
+                          Grid.Column="0"
+                          Grid.ColumnSpan="2"
+                          Margin="0,0,0,12"
+                          HorizontalAlignment="Stretch"
                           AutomationProperties.Name="{x:Bind ViewModel.AdditionalArgumentsControlAutomationPropName}"
                           IsTabStop="False"
                           ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
                           ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}" />
-            <TextBlock x:Uid="Actions_Keybindings"
-                       Grid.Row="3"
-                       Grid.Column="0"
-                       VerticalAlignment="Center" />
-            <ListView x:Name="KeyChordListView"
-                      x:Uid="Actions_KeyBindingsListView"
-                      Grid.Row="3"
-                      Grid.Column="1"
-                      ItemTemplate="{StaticResource KeyChordTemplate}"
-                      ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
-                      SelectionMode="None">
-                <ListView.Header>
-                    <Button Click="{x:Bind ViewModel.AddKeybinding_Click}">
-                        <TextBlock x:Uid="Actions_AddKeyChord" />
-                    </Button>
-                </ListView.Header>
-            </ListView>
-            <Button Grid.Row="4"
+            <Button Grid.Row="7"
                     Grid.Column="0"
                     IsEnabled="{x:Bind ViewModel.IsUserAction, Mode=OneWay}"
                     Style="{StaticResource DeleteButtonStyle}">

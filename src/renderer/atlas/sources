@@ -6,7 +6,7 @@ TARGETTYPE = LIBRARY
 PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = pch.h
 
-MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201
+MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201 /wd4505
 
 FXC_FLAGS               = /nologo /Emain /WX /all_resources_bound /Zi
 FXC_PROFILE_VERSION     = 4_0

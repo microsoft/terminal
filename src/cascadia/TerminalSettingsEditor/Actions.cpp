@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Actions.h"
 #include "Actions.g.cpp"
+#include "LibraryResources.h"
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
 using namespace winrt::Windows::UI::Xaml;
@@ -23,7 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::ActionsViewModel>();
         _ViewModel.ReSortCommandList();
-        _ViewModel.CurrentPage(ActionsSubPage::Base);
         auto vmImpl = get_self<ActionsViewModel>(_ViewModel);
         vmImpl->MarkAsVisited();
         _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             AddNewButton().Focus(FocusState::Programmatic);
         });
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         TraceLoggingWrite(
             g_hTerminalSettingsEditorProvider,

@@ -50,6 +50,11 @@ using namespace Microsoft::Console::Interactivity;
             CodepointWidthDetector::Singleton().Reset(mode);
         }
 
+        if (pArgs->GetAmbiguousIsWide())
+        {
+            CodepointWidthDetector::Singleton().SetAmbiguousWidth(2);
+        }
+
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
@@ -115,6 +120,14 @@ using namespace Microsoft::Console::Interactivity;
             RETURN_IF_FAILED(_pPtySignalInputThread->Start());
         }
         CATCH_RETURN();
+    }
+
+    // TODO GH#19847: Avoid translating win32im sequences to Kitty Keyboard Protocol temporarily.
+    // This is because as of this writing, our implementation is brand new, and Windows Terminal
+    // needs a toggle to disable it. That only works if ConPTY then doesn't do it anyway.
+    if (const auto inputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().pInputBuffer)
+    {
+        inputBuffer->GetTerminalInput().ForceDisableKittyKeyboardProtocol(true);
     }
 
     // The only way we're initialized is if the args said we're in conpty mode.

@@ -189,7 +189,10 @@ bool HostSignalInputThread::_GetData(std::span<std::byte> buffer)
                                 &_dwThreadId));
 
     RETURN_LAST_ERROR_IF_NULL(_hThread.get());
-    LOG_IF_FAILED(SetThreadDescription(_hThread.get(), L"Host Signal Handler Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(_hThread.get(), L"Host Signal Handler Thread"));
+    }
 
     return S_OK;
 }

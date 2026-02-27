@@ -824,7 +824,7 @@
     <value>Descartar selección</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Una línea</value>
+    <value>Línea única</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>Con secuencias de control</value>

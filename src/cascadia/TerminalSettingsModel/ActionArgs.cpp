@@ -59,9 +59,8 @@ namespace winrt
     namespace WARC = ::winrt::Windows::ApplicationModel::Resources::Core;
 }
 
-// Like RS_ and RS_fmt, but they use an ambient boolean named "localized" to
-// determine whether to load the English version of a resource or the localized
-// one.
+// Like RS_ and RS_fmt, but they use an ambient context to determine
+// whether to load the English version of a resource or the localized one.
 #define RS_switchable_(x) RS_switchable_impl(context, USES_RESOURCE(x))
 #define RS_switchable_fmt(x, ...) RS_switchable_fmt_impl(context, USES_RESOURCE(x), __VA_ARGS__)
 

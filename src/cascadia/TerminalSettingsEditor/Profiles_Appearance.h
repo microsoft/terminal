@@ -5,10 +5,9 @@
 
 #include <ThrottledFunc.h>
 
+#include "Profiles_Appearance.g.h"
 #include "PreviewConnection.h"
 #include "Utils.h"
-
-#include "Profiles_Appearance.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

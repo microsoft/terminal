@@ -30,6 +30,7 @@ Author(s):
     X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
     X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                         \
+    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, "compatibility.ambiguousWidth", winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                               \
     X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, "defaultInputScope")                                                                                                 \
     X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
     X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
@@ -103,6 +104,7 @@ Author(s):
     X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
     X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                      \
     X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
+    X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                   \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \

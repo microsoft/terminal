@@ -200,7 +200,8 @@
             </Grid>
         </Border>
 
-        <local:SettingContainer x:Uid="ColorScheme_InboxSchemeDuplicate"
+        <local:SettingContainer x:Name="InboxSchemeDuplicate"
+                                x:Uid="ColorScheme_InboxSchemeDuplicate"
                                 Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
             <Button x:Name="DuplicateSchemeButton"
                     x:Uid="ColorScheme_DuplicateButton"
@@ -208,7 +209,8 @@
                     Style="{StaticResource BrowseButtonStyle}" />
         </local:SettingContainer>
 
-        <local:SettingContainer x:Uid="ColorScheme_ColorsHeader"
+        <local:SettingContainer x:Name="ColorsHeader"
+                                x:Uid="ColorScheme_ColorsHeader"
                                 StartExpanded="True"
                                 Style="{StaticResource ExpanderSettingContainerStyle}"
                                 Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">

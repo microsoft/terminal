@@ -349,6 +349,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _ReloadEnvironmentVariables = profile.ReloadEnvironmentVariables();
         _RainbowSuggestions = profile.RainbowSuggestions();
         _ForceVTInput = profile.ForceVTInput();
+        _AllowKittyKeyboardMode = profile.AllowKittyKeyboardMode();
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
         _PathTranslationStyle = profile.PathTranslationStyle();
@@ -375,6 +376,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _TextMeasurement = globalSettings.TextMeasurement();
+        _AmbiguousWidth = globalSettings.AmbiguousWidth();
         _DefaultInputScope = globalSettings.DefaultInputScope();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();

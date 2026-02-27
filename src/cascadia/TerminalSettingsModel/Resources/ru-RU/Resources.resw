@@ -821,10 +821,10 @@
     <comment>The display name of a dynamic profile generator for SSH hosts</comment>
   </data>
   <data name="DismissSelectionActionArgumentLocalized" xml:space="preserve">
-    <value>Закрыть выделение</value>
+    <value>Отменить выбор</value>
   </data>
   <data name="SingleLineActionArgumentLocalized" xml:space="preserve">
-    <value>Одна строка</value>
+    <value>Одинарная линия</value>
   </data>
   <data name="WithControlSequencesActionArgumentLocalized" xml:space="preserve">
     <value>С последовательностями управления</value>
@@ -941,7 +941,7 @@
     <value>Фон</value>
   </data>
   <data name="MatchModeActionArgumentLocalized" xml:space="preserve">
-    <value>Режим соответствия</value>
+    <value>Режим сопоставления</value>
   </data>
   <data name="StartingDirectoryActionArgumentLocalized" xml:space="preserve">
     <value>Начальный каталог</value>
