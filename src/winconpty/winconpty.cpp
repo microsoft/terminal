@@ -16,6 +16,16 @@
 #else
 #include "device.h"
 #include <filesystem>
+
+static constexpr DWORD SystemConsoleInformation = 132;
+
+typedef struct _SYSTEM_CONSOLE_INFORMATION
+{
+    ULONG DriverLoaded : 1;
+    ULONG Spare : 31;
+} SYSTEM_CONSOLE_INFORMATION;
+
+NTSYSCALLAPI NTSTATUS NTAPI NtSetSystemInformation(SYSTEM_INFORMATION_CLASS Class, PVOID Info, ULONG Length);
 #endif // __INSIDE_WINDOWS
 
 #pragma warning(push)
@@ -88,6 +98,19 @@ static wchar_t* _ConsoleHostPath()
     return consoleHostPath.get();
 }
 
+static void _EnsureDriverIsLoaded() noexcept
+{
+#ifndef __INSIDE_WINDOWS
+    HMODULE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+    if (auto setSystemInformation{ GetProcAddressByFunctionDeclaration(ntdll, NtSetSystemInformation) })
+    {
+        SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
+        ConsoleInformation.DriverLoaded = TRUE;
+        std::ignore = setSystemInformation(static_cast<SYSTEM_INFORMATION_CLASS>(SystemConsoleInformation), &ConsoleInformation, sizeof(ConsoleInformation));
+    }
+#endif // !__INSIDE_WINDOWS
+}
+
 static bool _HandleIsValid(HANDLE h) noexcept
 {
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
@@ -116,7 +139,12 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     }
 
     wil::unique_handle serverHandle;
-    RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
+    if (FAILED(CreateServerHandle(serverHandle.addressof(), TRUE)))
+    {
+        // Try again after loading ConDrv.
+        _EnsureDriverIsLoaded();
+        RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
+    }
 
     // The hPtyReference we create here is used when the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute is processed.
     // This ensures that conhost's client processes inherit the correct (= our) console handle.

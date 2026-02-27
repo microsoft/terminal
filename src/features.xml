@@ -27,8 +27,8 @@
     </feature>
 
     <feature>
-        <name>Feature_ConhostAtlasEngine</name>
-        <description>Controls whether conhost supports the Atlas engine</description>
+        <name>Feature_ConhostAtlasEngineCustomShaders</name>
+        <description>Controls whether conhost supports custom shaders in Atlas engine</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledBrandingTokens>
             <brandingToken>WindowsInbox</brandingToken>

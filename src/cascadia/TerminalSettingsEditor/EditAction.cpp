@@ -8,7 +8,9 @@
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Navigation;
+using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -36,6 +38,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (auto kcVM{ args.try_as<KeyChordViewModel>() })
                     {
+                        // Force a layout update in case this key chord was newly added
+                        page->KeyChordListView().ScrollIntoView(*kcVM);
+                        page->KeyChordListView().UpdateLayout();
                         if (const auto& container = page->KeyChordListView().ContainerFromItem(*kcVM))
                         {
                             container.as<Controls::ListViewItem>().Focus(FocusState::Programmatic);
@@ -49,5 +54,86 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             CommandNameTextBox().Focus(FocusState::Programmatic);
         });
+
+        // Initialize AutoSuggestBox with current action and store last valid action
+        if (_ViewModel.ProposedShortcutActionName())
+        {
+            const auto currentAction = winrt::unbox_value<winrt::hstring>(_ViewModel.ProposedShortcutActionName());
+            ShortcutActionBox().Text(currentAction);
+            _lastValidAction = currentAction;
+        }
+    }
+
+    void EditAction::ShortcutActionBox_GotFocus(const IInspectable& sender, const RoutedEventArgs&)
+    {
+        // Only rebuild the list if we don't have a cached list or if the cached list is filtered
+        if (!_filteredActions || !_currentActionFilter.empty())
+        {
+            // Open the suggestions list with all available actions
+            std::vector<winrt::hstring> allActions;
+            for (const auto& action : _ViewModel.AvailableShortcutActions())
+            {
+                allActions.push_back(action);
+            }
+
+            _filteredActions = winrt::single_threaded_observable_vector(std::move(allActions));
+            _currentActionFilter = L"";
+            sender.as<AutoSuggestBox>().ItemsSource(_filteredActions);
+        }
+        sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
+    }
+
+    void EditAction::ShortcutActionBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
+    {
+        if (args.Reason() == AutoSuggestionBoxTextChangeReason::UserInput)
+        {
+            const auto searchText = sender.Text();
+            std::vector<winrt::hstring> filtered;
+
+            for (const auto& action : _ViewModel.AvailableShortcutActions())
+            {
+                // TODO: Update this to use fzf later
+                if (til::contains_linguistic_insensitive(action, searchText))
+                {
+                    filtered.push_back(action);
+                }
+            }
+
+            _filteredActions = winrt::single_threaded_observable_vector(std::move(filtered));
+            _currentActionFilter = searchText;
+            sender.ItemsSource(_filteredActions);
+        }
+    }
+
+    void EditAction::ShortcutActionBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
+    {
+        const auto submittedText = args.QueryText();
+
+        for (const auto& action : _ViewModel.AvailableShortcutActions())
+        {
+            if (action == submittedText)
+            {
+                _ViewModel.ProposedShortcutActionName(winrt::box_value(submittedText));
+                _lastValidAction = submittedText;
+                return;
+            }
+        }
+
+        // If we get here, we never found a match.
+        // Revert to the last valid action
+        sender.Text(_lastValidAction);
+    }
+
+    void EditAction::ShortcutActionBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
+    {
+        // The auto suggest box does a weird thing where it reverts to the last query text when you
+        // keyboard navigate out of it. Intercept it here and keep the correct text.
+        const auto box = sender.as<AutoSuggestBox>();
+        const auto currentText = box.Text();
+
+        if (currentText != _lastValidAction && !_lastValidAction.empty())
+        {
+            box.Text(_lastValidAction);
+        }
     }
 }

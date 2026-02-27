@@ -303,7 +303,10 @@ void PtySignalInputThread::_DoSetWindowParent(const SetParentData& data)
     RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
-    LOG_IF_FAILED(SetThreadDescription(hThread, L"ConPTY Signal Handler Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(hThread, L"ConPTY Signal Handler Thread"));
+    }
 
     return S_OK;
 }

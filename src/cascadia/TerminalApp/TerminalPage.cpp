@@ -38,7 +38,6 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
-using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Text;
@@ -2942,7 +2941,7 @@ namespace winrt::TerminalApp::implementation
     // - Does some of this in a background thread, as to not hang/crash the UI thread.
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
-    safe_void_coroutine TerminalPage::_PasteFromClipboardHandler(const IInspectable /*sender*/, const PasteFromClipboardEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_PasteFromClipboardHandler(const IInspectable sender, const PasteFromClipboardEventArgs eventArgs)
     try
     {
         // The old Win32 clipboard API as used below is somewhere in the order of 300-1000x faster than
@@ -2951,6 +2950,7 @@ namespace winrt::TerminalApp::implementation
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
         const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
+        const auto sourceId = sender.try_as<ControlInteractivity>().Id();
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
@@ -3048,7 +3048,30 @@ namespace winrt::TerminalApp::implementation
         // This will end up calling ConptyConnection::WriteInput which calls WriteFile which may block for
         // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
         assert(!dispatcher.HasThreadAccess());
-        eventArgs.HandleClipboardData(std::move(text));
+        eventArgs.HandleClipboardData(text);
+
+        // GH#18821: If broadcast input is active, paste the same text into all other
+        // panes on the tab. We do this here (rather than re-reading the
+        // clipboard per-pane) so that only one paste warning is shown.
+        co_await wil::resume_foreground(dispatcher);
+        if (const auto strongThis = weakThis.get())
+        {
+            if (const auto& tab{ strongThis->_GetFocusedTabImpl() })
+            {
+                if (tab->TabStatus().IsInputBroadcastActive())
+                {
+                    tab->GetRootPane()->WalkTree([&](auto&& pane) {
+                        if (const auto control = pane->GetTerminalControl())
+                        {
+                            if (control.ContentId() != sourceId && !control.ReadOnly())
+                            {
+                                control.RawWriteString(text);
+                            }
+                        }
+                    });
+                }
+            }
+        }
     }
     CATCH_LOG();
 
@@ -3358,24 +3381,6 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
-        // First, check if we're in broadcast input mode. If so, let's tell all
-        // the controls to paste.
-        if (const auto& tab{ _GetFocusedTabImpl() })
-        {
-            if (tab->TabStatus().IsInputBroadcastActive())
-            {
-                tab->GetRootPane()->WalkTree([](auto&& pane) {
-                    if (auto control = pane->GetTerminalControl())
-                    {
-                        control.PasteTextFromClipboard();
-                    }
-                });
-                return;
-            }
-        }
-
-        // The focused tab wasn't in broadcast mode. No matter. Just ask the
-        // current one to paste.
         if (const auto& control{ _GetActiveControl() })
         {
             control.PasteTextFromClipboard();
@@ -4092,12 +4097,12 @@ namespace winrt::TerminalApp::implementation
     {
         constexpr auto lightnessThreshold = 0.6f;
         // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
-        const auto IsBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
+        const auto isBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
         const auto isLightAccentColor = ColorFix::GetLightness(accentColor) >= lightnessThreshold;
         const auto hoverColorAdjustment = isLightAccentColor ? -0.05f : 0.05f;
         const auto pressedColorAdjustment = isLightAccentColor ? -0.1f : 0.1f;
 
-        const auto foregroundColor = IsBrightColor ? Colors::Black() : Colors::White();
+        const auto foregroundColor = isBrightColor ? Colors::Black() : Colors::White();
         const auto hoverColor = til::color{ ColorFix::AdjustLightness(accentColor, hoverColorAdjustment) };
         const auto pressedColor = til::color{ ColorFix::AdjustLightness(accentColor, pressedColorAdjustment) };
 

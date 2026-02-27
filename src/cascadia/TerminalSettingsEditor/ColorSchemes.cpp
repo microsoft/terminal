@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::ColorSchemesPageViewModel>();
         _ViewModel.CurrentPage(ColorSchemesSubPage::Base);
+        BringIntoViewWhenLoaded(args.ElementToFocus());
 
         _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             // Only let this succeed once.

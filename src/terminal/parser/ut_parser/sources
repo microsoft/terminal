@@ -82,6 +82,7 @@ TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(CONSOLE_OBJ_PATH)\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
     $(CONSOLE_OBJ_PATH)\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
+    $(CONSOLE_OBJ_PATH)\renderer\atlas\$(O)\ConRenderAtlas.lib \
     $(CONSOLE_OBJ_PATH)\audio\midi\lib\$(O)\ConAudioMidi.lib \
     $(CONSOLE_OBJ_PATH)\server\lib\$(O)\ConServer.lib \
     $(CONSOLE_OBJ_PATH)\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
