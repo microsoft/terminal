@@ -1482,6 +1482,9 @@ namespace winrt::TerminalApp::implementation
                 return {};
             }
         }();
+        static const auto ambiguousIsWide = [&]() -> bool {
+            return _settings.GlobalSettings().AmbiguousWidth() == AmbiguousWidth::Wide;
+        }();
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -1546,6 +1549,10 @@ namespace winrt::TerminalApp::implementation
         if (!textMeasurement.empty())
         {
             valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
+        }
+        if (ambiguousIsWide)
+        {
+            valueSet.Insert(L"ambiguousIsWide", Windows::Foundation::PropertyValue::CreateBoolean(true));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})

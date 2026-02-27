@@ -85,6 +85,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 break;
             }
             CodepointWidthDetector::Singleton().Reset(mode);
+
+            if (settings.AmbiguousWidth() == AmbiguousWidth::Wide)
+            {
+                CodepointWidthDetector::Singleton().SetAmbiguousWidth(2);
+            }
+
             return true;
         }();
 

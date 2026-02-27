@@ -68,6 +68,7 @@ namespace Microsoft.Terminal.Control
         Boolean DisablePartialInvalidation { get; };
         Boolean SoftwareRendering { get; };
         Microsoft.Terminal.Control.TextMeasurement TextMeasurement { get; };
+        Microsoft.Terminal.Control.AmbiguousWidth AmbiguousWidth { get; };
         Microsoft.Terminal.Control.DefaultInputScope DefaultInputScope { get; };
         Boolean ShowMarks { get; };
         Boolean UseBackgroundImageForWindow { get; };
