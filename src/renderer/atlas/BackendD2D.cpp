@@ -666,6 +666,7 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         }
     };
     const auto appendCurlyLine = [&](const GridLineRange& r, const std::span<const u32>& colorBitmap) {
+        const auto colors = &colorBitmap[p.colorBitmapRowStride * y];
         const auto& font = *p.s->font;
 
         const auto duTop = static_cast<f32>(font.doubleUnderline[0].position);
@@ -686,8 +687,6 @@ void BackendD2D::_drawGridlineRow(const RenderingPayload& p, const ShapedRow* ro
         const auto bottom = center + (height - duHeight);
         const auto step = roundf(0.5f * height);
         const auto period = 4.0f * step;
-
-        const auto colors = &colorBitmap[p.colorBitmapRowStride * y];
 
         // Calculate the wave over the entire region to be underlined, even if
         // it has multiple colors in it. That way, when we clip it to render each
