@@ -350,7 +350,7 @@ void ROW::_init() noexcept
     std::iota(_charOffsets.begin(), _charOffsets.end(), uint16_t{ 0 });
 #endif
 
-#pragma warning(push)
+#pragma warning(pop)
 }
 
 void ROW::CopyFrom(const ROW& source)
