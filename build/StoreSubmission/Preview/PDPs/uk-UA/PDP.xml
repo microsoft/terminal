@@ -56,11 +56,6 @@
   <ReleaseNotes _locID="App_ReleaseNotes">
     <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__}{Locked=wt.exe} App Release Note" -->Версія __VERSION_NUMBER__
 
-- Цілком нова сторінка розширень, яка показує, що було встановлено у вашому терміналі
-- Палітра команд тепер відображається вашою рідною мовою, а також англійською
-- Нові функції віртуального автомата, такі як синхронізований рендеринг, нові колірні схеми, налаштування для швидких дій миші, таких як масштабування, тощо
-
-Будь ласка, перегляньте нашу сторінку релізів GitHub для отримання додаткової інформації.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
