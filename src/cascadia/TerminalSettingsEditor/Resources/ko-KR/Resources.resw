@@ -371,6 +371,14 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Windows 콘솔</value>
   </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>좁게</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>넓게</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>열</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>

@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Windows コンソール</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>あいまいな文字の幅</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>東アジアのあいまいな文字に使用する幅を設定します。[幅を狭くする] (既定) は互換性を優先し、[幅を広くする] は多くの CJK フォントでの読みやすさを優先します。[幅を広くする] モードでは、一部のアプリケーションが正しく動作せず、カーソルの動きが不安定になることがあります。この設定を変更するには、Windows ターミナルの再起動が必要で、Windows ターミナル内から起動したアプリケーションにのみ適用されます。</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>狭い</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>広い</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>列</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
