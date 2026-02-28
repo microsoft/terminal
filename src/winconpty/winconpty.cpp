@@ -166,7 +166,8 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
+    const auto inheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) ? L"--inheritcursor " : L"";
+    const auto ambiguousIsWide = (dwFlags & PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE) ? L"--ambiguousIsWide " : L"";
 
     const wchar_t* textMeasurement;
     switch (dwFlags & PSEUDOCONSOLE_GLYPH_WIDTH__MASK)
@@ -192,9 +193,10 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     wil::unique_process_heap_string cmd;
     RETURN_IF_FAILED(wil::str_printf_nothrow(
         cmd,
-        L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+        L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
         conhostPath,
-        bInheritCursor ? L"--inheritcursor " : L"",
+        inheritCursor,
+        ambiguousIsWide,
         textMeasurement,
         size.X,
         size.Y,

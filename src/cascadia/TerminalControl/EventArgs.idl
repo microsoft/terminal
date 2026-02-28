@@ -26,6 +26,12 @@ namespace Microsoft.Terminal.Control
         Console,
     };
 
+    enum AmbiguousWidth
+    {
+        Narrow,
+        Wide,
+    };
+
     enum DefaultInputScope
     {
         Default,

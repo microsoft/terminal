@@ -836,6 +836,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextMeasurement)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::AmbiguousWidth)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "narrow", ValueType::Narrow },
+        pair_type{ "wide", ValueType::Wide },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::DefaultInputScope)
 {
     JSON_MAPPINGS(2) = {

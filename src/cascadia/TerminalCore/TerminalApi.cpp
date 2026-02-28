@@ -140,7 +140,7 @@ unsigned int Terminal::GetInputCodePage() const noexcept
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    if (_clipboardOperationsAllowed)
+    if (_clipboardOperationsAllowed && _focused)
     {
         _pfnCopyToClipboard(content);
     }

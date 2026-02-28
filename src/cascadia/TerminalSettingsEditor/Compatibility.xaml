@@ -42,6 +42,15 @@
                       Style="{StaticResource ComboBoxSettingStyle}" />
         </local:SettingContainer>
 
+        <!--  Ambiguous Width  -->
+        <local:SettingContainer x:Uid="Globals_AmbiguousWidth">
+            <ComboBox AutomationProperties.AccessibilityView="Content"
+                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                      ItemsSource="{x:Bind ViewModel.AmbiguousWidthList}"
+                      SelectedItem="{x:Bind ViewModel.CurrentAmbiguousWidth, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingContainer>
+
         <!--  Debug Features  -->
         <local:SettingContainer x:Name="DebugFeaturesEnabled"
                                 x:Uid="Globals_DebugFeaturesEnabled"

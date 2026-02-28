@@ -1671,6 +1671,9 @@ namespace winrt::TerminalApp::implementation
                 return {};
             }
         }();
+        static const auto ambiguousIsWide = [&]() -> bool {
+            return _settings.GlobalSettings().AmbiguousWidth() == AmbiguousWidth::Wide;
+        }();
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -1735,6 +1738,10 @@ namespace winrt::TerminalApp::implementation
         if (!textMeasurement.empty())
         {
             valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
+        }
+        if (ambiguousIsWide)
+        {
+            valueSet.Insert(L"ambiguousIsWide", Windows::Foundation::PropertyValue::CreateBoolean(true));
         }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})
@@ -5160,7 +5167,7 @@ namespace winrt::TerminalApp::implementation
                                                             theme.TabRow().UnfocusedBackground()) :
                                               ThemeColor{ nullptr } };
 
-        if (_settings.GlobalSettings().UseAcrylicInTabRow())
+        if (_settings.GlobalSettings().UseAcrylicInTabRow() && (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic()))
         {
             if (tabRowBg)
             {
