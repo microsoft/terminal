@@ -453,8 +453,15 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandlePasteText(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
-        _PasteText();
-        args.Handled(true);
+        if (ExtensionPresenter().Visibility() == Visibility::Visible)
+        {
+            args.Handled(false);
+        }
+        else
+        {
+            _PasteText();
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
@@ -548,7 +555,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCopyText(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
+        if (ExtensionPresenter().Visibility() == Visibility::Visible)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
             const auto copyFormatting = realArgs.CopyFormatting();
             const auto format = copyFormatting ? copyFormatting.Value() : _settings.GlobalSettings().CopyFormatting();
