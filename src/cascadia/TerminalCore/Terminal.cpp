@@ -44,8 +44,7 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 {
     _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const til::size bufferSize{ viewportSize.width,
-                                Utils::ClampToShortMax(viewportSize.height + scrollbackLines, 1) };
+    const til::size bufferSize{ viewportSize.width, viewportSize.height + scrollbackLines };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _mainBuffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, true, &renderer);
@@ -67,7 +66,7 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
                                   Utils::ClampToShortMax(settings.InitialRows(), 1) };
 
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderer);
+    Create(viewportSize, std::clamp(settings.HistorySize(), 0, til::CoordTypeMax / 2), renderer);
 
     UpdateSettings(settings);
 }

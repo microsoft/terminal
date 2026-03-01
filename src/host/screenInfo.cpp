@@ -2120,10 +2120,10 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     // MSFT-33471786, GH#13193:
     // newViewport may reside anywhere outside of the valid coordScreenBufferSize.
     // For instance it might be scrolled down more than our text buffer allows to be scrolled.
-    const auto cx = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.width(), 1, coordScreenBufferSize.width));
-    const auto cy = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.height(), 1, coordScreenBufferSize.height));
-    const auto x = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx));
-    const auto y = gsl::narrow_cast<SHORT>(std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy));
+    const auto cx = std::clamp(viewportRect.width(), 1, coordScreenBufferSize.width);
+    const auto cy = std::clamp(viewportRect.height(), 1, coordScreenBufferSize.height);
+    const auto x = std::clamp(viewportRect.left, 0, coordScreenBufferSize.width - cx);
+    const auto y = std::clamp(viewportRect.top, 0, coordScreenBufferSize.height - cy);
 
     _viewport = Viewport::FromExclusive({ x, y, x + cx, y + cy });
 
