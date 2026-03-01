@@ -62,6 +62,8 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        Boolean IsTabRowVisible();
+
         WindowProperties WindowProperties { get; };
         void IdentifyWindow();
 

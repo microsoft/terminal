@@ -131,6 +131,7 @@ namespace winrt::TerminalApp::implementation
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+        bool IsTabRowVisible() const;
         bool ShowTabsFullscreen() const;
         void SetShowTabsFullscreen(bool newShowTabsFullscreen);
         void SetFullscreen(bool);
