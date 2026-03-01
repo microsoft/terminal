@@ -69,6 +69,9 @@ enum Pos : u32
     Pos_1_4,
     Pos_3_4,
 
+    Pos_1_3,
+    Pos_2_3,
+
     Pos_2_6,
     Pos_3_6,
     Pos_5_6,
@@ -110,6 +113,9 @@ inline constexpr f32 Pos_Lut[][2] = {
 
     /* Pos_1_4         */ { 1.0f / 4.0f, 0.0f },
     /* Pos_3_4         */ { 3.0f / 4.0f, 0.0f },
+
+    /* Pos_1_3         */ { 1.0f / 3.0f, 0.0f },
+    /* Pos_2_3         */ { 2.0f / 3.0f, 0.0f },
 
     /* Pos_2_6         */ { 2.0f / 6.0f, 0.0f },
     /* Pos_3_6         */ { 3.0f / 6.0f, 0.0f },
@@ -1037,6 +1043,336 @@ static constexpr Instruction Powerline[Powerline_CharCount][InstructionsPerGlyph
     },
 };
 
+// Symbols for Legacy Computing: Block Sextants (U+1FB00-1FB3B)
+// 2x3 grid of cells numbered:
+//   0 1   (top row:    y = 0 to 1/3)
+//   2 3   (middle row: y = 1/3 to 2/3)
+//   4 5   (bottom row: y = 2/3 to 1)
+//
+// Pattern encoding: bit N = cell N filled
+// Excluded patterns (exist elsewhere): 0 (empty), 21 (left half), 42 (right half), 63 (full)
+// Optimization: adjacent cells in a row merged into single horizontal bar
+static constexpr Instruction Sextant[Sextant_CharCount][InstructionsPerGlyph] = {
+    // U+1FB00 BLOCK SEXTANT-1 (pattern 1: cell 0)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+    },
+    // U+1FB01 BLOCK SEXTANT-2 (pattern 2: cell 1)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+    },
+    // U+1FB02 BLOCK SEXTANT-12 (pattern 3: cells 0,1)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+    },
+    // U+1FB03 BLOCK SEXTANT-3 (pattern 4: cell 2)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+    },
+    // U+1FB04 BLOCK SEXTANT-13 (pattern 5: cells 0,2)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+    },
+    // U+1FB05 BLOCK SEXTANT-23 (pattern 6: cells 1,2)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+    },
+    // U+1FB06 BLOCK SEXTANT-123 (pattern 7: cells 0,1,2)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+    },
+    // U+1FB07 BLOCK SEXTANT-4 (pattern 8: cell 3)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB08 BLOCK SEXTANT-14 (pattern 9: cells 0,3)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB09 BLOCK SEXTANT-24 (pattern 10: cells 1,3)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB0A BLOCK SEXTANT-124 (pattern 11: cells 0,1,3)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB0B BLOCK SEXTANT-34 (pattern 12: cells 2,3)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB0C BLOCK SEXTANT-134 (pattern 13: cells 0,2,3)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB0D BLOCK SEXTANT-234 (pattern 14: cells 1,2,3)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB0E BLOCK SEXTANT-1234 (pattern 15: cells 0,1,2,3)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+    },
+    // U+1FB0F BLOCK SEXTANT-5 (pattern 16: cell 4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB10 BLOCK SEXTANT-15 (pattern 17: cells 0,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB11 BLOCK SEXTANT-25 (pattern 18: cells 1,4)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB12 BLOCK SEXTANT-125 (pattern 19: cells 0,1,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB13 BLOCK SEXTANT-35 (pattern 20: cells 2,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // Pattern 21 (left half = cells 0,2,4) is U+258C LEFT HALF BLOCK - skipped
+    // U+1FB14 BLOCK SEXTANT-235 (pattern 22: cells 1,2,4)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB15 BLOCK SEXTANT-1235 (pattern 23: cells 0,1,2,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB16 BLOCK SEXTANT-45 (pattern 24: cells 3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB17 BLOCK SEXTANT-145 (pattern 25: cells 0,3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB18 BLOCK SEXTANT-245 (pattern 26: cells 1,3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB19 BLOCK SEXTANT-1245 (pattern 27: cells 0,1,3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB1A BLOCK SEXTANT-345 (pattern 28: cells 2,3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB1B BLOCK SEXTANT-1345 (pattern 29: cells 0,2,3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB1C BLOCK SEXTANT-2345 (pattern 30: cells 1,2,3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB1D BLOCK SEXTANT-12345 (pattern 31: cells 0,1,2,3,4)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_2, Pos_1_1 },
+    },
+    // U+1FB1E BLOCK SEXTANT-6 (pattern 32: cell 5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB1F BLOCK SEXTANT-16 (pattern 33: cells 0,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB20 BLOCK SEXTANT-26 (pattern 34: cells 1,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB21 BLOCK SEXTANT-126 (pattern 35: cells 0,1,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB22 BLOCK SEXTANT-36 (pattern 36: cells 2,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB23 BLOCK SEXTANT-136 (pattern 37: cells 0,2,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB24 BLOCK SEXTANT-236 (pattern 38: cells 1,2,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB25 BLOCK SEXTANT-1236 (pattern 39: cells 0,1,2,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB26 BLOCK SEXTANT-46 (pattern 40: cells 3,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB27 BLOCK SEXTANT-146 (pattern 41: cells 0,3,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // Pattern 42 (right half = cells 1,3,5) is U+2590 RIGHT HALF BLOCK - skipped
+    // U+1FB28 BLOCK SEXTANT-1246 (pattern 43: cells 0,1,3,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB29 BLOCK SEXTANT-346 (pattern 44: cells 2,3,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB2A BLOCK SEXTANT-1346 (pattern 45: cells 0,2,3,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB2B BLOCK SEXTANT-2346 (pattern 46: cells 1,2,3,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB2C BLOCK SEXTANT-12346 (pattern 47: cells 0,1,2,3,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB2D BLOCK SEXTANT-56 (pattern 48: cells 4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB2E BLOCK SEXTANT-156 (pattern 49: cells 0,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB2F BLOCK SEXTANT-256 (pattern 50: cells 1,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB30 BLOCK SEXTANT-1256 (pattern 51: cells 0,1,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB31 BLOCK SEXTANT-356 (pattern 52: cells 2,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB32 BLOCK SEXTANT-1356 (pattern 53: cells 0,2,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB33 BLOCK SEXTANT-2356 (pattern 54: cells 1,2,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB34 BLOCK SEXTANT-12356 (pattern 55: cells 0,1,2,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_2, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB35 BLOCK SEXTANT-456 (pattern 56: cells 3,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB36 BLOCK SEXTANT-1456 (pattern 57: cells 0,3,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB37 BLOCK SEXTANT-2456 (pattern 58: cells 1,3,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB38 BLOCK SEXTANT-12456 (pattern 59: cells 0,1,3,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB39 BLOCK SEXTANT-3456 (pattern 60: cells 2,3,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB3A BLOCK SEXTANT-13456 (pattern 61: cells 0,2,3,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_0_1, Pos_1_2, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // U+1FB3B BLOCK SEXTANT-23456 (pattern 62: cells 1,2,3,4,5)
+    {
+        Instruction{ Shape_Filled100, Pos_1_2, Pos_0_1, Pos_1_1, Pos_1_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_1_3, Pos_1_1, Pos_2_3 },
+        Instruction{ Shape_Filled100, Pos_0_1, Pos_2_3, Pos_1_1, Pos_1_1 },
+    },
+    // Pattern 63 (full block = all cells) is U+2588 FULL BLOCK - not in this range
+};
+
 constexpr bool BoxDrawing_IsMapped(char32_t codepoint)
 {
     return codepoint >= BoxDrawing_FirstChar && codepoint < (BoxDrawing_FirstChar + BoxDrawing_CharCount);
@@ -1047,11 +1383,16 @@ constexpr bool Powerline_IsMapped(char32_t codepoint)
     return codepoint >= Powerline_FirstChar && codepoint < (Powerline_FirstChar + Powerline_CharCount);
 }
 
+constexpr bool Sextant_IsMapped(char32_t codepoint)
+{
+    return codepoint >= Sextant_FirstChar && codepoint < (Sextant_FirstChar + Sextant_CharCount);
+}
+
 // How should I make this constexpr == inline, if it's an external symbol? Bad compiler!
 #pragma warning(suppress : 26497) // You can attempt to make '...' constexpr unless it contains any undefined behavior (f.4).
 bool BuiltinGlyphs::IsBuiltinGlyph(char32_t codepoint) noexcept
 {
-    return BoxDrawing_IsMapped(codepoint) || Powerline_IsMapped(codepoint);
+    return BoxDrawing_IsMapped(codepoint) || Powerline_IsMapped(codepoint) || Sextant_IsMapped(codepoint);
 }
 
 static const Instruction* GetInstructions(char32_t codepoint) noexcept
@@ -1063,6 +1404,10 @@ static const Instruction* GetInstructions(char32_t codepoint) noexcept
     if (Powerline_IsMapped(codepoint))
     {
         return &Powerline[codepoint - Powerline_FirstChar][0];
+    }
+    if (Sextant_IsMapped(codepoint))
+    {
+        return &Sextant[codepoint - Sextant_FirstChar][0];
     }
     return nullptr;
 }
@@ -1076,6 +1421,10 @@ i32 BuiltinGlyphs::GetBitmapCellIndex(char32_t codepoint) noexcept
     if (Powerline_IsMapped(codepoint))
     {
         return codepoint - Powerline_FirstChar + BoxDrawing_CharCount;
+    }
+    if (Sextant_IsMapped(codepoint))
+    {
+        return codepoint - Sextant_FirstChar + BoxDrawing_CharCount + Powerline_CharCount;
     }
     return -1;
 }
