@@ -161,6 +161,10 @@ namespace Microsoft::Console::Interactivity::Win32
         RECT _rcWorkBeforeFullscreen;
         UINT _dpiBeforeFullscreen;
 
+        RECT _clientBeforeFullscreen{};
+        COORD _viewportCellsBeforeFullscreen{};
+        COORD _bufferCellsBeforeFullscreen{};
+
         // math helpers
         void _CalculateWindowRect(const til::size coordWindowInChars,
                                   _Inout_ til::rect* const prectWindow) const;
