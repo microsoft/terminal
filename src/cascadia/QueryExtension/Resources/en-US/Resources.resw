@@ -126,7 +126,7 @@
     <comment>The message presented to the user when they attempt to use the AI chat feature without providing an AI endpoint and key.</comment>
   </data>
   <data name="UnknownErrorMessage" xml:space="preserve">
-    <value>An error occurred. Your AI provider might not be correctly configured, or the service might be temporarily unavailable.</value>
+    <value>An error occurred. The service might be temporarily unavailable or there might be network connectivity issues.</value>
     <comment>The error message presented to the user when we were unable to query the provided endpoint.</comment>
   </data>
   <data name="InvalidModelMessage" xml:space="preserve">

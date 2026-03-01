@@ -248,6 +248,7 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         // Make sure we are on the background thread for the http request
         auto strongThis = get_strong();
         co_await winrt::resume_background();
+        auto cancellationToken{ co_await winrt::get_cancellation_token() };
 
         for (bool refreshAttempted = false;;)
         {
@@ -276,19 +277,37 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 };
 
                 // Send the request
-                const auto jsonResult = co_await _SendRequestReturningJson(_endpointUri, requestContent, WWH::HttpMethod::Post());
-                if (jsonResult.HasKey(errorKey))
+                const auto sendRequestOperation = _SendRequestReturningJson(_endpointUri, requestContent, WWH::HttpMethod::Post());
+
+                // if the caller cancels this operation, make sure to cancel the http request as well
+                cancellationToken.callback([sendRequestOperation] {
+                    sendRequestOperation.Cancel();
+                });
+
+                if (sendRequestOperation.wait_for(std::chrono::seconds(5)) == AsyncStatus::Completed)
                 {
-                    const auto errorObject = jsonResult.GetNamedObject(errorKey);
-                    message = errorObject.GetNamedString(messageKey);
-                    errorType = ErrorTypes::FromProvider;
+                    // Parse out the suggestion from the response
+                    const auto jsonResult = sendRequestOperation.GetResults();
+                    if (jsonResult.HasKey(errorKey))
+                    {
+                        const auto errorObject = jsonResult.GetNamedObject(errorKey);
+                        message = errorObject.GetNamedString(messageKey);
+                        errorType = ErrorTypes::FromProvider;
+                    }
+                    else
+                    {
+                        const auto choices = jsonResult.GetNamedArray(choicesKey);
+                        const auto firstChoice = choices.GetAt(0).GetObject();
+                        const auto messageObject = firstChoice.GetNamedObject(messageKey);
+                        message = messageObject.GetNamedString(contentKey);
+                    }
                 }
                 else
                 {
-                    const auto choices = jsonResult.GetNamedArray(choicesKey);
-                    const auto firstChoice = choices.GetAt(0).GetObject();
-                    const auto messageObject = firstChoice.GetNamedObject(messageKey);
-                    message = messageObject.GetNamedString(contentKey);
+                    // if the http request takes too long, cancel the http request and return an error
+                    sendRequestOperation.Cancel();
+                    message = RS_(L"UnknownErrorMessage");
+                    errorType = ErrorTypes::Unknown;
                 }
                 break;
             }
@@ -305,8 +324,23 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
                 break;
             }
 
-            co_await _refreshAuthTokens();
-            refreshAttempted = true;
+            const auto refreshTokensAction = _refreshAuthTokens();
+            cancellationToken.callback([refreshTokensAction] {
+                refreshTokensAction.Cancel();
+            });
+            // allow up to 10 seconds for reauthentication
+            if (refreshTokensAction.wait_for(std::chrono::seconds(10)) == AsyncStatus::Completed)
+            {
+                refreshAttempted = true;
+            }
+            else
+            {
+                // if the refresh action takes too long, cancel it and return an error
+                refreshTokensAction.Cancel();
+                message = RS_(L"UnknownErrorMessage");
+                errorType = ErrorTypes::Unknown;
+                break;
+            }
         }
 
         // Also make a new entry in our jsonMessages list, so the AI knows the full conversation so far
@@ -334,7 +368,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
 
         try
         {
-            const auto jsonResult = co_await _SendRequestReturningJson(accessTokenEndpoint, requestContent, WWH::HttpMethod::Post());
+            const auto reAuthOperation = _SendRequestReturningJson(accessTokenEndpoint, requestContent, WWH::HttpMethod::Post());
+            auto cancellationToken{ co_await winrt::get_cancellation_token() };
+            cancellationToken.callback([reAuthOperation] {
+                reAuthOperation.Cancel();
+            });
+            const auto jsonResult{ co_await reAuthOperation };
 
             _authToken = jsonResult.GetNamedString(accessTokenKey);
             _refreshToken = jsonResult.GetNamedString(refreshTokenKey);
@@ -360,7 +399,12 @@ namespace winrt::Microsoft::Terminal::Query::Extension::implementation
         WWH::HttpRequestMessage request{ method, Uri{ uri } };
         request.Content(content);
 
-        const auto response{ co_await _httpClient.SendRequestAsync(request) };
+        const auto sendRequestOperation = _httpClient.SendRequestAsync(request);
+        auto cancellationToken{ co_await winrt::get_cancellation_token() };
+        cancellationToken.callback([sendRequestOperation] {
+            sendRequestOperation.Cancel();
+        });
+        const auto response{ co_await sendRequestOperation };
         const auto string{ co_await response.Content().ReadAsStringAsync() };
         _lastResponse = string;
         const auto jsonResult{ WDJ::JsonObject::Parse(string) };
