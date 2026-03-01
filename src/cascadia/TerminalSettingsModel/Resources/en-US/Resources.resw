@@ -340,6 +340,9 @@
   <data name="PrevTabCommandKey" xml:space="preserve">
     <value>Previous tab</value>
   </data>
+  <data name="FocusBellTabCommandKey" xml:space="preserve">
+    <value>Focus next bell tab</value>
+  </data>
   <data name="RenameTabCommandKey" xml:space="preserve">
     <value>Rename tab to "{0}"</value>
     <comment>{0} will be replaced with a user-defined string</comment>
