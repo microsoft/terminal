@@ -197,9 +197,9 @@ std::vector<size_t> RenderData::GetPatternId(const til::point /*location*/) cons
 //   relevant table translation information and preferences.
 // Return Value:
 // - ARGB color values for the foreground and background
-std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
+std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) noexcept
 {
-    const auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
     return renderSettings.GetAttributeColors(attr);
 }
 

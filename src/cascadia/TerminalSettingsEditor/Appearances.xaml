@@ -484,6 +484,15 @@
                           SelectedItem="{x:Bind CurrentAdjustIndistinguishableColors, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
+
+            <!--  Generate palette  -->
+            <local:SettingContainer x:Uid="Profile_GeneratePalette"
+                                    ClearSettingValue="{x:Bind Appearance.ClearGeneratePalette}"
+                                    HasSettingValue="{x:Bind Appearance.HasGeneratePalette, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.GeneratePaletteOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.GeneratePalette, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
         </StackPanel>
 
         <!--  Grouping: Cursor  -->

@@ -135,7 +135,7 @@ public:
                                                            const bool isVisible) noexcept = 0;
 
     // driver will pare down for non-Ex method
-    virtual void GetConsoleScreenBufferInfoExImpl(const IConsoleOutputObject& context,
+    virtual void GetConsoleScreenBufferInfoExImpl(IConsoleOutputObject& context,
                                                   CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept = 0;
 
     [[nodiscard]] virtual HRESULT SetConsoleScreenBufferInfoExImpl(IConsoleOutputObject& OutContext,

@@ -142,6 +142,7 @@ Author(s):
     X(IMediaResource, BackgroundImagePath, "backgroundImage", implementation::MediaResource::Empty())                                                              \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
     X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Automatic)                                       \
+    X(bool, GeneratePalette, "generatePalette", true)                                                                                                              \
     X(bool, UseAcrylic, "useAcrylic", false)
 
 // Intentionally omitted Appearance settings:

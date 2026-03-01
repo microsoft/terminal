@@ -86,6 +86,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.IntenseStyle, IntenseTextStyle);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.AdjustTextMode, AdjustIndistinguishableColors);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, GeneratePalette);
 
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);

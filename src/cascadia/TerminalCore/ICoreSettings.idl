@@ -101,6 +101,7 @@ namespace Microsoft.Terminal.Core
         Boolean IntenseIsBold { get; };
         Boolean IntenseIsBright { get; };
         AdjustTextMode AdjustIndistinguishableColors { get; };
+        Boolean GeneratePalette { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };

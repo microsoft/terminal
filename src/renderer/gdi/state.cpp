@@ -262,7 +262,7 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                      const RenderSettings& renderSettings,
+                                                      RenderSettings& renderSettings,
                                                       const gsl::not_null<IRenderData*> /*pData*/,
                                                       const bool usingSoftFont,
                                                       const bool isSettingDefaultBrushes) noexcept

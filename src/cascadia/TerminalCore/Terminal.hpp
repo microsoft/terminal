@@ -166,7 +166,7 @@ public:
 
     void ClearMark();
     void ClearAllMarks();
-    til::color GetColorForMark(const ScrollbarData& markData) const;
+    til::color GetColorForMark(const ScrollbarData& markData);
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
@@ -206,7 +206,7 @@ public:
     std::wstring GetHyperlinkCustomId(uint16_t id) const override;
     std::vector<size_t> GetPatternId(const til::point viewportPos) const override;
 
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) noexcept override;
     std::span<const til::point_span> GetSelectionSpans() const noexcept override;
     std::span<const til::point_span> GetSearchHighlights() const noexcept override;
     const til::point_span* GetSearchHighlightFocused() const noexcept override;
@@ -238,7 +238,7 @@ public:
 
     void UpdatePatternsUnderLock();
 
-    const std::optional<til::color> GetTabColor() const;
+    const std::optional<til::color> GetTabColor();
 
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
@@ -311,7 +311,7 @@ public:
     til::point SelectionEndForRendering() const;
     SelectionEndpoint SelectionEndpointTarget() const noexcept;
 
-    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false) const;
+    TextCopyData RetrieveSelectedTextFromBuffer(const bool singleLine, const bool withControlSequences = false, const bool html = false, const bool rtf = false);
 #pragma endregion
 
 #ifndef NDEBUG
