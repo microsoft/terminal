@@ -75,6 +75,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CreateTerminalMuxXamlType);
 
         TEST_METHOD(CreateTerminalPage);
+        TEST_METHOD(SettingsReloadPreservesExplicitTabTitleOverride);
 
         TEST_METHOD(TryDuplicateBadTab);
         TEST_METHOD(TryDuplicateBadPane);
@@ -341,6 +342,43 @@ namespace TerminalAppLocalTests
 
         auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::SettingsReloadPreservesExplicitTabTitleOverride()
+    {
+        auto page = _commonSetup();
+
+        auto result = RunOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{};
+            newTerminalArgs.TabTitle(L"Pinger");
+
+            VERIFY_SUCCEEDED(page->_OpenNewTab(newTerminalArgs));
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Sleep(250);
+
+        result = RunOnUIThread([&page]() {
+            const auto focusedTab{ page->_GetFocusedTab() };
+            VERIFY_IS_NOT_NULL(focusedTab);
+            VERIFY_ARE_EQUAL(L"Pinger", focusedTab.Title());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        result = RunOnUIThread([&page]() {
+            page->SetSettings(page->_settings, true);
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Sleep(250);
+
+        result = RunOnUIThread([&page]() {
+            const auto focusedTab{ page->_GetFocusedTab() };
+            VERIFY_IS_NOT_NULL(focusedTab);
+            VERIFY_ARE_EQUAL(L"Pinger", focusedTab.Title());
         });
         VERIFY_SUCCEEDED(result);
     }
