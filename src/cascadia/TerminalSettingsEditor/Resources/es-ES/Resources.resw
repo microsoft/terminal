@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Consola de Windows</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>Ancho de caracteres ambiguos</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>Establece el ancho usado para los caracteres ambiguos de Asia Oriental. "Estrecho" (valor predeterminado) da prioridad a la compatibilidad, mientras que "Ancho" da prioridad a la legibilidad con muchas fuentes CJK. En el modo "Ancho", es posible que algunas aplicaciones no funcionen correctamente y provoquen un movimiento errático del cursor. Cambiar esta configuración requiere un reinicio de Terminal Windows y solo se aplica a las aplicaciones que se inician desde dentro de ella.</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>Estrecho</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>Anchura</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Columnas</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>

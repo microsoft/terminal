@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Console Windows</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>Largeur des caractères ambigus d’Asie de l’Est</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>Définit la largeur utilisée pour les caractères ambigus d’Asie de l’Est. « Narrow » (par défaut) privilégie la compatibilité, tandis que « Wide » favorise la lisibilité avec de nombreuses polices CJK. En mode « Wide », certaines applications peuvent ne pas fonctionner correctement et provoquer un déplacement erratique du curseur. La modification de ce paramètre nécessite le redémarrage du Terminal Windows et ne s’applique qu’aux applications lancées à partir de celui-ci.</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>Étroites</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>Larges</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colonnes</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
