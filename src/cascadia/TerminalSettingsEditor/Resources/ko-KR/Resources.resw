@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Windows 콘솔</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>모호한 문자 너비</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>동아시아의 모호한 문자에 사용되는 너비를 설정하세요. "좁게"(기본값)는 호환성을 우선시하고, "넓게"는 많은 CJK 글꼴에서 가독성을 우선시합니다. "넓게" 모드에서는 일부 애플리케이션이 제대로 작동하지 않아 커서가 이상하게 움직일 수 있습니다. 이 설정을 변경하려면 Windows 터미널을 다시 시작해야 하며, 이 설정은 Windows 터미널 내에서 실행된 애플리케이션에만 적용됩니다.</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>좁게</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>넓게</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>열</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
