@@ -56,6 +56,12 @@
   <ReleaseNotes _locID="App_ReleaseNotes">
     <!-- _locComment_text="{MaxLength=1500} {Locked=__VERSION_NUMBER__}{Locked=wt.exe} App Release Note" -->Версія __VERSION_NUMBER__
 
+- Нарешті, можливість пошуку будь-якого налаштування!
+- Новий вбудований редактор для прив'язки клавіш, дій та палітри команд.
+- Нові локалізації спільноти на сербську та українську мови.
+- Підтримка протоколу клавіатури "Kitty" для високоточного кодування введення.
+
+Будь ласка, перегляньте нашу сторінку релізів GitHub для отримання додаткової інформації.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->
