@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Щіŋďŏшś Ĉǿŉşöℓę !!! !</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>Ẅίďτħ οƒ àmъïġũõŭś ¢ћäřаčτëŕś !!! !!! !!!</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>Šеŧѕ тĥé ẃίďтн цšеď ƒθŕ Ёāѕť Дѕїāπ Δmъìĝůόųş ¢ĥǻŕǻćτєŗş. "Νǻяѓòш" (đéƒåųĺţ) ρґΐõѓіŧīźéѕ ċǿmραťĭвĭľΐτŷ, ẃђίļė "Ẁîδ℮" рŕīόŕïтϊźĕş гèáðàвіℓīτў ẁìτн мâйý ČЈК ƒблťś. Ĩл "Шϊďε" mőδє, şõmе áρφļĭĉªτιόņś мąу ⁿõт ẃóѓк çθřŕзçτłў αŋδ čäűѕє ℮ŗѓāŧíć ςŭѓşοґ mòνėmĕŋť. Ċђªŋĝϊйġ тнϊş śэттĩņģ ŕêqůįŗëš å ř℮ŝţâгŧ ōƒ Ẁίήďôωş Ţёŕмĭиàĺ ąηδ îт öŉłý ãφрŀįέѕ τő ąρрļĭсатįŏлŝ ℓаϋⁿćћ℮ð ƒřом шìтħїή îť. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>Ŋǻŕґŏш !</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>Шĭðе !</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Ċσŀùмñѕ !!</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>

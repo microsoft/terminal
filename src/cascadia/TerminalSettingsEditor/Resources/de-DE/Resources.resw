@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Windows-Konsole</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>Breite von mehrdeutigen Zeichen</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>Legt die Breite fest, die für ostasiatische mehrdeutige Zeichen verwendet wird. „Eng“ (Standard) priorisiert die Kompatibilität, während „Weit“ die Lesbarkeit mit vielen CJK-Schriftarten priorisiert. Im Modus „Breit“ funktionieren einige Anwendungen möglicherweise nicht ordnungsgemäß und verursachen eine erratische Cursorbewegung. Das Ändern dieser Einstellung erfordert einen Neustart von Windows-Terminal und gilt nur für Anwendungen, die von dort aus gestartet werden.</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>Schmal</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>Breit</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Spalten</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
