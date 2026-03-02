@@ -38,12 +38,13 @@ namespace winrt::TerminalApp::implementation
 
     struct TerminalSettingsCache
     {
-        TerminalSettingsCache(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        TerminalSettingsCache(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
         std::optional<TerminalSettingsPair> TryLookup(const Microsoft::Terminal::Settings::Model::Profile& profile);
-        void Reset(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
+        void Reset(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings, const Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
 
     private:
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
+        Microsoft::Terminal::Settings::Model::WindowSettings _windowSettings{ nullptr };
         std::unordered_map<winrt::guid, std::pair<Microsoft::Terminal::Settings::Model::Profile, std::optional<winrt::Microsoft::Terminal::Settings::TerminalSettingsCreateResult>>> profileGuidSettingsMap;
     };
 }

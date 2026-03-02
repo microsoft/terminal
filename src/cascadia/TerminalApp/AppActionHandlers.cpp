@@ -550,7 +550,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
             const auto copyFormatting = realArgs.CopyFormatting();
-            const auto format = copyFormatting ? copyFormatting.Value() : _settings.GlobalSettings().CopyFormatting();
+            const auto format = copyFormatting ? copyFormatting.Value() : _currentWindowSettings().CopyFormatting();
             const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), format);
             args.Handled(handled);
         }
@@ -961,7 +961,7 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto& terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            const auto profile{ _settings.GetProfileForArgs(terminalArgs) };
+            const auto profile{ _settings.GetProfileForArgs(terminalArgs, _currentWindowSettings()) };
             terminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
         }
 
@@ -1118,7 +1118,7 @@ namespace winrt::TerminalApp::implementation
                 // use global default if query URL is unspecified
                 if (queryUrl.empty())
                 {
-                    queryUrl = std::wstring_view{ _settings.GlobalSettings().SearchWebDefaultQueryUrl() };
+                    queryUrl = std::wstring_view{ _currentWindowSettings().SearchWebDefaultQueryUrl() };
                 }
 
                 constexpr std::wstring_view queryToken{ L"%s" };

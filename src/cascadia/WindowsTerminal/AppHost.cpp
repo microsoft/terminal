@@ -556,21 +556,66 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
     til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
-    if (_windowLogic.IsQuakeWindow())
+    if (const auto dockingSettings{ _windowLogic.Docking() })
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
         const auto availableSpace = desktopDimensions + nonClientSize;
+        const auto singleBorderWidth = nonClientSize.width / 2;
+        const auto singleBorderHeight = nonClientSize.height / 2;
 
-        origin = {
-            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
-            (nearestMonitorInfo.rcWork.top)
-        };
-        dimensions = {
-            availableSpace.width,
-            availableSpace.height / 2
-        };
-        launchMode = LaunchMode::FocusMode;
+        // If it's >1, then use that as a number of px.
+        // If it's <= 1, then use that as a multiplier on the available space
+        const auto settingsWidth = dockingSettings.Width();
+        const auto width{ settingsWidth > 1.0 ? settingsWidth : (availableSpace.width * settingsWidth) };
+        const auto settingsHeight = dockingSettings.Height();
+        const auto height{ settingsHeight > 1.0 ? settingsHeight : (availableSpace.height * settingsHeight) };
+
+        dimensions = { til::math::rounding,
+                       width,
+                       height };
+
+        // Account for centerOnLaunch too
+        const til::size fromSide = centerOnLaunch ? (til::size{ til::math::rounding,
+                                                                (availableSpace.width - width) / 2.0,
+                                                                (availableSpace.height - height) / 2.0 }) :
+                                                    (til::size{ 0, 0 });
+
+        switch (dockingSettings.Side())
+        {
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth) + fromSide.width),
+                (nearestMonitorInfo.rcWork.top)
+            };
+            break;
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth) + fromSide.width),
+                (nearestMonitorInfo.rcWork.bottom - singleBorderHeight - (dimensions.height))
+            };
+            break;
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (singleBorderWidth)),
+                (nearestMonitorInfo.rcWork.top) + fromSide.height
+            };
+            break;
+        }
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right:
+        {
+            origin = {
+                (nearestMonitorInfo.rcWork.right - (singleBorderWidth) - (dimensions.width)),
+                (nearestMonitorInfo.rcWork.top) + fromSide.height
+            };
+            break;
+        }
+        }
     }
     else if (centerOnLaunch)
     {
@@ -930,7 +975,7 @@ void _frameColorHelper(const HWND h, const COLORREF color)
 
 void AppHost::_updateTheme()
 {
-    auto theme = _appLogic.Settings().GlobalSettings().CurrentTheme();
+    auto theme = _windowLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
@@ -1027,7 +1072,13 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
+    // The window's per-window settings identity changed (e.g. window
+    // name changed, or settings reloaded).  Re-push every host-level
+    // per-window property so the IslandWindow stays in sync.
+    _window->DockSettings(_windowLogic.Docking(), _windowLogic.CenterOnLaunch());
+    _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
 }
 
 // Raised from TerminalWindow. We handle by bubbling the request to the window manager.

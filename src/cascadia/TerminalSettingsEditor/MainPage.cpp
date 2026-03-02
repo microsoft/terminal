@@ -540,7 +540,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == interactionTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings(), _settingsClone.WindowSettingsDefaults()), *this, elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
             SettingsNav().SelectedItem(InteractionNavItem());
@@ -656,7 +656,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings(), _settingsClone.WindowSettingsDefaults()), *this, elementToFocus));
             const auto crumb = winrt::make<Breadcrumb>(box_value(clickedItemTag), RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None);
             _breadcrumbs.Append(crumb);
             SettingsNav().SelectedItem(AppearanceNavItem());
@@ -1189,10 +1189,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-        const bool hasThemeForSettings{ theme.Settings() != nullptr };
-        const auto& appTheme = theme.RequestedTheme();
-        const auto& requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
+        const auto& theme = _settingsSource.GlobalSettings().CurrentTheme(_settingsSource.WindowSettingsDefaults());
+        const auto& requestedTheme = theme.RequestedTheme();
 
         RequestedTheme(requestedTheme);
 
@@ -1203,7 +1201,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //
         // To mitigate this, don't set the transparent background in the case
         // that our theme is different than the app's.
-        const bool actuallyUseMica = isMicaAvailable && (appTheme == requestedTheme);
+        const bool actuallyUseMica = isMicaAvailable;
 
         const auto bgKey = (theme.Window() != nullptr && theme.Window().UseMica()) && actuallyUseMica ?
                                L"SettingsPageMicaBackground" :

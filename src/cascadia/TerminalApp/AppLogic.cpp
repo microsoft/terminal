@@ -194,7 +194,7 @@ namespace winrt::TerminalApp::implementation
             g_hTerminalAppProvider,
             "AppCreated",
             TraceLoggingDescription("Event emitted when the application is started"),
-            TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
+            TraceLoggingBool(_settings.WindowSettingsDefaults().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
@@ -229,12 +229,12 @@ namespace winrt::TerminalApp::implementation
             }
 
             _hasSettingsStartupActions = false;
-            const auto startupActions = newSettings.GlobalSettings().StartupActions();
+            const auto startupActions = newSettings.WindowSettingsDefaults().StartupActions();
             if (!startupActions.empty())
             {
                 _settingsAppArgs.FullResetState();
 
-                ExecuteCommandlineArgs args{ newSettings.GlobalSettings().StartupActions() };
+                ExecuteCommandlineArgs args{ newSettings.WindowSettingsDefaults().StartupActions() };
                 auto result = _settingsAppArgs.ParseArgs(args);
                 if (result == 0)
                 {

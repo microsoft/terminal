@@ -17,6 +17,7 @@ Author(s):
 #include <json/json.h>
 
 #include "../types/inc/utils.hpp"
+#include <til/winrt.h>
 
 namespace winrt
 {
@@ -57,6 +58,35 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         Json::Value ToJson(const T& val);
 
         std::string TypeDescription() const { return "<unknown>"; }
+    };
+
+    // Specialization for til::property<T> so we can deserialize directly into properties
+    template<typename T>
+    struct ConversionTrait<til::property<T>>
+    {
+        til::property<T> FromJson(const Json::Value& json)
+        {
+            ConversionTrait<T> trait;
+            return til::property<T>{ trait.FromJson(json) };
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            ConversionTrait<T> trait;
+            return trait.CanConvert(json);
+        }
+
+        Json::Value ToJson(const til::property<T>& val)
+        {
+            ConversionTrait<T> trait;
+            return trait.ToJson(val());
+        }
+
+        std::string TypeDescription() const
+        {
+            ConversionTrait<T> trait;
+            return trait.TypeDescription();
+        }
     };
 
     namespace Detail

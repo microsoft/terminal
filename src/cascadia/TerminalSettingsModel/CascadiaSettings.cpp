@@ -113,6 +113,7 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         settings->_globals = _globals->Copy();
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
+        settings->_baseWindowSettings = _baseWindowSettings->Copy();
 
         // extension packages don't need a deep clone
         // because they're fully immutable. We can just copy the reference over instead.
@@ -218,6 +219,37 @@ Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 Model::Profile CascadiaSettings::ProfileDefaults() const
 {
     return *_baseLayerProfile;
+}
+
+Model::WindowSettings CascadiaSettings::WindowSettingsDefaults() const
+{
+    return *_baseWindowSettings;
+}
+
+Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& windowName) const
+{
+    if (const auto& forName = _windows.TryLookup(windowName))
+    {
+        return forName;
+    }
+    else if (windowName == L"_quake")
+    {
+        const auto& quakeSettings{ winrt::make_self<implementation::WindowSettings>() };
+        quakeSettings->AddLeastImportantParent(_baseWindowSettings);
+        _resolveDefaultProfileForWindow(*quakeSettings, _allProfiles.GetAt(0).Guid());
+        quakeSettings->InitializeForQuakeMode();
+
+        return *quakeSettings;
+    }
+    else
+    {
+        return *_baseWindowSettings;
+    }
+}
+
+winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Model::WindowSettings> CascadiaSettings::AllWindowSettings() const noexcept
+{
+    return _windows;
 }
 
 // Method Description:
@@ -706,7 +738,7 @@ static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
 
 void CascadiaSettings::_validateRegexes()
 {
-    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    if (!_validateNTMEntries(_baseWindowSettings->NewTabMenu()))
     {
         _warnings.Append(SettingsLoadWarnings::InvalidRegex);
     }
@@ -728,7 +760,9 @@ void CascadiaSettings::_validateRegexes()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
+Model::Profile CascadiaSettings::GetProfileForArgs(
+    const Model::NewTerminalArgs& newTerminalArgs,
+    const Model::WindowSettings& currentWindowSettings) const
 {
     if (newTerminalArgs)
     {
@@ -772,7 +806,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
     // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
     // TODO GH#10952: Detect the profile based on the commandline (add matching support)
     return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-               FindProfile(GlobalSettings().DefaultProfile()) :
+               FindProfile(currentWindowSettings.DefaultProfile()) :
                ProfileDefaults();
 }
 
@@ -1232,10 +1266,10 @@ void CascadiaSettings::_validateThemeExists()
         auto newTheme = winrt::make_self<Theme>();
         newTheme->Name(L"system");
         _globals->AddTheme(*newTheme);
-        _globals->Theme(Model::ThemePair{ L"system" });
+        _baseWindowSettings->Theme(Model::ThemePair{ L"system" });
     }
 
-    const auto& theme{ _globals->Theme() };
+    const auto& theme{ _baseWindowSettings->Theme() };
     if (theme.DarkName() == theme.LightName())
     {
         // Only one theme. We'll treat it as such.
@@ -1243,7 +1277,7 @@ void CascadiaSettings::_validateThemeExists()
         {
             _warnings.Append(SettingsLoadWarnings::UnknownTheme);
             // safely fall back to system as the theme.
-            _globals->Theme(*winrt::make_self<ThemePair>(L"system"));
+            _baseWindowSettings->Theme(*winrt::make_self<ThemePair>(L"system"));
         }
     }
     else

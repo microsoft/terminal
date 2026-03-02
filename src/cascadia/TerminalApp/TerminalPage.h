@@ -283,6 +283,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::ContentManager _manager{ nullptr };
 
+        Microsoft::Terminal::Settings::Model::WindowSettings _currentWindowSettings() const;
+
         std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
 
         struct StashedDragData

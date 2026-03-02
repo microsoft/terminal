@@ -173,7 +173,7 @@ namespace winrt::TerminalApp::implementation
             // Make sure to try/catch this, because the LocalTests won't be
             // able to use this helper.
             const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            if (settings.WindowSettingsDefaults().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
             {
                 _headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
             }

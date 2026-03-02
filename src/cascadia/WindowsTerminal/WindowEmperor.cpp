@@ -1419,14 +1419,15 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     // RequestsTrayIcon setting value, and combine that with the result of each
     // window (which won't change during a settings reload).
     const auto globals = _app.Logic().Settings().GlobalSettings();
-    auto needsIcon = globals.AlwaysShowNotificationIcon() || globals.MinimizeToNotificationArea();
-    if (!needsIcon)
-    {
-        for (const auto& host : _windows)
-        {
-            needsIcon |= host->Logic().IsQuakeWindow();
-        }
-    }
+    const auto windowDefaults = _app.Logic().Settings().WindowSettingsDefaults();
+    auto needsIcon = globals.AlwaysShowNotificationIcon() || windowDefaults.MinimizeToNotificationArea();
+    //if (!needsIcon)
+    //{
+    //    for (const auto& host : _windows)
+    //    {
+    //        needsIcon |= host->Logic().IsQuakeWindow();
+    //    }
+    //}
 
     if (_notificationIconShown == needsIcon)
     {

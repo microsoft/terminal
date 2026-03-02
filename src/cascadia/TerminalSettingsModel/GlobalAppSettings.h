@@ -25,6 +25,7 @@ Author(s):
 #include "Theme.h"
 #include "NewTabMenuEntry.h"
 #include "RemainingProfilesEntry.h"
+#include "WindowSettings.h"
 
 // fwdecl unittest classes
 namespace SettingsModelUnitTests
@@ -58,14 +59,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         const std::vector<SettingsLoadWarnings>& KeybindingsWarnings() const;
 
-        // This DefaultProfile() setter is called by CascadiaSettings,
-        // when it parses UnparsedDefaultProfile in _finalizeSettings().
-        void DefaultProfile(const guid& defaultProfile) noexcept;
-        guid DefaultProfile() const;
+
 
         Windows::Foundation::Collections::IMapView<hstring, Model::Theme> Themes() noexcept;
         void AddTheme(const Model::Theme& theme);
-        Model::Theme CurrentTheme() noexcept;
+        Model::Theme CurrentTheme(const Model::WindowSettings& window) noexcept;
         bool ShouldUsePersistedLayout() const;
 
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
@@ -80,8 +78,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring SourceBasePath;
 
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
-
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING_WITH_LOGGING(Model::GlobalAppSettings, type, name, jsonKey, ##__VA_ARGS__)
         MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
@@ -94,7 +90,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr bool debugFeaturesDefault{ true };
 #endif
 
-        winrt::guid _defaultProfile{};
         bool _fixupsAppliedDuringLoad{ false };
         bool _legacyReloadEnvironmentVariables{ true };
         bool _legacyForceVTInput{ false };

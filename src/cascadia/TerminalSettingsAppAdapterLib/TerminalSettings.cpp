@@ -50,21 +50,21 @@ namespace winrt::Microsoft::Terminal::Settings
         return { horizAlign, vertAlign };
     }
 
-    winrt::com_ptr<TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    winrt::com_ptr<TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const Model::WindowSettings& windowSettings)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
 
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
-        settings->_ApplyGlobalSettings(globals);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme());
+        settings->_ApplyWindowSettings(windowSettings);
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
 
         return settings;
     }
 
-    winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const Model::WindowSettings& windowSettings)
     {
-        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        const auto settings = _CreateWithProfileCommon(appSettings, profile, windowSettings);
         settings->_UseBackgroundImageForWindow = false;
         return settings;
     }
@@ -80,9 +80,9 @@ namespace winrt::Microsoft::Terminal::Settings
     // Return Value:
     // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
     //   one for when the terminal is focused and the other for when the terminal is unfocused
-    TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const Model::WindowSettings& windowSettings)
     {
-        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        const auto settings = _CreateWithProfileCommon(appSettings, profile, windowSettings);
 
         winrt::com_ptr<TerminalSettings> child{ nullptr };
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings
             const auto globals = appSettings.GlobalSettings();
             child = winrt::make_self<TerminalSettings>();
             child->_parent = settings->get_strong();
-            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
+            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
         }
 
         return TerminalSettingsCreateResult{ settings.get(), child.get() };
@@ -114,10 +114,11 @@ namespace winrt::Microsoft::Terminal::Settings
     // - A TerminalSettingsCreateResult object, which contains a pair of TerminalSettings
     //   objects. One for when the terminal is focused and one for when the terminal is unfocused.
     TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
-                                                                             const Model::NewTerminalArgs& newTerminalArgs)
+                                                                             const Model::NewTerminalArgs& newTerminalArgs,
+                                                                             const Model::WindowSettings& windowSettings)
     {
-        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair{ CreateWithProfile(appSettings, profile) };
+        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs, windowSettings);
+        auto settingsPair{ CreateWithProfile(appSettings, profile, windowSettings) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
@@ -356,31 +357,31 @@ namespace winrt::Microsoft::Terminal::Settings
     }
 
     // Method Description:
-    // - Applies appropriate settings from the globals into the TerminalSettings object.
+    // - Applies appropriate settings from the window settings into the TerminalSettings object.
     // Arguments:
-    // - globalSettings: the global property values we're applying.
+    // - windowSettings: the per-window property values we're applying.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
+    void TerminalSettings::_ApplyWindowSettings(const Model::WindowSettings& windowSettings) noexcept
     {
-        _InitialRows = globalSettings.InitialRows();
-        _InitialCols = globalSettings.InitialCols();
+        _InitialRows = windowSettings.InitialRows();
+        _InitialCols = windowSettings.InitialCols();
 
-        _WordDelimiters = globalSettings.WordDelimiters();
-        _CopyOnSelect = globalSettings.CopyOnSelect();
-        _CopyFormatting = globalSettings.CopyFormatting();
-        _FocusFollowMouse = globalSettings.FocusFollowMouse();
-        _ScrollToZoom = globalSettings.ScrollToZoom();
-        _ScrollToChangeOpacity = globalSettings.ScrollToChangeOpacity();
-        _GraphicsAPI = globalSettings.GraphicsAPI();
-        _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
-        _SoftwareRendering = globalSettings.SoftwareRendering();
-        _TextMeasurement = globalSettings.TextMeasurement();
-        _DefaultInputScope = globalSettings.DefaultInputScope();
-        _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
-        _TrimBlockSelection = globalSettings.TrimBlockSelection();
-        _DetectURLs = globalSettings.DetectURLs();
-        _EnableUnfocusedAcrylic = globalSettings.EnableUnfocusedAcrylic();
+        _WordDelimiters = windowSettings.WordDelimiters();
+        _CopyOnSelect = windowSettings.CopyOnSelect();
+        _CopyFormatting = windowSettings.CopyFormatting();
+        _FocusFollowMouse = windowSettings.FocusFollowMouse();
+        _ScrollToZoom = windowSettings.ScrollToZoom();
+        _ScrollToChangeOpacity = windowSettings.ScrollToChangeOpacity();
+        _GraphicsAPI = windowSettings.GraphicsAPI();
+        _DisablePartialInvalidation = windowSettings.DisablePartialInvalidation();
+        _SoftwareRendering = windowSettings.SoftwareRendering();
+        _TextMeasurement = windowSettings.TextMeasurement();
+        _DefaultInputScope = windowSettings.DefaultInputScope();
+        _UseBackgroundImageForWindow = windowSettings.UseBackgroundImageForWindow();
+        _TrimBlockSelection = windowSettings.TrimBlockSelection();
+        _DetectURLs = windowSettings.DetectURLs();
+        _EnableUnfocusedAcrylic = windowSettings.EnableUnfocusedAcrylic();
     }
 
     // Method Description:

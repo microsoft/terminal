@@ -121,7 +121,7 @@ namespace winrt::TerminalApp::implementation
     {
         static const auto key = winrt::box_value(L"SettingsUiTabBrush");
         return ThemeLookup(WUX::Application::Current().Resources(),
-                           _settings.GlobalSettings().CurrentTheme().RequestedTheme(),
+                           _settings.GlobalSettings().CurrentTheme(_settings.WindowSettingsDefaults()).RequestedTheme(),
                            key)
             .try_as<winrt::WUX::Media::Brush>();
     }

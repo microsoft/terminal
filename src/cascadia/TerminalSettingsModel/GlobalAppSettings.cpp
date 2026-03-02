@@ -59,9 +59,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 {
     auto globals{ winrt::make_self<GlobalAppSettings>() };
 
-    globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
-
-    globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
@@ -84,14 +81,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         {
             const auto themeImpl{ winrt::get_self<implementation::Theme>(kv.Value()) };
             globals->_themes.Insert(kv.Key(), *themeImpl->Copy());
-        }
-    }
-    if (_NewTabMenu)
-    {
-        globals->_NewTabMenu = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
-        for (const auto& entry : *_NewTabMenu)
-        {
-            globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
         }
     }
     if (_DisabledProfileSources)
@@ -117,17 +106,6 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microso
 
 #pragma region DefaultProfile
 
-void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
-{
-    _defaultProfile = defaultProfile;
-    _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
-}
-
-winrt::guid GlobalAppSettings::DefaultProfile() const
-{
-    return _defaultProfile;
-}
-
 #pragma endregion
 
 winrt::Microsoft::Terminal::Settings::Model::ActionMap GlobalAppSettings::ActionMap() const noexcept
@@ -150,17 +128,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 
 void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origin)
 {
-    JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
-
-    // GH#8076 - when adding enum values to this key, we also changed it from
-    // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
-    // "useTabSwitcher", but prefer "tabSwitcherMode"
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode) || _fixupsAppliedDuringLoad;
-
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs) || _fixupsAppliedDuringLoad;
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
@@ -169,17 +137,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
-    // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values
-    // We only want to assign if the value did change through clamping,
-    // otherwise we could end up setting defaults that get persisted
-    if (this->HasInitialCols())
-    {
-        this->InitialCols(std::clamp(this->InitialCols(), 1, 999));
-    }
-    if (this->HasInitialRows())
-    {
-        this->InitialRows(std::clamp(this->InitialRows(), 1, 999));
-    }
     LayerActionsFrom(json, origin, true);
 
     // No need to update _fixupsAppliedDuringLoad here.
@@ -203,20 +160,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
         _fixupsAppliedDuringLoad |= firstWindowPreferenceValue == LegacyPersistedWindowLayout.data();
     }
 
-    // Remove settings included in userDefaults
-    static constexpr std::array<std::pair<std::string_view, std::string_view>, 2> userDefaultSettings{ { { "copyOnSelect", "false" },
-                                                                                                         { "copyFormatting", "false" } } };
-    for (const auto& [setting, val] : userDefaultSettings)
-    {
-        if (const auto settingJson{ json.find(&*setting.cbegin(), (&*setting.cbegin()) + setting.size()) })
-        {
-            if (settingJson->asString() == val)
-            {
-                // false positive!
-                _changeLog.erase(std::string{ setting });
-            }
-        }
-    }
+    // NOTE: "copyOnSelect" and "copyFormatting" used to be global settings.
+    // They were moved to WindowSettings and are now handled by
+    // WindowSettings::LayerJson. No cleanup is needed here because
+    // MTSM_GLOBAL_SETTINGS no longer includes them, so they never enter
+    // the changeLog in the first place.
 }
 
 void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings)
@@ -301,34 +249,8 @@ const std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarni
 // - the JsonObject representing this instance
 Json::Value GlobalAppSettings::ToJson()
 {
-    // These experimental options should be removed from the settings file if they're at their default value.
-    // This prevents them from sticking around forever, even if the user was just experimenting with them.
-    // One could consider this a workaround for the settings UI right now not having a "reset to default" button for these.
-    if (_GraphicsAPI == Control::GraphicsAPI::Automatic)
-    {
-        _GraphicsAPI.reset();
-    }
-    if (_TextMeasurement == Control::TextMeasurement::Graphemes)
-    {
-        _TextMeasurement.reset();
-    }
-    if (_DefaultInputScope == Control::DefaultInputScope::Default)
-    {
-        _DefaultInputScope.reset();
-    }
-
-    if (_DisablePartialInvalidation == false)
-    {
-        _DisablePartialInvalidation.reset();
-    }
-    if (_SoftwareRendering == false)
-    {
-        _SoftwareRendering.reset();
-    }
 
     Json::Value json{ Json::ValueType::objectValue };
-
-    JsonUtils::SetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
 
 #define GLOBAL_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
@@ -346,19 +268,20 @@ bool GlobalAppSettings::FixupsAppliedDuringLoad()
     return _fixupsAppliedDuringLoad || _actionMap->FixupsAppliedDuringLoad();
 }
 
-winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme() noexcept
+winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentTheme(const Model::WindowSettings& window) noexcept
 {
     auto requestedTheme = Model::Theme::IsSystemInDarkTheme() ?
                               winrt::Windows::UI::Xaml::ElementTheme::Dark :
                               winrt::Windows::UI::Xaml::ElementTheme::Light;
 
+    const auto& themePair{ window.Theme() };
     switch (requestedTheme)
     {
     case winrt::Windows::UI::Xaml::ElementTheme::Light:
-        return _themes.TryLookup(Theme().LightName());
+        return _themes.TryLookup(themePair.LightName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Dark:
-        return _themes.TryLookup(Theme().DarkName());
+        return _themes.TryLookup(themePair.DarkName());
 
     case winrt::Windows::UI::Xaml::ElementTheme::Default:
     default:
@@ -390,16 +313,6 @@ bool GlobalAppSettings::ShouldUsePersistedLayout() const
 void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
     _actionMap->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
-    if (_NewTabMenu)
-    {
-        for (const auto& entry : *_NewTabMenu)
-        {
-            if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
-            {
-                resolvable->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
-            }
-        }
-    }
     for (auto& parent : _parents)
     {
         parent->ResolveMediaResources(resolver);
@@ -408,115 +321,20 @@ void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver
 
 void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
 {
-    if (setting == "theme")
-    {
-        if (_Theme.has_value())
-        {
-            // ThemePair always has a Dark/Light value,
-            // so we need to check if they were explicitly set
-            if (_Theme->DarkName() == _Theme->LightName())
-            {
-                _changeLog.emplace(setting);
-            }
-            else
-            {
-                _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, "dark"));
-                _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, "light"));
-            }
-        }
-    }
-    else if (setting == "newTabMenu")
-    {
-        if (_NewTabMenu.has_value())
-        {
-            for (const auto& entry : *_NewTabMenu)
-            {
-                std::string entryType;
-                switch (entry.Type())
-                {
-                case NewTabMenuEntryType::Profile:
-                    entryType = "profile";
-                    break;
-                case NewTabMenuEntryType::Separator:
-                    entryType = "separator";
-                    break;
-                case NewTabMenuEntryType::Folder:
-                    entryType = "folder";
-                    break;
-                case NewTabMenuEntryType::RemainingProfiles:
-                    entryType = "remainingProfiles";
-                    break;
-                case NewTabMenuEntryType::MatchProfiles:
-                    entryType = "matchProfiles";
-                    break;
-                case NewTabMenuEntryType::Action:
-                    entryType = "action";
-                    break;
-                case NewTabMenuEntryType::Invalid:
-                    // ignore invalid
-                    continue;
-                }
-                _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, entryType));
-            }
-        }
-    }
-    else
-    {
-        _changeLog.emplace(setting);
-    }
+    _changeLog.emplace(setting);
 }
 
 void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
 {
     const auto oldID = cmd.ID();
     _actionMap->UpdateCommandID(cmd, newID);
-    // newID might have been empty when this function was called, if so actionMap would have generated a new ID, use that
-    newID = cmd.ID();
-    if (_NewTabMenu)
-    {
-        // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
-        std::function<void(const Model::NewTabMenuEntry&)> recursiveEntryIdUpdate;
-        recursiveEntryIdUpdate = [&](const Model::NewTabMenuEntry& entry) {
-            if (entry.Type() == NewTabMenuEntryType::Action)
-            {
-                if (const auto actionEntry{ entry.try_as<ActionEntry>() })
-                {
-                    if (actionEntry.ActionId() == oldID)
-                    {
-                        actionEntry.ActionId(newID);
-                    }
-                }
-            }
-            else if (entry.Type() == NewTabMenuEntryType::Folder)
-            {
-                if (const auto folderEntry{ entry.try_as<FolderEntry>() })
-                {
-                    for (const auto& nestedEntry : folderEntry.RawEntries())
-                    {
-                        recursiveEntryIdUpdate(nestedEntry);
-                    }
-                }
-            }
-        };
-
-        for (const auto& entry : *_NewTabMenu)
-        {
-            recursiveEntryIdUpdate(entry);
-        }
-    }
 }
 
 void GlobalAppSettings::_logSettingIfSet(const std::string_view& setting, const bool isSet)
 {
     if (isSet)
     {
-        // Exclude some false positives from userDefaults.json
-        const bool settingCopyFormattingToDefault = til::equals_insensitive_ascii(setting, "copyFormatting") && _CopyFormatting.has_value() && _CopyFormatting.value() == static_cast<Control::CopyFormat>(0);
-        const bool settingNTMToDefault = til::equals_insensitive_ascii(setting, "newTabMenu") && _NewTabMenu.has_value() && _NewTabMenu->Size() == 1 && _NewTabMenu->GetAt(0).Type() == NewTabMenuEntryType::RemainingProfiles;
-        if (!settingCopyFormattingToDefault && !settingNTMToDefault)
-        {
-            _logSettingSet(setting);
-        }
+        _logSettingSet(setting);
     }
 }
 
