@@ -1105,6 +1105,7 @@ namespace winrt::TerminalApp::implementation
             dispatcher,
             til::throttled_func_options{
                 .delay = std::chrono::milliseconds{ 200 },
+                .leading = true,
                 .trailing = true,
             },
             [weakThis]() {

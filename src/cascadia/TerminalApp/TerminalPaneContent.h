@@ -78,7 +78,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
         bool _bellPlayerCreated{ false };
-        bool _autoDetectActive{ false };
+        std::atomic<bool> _autoDetectActive{ false };
 
         struct ControlEventTokens
         {
