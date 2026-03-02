@@ -33,6 +33,7 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.IntenseStyle> IntenseTextStyle { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.PathTranslationStyle> PathTranslationStyle { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.AutoDetectRunningCommand> AutoDetectRunningCommand { get; };
 
         // Actions
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.ResizeDirection> ResizeDirection { get; };

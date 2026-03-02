@@ -30,6 +30,7 @@
     <ClCompile Include="fzf/fzf.cpp">
       <Filter>fzf</Filter>
     </ClCompile>
+    <ClCompile Include="DesktopNotification.cpp" />
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="TerminalSettingsCache.cpp" />
@@ -58,6 +59,7 @@
     <ClInclude Include="fzf/fzf.h">
       <Filter>fzf</Filter>
     </ClInclude>
+    <ClInclude Include="DesktopNotification.h" />
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="WindowsPackageManagerFactory.h" />

@@ -108,7 +108,10 @@ Author(s):
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
-    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None) \
+    X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnInactiveOutput, "notifyOnInactiveOutput", Microsoft::Terminal::Control::OutputNotificationStyle{0})                             \
+    X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnNextPrompt, "notifyOnNextPrompt", Microsoft::Terminal::Control::OutputNotificationStyle{0})                                       \
+    X(Microsoft::Terminal::Control::AutoDetectRunningCommand, AutoDetectRunningCommand, "autoDetectRunningCommand", Microsoft::Terminal::Control::AutoDetectRunningCommand::Disabled)
 
 // Intentionally omitted Profile settings:
 // * Name

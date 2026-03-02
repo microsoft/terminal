@@ -173,6 +173,7 @@
     <ClInclude Include="SettingsPaneContent.h">
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="DesktopNotification.h" />
     <ClInclude Include="Toast.h" />
     <ClInclude Include="TerminalSettingsCache.h" />
     <ClInclude Include="SuggestionsControl.h">
@@ -286,6 +287,7 @@
       <DependentUpon>TerminalPaneContent.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="DesktopNotification.cpp" />
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="TerminalSettingsCache.cpp" />
     <ClCompile Include="SuggestionsControl.cpp">

@@ -3583,7 +3583,7 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     else if (subParam == 12)
     {
         _pages.ActivePage().Buffer().StartCommand();
-        _api.NotifyShellIntegrationMark();
+        _api.NotifyShellIntegrationMark(ITerminalApi::ShellIntegrationMark::Command);
     }
 }
 
@@ -3614,7 +3614,7 @@ void AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     if (action == L"SetMark")
     {
         _pages.ActivePage().Buffer().StartPrompt();
-        _api.NotifyShellIntegrationMark();
+        _api.NotifyShellIntegrationMark(ITerminalApi::ShellIntegrationMark::Prompt);
     }
 }
 
@@ -3648,19 +3648,19 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         case L'A': // FTCS_PROMPT
         {
             _pages.ActivePage().Buffer().StartPrompt();
-            _api.NotifyShellIntegrationMark();
+            _api.NotifyShellIntegrationMark(ITerminalApi::ShellIntegrationMark::Prompt);
             break;
         }
         case L'B': // FTCS_COMMAND_START
         {
             _pages.ActivePage().Buffer().StartCommand();
-            _api.NotifyShellIntegrationMark();
+            _api.NotifyShellIntegrationMark(ITerminalApi::ShellIntegrationMark::Command);
             break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
             _pages.ActivePage().Buffer().StartOutput();
-            _api.NotifyShellIntegrationMark();
+            _api.NotifyShellIntegrationMark(ITerminalApi::ShellIntegrationMark::Output);
             break;
         }
         case L'D': // FTCS_COMMAND_FINISHED
@@ -3681,7 +3681,7 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             }
 
             _pages.ActivePage().Buffer().EndCurrentCommand(error);
-            _api.NotifyShellIntegrationMark();
+            _api.NotifyShellIntegrationMark(ITerminalApi::ShellIntegrationMark::CommandFinished);
 
             break;
         }

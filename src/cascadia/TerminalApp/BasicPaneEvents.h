@@ -10,6 +10,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<> ConnectionStateChanged;
         til::typed_event<IPaneContent> CloseRequested;
         til::typed_event<IPaneContent, winrt::TerminalApp::BellEventArgs> BellRequested;
+        til::typed_event<IPaneContent, winrt::TerminalApp::NotificationEventArgs> NotificationRequested;
         til::typed_event<IPaneContent> TitleChanged;
         til::typed_event<IPaneContent> TabColorChanged;
         til::typed_event<IPaneContent> TaskbarProgressChanged;

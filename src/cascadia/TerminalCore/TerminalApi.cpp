@@ -400,8 +400,26 @@ void Terminal::NotifyBufferRotation(const int delta)
     }
 }
 
-void Terminal::NotifyShellIntegrationMark()
+void Terminal::NotifyShellIntegrationMark(ShellIntegrationMark mark)
 {
     // Notify the scrollbar that marks have been added so it can refresh the mark indicators
     _NotifyScrollEvent();
+
+    switch (mark)
+    {
+    case ShellIntegrationMark::Prompt:
+        if (_pfnPromptReturned)
+        {
+            _pfnPromptReturned();
+        }
+        break;
+    case ShellIntegrationMark::Output:
+        if (_pfnCommandStarted)
+        {
+            _pfnCommandStarted();
+        }
+        break;
+    default:
+        break;
+    }
 }

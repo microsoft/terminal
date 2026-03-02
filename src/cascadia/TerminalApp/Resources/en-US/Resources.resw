@@ -923,4 +923,16 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>An invalid regular expression was found.</value>
   </data>
+  <data name="NotificationTitle" xml:space="preserve">
+    <value>Windows Terminal</value>
+    <comment>Title shown in desktop toast notifications for tab activity.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>Tab "{0}" has new activity</value>
+    <comment>{Locked="{0}"}Message shown in a desktop toast notification when a tab produces output. {0} is the tab title.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>Tab "{0}" in {1} has new activity</value>
+    <comment>{Locked="{0}"}{Locked="{1}"}Message shown in a desktop toast notification when a tab produces output. {0} is the tab title. {1} is the window name.</comment>
+  </data>
 </root>

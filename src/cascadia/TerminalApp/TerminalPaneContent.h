@@ -4,6 +4,7 @@
 #pragma once
 #include "TerminalPaneContent.g.h"
 #include "BellEventArgs.g.h"
+#include "NotificationEventArgs.g.h"
 #include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation
@@ -17,6 +18,15 @@ namespace winrt::TerminalApp::implementation
             FlashTaskbar(flashTaskbar) {}
 
         til::property<bool> FlashTaskbar;
+    };
+
+    struct NotificationEventArgs : public NotificationEventArgsT<NotificationEventArgs>
+    {
+    public:
+        NotificationEventArgs(winrt::Microsoft::Terminal::Control::OutputNotificationStyle style) :
+            Style(style) {}
+
+        til::property<winrt::Microsoft::Terminal::Control::OutputNotificationStyle> Style;
     };
 
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>, BasicPaneEvents
@@ -43,8 +53,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         winrt::hstring Title() { return _control.Title(); }
-        uint64_t TaskbarState() { return _control.TaskbarState(); }
-        uint64_t TaskbarProgress() { return _control.TaskbarProgress(); }
+        uint64_t TaskbarState();
+        uint64_t TaskbarProgress();
         bool ReadOnly() { return _control.ReadOnly(); }
         winrt::hstring Icon() const;
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() const noexcept;
@@ -66,11 +76,15 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
         bool _bellPlayerCreated{ false };
+        bool _autoDetectActive{ false };
 
         struct ControlEventTokens
         {
             winrt::Microsoft::Terminal::Control::TermControl::ConnectionStateChanged_revoker _ConnectionStateChanged;
             winrt::Microsoft::Terminal::Control::TermControl::WarningBell_revoker _WarningBell;
+            winrt::Microsoft::Terminal::Control::TermControl::PromptReturned_revoker _PromptReturned;
+            winrt::Microsoft::Terminal::Control::TermControl::CommandStarted_revoker _CommandStarted;
+            winrt::Microsoft::Terminal::Control::TermControl::OutputIdle_revoker _OutputIdle;
             winrt::Microsoft::Terminal::Control::TermControl::CloseTerminalRequested_revoker _CloseTerminalRequested;
             winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
 
@@ -89,6 +103,12 @@ namespace winrt::TerminalApp::implementation
         safe_void_coroutine _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& e);
+        void _controlPromptReturnedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                           const winrt::Windows::Foundation::IInspectable& e);
+        void _controlCommandStartedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                           const winrt::Windows::Foundation::IInspectable& e);
+        void _controlOutputIdleHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                       const winrt::Windows::Foundation::IInspectable& e);
         void _controlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);
 
         void _controlTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);

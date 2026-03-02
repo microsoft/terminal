@@ -16,6 +16,11 @@ namespace TerminalApp
         Boolean FlashTaskbar { get; };
     };
 
+    runtimeclass NotificationEventArgs
+    {
+        Microsoft.Terminal.Control.OutputNotificationStyle Style { get; };
+    };
+
     interface IPaneContent
     {
         Windows.UI.Xaml.FrameworkElement GetRoot();
@@ -41,6 +46,7 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<Object, Object> ConnectionStateChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, BellEventArgs> BellRequested;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, NotificationEventArgs> NotificationRequested;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TitleChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TaskbarProgressChanged;

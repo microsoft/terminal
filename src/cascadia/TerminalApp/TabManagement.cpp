@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
+#include "DesktopNotification.h"
 
 #include <shlobj.h>
 
@@ -147,6 +148,15 @@ namespace winrt::TerminalApp::implementation
             if (page && tab)
             {
                 page->RaiseVisualBell.raise(nullptr, nullptr);
+            }
+        });
+
+        // When a tab requests a desktop toast notification (OutputNotificationStyle::Notification),
+        // send the toast and handle activation by summoning this window and switching to the tab.
+        newTabImpl->TabToastNotificationRequested([weakThis{ get_weak() }](const winrt::hstring& title, uint32_t tabIndex) {
+            if (const auto page{ weakThis.get() })
+            {
+                page->_SendDesktopNotification(title, tabIndex);
             }
         });
 
@@ -1184,5 +1194,55 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::_HasMultipleTabs() const
     {
         return _tabs.Size() > 1;
+    }
+
+    // Method Description:
+    // - Sends a Windows desktop toast notification for a tab. When the user clicks
+    //   the toast, summon this window and switch to the specified tab.
+    // Arguments:
+    // - tabTitle: The title of the tab to display in the notification.
+    // - tabIndex: The index of the tab to switch to when the toast is activated.
+    void TerminalPage::_SendDesktopNotification(const winrt::hstring& tabTitle, uint32_t tabIndex)
+    {
+        // Build the notification message.
+        // Use the window name if available for context, otherwise just use the tab title.
+        const auto windowName = _WindowProperties ? _WindowProperties.WindowNameForDisplay() : winrt::hstring{};
+        winrt::hstring message;
+        if (!windowName.empty())
+        {
+            message = RS_fmt(L"NotificationMessage_TabActivityInWindow", std::wstring_view{ tabTitle }, std::wstring_view{ windowName });
+        }
+        else
+        {
+            message = RS_fmt(L"NotificationMessage_TabActivity", std::wstring_view{ tabTitle });
+        }
+
+        implementation::DesktopNotificationArgs args;
+        args.Title = RS_(L"NotificationTitle");
+        args.Message = message;
+        args.TabIndex = tabIndex;
+
+        // Capture a weak ref and the dispatcher so we can marshal back to the UI thread
+        // when the toast is activated.
+        auto weakThis = get_weak();
+        auto dispatcher = Dispatcher();
+
+        implementation::DesktopNotification::SendNotification(
+            args,
+            [weakThis, dispatcher, tabIndex](uint32_t /*activatedTabIndex*/) -> void {
+                // The toast Activated callback fires on a background thread.
+                // We need to dispatch to the UI thread to summon the window and switch tabs.
+                [](auto weakThis, auto dispatcher, auto tabIndex) -> safe_void_coroutine {
+                    co_await wil::resume_foreground(dispatcher);
+                    if (const auto page{ weakThis.get() })
+                    {
+                        // Summon this window (bring to foreground)
+                        page->SummonWindowRequested.raise(nullptr, nullptr);
+
+                        // Switch to the tab that triggered the notification
+                        page->_SelectTab(tabIndex);
+                    }
+                }(weakThis, dispatcher, tabIndex);
+            });
     }
 }

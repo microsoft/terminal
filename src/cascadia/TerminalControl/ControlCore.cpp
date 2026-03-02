@@ -118,6 +118,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnWarningBell = [this] { _terminalWarningBell(); };
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
+        auto pfnPromptReturned = [this] { _terminalPromptReturned(); };
+        _terminal->SetPromptReturnedCallback(pfnPromptReturned);
+
+        auto pfnCommandStarted = [this] { _terminalCommandStarted(); };
+        _terminal->SetCommandStartedCallback(pfnCommandStarted);
+
         auto pfnTitleChanged = [this](auto&& PH1) { _terminalTitleChanged(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
@@ -1591,6 +1597,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then the Terminal already has the write lock when calling this
         // callback.
         WarningBell.raise(*this, nullptr);
+    }
+
+    void ControlCore::_terminalPromptReturned()
+    {
+        // Since this can only ever be triggered by output from the connection,
+        // then the Terminal already has the write lock when calling this
+        // callback.
+        PromptReturned.raise(*this, nullptr);
+    }
+
+    void ControlCore::_terminalCommandStarted()
+    {
+        // Since this can only ever be triggered by output from the connection,
+        // then the Terminal already has the write lock when calling this
+        // callback.
+        CommandStarted.raise(*this, nullptr);
     }
 
     // Method Description:

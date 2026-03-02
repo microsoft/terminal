@@ -1265,6 +1265,16 @@ void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function
     _pfnClearQuickFix.swap(pfn);
 }
 
+void Terminal::SetPromptReturnedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnPromptReturned.swap(pfn);
+}
+
+void Terminal::SetCommandStartedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnCommandStarted.swap(pfn);
+}
+
 // Method Description:
 // - Stores the search highlighted regions in the terminal
 void Terminal::SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept
