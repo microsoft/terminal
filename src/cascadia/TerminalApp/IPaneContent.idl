@@ -19,6 +19,7 @@ namespace TerminalApp
     runtimeclass NotificationEventArgs
     {
         Microsoft.Terminal.Control.OutputNotificationStyle Style { get; };
+        Boolean OnlyWhenInactive { get; };
     };
 
     interface IPaneContent

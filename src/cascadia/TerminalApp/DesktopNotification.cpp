@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
 
             // Build the toast XML. We use a simple template with a title and body text.
             //
-            // <toast launch="tabIndex=N">
+            // <toast launch="__fromToast">
             //   <visual>
             //     <binding template="ToastGeneric">
             //       <text>Title</text>
@@ -57,9 +57,14 @@ namespace winrt::TerminalApp::implementation
             // Second <text> is the body
             textNodes.Item(1).InnerText(args.Message);
 
-            // Set launch args so we can identify which tab to activate.
             auto toastElement = toastXml.DocumentElement();
-            toastElement.SetAttribute(L"launch", fmt::format(FMT_COMPILE(L"tabIndex={}"), args.TabIndex));
+
+            // When a toast is clicked, Windows launches a new instance of the app
+            // with the "launch" attribute as command-line arguments. We handle
+            // toast activation in-process via the Activated event below, so the
+            // new instance should do nothing. "__fromToast" is recognized by
+            // AppCommandlineArgs::ParseArgs as a no-op sentinel.
+            toastElement.SetAttribute(L"launch", L"__fromToast");
 
             // Set the scenario to "reminder" to ensure the toast shows even in DND,
             // and the group/tag to allow replacement of repeated notifications.

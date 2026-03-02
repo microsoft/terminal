@@ -23,10 +23,11 @@ namespace winrt::TerminalApp::implementation
     struct NotificationEventArgs : public NotificationEventArgsT<NotificationEventArgs>
     {
     public:
-        NotificationEventArgs(winrt::Microsoft::Terminal::Control::OutputNotificationStyle style) :
-            Style(style) {}
+        NotificationEventArgs(winrt::Microsoft::Terminal::Control::OutputNotificationStyle style, bool onlyWhenInactive = false) :
+            Style(style), OnlyWhenInactive(onlyWhenInactive) {}
 
         til::property<winrt::Microsoft::Terminal::Control::OutputNotificationStyle> Style;
+        til::property<bool> OnlyWhenInactive;
     };
 
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>, BasicPaneEvents
@@ -46,6 +47,7 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
 
         void MarkAsDefterm();
+        void PlayNotificationSound();
 
         winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
         {

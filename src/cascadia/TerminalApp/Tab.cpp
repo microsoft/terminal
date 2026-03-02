@@ -1205,11 +1205,17 @@ namespace winrt::TerminalApp::implementation
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
                 {
-                    // For NotifyOnInactiveOutput, only show notifications if this sender
-                    // is NOT the currently active pane content. For NotifyOnNextPrompt,
-                    // the notification is always relevant.
+                    // For NotifyOnInactiveOutput (OnlyWhenInactive=true), suppress
+                    // ALL notification styles when the sender is the active pane.
+                    // For NotifyOnNextPrompt (OnlyWhenInactive=false), always fire.
                     const auto activeContent = tab->GetActiveContent();
                     const auto isActivePaneContent = activeContent && activeContent == sender;
+
+                    if (notifArgs.OnlyWhenInactive() && isActivePaneContent &&
+                        tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        co_return;
+                    }
 
                     const auto style = notifArgs.Style();
 
@@ -1219,20 +1225,23 @@ namespace winrt::TerminalApp::implementation
                         tab->TabRaiseVisualBell.raise();
                     }
 
-                    // Audible notification is handled in TerminalPaneContent already
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Audible))
+                    {
+                        // Play the notification sound via the pane's bell infrastructure
+                        // (respects BellSound profile setting, uses MediaPlayer, etc.)
+                        if (const auto termContent{ sender.try_as<TerminalApp::TerminalPaneContent>() })
+                        {
+                            termContent.PlayNotificationSound();
+                        }
+                    }
 
                     if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Tab))
                     {
-                        // Show the activity indicator in the tab header (distinct from bell)
-                        // Only for inactive pane output, skip if this is the focused pane in a focused tab
-                        if (!isActivePaneContent || tab->_focusState == WUX::FocusState::Unfocused)
-                        {
-                            tab->ShowActivityIndicator(true);
+                        tab->ShowActivityIndicator(true);
 
-                            if (tab->_focusState != WUX::FocusState::Unfocused)
-                            {
-                                tab->ActivateActivityIndicatorTimer();
-                            }
+                        if (tab->_focusState != WUX::FocusState::Unfocused)
+                        {
+                            tab->ActivateActivityIndicatorTimer();
                         }
                     }
 

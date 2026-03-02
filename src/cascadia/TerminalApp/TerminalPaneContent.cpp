@@ -265,6 +265,30 @@ namespace winrt::TerminalApp::implementation
     //   has the 'visual' flag set
     // Arguments:
     // - <unused>
+    // Method Description:
+    // - Plays the notification sound using the profile's BellSound setting if
+    //   configured, otherwise falls back to the system "Critical Stop" sound.
+    //   Reused by the warning bell handler, NotifyOnNextPrompt, and
+    //   NotifyOnInactiveOutput (called from Tab after the active-pane check).
+    void TerminalPaneContent::PlayNotificationSound()
+    {
+        if (_profile)
+        {
+            auto sounds{ _profile.BellSound() };
+            if (sounds && sounds.Size() > 0)
+            {
+                winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                winrt::Windows::Foundation::Uri uri{ soundPath };
+                _playBellSound(uri);
+            }
+            else
+            {
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+        }
+    }
+
     void TerminalPaneContent::_controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
@@ -275,19 +299,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
                 {
-                    // Audible is set, play the sound
-                    auto sounds{ _profile.BellSound() };
-                    if (sounds && sounds.Size() > 0)
-                    {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        winrt::Windows::Foundation::Uri uri{ soundPath };
-                        _playBellSound(uri);
-                    }
-                    else
-                    {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                    }
+                    PlayNotificationSound();
                 }
 
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
@@ -344,20 +356,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (_profile)
         {
-            // Check NotifyOnNextPrompt setting and raise a notification
+            // Check NotifyOnNextPrompt setting and raise a notification.
+            // Pass OnlyWhenInactive=true so Tab suppresses notifications when
+            // this pane is active in a focused tab.
             const auto notifyStyle = _profile.NotifyOnNextPrompt();
             if (static_cast<int>(notifyStyle) != 0)
             {
-                // Play audible notification if requested (handle here like BellStyle::Audible)
-                if (WI_IsFlagSet(notifyStyle, OutputNotificationStyle::Audible))
-                {
-                    const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                }
-
-                // Raise NotificationRequested so Tab can handle Taskbar/Tab/Notification flags
                 NotificationRequested.raise(*this,
-                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle));
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, true));
             }
 
             // If autoDetectRunningCommand is enabled, clear the progress ring
@@ -400,17 +406,11 @@ namespace winrt::TerminalApp::implementation
             const auto notifyStyle = _profile.NotifyOnInactiveOutput();
             if (static_cast<int>(notifyStyle) != 0)
             {
-                // Play audible notification if requested
-                if (WI_IsFlagSet(notifyStyle, OutputNotificationStyle::Audible))
-                {
-                    const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                }
-
-                // Raise NotificationRequested so Tab can handle Taskbar/Tab flags.
-                // Tab will check if this pane is the active pane and skip if so.
+                // Raise NotificationRequested so Tab can handle Taskbar/Tab/Audible flags.
+                // Pass OnlyWhenInactive=true so Tab skips notifications for the active pane.
+                // Note: Audible is handled by Tab (not here) so it can be gated on active state.
                 NotificationRequested.raise(*this,
-                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle));
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, true));
             }
         }
     }
