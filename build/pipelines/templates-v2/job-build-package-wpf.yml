@@ -46,6 +46,7 @@ jobs:
           BuildConfiguration: ${{ config }}
   dependsOn: ${{ parameters.dependsOn }}
   variables:
+    BuildPlatform: Any CPU
     OutputBuildPlatform: AnyCPU
     Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
     JobOutputDirectory: $(Build.ArtifactStagingDirectory)\nupkg
