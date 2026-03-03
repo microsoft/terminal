@@ -353,6 +353,25 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 #endif
     }
 
+    // Toast notification activations launch a new unelevated instance of the
+    // app with "__fromToast" as the sole command-line argument. This happens
+    // when the originating Terminal window is elevated — Windows cannot
+    // COM-activate an elevated process from a toast click, so it starts a new
+    // unelevated process instead. That process must not restore persisted
+    // layouts, create windows, or do anything else — just exit immediately.
+    //
+    // We check this BEFORE the mutex handoff because the elevated instance
+    // owns the mutex and UIPI blocks WM_COPYDATA from our unelevated process,
+    // which would cause acquireMutexOrAttemptHandoff to spin for ~30s.
+    const auto args = commandlineToArgArray(GetCommandLineW());
+    {
+        if (args.size() == 2 && args[1] == L"__fromToast")
+        {
+            TerminateProcess(GetCurrentProcess(), 0);
+            __assume(false);
+        }
+    }
+
     // Windows Terminal is a single-instance application. Either acquire ownership
     // over the mutex, or hand off the command line to the existing instance.
     const auto mutex = acquireMutexOrAttemptHandoff(windowClassName.c_str(), nCmdShow);
@@ -405,8 +424,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                 startIdx += 1;
             }
         }
-
-        const auto args = commandlineToArgArray(GetCommandLineW());
 
         if (args.size() == 2 && args[1] == L"-Embedding")
         {

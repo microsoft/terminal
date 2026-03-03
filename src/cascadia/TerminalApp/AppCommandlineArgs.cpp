@@ -1068,16 +1068,6 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring> args)
         return 0;
     }
 
-    // Toast notification activations launch a new instance with "__fromToast"
-    // as command-line args. We handle toast clicks in-process via the
-    // ToastNotification::Activated event, so there's nothing for this
-    // (possibly handed-off) commandline to do. Return non-zero with no exit
-    // message so that _dispatchCommandline silently ignores it.
-    if (args.size() == 2 && args[1] == L"__fromToast")
-    {
-        return 1;
-    }
-
     auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 
     for (auto& cmdBlob : commands)
