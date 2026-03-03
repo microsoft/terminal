@@ -1206,7 +1206,9 @@ namespace winrt::TerminalApp::implementation
     {
         // Build the notification message.
         // Use the window name if available for context, otherwise just use the tab title.
-        const auto windowName = _WindowProperties ? _WindowProperties.WindowNameForDisplay() : winrt::hstring{};
+        // Use the raw WindowName (not WindowNameForDisplay) so we don't include
+        // the "<unnamed window>" placeholder in the notification body.
+        const auto windowName = _WindowProperties ? _WindowProperties.WindowName() : winrt::hstring{};
         winrt::hstring message;
         if (!windowName.empty())
         {
