@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Консоль Windows</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>Ширина символов в пропорциональных шрифтах</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>Задает ширину для символов восточноазиатских шрифтов. Значение "Узкая" (по умолчанию) обеспечивает совместимость, а "Широкая" улучшает читаемость большинства шрифтов CJK. В режиме "Широкая" некоторые приложения могут работать неправильно, что приводит к беспорядочному движению курсора. Изменение этого параметра требует перезапуска Терминала Windows и применяется только к приложениям, запущенным из него.</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>Узкие</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>Широкие</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Столбцы</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
