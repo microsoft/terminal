@@ -846,20 +846,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::WriteInputString(const winrt::hstring& wstr, WriteInputStringType type)
     {
-        WriteInputStringWithoutBroadcast(wstr, type);
-
-        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (StringSent)
-        {
-            StringSent.raise(*this, winrt::make<StringSentEventArgs>(wstr, static_cast<uint32_t>(type)));
-        }
-    }
-
-    void TermControl::WriteInputStringWithoutBroadcast(const winrt::hstring& wstr, WriteInputStringType type)
-    {
         // Dismiss any previewed input.
         PreviewInput(hstring{});
-
         _core.WriteInputString(wstr, type);
     }
 

@@ -80,7 +80,6 @@ namespace Microsoft.Terminal.Control
 
         event Windows.Foundation.TypedEventHandler<Object, KeySentEventArgs> KeySent;
         event Windows.Foundation.TypedEventHandler<Object, CharSentEventArgs> CharSent;
-        event Windows.Foundation.TypedEventHandler<Object, StringSentEventArgs> StringSent;
         event Windows.Foundation.TypedEventHandler<Object, SearchMissingCommandEventArgs> SearchMissingCommand;
 
 
@@ -130,9 +129,6 @@ namespace Microsoft.Terminal.Control
         Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
         Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void WriteInputString(String text, WriteInputStringType type);
-        // This is a stopgap until GH#20164 removes StringSent
-        // It prevents us from entering an infinite broadcast loop
-        void WriteInputStringWithoutBroadcast(String text, WriteInputStringType type);
 
         void BellLightOn();
 

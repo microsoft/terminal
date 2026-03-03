@@ -186,7 +186,6 @@ namespace winrt::TerminalApp::implementation
             // These events literally only apply if the content is a TermControl.
             winrt::Microsoft::Terminal::Control::TermControl::KeySent_revoker KeySent;
             winrt::Microsoft::Terminal::Control::TermControl::CharSent_revoker CharSent;
-            winrt::Microsoft::Terminal::Control::TermControl::StringSent_revoker StringSent;
 
             winrt::TerminalApp::TerminalPaneContent::RestartTerminalRequested_revoker RestartTerminalRequested;
         };
