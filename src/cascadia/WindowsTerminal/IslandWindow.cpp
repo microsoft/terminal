@@ -1644,8 +1644,10 @@ void IslandWindow::DockSettings(Docking settings, const bool centered) noexcept
     {
         _dockingSettings = settings;
 
-        // TODO! comment
-        // Don't enter quake mode if we don't have an HWND yet
+        // If the window has already been created, immediately apply the
+        // new docking configuration so it snaps into place.  When called
+        // before window creation (e.g. during startup) the docking will
+        // be applied later by _initialResizeAndRepositionWindow.
         if (settings && _window)
         {
             _applyDocking();
@@ -1664,9 +1666,11 @@ void IslandWindow::SetAutoHideWindow(bool autoHideWindow) noexcept
 }
 
 // Method Description:
-// TODO! comment
-// - Enter quake mode for the monitor this window is currently on. This involves
-//   resizing it to the top half of the monitor.
+// - Apply the current docking configuration.  The window is moved and
+//   resized to the appropriate edge of the nearest monitor according
+//   to _dockingSettings (side, width, height).  If _centered is set,
+//   the window is offset towards the centre of the monitor along the
+//   non-docked axis.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1694,13 +1698,13 @@ void IslandWindow::_applyDocking()
 }
 
 // Method Description:
-// - Get the size and position of the window that a "quake mode" should occupy
-//   on the given monitor.
-// - The window will occupy the top half of the monitor.
+// - Calculate the position and size of the docked window on the given
+//   monitor.  The result depends on _dockingSettings (side, width,
+//   height) and _centered.
 // Arguments:
-// - <none>
+// - hmon: the monitor to dock on.
 // Return Value:
-// - <none>
+// - A til::rect describing the window rectangle in screen coordinates.
 til::rect IslandWindow::_getDockedSize(HMONITOR hmon)
 {
     MONITORINFO nearestMonitorInfo;

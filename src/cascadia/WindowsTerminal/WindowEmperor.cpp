@@ -1421,13 +1421,14 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     const auto globals = _app.Logic().Settings().GlobalSettings();
     const auto windowDefaults = _app.Logic().Settings().WindowSettingsDefaults();
     auto needsIcon = globals.AlwaysShowNotificationIcon() || windowDefaults.MinimizeToNotificationArea();
-    //if (!needsIcon)
-    //{
-    //    for (const auto& host : _windows)
-    //    {
-    //        needsIcon |= host->Logic().IsQuakeWindow();
-    //    }
-    //}
+    if (!needsIcon)
+    {
+        for (const auto& host : _windows)
+        {
+            const auto logic = host->Logic();
+            needsIcon |= logic.GetMinimizeToNotificationArea();
+        }
+    }
 
     if (_notificationIconShown == needsIcon)
     {
