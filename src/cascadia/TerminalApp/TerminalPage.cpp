@@ -2957,8 +2957,6 @@ namespace winrt::TerminalApp::implementation
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
         const auto bracketedPaste = eventArgs.BracketedPasteEnabled();
-        const auto sourceId = sender.try_as<ControlInteractivity>().Id();
-
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
 
@@ -3052,6 +3050,8 @@ namespace winrt::TerminalApp::implementation
             co_await winrt::resume_background();
         }
 
+        const auto control = sender.as<TermControl>();
+
         // This will end up calling ConptyConnection::WriteInput which calls WriteFile which may block for
         // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
         assert(!dispatcher.HasThreadAccess());
@@ -3068,11 +3068,11 @@ namespace winrt::TerminalApp::implementation
                 if (tab->TabStatus().IsInputBroadcastActive())
                 {
                     tab->GetRootPane()->WalkTree([&](auto&& pane) {
-                        if (const auto control = pane->GetTerminalControl())
+                        if (const auto nextControl = pane->GetTerminalControl())
                         {
-                            if (control.ContentId() != sourceId && !control.ReadOnly())
+                            if (nextControl.ContentId() != control.ContentId() && !nextControl.ReadOnly())
                             {
-                                control.WriteInputString(text, WriteInputStringType::Clipboard);
+                                nextControl.WriteInputString(text, WriteInputStringType::Clipboard);
                             }
                         }
                     });
