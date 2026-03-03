@@ -2969,22 +2969,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return std::pow(cursorDistanceFromBorder, 2.0) / 25.0 + 2.0;
     }
 
-    // Method Description:
-    // - Paste this text, and raise a StringSent, to potentially broadcast this
-    //   text to other controls in the app. For certain interactions, like
-    //   drag/dropping a file, we want to act like we "pasted" the text (even if
-    //   the text didn't come from the clipboard). This lets those interactions
-    //   broadcast as well.
-    void TermControl::_pasteTextWithBroadcast(const winrt::hstring& text)
-    {
-        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (StringSent)
-        {
-            StringSent.raise(*this, winrt::make<StringSentEventArgs>(text));
-        }
-        _core.WriteInputString(text, WriteInputStringType::Raw);
-    }
-
     // Method description:
     // - Checks if the uri is valid and sends an event if so
     // Arguments:

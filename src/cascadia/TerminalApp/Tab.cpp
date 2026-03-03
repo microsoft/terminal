@@ -2174,7 +2174,6 @@ namespace winrt::TerminalApp::implementation
                     // Always clear out old ones, just in case.
                     events.KeySent.revoke();
                     events.CharSent.revoke();
-                    events.StringSent.revoke();
 
                     if (newIsBroadcasting)
                     {
@@ -2212,17 +2211,6 @@ namespace winrt::TerminalApp::implementation
                                                   e.Character(),
                                                   e.ScanCode(),
                                                   e.Modifiers());
-                }
-            }
-        });
-
-        events.StringSent = termControl.StringSent(winrt::auto_revoke, [weakThis](auto&& sender, auto&& e) {
-            if (const auto tab{ weakThis.get() })
-            {
-                if (tab->_tabStatus.IsInputBroadcastActive())
-                {
-                    tab->_rootPane->BroadcastString(sender.try_as<TermControl>(),
-                                                    e.Text());
                 }
             }
         });

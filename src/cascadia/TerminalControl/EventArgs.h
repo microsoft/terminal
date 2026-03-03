@@ -18,7 +18,6 @@
 #include "CompletionsChangedEventArgs.g.h"
 #include "KeySentEventArgs.g.h"
 #include "CharSentEventArgs.g.h"
-#include "StringSentEventArgs.g.h"
 #include "SearchMissingCommandEventArgs.g.h"
 #include "WindowSizeChangedEventArgs.g.h"
 
@@ -221,15 +220,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WINRT_PROPERTY(wchar_t, Character);
         WINRT_PROPERTY(WORD, ScanCode);
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Core::ControlKeyStates, Modifiers);
-    };
-
-    struct StringSentEventArgs : public StringSentEventArgsT<StringSentEventArgs>
-    {
-    public:
-        StringSentEventArgs(const winrt::hstring& text) :
-            _Text(text) {}
-
-        WINRT_PROPERTY(winrt::hstring, Text);
     };
 
     struct SearchMissingCommandEventArgs : public SearchMissingCommandEventArgsT<SearchMissingCommandEventArgs>

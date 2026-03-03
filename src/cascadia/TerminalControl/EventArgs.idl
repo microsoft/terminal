@@ -148,11 +148,6 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
     }
 
-    runtimeclass StringSentEventArgs
-    {
-        String Text { get; };
-    }
-
     runtimeclass SearchMissingCommandEventArgs
     {
         String MissingCommand { get; };
