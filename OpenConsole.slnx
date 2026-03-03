@@ -1056,5 +1056,7 @@
       <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
+    <Project Path="src/tools/wt.mcp/wt.mcp.csproj" Id="14ae7ba4-7592-4d77-bad1-5fcb0ace7399">
+    </Project>
   </Folder>
 </Solution>
