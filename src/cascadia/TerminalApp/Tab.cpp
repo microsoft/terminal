@@ -1186,6 +1186,14 @@ namespace winrt::TerminalApp::implementation
                         tab->TabRaiseVisualBell.raise();
                     }
 
+                    // Send a desktop toast notification if requested, but only if
+                    // the pane isn't already in the belled state. This prevents
+                    // spamming toasts for repeated BEL characters.
+                    if (bellArgs.SendNotification() && !tab->_tabStatus.BellIndicator())
+                    {
+                        tab->TabToastNotificationRequested.raise(tab->Title(), tab->TabViewIndex());
+                    }
+
                     // Show the bell indicator in the tab header
                     tab->ShowBellIndicator(true);
 

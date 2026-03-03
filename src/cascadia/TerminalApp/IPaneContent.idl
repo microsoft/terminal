@@ -14,6 +14,7 @@ namespace TerminalApp
     runtimeclass BellEventArgs
     {
         Boolean FlashTaskbar { get; };
+        Boolean SendNotification { get; };
     };
 
     runtimeclass NotificationEventArgs
