@@ -185,7 +185,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto termControl{ _senderOrActiveControl(sender) })
             {
-                termControl.WriteInputString(realArgs.Input(), WriteInputStringType::Raw);
+                _writeInputStringToControlAndBroadcastGroup(termControl, realArgs.Input(), WriteInputStringType::Raw);
                 args.Handled(true);
             }
         }
