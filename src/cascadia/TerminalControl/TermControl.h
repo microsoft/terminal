@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResetFontSize();
         winrt::Windows::Foundation::Size GetFontSize() const;
 
-        void SendInput(const winrt::hstring& input);
+        void WriteInputString(const winrt::hstring& wstr, WriteInputStringType type);
         void ClearBuffer(Control::ClearBufferType clearType);
 
         void ToggleShaderEffects();
@@ -181,7 +181,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-        void RawWriteString(const winrt::hstring& text);
 
         void ShowContextMenu();
         bool OpenQuickFixMenu();

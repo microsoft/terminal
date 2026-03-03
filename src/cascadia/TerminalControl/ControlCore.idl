@@ -68,6 +68,14 @@ namespace Microsoft.Terminal.Control
         Boolean SearchRegexInvalid;
     };
 
+    enum WriteInputStringType
+    {
+        // Text which is to be passed through unmodified.
+        Raw,
+        // Text which is to be treated as clipboard input, stripped and formatted according to the application's wishes.
+        Clipboard,
+    };
+
     [default_interface] runtimeclass SelectionColor
     {
         SelectionColor();
@@ -127,8 +135,7 @@ namespace Microsoft.Terminal.Control
         Boolean SendCharEvent(Char ch,
                               Int16 scanCode,
                               Microsoft.Terminal.Core.ControlKeyStates modifiers);
-        void SendInput(String text);
-        void PasteText(String text);
+        void WriteInputString(String text, WriteInputStringType type);
         void SelectAll();
         void ClearSelection();
         Boolean ToggleBlockSelection();

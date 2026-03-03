@@ -492,7 +492,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void ControlCore::SendInput(const std::wstring_view wstr)
+    void ControlCore::_sendInput(const std::wstring_view wstr)
     {
         if (wstr.empty())
         {
@@ -548,7 +548,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         if (out)
         {
-            SendInput(*out);
+            _sendInput(*out);
             return true;
         }
         return false;
@@ -706,7 +706,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         if (out)
         {
-            SendInput(*out);
+            _sendInput(*out);
             return true;
         }
         return false;
@@ -725,7 +725,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         if (out)
         {
-            SendInput(*out);
+            _sendInput(*out);
             return true;
         }
         return false;
@@ -1445,24 +1445,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection.
-    void ControlCore::PasteText(const winrt::hstring& hstr)
+    void ControlCore::WriteInputString(const std::wstring_view& str, WriteInputStringType type)
     {
-        using namespace ::Microsoft::Console::Utils;
-
-        auto filtered = FilterStringForPaste(hstr, CarriageReturnNewline | ControlCodes);
-        if (BracketedPasteEnabled())
+        switch (type)
         {
-            filtered.insert(0, L"\x1b[200~");
-            filtered.append(L"\x1b[201~");
+        case WriteInputStringType::Clipboard:
+        {
+            using namespace ::Microsoft::Console::Utils;
+
+            auto filtered = FilterStringForPaste(str, CarriageReturnNewline | ControlCodes);
+            if (BracketedPasteEnabled())
+            {
+                filtered.insert(0, L"\x1b[200~");
+                filtered.append(L"\x1b[201~");
+            }
+
+            // It's important to not hold the terminal lock while calling this function as sending the data may take a long time.
+            _sendInput(filtered);
+
+            const auto lock = _terminal->LockForWriting();
+            _terminal->ClearSelection();
+            _updateSelectionUI();
+            _terminal->TrySnapOnInput();
+            return;
         }
-
-        // It's important to not hold the terminal lock while calling this function as sending the data may take a long time.
-        SendInput(filtered);
-
-        const auto lock = _terminal->LockForWriting();
-        _terminal->ClearSelection();
-        _updateSelectionUI();
-        _terminal->TrySnapOnInput();
+        case WriteInputStringType::Raw:
+            _sendInput(str);
+            return;
+        }
     }
 
     FontInfo ControlCore::GetFont() const
@@ -2188,7 +2198,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // Sending input requires that we're unlocked, because
                     // writing the input pipe may block indefinitely.
                     const auto suspension = _terminal->SuspendLock();
-                    SendInput(buffer);
+                    _sendInput(buffer);
                 }
             }
         }

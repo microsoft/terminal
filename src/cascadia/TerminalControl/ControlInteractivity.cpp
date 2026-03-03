@@ -226,7 +226,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto args = winrt::make<PasteFromClipboardEventArgs>(
             [core = _core](const winrt::hstring& wstr) {
-                core->PasteText(wstr);
+                core->WriteInputString(wstr, WriteInputStringType::Clipboard);
             },
             _core->BracketedPasteEnabled());
 

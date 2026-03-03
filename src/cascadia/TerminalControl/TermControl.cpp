@@ -238,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        core->SendInput(text);
+        core->WriteInputString(text, WriteInputStringType::Raw);
     }
 
     ::Microsoft::Console::Render::Renderer* TsfDataProvider::GetRenderer()
@@ -907,18 +907,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void TermControl::SendInput(const winrt::hstring& wstr)
+    void TermControl::WriteInputString(const winrt::hstring& wstr, WriteInputStringType type)
     {
         // Dismiss any previewed input.
         PreviewInput(hstring{});
 
-        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (StringSent)
-        {
-            StringSent.raise(*this, winrt::make<StringSentEventArgs>(wstr));
-        }
-
-        RawWriteString(wstr);
+        _core.WriteInputString(wstr, type);
     }
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
     {
@@ -1519,11 +1513,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.SendCharEvent(character, scanCode, modifiers);
     }
 
-    void TermControl::RawWriteString(const winrt::hstring& text)
-    {
-        _core.SendInput(text);
-    }
-
     // Method Description:
     // - Manually handles key events for certain keys that can't be passed to us
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
@@ -1670,7 +1659,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // If it encounters a string that isn't, cppwinrt will abort().
                 // It should already be null-terminated, but let's make sure to not crash.
                 buf[buf_len] = L'\0';
-                _core.SendInput(std::wstring_view{ &buf[0], buf_len });
+                _core.WriteInputString(std::wstring_view{ &buf[0], buf_len }, WriteInputStringType::Raw);
             }
 
             s = {};
@@ -3215,7 +3204,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             StringSent.raise(*this, winrt::make<StringSentEventArgs>(text));
         }
-        _core.PasteText(text);
+        _core.WriteInputString(text, WriteInputStringType::Raw);
     }
 
     // Method Description:
