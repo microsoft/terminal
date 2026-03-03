@@ -70,7 +70,6 @@ namespace Microsoft.Terminal.Control
 
     runtimeclass PasteFromClipboardEventArgs
     {
-        void HandleClipboardData(String data);
         Boolean BracketedPasteEnabled { get; };
     }
 

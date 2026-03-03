@@ -86,19 +86,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct PasteFromClipboardEventArgs : public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
     public:
-        PasteFromClipboardEventArgs(std::function<void(const hstring&)> clipboardDataHandler, bool bracketedPasteEnabled) :
-            m_clipboardDataHandler(clipboardDataHandler),
+        PasteFromClipboardEventArgs(bool bracketedPasteEnabled) :
             _BracketedPasteEnabled{ bracketedPasteEnabled } {}
 
-        void HandleClipboardData(hstring value)
-        {
-            m_clipboardDataHandler(value);
-        };
-
         WINRT_PROPERTY(bool, BracketedPasteEnabled, false);
-
-    private:
-        std::function<void(const hstring&)> m_clipboardDataHandler;
     };
 
     struct OpenHyperlinkEventArgs : public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>

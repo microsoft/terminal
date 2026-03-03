@@ -3055,7 +3055,7 @@ namespace winrt::TerminalApp::implementation
         // This will end up calling ConptyConnection::WriteInput which calls WriteFile which may block for
         // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
         assert(!dispatcher.HasThreadAccess());
-        eventArgs.HandleClipboardData(text);
+        control.WriteInputString(text, WriteInputStringType::Clipboard);
 
         // GH#18821: If broadcast input is active, paste the same text into all other
         // panes on the tab. We do this here (rather than re-reading the
