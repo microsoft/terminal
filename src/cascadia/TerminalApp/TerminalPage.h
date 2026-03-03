@@ -573,6 +573,7 @@ namespace winrt::TerminalApp::implementation
         void _activePaneChanged(winrt::TerminalApp::Tab tab, Windows::Foundation::IInspectable args);
         safe_void_coroutine _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
 
+        Microsoft::Terminal::Settings::Model::Profile _getProfileForControl(const Microsoft::Terminal::Control::TermControl& control);
         void _writeInputStringToControlAndBroadcastGroup(const Microsoft::Terminal::Control::TermControl& control, const winrt::hstring text, Microsoft::Terminal::Control::WriteInputStringType type);
 
 #pragma region ActionHandlers

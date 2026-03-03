@@ -5818,6 +5818,27 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    Profile TerminalPage::_getProfileForControl(const Microsoft::Terminal::Control::TermControl& control)
+    {
+        // Annoyingly expensive, but we can make it cheaper in the future.
+        Profile profile{ nullptr };
+        for (const auto& tab : _tabs)
+        {
+            if (auto tabImpl{ _GetTabImpl(tab) })
+            {
+                tabImpl->GetRootPane()->WalkTree([&](auto&& pane) {
+                    if (const auto c = pane->GetTerminalControl(); c == control)
+                    {
+                        profile = pane->GetProfile();
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }
+        return profile;
+    }
+
     // Method Description:
     // - Handle the DragOver event. We'll signal that the drag operation we
     //   support is the "copy" operation, and we'll also customize the
