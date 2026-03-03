@@ -48,7 +48,6 @@
 #include <winrt/Windows.ui.xaml.markup.h>
 #include <winrt/Windows.ui.xaml.shapes.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
-#include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.UI.Xaml.Shapes.h>
 

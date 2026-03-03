@@ -923,4 +923,12 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>An invalid regular expression was found.</value>
   </data>
+  <data name="DragFileCaption" xml:space="preserve">
+    <value>Paste path to file</value>
+    <comment>The displayed caption for dragging a file onto a terminal.</comment>
+  </data>
+  <data name="DragTextCaption" xml:space="preserve">
+    <value>Paste text</value>
+    <comment>The displayed caption for dragging text onto a terminal.</comment>
+  </data>
 </root>
