@@ -571,6 +571,10 @@ namespace winrt::TerminalApp::implementation
         void _activePaneChanged(winrt::TerminalApp::Tab tab, Windows::Foundation::IInspectable args);
         safe_void_coroutine _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
 
+        using broadcast_group = til::small_vector<TerminalApp::TerminalPaneContent, 1>;
+        broadcast_group _getBroadcastGroupFromControl(const Microsoft::Terminal::Control::TermControl& control);
+        void _writeInputStringToBroadcastGroup(const broadcast_group& broadcastGroup, const winrt::hstring text, Microsoft::Terminal::Control::WriteInputStringType type);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);

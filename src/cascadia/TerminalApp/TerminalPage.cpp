@@ -2954,7 +2954,7 @@ namespace winrt::TerminalApp::implementation
         const auto dispatcher = Dispatcher();
         const auto globalSettings = _settings.GlobalSettings();
         const auto control = sender.as<TermControl>();
-        // TODO GH#20164 these were added to ease the transition to broadcast group management; fill them in
+        const auto broadcastGroup = _getBroadcastGroupFromControl(control);
         // Used to determine whether to emit empty pastes and strip extra whitespace
         const auto anyHasBracketedPaste = control && !control.ReadOnly() && control.BracketedPasteEnabled();
         // Used to determine whether to warn on multi-line paste
@@ -3064,7 +3064,7 @@ namespace winrt::TerminalApp::implementation
         // This will end up calling ConptyConnection::WriteInput which calls WriteFile which may block for
         // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
         assert(!dispatcher.HasThreadAccess());
-        control.WriteInputString(text, WriteInputStringType::Clipboard);
+        _writeInputStringToBroadcastGroup(broadcastGroup, text, WriteInputStringType::Clipboard);
     }
     CATCH_LOG();
 
@@ -5799,5 +5799,44 @@ namespace winrt::TerminalApp::implementation
         profileMenuItemFlyout.Items().Append(runAsAdminItem);
 
         return profileMenuItemFlyout;
+    }
+
+    TerminalPage::broadcast_group TerminalPage::_getBroadcastGroupFromControl(const TermControl& control)
+    {
+        TerminalPage::broadcast_group contents;
+        auto controlContent{ TerminalPaneContent::ContentFromControl(control) };
+        if (controlContent)
+        {
+            contents.emplace_back(controlContent);
+        }
+
+        if (const auto& tab{ _GetFocusedTabImpl() })
+        {
+            if (tab->TabStatus().IsInputBroadcastActive())
+            {
+                tab->GetRootPane()->WalkTree([&](auto&& pane) {
+                    if (auto content = pane->GetContent(); content && content != controlContent)
+                    {
+                        if (const auto termContent{ content.try_as<TerminalPaneContent>() })
+                        {
+                            contents.emplace_back(*termContent);
+                        }
+                    }
+                });
+            }
+        }
+        return contents;
+    }
+
+    void TerminalPage::_writeInputStringToBroadcastGroup(const TerminalPage::broadcast_group& broadcastGroup, const winrt::hstring text, WriteInputStringType type)
+    {
+        for (auto&& content : broadcastGroup)
+        {
+            auto nextControl{ content.GetTermControl() };
+            if (!nextControl.ReadOnly())
+            {
+                nextControl.WriteInputString(text, type);
+            }
+        }
     }
 }
