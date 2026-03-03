@@ -37,6 +37,7 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::Storage::Streams;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Core;
@@ -1963,6 +1964,9 @@ namespace winrt::TerminalApp::implementation
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
+
+        term.DragOver({ this, &TerminalPage::_ControlDragOverHandler });
+        term.Drop({ this, &TerminalPage::_ControlDragDropHandler });
 
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
@@ -5799,6 +5803,272 @@ namespace winrt::TerminalApp::implementation
         profileMenuItemFlyout.Items().Append(runAsAdminItem);
 
         return profileMenuItemFlyout;
+    }
+
+    static void _translatePathInPlace(std::wstring& fullPath, PathTranslationStyle translationStyle)
+    {
+        static constexpr wil::zwstring_view s_pathPrefixes[] = {
+            {},
+            /* WSL */ L"/mnt/",
+            /* Cygwin */ L"/cygdrive/",
+            /* MSYS2 */ L"/",
+            /* MinGW */ {},
+        };
+        static constexpr wil::zwstring_view sSingleQuoteEscape = L"'\\''";
+        static constexpr auto cchSingleQuoteEscape = sSingleQuoteEscape.size();
+
+        if (translationStyle == PathTranslationStyle::None)
+        {
+            return;
+        }
+
+        // All of the other path translation modes current result in /-delimited paths
+        std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
+
+        // Escape single quotes, assuming translated paths are always quoted by a pair of single quotes.
+        size_t pos = 0;
+        while ((pos = fullPath.find(L'\'', pos)) != std::wstring::npos)
+        {
+            // ' -> '\'' (for POSIX shell)
+            fullPath.replace(pos, 1, sSingleQuoteEscape);
+            // Arithmetic overflow cannot occur here.
+            pos += cchSingleQuoteEscape;
+        }
+
+        if (translationStyle == PathTranslationStyle::MinGW)
+        {
+            return;
+        }
+
+        if (fullPath.size() >= 2 && fullPath.at(1) == L':')
+        {
+            // C:/foo/bar -> Cc/foo/bar
+            fullPath.at(1) = til::tolower_ascii(fullPath.at(0));
+            // Cc/foo/bar -> [PREFIX]c/foo/bar
+            fullPath.replace(0, 1, s_pathPrefixes[static_cast<int>(translationStyle)]);
+        }
+        else if (translationStyle == PathTranslationStyle::WSL)
+        {
+            // Stripping the UNC name and distribution prefix only applies to WSL.
+            static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
+            for (auto prefix : wslPathPrefixes)
+            {
+                if (til::starts_with(fullPath, prefix))
+                {
+                    if (const auto idx = fullPath.find(L'/', prefix.size()); idx != std::wstring::npos)
+                    {
+                        // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
+                        fullPath.erase(0, idx);
+                    }
+                    else
+                    {
+                        // //wsl.localhost/Ubuntu-18.04 -> /
+                        fullPath = L"/";
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // Method Description:
+    // - Handle the DragOver event. We'll signal that the drag operation we
+    //   support is the "copy" operation, and we'll also customize the
+    //   appearance of the drag-drop UI, by removing the preview and setting a
+    //   custom caption. For more information, see
+    //   https://docs.microsoft.com/en-us/windows/uwp/design/input/drag-and-drop#customize-the-ui
+    // Arguments:
+    // - e: The DragEventArgs from the DragOver event
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ControlDragOverHandler(const Windows::Foundation::IInspectable& /*sender*/,
+                                               const DragEventArgs& e)
+    {
+        // We can only handle drag/dropping StorageItems (files) and plain Text
+        // currently. If the format on the clipboard is anything else, returning
+        // early here will prevent the drag/drop from doing anything.
+        if (!(e.DataView().Contains(StandardDataFormats::StorageItems()) ||
+              e.DataView().Contains(StandardDataFormats::Text())))
+        {
+            return;
+        }
+
+        // Make sure to set the AcceptedOperation, so that we can later receive the path in the Drop event
+        e.AcceptedOperation(DataPackageOperation::Copy);
+
+        // Sets custom UI text
+        if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            e.DragUIOverride().Caption(RS_(L"DragFileCaption"));
+        }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            e.DragUIOverride().Caption(RS_(L"DragTextCaption"));
+        }
+
+        // Sets if the caption is visible
+        e.DragUIOverride().IsCaptionVisible(true);
+        // Sets if the dragged content is visible
+        e.DragUIOverride().IsContentVisible(false);
+        // Sets if the glyph is visible
+        e.DragUIOverride().IsGlyphVisible(false);
+    }
+
+    // Method Description:
+    // - Async handler for the "Drop" event. If a file was dropped onto our
+    //   root, we'll try to get the path of the file dropped onto us, and write
+    //   the full path of the file to our terminal connection. Like conhost, if
+    //   the path contains a space, we'll wrap the path in quotes.
+    // - Unlike conhost, if multiple files are dropped onto the terminal, we'll
+    //   write all the paths to the terminal, separated by spaces.
+    // Arguments:
+    // - e: The DragEventArgs from the Drop event
+    // Return Value:
+    // - <none>
+    safe_void_coroutine TerminalPage::_ControlDragDropHandler(Windows::Foundation::IInspectable sender,
+                                                              DragEventArgs e)
+    {
+        auto weak = get_weak();
+        const auto control = sender.as<TermControl>();
+
+        if (_hostingHwnd)
+        {
+            SetForegroundWindow(*_hostingHwnd);
+        }
+
+        if (e.DataView().Contains(StandardDataFormats::ApplicationLink()))
+        {
+            try
+            {
+                auto link{ co_await e.DataView().GetApplicationLinkAsync() };
+                if (const auto strong = weak.get())
+                {
+                    _writeInputStringToControlAndBroadcastGroup(control, link.AbsoluteUri(), WriteInputStringType::Clipboard);
+                }
+            }
+            CATCH_LOG();
+        }
+        else if (e.DataView().Contains(StandardDataFormats::WebLink()))
+        {
+            try
+            {
+                auto link{ co_await e.DataView().GetWebLinkAsync() };
+                if (const auto strong = weak.get())
+                {
+                    _writeInputStringToControlAndBroadcastGroup(control, link.AbsoluteUri(), WriteInputStringType::Clipboard);
+                }
+            }
+            CATCH_LOG();
+        }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            try
+            {
+                auto text{ co_await e.DataView().GetTextAsync() };
+                if (const auto strong = weak.get())
+                {
+                    _writeInputStringToControlAndBroadcastGroup(control, text, WriteInputStringType::Clipboard);
+                }
+            }
+            CATCH_LOG();
+        }
+        // StorageItem must be last. Some applications put hybrid data format items
+        // in a drop message and we'll eat a crash when we request them.
+        // Those applications usually include Text as well, so having storage items
+        // last makes sure we'll hit text before getting to them.
+        else if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
+            try
+            {
+                items = co_await e.DataView().GetStorageItemsAsync();
+            }
+            CATCH_LOG();
+
+            if (items && items.Size() > 0)
+            {
+                std::vector<std::wstring> fullPaths;
+
+                // GH#14628: Workaround for GetStorageItemsAsync() only returning 16 items
+                // at most when dragging and dropping from archives (zip, 7z, rar, etc.)
+                if (items.Size() == 16 && e.DataView().Contains(winrt::hstring{ L"FileDrop" }))
+                {
+                    auto fileDropData = co_await e.DataView().GetDataAsync(winrt::hstring{ L"FileDrop" });
+                    if (fileDropData != nullptr)
+                    {
+                        auto stream = fileDropData.as<IRandomAccessStream>();
+                        stream.Seek(0);
+
+                        const uint32_t streamSize = gsl::narrow_cast<uint32_t>(stream.Size());
+                        const Buffer buf(streamSize);
+                        const auto buffer = co_await stream.ReadAsync(buf, streamSize, InputStreamOptions::None);
+
+                        const HGLOBAL hGlobal = buffer.data();
+                        const auto count = DragQueryFileW(static_cast<HDROP>(hGlobal), 0xFFFFFFFF, nullptr, 0);
+                        fullPaths.reserve(count);
+
+                        for (unsigned int i = 0; i < count; i++)
+                        {
+                            std::wstring path;
+                            path.resize(wil::max_path_length);
+                            const auto charsCopied = DragQueryFileW(static_cast<HDROP>(hGlobal), i, path.data(), wil::max_path_length);
+
+                            if (charsCopied > 0)
+                            {
+                                path.resize(charsCopied);
+                                fullPaths.emplace_back(std::move(path));
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    fullPaths.reserve(items.Size());
+                    for (const auto& item : items)
+                    {
+                        fullPaths.emplace_back(item.Path());
+                    }
+                }
+
+                const auto strong = weak.get();
+                if (!strong)
+                {
+                    co_return;
+                }
+
+                // TODO(DH) the fuckin' delimiter from DragDropDelimiter
+                std::wstring allPathsString;
+                for (auto& fullPath : fullPaths)
+                {
+                    // Join the paths with spaces
+                    if (!allPathsString.empty())
+                    {
+                        allPathsString += L" ";
+                    }
+
+                    const auto translationStyle{ PathTranslationStyle::WSL };
+                    //const auto translationStyle{ _core.Settings().PathTranslationStyle() }; / TODO DH /
+                    _translatePathInPlace(fullPath, translationStyle);
+
+                    // All translated paths get quotes, and all strings spaces get quotes; all translated paths get single quotes
+                    const auto quotesNeeded = translationStyle != PathTranslationStyle::None || fullPath.find(L' ') != std::wstring::npos;
+                    const auto quotesChar = translationStyle != PathTranslationStyle::None ? L'\'' : L'"';
+
+                    // Append fullPath and also wrap it in quotes if needed
+                    if (quotesNeeded)
+                    {
+                        allPathsString.push_back(quotesChar);
+                    }
+                    allPathsString.append(fullPath);
+                    if (quotesNeeded)
+                    {
+                        allPathsString.push_back(quotesChar);
+                    }
+                }
+
+                _writeInputStringToControlAndBroadcastGroup(control, winrt::hstring{ allPathsString }, WriteInputStringType::Clipboard);
+            }
+        }
     }
 
     TerminalPage::broadcast_group TerminalPage::_getBroadcastGroupFromControl(const TermControl& control)

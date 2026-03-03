@@ -20,8 +20,6 @@
              AllowFocusOnInteraction="True"
              Background="Transparent"
              CharacterReceived="_CharacterHandler"
-             DragOver="_DragOverHandler"
-             Drop="_DragDropHandler"
              GotFocus="_GotFocusHandler"
              IsTabStop="True"
              KeyUp="_KeyUpHandler"
