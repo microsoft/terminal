@@ -743,8 +743,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 
     if (originalRet != HTCLIENT)
     {
-        // TODO! I don't think we really need this anymore.
-        // _maybe_ for the side we're docked to?
         return originalRet;
     }
 
@@ -764,9 +762,14 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // the top of the drag bar is used to resize the window
     if (!_isMaximized && isOnResizeBorder)
     {
-        // However, if we're the quake window, then just return HTCAPTION so we
-        // don't get a resize handle on the top.
-        // TODO! if we're docked to the top and on the top, return caption?
+        // If we're docked to the top, return HTCAPTION so we don't get a
+        // resize handle on the side we're docked to. The user can't resize
+        // the window away from the docked edge.
+        if (_docked() && _dockingSettings.Side() == winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top)
+        {
+            return HTCAPTION;
+        }
+
         return HTTOP;
     }
 

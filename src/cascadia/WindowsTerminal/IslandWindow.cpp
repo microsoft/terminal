@@ -580,7 +580,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
         if (wparam == SIZE_MINIMIZED)
         {
             WindowVisibilityChanged.raise(false);
-            // TODO! This used to just be quake. Should this have _always_ been for all _minimizeToNotificationArea windows?
+
             if (_minimizeToNotificationArea)
             {
                 ShowWindow(GetHandle(), SW_HIDE);
@@ -1321,7 +1321,10 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
 
 // Method Description:
 // - Helper for performing a sliding animation. This will animate our _Xaml
-//   Island_, either growing down or shrinking up, using SetWindowRgn.
+//   Island_ using SetWindowRgn, revealing or hiding the window from the edge
+//   it is docked to.  For Top-docked windows the region grows/shrinks
+//   vertically from the top; for Bottom from the bottom; for Left horizontally
+//   from the left; for Right from the right.
 // - This function does the entire animation on the main thread (the UI thread),
 //   and **DOES NOT YIELD IT**. The window will be animating for the entire
 //   duration of dropdownDuration.
@@ -1330,14 +1333,21 @@ void IslandWindow::SummonWindow(winrt::TerminalApp::SummonWindowBehavior args)
 // Arguments:
 // - dropdownDuration: The duration to play the animation, in milliseconds. If
 //   0, we won't perform a dropdown animation.
-// - down: if true, increase the height from top to bottom. otherwise, decrease
-//   the height, from bottom to top.
+// - appearing: if true, the window is sliding into view (the visible region
+//   grows). If false, it is sliding out of view (the visible region shrinks).
 // Return Value:
 // - <none>
-void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool down)
+void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool appearing)
 {
     til::rect fullWindowSize{ GetWindowRect() };
+    const auto fullWidth = fullWindowSize.width();
     const auto fullHeight = fullWindowSize.height();
+
+    // Determine which axis and direction to animate based on the dock side.
+    // Default to Top for the (unlikely) case where there is no docking config.
+    const auto side = _dockingSettings ? _dockingSettings.Side() : Model::DockPosition::Top;
+    const bool horizontal = (side == Model::DockPosition::Left || side == Model::DockPosition::Right);
+    const auto fullExtent = horizontal ? fullWidth : fullHeight;
 
     const double animationDuration = dropdownDuration; // use floating-point math throughout
     const auto start = std::chrono::system_clock::now();
@@ -1355,12 +1365,31 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
             break;
         }
 
-        // If going down, increase the height over time. If going up, decrease the height.
-        const auto currentHeight = ::base::saturated_cast<int>(
-            down ? ((dt / animationDuration) * fullHeight) :
-                   ((1.0 - (dt / animationDuration)) * fullHeight));
+        // Progress goes 0→1 when appearing and 1→0 when disappearing.
+        const auto progress = appearing ? (dt / animationDuration) : (1.0 - (dt / animationDuration));
+        const auto currentExtent = ::base::saturated_cast<int>(progress * fullExtent);
 
-        wil::unique_hrgn rgn{ CreateRectRgn(0, 0, fullWindowSize.width(), currentHeight) };
+        wil::unique_hrgn rgn;
+        switch (side)
+        {
+        case Model::DockPosition::Top:
+        default:
+            // Reveal/hide from the top edge downward.
+            rgn.reset(CreateRectRgn(0, 0, fullWidth, currentExtent));
+            break;
+        case Model::DockPosition::Bottom:
+            // Reveal/hide from the bottom edge upward.
+            rgn.reset(CreateRectRgn(0, fullHeight - currentExtent, fullWidth, fullHeight));
+            break;
+        case Model::DockPosition::Left:
+            // Reveal/hide from the left edge rightward.
+            rgn.reset(CreateRectRgn(0, 0, currentExtent, fullHeight));
+            break;
+        case Model::DockPosition::Right:
+            // Reveal/hide from the right edge leftward.
+            rgn.reset(CreateRectRgn(fullWidth - currentExtent, 0, fullWidth, fullHeight));
+            break;
+        }
         SetWindowRgn(_interopWindowHandle, rgn.get(), true);
 
         // Go immediately into another frame. This prevents the window from
@@ -1400,13 +1429,13 @@ void IslandWindow::_dropdownWindow(const uint32_t dropdownDuration,
     // Possibly go to the monitor of the mouse / old foreground window.
     _moveToMonitor(oldForegroundWindow, toMonitor);
 
-    // Now that we're visible, animate the dropdown.
+    // Now that we're visible, animate the window sliding into view.
     _doSlideAnimation(dropdownDuration, true);
 }
 
 void IslandWindow::_slideUpWindow(const uint32_t dropdownDuration)
 {
-    // First, animate the window sliding up.
+    // First, animate the window sliding out of view.
     _doSlideAnimation(dropdownDuration, false);
 
     // Then, use SetWindowPlacement to minimize without the animation.

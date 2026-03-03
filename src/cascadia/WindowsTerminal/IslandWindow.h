@@ -131,7 +131,7 @@ protected:
     void _dropdownWindow(const uint32_t dropdownDuration,
                          const winrt::TerminalApp::MonitorBehavior toMonitor);
     void _slideUpWindow(const uint32_t dropdownDuration);
-    void _doSlideAnimation(const uint32_t dropdownDuration, const bool down);
+    void _doSlideAnimation(const uint32_t dropdownDuration, const bool appearing);
     void _globalDismissWindow(const uint32_t dropdownDuration);
 
     static MONITORINFO _getMonitorForCursor();
