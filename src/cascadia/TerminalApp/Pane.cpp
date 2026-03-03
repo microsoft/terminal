@@ -3051,7 +3051,7 @@ void Pane::BroadcastString(const winrt::Microsoft::Terminal::Control::TermContro
         {
             if (termControl != sourceControl && !termControl.ReadOnly())
             {
-                termControl.RawWriteString(text);
+                termControl.WriteInputString(text, WriteInputStringType::Raw);
             }
         }
     });

@@ -3072,7 +3072,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             if (control.ContentId() != sourceId && !control.ReadOnly())
                             {
-                                control.RawWriteString(text);
+                                control.WriteInputString(text, WriteInputStringType::Clipboard);
                             }
                         }
                     });
