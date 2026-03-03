@@ -132,7 +132,12 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
     // We don't have XAML yet, but we do have other stuff.
     _windowLogic = _appLogic.CreateNewWindow();
 
-    if (const auto content = windowArgs.Content(); !content.empty())
+    if (const auto layout = windowArgs.PersistedLayout())
+    {
+        _windowLogic.SetPersistedLayout(layout);
+        _launchShowWindowCommand = SW_NORMAL;
+    }
+    else if (const auto content = windowArgs.Content(); !content.empty())
     {
         _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
         _launchShowWindowCommand = SW_NORMAL;

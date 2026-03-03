@@ -55,11 +55,13 @@ namespace TerminalApp
 
         Int32 SetStartupCommandline(CommandlineArgs args);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        void SetPersistedLayout(Microsoft.Terminal.Settings.Model.WindowLayout layout);
         Int32 ExecuteCommandline(CommandlineArgs args);
 
         Boolean ShouldImmediatelyHandoffToElevated();
         void HandoffToElevated();
 
+        Microsoft.Terminal.Settings.Model.WindowLayout GetWindowLayout();
         void PersistState();
 
         Windows.UI.Xaml.UIElement GetRoot();

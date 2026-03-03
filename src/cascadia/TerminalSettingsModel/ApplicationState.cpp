@@ -20,6 +20,7 @@ static constexpr std::string_view TabLayoutKey{ "tabLayout" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view InitialSizeKey{ "initialSize" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+static constexpr std::string_view PersistedWorkspacesKey{ "persistedWorkspaces" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
@@ -276,6 +277,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
+
+        // Manually handled because IMap<K,V> has a comma that breaks the X-macro.
+        if (WI_IsFlagSet(parseSource, FileSource::Shared))
+            state->PersistedWorkspaces = JsonUtils::GetValueForKey<std::optional<Windows::Foundation::Collections::IMap<hstring, Model::WindowLayout>>>(root, PersistedWorkspacesKey);
     }
 
     Json::Value ApplicationState::ToJson(FileSource parseSource) const noexcept
@@ -298,6 +303,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
+
+            // Manually handled because IMap<K,V> has a comma that breaks the X-macro.
+            if (WI_IsFlagSet(parseSource, FileSource::Shared))
+                JsonUtils::SetValueForKey(root, PersistedWorkspacesKey, state->PersistedWorkspaces);
         }
         return root;
     }
@@ -339,6 +348,51 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return state->DismissedBadges->contains(badgeId);
         }
         return false;
+    }
+
+    void ApplicationState::SaveWorkspace(const hstring& name, const Model::WindowLayout& layout)
+    {
+        {
+            const auto state = _state.lock();
+            if (!state->PersistedWorkspaces || !*state->PersistedWorkspaces)
+            {
+                state->PersistedWorkspaces = winrt::single_threaded_map<hstring, Model::WindowLayout>();
+            }
+            (*state->PersistedWorkspaces).Insert(name, layout);
+        }
+        _throttler();
+    }
+
+    bool ApplicationState::RemoveWorkspace(const hstring& name)
+    {
+        bool removed{ false };
+        {
+            const auto state = _state.lock();
+            if (state->PersistedWorkspaces && *state->PersistedWorkspaces)
+            {
+                auto map = *state->PersistedWorkspaces;
+                if (map.HasKey(name))
+                {
+                    map.Remove(name);
+                    removed = true;
+                }
+            }
+        }
+        if (removed)
+        {
+            _throttler();
+        }
+        return removed;
+    }
+
+    Windows::Foundation::Collections::IMapView<hstring, Model::WindowLayout> ApplicationState::AllPersistedWorkspaces()
+    {
+        const auto state = _state.lock_shared();
+        if (state->PersistedWorkspaces && *state->PersistedWorkspaces)
+        {
+            return (*state->PersistedWorkspaces).GetView();
+        }
+        return nullptr;
     }
 
     // Generate all getter/setters

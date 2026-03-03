@@ -122,6 +122,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine RequestQuit();
         safe_void_coroutine CloseWindow();
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
         void PersistState();
         std::vector<IPaneContent> Panes() const;
 
@@ -225,6 +226,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::TabRowControl _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
+        Windows::UI::Xaml::Controls::MenuFlyout _workspaceFlyout{ nullptr };
         winrt::TerminalApp::ColorPickupFlyout _tabColorPicker{ nullptr };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
@@ -326,6 +328,7 @@ namespace winrt::TerminalApp::implementation
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
         safe_void_coroutine _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs newContentArgs);
+        safe_void_coroutine _OpenWorkspaceWindow(const winrt::hstring name);
 
         void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -564,6 +567,7 @@ namespace winrt::TerminalApp::implementation
 
         void _PopulateContextMenu(const Microsoft::Terminal::Control::TermControl& control, const Microsoft::UI::Xaml::Controls::CommandBarFlyout& sender, const bool withSelection);
         void _PopulateQuickFixMenu(const Microsoft::Terminal::Control::TermControl& control, const Windows::UI::Xaml::Controls::MenuFlyout& sender);
+        void _PopulateWorkspaceFlyout();
         winrt::Windows::UI::Xaml::Controls::MenuFlyout _CreateRunAsAdminFlyout(int profileIndex);
 
         winrt::Microsoft::Terminal::Control::TermControl _senderOrActiveControl(const winrt::Windows::Foundation::IInspectable& sender);

@@ -938,6 +938,27 @@ namespace winrt::TerminalApp::implementation
         co_return;
     }
 
+    // Launch `wt -w <name>` so the monarch can either summon an existing
+    // window with that name or restore a persisted workspace.
+    safe_void_coroutine TerminalPage::_OpenWorkspaceWindow(const winrt::hstring name)
+    {
+        co_await winrt::resume_background();
+
+        const auto exePath{ GetWtExePath() };
+        const auto cmdline = fmt::format(FMT_COMPILE(L"-w {}"), std::wstring_view{ name });
+
+        SHELLEXECUTEINFOW seInfo{ 0 };
+        seInfo.cbSize = sizeof(seInfo);
+        seInfo.fMask = SEE_MASK_NOASYNC;
+        seInfo.lpVerb = L"open";
+        seInfo.lpFile = exePath.c_str();
+        seInfo.lpParameters = cmdline.c_str();
+        seInfo.nShow = SW_SHOWNORMAL;
+        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+        co_return;
+    }
+
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
@@ -1631,6 +1652,70 @@ namespace winrt::TerminalApp::implementation
         {
             const auto handled = control.OpenQuickFixMenu();
             args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleOpenWorkspace(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        // Open (or summon) a named window.  We launch a new `wt -w <name>`
+        // process which the monarch will route to the correct live window or
+        // restore from a persisted workspace.
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<OpenWorkspaceArgs>())
+            {
+                const auto name = realArgs.Name();
+                if (!name.empty())
+                {
+                    _OpenWorkspaceWindow(name);
+                }
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleSaveWorkspace(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SaveWorkspaceArgs>())
+            {
+                // If a name is supplied, use it; otherwise fall back to the
+                // current window name.
+                auto name = realArgs.Name();
+                if (name.empty())
+                {
+                    name = _WindowProperties.WindowName();
+                }
+
+                if (!name.empty())
+                {
+                    if (const auto layout = GetWindowLayout())
+                    {
+                        ApplicationState::SharedInstance().SaveWorkspace(name, layout);
+                    }
+                }
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleDeleteWorkspace(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<DeleteWorkspaceArgs>())
+            {
+                const auto name = realArgs.Name();
+                if (!name.empty())
+                {
+                    ApplicationState::SharedInstance().RemoveWorkspace(name);
+                }
+                args.Handled(true);
+            }
         }
     }
 }

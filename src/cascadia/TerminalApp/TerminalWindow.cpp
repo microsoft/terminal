@@ -252,6 +252,15 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
+    WindowLayout TerminalWindow::GetWindowLayout()
+    {
+        if (_root)
+        {
+            return _root->GetWindowLayout();
+        }
+        return nullptr;
+    }
+
     void TerminalWindow::PersistState()
     {
         if (_root)
@@ -1100,6 +1109,11 @@ namespace winrt::TerminalApp::implementation
 
         const auto args = _contentStringToActions(content, true);
         _initialContentArgs = wil::to_vector(args);
+    }
+
+    void TerminalWindow::SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout)
+    {
+        _cachedLayout = layout;
     }
 
     // Method Description:

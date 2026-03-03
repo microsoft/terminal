@@ -40,6 +40,9 @@
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "OpenWorkspaceArgs.g.cpp"
+#include "SaveWorkspaceArgs.g.cpp"
+#include "DeleteWorkspaceArgs.g.cpp"
 #include "SearchForTextArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
@@ -793,6 +796,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::hstring{ RS_switchable_fmt(L"RenameWindowCommandKey", Name()) };
         }
         return RS_switchable_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring OpenWorkspaceArgs::GenerateName(const winrt::WARC::ResourceContext& /*context*/) const
+    {
+        // "Open workspace \"{_Name}\""
+        if (!Name().empty())
+        {
+            return winrt::hstring{ fmt::format(L"Open workspace \"{}\"", std::wstring_view{ Name() }) };
+        }
+        return winrt::hstring{ L"Open workspace" };
+    }
+
+    winrt::hstring SaveWorkspaceArgs::GenerateName(const winrt::WARC::ResourceContext& /*context*/) const
+    {
+        if (!Name().empty())
+        {
+            return winrt::hstring{ fmt::format(L"Save workspace \"{}\"", std::wstring_view{ Name() }) };
+        }
+        return winrt::hstring{ L"Save workspace" };
+    }
+
+    winrt::hstring DeleteWorkspaceArgs::GenerateName(const winrt::WARC::ResourceContext& /*context*/) const
+    {
+        if (!Name().empty())
+        {
+            return winrt::hstring{ fmt::format(L"Delete workspace \"{}\"", std::wstring_view{ Name() }) };
+        }
+        return winrt::hstring{ L"Delete workspace" };
     }
 
     winrt::hstring SearchForTextArgs::GenerateName(const winrt::WARC::ResourceContext& context) const

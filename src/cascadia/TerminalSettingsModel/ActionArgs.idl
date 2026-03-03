@@ -420,6 +420,24 @@ namespace Microsoft.Terminal.Settings.Model
         String Name { get; };
     };
 
+    [default_interface] runtimeclass OpenWorkspaceArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        OpenWorkspaceArgs(String name);
+        String Name { get; };
+    };
+
+    [default_interface] runtimeclass SaveWorkspaceArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        SaveWorkspaceArgs(String name);
+        String Name { get; };
+    };
+
+    [default_interface] runtimeclass DeleteWorkspaceArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        DeleteWorkspaceArgs(String name);
+        String Name { get; };
+    };
+
     [default_interface] runtimeclass SearchForTextArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         String QueryUrl { get; };

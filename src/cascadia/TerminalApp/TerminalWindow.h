@@ -70,6 +70,7 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
         void PersistState();
 
         void UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
@@ -78,6 +79,7 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(TerminalApp::CommandlineArgs args);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
+        void SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout);
         int32_t ExecuteCommandline(TerminalApp::CommandlineArgs args);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
 

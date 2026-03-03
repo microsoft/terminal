@@ -36,6 +36,10 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean DismissBadge(String badgeId);
         Boolean BadgeDismissed(String badgeId);
 
+        void SaveWorkspace(String name, WindowLayout layout);
+        Boolean RemoveWorkspace(String name);
+        Windows.Foundation.Collections.IMapView<String, WindowLayout> AllPersistedWorkspaces();
+
         String SettingsHash;
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts;
         Windows.Foundation.Collections.IVector<String> RecentCommands;

@@ -75,6 +75,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool DismissBadge(const hstring& badgeId);
         bool BadgeDismissed(const hstring& badgeId) const;
 
+        void SaveWorkspace(const hstring& name, const Model::WindowLayout& layout);
+        bool RemoveWorkspace(const hstring& name);
+        Windows::Foundation::Collections::IMapView<hstring, Model::WindowLayout> AllPersistedWorkspaces();
+
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     type name() const noexcept;                                  \
@@ -88,6 +92,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) std::optional<type> name{ __VA_ARGS__ };
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
+            // Manually declared because IMap<K,V> has a comma that breaks the macro.
+            std::optional<Windows::Foundation::Collections::IMap<hstring, Model::WindowLayout>> PersistedWorkspaces;
         };
         til::shared_mutex<state_t> _state;
         std::filesystem::path _sharedPath;
