@@ -393,8 +393,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // attached content before we set up the throttled func, and that'll A/V
         _revokers.coreScrollPositionChanged = _core.ScrollPositionChanged(winrt::auto_revoke, { get_weak(), &TermControl::_ScrollPositionChanged });
         _revokers.WarningBell = _core.WarningBell(winrt::auto_revoke, { get_weak(), &TermControl::_coreWarningBell });
-        _revokers.PromptReturned = _core.PromptReturned(winrt::auto_revoke, { get_weak(), &TermControl::_corePromptReturned });
-        _revokers.CommandStarted = _core.CommandStarted(winrt::auto_revoke, { get_weak(), &TermControl::_coreCommandStarted });
+        _revokers.PromptStarted = _core.PromptStarted(winrt::auto_revoke, { get_weak(), &TermControl::_corePromptStarted });
+        _revokers.OutputStarted = _core.OutputStarted(winrt::auto_revoke, { get_weak(), &TermControl::_coreOutputStarted });
 
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
@@ -3701,14 +3701,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _playWarningBell->Run();
     }
 
-    void TermControl::_corePromptReturned(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    void TermControl::_corePromptStarted(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
-        PromptReturned.raise(*this, nullptr);
+        PromptStarted.raise(*this, nullptr);
     }
 
-    void TermControl::_coreCommandStarted(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    void TermControl::_coreOutputStarted(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
-        CommandStarted.raise(*this, nullptr);
+        OutputStarted.raise(*this, nullptr);
     }
 
     hstring TermControl::ReadEntireBuffer() const

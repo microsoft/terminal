@@ -68,8 +68,8 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
-        event Windows.Foundation.TypedEventHandler<Object, Object> PromptReturned;
-        event Windows.Foundation.TypedEventHandler<Object, Object> CommandStarted;
+        event Windows.Foundation.TypedEventHandler<Object, Object> PromptStarted;
+        event Windows.Foundation.TypedEventHandler<Object, Object> OutputStarted;
         event Windows.Foundation.TypedEventHandler<Object, Object> OutputIdle;
         event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
         event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;

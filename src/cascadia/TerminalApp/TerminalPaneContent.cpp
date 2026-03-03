@@ -35,8 +35,8 @@ namespace winrt::TerminalApp::implementation
     {
         _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_controlConnectionStateChangedHandler });
         _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlWarningBellHandler });
-        _controlEvents._PromptReturned = _control.PromptReturned(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlPromptReturnedHandler });
-        _controlEvents._CommandStarted = _control.CommandStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlCommandStartedHandler });
+        _controlEvents._PromptStarted = _control.PromptStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlPromptStartedHandler });
+        _controlEvents._OutputStarted = _control.OutputStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputStartedHandler });
         _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_closeTerminalRequestedHandler });
         _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_restartTerminalRequestedHandler });
         _controlEvents._OutputIdle = _control.OutputIdle(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputIdleHandler });
@@ -351,8 +351,8 @@ namespace winrt::TerminalApp::implementation
     //   the command has finished and we're back at a prompt.
     // - Checks NotifyOnNextPrompt setting and raises NotificationRequested.
     // - If autoDetectRunningCommand is enabled, clears the indeterminate progress ring.
-    void TerminalPaneContent::_controlPromptReturnedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                            const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    void TerminalPaneContent::_controlPromptStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
         if (_profile)
         {
@@ -380,8 +380,8 @@ namespace winrt::TerminalApp::implementation
     // - Raised when a shell integration command output mark (133;C) is received,
     //   indicating a command has started executing.
     // - If autoDetectRunningCommand is enabled, shows an indeterminate progress ring.
-    void TerminalPaneContent::_controlCommandStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                                            const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    void TerminalPaneContent::_controlOutputStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
         if (_profile)
         {

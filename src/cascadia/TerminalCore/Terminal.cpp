@@ -753,9 +753,9 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
 
             }
             // regardless, start notify that we started command output
-            if (_pfnCommandStarted)
+            if (_pfnOutputStarted)
             {
-                _pfnCommandStarted();
+                _pfnOutputStarted();
             }
         }
     }
@@ -1271,14 +1271,14 @@ void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function
     _pfnClearQuickFix.swap(pfn);
 }
 
-void Terminal::SetPromptReturnedCallback(std::function<void()> pfn) noexcept
+void Terminal::SetPromptStartedCallback(std::function<void()> pfn) noexcept
 {
-    _pfnPromptReturned.swap(pfn);
+    _pfnPromptStarted.swap(pfn);
 }
 
-void Terminal::SetCommandStartedCallback(std::function<void()> pfn) noexcept
+void Terminal::SetOutputStartedCallback(std::function<void()> pfn) noexcept
 {
-    _pfnCommandStarted.swap(pfn);
+    _pfnOutputStarted.swap(pfn);
 }
 
 // Method Description:

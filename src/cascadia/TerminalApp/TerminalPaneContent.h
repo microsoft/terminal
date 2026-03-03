@@ -84,8 +84,8 @@ namespace winrt::TerminalApp::implementation
         {
             winrt::Microsoft::Terminal::Control::TermControl::ConnectionStateChanged_revoker _ConnectionStateChanged;
             winrt::Microsoft::Terminal::Control::TermControl::WarningBell_revoker _WarningBell;
-            winrt::Microsoft::Terminal::Control::TermControl::PromptReturned_revoker _PromptReturned;
-            winrt::Microsoft::Terminal::Control::TermControl::CommandStarted_revoker _CommandStarted;
+            winrt::Microsoft::Terminal::Control::TermControl::PromptStarted_revoker _PromptStarted;
+            winrt::Microsoft::Terminal::Control::TermControl::OutputStarted_revoker _OutputStarted;
             winrt::Microsoft::Terminal::Control::TermControl::OutputIdle_revoker _OutputIdle;
             winrt::Microsoft::Terminal::Control::TermControl::CloseTerminalRequested_revoker _CloseTerminalRequested;
             winrt::Microsoft::Terminal::Control::TermControl::RestartTerminalRequested_revoker _RestartTerminalRequested;
@@ -105,10 +105,10 @@ namespace winrt::TerminalApp::implementation
         safe_void_coroutine _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& e);
-        void _controlPromptReturnedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                           const winrt::Windows::Foundation::IInspectable& e);
-        void _controlCommandStartedHandler(const winrt::Windows::Foundation::IInspectable& sender,
-                                           const winrt::Windows::Foundation::IInspectable& e);
+        void _controlPromptStartedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const winrt::Windows::Foundation::IInspectable& e);
+        void _controlOutputStartedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const winrt::Windows::Foundation::IInspectable& e);
         void _controlOutputIdleHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                        const winrt::Windows::Foundation::IInspectable& e);
         void _controlReadOnlyChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& e);

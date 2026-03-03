@@ -232,8 +232,8 @@ public:
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
-    void SetPromptReturnedCallback(std::function<void()> pfn) noexcept;
-    void SetCommandStartedCallback(std::function<void()> pfn) noexcept;
+    void SetPromptStartedCallback(std::function<void()> pfn) noexcept;
+    void SetOutputStartedCallback(std::function<void()> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
     void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
     void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
@@ -342,8 +342,8 @@ private:
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
     std::function<void()> _pfnClearQuickFix;
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
-    std::function<void()> _pfnPromptReturned;
-    std::function<void()> _pfnCommandStarted;
+    std::function<void()> _pfnPromptStarted;
+    std::function<void()> _pfnOutputStarted;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;

@@ -408,15 +408,15 @@ void Terminal::NotifyShellIntegrationMark(ShellIntegrationMark mark)
     switch (mark)
     {
     case ShellIntegrationMark::Prompt:
-        if (_pfnPromptReturned)
+        if (_pfnPromptStarted)
         {
-            _pfnPromptReturned();
+            _pfnPromptStarted();
         }
         break;
     case ShellIntegrationMark::Output:
-        if (_pfnCommandStarted)
+        if (_pfnOutputStarted)
         {
-            _pfnCommandStarted();
+            _pfnOutputStarted();
         }
         break;
     default:

@@ -118,11 +118,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnWarningBell = [this] { _terminalWarningBell(); };
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
-        auto pfnPromptReturned = [this] { _terminalPromptReturned(); };
-        _terminal->SetPromptReturnedCallback(pfnPromptReturned);
+        auto pfnPromptStarted = [this] { _terminalPromptStarted(); };
+        _terminal->SetPromptStartedCallback(pfnPromptStarted);
 
-        auto pfnCommandStarted = [this] { _terminalCommandStarted(); };
-        _terminal->SetCommandStartedCallback(pfnCommandStarted);
+        auto pfnOutputStarted = [this] { _terminalOutputStarted(); };
+        _terminal->SetOutputStartedCallback(pfnOutputStarted);
 
         auto pfnTitleChanged = [this](auto&& PH1) { _terminalTitleChanged(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -1603,7 +1603,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WarningBell.raise(*this, nullptr);
     }
 
-    void ControlCore::_terminalPromptReturned()
+    void ControlCore::_terminalPromptStarted()
     {
         // Since this can only ever be triggered by output from the connection,
         // then the Terminal already has the write lock when calling this
@@ -1612,10 +1612,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        PromptReturned.raise(*this, nullptr);
+        PromptStarted.raise(*this, nullptr);
     }
 
-    void ControlCore::_terminalCommandStarted()
+    void ControlCore::_terminalOutputStarted()
     {
         // Since this can only ever be triggered by output from the connection,
         // then the Terminal already has the write lock when calling this
@@ -1624,7 +1624,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        CommandStarted.raise(*this, nullptr);
+        OutputStarted.raise(*this, nullptr);
     }
 
     // Method Description:

@@ -276,8 +276,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
         til::typed_event<IInspectable, Control::WriteToClipboardEventArgs> WriteToClipboard;
         til::typed_event<> WarningBell;
-        til::typed_event<> PromptReturned;
-        til::typed_event<> CommandStarted;
+        til::typed_event<> PromptStarted;
+        til::typed_event<> OutputStarted;
         til::typed_event<> TabColorChanged;
         til::typed_event<> BackgroundColorChanged;
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
@@ -326,8 +326,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region TerminalCoreCallbacks
         void _terminalWarningBell();
-        void _terminalPromptReturned();
-        void _terminalCommandStarted();
+        void _terminalPromptStarted();
+        void _terminalOutputStarted();
         void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalScrollPositionChanged(const int viewTop,
                                             const int viewHeight,
