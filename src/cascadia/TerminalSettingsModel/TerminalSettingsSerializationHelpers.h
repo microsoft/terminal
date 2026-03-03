@@ -560,6 +560,21 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SuggestionsSourc
     };
 };
 
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabStatusFilter)
+{
+    static constexpr std::array<pair_type, 9> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "bell", ValueType::Bell },
+        pair_type{ "activity", ValueType::Activity },
+        pair_type{ "error", ValueType::Error },
+        pair_type{ "paused", ValueType::Paused },
+        pair_type{ "set", ValueType::Set },
+        pair_type{ "indeterminate", ValueType::Indeterminate },
+        pair_type{ "progress", ValueType::Progress },
+        pair_type{ "all", AllSet },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
 {
     JSON_MAPPINGS(3) = {

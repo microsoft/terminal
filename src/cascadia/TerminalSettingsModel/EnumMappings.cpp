@@ -65,6 +65,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::ScrollToMarkDirection, ScrollToMarkDirection);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode, CommandPaletteLaunchMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::SuggestionsSource, SuggestionsSource);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::TabStatusFilter, TabStatusFilter);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::FindMatchDirection, FindMatchDirection);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::DesktopBehavior, DesktopBehavior);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::MonitorBehavior, MonitorBehavior);

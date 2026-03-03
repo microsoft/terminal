@@ -149,6 +149,19 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff,
     };
 
+    [flags]
+    enum TabStatusFilter
+    {
+        Bell = 0x1,
+        Activity = 0x2,
+        Error = 0x4,
+        Paused = 0x8,
+        Set = 0x10,
+        Indeterminate = 0x20,
+        Progress = 0x3C, // Error | Paused | Set | Indeterminate
+        All = 0xffffffff,
+    };
+
     interface INewContentArgs {
         String Type { get; };
         Boolean Equals(INewContentArgs other);
@@ -403,15 +416,17 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass PrevTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         PrevTabArgs();
-        PrevTabArgs(TabSwitcherMode SwitcherMode);
+        PrevTabArgs(TabSwitcherMode SwitcherMode, TabStatusFilter Filter);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+        TabStatusFilter Filter;
     };
 
     [default_interface] runtimeclass NextTabArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         NextTabArgs();
-        NextTabArgs(TabSwitcherMode SwitcherMode);
+        NextTabArgs(TabSwitcherMode SwitcherMode, TabStatusFilter Filter);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+        TabStatusFilter Filter;
     };
 
     [default_interface] runtimeclass RenameWindowArgs : IActionArgs, IActionArgsDescriptorAccess

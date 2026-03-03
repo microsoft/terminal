@@ -397,8 +397,8 @@ void AppCommandlineArgs::_buildFocusTabParser()
                 // GH#10070 - make sure to not use the MRU order when switching
                 // tabs on the commandline. That wouldn't make any sense!
                 focusTabAction.Args(_focusNextTab ?
-                                        static_cast<IActionArgs>(NextTabArgs(TabSwitcherMode::Disabled)) :
-                                        static_cast<IActionArgs>(PrevTabArgs(TabSwitcherMode::Disabled)));
+                                        static_cast<IActionArgs>(NextTabArgs(TabSwitcherMode::Disabled, TabStatusFilter::All)) :
+                                        static_cast<IActionArgs>(PrevTabArgs(TabSwitcherMode::Disabled, TabStatusFilter::All)));
                 _startupActions.push_back(std::move(focusTabAction));
             }
         });

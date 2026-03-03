@@ -762,26 +762,84 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NewWindowCommandKey"), newTerminalArgsStr);
     }
 
-    winrt::hstring PrevTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
+    static winrt::hstring _TabStatusFilterToString(TabStatusFilter filter)
     {
-        if (!SwitcherMode())
+        if (filter == TabStatusFilter::All)
         {
-            return RS_switchable_(L"PrevTabCommandKey");
+            return {};
         }
 
-        const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
-        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"PrevTabCommandKey"), mode);
+        std::wstring result;
+        if (WI_IsFlagSet(filter, TabStatusFilter::Bell))
+        {
+            result += L"bell, ";
+        }
+        if (WI_IsFlagSet(filter, TabStatusFilter::Activity))
+        {
+            result += L"activity, ";
+        }
+        if (WI_IsFlagSet(filter, TabStatusFilter::Error))
+        {
+            result += L"error, ";
+        }
+        if (WI_IsFlagSet(filter, TabStatusFilter::Paused))
+        {
+            result += L"paused, ";
+        }
+        if (WI_IsFlagSet(filter, TabStatusFilter::Set))
+        {
+            result += L"set, ";
+        }
+        if (WI_IsFlagSet(filter, TabStatusFilter::Indeterminate))
+        {
+            result += L"indeterminate, ";
+        }
+        // Trim trailing ", "
+        if (result.size() >= 2)
+        {
+            result.resize(result.size() - 2);
+        }
+        return winrt::hstring{ result };
+    }
+
+    winrt::hstring PrevTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
+    {
+        winrt::hstring base;
+        if (!SwitcherMode())
+        {
+            base = RS_switchable_(L"PrevTabCommandKey");
+        }
+        else
+        {
+            const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+            base = til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"PrevTabCommandKey"), mode);
+        }
+        const auto filterStr = _TabStatusFilterToString(Filter());
+        if (filterStr.empty())
+        {
+            return base;
+        }
+        return til::hstring_format(FMT_COMPILE(L"{}, filter: {}"), base, filterStr);
     }
 
     winrt::hstring NextTabArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
     {
+        winrt::hstring base;
         if (!SwitcherMode())
         {
-            return RS_switchable_(L"NextTabCommandKey");
+            base = RS_switchable_(L"NextTabCommandKey");
         }
-
-        const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
-        return til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NextTabCommandKey"), mode);
+        else
+        {
+            const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+            base = til::hstring_format(FMT_COMPILE(L"{}, {}"), RS_switchable_(L"NextTabCommandKey"), mode);
+        }
+        const auto filterStr = _TabStatusFilterToString(Filter());
+        if (filterStr.empty())
+        {
+            return base;
+        }
+        return til::hstring_format(FMT_COMPILE(L"{}, filter: {}"), base, filterStr);
     }
 
     winrt::hstring RenameWindowArgs::GenerateName(const winrt::WARC::ResourceContext& context) const

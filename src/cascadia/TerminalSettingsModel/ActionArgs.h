@@ -236,11 +236,13 @@ protected:                                                                  \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define PREV_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, ArgTypeHint::None, nullptr)
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, ArgTypeHint::None, nullptr) \
+    X(TabStatusFilter, Filter, "filter", false, ArgTypeHint::None, TabStatusFilter::All)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define NEXT_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, ArgTypeHint::None, nullptr)
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, ArgTypeHint::None, nullptr) \
+    X(TabStatusFilter, Filter, "filter", false, ArgTypeHint::None, TabStatusFilter::All)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
