@@ -1,5 +1,8 @@
+using Json.Patch;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 /// <summary>
 /// MCP tools for reading and writing Windows Terminal settings.json.
@@ -91,5 +94,72 @@ internal class SettingsTools
 
         File.WriteAllText(path, settingsJson);
         return $"Settings written to: {path}";
+    }
+
+    [McpServerTool, Description("""
+        Previews a JSON Patch (RFC 6902) against Windows Terminal settings.json WITHOUT writing any changes.
+        Returns a unified diff showing exactly what would change.
+        Always call this before ApplySettingsChange so the user can review the diff.
+        Display the returned diff to the user in your response as a code block so they can review it.
+        The patch is an array of operations, each with "op", "path", and optionally "value" or "from".
+        Supported ops: "add", "remove", "replace", "move", "copy", "test".
+        Example: [{"op": "replace", "path": "/theme", "value": "dark"}]
+        """)]
+    public static string PreviewSettingsChange(
+        [Description("A JSON Patch document (RFC 6902): an array of operations to apply")] string patchJson,
+        [Description("The release channel. If not specified, the most-preview installed channel is used.")] TerminalRelease? release = null)
+    {
+        var resolved = SettingsHelper.ResolveRelease(release);
+        if (resolved is null)
+        {
+            return "No Windows Terminal installations found.";
+        }
+
+        var (before, patched, error) = SettingsHelper.ApplyPatch(resolved.Value, patchJson);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        var diff = SettingsHelper.UnifiedDiff(before!, patched!, $"settings.json ({resolved})");
+        if (string.IsNullOrEmpty(diff))
+        {
+            return "No changes — the patch produces identical output.";
+        }
+
+        return diff;
+    }
+
+    [McpServerTool, Description("""
+        Applies a JSON Patch (RFC 6902) to a Windows Terminal settings.json file and writes the result.
+        IMPORTANT: Always call PreviewSettingsChange first and show the diff to the user before calling this tool.
+        After showing the diff, call this tool immediately — do not ask for separate user confirmation.
+        The client will show its own confirmation dialog for approval.
+        """)]
+    public static string ApplySettingsChange(
+        [Description("A JSON Patch document (RFC 6902): an array of operations to apply")] string patchJson,
+        [Description("The release channel. If not specified, the most-preview installed channel is used.")] TerminalRelease? release = null)
+    {
+        var resolved = SettingsHelper.ResolveRelease(release);
+        if (resolved is null)
+        {
+            return "No Windows Terminal installations found.";
+        }
+
+        var (before, patched, error) = SettingsHelper.ApplyPatch(resolved.Value, patchJson);
+        if (error is not null)
+        {
+            return error;
+        }
+
+        var path = resolved.Value.GetSettingsJsonPath();
+
+        // Back up before writing
+        File.Copy(path, path + ".bak", overwrite: true);
+
+        var writeOptions = new JsonSerializerOptions { WriteIndented = true };
+        File.WriteAllText(path, patched!);
+
+        return $"Settings updated. Written to: {path}";
     }
 }

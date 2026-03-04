@@ -46,26 +46,11 @@ internal static class TerminalReleaseExtensions
     }
 
     /// <summary>
-    /// Returns the most-preview installed channel (Canary > Preview > Stable),
-    /// excluding Dev unless no other channel is found.
-    /// Returns null if nothing is installed.
+    /// Returns the most-preview installed channel.
+    /// Delegates to <see cref="SettingsHelper.ResolveRelease"/>.
     /// </summary>
     public static TerminalRelease? DetectDefaultChannel()
     {
-        // Prefer the most-preview channel
-        if (TerminalRelease.Canary.IsInstalled())
-        {
-            return TerminalRelease.Canary;
-        }
-        if (TerminalRelease.Preview.IsInstalled())
-        {
-            return TerminalRelease.Preview;
-        }
-        if (TerminalRelease.Stable.IsInstalled())
-        {
-            return TerminalRelease.Stable;
-        }
-
-        return null;
+        return SettingsHelper.ResolveRelease();
     }
 }
