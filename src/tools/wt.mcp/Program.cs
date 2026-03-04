@@ -15,7 +15,8 @@ public static class Program
         builder.Services
             .AddMcpServer()
             .WithStdioServerTransport()
-            .WithTools<SettingsTools>();
+            .WithTools<SettingsTools>()
+            .WithTools<FragmentTools>();
 
         await builder.Build().RunAsync();
     }

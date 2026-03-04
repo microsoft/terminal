@@ -68,34 +68,6 @@ internal class SettingsTools
         return File.ReadAllText(path);
     }
 
-    [McpServerTool, Description("Writes new contents to a Windows Terminal settings.json file. Use with caution — this overwrites the entire file.")]
-    public static string WriteSettings(
-        [Description("The full JSON content to write to settings.json")] string settingsJson,
-        [Description("The release channel to write settings to. If not specified, the most-preview installed channel is used.")] TerminalRelease? release = null)
-    {
-        release ??= TerminalReleaseExtensions.DetectDefaultChannel();
-        if (release is null)
-        {
-            return "No Windows Terminal installations found.";
-        }
-
-        var path = release.Value.GetSettingsJsonPath();
-        var directory = Path.GetDirectoryName(path);
-        if (directory is not null && !Directory.Exists(directory))
-        {
-            return $"Settings directory not found: {directory}. Is this Terminal release installed?";
-        }
-
-        // Back up the existing file before overwriting
-        if (File.Exists(path))
-        {
-            File.Copy(path, path + ".bak", overwrite: true);
-        }
-
-        File.WriteAllText(path, settingsJson);
-        return $"Settings written to: {path}";
-    }
-
     [McpServerTool, Description("""
         Previews a JSON Patch (RFC 6902) against Windows Terminal settings.json WITHOUT writing any changes.
         Returns a unified diff showing exactly what would change.
@@ -157,7 +129,6 @@ internal class SettingsTools
         // Back up before writing
         File.Copy(path, path + ".bak", overwrite: true);
 
-        var writeOptions = new JsonSerializerOptions { WriteIndented = true };
         File.WriteAllText(path, patched!);
 
         return $"Settings updated. Written to: {path}";
