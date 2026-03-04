@@ -35,7 +35,14 @@ namespace winrt::TerminalApp::implementation
 
     INewContentArgs MarkdownPaneContent::GetNewTerminalArgs(BuildStartupKind /*kind*/) const
     {
-        return BaseContentArgs(L"x-markdown");
+        if (_filePath.empty())
+        {
+            return BaseContentArgs(L"x-markdown");
+        }
+
+        auto dataMap = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+        dataMap.Insert(L"path", _filePath);
+        return BaseContentArgs(L"x-markdown", dataMap.GetView());
     }
 
     void MarkdownPaneContent::_clearOldNotebook()

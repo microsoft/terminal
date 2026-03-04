@@ -3706,7 +3706,17 @@ namespace winrt::TerminalApp::implementation
         {
             if (Feature_MarkdownPane::IsEnabled())
             {
-                const auto& markdownContent{ winrt::make_self<MarkdownPaneContent>(L"") };
+                // Extract the file path from the content args data map
+                winrt::hstring filePath;
+                if (const auto& data = contentArgs.Data())
+                {
+                    if (data.HasKey(L"path"))
+                    {
+                        filePath = data.Lookup(L"path");
+                    }
+                }
+
+                const auto& markdownContent{ winrt::make_self<MarkdownPaneContent>(filePath) };
                 markdownContent->UpdateSettings(_settings);
                 markdownContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
 

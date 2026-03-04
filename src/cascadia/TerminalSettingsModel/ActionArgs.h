@@ -333,14 +333,48 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         BaseContentArgs() :
             BaseContentArgs(L"") {}
 
+        BaseContentArgs(winrt::hstring type, Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::hstring> data) :
+            _Type{ type },
+            _Data{ data } {}
+
         ACTION_ARG(winrt::hstring, Type, L"");
 
         static constexpr std::string_view TypeKey{ "type" };
 
     public:
+    
+        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::hstring> Data() const noexcept
+        {
+            return _Data;
+        }
+
         bool Equals(INewContentArgs other) const
         {
-            return other.Type() == _Type;
+            if (other.Type() != _Type)
+            {
+                return false;
+            }
+            auto otherData = other.Data();
+            if (_Data == nullptr && otherData == nullptr)
+            {
+                return true;
+            }
+            if (_Data == nullptr || otherData == nullptr)
+            {
+                return false;
+            }
+            if (_Data.Size() != otherData.Size())
+            {
+                return false;
+            }
+            for (const auto& [key, value] : _Data)
+            {
+                if (!otherData.HasKey(key) || otherData.Lookup(key) != value)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         size_t Hash() const
         {
@@ -351,11 +385,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void Hash(til::hasher& h) const
         {
             h.write(Type());
+            if (_Data)
+            {
+                for (const auto& [key, value] : _Data)
+                {
+                    h.write(key);
+                    h.write(value);
+                }
+            }
         }
         INewContentArgs Copy() const
         {
             auto copy{ winrt::make_self<BaseContentArgs>() };
             copy->_Type = _Type;
+            if (_Data)
+            {
+                auto dataCopy = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+                for (const auto& [key, value] : _Data)
+                {
+                    dataCopy.Insert(key, value);
+                }
+                copy->_Data = dataCopy.GetView();
+            }
             return *copy;
         }
         winrt::hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
@@ -372,8 +423,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args{ get_self<BaseContentArgs>(val) };
             Json::Value json{ Json::ValueType::objectValue };
             JsonUtils::SetValueForKey(json, TypeKey, args->_Type);
+            if (args->_Data)
+            {
+                for (const auto& [key, value] : args->_Data)
+                {
+                    json[winrt::to_string(key)] = winrt::to_string(value);
+                }
+            }
             return json;
         }
+
+    private:
+        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::hstring> _Data{ nullptr };
     };
 
     // Although it may _seem_ like NewTerminalArgs can use ACTION_ARG_BODY, it
@@ -397,6 +458,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
         hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext&) const;
         hstring ToCommandline() const;
+
+        // NewTerminalArgs doesn't use the Data map - it has its own specific properties
+        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::hstring> Data() const noexcept
+        {
+            return nullptr;
+        }
 
         bool Equals(const Model::INewContentArgs& other)
         {
@@ -513,9 +580,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return { terminalArgs, {} };
         }
 
-        // For now, we don't support any other concrete types of content
-        // with args. Just return a placeholder type that only includes the type
-        return { *winrt::make_self<BaseContentArgs>(type), {} };
+        // Extract all other keys (except "type") into a data map
+        auto dataMap = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+        for (auto it = json.begin(); it != json.end(); ++it)
+        {
+            const auto key = it.name();
+            if (key != "type" && it->isString())
+            {
+                dataMap.Insert(winrt::to_hstring(key), winrt::to_hstring(it->asString()));
+            }
+        }
+
+        auto baseArgs = winrt::make_self<BaseContentArgs>(type);
+        if (dataMap.Size() > 0)
+        {
+            baseArgs = winrt::make_self<BaseContentArgs>(type, dataMap.GetView());
+        }
+        return { *baseArgs, {} };
     }
     static Json::Value ContentArgsToJson(const Model::INewContentArgs& contentArgs)
     {
@@ -529,9 +610,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs::ToJson(contentArgs.try_as<Model::NewTerminalArgs>());
         }
 
-        // For now, we don't support any other concrete types of content
-        // with args. Just return a placeholder.
-        auto base{ winrt::make_self<BaseContentArgs>(contentArgs.Type()) };
+        // For non-terminal content types, serialize via BaseContentArgs which handles the Data map
+        if (auto baseArgs = contentArgs.try_as<Model::BaseContentArgs>())
+        {
+            return BaseContentArgs::ToJson(baseArgs);
+        }
+
+        // Fallback: create a BaseContentArgs with the type and data
+        auto base = winrt::make_self<BaseContentArgs>(contentArgs.Type(), contentArgs.Data());
         return BaseContentArgs::ToJson(*base);
     }
 

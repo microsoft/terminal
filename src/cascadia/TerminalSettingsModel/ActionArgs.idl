@@ -151,6 +151,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     interface INewContentArgs {
         String Type { get; };
+        Windows.Foundation.Collections.IMapView<String, String> Data { get; };
         Boolean Equals(INewContentArgs other);
         UInt64 Hash();
         INewContentArgs Copy();
@@ -161,6 +162,7 @@ namespace Microsoft.Terminal.Settings.Model
     runtimeclass BaseContentArgs : [default] INewContentArgs {
         BaseContentArgs();
         BaseContentArgs(String type);
+        BaseContentArgs(String type, Windows.Foundation.Collections.IMapView<String, String> data);
     };
 
     runtimeclass NewTerminalArgs : INewContentArgs, IActionArgsDescriptorAccess {
