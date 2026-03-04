@@ -354,15 +354,13 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     }
 
     // Toast notification activations launch a new unelevated instance of the
-    // app with "__fromToast" as the sole command-line argument. This happens
-    // when the originating Terminal window is elevated — Windows cannot
-    // COM-activate an elevated process from a toast click, so it starts a new
-    // unelevated process instead. That process must not restore persisted
-    // layouts, create windows, or do anything else — just exit immediately.
+    // app with "__fromToast" as the sole command-line argument. It will always
+    // start a new instance of our exe.
     //
-    // We check this BEFORE the mutex handoff because the elevated instance
-    // owns the mutex and UIPI blocks WM_COPYDATA from our unelevated process,
-    // which would cause acquireMutexOrAttemptHandoff to spin for ~30s.
+    // However, we're also able to just handle the .Activated event on the toast
+    // itself, so we don't care about this process we're spawning. So before we
+    // do _anything_ else, if we were created for a toast, just immediately
+    // bail. 
     const auto args = commandlineToArgArray(GetCommandLineW());
     {
         if (args.size() == 2 && args[1] == L"__fromToast")
