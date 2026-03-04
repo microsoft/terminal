@@ -302,6 +302,12 @@
   <data name="KeyChordArgDesc" xml:space="preserve">
     <value>An optional argument</value>
   </data>
+  <data name="OpenFileDesc" xml:space="preserve">
+    <value>Open a file in a new pane</value>
+  </data>
+  <data name="OpenFilePathArgDesc" xml:space="preserve">
+    <value>The path to the file to open</value>
+  </data>
   <data name="CmdFocusTabDesc" xml:space="preserve">
     <value>Move focus to another tab</value>
   </data>

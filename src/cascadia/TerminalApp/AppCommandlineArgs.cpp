@@ -209,6 +209,7 @@ void AppCommandlineArgs::_buildParser()
     _buildSwapPaneParser();
     _buildFocusPaneParser();
     _buildSaveSnippetParser();
+    _buildOpenFileParser();
 }
 
 // Method Description:
@@ -603,6 +604,35 @@ void AppCommandlineArgs::_buildSaveSnippetParser()
     setupSubcommand(_saveCommand);
 }
 
+void AppCommandlineArgs::_buildOpenFileParser()
+{
+    _openFileCommand = _app.add_subcommand("x-open", RS_A(L"OpenFileDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        subcommand->add_option("path", _openFilePath, RS_A(L"OpenFilePathArgDesc"))->required();
+
+        subcommand->callback([&, this]() {
+            // Resolve the path. If the user provided a relative path,
+            // resolve it against the current working directory.
+            auto path = winrt::to_hstring(_openFilePath);
+
+            auto dataMap = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
+            dataMap.Insert(L"path", path);
+            BaseContentArgs contentArgs{ L"x-markdown", dataMap.GetView() };
+
+            // Use SplitPane so the file opens as a pane alongside
+            // the active terminal, rather than replacing it.
+            SplitPaneArgs args{ SplitDirection::Automatic, contentArgs };
+            ActionAndArgs splitAction{};
+            splitAction.Action(ShortcutAction::SplitPane);
+            splitAction.Args(args);
+            _startupActions.push_back(splitAction);
+        });
+    };
+
+    setupSubcommand(_openFileCommand);
+}
+
 // Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
@@ -777,7 +807,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand ||
-             *_saveCommand);
+             *_saveCommand ||
+             *_openFileCommand);
 }
 
 // Method Description:
@@ -813,6 +844,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _swapPaneDirection = FocusDirection::None;
 
     _focusPaneTarget = -1;
+    _openFilePath.clear();
     _loadPersistedLayoutIdx = -1;
 
     // DON'T clear _launchMode here! This will get called once for every
@@ -1014,9 +1046,9 @@ void AppCommandlineArgs::ValidateStartupCommands()
     // If we parsed no commands, or the first command we've parsed is not a new
     // tab action, prepend a new-tab command to the front of the list.
     // (also, we don't need to do this if the only action is a x-save)
-    else if (_startupActions.empty() ||
-             (_startupActions.front().Action() != ShortcutAction::NewTab &&
-              _startupActions.front().Action() != ShortcutAction::SaveSnippet))
+    if (_startupActions.empty() ||
+        (_startupActions.front().Action() != ShortcutAction::NewTab &&
+         _startupActions.front().Action() != ShortcutAction::SaveSnippet))
     {
         // Build the NewTab action from the values we've parsed on the commandline.
         NewTerminalArgs newTerminalArgs{};
@@ -1099,6 +1131,28 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring> args)
 
     // If all the args were successfully parsed, we'll have some commands
     // built in _appArgs, which we'll use when the application starts up.
+
+    // If we only have a single x-open command and no explicit -w flag,
+    // target the current window so we don't spawn a new one just to open a
+    // file. This needs to happen here (not in ValidateStartupCommands)
+    // because the emperor reads TargetWindow() right after parsing to
+    // decide where to route the commandline.
+    if (_startupActions.size() == 1 &&
+        _startupActions.front().Action() == ShortcutAction::SplitPane &&
+        _windowTarget.empty())
+    {
+        if (const auto& splitArgs = _startupActions.front().Args().try_as<SplitPaneArgs>())
+        {
+            if (const auto& contentArgs = splitArgs.ContentArgs())
+            {
+                if (contentArgs.Type() == L"x-markdown")
+                {
+                    _windowTarget = "0";
+                }
+            }
+        }
+    }
+
     return 0;
 }
 
