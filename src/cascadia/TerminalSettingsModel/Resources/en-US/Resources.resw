@@ -904,6 +904,9 @@
   <data name="SwitcherModeActionArgumentLocalized" xml:space="preserve">
     <value>Switcher mode</value>
   </data>
+  <data name="FilterActionArgumentLocalized" xml:space="preserve">
+    <value>Filter</value>
+  </data>
   <data name="QueryUrlActionArgumentLocalized" xml:space="preserve">
     <value>Query URL</value>
   </data>

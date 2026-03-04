@@ -362,7 +362,7 @@ namespace winrt::TerminalApp::implementation
         void _FocusCurrentTab(const bool focusAlways);
         bool _HasMultipleTabs() const;
 
-        void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
+        void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode, const Microsoft::Terminal::Settings::Model::TabStatusFilter filter = Microsoft::Terminal::Settings::Model::TabStatusFilter::All);
         bool _SelectTab(uint32_t tabIndex);
         bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);

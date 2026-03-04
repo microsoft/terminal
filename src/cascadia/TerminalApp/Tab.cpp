@@ -1306,6 +1306,62 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Returns true if this tab matches the given TabStatusFilter flags.
+    //   A tab matches if ANY of the requested status flags are active (OR semantic).
+    //   If filter is All (0xffffffff), always returns true.
+    // Arguments:
+    // - filter: A combination of TabStatusFilter flags to check.
+    // Return Value:
+    // - true if the tab matches the filter, false otherwise.
+    bool Tab::MatchesFilter(const winrt::Microsoft::Terminal::Settings::Model::TabStatusFilter filter) const
+    {
+        ASSERT_UI_THREAD();
+
+        using TSF = winrt::Microsoft::Terminal::Settings::Model::TabStatusFilter;
+
+        // All means no filtering — every tab matches.
+        if (filter == TSF::All)
+        {
+            return true;
+        }
+
+        // Check bell indicator
+        if (WI_IsFlagSet(filter, TSF::Bell) && _tabStatus.BellIndicator())
+        {
+            return true;
+        }
+
+        // Check activity indicator
+        if (WI_IsFlagSet(filter, TSF::Activity) && _tabStatus.ActivityIndicator())
+        {
+            return true;
+        }
+
+        // Check progress-related flags against the combined taskbar state.
+        // TaskbarState::State() values from DispatchTypes.hpp:
+        //   Clear = 0, Set = 1, Error = 2, Indeterminate = 3, Paused = 4
+        const auto taskbarState = GetCombinedTaskbarState().State();
+        if (WI_IsFlagSet(filter, TSF::Set) && taskbarState == 1)
+        {
+            return true;
+        }
+        if (WI_IsFlagSet(filter, TSF::Error) && taskbarState == 2)
+        {
+            return true;
+        }
+        if (WI_IsFlagSet(filter, TSF::Indeterminate) && taskbarState == 3)
+        {
+            return true;
+        }
+        if (WI_IsFlagSet(filter, TSF::Paused) && taskbarState == 4)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    // Method Description:
     // - This should be called on the UI thread. If you don't, then it might
     //   silently do nothing.
     // - Update our TabStatus to reflect the progress state of the currently

@@ -535,30 +535,111 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
-    void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode)
+    //   When a filter is specified (not All), only tabs matching the filter are considered.
+    void TerminalPage::_SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode, const Microsoft::Terminal::Settings::Model::TabStatusFilter filter)
     {
         const auto index{ _GetFocusedTabIndex().value_or(0) };
         const auto tabSwitchMode = customTabSwitcherMode ? customTabSwitcherMode.Value() : _settings.GlobalSettings().TabSwitcherMode();
         if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
-            auto tabCount = _tabs.Size();
-            // Wraparound math. By adding tabCount and then calculating
-            // modulo tabCount, we clamp the values to the range [0,
-            // tabCount) while still supporting moving leftward from 0 to
-            // tabCount - 1.
-            const auto newTabIndex = ((tabCount + index + (bMoveRight ? 1 : -1)) % tabCount);
-            _SelectTab(newTabIndex);
+            const auto tabCount = _tabs.Size();
+            if (tabCount == 0)
+            {
+                return;
+            }
+
+            if (filter == TabStatusFilter::All)
+            {
+                // Original unfiltered behavior
+                const auto newTabIndex = ((tabCount + index + (bMoveRight ? 1 : -1)) % tabCount);
+                _SelectTab(newTabIndex);
+            }
+            else
+            {
+                // Iterate in the given direction, wrapping around, looking for a matching tab.
+                for (uint32_t i = 1; i <= tabCount; i++)
+                {
+                    const auto candidateIndex = ((tabCount + index + (bMoveRight ? i : -static_cast<int>(i))) % tabCount);
+                    if (const auto tabImpl = _GetTabImpl(_tabs.GetAt(candidateIndex)))
+                    {
+                        if (tabImpl->MatchesFilter(filter))
+                        {
+                            _SelectTab(candidateIndex);
+                            return;
+                        }
+                    }
+                }
+                // No match found — stay on current tab.
+            }
         }
         else
         {
-            const auto p = LoadCommandPalette();
-            p.SetTabs(_tabs, _mruTabs);
+            if (filter == TabStatusFilter::All)
+            {
+                // Original unfiltered behavior
+                const auto p = LoadCommandPalette();
+                p.SetTabs(_tabs, _mruTabs);
+                p.EnableTabSwitcherMode(index, tabSwitchMode);
+                p.Visibility(Visibility::Visible);
+                p.SelectNextItem(bMoveRight);
+            }
+            else
+            {
+                // Build filtered copies of _tabs and _mruTabs.
+                auto filteredTabs = winrt::single_threaded_observable_vector<TerminalApp::Tab>();
+                auto filteredMruTabs = winrt::single_threaded_observable_vector<TerminalApp::Tab>();
 
-            // Otherwise, set up the tab switcher in the selected mode, with
-            // the given ordering, and make it visible.
-            p.EnableTabSwitcherMode(index, tabSwitchMode);
-            p.Visibility(Visibility::Visible);
-            p.SelectNextItem(bMoveRight);
+                for (const auto& tab : _tabs)
+                {
+                    if (const auto tabImpl = _GetTabImpl(tab))
+                    {
+                        if (tabImpl->MatchesFilter(filter))
+                        {
+                            filteredTabs.Append(tab);
+                        }
+                    }
+                }
+
+                // If no tabs match the filter, do nothing.
+                if (filteredTabs.Size() == 0)
+                {
+                    return;
+                }
+
+                for (const auto& tab : _mruTabs)
+                {
+                    if (const auto tabImpl = _GetTabImpl(tab))
+                    {
+                        if (tabImpl->MatchesFilter(filter))
+                        {
+                            filteredMruTabs.Append(tab);
+                        }
+                    }
+                }
+
+                // Find the current tab's position in the filtered list.
+                const auto currentTab = _tabs.GetAt(index);
+                uint32_t filteredStartIdx = 0;
+                if (!filteredTabs.IndexOf(currentTab, filteredStartIdx))
+                {
+                    // Current tab is not in the filtered set. Position so the
+                    // first SelectNextItem call wraps to the appropriate end.
+                    if (bMoveRight)
+                    {
+                        filteredStartIdx = filteredTabs.Size() - 1;
+                    }
+                    else
+                    {
+                        filteredStartIdx = 0;
+                    }
+                }
+
+                const auto p = LoadCommandPalette();
+                p.SetTabs(filteredTabs, filteredMruTabs);
+                p.EnableTabSwitcherMode(filteredStartIdx, tabSwitchMode);
+                p.Visibility(Visibility::Visible);
+                p.SelectNextItem(bMoveRight);
+            }
         }
     }
 

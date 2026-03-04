@@ -158,7 +158,7 @@ namespace winrt::TerminalApp::implementation
         const auto& realArgs = args.ActionArgs().try_as<NextTabArgs>();
         if (realArgs)
         {
-            _SelectNextTab(true, realArgs.SwitcherMode());
+            _SelectNextTab(true, realArgs.SwitcherMode(), realArgs.Filter());
             args.Handled(true);
         }
     }
@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
         const auto& realArgs = args.ActionArgs().try_as<PrevTabArgs>();
         if (realArgs)
         {
-            _SelectNextTab(false, realArgs.SwitcherMode());
+            _SelectNextTab(false, realArgs.SwitcherMode(), realArgs.Filter());
             args.Handled(true);
         }
     }
