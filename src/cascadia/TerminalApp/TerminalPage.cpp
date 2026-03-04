@@ -5634,15 +5634,53 @@ namespace winrt::TerminalApp::implementation
             _workspaceFlyout.Items().Append(item);
         }
 
-        // --- Saved workspaces section ---
+        // --- Gather open window info first so we can filter workspaces ---
+        // Ask the host (via AppHost → WindowEmperor) for all live windows.
+        const auto windowListReq{ winrt::make<WindowListRequest>() };
+        RequestWindowList.raise(*this, windowListReq);
+        const auto windowEntries = windowListReq.WindowEntries();
+
+        // Collect the names of all currently-open windows so we can hide
+        // workspaces that are already live from the saved-workspaces list.
+        std::set<winrt::hstring> openWindowNames;
+        if (windowEntries)
+        {
+            for (const auto& entry : windowEntries)
+            {
+                const std::wstring_view entryView{ entry };
+                const auto tabPos = entryView.find(L'\t');
+                if (tabPos != std::wstring_view::npos)
+                {
+                    const auto namePart = entryView.substr(tabPos + 1);
+                    if (!namePart.empty())
+                    {
+                        openWindowNames.emplace(namePart);
+                    }
+                }
+            }
+        }
+
+        // --- Saved workspaces section (only those not currently open) ---
         const auto workspaces = ApplicationState::SharedInstance().AllPersistedWorkspaces();
         if (workspaces && workspaces.Size() > 0)
         {
-            _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+            bool addedSeparator = false;
 
             for (const auto& pair : workspaces)
             {
                 const auto name = pair.Key();
+
+                // Skip workspaces that correspond to a currently-open window.
+                if (openWindowNames.count(name))
+                {
+                    continue;
+                }
+
+                if (!addedSeparator)
+                {
+                    _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+                    addedSeparator = true;
+                }
 
                 MenuFlyoutItem item{};
                 item.Text(name);
@@ -5663,10 +5701,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         // --- Open windows section ---
-        // Ask the host (via AppHost → WindowEmperor) for all live windows.
-        const auto windowListReq{ winrt::make<WindowListRequest>() };
-        RequestWindowList.raise(*this, windowListReq);
-        const auto windowEntries = windowListReq.WindowEntries();
 
         if (windowEntries && windowEntries.Size() > 0)
         {
