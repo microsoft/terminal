@@ -49,24 +49,28 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBox x:Name="FilePathInput"
+                     x:Uid="MarkdownPaneFilePathInput"
                      Grid.Column="0"
                      Margin="4"
-                     PlaceholderText="Enter a path to a markdown file..."
-                     Text="Z:\dev\simple-test.md">
+                     PlaceholderText="Enter a path to a markdown file...">
                 <TextBox.ContextFlyout>
                     <mtu:TextMenuFlyout />
                 </TextBox.ContextFlyout>
             </TextBox>
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal">
-                <Button Margin="4"
+                <Button x:Uid="MarkdownPaneOpenFileButton"
+                        Margin="4"
+                        AutomationProperties.Name="Open file"
                         Tapped="_loadTapped">
                     <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                               FontSize="12"
                               Glyph="&#xe8e5;" />
                     <!--  OpenFile  -->
                 </Button>
-                <Button Margin="4"
+                <Button x:Uid="MarkdownPaneEditButton"
+                        Margin="4"
+                        AutomationProperties.Name="Edit"
                         Tapped="_editTapped">
                     <FontIcon x:Name="EditIcon"
                               FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -74,7 +78,9 @@
                               Glyph="&#xe932;" />
                     <!--  Label  -->
                 </Button>
-                <Button Margin="4"
+                <Button x:Uid="MarkdownPaneCloseButton"
+                        Margin="4"
+                        AutomationProperties.Name="Close"
                         Tapped="_closeTapped">
                     <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                               FontSize="12"

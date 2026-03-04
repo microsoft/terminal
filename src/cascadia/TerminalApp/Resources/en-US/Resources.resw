@@ -929,4 +929,25 @@
   <data name="InvalidRegex" xml:space="preserve">
     <value>An invalid regular expression was found.</value>
   </data>
+  <data name="MarkdownPaneFilePathInput.PlaceholderText" xml:space="preserve">
+    <value>Enter a path to a markdown file...</value>
+  </data>
+  <data name="MarkdownPaneOpenFileButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Open file</value>
+  </data>
+  <data name="MarkdownPaneOpenFileButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Open file</value>
+  </data>
+  <data name="MarkdownPaneEditButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="MarkdownPaneEditButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="MarkdownPaneCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="MarkdownPaneCloseButton.AutomationProperties.Name" xml:space="preserve">
+    <value>Close</value>
+  </data>
 </root>

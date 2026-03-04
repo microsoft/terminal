@@ -3706,13 +3706,27 @@ namespace winrt::TerminalApp::implementation
         {
             if (Feature_MarkdownPane::IsEnabled())
             {
-                // Extract the file path from the content args data map
+                // Extract the file path from the content args data map.
+                // If it's relative, resolve it against the virtual CWD
+                // (which is set by ProcessStartupActions to the caller's CWD).
                 winrt::hstring filePath;
                 if (const auto& data = contentArgs.Data())
                 {
                     if (data.HasKey(L"path"))
                     {
                         filePath = data.Lookup(L"path");
+                        std::filesystem::path fsPath{ std::wstring_view{ filePath } };
+                        if (fsPath.is_relative())
+                        {
+                            const auto cwd = _WindowProperties.VirtualWorkingDirectory();
+                            if (!cwd.empty())
+                            {
+                                fsPath = std::filesystem::path{ std::wstring_view{ cwd } } / fsPath;
+                                // now normalize it
+                                fsPath = fsPath.lexically_normal();
+                                filePath = winrt::hstring{ fsPath.wstring() };
+                            }
+                        }
                     }
                 }
 
