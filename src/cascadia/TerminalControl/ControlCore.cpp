@@ -139,6 +139,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnSearchMissingCommand = [this](auto&& PH1, auto&& PH2) { _terminalSearchMissingCommand(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
         _terminal->SetSearchMissingCommandCallback(pfnSearchMissingCommand);
 
+        auto pfnShowNotification = [this](auto&& PH1, auto&& PH2) { _terminalShowNotification(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
+        _terminal->SetShowNotificationCallback(pfnShowNotification);
+
         auto pfnClearQuickFix = [this] { ClearQuickFix(); };
         _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
 
@@ -1683,6 +1686,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow)
     {
         SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }, bufferRow));
+    }
+
+    void ControlCore::_terminalShowNotification(std::wstring_view title, std::wstring_view body)
+    {
+        ShowNotification.raise(*this, make<implementation::ShowNotificationEventArgs>(hstring{ title }, hstring{ body }));
     }
 
     void ControlCore::OpenCWD()

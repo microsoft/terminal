@@ -225,6 +225,7 @@ namespace Microsoft::Console::VirtualTerminal
             ResetHighlightColor = 117,
             FinalTermAction = 133,
             VsCodeAction = 633,
+            DesktopNotification = 777,
             ITerm2Action = 1337,
             WTAction = 9001,
         };

@@ -1161,6 +1161,38 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
+        events.NotificationRequested = content.NotificationRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto notifArgs) -> safe_void_coroutine {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (const auto tab{ weakThisCopy.get() })
+                {
+                    // Other notification styles may be added in the future,
+                    // (see GH#7955 for more details)
+                    //
+                    // Currently the only style is to request a toast
+                    // notification. We'll just check for that flag for now.
+                    const auto style = notifArgs.Style();
+                    if (WI_IsFlagSet(style, winrt::TerminalApp::OutputNotificationStyle::Notification))
+                    {
+                        // Request a desktop toast notification.
+                        // TerminalPage subscribes to this event and handles sending the toast
+                        // and processing its activation (summoning the window + switching tabs).
+                        const auto notifTitle = notifArgs.Title();
+                        const auto notifBody = notifArgs.Body();
+                        if (!notifTitle.empty())
+                        {
+                            tab->TabToastNotificationRequested.raise(notifTitle, notifBody, tab->TabViewIndex());
+                        }
+                        else
+                        {
+                            tab->TabToastNotificationRequested.raise(tab->Title(), L"", tab->TabViewIndex());
+                        }
+                    }
+                }
+            });
+
         if (const auto& terminal{ content.try_as<TerminalApp::TerminalPaneContent>() })
         {
             events.RestartTerminalRequested = terminal.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &Tab::_bubbleRestartTerminalRequested });

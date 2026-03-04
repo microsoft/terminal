@@ -161,6 +161,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void DoWTAction(const std::wstring_view string) override;
 
+        void DoDesktopNotification(const std::wstring_view string) override;
+
         StringHandler DefineSixelImage(const VTInt macroParameter,
                                        const DispatchTypes::SixelBackground backgroundSelect,
                                        const VTParameter backgroundColor) override; // SIXEL
