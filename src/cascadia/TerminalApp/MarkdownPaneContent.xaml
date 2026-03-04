@@ -78,6 +78,16 @@
                               Glyph="&#xe932;" />
                     <!--  Label  -->
                 </Button>
+                <Button x:Uid="MarkdownPaneSaveButton"
+                        Margin="4"
+                        AutomationProperties.Name="Save"
+                        Tapped="_saveTapped"
+                        Visibility="{x:Bind Editing, Mode=OneWay}">
+                    <FontIcon FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                              FontSize="12"
+                              Glyph="&#xe74e;" />
+                    <!--  Save  -->
+                </Button>
                 <Button x:Uid="MarkdownPaneCloseButton"
                         Margin="4"
                         AutomationProperties.Name="Close"
@@ -100,13 +110,6 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Grid x:Name="InProcContent"
-                  Grid.Column="0"
-                  Padding="16"
-                  HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="#ff0000" />
-
             <TextBox x:Name="_editor"
                      Grid.Column="1"
                      Padding="3"
@@ -116,7 +119,7 @@
                      FontFamily="Cascadia Code"
                      IsSpellCheckEnabled="False"
                      Text="{x:Bind FileContents, Mode=TwoWay}"
-                     Visibility="{x:Bind Editing}">
+                     Visibility="{x:Bind Editing, Mode=OneWay}">
                 <TextBox.ContextFlyout>
                     <mtu:TextMenuFlyout />
                 </TextBox.ContextFlyout>
@@ -132,7 +135,7 @@
                           IsVerticalScrollChainingEnabled="True">
                 <StackPanel x:Name="RenderedMarkdown"
                             Grid.Column="1"
-                            Padding="16"
+                            Padding="16,0,16,16"
                             HorizontalAlignment="Stretch"
                             Background="Transparent"
                             Orientation="Vertical" />

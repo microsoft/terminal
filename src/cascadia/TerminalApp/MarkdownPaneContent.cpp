@@ -160,6 +160,18 @@ namespace winrt::TerminalApp::implementation
         PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"Editing" });
     }
 
+    void MarkdownPaneContent::_saveTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
+    {
+        if (_filePath.empty())
+        {
+            return;
+        }
+
+        const std::filesystem::path filePath{ std::wstring_view{ _filePath } };
+        const auto content = winrt::to_string(FileContents());
+        til::io::write_utf8_string_to_file(filePath, content);
+    }
+
     void MarkdownPaneContent::_closeTapped(const Windows::Foundation::IInspectable&, const Windows::UI::Xaml::Input::TappedRoutedEventArgs&)
     {
         CloseRequested.raise(*this, nullptr);
