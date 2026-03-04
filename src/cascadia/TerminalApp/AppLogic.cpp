@@ -148,10 +148,17 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
-        _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
-            // TODO: This is really bad, because we reset any current user customizations.
-            // See GH#11522.
-            ReloadSettingsThrottled();
+        _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([weakSelf = get_weak(), dispatcher = DispatcherQueue::GetForCurrentThread()]() {
+            // GH#11522: Re-resolve only scancode-based keybindings for the new layout.
+            // sc(nnn) bindings translate scancode to VK via MapVirtualKeyW at parse time,
+            // but the mapping is layout-dependent. A full ReloadSettingsThrottled() would
+            // unnecessarily reset font zoom, VT colors, and other runtime state.
+            dispatcher.TryEnqueue([weakSelf]() {
+                if (auto self{ weakSelf.get() })
+                {
+                    self->_settings.GlobalSettings().ActionMap().NotifyKeyboardLayoutChanged();
+                }
+            });
         });
 
         // Do this here, rather than at the top of main. This will prevent us from
