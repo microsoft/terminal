@@ -162,6 +162,8 @@ public:
 
     void SearchMissingCommand(const std::wstring_view command) override;
 
+    void ShowNotification(const std::wstring_view title, const std::wstring_view body) override;
+
 #pragma endregion
 
     void ClearMark();
@@ -230,6 +232,7 @@ public:
     void SetPlayMidiNoteCallback(std::function<void(const int, const int, const std::chrono::microseconds)> pfn) noexcept;
     void CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept;
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
+    void SetShowNotificationCallback(std::function<void(std::wstring_view, std::wstring_view)> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
     void SetPromptStartedCallback(std::function<void()> pfn) noexcept;
@@ -340,6 +343,7 @@ private:
     std::function<void(const int, const int, const std::chrono::microseconds)> _pfnPlayMidiNote;
     std::function<void(std::wstring_view, unsigned int)> _pfnCompletionsChanged;
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
+    std::function<void(std::wstring_view, std::wstring_view)> _pfnShowNotification;
     std::function<void()> _pfnClearQuickFix;
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
     std::function<void()> _pfnPromptStarted;

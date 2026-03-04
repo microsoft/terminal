@@ -21,6 +21,8 @@ namespace TerminalApp
     {
         Microsoft.Terminal.Control.OutputNotificationStyle Style { get; };
         Boolean OnlyWhenInactive { get; };
+        String Title { get; };
+        String Body { get; };
     };
 
     interface IPaneContent

@@ -46,6 +46,7 @@ namespace winrt::TerminalApp::implementation
         _controlEvents._SetTaskbarProgress = _control.SetTaskbarProgress(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlSetTaskbarProgress });
         _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlReadOnlyChanged });
         _controlEvents._FocusFollowMouseRequested = _control.FocusFollowMouseRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlFocusFollowMouseRequested });
+        _controlEvents._ShowNotification = _control.ShowNotification(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlShowNotification });
     }
     void TerminalPaneContent::_removeControlEvents()
     {
@@ -184,6 +185,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_controlFocusFollowMouseRequested(const IInspectable&, const IInspectable&)
     {
         FocusRequested.raise(*this, nullptr);
+    }
+
+    void TerminalPaneContent::_controlShowNotification(const IInspectable& /*sender*/, const ShowNotificationEventArgs& args)
+    {
+        auto notifArgs = winrt::make<implementation::NotificationEventArgs>(
+            OutputNotificationStyle::Notification,
+            false,
+            args.Title(),
+            args.Body());
+        NotificationRequested.raise(*this, notifArgs);
     }
 
     // Method Description:

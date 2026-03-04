@@ -158,6 +158,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowOscNotifications);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnInactiveOutput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnNextPrompt);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.AutoDetectRunningCommand, AutoDetectRunningCommand);
