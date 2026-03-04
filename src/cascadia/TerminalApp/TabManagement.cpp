@@ -438,6 +438,21 @@ namespace winrt::TerminalApp::implementation
 
         const auto focusedTabIndex{ _GetFocusedTabIndex() };
 
+        // If this is the last tab in a named window, persist the workspace
+        // layout now—before the tab is shut down—so GetWindowLayout() can
+        // still see its tab data.
+        if (_tabs.Size() == 1)
+        {
+            const auto& windowName = _WindowProperties.WindowName();
+            if (!windowName.empty())
+            {
+                if (const auto layout = GetWindowLayout())
+                {
+                    ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
+                }
+            }
+        }
+
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
         tab.Shutdown();

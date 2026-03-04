@@ -48,7 +48,7 @@
                 <!--  Workspace/windows button  -->
                 <Button x:Name="WorkspaceDropdown"
                         Margin="4,4,0,4"
-                        Padding="4,2"
+                        Padding="8,2,4,2"
                         VerticalAlignment="Center"
                         BorderThickness="0"
                         Background="Transparent"
