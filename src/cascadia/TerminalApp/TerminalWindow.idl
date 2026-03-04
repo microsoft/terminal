@@ -129,6 +129,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, SummonWindowByIdRequestedArgs> SummonWindowByIdRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
@@ -140,6 +141,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
+        event Windows.Foundation.TypedEventHandler<Object, WindowListRequest> RequestWindowList;
 
         void AttachContent(String content, UInt32 tabIndex);
         void SendContentToOther(RequestReceiveContentArgs args);

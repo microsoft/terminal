@@ -25,6 +25,21 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
+    void TabRowControl::WorkspaceName(const winrt::hstring& value)
+    {
+        if (_WorkspaceName != value)
+        {
+            _WorkspaceName = value;
+            PropertyChanged.raise(*this, WUX::Data::PropertyChangedEventArgs{ L"WorkspaceName" });
+
+            // Collapse the name text when empty so the button shows only the icon.
+            if (const auto textBlock = WorkspaceNameText())
+            {
+                textBlock.Visibility(value.empty() ? WUX::Visibility::Collapsed : WUX::Visibility::Visible);
+            }
+        }
+    }
+
     // Method Description:
     // - Bound in the Xaml editor to the [+] button.
     // Arguments:

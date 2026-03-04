@@ -10,8 +10,10 @@
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
+#include "SummonWindowByIdRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
+#include "WindowListRequest.g.h"
 #include "Toast.h"
 
 #include "WindowsPackageManagerFactory.h"
@@ -63,6 +65,15 @@ namespace winrt::TerminalApp::implementation
             _ProposedName{ name } {};
     };
 
+    struct SummonWindowByIdRequestedArgs : SummonWindowByIdRequestedArgsT<SummonWindowByIdRequestedArgs>
+    {
+        WINRT_PROPERTY(uint64_t, WindowId);
+
+    public:
+        SummonWindowByIdRequestedArgs(uint64_t id) :
+            _WindowId{ id } {};
+    };
+
     struct RequestMoveContentArgs : RequestMoveContentArgsT<RequestMoveContentArgs>
     {
         WINRT_PROPERTY(winrt::hstring, Window);
@@ -82,6 +93,17 @@ namespace winrt::TerminalApp::implementation
         LaunchPositionRequest() = default;
 
         til::property<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> Position;
+    };
+
+    struct WindowListRequest : WindowListRequestT<WindowListRequest>
+    {
+        WindowListRequest() :
+            _WindowEntries{ winrt::single_threaded_vector<winrt::hstring>() } {}
+
+        winrt::Windows::Foundation::Collections::IVector<winrt::hstring> WindowEntries() const { return _WindowEntries; }
+
+    private:
+        winrt::Windows::Foundation::Collections::IVector<winrt::hstring> _WindowEntries;
     };
 
     struct WinGetSearchParams
@@ -193,6 +215,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IInspectable, IInspectable> IdentifyWindowsRequested;
         til::typed_event<IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs> RenameWindowRequested;
         til::typed_event<IInspectable, IInspectable> SummonWindowRequested;
+        til::typed_event<IInspectable, winrt::TerminalApp::SummonWindowByIdRequestedArgs> SummonWindowByIdRequested;
         til::typed_event<IInspectable, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
         til::typed_event<IInspectable, IInspectable> OpenSystemMenu;
@@ -204,6 +227,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs> RequestReceiveContent;
 
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
+        til::typed_event<IInspectable, winrt::TerminalApp::WindowListRequest> RequestWindowList;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);

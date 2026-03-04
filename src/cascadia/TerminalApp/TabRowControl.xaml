@@ -45,30 +45,32 @@
                           Glyph="&#xEA18;"
                           Visibility="{x:Bind ShowElevationShield, Mode=OneWay}" />
 
-                <!--  Workspace dropdown button  -->
-                <mux:DropDownButton x:Name="WorkspaceDropdown"
-                                    Margin="4,4,0,4"
-                                    Padding="4,2"
-                                    VerticalAlignment="Center"
-                                    BorderThickness="0"
-                                    Background="Transparent">
-                    <mux:DropDownButton.Content>
+                <!--  Workspace/windows button  -->
+                <Button x:Name="WorkspaceDropdown"
+                        Margin="4,4,0,4"
+                        Padding="4,2"
+                        VerticalAlignment="Center"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Visibility="{x:Bind ShowWindowsButton, Mode=OneWay}">
+                    <Button.Content>
                         <StackPanel Orientation="Horizontal"
                                     Spacing="4">
-                            <!--  E8F1 is the "SwitchApps" / multi-window glyph  -->
+                            <!--  EE40 is the "TaskViewSettings" glyph  -->
                             <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                                       FontSize="12"
-                                      Glyph="&#xE8F1;" />
+                                      Glyph="&#xEE40;" />
                             <TextBlock x:Name="WorkspaceNameText"
                                        VerticalAlignment="Center"
                                        FontSize="12"
+                                       Visibility="Collapsed"
                                        Text="{x:Bind WorkspaceName, Mode=OneWay}" />
                         </StackPanel>
-                    </mux:DropDownButton.Content>
-                    <mux:DropDownButton.Flyout>
+                    </Button.Content>
+                    <Button.Flyout>
                         <MenuFlyout x:Name="WorkspaceFlyout" />
-                    </mux:DropDownButton.Flyout>
-                </mux:DropDownButton>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
         </mux:TabView.TabStripHeader>
 

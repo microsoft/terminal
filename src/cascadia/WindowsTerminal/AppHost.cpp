@@ -270,11 +270,13 @@ void AppHost::Initialize()
 
     _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
     _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
+    _revokers.SummonWindowByIdRequested = _windowLogic.SummonWindowByIdRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowByIdRequested });
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
+    _revokers.RequestWindowList = _windowLogic.RequestWindowList(winrt::auto_revoke, { this, &AppHost::_HandleRequestWindowList });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -412,6 +414,26 @@ void AppHost::_HandleRequestLaunchPosition(const winrt::Windows::Foundation::IIn
                                            winrt::TerminalApp::LaunchPositionRequest args)
 {
     args.Position(_GetWindowLaunchPosition());
+}
+
+void AppHost::_HandleRequestWindowList(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                       winrt::TerminalApp::WindowListRequest args)
+{
+    // Ask the Emperor (on the main thread) for the current window list.
+    // SendMessage blocks until the message is processed, so this is
+    // synchronous and the results vector is filled in-place.
+    std::vector<WindowEmperor::WindowListEntry> entries;
+    SendMessage(_windowManager->GetMainWindow(),
+                WindowEmperor::WM_GET_WINDOW_LIST,
+                0,
+                reinterpret_cast<LPARAM>(&entries));
+
+    auto windowEntries = args.WindowEntries();
+    for (const auto& entry : entries)
+    {
+        // Format: "id\tname"  (name may be empty for unnamed windows)
+        windowEntries.Append(winrt::hstring{ fmt::format(FMT_COMPILE(L"{}\t{}"), entry.Id, entry.Name) });
+    }
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -1118,6 +1140,23 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     HandleSummon(std::move(summonArgs));
+}
+
+void AppHost::_SummonWindowByIdRequested(const winrt::Windows::Foundation::IInspectable&,
+                                         const winrt::TerminalApp::SummonWindowByIdRequestedArgs& args)
+{
+    // Summon the window by its ID without creating a new tab.
+    // We look up the target window in WindowEmperor and call HandleSummon directly.
+    const auto targetId = args.WindowId();
+    if (auto* targetWindow = _windowManager->GetWindowById(targetId))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summonBehavior;
+        summonBehavior.MoveToCurrentDesktop(false);
+        summonBehavior.DropdownDuration(0);
+        summonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summonBehavior.ToggleVisibility(false); // Do not toggle, just make visible.
+        targetWindow->HandleSummon(std::move(summonBehavior));
+    }
 }
 
 void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,

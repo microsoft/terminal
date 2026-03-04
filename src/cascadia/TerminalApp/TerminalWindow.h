@@ -224,6 +224,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
         FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
+        FORWARDED_TYPED_EVENT(SummonWindowByIdRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::SummonWindowByIdRequestedArgs, _root, SummonWindowByIdRequested);
         FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
         FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
         FORWARDED_TYPED_EVENT(ShowWindowChanged, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs, _root, ShowWindowChanged);
@@ -232,6 +233,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs, _root, RequestReceiveContent);
 
         FORWARDED_TYPED_EVENT(RequestLaunchPosition, Windows::Foundation::IInspectable, winrt::TerminalApp::LaunchPositionRequest, _root, RequestLaunchPosition);
+        FORWARDED_TYPED_EVENT(RequestWindowList, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowListRequest, _root, RequestWindowList);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

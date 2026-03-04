@@ -25,6 +25,7 @@
 #include "TerminalSettingsCache.h"
 
 #include "LaunchPositionRequest.g.cpp"
+#include "WindowListRequest.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "RequestMoveContentArgs.g.cpp"
 #include "TerminalPage.g.cpp"
@@ -349,7 +350,8 @@ namespace winrt::TerminalApp::implementation
         _workspaceFlyout = tabRowImpl->WorkspaceFlyout();
 
         // Set the initial workspace name from the window name.
-        _tabRow.WorkspaceName(_WindowProperties.WindowNameForDisplay());
+        // Use raw WindowName() so unnamed windows show no text.
+        _tabRow.WorkspaceName(_WindowProperties.WindowName());
 
         // Rebuild the workspace flyout each time it opens so it always
         // reflects the latest set of persisted workspaces.
@@ -467,6 +469,12 @@ namespace winrt::TerminalApp::implementation
         // them.
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
+
+        // Apply the ShowWindowsButton theme setting.
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
+        {
+            _tabRow.ShowWindowsButton(theme.Window() ? theme.Window().ShowWindowsButton() : true);
+        }
 
         _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
             DispatcherQueue::GetForCurrentThread(),
@@ -3929,6 +3937,12 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
 
+        // Apply the ShowWindowsButton theme setting.
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
+        {
+            _tabRow.ShowWindowsButton(theme.Window() ? theme.Window().ShowWindowsButton() : true);
+        }
+
         Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
         _tabView.Background(transparent);
 
@@ -5626,14 +5640,6 @@ namespace winrt::TerminalApp::implementation
         {
             _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
 
-            // Section header
-            {
-                MenuFlyoutItem header{};
-                header.Text(winrt::hstring{ L"Saved Workspaces" });
-                header.IsEnabled(false);
-                _workspaceFlyout.Items().Append(header);
-            }
-
             for (const auto& pair : workspaces)
             {
                 const auto name = pair.Key();
@@ -5656,8 +5662,84 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TODO: Add a section for listing all open windows in this process.
-        // This requires plumbing from WindowEmperor -> AppHost -> WindowProperties.
+        // --- Open windows section ---
+        // Ask the host (via AppHost → WindowEmperor) for all live windows.
+        const auto windowListReq{ winrt::make<WindowListRequest>() };
+        RequestWindowList.raise(*this, windowListReq);
+        const auto windowEntries = windowListReq.WindowEntries();
+
+        if (windowEntries && windowEntries.Size() > 0)
+        {
+            _workspaceFlyout.Items().Append(MenuFlyoutSeparator{});
+
+            const auto thisWindowId = _WindowProperties.WindowId();
+
+            for (const auto& entry : windowEntries)
+            {
+                // Each entry is formatted as "id\tname"
+                const std::wstring_view entryView{ entry };
+                const auto tabPos = entryView.find(L'\t');
+                if (tabPos == std::wstring_view::npos)
+                {
+                    continue;
+                }
+
+                uint64_t id = 0;
+                const auto idPart = entryView.substr(0, tabPos);
+                for (const auto ch : idPart)
+                {
+                    if (ch >= L'0' && ch <= L'9')
+                    {
+                        id = id * 10 + (ch - L'0');
+                    }
+                }
+
+                const auto namePart = entryView.substr(tabPos + 1);
+
+                // Build display text like "#1: MyWindow" or "#2: <unnamed>"
+                winrt::hstring displayText;
+                if (namePart.empty())
+                {
+                    displayText = winrt::hstring{ fmt::format(FMT_COMPILE(L"#{} (unnamed)"), id) };
+                }
+                else
+                {
+                    displayText = winrt::hstring{ fmt::format(FMT_COMPILE(L"#{}: {}"), id, namePart) };
+                }
+
+                MenuFlyoutItem item{};
+                item.Text(displayText);
+
+                // Use a different glyph for the current window
+                if (id == thisWindowId)
+                {
+                    auto iconElement = UI::IconPathConverter::IconWUX(L"\uE73E"); // CheckMark glyph
+                    Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                    item.Icon(iconElement);
+                    item.IsEnabled(false); // Can't summon yourself
+                }
+                else
+                {
+                    auto iconElement = UI::IconPathConverter::IconWUX(L"\uE737"); // ChromeRestore glyph
+                    Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
+                    item.Icon(iconElement);
+
+                    // Click handler: summon the target window by ID.
+                    // We raise SummonWindowByIdRequested which is handled by
+                    // AppHost to directly summon the window without creating
+                    // a new tab (unlike _OpenWorkspaceWindow which launches
+                    // `wt -w <name>` and creates a tab).
+                    item.Click([weakThis{ get_weak() }, id](auto&&, auto&&) {
+                        if (auto page{ weakThis.get() })
+                        {
+                            page->SummonWindowByIdRequested.raise(*page, winrt::make<SummonWindowByIdRequestedArgs>(id));
+                        }
+                    });
+                }
+
+                _workspaceFlyout.Items().Append(item);
+            }
+        }
     }
 
     // Handler for our WindowProperties's PropertyChanged event. We'll use this
@@ -5670,7 +5752,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Keep the workspace dropdown label in sync with the window name.
-        _tabRow.WorkspaceName(_WindowProperties.WindowNameForDisplay());
+        // Use raw WindowName() so clearing the name hides the text.
+        _tabRow.WorkspaceName(_WindowProperties.WindowName());
 
         // DON'T display the confirmation if this is the name we were
         // given on startup!

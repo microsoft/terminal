@@ -981,6 +981,19 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 host->Logic().IdentifyWindow();
             }
             return 0;
+        case WM_GET_WINDOW_LIST:
+        {
+            auto* result = reinterpret_cast<std::vector<WindowListEntry>*>(lParam);
+            if (result)
+            {
+                for (const auto& host : _windows)
+                {
+                    const auto props = host->Logic().WindowProperties();
+                    result->emplace_back(WindowListEntry{ props.WindowId(), std::wstring{ props.WindowName() } });
+                }
+            }
+            return 0;
+        }
         case WM_NOTIFY_FROM_NOTIFICATION_AREA:
             switch (LOWORD(lParam))
             {
