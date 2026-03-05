@@ -96,6 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DeleteUserCommand(const winrt::hstring& cmdID);
         void AddSendInputAction(winrt::hstring name, winrt::hstring input, const Control::KeyChord keys);
         void UpdateCommandID(const Model::Command& cmd, winrt::hstring newID);
+        void NotifyKeyboardLayoutChanged();
 
         Windows::Foundation::Collections::IVector<Model::Command> ExpandedCommands();
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
@@ -111,6 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
         void _RefreshKeyBindingCaches();
+        void _ResolveScancodeBindings(HKL layout);
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
