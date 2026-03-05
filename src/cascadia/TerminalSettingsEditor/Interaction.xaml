@@ -138,7 +138,8 @@
             <!--  Confirm Close On  -->
             <local:SettingContainer x:Name="ConfirmCloseOn"
                                     x:Uid="Globals_ConfirmCloseOn"
-                                    CurrentValue="{x:Bind ViewModel.ConfirmCloseOnPreview, Mode=OneWay}">
+                                    CurrentValue="{x:Bind ViewModel.ConfirmCloseOnPreview, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel>
                     <CheckBox x:Uid="Globals_ConfirmCloseOnAlways"
                               IsChecked="{x:Bind ViewModel.IsConfirmCloseOnFlagSet(1), BindBack=ViewModel.SetConfirmCloseOnAlways, Mode=TwoWay}" />
