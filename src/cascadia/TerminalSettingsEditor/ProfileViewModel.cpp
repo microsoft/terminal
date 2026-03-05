@@ -385,7 +385,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
     {
-        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme();
+        const auto currentTheme = _appSettings.WindowSettingsDefaults().CurrentTheme();
         if (const auto tabTheme = currentTheme.Tab())
         {
             // theme.tab.background: theme color must be evaluated

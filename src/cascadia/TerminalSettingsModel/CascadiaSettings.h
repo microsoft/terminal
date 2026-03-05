@@ -163,6 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring Hash() const noexcept;
         Model::CascadiaSettings Copy() const;
         Model::GlobalAppSettings GlobalSettings() const;
+        Model::GlobalAppSettings WindowSettingsDefaults() const;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::ActionMap ActionMap() const noexcept;

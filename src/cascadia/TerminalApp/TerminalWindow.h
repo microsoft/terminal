@@ -196,6 +196,7 @@ namespace winrt::TerminalApp::implementation
         bool _IsKeyboardServiceEnabled();
 
         void _RefreshThemeRoutine();
+        Microsoft::Terminal::Settings::Model::GlobalAppSettings _currentWindowSettings() const;
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _pageInitialized(const IInspectable& sender, const IInspectable& eventArgs);
         void _OpenSettingsUI();

@@ -55,9 +55,10 @@ namespace winrt::Microsoft::Terminal::Settings
         auto settings{ winrt::make_self<TerminalSettings>() };
 
         const auto globals = appSettings.GlobalSettings();
+        const auto windowDefaults = appSettings.WindowSettingsDefaults();
         settings->_ApplyProfileSettings(profile);
-        settings->_ApplyGlobalSettings(globals);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme());
+        settings->_ApplyWindowSettings(windowDefaults);
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), windowDefaults.CurrentTheme());
 
         return settings;
     }
@@ -88,9 +89,10 @@ namespace winrt::Microsoft::Terminal::Settings
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
         {
             const auto globals = appSettings.GlobalSettings();
+            const auto windowDefaults = appSettings.WindowSettingsDefaults();
             child = winrt::make_self<TerminalSettings>();
             child->_parent = settings->get_strong();
-            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
+            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), windowDefaults.CurrentTheme());
         }
 
         return TerminalSettingsCreateResult{ settings.get(), child.get() };
@@ -361,7 +363,7 @@ namespace winrt::Microsoft::Terminal::Settings
     // - globalSettings: the global property values we're applying.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
+    void TerminalSettings::_ApplyWindowSettings(const Model::GlobalAppSettings& globalSettings) noexcept
     {
         _InitialRows = globalSettings.InitialRows();
         _InitialCols = globalSettings.InitialCols();

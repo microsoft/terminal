@@ -550,7 +550,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto& realArgs = args.ActionArgs().try_as<CopyTextArgs>())
         {
             const auto copyFormatting = realArgs.CopyFormatting();
-            const auto format = copyFormatting ? copyFormatting.Value() : _settings.GlobalSettings().CopyFormatting();
+            const auto format = copyFormatting ? copyFormatting.Value() : _currentWindowSettings().CopyFormatting();
             const auto handled = _CopyText(realArgs.DismissSelection(), realArgs.SingleLine(), realArgs.WithControlSequences(), format);
             args.Handled(handled);
         }

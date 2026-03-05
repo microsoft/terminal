@@ -522,7 +522,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == interactionTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.WindowSettingsDefaults()), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == renderingTag)
@@ -620,7 +620,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == globalAppearanceTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.WindowSettingsDefaults()), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == addProfileTag)
@@ -1098,7 +1098,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto& theme = _settingsSource.WindowSettingsDefaults().CurrentTheme();
         const bool hasThemeForSettings{ theme.Settings() != nullptr };
         const auto& appTheme = theme.RequestedTheme();
         const auto& requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;

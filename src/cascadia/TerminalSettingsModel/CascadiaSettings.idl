@@ -38,6 +38,12 @@ namespace Microsoft.Terminal.Settings.Model
 
         GlobalAppSettings GlobalSettings { get; };
 
+        // Returns the per-window settings defaults. Today this is the same
+        // object as GlobalSettings. A follow-up change will introduce a
+        // dedicated WindowSettings type; using this accessor now makes
+        // that future diff much smaller.
+        GlobalAppSettings WindowSettingsDefaults { get; };
+
         Profile ProfileDefaults { get; };
 
         IObservableVector<Profile> AllProfiles { get; };

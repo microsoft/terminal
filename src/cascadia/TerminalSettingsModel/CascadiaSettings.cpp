@@ -210,6 +210,15 @@ Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 }
 
 // Method Description:
+// - Returns the per-window settings defaults. Today this returns the
+//   same GlobalAppSettings object. A follow-up change will replace
+//   the return type with a dedicated WindowSettings class.
+Model::GlobalAppSettings CascadiaSettings::WindowSettingsDefaults() const
+{
+    return *_globals;
+}
+
+// Method Description:
 // - Get a reference to our profiles.defaults object
 // Arguments:
 // - <none>
@@ -772,7 +781,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
     // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
     // TODO GH#10952: Detect the profile based on the commandline (add matching support)
     return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-               FindProfile(GlobalSettings().DefaultProfile()) :
+               FindProfile(WindowSettingsDefaults().DefaultProfile()) :
                ProfileDefaults();
 }
 
