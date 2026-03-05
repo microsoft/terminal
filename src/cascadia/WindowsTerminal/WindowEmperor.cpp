@@ -360,7 +360,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     // However, we're also able to just handle the .Activated event on the toast
     // itself, so we don't care about this process we're spawning. So before we
     // do _anything_ else, if we were created for a toast, just immediately
-    // bail. 
+    // bail.
     const auto args = commandlineToArgArray(GetCommandLineW());
     {
         if (args.size() == 2 && args[1] == L"__fromToast")
