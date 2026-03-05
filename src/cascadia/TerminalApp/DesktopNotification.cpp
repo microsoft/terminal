@@ -92,19 +92,17 @@ namespace winrt::TerminalApp::implementation
             // For packaged apps, CreateToastNotifier() uses the package identity automatically.
             // For unpackaged apps, we must pass the explicit AUMID that was registered
             // at startup via SetCurrentProcessExplicitAppUserModelID.
-            auto notifier = IsPackaged()
-                ? ToastNotificationManager::CreateToastNotifier()
-                : ToastNotificationManager::CreateToastNotifier(
+            auto notifier = IsPackaged() ? ToastNotificationManager::CreateToastNotifier() : ToastNotificationManager::CreateToastNotifier(
 #if defined(WT_BRANDING_RELEASE)
-                    L"Microsoft.WindowsTerminal"
+                                                                                                 L"Microsoft.WindowsTerminal"
 #elif defined(WT_BRANDING_PREVIEW)
-                    L"Microsoft.WindowsTerminalPreview"
+                                                                                                 L"Microsoft.WindowsTerminalPreview"
 #elif defined(WT_BRANDING_CANARY)
-                    L"Microsoft.WindowsTerminalCanary"
+                                                                                                 L"Microsoft.WindowsTerminalCanary"
 #else
-                    L"Microsoft.WindowsTerminalDev"
+                                                                                                 L"Microsoft.WindowsTerminalDev"
 #endif
-                );
+                                                                                             );
             notifier.Show(toast);
         }
         catch (...)
