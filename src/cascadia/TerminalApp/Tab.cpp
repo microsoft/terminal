@@ -1201,7 +1201,7 @@ namespace winrt::TerminalApp::implementation
 
         events.NotificationRequested = content.NotificationRequested(
             winrt::auto_revoke,
-            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto notifArgs) -> safe_void_coroutine {
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto notificationArgs) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
@@ -1212,15 +1212,15 @@ namespace winrt::TerminalApp::implementation
                     const auto activeContent = tab->GetActiveContent();
                     const auto isActivePaneContent = activeContent && activeContent == sender;
 
-                    if (notifArgs.OnlyWhenInactive() && isActivePaneContent &&
+                    if (notificationArgs.OnlyWhenInactive() && isActivePaneContent &&
                         tab->_focusState != WUX::FocusState::Unfocused)
                     {
                         co_return;
                     }
 
-                    const auto style = notifArgs.Style();
+                    const auto style = notificationArgs.Style();
 
-                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Taskbar))
+                    if (WI_IsFlagSet(style, OutputNotificationStyle::Taskbar))
                     {
                         // Flash the taskbar button
                         tab->TabRaiseVisualBell.raise();
