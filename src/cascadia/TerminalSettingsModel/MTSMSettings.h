@@ -79,38 +79,38 @@ Author(s):
 // * TerminalSettings.cpp: TerminalSettings::_ApplyProfileSettings
 // * IControlSettings.idl or ICoreSettings.idl
 // * ControlProperties.h
-#define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
-    X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
-    X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
-    X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \
-    X(hstring, AnswerbackMessage, "answerbackMessage")                                                                                                         \
-    X(hstring, Commandline, "commandline", L"%SystemRoot%\\System32\\cmd.exe")                                                                                 \
-    X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, "scrollbarState", Microsoft::Terminal::Control::ScrollbarState::Visible)                      \
-    X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, "antialiasingMode", Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
-    X(hstring, StartingDirectory, "startingDirectory")                                                                                                         \
-    X(IMediaResource, Icon, "icon", implementation::MediaResource::FromString(L"\uE756"))                                                                      \
-    X(bool, SuppressApplicationTitle, "suppressApplicationTitle", false)                                                                                       \
-    X(guid, ConnectionType, "connectionType")                                                                                                                  \
-    X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                 \
-    X(hstring, TabTitle, "tabTitle")                                                                                                                           \
-    X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
-    X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                   \
-    X(bool, RightClickContextMenu, "rightClickContextMenu", false)                                                                                             \
-    X(Windows::Foundation::Collections::IVector<IMediaResource>, BellSound, "bellSound", nullptr)                                                              \
-    X(bool, Elevate, "elevate", false)                                                                                                                         \
-    X(bool, AutoMarkPrompts, "autoMarkPrompts", true)                                                                                                          \
-    X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                          \
-    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                        \
-    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                      \
-    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                      \
-    X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                \
-    X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                   \
-    X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
-    X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
-    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
-    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None) \
-    X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnInactiveOutput, "notifyOnInactiveOutput", Microsoft::Terminal::Control::OutputNotificationStyle{0})                             \
-    X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnNextPrompt, "notifyOnNextPrompt", Microsoft::Terminal::Control::OutputNotificationStyle{0})                                       \
+#define MTSM_PROFILE_SETTINGS(X)                                                                                                                                           \
+    X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                                           \
+    X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                              \
+    X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                                          \
+    X(hstring, AnswerbackMessage, "answerbackMessage")                                                                                                                     \
+    X(hstring, Commandline, "commandline", L"%SystemRoot%\\System32\\cmd.exe")                                                                                             \
+    X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, "scrollbarState", Microsoft::Terminal::Control::ScrollbarState::Visible)                                  \
+    X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, "antialiasingMode", Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale)             \
+    X(hstring, StartingDirectory, "startingDirectory")                                                                                                                     \
+    X(IMediaResource, Icon, "icon", implementation::MediaResource::FromString(L"\uE756"))                                                                                  \
+    X(bool, SuppressApplicationTitle, "suppressApplicationTitle", false)                                                                                                   \
+    X(guid, ConnectionType, "connectionType")                                                                                                                              \
+    X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Automatic)                                                                                             \
+    X(hstring, TabTitle, "tabTitle")                                                                                                                                       \
+    X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                                        \
+    X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)                                                                                               \
+    X(bool, RightClickContextMenu, "rightClickContextMenu", false)                                                                                                         \
+    X(Windows::Foundation::Collections::IVector<IMediaResource>, BellSound, "bellSound", nullptr)                                                                          \
+    X(bool, Elevate, "elevate", false)                                                                                                                                     \
+    X(bool, AutoMarkPrompts, "autoMarkPrompts", true)                                                                                                                      \
+    X(bool, ShowMarks, "showMarksOnScrollbar", false)                                                                                                                      \
+    X(bool, RepositionCursorWithMouse, "experimental.repositionCursorWithMouse", false)                                                                                    \
+    X(bool, ReloadEnvironmentVariables, "compatibility.reloadEnvironmentVariables", true)                                                                                  \
+    X(bool, RainbowSuggestions, "experimental.rainbowSuggestions", false)                                                                                                  \
+    X(bool, ForceVTInput, "compatibility.input.forceVT", false)                                                                                                            \
+    X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                               \
+    X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                                   \
+    X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                                       \
+    X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                                           \
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)          \
+    X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnInactiveOutput, "notifyOnInactiveOutput", Microsoft::Terminal::Control::OutputNotificationStyle{ 0 }) \
+    X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnNextPrompt, "notifyOnNextPrompt", Microsoft::Terminal::Control::OutputNotificationStyle{ 0 })         \
     X(Microsoft::Terminal::Control::AutoDetectRunningCommand, AutoDetectRunningCommand, "autoDetectRunningCommand", Microsoft::Terminal::Control::AutoDetectRunningCommand::Disabled)
 
 // Intentionally omitted Profile settings:

@@ -418,7 +418,14 @@ function Invoke-CodeFormat() {
 
     $clangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -find "**\x64\bin\clang-format.exe"
     If ([String]::IsNullOrEmpty($clangFormatPath)) {
+        # try again with prerelease versions of Visual Studio, 
+        # and just take the first
+        $clangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -prerelease -find "**\clang-format.exe" | Select-Object -First 1
+    }
+
+    If ([String]::IsNullOrEmpty($clangFormatPath)) {
         Write-Error "No Visual Studio-supplied version of clang-format could be found."
+        return -1
     }
 
     $root = Find-OpenConsoleRoot
