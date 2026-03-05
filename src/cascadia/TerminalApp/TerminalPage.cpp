@@ -360,7 +360,17 @@ namespace winrt::TerminalApp::implementation
         case TabPosition::Bottom:
         {
             // Rearrange to: Row 0=InfoBars(Auto), Row 1=TabContent(*), Row 2=TabRow(Auto)
-            root.Children().Clear();
+            // Remove only the three layout elements; leave deferred-load stubs
+            // (CommandPalette, SuggestionsControl, dialogs, etc.) in the tree
+            // so that FindName() can still locate them later.
+            uint32_t idx;
+            if (root.Children().IndexOf(_tabRow, idx))
+                root.Children().RemoveAt(idx);
+            if (root.Children().IndexOf(infoBarPanel, idx))
+                root.Children().RemoveAt(idx);
+            if (root.Children().IndexOf(_tabContent, idx))
+                root.Children().RemoveAt(idx);
+
             root.RowDefinitions().Clear();
 
             WUX::Controls::RowDefinition row0;
@@ -377,16 +387,44 @@ namespace winrt::TerminalApp::implementation
             WUX::Controls::Grid::SetRow(_tabContent, 1);
             WUX::Controls::Grid::SetRow(_tabRow, 2);
 
-            root.Children().Append(infoBarPanel);
-            root.Children().Append(_tabContent);
-            root.Children().Append(_tabRow);
+            // Insert layout elements at the front so overlay elements
+            // (command palette, dialogs) remain on top in z-order.
+            root.Children().InsertAt(0, infoBarPanel);
+            root.Children().InsertAt(1, _tabContent);
+            root.Children().InsertAt(2, _tabRow);
+
+            // Update overlay elements: the ones that had Grid.Row="2" in XAML
+            // should now target Row 1 (the content area) instead of Row 2
+            // (which is the tab row in this layout). Iterate the remaining
+            // children (index 3+) and reassign any that were on row 2.
+            for (uint32_t i = 3; i < root.Children().Size(); ++i)
+            {
+                auto child = root.Children().GetAt(i);
+                if (const auto& fwe { child.try_as<WUX::FrameworkElement>() })
+                {
+                    if (WUX::Controls::Grid::GetRow(fwe) == 2)
+                    {
+                        WUX::Controls::Grid::SetRow(fwe, 1);
+                    }
+                }
+            }
             break;
         }
         case TabPosition::Left:
         case TabPosition::Right:
         {
             // Build a 3-column layout: [tabstrip | splitter | content] or reversed.
-            root.Children().Clear();
+            // Remove only the three layout elements; leave deferred-load stubs
+            // (CommandPalette, SuggestionsControl, dialogs, etc.) in the tree
+            // so that FindName() can still locate them later.
+            uint32_t removeIdx;
+            if (root.Children().IndexOf(_tabRow, removeIdx))
+                root.Children().RemoveAt(removeIdx);
+            if (root.Children().IndexOf(infoBarPanel, removeIdx))
+                root.Children().RemoveAt(removeIdx);
+            if (root.Children().IndexOf(_tabContent, removeIdx))
+                root.Children().RemoveAt(removeIdx);
+
             root.RowDefinitions().Clear();
 
             // Create column definitions
@@ -418,7 +456,8 @@ namespace winrt::TerminalApp::implementation
             // Create the splitter border
             _tabStripSplitter = WUX::Controls::Border();
             _tabStripSplitter.Width(4);
-            _tabStripSplitter.Background(WUX::Media::SolidColorBrush(Windows::UI::Colors::Transparent()));
+            // the BG color will get set in _updatePaneResources
+
             // Use a custom cursor via InputSystemCursorShape
             _tabStripSplitter.ManipulationMode(WUX::Input::ManipulationModes::None);
 
@@ -501,9 +540,26 @@ namespace winrt::TerminalApp::implementation
             // Clear any row assignments from XAML
             WUX::Controls::Grid::SetRow(_tabRow, 0);
 
-            root.Children().Append(_tabRow);
-            root.Children().Append(_tabStripSplitter);
-            root.Children().Append(contentGrid);
+            // Insert layout elements at the front so overlay elements
+            // (command palette, dialogs) remain on top in z-order.
+            root.Children().InsertAt(0, _tabRow);
+            root.Children().InsertAt(1, _tabStripSplitter);
+            root.Children().InsertAt(2, contentGrid);
+
+            // Update remaining overlay children (deferred-load stubs for
+            // CommandPalette, SuggestionsControl, dialogs, InfoBars,
+            // TeachingTips, etc.) so they span all 3 columns and cover the
+            // full width of the page, not just the tab strip column.
+            for (uint32_t i = 3; i < root.Children().Size(); ++i)
+            {
+                auto child = root.Children().GetAt(i);
+                if (const auto& fwe { child.try_as<WUX::FrameworkElement>() })
+                {
+                    WUX::Controls::Grid::SetColumn(fwe, 0);
+                    WUX::Controls::Grid::SetColumnSpan(fwe, 3);
+                    WUX::Controls::Grid::SetRow(fwe, 0);
+                }
+            }
 
             // Apply vertical styles to the TabView from our resource dictionary
             if (const auto res = Application::Current().Resources())
@@ -525,6 +581,35 @@ namespace winrt::TerminalApp::implementation
                     auto itemStyleType = winrt::xaml_typename<MUX::Controls::TabViewItem>();
                     tabRowResources.Insert(winrt::box_value(itemStyleType), verticalItemStyle);
                 }
+            }
+
+            // Bug fix: TabRowControl.xaml sets VerticalAlignment="Bottom" on
+            // the TabView for the default horizontal mode. Override to Top so
+            // tabs start at the top of the vertical strip.
+            _tabView.VerticalAlignment(WUX::VerticalAlignment::Top);
+
+            // Bug fix: In vertical mode, give the "new tab" button a text
+            // label ("New tab") next to its "+" icon so it reads naturally
+            // in the wider sidebar.
+            if (_newTabButton)
+            {
+                auto panel = WUX::Controls::StackPanel();
+                panel.Orientation(WUX::Controls::Orientation::Horizontal);
+                panel.Spacing(8);
+
+                WUX::Controls::FontIcon plusIcon{};
+                plusIcon.Glyph(L"\uE710");
+                plusIcon.FontFamily(WUX::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+                plusIcon.FontSize(12);
+                panel.Children().Append(plusIcon);
+
+                WUX::Controls::TextBlock label{};
+                label.Text(RS_(L"TabNewButtonText"));
+                label.VerticalAlignment(WUX::VerticalAlignment::Center);
+                label.FontFamily(WUX::Media::FontFamily{ L"Segoe UI" });
+                panel.Children().Append(label);
+
+                _newTabButton.Content(panel);
             }
             break;
         }
@@ -5211,6 +5296,7 @@ namespace winrt::TerminalApp::implementation
             // will eat focus.
             _paneResources.focusedBorderBrush = SolidColorBrush{ Colors::Black() };
         }
+        _tabStripSplitter.Background(_paneResources.focusedBorderBrush);
 
         const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
         if (res.HasKey(unfocusedBorderBrushKey))

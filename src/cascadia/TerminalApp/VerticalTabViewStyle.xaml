@@ -217,7 +217,7 @@
                                          MaxHeight="16"
                                          Margin="0,0,8,0">
                                     <ContentControl x:Name="IconControl"
-                                                    Content="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IconSource}"
+                                                    Content="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=TabViewTemplateSettings.IconElement}"
                                                     IsTabStop="False" />
                                 </Viewbox>
 

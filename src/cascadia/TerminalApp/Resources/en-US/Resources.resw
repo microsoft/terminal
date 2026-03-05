@@ -442,6 +442,10 @@
   <data name="NewTabRun.Text" xml:space="preserve">
     <value>Open a new tab</value>
   </data>
+  <data name="TabNewButtonText" xml:space="preserve">
+    <value>New tab</value>
+    <comment>Label for the new tab button in vertical tab strip mode.</comment>
+  </data>
   <data name="NewPaneRun.Text" xml:space="preserve">
     <value>Alt+Click to split the current window</value>
   </data>

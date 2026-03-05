@@ -85,29 +85,34 @@
 
         <local:AboutDialog x:Name="AboutDialog"
                            Grid.Row="2"
+                              Grid.ColumnSpan="3"
                            x:Load="False" />
 
         <ContentDialog x:Name="QuitDialog"
                        x:Uid="QuitDialog"
                        Grid.Row="2"
+                              Grid.ColumnSpan="3"
                        x:Load="False"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseAllDialog"
                        x:Uid="CloseAllDialog"
                        Grid.Row="2"
+                              Grid.ColumnSpan="3"
                        x:Load="False"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"
                        Grid.Row="2"
+                              Grid.ColumnSpan="3"
                        x:Load="False"
                        DefaultButton="Close" />
 
         <ContentDialog x:Name="MultiLinePasteDialog"
                        x:Uid="MultiLinePasteDialog"
                        Grid.Row="2"
+                              Grid.ColumnSpan="3"
                        x:Load="False"
                        DefaultButton="Primary">
             <StackPanel>
@@ -128,12 +133,14 @@
         <ContentDialog x:Name="LargePasteDialog"
                        x:Uid="LargePasteDialog"
                        Grid.Row="2"
+                              Grid.ColumnSpan="3"
                        x:Load="False"
                        DefaultButton="Primary" />
 
         <ContentDialog x:Name="ControlNoticeDialog"
                        x:Uid="ControlNoticeDialog"
                        Grid.Row="2"
+                              Grid.ColumnSpan="3"
                        x:Load="False"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
@@ -148,6 +155,7 @@
         <ContentDialog x:Name="CouldNotOpenUriDialog"
                        x:Uid="CouldNotOpenUriDialog"
                        Grid.Row="2"
+                       Grid.ColumnSpan="3"
                        x:Load="False"
                        DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True"
@@ -163,6 +171,7 @@
 
         <local:CommandPalette x:Name="CommandPaletteElement"
                               Grid.Row="2"
+                              Grid.ColumnSpan="3"
                               VerticalAlignment="Stretch"
                               x:Load="False"
                               PreviewKeyDown="_KeyDownHandler"
@@ -170,6 +179,7 @@
 
         <local:SuggestionsControl x:Name="SuggestionsElement"
                                   Grid.Row="2"
+                              Grid.ColumnSpan="3"
                                   HorizontalAlignment="Left"
                                   VerticalAlignment="Top"
                                   x:Load="False"
