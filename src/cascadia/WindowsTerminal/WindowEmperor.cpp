@@ -381,6 +381,21 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         __assume(false);
     }
 
+    // When running without package identity, set an explicit AppUserModelID so
+    // that toast notifications (and other shell features) work correctly.
+    if (!IsPackaged())
+    {
+#if defined(WT_BRANDING_RELEASE)
+        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(L"Microsoft.WindowsTerminal"));
+#elif defined(WT_BRANDING_PREVIEW)
+        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(L"Microsoft.WindowsTerminalPreview"));
+#elif defined(WT_BRANDING_CANARY)
+        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(L"Microsoft.WindowsTerminalCanary"));
+#else
+        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(L"Microsoft.WindowsTerminalDev"));
+#endif
+    }
+
     _app = winrt::TerminalApp::App{};
     _app.Logic().ReloadSettings();
 
