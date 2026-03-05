@@ -43,7 +43,8 @@
         </local:SettingContainer>
 
         <!--  Ambiguous Width  -->
-        <local:SettingContainer x:Uid="Globals_AmbiguousWidth">
+        <local:SettingContainer x:Name="AmbiguousWidth"
+                                x:Uid="Globals_AmbiguousWidth">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.AmbiguousWidthList}"

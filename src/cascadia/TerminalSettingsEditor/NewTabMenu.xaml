@@ -329,7 +329,8 @@
             </local:SettingContainer>
 
             <!--  Icon  -->
-            <local:SettingContainer x:Uid="NewTabMenu_CurrentFolderIcon"
+            <local:SettingContainer x:Name="CurrentFolderIcon"
+                                    x:Uid="NewTabMenu_CurrentFolderIcon"
                                     CurrentValueAccessibleName="{x:Bind ViewModel.CurrentFolderLocalizedIcon, Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
                 <local:SettingContainer.CurrentValue>
@@ -497,7 +498,8 @@
             </local:SettingContainer>
 
             <!--  Add Remaining Profiles  -->
-            <local:SettingContainer x:Uid="NewTabMenu_AddRemainingProfiles"
+            <local:SettingContainer x:Name="AddRemainingProfiles"
+                                    x:Uid="NewTabMenu_AddRemainingProfiles"
                                     FontIconGlyph="&#xE902;"
                                     Style="{StaticResource SettingContainerWithIcon}">
                 <Button x:Name="AddRemainingProfilesButton"
