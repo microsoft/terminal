@@ -234,6 +234,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(WriteToClipboard,         IInspectable, Control::WriteToClipboardEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard,       IInspectable, Control::PasteFromClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(ShowNotification,         IInspectable, Control::ShowNotificationEventArgs);
 
         // clang-format on
 
@@ -476,6 +477,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Control::ControlCore::CompletionsChanged_revoker CompletionsChanged;
             Control::ControlCore::RestartTerminalRequested_revoker RestartTerminalRequested;
             Control::ControlCore::SearchMissingCommand_revoker SearchMissingCommand;
+            Control::ControlCore::ShowNotification_revoker ShowNotification;
             Control::ControlCore::RefreshQuickFixUI_revoker RefreshQuickFixUI;
             Control::ControlCore::WindowSizeChanged_revoker WindowSizeChanged;
 

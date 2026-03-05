@@ -24,11 +24,13 @@ namespace winrt::TerminalApp::implementation
     struct NotificationEventArgs : public NotificationEventArgsT<NotificationEventArgs>
     {
     public:
-        NotificationEventArgs(winrt::Microsoft::Terminal::Control::OutputNotificationStyle style, bool onlyWhenInactive = false) :
-            Style(style), OnlyWhenInactive(onlyWhenInactive) {}
+        NotificationEventArgs(winrt::Microsoft::Terminal::Control::OutputNotificationStyle style, bool onlyWhenInactive = false, const winrt::hstring& title = {}, const winrt::hstring& body = {}) :
+            Style(style), OnlyWhenInactive(onlyWhenInactive), Title(title), Body(body) {}
 
         til::property<winrt::Microsoft::Terminal::Control::OutputNotificationStyle> Style;
         til::property<bool> OnlyWhenInactive;
+        til::property<winrt::hstring> Title;
+        til::property<winrt::hstring> Body;
     };
 
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>, BasicPaneEvents
@@ -96,6 +98,7 @@ namespace winrt::TerminalApp::implementation
             winrt::Microsoft::Terminal::Control::TermControl::SetTaskbarProgress_revoker _SetTaskbarProgress;
             winrt::Microsoft::Terminal::Control::TermControl::ReadOnlyChanged_revoker _ReadOnlyChanged;
             winrt::Microsoft::Terminal::Control::TermControl::FocusFollowMouseRequested_revoker _FocusFollowMouseRequested;
+            winrt::Microsoft::Terminal::Control::TermControl::ShowNotification_revoker _ShowNotification;
 
         } _controlEvents;
         void _setupControlEvents();
@@ -119,6 +122,7 @@ namespace winrt::TerminalApp::implementation
         void _controlSetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _controlReadOnlyChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _controlFocusFollowMouseRequested(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+        void _controlShowNotification(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Microsoft::Terminal::Control::ShowNotificationEventArgs& args);
 
         void _closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _restartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);

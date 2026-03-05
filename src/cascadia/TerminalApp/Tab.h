@@ -124,7 +124,7 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<TerminalApp::Tab, IInspectable> ActivePaneChanged;
         til::event<winrt::delegate<>> TabRaiseVisualBell;
-        til::event<winrt::delegate<winrt::hstring /*title*/, uint32_t /*tabIndex*/>> TabToastNotificationRequested;
+        til::event<winrt::delegate<winrt::hstring /*title*/, winrt::hstring /*body*/, uint32_t /*tabIndex*/>> TabToastNotificationRequested;
         til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
 
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.

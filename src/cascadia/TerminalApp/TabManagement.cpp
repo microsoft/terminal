@@ -153,10 +153,10 @@ namespace winrt::TerminalApp::implementation
 
         // When a tab requests a desktop toast notification (OutputNotificationStyle::Notification),
         // send the toast and handle activation by summoning this window and switching to the tab.
-        newTabImpl->TabToastNotificationRequested([weakThis{ get_weak() }](const winrt::hstring& title, uint32_t tabIndex) {
+        newTabImpl->TabToastNotificationRequested([weakThis{ get_weak() }](const winrt::hstring& title, const winrt::hstring& body, uint32_t tabIndex) {
             if (const auto page{ weakThis.get() })
             {
-                page->_SendDesktopNotification(title, tabIndex);
+                page->_SendDesktopNotification(title, body, tabIndex);
             }
         });
 
@@ -1202,25 +1202,37 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - tabTitle: The title of the tab to display in the notification.
     // - tabIndex: The index of the tab to switch to when the toast is activated.
-    void TerminalPage::_SendDesktopNotification(const winrt::hstring& tabTitle, uint32_t tabIndex)
+    void TerminalPage::_SendDesktopNotification(const winrt::hstring& tabTitle, const winrt::hstring& body, uint32_t tabIndex)
     {
         // Build the notification message.
-        // Use the window name if available for context; otherwise just use the tab title.
-        // Use the raw WindowName (not WindowNameForDisplay) so we don't include
-        // the "<unnamed window>" placeholder in the notification body.
-        const auto windowName = _WindowProperties ? _WindowProperties.WindowName() : winrt::hstring{};
+        // If a custom body is provided (e.g. from OSC 777), use the title/body directly.
+        // Otherwise, build the standard tab-activity notification message.
+        winrt::hstring notificationTitle;
         winrt::hstring message;
-        if (!windowName.empty())
+        if (!body.empty())
         {
-            message = RS_fmt(L"NotificationMessage_TabActivityInWindow", std::wstring_view{ tabTitle }, std::wstring_view{ windowName });
+            notificationTitle = tabTitle;
+            message = body;
         }
         else
         {
-            message = RS_fmt(L"NotificationMessage_TabActivity", std::wstring_view{ tabTitle });
+            // Use the window name if available for context, otherwise just use the tab title.
+            // Use the raw WindowName (not WindowNameForDisplay) so we don't include
+            // the "<unnamed window>" placeholder in the notification body.
+            const auto windowName = _WindowProperties ? _WindowProperties.WindowName() : winrt::hstring{};
+            if (!windowName.empty())
+            {
+                message = RS_fmt(L"NotificationMessage_TabActivityInWindow", std::wstring_view{ tabTitle }, std::wstring_view{ windowName });
+            }
+            else
+            {
+                message = RS_fmt(L"NotificationMessage_TabActivity", std::wstring_view{ tabTitle });
+            }
+            notificationTitle = RS_(L"NotificationTitle");
         }
 
         implementation::DesktopNotificationArgs args;
-        args.Title = RS_(L"NotificationTitle");
+        args.Title = notificationTitle;
         args.Message = message;
         args.TabIndex = tabIndex;
 

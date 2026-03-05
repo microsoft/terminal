@@ -1191,7 +1191,7 @@ namespace winrt::TerminalApp::implementation
                     // sending repeated toasts for repeated BEL characters.
                     if (bellArgs.SendNotification() && !tab->_tabStatus.BellIndicator())
                     {
-                        tab->TabToastNotificationRequested.raise(tab->Title(), tab->TabViewIndex());
+                        tab->TabToastNotificationRequested.raise(tab->Title(), L"", tab->TabViewIndex());
                     }
 
                     // Show the bell indicator in the tab header
@@ -1259,7 +1259,16 @@ namespace winrt::TerminalApp::implementation
                         // Request a desktop toast notification.
                         // TerminalPage subscribes to this event and handles sending the toast
                         // and processing its activation (summoning the window + switching tabs).
-                        tab->TabToastNotificationRequested.raise(tab->Title(), tab->TabViewIndex());
+                        const auto notifTitle = notifArgs.Title();
+                        const auto notifBody = notifArgs.Body();
+                        if (!notifTitle.empty())
+                        {
+                            tab->TabToastNotificationRequested.raise(notifTitle, notifBody, tab->TabViewIndex());
+                        }
+                        else
+                        {
+                            tab->TabToastNotificationRequested.raise(tab->Title(), L"", tab->TabViewIndex());
+                        }
                     }
                 }
             });
