@@ -163,7 +163,7 @@ internal class FragmentTools
         Previews changes to an existing fragment extension WITHOUT writing any changes.
         Returns a unified diff showing exactly what would change.
         Always call this before UpdateFragment so the user can review the diff.
-        Display the returned diff to the user in your response as a code block so they can review it.
+        IMPORTANT: You MUST display the returned diff inside a ```diff fenced code block.
         """)]
     public static string PreviewUpdateFragment(
         [Description("The app/extension name (folder name under the Fragments directory)")] string appName,

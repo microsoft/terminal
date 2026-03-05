@@ -72,10 +72,11 @@ internal class SettingsTools
         Previews a JSON Patch (RFC 6902) against Windows Terminal settings.json WITHOUT writing any changes.
         Returns a unified diff showing exactly what would change.
         Always call this before ApplySettingsChange so the user can review the diff.
-        Display the returned diff to the user in your response as a code block so they can review it.
-        The patch is an array of operations, each with "op", "path", and optionally "value" or "from".
+        IMPORTANT: You MUST display the returned diff inside a ```diff fenced code block.
         Supported ops: "add", "remove", "replace", "move", "copy", "test".
         Example: [{"op": "replace", "path": "/theme", "value": "dark"}]
+        When adding or modifying keybindings, ALWAYS check the existing keybindings array for conflicts
+        with the same key combination before applying. Warn the user if a conflict is found.
         """)]
     public static string PreviewSettingsChange(
         [Description("A JSON Patch document (RFC 6902): an array of operations to apply")] string patchJson,

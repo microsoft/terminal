@@ -16,7 +16,10 @@ public static class Program
             .AddMcpServer()
             .WithStdioServerTransport()
             .WithTools<SettingsTools>()
-            .WithTools<FragmentTools>();
+            .WithTools<FragmentTools>()
+            .WithTools<OhMyPoshTools>()
+            .WithTools<ShellIntegrationTools>()
+            .WithTools<SnippetTools>();
 
         await builder.Build().RunAsync();
     }
