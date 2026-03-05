@@ -166,9 +166,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
         std::optional<bool> legacyConfirmClose;
         if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
         {
-            _ConfirmCloseOn = legacyConfirmClose.value()
-                ? winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::MultipleTabs | winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::MultiplePanes
-                : winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::Never;
+            _ConfirmCloseOn = legacyConfirmClose.value() ? winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::MultipleTabs | winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::MultiplePanes : winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::Never;
             _fixupsAppliedDuringLoad = true;
         }
     }

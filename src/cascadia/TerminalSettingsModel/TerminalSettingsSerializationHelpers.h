@@ -95,7 +95,7 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn)
         pair_type{ "always", ValueType::Always },
         pair_type{ "multipleTabs", ValueType::MultipleTabs },
         pair_type{ "multiplePanes", ValueType::MultiplePanes },
-         // TODO GH#6549: Future - requires TermControl to expose client count
+        // TODO GH#6549: Future - requires TermControl to expose client count
         // pair_type{ "multipleProcesses", ValueType::MultipleProcesses },
     };
 
@@ -104,9 +104,7 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn)
         // Support legacy boolean: true -> MultipleTabs|MultiplePanes, false -> Never
         if (json.isBool())
         {
-            return json.asBool()
-                ? ValueType::MultipleTabs | ValueType::MultiplePanes
-                : AllClear;
+            return json.asBool() ? ValueType::MultipleTabs | ValueType::MultiplePanes : AllClear;
         }
         return BaseFlagMapper::FromJson(json);
     }
