@@ -1205,7 +1205,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_SendDesktopNotification(const winrt::hstring& tabTitle, uint32_t tabIndex)
     {
         // Build the notification message.
-        // Use the window name if available for context, otherwise just use the tab title.
+        // Use the window name if available for context; otherwise just use the tab title.
         // Use the raw WindowName (not WindowNameForDisplay) so we don't include
         // the "<unnamed window>" placeholder in the notification body.
         const auto windowName = _WindowProperties ? _WindowProperties.WindowName() : winrt::hstring{};
