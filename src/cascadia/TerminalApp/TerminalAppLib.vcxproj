@@ -65,6 +65,10 @@
       <Type>DefaultStyle</Type>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="VerticalTabViewStyle.xaml">
+      <Type>DefaultStyle</Type>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ColorPickupFlyout.xaml">
       <SubType>Designer</SubType>
     </Page>

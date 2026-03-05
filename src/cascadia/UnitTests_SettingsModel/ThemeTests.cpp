@@ -28,6 +28,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ParseNullWindowTheme);
         TEST_METHOD(ParseThemeWithNullThemeColor);
         TEST_METHOD(InvalidCurrentTheme);
+        TEST_METHOD(ParseTabPosition);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -263,6 +264,105 @@ namespace SettingsModelUnitTests
             auto deserializationErrorMessage = til::u8u16(e.what());
             Log::Comment(NoThrowString().Format(deserializationErrorMessage.c_str()));
             throw e;
+        }
+    }
+
+    void ThemeTests::ParseTabPosition()
+    {
+        Log::Comment(L"Verify tabPosition round-trips through JSON serialization.");
+
+        // Test each of the four tab positions
+        static constexpr std::string_view leftTheme{ R"({
+            "name": "leftTabs",
+            "window":
+            {
+                "tabPosition": "left"
+            }
+        })" };
+
+        static constexpr std::string_view rightTheme{ R"({
+            "name": "rightTabs",
+            "window":
+            {
+                "tabPosition": "right"
+            }
+        })" };
+
+        static constexpr std::string_view bottomTheme{ R"({
+            "name": "bottomTabs",
+            "window":
+            {
+                "tabPosition": "bottom"
+            }
+        })" };
+
+        static constexpr std::string_view topTheme{ R"({
+            "name": "topTabs",
+            "window":
+            {
+                "tabPosition": "top"
+            }
+        })" };
+
+        // Test default (no tabPosition specified)
+        static constexpr std::string_view defaultTheme{ R"({
+            "name": "defaultTabs",
+            "window":
+            {
+                "useMica": false
+            }
+        })" };
+
+        // Parse and verify "left"
+        {
+            const auto schemeObject = VerifyParseSucceeded(leftTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(L"leftTabs", theme->Name());
+            VERIFY_IS_NOT_NULL(theme->Window());
+            VERIFY_ARE_EQUAL(Settings::Model::TabPosition::Left, theme->Window().TabPosition());
+
+            // Re-serialize and verify the key is present
+            const auto reJson = theme->ToJson();
+            VERIFY_IS_TRUE(reJson.isMember("window"));
+            VERIFY_IS_TRUE(reJson["window"].isMember("tabPosition"));
+            VERIFY_ARE_EQUAL("left", reJson["window"]["tabPosition"].asString());
+        }
+
+        // Parse and verify "right"
+        {
+            const auto schemeObject = VerifyParseSucceeded(rightTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::TabPosition::Right, theme->Window().TabPosition());
+
+            const auto reJson = theme->ToJson();
+            VERIFY_ARE_EQUAL("right", reJson["window"]["tabPosition"].asString());
+        }
+
+        // Parse and verify "bottom"
+        {
+            const auto schemeObject = VerifyParseSucceeded(bottomTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::TabPosition::Bottom, theme->Window().TabPosition());
+
+            const auto reJson = theme->ToJson();
+            VERIFY_ARE_EQUAL("bottom", reJson["window"]["tabPosition"].asString());
+        }
+
+        // Parse and verify "top"
+        {
+            const auto schemeObject = VerifyParseSucceeded(topTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::TabPosition::Top, theme->Window().TabPosition());
+
+            const auto reJson = theme->ToJson();
+            VERIFY_ARE_EQUAL("top", reJson["window"]["tabPosition"].asString());
+        }
+
+        // Parse default — should be Top
+        {
+            const auto schemeObject = VerifyParseSucceeded(defaultTheme);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_ARE_EQUAL(Settings::Model::TabPosition::Top, theme->Window().TabPosition());
         }
     }
 }

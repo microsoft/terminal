@@ -1,0 +1,268 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+
+    Retemplated styles for vertical (Left/Right) tab strip orientation.
+    These styles override the horizontal TabView layout to stack tabs vertically
+    in a sidebar configuration.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+                    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives">
+
+    <!--
+        VerticalTabViewListViewStyle:
+        Override the ItemsPanel to use vertical orientation and switch scrolling
+        from horizontal to vertical.
+    -->
+    <Style x:Key="VerticalTabViewListViewStyle"
+           TargetType="primitives:TabViewListView">
+        <Setter Property="TabNavigation" Value="Once" />
+        <Setter Property="IsItemClickEnabled" Value="True" />
+        <Setter Property="IsSwipeEnabled" Value="False" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollMode" Value="Enabled" />
+        <Setter Property="ScrollViewer.IsHorizontalRailEnabled" Value="False" />
+        <Setter Property="ScrollViewer.IsVerticalRailEnabled" Value="True" />
+        <Setter Property="SingleSelectionFollowsFocus" Value="False" />
+        <Setter Property="ItemContainerTransitions">
+            <Setter.Value>
+                <TransitionCollection>
+                    <AddDeleteThemeTransition />
+                    <ContentThemeTransition />
+                    <ReorderThemeTransition />
+                </TransitionCollection>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        VerticalTabViewStyle:
+        Retemplate the TabView control for a vertical sidebar layout.
+        Instead of 4 columns in TabContainerGrid, we use 3 rows:
+          Row 0 (Auto): Header (elevation shield)
+          Row 1 (*):    Tab list (fills vertical space)
+          Row 2 (Auto): Footer (new tab button)
+        The TabContentPresenter is removed — WT doesn't use it.
+    -->
+    <Style x:Key="VerticalTabViewStyle"
+           TargetType="mux:TabView">
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="TabNavigation" Value="Once" />
+        <Setter Property="IsAddTabButtonVisible" Value="False" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="mux:TabView">
+                    <Grid x:Name="TabContainerGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!--  Header (elevation shield, etc.)  -->
+                        <ContentPresenter x:Name="LeftContentPresenter"
+                                          Grid.Row="0"
+                                          Content="{TemplateBinding TabStripHeader}"
+                                          ContentTemplate="{TemplateBinding TabStripHeaderTemplate}" />
+
+                        <!--  Tab list  -->
+                        <primitives:TabViewListView x:Name="TabListView"
+                                                    Grid.Row="1"
+                                                    AllowDrop="{TemplateBinding AllowDropTabs}"
+                                                    CanDragItems="{TemplateBinding CanDragTabs}"
+                                                    CanReorderItems="{TemplateBinding CanReorderTabs}"
+                                                    ItemTemplate="{TemplateBinding TabItemTemplate}"
+                                                    ItemTemplateSelector="{TemplateBinding TabItemTemplateSelector}"
+                                                    ItemsSource="{TemplateBinding TabItemsSource}"
+                                                    Style="{StaticResource VerticalTabViewListViewStyle}" />
+
+                        <!--  Footer (new tab button)  -->
+                        <ContentPresenter x:Name="RightContentPresenter"
+                                          Grid.Row="2"
+                                          Content="{TemplateBinding TabStripFooter}"
+                                          ContentTemplate="{TemplateBinding TabStripFooterTemplate}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        VerticalTabViewItemStyle:
+        Simplified TabViewItem template for vertical tabs.
+        Removes curved corner arcs, replaces with rounded Border and a
+        left-edge accent bar for the selected tab. Tabs fill strip width.
+    -->
+    <Style x:Key="VerticalTabViewItemStyle"
+           TargetType="mux:TabViewItem">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
+        <Setter Property="Padding" Value="8,6,8,6" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="mux:TabViewItem">
+                    <Grid x:Name="LayoutRoot"
+                          Margin="2,1,2,1">
+
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal">
+                                    <VisualState.Setters>
+                                        <Setter Target="TabContainer.Background" Value="Transparent" />
+                                        <Setter Target="SelectedIndicator.Opacity" Value="0" />
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundPointerOver}" />
+                                        <Setter Target="SelectedIndicator.Opacity" Value="0" />
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundPressed}" />
+                                        <Setter Target="SelectedIndicator.Opacity" Value="0" />
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="Selected">
+                                    <VisualState.Setters>
+                                        <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+                                        <Setter Target="SelectedIndicator.Opacity" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="PointerOverSelected">
+                                    <VisualState.Setters>
+                                        <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundSelected}" />
+                                        <Setter Target="SelectedIndicator.Opacity" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="PressedSelected">
+                                    <VisualState.Setters>
+                                        <Setter Target="TabContainer.Background" Value="{ThemeResource TabViewItemHeaderBackgroundPressed}" />
+                                        <Setter Target="SelectedIndicator.Opacity" Value="1" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+
+                            <VisualStateGroup x:Name="CloseButtonOverlayModeStates">
+                                <VisualState x:Name="CloseButtonVisible" />
+                                <VisualState x:Name="CloseButtonCollapsed">
+                                    <VisualState.Setters>
+                                        <Setter Target="CloseButton.Visibility" Value="Collapsed" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+
+                            <VisualStateGroup x:Name="TabViewWidthModeStates">
+                                <!--  In vertical mode, tabs always stretch to full width  -->
+                                <VisualState x:Name="StandardWidth" />
+                                <VisualState x:Name="Compact" />
+                            </VisualStateGroup>
+
+                            <VisualStateGroup x:Name="IconStates">
+                                <VisualState x:Name="Icon" />
+                                <VisualState x:Name="NoIcon">
+                                    <VisualState.Setters>
+                                        <Setter Target="IconBox.Visibility" Value="Collapsed" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+
+                            <VisualStateGroup x:Name="DisabledStates">
+                                <VisualState x:Name="Enabled" />
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Opacity" Value="{ThemeResource ListViewItemDisabledThemeOpacity}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+
+                        <!--  Selected tab background  -->
+                        <Border x:Name="TabContainer"
+                                Background="Transparent"
+                                CornerRadius="{ThemeResource ControlCornerRadius}"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="IconColumn"
+                                                      Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!--  Tab icon  -->
+                                <Viewbox x:Name="IconBox"
+                                         Grid.Column="0"
+                                         MaxWidth="16"
+                                         MaxHeight="16"
+                                         Margin="0,0,8,0">
+                                    <ContentControl x:Name="IconControl"
+                                                    Content="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IconSource}"
+                                                    IsTabStop="False" />
+                                </Viewbox>
+
+                                <!--  Tab title  -->
+                                <ContentPresenter x:Name="ContentPresenter"
+                                                  Grid.Column="1"
+                                                  HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  Content="{TemplateBinding Header}"
+                                                  ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                                  ContentTransitions="{TemplateBinding ContentTransitions}"
+                                                  FontWeight="{TemplateBinding FontWeight}"
+                                                  TextWrapping="NoWrap" />
+
+                                <!--  Close button  -->
+                                <Button x:Name="CloseButton"
+                                        Grid.Column="2"
+                                        Width="20"
+                                        Height="20"
+                                        Margin="4,0,0,0"
+                                        Padding="0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Content="&#xE711;"
+                                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                        FontSize="10"
+                                        IsTextScaleFactorEnabled="False" />
+                            </Grid>
+                        </Border>
+
+                        <!--  Left-edge accent bar for selected tab  -->
+                        <Border x:Name="SelectedIndicator"
+                                Width="3"
+                                Height="16"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                CornerRadius="2"
+                                Opacity="0" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

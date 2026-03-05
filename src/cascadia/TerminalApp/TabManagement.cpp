@@ -255,9 +255,38 @@ namespace winrt::TerminalApp::implementation
         }
         if (_tabRow)
         {
-            // collapse/show the row that the tabs are in.
-            // NaN is the special value XAML uses for "Auto" sizing.
-            _tabRow.Height(isVisible ? NAN : 0);
+            if (_tabPosition == Settings::Model::TabPosition::Left ||
+                _tabPosition == Settings::Model::TabPosition::Right)
+            {
+                // For left/right positions, collapse the column width instead of row height.
+                // Also hide the splitter.
+                _tabRow.Width(isVisible ? std::numeric_limits<double>::quiet_NaN() : 0);
+                if (_tabStripSplitter)
+                {
+                    _tabStripSplitter.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
+                }
+                // Collapse or restore the tab strip column
+                auto tabStripColIdx = (_tabPosition == Settings::Model::TabPosition::Left) ? 0u : 2u;
+                auto root = this->Root();
+                if (root.ColumnDefinitions().Size() > tabStripColIdx)
+                {
+                    auto col = root.ColumnDefinitions().GetAt(tabStripColIdx);
+                    if (isVisible)
+                    {
+                        col.Width(WUX::GridLengthHelper::FromPixels(200));
+                    }
+                    else
+                    {
+                        col.Width(WUX::GridLengthHelper::FromPixels(0));
+                    }
+                }
+            }
+            else
+            {
+                // Top/Bottom: collapse/show the row that the tabs are in.
+                // NaN is the special value XAML uses for "Auto" sizing.
+                _tabRow.Height(isVisible ? NAN : 0);
+            }
         }
     }
 

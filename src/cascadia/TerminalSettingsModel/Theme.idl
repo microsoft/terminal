@@ -11,6 +11,14 @@ namespace Microsoft.Terminal.Settings.Model
         Monochrome
     };
 
+    enum TabPosition
+    {
+        Top,
+        Bottom,
+        Left,
+        Right
+    };
+
     enum ThemeColorType
     {
         Accent,
@@ -64,6 +72,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean RainbowFrame { get; };
         ThemeColor Frame { get; };
         ThemeColor UnfocusedFrame { get; };
+        TabPosition TabPosition { get; };
     }
 
     runtimeclass TabRowTheme {
