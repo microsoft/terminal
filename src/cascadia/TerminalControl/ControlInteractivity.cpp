@@ -314,14 +314,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else
             {
-                // Try to copy the text and clear the selection
-                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, _core->Settings().CopyFormatting());
-                _core->ClearSelection();
-                if (_core->CopyOnSelect() || !successfulCopy)
+                if (_core->CopyOnSelect())
                 {
-                    // CopyOnSelect: right click always pastes!
-                    // Otherwise: no selection --> paste
+                    // GH#19942: When copyOnSelect is enabled, the selection
+                    // was already copied to the clipboard when the user
+                    // released the left mouse button. Don't re-copy it on
+                    // right-click, as that would overwrite whatever the user
+                    // may have subsequently copied from another application.
+                    // Just clear the selection and paste.
+                    _core->ClearSelection();
                     RequestPasteTextFromClipboard();
+                }
+                else
+                {
+                    // Try to copy the text and clear the selection
+                    const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, _core->Settings().CopyFormatting());
+                    _core->ClearSelection();
+                    if (!successfulCopy)
+                    {
+                        // no selection --> paste
+                        RequestPasteTextFromClipboard();
+                    }
                 }
             }
         }
