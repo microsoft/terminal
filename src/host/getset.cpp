@@ -99,7 +99,7 @@ void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& m
 // Arguments:
 // - context - The output buffer concerned
 // - data - Receives structure filled with metadata about the output buffer
-void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
+void ApiRoutines::GetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
                                                    CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
     try

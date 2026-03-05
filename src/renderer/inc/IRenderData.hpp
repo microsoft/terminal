@@ -68,7 +68,7 @@ namespace Microsoft::Console::Render
         virtual std::vector<size_t> GetPatternId(const til::point location) const = 0;
 
         // This block used to be IUiaData.
-        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept = 0;
+        virtual std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) noexcept = 0;
         virtual bool IsSelectionActive() const = 0;
         virtual bool IsBlockSelection() const = 0;
         virtual void ClearSelection() = 0;

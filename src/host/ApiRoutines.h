@@ -129,7 +129,7 @@ public:
                                                    const bool isVisible) noexcept override;
 
     //// driver will pare down for non-Ex method
-    void GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
+    void GetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
                                           CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept override;
 
     [[nodiscard]] HRESULT SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
