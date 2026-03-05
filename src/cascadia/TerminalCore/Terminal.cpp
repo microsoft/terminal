@@ -751,7 +751,6 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
 
                 // This changed the scrollbar marks - raise a notification to update them
                 _NotifyScrollEvent();
-
             }
             // regardless, start notify that we started command output
             if (_pfnOutputStarted)

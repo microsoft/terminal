@@ -278,7 +278,7 @@ namespace winrt::TerminalApp::implementation
     // - <unused>
     // Method Description:
     // - Plays the notification sound using the profile's BellSound setting if
-    //   configured, otherwise falls back to the system "Critical Stop" sound.
+    //   configured; otherwise falls back to the system "Critical Stop" sound.
     //   Reused by the warning bell handler, NotifyOnNextPrompt, and
     //   NotifyOnInactiveOutput (called from Tab after the active-pane check).
     void TerminalPaneContent::PlayNotificationSound()

@@ -1207,11 +1207,11 @@ namespace winrt::TerminalApp::implementation
         // Build the notification message.
         // If a custom body is provided (e.g. from OSC 777), use the title/body directly.
         // Otherwise, build the standard tab-activity notification message.
-        winrt::hstring notifTitle;
+        winrt::hstring notificationTitle;
         winrt::hstring message;
         if (!body.empty())
         {
-            notifTitle = tabTitle;
+            notificationTitle = tabTitle;
             message = body;
         }
         else
@@ -1228,11 +1228,11 @@ namespace winrt::TerminalApp::implementation
             {
                 message = RS_fmt(L"NotificationMessage_TabActivity", std::wstring_view{ tabTitle });
             }
-            notifTitle = RS_(L"NotificationTitle");
+            notificationTitle = RS_(L"NotificationTitle");
         }
 
         implementation::DesktopNotificationArgs args;
-        args.Title = notifTitle;
+        args.Title = notificationTitle;
         args.Message = message;
         args.TabIndex = tabIndex;
 
