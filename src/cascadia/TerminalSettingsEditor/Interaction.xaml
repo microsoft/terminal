@@ -135,11 +135,18 @@
             <TextBlock x:Uid="Globals_WarningsHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-            <!--  Close All Tabs Warning  -->
-            <local:SettingContainer x:Name="ConfirmCloseAllTabs"
-                                    x:Uid="Globals_ConfirmCloseAllTabs">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.ConfirmCloseAllTabs, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            <!--  Confirm Close On  -->
+            <local:SettingContainer x:Name="ConfirmCloseOn"
+                                    x:Uid="Globals_ConfirmCloseOn"
+                                    CurrentValue="{x:Bind ViewModel.ConfirmCloseOnPreview, Mode=OneWay}">
+                <StackPanel>
+                    <CheckBox x:Uid="Globals_ConfirmCloseOnAlways"
+                              IsChecked="{x:Bind ViewModel.IsConfirmCloseOnFlagSet(1), BindBack=ViewModel.SetConfirmCloseOnAlways, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Globals_ConfirmCloseOnMultipleTabs"
+                              IsChecked="{x:Bind ViewModel.IsConfirmCloseOnFlagSet(2), BindBack=ViewModel.SetConfirmCloseOnMultipleTabs, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Globals_ConfirmCloseOnMultiplePanes"
+                              IsChecked="{x:Bind ViewModel.IsConfirmCloseOnFlagSet(4), BindBack=ViewModel.SetConfirmCloseOnMultiplePanes, Mode=TwoWay}" />
+                </StackPanel>
             </local:SettingContainer>
 
             <!--  Input Service Warning  -->

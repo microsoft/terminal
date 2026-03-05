@@ -2197,6 +2197,26 @@
     <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
+  <data name="Globals_ConfirmCloseOn.Header" xml:space="preserve">
+    <value>Confirm before closing</value>
+    <comment>Header for a group of checkboxes controlling when to show a confirmation dialog before closing.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseOnAlways.Content" xml:space="preserve">
+    <value>Always</value>
+    <comment>Checkbox label: always confirm before closing a window, tab, or pane.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseOnMultipleTabs.Content" xml:space="preserve">
+    <value>Multiple tabs</value>
+    <comment>Checkbox label: confirm before closing a window with more than one tab.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseOnMultiplePanes.Content" xml:space="preserve">
+    <value>Multiple panes</value>
+    <comment>Checkbox label: confirm before closing a tab with more than one pane.</comment>
+  </data>
+  <data name="Globals_ConfirmCloseOnNever" xml:space="preserve">
+    <value>Never</value>
+    <comment>Preview text shown when no confirm-close-on flags are set.</comment>
+  </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
   </data>

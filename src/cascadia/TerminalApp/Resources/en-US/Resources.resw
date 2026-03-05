@@ -514,6 +514,24 @@
   <data name="CloseAllDialog.Title" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="CloseTabDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseTabDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close tab</value>
+  </data>
+  <data name="CloseTabDialog.Title" xml:space="preserve">
+    <value>Do you want to close this tab?</value>
+  </data>
+  <data name="ClosePaneDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="ClosePaneDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close pane</value>
+  </data>
+  <data name="ClosePaneDialog.Title" xml:space="preserve">
+    <value>Do you want to close this pane?</value>
+  </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>

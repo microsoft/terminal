@@ -160,7 +160,18 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs) || _fixupsAppliedDuringLoad;
+    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
+    // "confirmCloseOn" flags enum. true -> MultipleTabs|MultiplePanes, false -> Never.
+    {
+        std::optional<bool> legacyConfirmClose;
+        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        {
+            _ConfirmCloseOn = legacyConfirmClose.value()
+                ? winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::MultipleTabs | winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::MultiplePanes
+                : winrt::Microsoft::Terminal::Settings::Model::ConfirmCloseOn::Never;
+            _fixupsAppliedDuringLoad = true;
+        }
+    }
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
