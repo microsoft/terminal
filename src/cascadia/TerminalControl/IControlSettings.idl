@@ -29,6 +29,23 @@ namespace Microsoft.Terminal.Control
         MinGW,
     };
 
+    [flags]
+    enum OutputNotificationStyle
+    {
+        Taskbar = 0x1,
+        Audible = 0x2,
+        Tab = 0x4,
+        Notification = 0x8,
+        All = 0xffffffff
+    };
+
+    enum AutoDetectRunningCommand
+    {
+        Disabled,
+        Automatic,
+        Progress
+    };
+
     // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety

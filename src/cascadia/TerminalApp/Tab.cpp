@@ -124,6 +124,15 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Called when the timer for the activity indicator in the tab header fires
+    // - Removes the activity indicator from the tab header
+    void Tab::_ActivityIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
+    {
+        ShowActivityIndicator(false);
+        _activityIndicatorTimer.Stop();
+    }
+
+    // Method Description:
     // - Initializes a TabViewItem for this Tab instance.
     // Arguments:
     // - <none>
@@ -329,6 +338,11 @@ namespace winrt::TerminalApp::implementation
             {
                 ShowBellIndicator(false);
             }
+            // When we gain focus, remove the activity indicator if it is active
+            if (_tabStatus.ActivityIndicator())
+            {
+                ShowActivityIndicator(false);
+            }
         }
     }
 
@@ -457,6 +471,29 @@ namespace winrt::TerminalApp::implementation
         }
 
         _bellIndicatorTimer.Start();
+    }
+
+    void Tab::ShowActivityIndicator(const bool show)
+    {
+        ASSERT_UI_THREAD();
+
+        _tabStatus.ActivityIndicator(show);
+    }
+
+    // Method Description:
+    // - Activates the timer for the activity indicator in the tab
+    // - Called if a notification was raised when the tab already has focus
+    void Tab::ActivateActivityIndicatorTimer()
+    {
+        ASSERT_UI_THREAD();
+
+        if (!_activityIndicatorTimer)
+        {
+            _activityIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+            _activityIndicatorTimer.Tick({ get_weak(), &Tab::_ActivityIndicatorTimerTick });
+        }
+
+        _activityIndicatorTimer.Start();
     }
 
     // Method Description:
@@ -1068,6 +1105,7 @@ namespace winrt::TerminalApp::implementation
             dispatcher,
             til::throttled_func_options{
                 .delay = std::chrono::milliseconds{ 200 },
+                .leading = true,
                 .trailing = true,
             },
             [weakThis]() {
@@ -1157,6 +1195,63 @@ namespace winrt::TerminalApp::implementation
                     if (tab->_focusState != WUX::FocusState::Unfocused)
                     {
                         tab->ActivateBellIndicatorTimer();
+                    }
+                }
+            });
+
+        events.NotificationRequested = content.NotificationRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto notificationArgs) -> safe_void_coroutine {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (const auto tab{ weakThisCopy.get() })
+                {
+                    // For NotifyOnInactiveOutput (OnlyWhenInactive=true), suppress
+                    // ALL notification styles when the sender is the active pane.
+                    // For NotifyOnNextPrompt (OnlyWhenInactive=false), always fire.
+                    const auto activeContent = tab->GetActiveContent();
+                    const auto isActivePaneContent = activeContent && activeContent == sender;
+
+                    if (notificationArgs.OnlyWhenInactive() && isActivePaneContent &&
+                        tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        co_return;
+                    }
+
+                    const auto style = notificationArgs.Style();
+
+                    if (WI_IsFlagSet(style, OutputNotificationStyle::Taskbar))
+                    {
+                        // Flash the taskbar button
+                        tab->TabRaiseVisualBell.raise();
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Audible))
+                    {
+                        // Play the notification sound via the pane's bell infrastructure
+                        // (respects BellSound profile setting, uses MediaPlayer, etc.)
+                        if (const auto termContent{ sender.try_as<TerminalApp::TerminalPaneContent>() })
+                        {
+                            termContent.PlayNotificationSound();
+                        }
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Tab))
+                    {
+                        tab->ShowActivityIndicator(true);
+
+                        if (tab->_focusState != WUX::FocusState::Unfocused)
+                        {
+                            tab->ActivateActivityIndicatorTimer();
+                        }
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Notification))
+                    {
+                        // Request a desktop toast notification.
+                        // TerminalPage subscribes to this event and handles sending the toast
+                        // and processing its activation (summoning the window + switching tabs).
+                        tab->TabToastNotificationRequested.raise(tab->Title(), tab->TabViewIndex());
                     }
                 }
             });
@@ -1392,6 +1487,11 @@ namespace winrt::TerminalApp::implementation
                 if (tab->_tabStatus.BellIndicator())
                 {
                     tab->ShowBellIndicator(false);
+                }
+                // Also remove the activity indicator
+                if (tab->_tabStatus.ActivityIndicator())
+                {
+                    tab->ShowActivityIndicator(false);
                 }
             }
         });

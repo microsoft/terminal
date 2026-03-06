@@ -751,6 +751,11 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
                 // This changed the scrollbar marks - raise a notification to update them
                 _NotifyScrollEvent();
             }
+            // regardless, start notify that we started command output
+            if (_pfnOutputStarted)
+            {
+                _pfnOutputStarted();
+            }
         }
     }
 
@@ -1263,6 +1268,16 @@ void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::f
 void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept
 {
     _pfnClearQuickFix.swap(pfn);
+}
+
+void Terminal::SetPromptStartedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnPromptStarted.swap(pfn);
+}
+
+void Terminal::SetOutputStartedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnOutputStarted.swap(pfn);
 }
 
 // Method Description:

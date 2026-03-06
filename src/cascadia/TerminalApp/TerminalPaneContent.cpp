@@ -10,6 +10,7 @@
 #include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
+#include "NotificationEventArgs.g.cpp"
 #include "TerminalPaneContent.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -34,8 +35,11 @@ namespace winrt::TerminalApp::implementation
     {
         _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_controlConnectionStateChangedHandler });
         _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlWarningBellHandler });
+        _controlEvents._PromptStarted = _control.PromptStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlPromptStartedHandler });
+        _controlEvents._OutputStarted = _control.OutputStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputStartedHandler });
         _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_closeTerminalRequestedHandler });
         _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_restartTerminalRequestedHandler });
+        _controlEvents._OutputIdle = _control.OutputIdle(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputIdleHandler });
 
         _controlEvents._TitleChanged = _control.TitleChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTitleChanged });
         _controlEvents._TabColorChanged = _control.TabColorChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTabColorChanged });
@@ -261,6 +265,30 @@ namespace winrt::TerminalApp::implementation
     //   has the 'visual' flag set
     // Arguments:
     // - <unused>
+    // Method Description:
+    // - Plays the notification sound using the profile's BellSound setting if
+    //   configured; otherwise falls back to the system "Critical Stop" sound.
+    //   Reused by the warning bell handler, NotifyOnNextPrompt, and
+    //   NotifyOnInactiveOutput (called from Tab after the active-pane check).
+    void TerminalPaneContent::PlayNotificationSound()
+    {
+        if (_profile)
+        {
+            auto sounds{ _profile.BellSound() };
+            if (sounds && sounds.Size() > 0)
+            {
+                winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                winrt::Windows::Foundation::Uri uri{ soundPath };
+                _playBellSound(uri);
+            }
+            else
+            {
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+        }
+    }
+
     void TerminalPaneContent::_controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
@@ -271,19 +299,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
                 {
-                    // Audible is set, play the sound
-                    auto sounds{ _profile.BellSound() };
-                    if (sounds && sounds.Size() > 0)
-                    {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        winrt::Windows::Foundation::Uri uri{ soundPath };
-                        _playBellSound(uri);
-                    }
-                    else
-                    {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                    }
+                    PlayNotificationSound();
                 }
 
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
@@ -296,6 +312,21 @@ namespace winrt::TerminalApp::implementation
                                     *winrt::make_self<TerminalApp::implementation::BellEventArgs>(WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar)));
             }
         }
+    }
+
+    void TerminalPaneContent::_controlPromptStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+    }
+
+    void TerminalPaneContent::_controlOutputStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+    }
+
+    void TerminalPaneContent::_controlOutputIdleHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                        const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
     }
 
     safe_void_coroutine TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
