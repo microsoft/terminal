@@ -353,6 +353,23 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 #endif
     }
 
+    // Toast notification activations launch a new unelevated instance of the
+    // app with "__fromToast" as the sole command-line argument. It will always
+    // start a new instance of our exe.
+    //
+    // However, we're also able to just handle the .Activated event on the toast
+    // itself, so we don't care about this process we're spawning. So before we
+    // do _anything_ else, if we were created for a toast, just immediately
+    // bail.
+    const auto args = commandlineToArgArray(GetCommandLineW());
+    {
+        if (args.size() == 2 && args[1] == L"__fromToast")
+        {
+            TerminateProcess(GetCurrentProcess(), 0);
+            __assume(false);
+        }
+    }
+
     // Windows Terminal is a single-instance application. Either acquire ownership
     // over the mutex, or hand off the command line to the existing instance.
     const auto mutex = acquireMutexOrAttemptHandoff(windowClassName.c_str(), nCmdShow);
@@ -405,8 +422,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
                 startIdx += 1;
             }
         }
-
-        const auto args = commandlineToArgArray(GetCommandLineW());
 
         if (args.size() == 2 && args[1] == L"-Embedding")
         {

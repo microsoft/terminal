@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
+#include "DesktopNotification.h"
 
 #include <shlobj.h>
 
