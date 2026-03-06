@@ -24,7 +24,7 @@
     "showAdminShield": true,
 
     // Miscellaneous
-    "confirmCloseAllTabs": true,
+    "warning.confirmCloseOn": ["multipleTabs", "multiplePanes"],
     "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,
