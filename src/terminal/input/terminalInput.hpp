@@ -22,7 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] static OutputType MakeOutput(const std::wstring_view& str);
         [[nodiscard]] OutputType HandleKey(const INPUT_RECORD& pInEvent);
         [[nodiscard]] OutputType HandleFocus(bool focused) const;
-        [[nodiscard]] OutputType HandleMouse(til::point position, unsigned int button, short modifierKeyState, short delta, MouseButtonState state);
+        [[nodiscard]] OutputType HandleMouse(til::point position, unsigned int button, short modifierKeyState, short delta, MouseButtonState state, til::point pixelPosition = {});
 
         enum class Mode : size_t
         {
@@ -37,6 +37,7 @@ namespace Microsoft::Console::VirtualTerminal
 
             Utf8MouseEncoding,
             SgrMouseEncoding,
+            SgrPixelMouseEncoding,
 
             DefaultMouseTracking,
             ButtonEventMouseTracking,

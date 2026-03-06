@@ -826,7 +826,7 @@ try
     TerminalInput::OutputType out;
     {
         const auto lock = _terminal->LockForReading();
-        out = _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
+        out = _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state, cursorPosition);
     }
     if (out)
     {

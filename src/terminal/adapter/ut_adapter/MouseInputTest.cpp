@@ -485,6 +485,77 @@ public:
         }
     }
 
+    TEST_METHOD(SgrPixelModeTests)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_MOUSEMOVE}")
+            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205, 0x0200}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
+        END_TEST_METHOD_PROPERTIES()
+
+        Log::Comment(L"Starting test...");
+
+        TerminalInput mouseInput;
+        unsigned int uiModifierKeystate = 0;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiModifierKeystate));
+        auto sModifierKeystate = (SHORT)uiModifierKeystate;
+        short sScrollDelta = 0;
+
+        unsigned int uiButton;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
+
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
+
+        mouseInput.SetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding, true);
+
+        // SGR-Pixel mode uses pixel coordinates instead of cell coordinates.
+        // The format is identical to SGR: ESC [ < button ; px ; py M/m
+        // where px and py are 1-based pixel positions.
+        static const til::point testPixelCoords[] = {
+            { 0, 0 },
+            { 5, 10 },
+            { 100, 200 },
+            { 1920, 1080 },
+        };
+        static const wchar_t* testPixelOutput[] = {
+            L"\x1b[<%d;1;1M",
+            L"\x1b[<%d;6;11M",
+            L"\x1b[<%d;101;201M",
+            L"\x1b[<%d;1921;1081M",
+        };
+
+        // Test with AnyEventMouseTracking to cover all button types including hovers
+        mouseInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
+        for (auto i = 0; i < ARRAYSIZE(testPixelCoords); i++)
+        {
+            const auto pixelCoord = testPixelCoords[i];
+            // Cell position doesn't matter for SGR-Pixel output; pixel position is used.
+            const til::point cellCoord{ pixelCoord.x / 8, pixelCoord.y / 16 }; // approximate cell coords
+
+            const auto expected = BuildSGRTestOutput(testPixelOutput[i], uiButton, sModifierKeystate, sScrollDelta);
+
+            VERIFY_ARE_EQUAL(expected,
+                             mouseInput.HandleMouse(cellCoord,
+                                                    uiButton,
+                                                    sModifierKeystate,
+                                                    sScrollDelta,
+                                                    {},
+                                                    pixelCoord),
+                             NoThrowString().Format(L"pixel(x,y)=(%d,%d)", pixelCoord.x, pixelCoord.y));
+        }
+
+        // Verify mutual exclusivity: enabling SgrPixelMouseEncoding should disable SgrMouseEncoding
+        mouseInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, true);
+        VERIFY_IS_FALSE(mouseInput.GetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding));
+        VERIFY_IS_TRUE(mouseInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
+
+        // And vice versa
+        mouseInput.SetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding, true);
+        VERIFY_IS_FALSE(mouseInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
+        VERIFY_IS_TRUE(mouseInput.GetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding));
+    }
+
     TEST_METHOD(ScrollWheelTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
