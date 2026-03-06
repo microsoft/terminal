@@ -292,7 +292,7 @@ bool TerminalInput::IsTrackingMouseInput() const noexcept
 // Return value:
 // - Returns an empty optional if we didn't handle the mouse event and the caller can opt to handle it in some other way.
 // - Returns a string if we successfully translated it into a VT input sequence.
-TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, const unsigned int button, const short modifierKeyState, const short delta, const MouseButtonState state)
+TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, const unsigned int button, const short modifierKeyState, const short delta, const MouseButtonState state, const til::point pixelPosition)
 {
     if (Utils::Sign(delta) != Utils::Sign(_mouseInputState.accumulatedDelta))
     {
@@ -364,6 +364,13 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
             if (_inputMode.test(Mode::Utf8MouseEncoding))
             {
                 return _GenerateUtf8Sequence(position, realButton, isHover, modifierKeyState, delta);
+            }
+            else if (_inputMode.test(Mode::SgrPixelMouseEncoding))
+            {
+                // SGR-Pixel mode (1016) uses the same format as SGR (1006),
+                // but with pixel coordinates instead of cell coordinates.
+                const auto effectiveButton = physicalButtonPressed ? realButton : button;
+                return _GenerateSGRSequence(pixelPosition, effectiveButton, _isButtonUp(button), isHover, modifierKeyState, delta);
             }
             else if (_inputMode.test(Mode::SgrMouseEncoding))
             {

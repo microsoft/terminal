@@ -623,7 +623,11 @@ bool InputBuffer::WriteMouseEvent(til::point position, const unsigned int button
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.GetActiveOutputBuffer().GetViewport().ToOrigin().Clamp(position);
 
-        if (const auto out = _termInput.HandleMouse(position, button, keyState, wheelDelta, state))
+        // Approximate pixel position from cell coordinates for SGR-Pixel mode (1016).
+        const auto fontSize = gci.GetActiveOutputBuffer().GetCurrentFont().GetSize();
+        const til::point pixelPosition{ position.x * fontSize.width, position.y * fontSize.height };
+
+        if (const auto out = _termInput.HandleMouse(position, button, keyState, wheelDelta, state, pixelPosition))
         {
             _writeString(*out);
             return true;

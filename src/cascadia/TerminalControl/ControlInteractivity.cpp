@@ -262,7 +262,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_canSendVTMouseInput(modifiers))
         {
-            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState, til::point{ pixelPosition });
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
         {
@@ -346,7 +346,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState, til::point{ pixelPosition });
             handledCompletely = true;
         }
         // GH#4603 - don't modify the selection if the pointer press didn't
@@ -445,7 +445,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState, til::point{ pixelPosition });
             return;
         }
 
@@ -508,7 +508,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                          delta.Y != 0 ? WM_MOUSEWHEEL : WM_MOUSEHWHEEL,
                                          modifiers,
                                          ::base::saturated_cast<short>(delta.Y != 0 ? delta.Y : delta.X),
-                                         buttonState);
+                                         buttonState,
+                                         til::point{ pixelPosition });
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
@@ -716,12 +717,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const unsigned int pointerUpdateKind,
                                                      const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                      const SHORT wheelDelta,
-                                                     Control::MouseButtonState buttonState)
+                                                     Control::MouseButtonState buttonState,
+                                                     const til::point pixelPosition)
     {
         const auto adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
         // If the click happened outside the active region, core should get a chance to filter it out or clamp it.
         const auto adjustedY = terminalPosition.y - adjustment;
-        return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
+        return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState), pixelPosition);
     }
 
     // Method Description:

@@ -1859,6 +1859,9 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enable);
         break;
+    case DispatchTypes::ModeParams::SGR_PIXEL_MODE:
+        _terminalInput.SetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding, enable);
+        break;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
         // ConPTY always wants to know about focus events, so let it know that it needs to re-enable this mode.
@@ -2008,6 +2011,9 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
+        break;
+    case DispatchTypes::ModeParams::SGR_PIXEL_MODE:
+        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding));
         break;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent));

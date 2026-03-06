@@ -716,12 +716,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const unsigned int uiButton,
                                      const ControlKeyStates states,
                                      const short wheelDelta,
-                                     const TerminalInput::MouseButtonState state)
+                                     const TerminalInput::MouseButtonState state,
+                                     const til::point pixelPosition)
     {
         TerminalInput::OutputType out;
         {
             const auto lock = _terminal->LockForReading();
-            out = _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
+            out = _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state, pixelPosition);
         }
         if (out)
         {

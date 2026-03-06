@@ -207,7 +207,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const unsigned int uiButton,
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,
                             const short wheelDelta,
-                            const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+                            const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state,
+                            const til::point pixelPosition = {});
         void UserScrollViewport(const int viewTop);
 
         void ClearBuffer(Control::ClearBufferType clearType);
