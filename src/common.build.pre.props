@@ -98,11 +98,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
-    <!-- TODO!!!!! REVERT MEEEEEEEE -->
-    <!-- <PreferredToolArchitecture>x64</PreferredToolArchitecture> -->
-    <PreferredToolArchitecture Condition="'$(PreferredToolArchitecture)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='ARM64'">arm64</PreferredToolArchitecture>
-    <PreferredToolArchitecture Condition="'$(PreferredToolArchitecture)'==''">x64</PreferredToolArchitecture>
-     
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
     <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
     <!--

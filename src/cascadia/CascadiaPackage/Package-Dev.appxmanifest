@@ -85,7 +85,7 @@
                 <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
               </uap3:AppExtensionHost>
         </uap3:Extension>
-        <!-- <uap3:Extension Category="windows.appExtension">
+        <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.console.host"
                 Id="OpenConsole-Dev"
                 DisplayName="OpenConsole Dev"
@@ -111,7 +111,7 @@
             <com:ComInterface>
                 <com:ProxyStub Id="DEC4804D-56D1-4F73-9FBE-6828E7C85C56" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleProxy.dll"/>
                 <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
-                <com:Interface Id="6F23DA90-15C5-4203-9DB0-64E73F1B1B00" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/> 
+                <com:Interface Id="6F23DA90-15C5-4203-9DB0-64E73F1B1B00" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/> <!-- ITerminalHandoff3 -->
                 <com:Interface Id="746E6BC0-AB05-4E38-AB14-71E86763141F" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
             </com:ComInterface>
         </com:Extension>
@@ -137,7 +137,7 @@
                   <desktop5:Verb Id="OpenTerminalDev" Clsid="52065414-e077-47ec-a3ac-1cc5455e1b54" />
                 </desktop5:ItemType>
             </desktop4:FileExplorerContextMenus>
-        </desktop4:Extension> -->
+        </desktop4:Extension>
 
       </Extensions>
 
