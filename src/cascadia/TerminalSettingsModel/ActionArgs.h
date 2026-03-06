@@ -434,6 +434,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ElevateKey, args->_Elevate);
             JsonUtils::GetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
             JsonUtils::GetValueForKey(json, ContentKey, args->_ContentId);
+            JsonUtils::GetValueForKey(json, AppendCommandLineKey, args->_AppendCommandLine);
             return *args;
         }
         static Json::Value ToJson(const Model::NewTerminalArgs& val)
@@ -456,6 +457,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, ElevateKey, args->_Elevate);
             JsonUtils::SetValueForKey(json, ReloadEnvironmentVariablesKey, args->_ReloadEnvironmentVariables);
             JsonUtils::SetValueForKey(json, ContentKey, args->_ContentId);
+            JsonUtils::SetValueForKey(json, AppendCommandLineKey, args->_AppendCommandLine);
             return json;
         }
         Model::NewTerminalArgs Copy() const
@@ -473,6 +475,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Elevate = _Elevate;
             copy->_ReloadEnvironmentVariables = _ReloadEnvironmentVariables;
             copy->_ContentId = _ContentId;
+            copy->_AppendCommandLine = _AppendCommandLine;
             return *copy;
         }
         size_t Hash() const
@@ -494,6 +497,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(Elevate());
             h.write(ReloadEnvironmentVariables());
             h.write(ContentId());
+            h.write(AppendCommandLine());
         }
     };
 
