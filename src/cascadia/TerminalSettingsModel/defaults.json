@@ -564,6 +564,7 @@
         { "command": "duplicateTab", "id": "Terminal.DuplicateTab" },
         { "command": "nextTab", "id": "Terminal.NextTab" },
         { "command": "prevTab", "id": "Terminal.PrevTab" },
+        { "command": "focusBellTab", "id": "Terminal.FocusBellTab", "keys": "ctrl+shift+b" },
         { "command": { "action": "switchToTab", "index": 0 }, "id": "Terminal.SwitchToTab0" },
         { "command": { "action": "switchToTab", "index": 1 }, "id": "Terminal.SwitchToTab1" },
         { "command": { "action": "switchToTab", "index": 2 }, "id": "Terminal.SwitchToTab2" },
