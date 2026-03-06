@@ -118,6 +118,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnWarningBell = [this] { _terminalWarningBell(); };
         _terminal->SetWarningBellCallback(pfnWarningBell);
 
+        auto pfnPromptStarted = [this] { _terminalPromptStarted(); };
+        _terminal->SetPromptStartedCallback(pfnPromptStarted);
+
+        auto pfnOutputStarted = [this] { _terminalOutputStarted(); };
+        _terminal->SetOutputStartedCallback(pfnOutputStarted);
+
         auto pfnTitleChanged = [this](auto&& PH1) { _terminalTitleChanged(std::forward<decltype(PH1)>(PH1)); };
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
@@ -1590,7 +1596,35 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Since this can only ever be triggered by output from the connection,
         // then the Terminal already has the write lock when calling this
         // callback.
+        if (_restoring)
+        {
+            return;
+        }
         WarningBell.raise(*this, nullptr);
+    }
+
+    void ControlCore::_terminalPromptStarted()
+    {
+        // Since this can only ever be triggered by output from the connection,
+        // then the Terminal already has the write lock when calling this
+        // callback.
+        if (_restoring)
+        {
+            return;
+        }
+        PromptStarted.raise(*this, nullptr);
+    }
+
+    void ControlCore::_terminalOutputStarted()
+    {
+        // Since this can only ever be triggered by output from the connection,
+        // then the Terminal already has the write lock when calling this
+        // callback.
+        if (_restoring)
+        {
+            return;
+        }
+        OutputStarted.raise(*this, nullptr);
     }
 
     // Method Description:
@@ -1650,6 +1684,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::_terminalTaskbarProgressChanged()
     {
+        if (_restoring)
+        {
+            return;
+        }
         TaskbarProgressChanged.raise(*this, nullptr);
     }
 
@@ -1667,6 +1705,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - duration - How long the note should be sustained (in microseconds).
     void ControlCore::_terminalPlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration)
     {
+        if (_restoring)
+        {
+            return;
+        }
         // The UI thread might try to acquire the console lock from time to time.
         // --> Unlock it, so the UI doesn't hang while we're busy.
         const auto suspension = _terminal->SuspendLock();
@@ -1839,8 +1881,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->SerializeMainBuffer(handle);
     }
 
-    void ControlCore::RestoreFromPath(const wchar_t* path) const
+    void ControlCore::RestoreFromPath(const wchar_t* path)
     {
+        // Suppress notifications (bells, prompt-returned, command-started, etc.)
+        // while we replay persisted buffer content. Without this, restoring a
+        // session fires the same events that live output would, producing
+        // unwanted audible bells, tab activity indicators, and taskbar flashes.
+        _restoring = true;
+        const auto restoreComplete = wil::scope_exit([&] { _restoring = false; });
+
         wil::unique_handle file{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr) };
 
         // This block of code exists temporarily to fix buffer dumps that were

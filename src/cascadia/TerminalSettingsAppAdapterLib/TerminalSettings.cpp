@@ -353,6 +353,10 @@ namespace winrt::Microsoft::Terminal::Settings
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
         _PathTranslationStyle = profile.PathTranslationStyle();
+
+        _NotifyOnInactiveOutput = profile.NotifyOnInactiveOutput();
+        _NotifyOnNextPrompt = profile.NotifyOnNextPrompt();
+        _AutoDetectRunningCommand = profile.AutoDetectRunningCommand();
     }
 
     // Method Description:

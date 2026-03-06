@@ -76,6 +76,36 @@
         }
       ]
     },
+    "OutputNotificationStyle": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "taskbar",
+              "audible",
+              "tab",
+              "notification"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "taskbar",
+            "audible",
+            "tab",
+            "notification",
+            "all",
+            "none"
+          ]
+        }
+      ]
+    },
     "BellSound": {
       "default": "",
       "description": "Sets the file location of the sound played when the application emits a BEL character. If the path is invalid no sound will be played. This property also accepts an array of sounds and the terminal will pick one at random.",
@@ -92,6 +122,14 @@
             "type": "string"
           }
         }
+      ]
+    },
+    "AutoDetectRunningCommand": {
+      "type": "string",
+      "enum": [
+        "disabled",
+        "automatic",
+        "progress"
       ]
     },
     "BuiltinSuggestionSource": {
@@ -3174,6 +3212,21 @@
             "mingw"
           ],
           "type": "string"
+        },
+        "notifyOnInactiveOutput": {
+          "default": "none",
+          "description": "Controls how the terminal notifies you when a background pane produces output. Supported values include `taskbar`, `audible`, `tab`, and `notification`. Can be set to true (equivalent to `tab`), false/none (disabled), a single string, or an array of strings.",
+          "$ref": "#/$defs/OutputNotificationStyle"
+        },
+        "notifyOnNextPrompt": {
+          "default": "none",
+          "description": "Controls how the terminal notifies you when a running command finishes and the shell returns to a prompt. Requires shell integration. Supported values include `taskbar`, `audible`, `tab`, and `notification`. Can be set to true (equivalent to `tab`), false/none (disabled), a single string, or an array of strings.",
+          "$ref": "#/$defs/OutputNotificationStyle"
+        },
+        "autoDetectRunningCommand": {
+          "default": "disabled",
+          "description": "Controls automatic detection of running commands via shell integration marks. When set to `automatic`, an indeterminate progress indicator is shown on the tab while a command is executing. When set to `progress`, the terminal will also attempt to detect progress percentages from command output. Requires shell integration.",
+          "$ref": "#/$defs/AutoDetectRunningCommand"
         }
       }
     },

@@ -53,6 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::IntenseStyle, IntenseTextStyle);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors);
     DEFINE_ENUM_MAP(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle);
+    DEFINE_ENUM_MAP(Microsoft::Terminal::Control::AutoDetectRunningCommand, AutoDetectRunningCommand);
 
     // Actions
     DEFINE_ENUM_MAP(Microsoft::Terminal::Settings::Model::ResizeDirection, ResizeDirection);

@@ -10,6 +10,7 @@
 #include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
+#include "NotificationEventArgs.g.cpp"
 #include "TerminalPaneContent.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -34,8 +35,11 @@ namespace winrt::TerminalApp::implementation
     {
         _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_controlConnectionStateChangedHandler });
         _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlWarningBellHandler });
+        _controlEvents._PromptStarted = _control.PromptStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlPromptStartedHandler });
+        _controlEvents._OutputStarted = _control.OutputStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputStartedHandler });
         _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_closeTerminalRequestedHandler });
         _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_restartTerminalRequestedHandler });
+        _controlEvents._OutputIdle = _control.OutputIdle(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputIdleHandler });
 
         _controlEvents._TitleChanged = _control.TitleChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTitleChanged });
         _controlEvents._TabColorChanged = _control.TabColorChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTabColorChanged });
@@ -261,6 +265,30 @@ namespace winrt::TerminalApp::implementation
     //   has the 'visual' flag set
     // Arguments:
     // - <unused>
+    // Method Description:
+    // - Plays the notification sound using the profile's BellSound setting if
+    //   configured; otherwise falls back to the system "Critical Stop" sound.
+    //   Reused by the warning bell handler, NotifyOnNextPrompt, and
+    //   NotifyOnInactiveOutput (called from Tab after the active-pane check).
+    void TerminalPaneContent::PlayNotificationSound()
+    {
+        if (_profile)
+        {
+            auto sounds{ _profile.BellSound() };
+            if (sounds && sounds.Size() > 0)
+            {
+                winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                winrt::Windows::Foundation::Uri uri{ soundPath };
+                _playBellSound(uri);
+            }
+            else
+            {
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+        }
+    }
+
     void TerminalPaneContent::_controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
@@ -271,19 +299,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
                 {
-                    // Audible is set, play the sound
-                    auto sounds{ _profile.BellSound() };
-                    if (sounds && sounds.Size() > 0)
-                    {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        winrt::Windows::Foundation::Uri uri{ soundPath };
-                        _playBellSound(uri);
-                    }
-                    else
-                    {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                    }
+                    PlayNotificationSound();
                 }
 
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
@@ -294,6 +310,107 @@ namespace winrt::TerminalApp::implementation
                 // raise the event with the bool value corresponding to the taskbar flag
                 BellRequested.raise(*this,
                                     *winrt::make_self<TerminalApp::implementation::BellEventArgs>(WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar)));
+            }
+        }
+    }
+
+    // Method Description:
+    // - Returns the taskbar state, accounting for auto-detected running command progress.
+    //   VT-set progress (OSC 9;4) takes precedence over auto-detected progress.
+    uint64_t TerminalPaneContent::TaskbarState()
+    {
+        const auto vtState = _control.TaskbarState();
+        // VT-set progress takes precedence over auto-detected progress
+        if (vtState != 0)
+        {
+            return vtState;
+        }
+        // Auto-detected indeterminate progress (between command start and prompt return)
+        if (_autoDetectActive)
+        {
+            return 3; // TaskbarState::Indeterminate
+        }
+        return 0;
+    }
+
+    // Method Description:
+    // - Returns the taskbar progress, accounting for auto-detected running command progress.
+    uint64_t TerminalPaneContent::TaskbarProgress()
+    {
+        const auto vtState = _control.TaskbarState();
+        // VT-set progress takes precedence
+        if (vtState != 0)
+        {
+            return _control.TaskbarProgress();
+        }
+        return 0;
+    }
+
+    // Method Description:
+    // - Raised when a shell integration prompt mark (133;A) is received, indicating
+    //   the command has finished and we're back at a prompt.
+    // - Checks NotifyOnNextPrompt setting and raises NotificationRequested.
+    // - If autoDetectRunningCommand is enabled, clears the indeterminate progress ring.
+    void TerminalPaneContent::_controlPromptStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            // Check NotifyOnNextPrompt setting and raise a notification.
+            // Pass OnlyWhenInactive=true so Tab suppresses notifications when
+            // this pane is active in a focused tab.
+            const auto notifyStyle = _profile.NotifyOnNextPrompt();
+            if (static_cast<int>(notifyStyle) != 0)
+            {
+                NotificationRequested.raise(*this,
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, true));
+            }
+
+            // If autoDetectRunningCommand is enabled, clear the progress ring
+            const auto autoDetect = _profile.AutoDetectRunningCommand();
+            if (autoDetect != AutoDetectRunningCommand::Disabled && _autoDetectActive)
+            {
+                _autoDetectActive = false;
+                TaskbarProgressChanged.raise(*this, nullptr);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Raised when a shell integration command output mark (133;C) is received,
+    //   indicating a command has started executing.
+    // - If autoDetectRunningCommand is enabled, shows an indeterminate progress ring.
+    void TerminalPaneContent::_controlOutputStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            const auto autoDetect = _profile.AutoDetectRunningCommand();
+            if (autoDetect != AutoDetectRunningCommand::Disabled && !_autoDetectActive)
+            {
+                _autoDetectActive = true;
+                TaskbarProgressChanged.raise(*this, nullptr);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Raised when output stops being produced for ~100ms (debounced).
+    //   Used to detect output in inactive panes for NotifyOnInactiveOutput.
+    // - Raises NotificationRequested so Tab can show activity indicators.
+    void TerminalPaneContent::_controlOutputIdleHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                        const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            const auto notifyStyle = _profile.NotifyOnInactiveOutput();
+            if (static_cast<int>(notifyStyle) != 0)
+            {
+                // Raise NotificationRequested so Tab can handle Taskbar/Tab/Audible flags.
+                // Pass OnlyWhenInactive=true so Tab skips notifications for the active pane.
+                // Note: Audible is handled by Tab (not here) so it can be gated on active state.
+                NotificationRequested.raise(*this,
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, true));
             }
         }
     }

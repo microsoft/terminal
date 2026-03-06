@@ -50,6 +50,23 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
 
+        String NotifyOnInactiveOutputPreview { get; };
+        Boolean IsNotifyOnInactiveOutputFlagSet(UInt32 flag);
+        void SetNotifyOnInactiveOutputTaskbar(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnInactiveOutputAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnInactiveOutputTab(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnInactiveOutputNotification(Windows.Foundation.IReference<Boolean> on);
+
+        String NotifyOnNextPromptPreview { get; };
+        Boolean IsNotifyOnNextPromptFlagSet(UInt32 flag);
+        void SetNotifyOnNextPromptTaskbar(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnNextPromptAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnNextPromptTab(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnNextPromptNotification(Windows.Foundation.IReference<Boolean> on);
+
+        IInspectable CurrentAutoDetectRunningCommand;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AutoDetectRunningCommandList { get; };
+
         String BellSoundPreview { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
         void RequestAddBellSound(String path);
@@ -140,5 +157,8 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnInactiveOutput);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnNextPrompt);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.AutoDetectRunningCommand, AutoDetectRunningCommand);
     }
 }
