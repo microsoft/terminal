@@ -75,7 +75,8 @@
                                     ClearSettingValue="{x:Bind Profile.ClearHistorySize}"
                                     HasSettingValue="{x:Bind Profile.HasHistorySize, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.HistorySizeOverrideSource, Mode=OneWay}">
-                <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
+                <muxc:NumberBox x:Name="HistorySizeBox"
+                                x:Uid="Profile_HistorySizeBox"
                                 LargeChange="100"
                                 Minimum="0"
                                 SmallChange="10"
