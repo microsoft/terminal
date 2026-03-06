@@ -817,6 +817,7 @@ class ::Microsoft::Console::VirtualTerminal::VtIoTests
 
         VERIFY_NT_SUCCESS(SCREEN_INFORMATION::CreateInstance(
             screenInfo->GetViewport().Dimensions(),
+            screenInfo->GetDesiredFont(),
             screenInfo->GetCurrentFont(),
             screenInfo->GetBufferSize().Dimensions(),
             screenInfo->GetAttributes(),

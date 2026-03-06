@@ -275,14 +275,14 @@ public:
     std::wstring GetWithControlSequences(const CopyRequest& req) const;
 
     std::string GenHTML(const CopyRequest& req,
-                        const int fontHeightPoints,
+                        const float fontHeightPoints,
                         const std::wstring_view fontFaceName,
                         const COLORREF backgroundColor,
                         const bool isIntenseBold,
                         std::function<std::tuple<COLORREF, COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const noexcept;
 
     std::string GenRTF(const CopyRequest& req,
-                       const int fontHeightPoints,
+                       const float fontHeightPoints,
                        const std::wstring_view fontFaceName,
                        const COLORREF backgroundColor,
                        const bool isIntenseBold,

@@ -698,7 +698,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     til::point ControlInteractivity::_getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell)
     {
         // Get the size of the font, which is in pixels
-        const auto fontSize{ _core->GetFont().GetSize() };
+        const auto fontSize{ _core->GetFont().GetCellSizeInPhysicalPx() };
 
         if (roundToNearestCell)
         {

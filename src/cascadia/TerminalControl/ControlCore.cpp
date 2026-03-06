@@ -67,9 +67,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlCore::ControlCore(Control::IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
-                             TerminalConnection::ITerminalConnection connection) :
-        _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, DEFAULT_FONT_SIZE, CP_UTF8 },
-        _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
+                             TerminalConnection::ITerminalConnection connection)
     {
         static const auto textMeasurementInit = [&]() {
             TextMeasurementMode mode = TextMeasurementMode::Graphemes;
@@ -290,7 +288,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::AttachToNewControl()
     {
         _setupDispatcherAndCallbacks();
-        const auto actualNewSize = _actualFont.GetSize();
+        const auto actualNewSize = _actualFont.GetCellSizeInPhysicalPx();
         // Bubble this up, so our new control knows how big we want the font.
         FontSizeChanged.raise(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
 
@@ -1122,7 +1120,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
         }
 
-        const auto actualNewSize = _actualFont.GetSize();
+        const auto actualNewSize = _actualFont.GetCellSizeInPhysicalPx();
         FontSizeChanged.raise(*this, winrt::make<FontSizeChangedArgs>(actualNewSize.width, actualNewSize.height));
     }
 
@@ -1134,20 +1132,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Returns true if you need to call _refreshSizeUnderLock().
     bool ControlCore::_setFontSizeUnderLock(float fontSize)
     {
-        // Make sure we have a non-zero font size
+        const auto before = _actualFont.GetCellSizeInPhysicalPx();
+
         const auto newSize = std::max(fontSize, 1.0f);
         const auto fontFace = _settings.FontFace();
-        const auto fontWeight = _settings.FontWeight();
-        _desiredFont = { fontFace, 0, fontWeight.Weight, newSize, CP_UTF8 };
-        _actualFont = { fontFace, 0, fontWeight.Weight, _desiredFont.GetEngineSize(), CP_UTF8, false };
 
-        _desiredFont.SetEnableBuiltinGlyphs(_builtinGlyphs);
-        _desiredFont.SetEnableColorGlyphs(_colorGlyphs);
-        _desiredFont.SetCellSize(_cellWidth, _cellHeight);
+        _desiredFont.SetFontSizeInPt(newSize);
 
-        const auto before = _actualFont.GetSize();
         _updateFont();
-        const auto after = _actualFont.GetSize();
+        const auto after = _actualFont.GetCellSizeInPhysicalPx();
         return before != after;
     }
 
@@ -1173,7 +1166,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto lock = _terminal->LockForWriting();
 
-        if (_setFontSizeUnderLock(_desiredFont.GetFontSize() + fontSizeDelta))
+        if (_setFontSizeUnderLock(_desiredFont.GetFontSizeInPt() + fontSizeDelta))
         {
             _refreshSizeUnderLock();
         }
@@ -1204,8 +1197,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Don't actually resize so small that a single character wouldn't fit
         // in either dimension. The buffer really doesn't like being size 0.
-        cx = std::max(cx, _actualFont.GetSize().width);
-        cy = std::max(cy, _actualFont.GetSize().height);
+        cx = std::max(cx, _actualFont.GetCellSizeInPhysicalPx().width);
+        cy = std::max(cy, _actualFont.GetCellSizeInPhysicalPx().height);
 
         // Convert our new dimensions to characters
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { cx, cy });
@@ -1472,7 +1465,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
     {
-        const auto fontSize = _actualFont.GetSize();
+        const auto fontSize = _actualFont.GetCellSizeInPhysicalPx();
         return {
             static_cast<float>(fontSize.width),
             static_cast<float>(fontSize.height)
@@ -1486,7 +1479,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::Size ControlCore::FontSizeInDips() const
     {
-        const auto fontSize = _actualFont.GetSize();
+        const auto fontSize = _actualFont.GetCellSizeInPhysicalPx();
         const auto scale = 1.0f / _compositionScale;
         return {
             fontSize.width * scale,
