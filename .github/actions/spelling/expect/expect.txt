@@ -1485,7 +1485,6 @@ RVERTICAL
 rvpa
 RWIN
 rxvt
-SafeArrayUnaccessData
 safemath
 sba
 SBCS
@@ -1773,6 +1772,7 @@ uldash
 uldb
 ULONGLONG
 ulwave
+Unaccess
 Unadvise
 unattend
 UNCPRIORITY
