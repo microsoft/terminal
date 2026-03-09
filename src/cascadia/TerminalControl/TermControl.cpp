@@ -930,6 +930,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ToggleShaderEffects();
     }
 
+    void TermControl::ToggleRecording()
+    {
+        _core.ToggleRecording();
+        RecordingChanged.raise(*this, nullptr);
+    }
+
+    bool TermControl::IsRecording() const noexcept
+    {
+        return _core.IsRecording();
+    }
+
     // Method Description:
     // - Style our UI elements based on the values in our settings, and set up
     //   other control-specific settings. This method will be called whenever

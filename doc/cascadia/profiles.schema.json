@@ -475,6 +475,8 @@
         "toggleFullscreen",
         "togglePaneZoom",
         "toggleReadOnlyMode",
+        "toggleRecording",
+        "openCastFile",
         "toggleShaderEffects",
         "toggleSplitOrientation",
         "wt",

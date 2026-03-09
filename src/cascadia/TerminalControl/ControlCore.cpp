@@ -2226,6 +2226,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _isReadOnly = !_isReadOnly;
     }
 
+    void ControlCore::ToggleRecording()
+    {
+        _isRecording = !_isRecording;
+        RecordingStateChanged.raise(*this, nullptr);
+    }
+
+    bool ControlCore::IsRecording() const
+    {
+        return _isRecording;
+    }
+
     void ControlCore::SetReadOnlyMode(const bool readOnlyState)
     {
         _isReadOnly = readOnlyState;

@@ -139,6 +139,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void LostFocus();
 
         void ToggleShaderEffects();
+        void ToggleRecording();
+        bool IsRecording() const;
         void AdjustOpacity(const float adjustment);
         void ResumeRendering();
 
@@ -300,6 +302,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<> RestartTerminalRequested;
 
         til::typed_event<> Attached;
+
+        til::typed_event<> RecordingStateChanged;
         // clang-format on
 
     private:
@@ -421,6 +425,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint16_t _lastHoveredId{ 0 };
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
+        bool _isRecording{ false };
         bool _closing{ false };
 
         struct StashedColorScheme

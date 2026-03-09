@@ -1120,6 +1120,17 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
+        events.RecordingChanged = content.RecordingChanged(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (auto tab{ weakThisCopy.get() })
+                {
+                    tab->_UpdateRecordingState();
+                }
+            });
+
         events.FocusRequested = content.FocusRequested(
             winrt::auto_revoke,
             [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto) -> safe_void_coroutine {
@@ -2114,6 +2125,15 @@ namespace winrt::TerminalApp::implementation
         // Update all the visuals on all our panes, so they can update their
         // border colors accordingly.
         _rootPane->WalkTree([](const auto& p) { p->UpdateVisuals(); });
+    }
+
+    void Tab::_UpdateRecordingState()
+    {
+        const auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            _tabStatus.IsRecordingActive(control.IsRecording());
+        }
     }
 
     std::shared_ptr<Pane> Tab::GetActivePane() const

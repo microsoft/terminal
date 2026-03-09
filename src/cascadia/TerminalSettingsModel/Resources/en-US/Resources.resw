@@ -496,6 +496,12 @@
   <data name="TogglePaneReadOnlyCommandKey" xml:space="preserve">
     <value>Toggle pane read-only mode</value>
   </data>
+  <data name="ToggleRecordingCommandKey" xml:space="preserve">
+    <value>Toggle recording</value>
+  </data>
+  <data name="OpenCastFileCommandKey" xml:space="preserve">
+    <value>Open asciicast file...</value>
+  </data>
   <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
     <value>Enable pane read-only mode</value>
   </data>

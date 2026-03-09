@@ -569,6 +569,7 @@ namespace winrt::TerminalApp::implementation
 
         void _activePaneChanged(winrt::TerminalApp::Tab tab, Windows::Foundation::IInspectable args);
         safe_void_coroutine _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
+        safe_void_coroutine _openCastFileHelper();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

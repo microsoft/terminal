@@ -10,6 +10,7 @@
 #include "../../types/inc/utils.hpp"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "Utils.h"
+#include <Utils.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -1631,6 +1632,81 @@ namespace winrt::TerminalApp::implementation
         {
             const auto handled = control.OpenQuickFixMenu();
             args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleToggleRecording(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        const auto res = _ApplyToActiveControls([](auto& control) {
+            control.ToggleRecording();
+        });
+        args.Handled(res);
+    }
+
+    void TerminalPage::_HandleOpenCastFile(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        _openCastFileHelper();
+        args.Handled(true);
+    }
+
+    safe_void_coroutine TerminalPage::_openCastFileHelper()
+    {
+        auto strongThis{ get_strong() };
+
+        if (!_hostingHwnd.has_value())
+        {
+            co_return;
+        }
+
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Asciicast Files (*.cast)", L"*.cast" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+        static constexpr winrt::guid clientGuidCastFile{ 0x7B3A8E1F, 0x2C4D, 0x4A5E, { 0xB6, 0x09, 0xD1, 0xF3, 0xA2, 0xE4, 0xC8, 0x5B } };
+
+        winrt::hstring path;
+        try
+        {
+            path = co_await OpenFilePicker(*_hostingHwnd, [](auto&& dialog) {
+                THROW_IF_FAILED(dialog->SetClientGuid(clientGuidCastFile));
+                try
+                {
+                    auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Desktop, KF_FLAG_DEFAULT, nullptr) };
+                    dialog->SetDefaultFolder(folderShellItem.get());
+                }
+                CATCH_LOG(); // non-fatal
+                THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                THROW_IF_FAILED(dialog->SetFileTypeIndex(1));
+                THROW_IF_FAILED(dialog->SetDefaultExtension(L"cast"));
+            });
+        }
+        CATCH_LOG();
+
+        if (path.empty())
+        {
+            co_return;
+        }
+
+        // Create the AsciicastConnection and initialize it with the file path.
+        TerminalConnection::AsciicastConnection connection;
+        Windows::Foundation::Collections::ValueSet settings;
+        settings.Insert(L"CastFilePath", Windows::Foundation::PropertyValue::CreateString(path));
+        connection.Initialize(settings);
+
+        // Create a new tab with the connection, reusing the existing pattern.
+        NewTerminalArgs newTerminalArgs;
+        newTerminalArgs.TabTitle(path);
+        newTerminalArgs.Elevate(false);
+
+        const auto newPane = _MakePane(newTerminalArgs, nullptr, std::move(connection));
+        if (newPane)
+        {
+            newPane->WalkTree([](const auto& pane) {
+                pane->FinalizeConfigurationGivenDefault();
+            });
+            _CreateNewTabFromPane(newPane);
         }
     }
 }

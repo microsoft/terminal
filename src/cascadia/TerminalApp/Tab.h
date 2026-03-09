@@ -181,6 +181,7 @@ namespace winrt::TerminalApp::implementation
             winrt::TerminalApp::IPaneContent::TaskbarProgressChanged_revoker TaskbarProgressChanged;
             winrt::TerminalApp::IPaneContent::ConnectionStateChanged_revoker ConnectionStateChanged;
             winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
+            winrt::TerminalApp::IPaneContent::RecordingChanged_revoker RecordingChanged;
             winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
 
             // These events literally only apply if the content is a TermControl.
@@ -224,6 +225,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _GetActiveTitle() const;
 
         void _RecalculateAndApplyReadOnly();
+
+        void _UpdateRecordingState();
 
         void _UpdateProgressState();
 
