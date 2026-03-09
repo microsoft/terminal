@@ -134,7 +134,6 @@ roundf
 RSHIFT
 rvrn
 SACL
-SafeArrayUnaccessData
 schandle
 SEH
 semver
