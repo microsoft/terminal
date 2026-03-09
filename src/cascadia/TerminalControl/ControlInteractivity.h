@@ -156,13 +156,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta);
 
         til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
+        std::pair<float, float> _getTerminalPositionF(const til::point pixelPosition);
 
-        bool _sendMouseEventHelper(const til::point terminalPosition,
+        bool _sendMouseEventHelper(float terminalX,
+                                   float terminalY,
                                    const unsigned int pointerUpdateKind,
                                    const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                    const SHORT wheelDelta,
-                                   Control::MouseButtonState buttonState,
-                                   const til::point pixelPosition = {});
+                                   Control::MouseButtonState buttonState);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

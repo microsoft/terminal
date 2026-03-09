@@ -203,12 +203,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool SendCharEvent(const wchar_t ch,
                            const WORD scanCode,
                            const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-        bool SendMouseEvent(const til::point viewportPos,
+        bool SendMouseEvent(float viewportX,
+                            float viewportY,
                             const unsigned int uiButton,
                             const ::Microsoft::Terminal::Core::ControlKeyStates states,
                             const short wheelDelta,
-                            const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state,
-                            const til::point pixelPosition = {});
+                            const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
         void UserScrollViewport(const int viewTop);
 
         void ClearBuffer(Control::ClearBufferType clearType);

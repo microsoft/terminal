@@ -1860,7 +1860,14 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enable);
         break;
     case DispatchTypes::ModeParams::SGR_PIXEL_MODE:
-        _terminalInput.SetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding, enable);
+        // SGR-Pixel mode requires real sub-cell pixel coordinates. It's not
+        // supported in direct conhost because the Win32 console input API only
+        // provides character-cell coordinates. In ConPTY mode (IsVtInputEnabled),
+        // the request is passed through to the Terminal frontend which has pixel data.
+        if (!_api.IsConhost() || _api.IsVtInputEnabled())
+        {
+            _terminalInput.SetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding, enable);
+        }
         break;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         _terminalInput.SetInputMode(TerminalInput::Mode::FocusEvent, enable);
@@ -2013,7 +2020,14 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::SgrMouseEncoding));
         break;
     case DispatchTypes::ModeParams::SGR_PIXEL_MODE:
-        state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding));
+        if (_api.IsConhost() && !_api.IsVtInputEnabled())
+        {
+            state = DispatchTypes::DECRPM_PermanentlyDisabled;
+        }
+        else
+        {
+            state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding));
+        }
         break;
     case DispatchTypes::ModeParams::FOCUS_EVENT_MODE:
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::FocusEvent));

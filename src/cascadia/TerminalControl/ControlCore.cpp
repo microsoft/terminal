@@ -712,17 +712,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return false;
     }
 
-    bool ControlCore::SendMouseEvent(const til::point viewportPos,
+    bool ControlCore::SendMouseEvent(const float viewportX,
+                                     const float viewportY,
                                      const unsigned int uiButton,
                                      const ControlKeyStates states,
                                      const short wheelDelta,
-                                     const TerminalInput::MouseButtonState state,
-                                     const til::point pixelPosition)
+                                     const TerminalInput::MouseButtonState state)
     {
         TerminalInput::OutputType out;
         {
             const auto lock = _terminal->LockForReading();
-            out = _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state, pixelPosition);
+            out = _terminal->SendMouseEvent(viewportX, viewportY, uiButton, states, wheelDelta, state);
         }
         if (out)
         {

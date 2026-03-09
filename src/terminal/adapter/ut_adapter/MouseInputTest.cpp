@@ -245,7 +245,7 @@ public:
         unsigned int uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse(0, 0, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
 
@@ -261,7 +261,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -282,7 +283,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -303,7 +305,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -332,7 +335,7 @@ public:
         unsigned int uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse(0, 0, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, true);
 
@@ -351,7 +354,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -372,7 +376,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -393,7 +398,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -422,7 +428,7 @@ public:
         unsigned int uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse(0, 0, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, true);
 
@@ -441,7 +447,9 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta, {}),
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
+                                                    uiButton, sModifierKeystate, sScrollDelta, {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.x, Coord.y));
         }
 
@@ -460,7 +468,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -476,7 +485,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -505,44 +515,44 @@ public:
         unsigned int uiButton;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiButton", uiButton));
 
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse(0, 0, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput.SetInputMode(TerminalInput::Mode::SgrPixelMouseEncoding, true);
 
-        // SGR-Pixel mode uses pixel coordinates instead of cell coordinates.
-        // The format is identical to SGR: ESC [ < button ; px ; py M/m
-        // where px and py are 1-based pixel positions.
-        static const til::point testPixelCoords[] = {
-            { 0, 0 },
-            { 5, 10 },
-            { 100, 200 },
-            { 1920, 1080 },
+        // SGR-Pixel mode (1016) uses virtual pixel coordinates with a 10x20
+        // cell size (matching the DEC VT340 convention). The float cell position
+        // is multiplied by 10 (x) or 20 (y) and reported 1-based in SGR format.
+        struct TestCase
+        {
+            float viewportX;
+            float viewportY;
+            const wchar_t* expectedOutput;
         };
-        static const wchar_t* testPixelOutput[] = {
-            L"\x1b[<%d;1;1M",
-            L"\x1b[<%d;6;11M",
-            L"\x1b[<%d;101;201M",
-            L"\x1b[<%d;1921;1081M",
+        static const TestCase testCases[] = {
+            // Top-left corner of cell (0,0): virtual pixel (0,0) -> 1-based (1,1)
+            { 0.0f, 0.0f, L"\x1b[<%d;1;1M" },
+            // Center of cell (0,0): virtual pixel (5,10) -> 1-based (6,11)
+            { 0.5f, 0.5f, L"\x1b[<%d;6;11M" },
+            // Cell (1,1) top-left: virtual pixel (10,20) -> 1-based (11,21)
+            { 1.0f, 1.0f, L"\x1b[<%d;11;21M" },
+            // Cell (10,5) with sub-cell offset: virtual pixel (103,105) -> 1-based (104,106)
+            { 10.3f, 5.25f, L"\x1b[<%d;104;106M" },
         };
 
         // Test with AnyEventMouseTracking to cover all button types including hovers
         mouseInput.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, true);
-        for (auto i = 0; i < ARRAYSIZE(testPixelCoords); i++)
+        for (const auto& tc : testCases)
         {
-            const auto pixelCoord = testPixelCoords[i];
-            // Cell position doesn't matter for SGR-Pixel output; pixel position is used.
-            const til::point cellCoord{ pixelCoord.x / 8, pixelCoord.y / 16 }; // approximate cell coords
-
-            const auto expected = BuildSGRTestOutput(testPixelOutput[i], uiButton, sModifierKeystate, sScrollDelta);
+            const auto expected = BuildSGRTestOutput(tc.expectedOutput, uiButton, sModifierKeystate, sScrollDelta);
 
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(cellCoord,
+                             mouseInput.HandleMouse(tc.viewportX,
+                                                    tc.viewportY,
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
-                                                    {},
-                                                    pixelCoord),
-                             NoThrowString().Format(L"pixel(x,y)=(%d,%d)", pixelCoord.x, pixelCoord.y));
+                                                    {}),
+                             NoThrowString().Format(L"viewport(%.1f,%.1f)", tc.viewportX, tc.viewportY));
         }
 
         // Verify mutual exclusivity: enabling SgrPixelMouseEncoding should disable SgrMouseEncoding
@@ -576,7 +586,7 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"sScrollDelta", iScrollDelta));
         auto sScrollDelta = (short)(iScrollDelta);
 
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse(0, 0, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         // Default Tracking, Default Encoding
         mouseInput.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, true);
@@ -593,7 +603,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -616,7 +627,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -633,7 +645,8 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(expected,
-                             mouseInput.HandleMouse(Coord,
+                             mouseInput.HandleMouse(static_cast<float>(Coord.x),
+                                                    static_cast<float>(Coord.y),
                                                     uiButton,
                                                     sModifierKeystate,
                                                     sScrollDelta,
@@ -653,40 +666,40 @@ public:
         mouseInput.SetInputMode(TerminalInput::Mode::AlternateScroll, true);
 
         Log::Comment(L"Test mouse wheel scrolling up");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[A"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[A"), mouseInput.HandleMouse(0, 0, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling down");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[B"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[B"), mouseInput.HandleMouse(0, 0, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling right");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[C"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[C"), mouseInput.HandleMouse(0, 0, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling left");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[D"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1B[D"), mouseInput.HandleMouse(0, 0, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Enable cursor keys mode");
         mouseInput.SetInputMode(TerminalInput::Mode::CursorKey, true);
 
         Log::Comment(L"Test mouse wheel scrolling up");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOA"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOA"), mouseInput.HandleMouse(0, 0, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling down");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOB"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOB"), mouseInput.HandleMouse(0, 0, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling right");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOC"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOC"), mouseInput.HandleMouse(0, 0, WM_MOUSEHWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling left");
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOD"), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1BOD"), mouseInput.HandleMouse(0, 0, WM_MOUSEHWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Confirm no effect when scroll mode is disabled");
         mouseInput.UseAlternateScreenBuffer();
         mouseInput.SetInputMode(TerminalInput::Mode::AlternateScroll, false);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse(0, 0, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Confirm no effect when using the main buffer");
         mouseInput.UseMainScreenBuffer();
         mouseInput.SetInputMode(TerminalInput::Mode::AlternateScroll, true);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeUnhandled(), mouseInput.HandleMouse(0, 0, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
     }
 };

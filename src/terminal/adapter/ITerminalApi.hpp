@@ -51,6 +51,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SetViewportPosition(const til::point position) = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
+        virtual bool IsConhost() const = 0;
 
         enum class Mode : size_t
         {
