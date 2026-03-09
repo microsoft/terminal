@@ -1485,6 +1485,7 @@ RVERTICAL
 rvpa
 RWIN
 rxvt
+SafeArrayUnaccessData
 safemath
 sba
 SBCS
