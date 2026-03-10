@@ -207,8 +207,13 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             continue
         }
 
-        # Extract Name (prefer x:Name over Name)
-        $name = $null -ne $settingContainer.Name ? $settingContainer.Name : ""
+        # Extract Name via GetAttribute to avoid PowerShell's XML integration
+        # returning the element name (e.g. "local:SettingContainer") when x:Name is absent.
+        $name = $settingContainer.GetAttribute("x:Name")
+        if ([string]::IsNullOrEmpty($name))
+        {
+            $name = ""
+        }
         if ($filename -eq "Appearances.xaml")
         {
             # Profile.Appearance settings need a special prefix for the ElementName.
