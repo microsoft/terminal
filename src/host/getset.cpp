@@ -982,23 +982,20 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // A null character will get translated to whitespace.
         fillCharacter = Microsoft::Console::VirtualTerminal::VtIo::SanitizeUCS2(fillCharacter);
 
-        if (writer)
+        // GH#3126 - This is a shim for cmd's `cls` function. In the
+        // legacy console, `cls` is supposed to clear the entire buffer.
+        // We always use a VT sequence, even if ConPTY isn't used, because those are faster nowadays.
+        if (enableCmdShim &&
+            source.left <= 0 && source.top <= 0 &&
+            source.right >= bufferSize.RightInclusive() && source.bottom >= bufferSize.BottomInclusive() &&
+            target.x == 0 && target.y <= -bufferSize.BottomExclusive() &&
+            !clip &&
+            fillCharacter == UNICODE_SPACE && fillAttribute == buffer.GetAttributes().GetLegacyAttributes())
         {
-            // GH#3126 - This is a shim for cmd's `cls` function. In the
-            // legacy console, `cls` is supposed to clear the entire buffer.
-            // We always use a VT sequence, even if ConPTY isn't used, because those are faster nowadays.
-            if (enableCmdShim &&
-                source.left <= 0 && source.top <= 0 &&
-                source.right >= bufferSize.RightInclusive() && source.bottom >= bufferSize.BottomInclusive() &&
-                target.x == 0 && target.y <= -bufferSize.BottomExclusive() &&
-                !clip &&
-                fillCharacter == UNICODE_SPACE && fillAttribute == buffer.GetAttributes().GetLegacyAttributes())
-            {
-                WriteClearScreen(context);
-                writer.Submit();
-                return S_OK;
-            }
-
+            WriteClearScreen(context);
+        }
+        else if (writer)
+        {
             const auto clipViewport = clip ? Viewport::FromInclusive(*clip).Clamp(bufferSize) : bufferSize;
             const auto sourceViewport = Viewport::FromInclusive(source);
             const auto fillViewport = sourceViewport.Clamp(clipViewport);
@@ -1084,13 +1081,16 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                 RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, fill, w, fillViewport, writtenViewport));
                 RETURN_IF_FAILED(WriteConsoleOutputWImplHelper(context, backup, w, Viewport::FromDimensions(target, readViewport.Dimensions()).Clamp(clipViewport), writtenViewport));
             }
-
-            writer.Submit();
         }
         else
         {
             TextAttribute useThisAttr(fillAttribute);
             ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
+        }
+
+        if (writer)
+        {
+            writer.Submit();
         }
 
         return S_OK;
