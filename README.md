@@ -15,7 +15,6 @@
     - [Via Chocolatey (unofficial)](#via-chocolatey-unofficial)
     - [Via Scoop (unofficial)](#via-scoop-unofficial)
 - [Installing Windows Terminal Canary](#installing-windows-terminal-canary)
-- [Windows Terminal Roadmap](#windows-terminal-roadmap)
 - [Terminal \& Console Overview](#terminal--console-overview)
   - [Windows Terminal](#windows-terminal)
   - [The Windows Console Host](#the-windows-console-host)
@@ -177,11 +176,6 @@ The Portable ZIP distribution is a portable application. It will not automatical
 _Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
 
 ---
-
-## Windows Terminal Roadmap
-
-The plan for the Windows Terminal [is described here](/doc/roadmap-2023.md) and
-will be updated as the project proceeds.
 
 ## Terminal & Console Overview
 
