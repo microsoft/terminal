@@ -12,7 +12,7 @@ Handle Handle::Create()
 {
     Handle handle;
     handle._impl = new Implementation();
-    if (!handle._impl->Initialize())
+    if (FAILED(handle._impl->Initialize()))
     {
         delete handle._impl;
         handle._impl = nullptr;
