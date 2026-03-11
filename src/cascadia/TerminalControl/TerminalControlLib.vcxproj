@@ -72,6 +72,7 @@
     <ClCompile Include="ControlCore.cpp">
       <DependentUpon>ControlCore.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="..\TerminalConnection\AsciicastRecorder.cpp" />
     <ClCompile Include="ControlInteractivity.cpp">
       <DependentUpon>ControlInteractivity.idl</DependentUpon>
     </ClCompile>

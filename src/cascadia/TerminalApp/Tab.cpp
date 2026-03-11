@@ -1120,6 +1120,17 @@ namespace winrt::TerminalApp::implementation
                 }
             });
 
+        events.RecordingChanged = content.RecordingChanged(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](auto&&, auto&&) -> safe_void_coroutine {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (auto tab{ weakThisCopy.get() })
+                {
+                    tab->_UpdateRecordingState();
+                }
+            });
+
         events.FocusRequested = content.FocusRequested(
             winrt::auto_revoke,
             [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto) -> safe_void_coroutine {
@@ -1732,6 +1743,23 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
         }
 
+        Controls::MenuFlyoutItem recordingMenuItem = _recordingMenuItem;
+        {
+            // "Record session" / "Stop recording"
+            Controls::FontIcon recordingSymbol;
+            recordingSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            recordingSymbol.Glyph(L"\xEA3B"); // Record
+
+            recordingMenuItem.Click({ get_weak(), &Tab::_toggleRecordingClicked });
+            recordingMenuItem.Text(RS_(L"StartRecordingText"));
+            recordingMenuItem.Icon(recordingSymbol);
+
+            const auto recordingToolTip = RS_(L"StartRecordingToolTip");
+
+            WUX::Controls::ToolTipService::SetToolTip(recordingMenuItem, box_value(recordingToolTip));
+            Automation::AutomationProperties::SetHelpText(recordingMenuItem, recordingToolTip);
+        }
+
         Controls::MenuFlyoutItem restartConnectionMenuItem = _restartConnectionMenuItem;
         {
             // "Restart connection"
@@ -1764,6 +1792,7 @@ namespace winrt::TerminalApp::implementation
         _AppendMoveMenuItems(contextMenuFlyout);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
+        contextMenuFlyout.Items().Append(recordingMenuItem);
         contextMenuFlyout.Items().Append(restartConnectionMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
@@ -2114,6 +2143,17 @@ namespace winrt::TerminalApp::implementation
         // Update all the visuals on all our panes, so they can update their
         // border colors accordingly.
         _rootPane->WalkTree([](const auto& p) { p->UpdateVisuals(); });
+    }
+
+    void Tab::_UpdateRecordingState()
+    {
+        const auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            const auto isRecording = control.IsRecording();
+            _tabStatus.IsRecordingActive(isRecording);
+            _recordingMenuItem.Text(isRecording ? RS_(L"StopRecordingText") : RS_(L"StartRecordingText"));
+        }
     }
 
     std::shared_ptr<Pane> Tab::GetActivePane() const
@@ -2670,6 +2710,12 @@ namespace winrt::TerminalApp::implementation
                            const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
     {
         ActionAndArgs actionAndArgs{ ShortcutAction::Find, nullptr };
+        _dispatch.DoAction(*this, actionAndArgs);
+    }
+    void Tab::_toggleRecordingClicked(const winrt::Windows::Foundation::IInspectable& /* sender */,
+                                      const winrt::Windows::UI::Xaml::RoutedEventArgs& /* args */)
+    {
+        ActionAndArgs actionAndArgs{ ShortcutAction::ToggleRecording, nullptr };
         _dispatch.DoAction(*this, actionAndArgs);
     }
     void Tab::_bubbleRestartTerminalRequested(TerminalApp::TerminalPaneContent sender,

@@ -1,5 +1,7 @@
 aci
 allcolors
+asciicast
+asciinema
 breadcrumb
 breadcrumbs
 ccmp

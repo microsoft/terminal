@@ -126,6 +126,10 @@ namespace Microsoft.Terminal.Control
         void ResetFontSize();
 
         void ToggleShaderEffects();
+        void StartRecording(String filePath);
+        void StopRecording();
+        Boolean IsRecording { get; };
+        event Windows.Foundation.TypedEventHandler<Object, Object> RecordingChanged;
         void SendInput(String input);
         Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);
         Boolean RawWriteChar(Char character, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers);

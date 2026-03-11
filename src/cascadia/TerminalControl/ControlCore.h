@@ -23,6 +23,7 @@
 #include "../../buffer/out/search.h"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
+#include "../../cascadia/TerminalConnection/AsciicastRecorder.h"
 
 namespace Microsoft::Console::Render::Atlas
 {
@@ -139,6 +140,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void LostFocus();
 
         void ToggleShaderEffects();
+        void StartRecording(const winrt::hstring& filePath);
+        void StopRecording();
+        bool IsRecording() const;
         void AdjustOpacity(const float adjustment);
         void ResumeRendering();
 
@@ -300,6 +304,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<> RestartTerminalRequested;
 
         til::typed_event<> Attached;
+
+        til::typed_event<> RecordingStateChanged;
         // clang-format on
 
     private:
@@ -421,6 +427,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint16_t _lastHoveredId{ 0 };
         std::atomic<bool> _initializedTerminal{ false };
         bool _isReadOnly{ false };
+        std::unique_ptr<winrt::Microsoft::Terminal::TerminalConnection::implementation::AsciicastRecorder> _recorder;
         bool _closing{ false };
 
         struct StashedColorScheme

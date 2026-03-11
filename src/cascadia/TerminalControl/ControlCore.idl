@@ -147,6 +147,10 @@ namespace Microsoft.Terminal.Control
         void SizeOrScaleChanged(Single width, Single height, Single scale);
 
         void ToggleShaderEffects();
+        void StartRecording(String filePath);
+        void StopRecording();
+        Boolean IsRecording { get; };
+        event Windows.Foundation.TypedEventHandler<Object, Object> RecordingStateChanged;
         void ToggleReadOnlyMode();
         void SetReadOnlyMode(Boolean readOnlyState);
 

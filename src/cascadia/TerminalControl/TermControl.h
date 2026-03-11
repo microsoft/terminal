@@ -131,6 +131,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ClearBuffer(Control::ClearBufferType clearType);
 
         void ToggleShaderEffects();
+        void StartRecording(const winrt::hstring& filePath);
+        void StopRecording();
+        bool IsRecording() const noexcept;
 
         void RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
@@ -209,6 +212,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<> HidePointerCursor;
         til::typed_event<> RestorePointerCursor;
         til::typed_event<> ReadOnlyChanged;
+        til::typed_event<> RecordingChanged;
         til::typed_event<IInspectable, IInspectable> FocusFollowMouseRequested;
         til::typed_event<Control::TermControl, Windows::UI::Xaml::RoutedEventArgs> Initialized;
         til::typed_event<> WarningBell;

@@ -56,6 +56,13 @@
                   FontSize="12"
                   Glyph="&#xEC05;"
                   Visibility="{x:Bind TabStatus.IsInputBroadcastActive, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderRecordingIcon"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="12"
+                  Foreground="Red"
+                  Glyph="&#xEA3B;"
+                  Visibility="{x:Bind TabStatus.IsRecordingActive, Mode=OneWay}" />
         <TextBlock x:Name="HeaderTextBlock"
                    Text="{x:Bind Title, Mode=OneWay}"
                    Visibility="Visible" />

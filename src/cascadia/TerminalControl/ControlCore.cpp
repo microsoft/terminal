@@ -267,6 +267,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ControlCore::~ControlCore()
     {
+        if (_recorder && _recorder->IsRecording())
+        {
+            _recorder->StopRecording();
+        }
+
         Close();
 
         // See notes about the _renderer member in the header file.
@@ -2224,6 +2229,80 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ToggleReadOnlyMode()
     {
         _isReadOnly = !_isReadOnly;
+    }
+
+    void ControlCore::StartRecording(const winrt::hstring& filePath)
+    {
+        if (_recorder && _recorder->IsRecording())
+        {
+            return; // already recording
+        }
+
+        const auto lock = _terminal->LockForReading();
+        const auto vp = _terminal->GetViewport();
+        const auto width = static_cast<uint32_t>(vp.Width());
+        const auto height = static_cast<uint32_t>(vp.Height());
+
+        // Grab the current prompt line with VT attributes so the
+        // recording doesn't start blank.
+        const auto& textBuffer = _terminal->GetTextBuffer();
+        const auto cursorPos = _terminal->GetViewportRelativeCursorPosition();
+        const auto bufferRow = vp.Top() + cursorPos.y;
+
+        const auto req = TextBuffer::CopyRequest{
+            textBuffer,
+            til::point{ 0, bufferRow },
+            til::point{ static_cast<til::CoordType>(width) - 1, bufferRow },
+            false, // blockSelection
+            false, // includeLineBreak
+            true, // trimTrailingWhitespace
+            false, // formatWrappedRows
+            true // bufferCoordinates
+        };
+        auto snapshot = std::wstring{};
+
+        // Move to the original viewport-relative row so subsequent
+        // VT cursor positions from the shell line up correctly.
+        if (cursorPos.y > 0)
+        {
+            wchar_t seq[32];
+            swprintf_s(seq, L"\x1b[%d;1H", cursorPos.y + 1);
+            snapshot.append(seq);
+        }
+        snapshot.append(textBuffer.GetWithControlSequences(req));
+
+        // Reset SGR and reposition the cursor.
+        {
+            wchar_t seq[32];
+            swprintf_s(seq, L"\x1b[0m\x1b[%d;%dH", cursorPos.y + 1, cursorPos.x + 1);
+            snapshot.append(seq);
+        }
+
+        _recorder = std::make_unique<winrt::Microsoft::Terminal::TerminalConnection::implementation::AsciicastRecorder>();
+        _recorder->StartRecording(_connection, std::wstring{ filePath }, width, height);
+
+        // Inject the prompt snapshot as the first recorded event.
+        if (!snapshot.empty())
+        {
+            _recorder->WriteInitialSnapshot(snapshot);
+        }
+
+        RecordingStateChanged.raise(*this, nullptr);
+    }
+
+    void ControlCore::StopRecording()
+    {
+        if (_recorder)
+        {
+            _recorder->StopRecording();
+            _recorder.reset();
+            RecordingStateChanged.raise(*this, nullptr);
+        }
+    }
+
+    bool ControlCore::IsRecording() const
+    {
+        return _recorder && _recorder->IsRecording();
     }
 
     void ControlCore::SetReadOnlyMode(const bool readOnlyState)

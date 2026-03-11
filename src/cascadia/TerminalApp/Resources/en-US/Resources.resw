@@ -802,6 +802,15 @@
   <data name="FindToolTip" xml:space="preserve">
     <value>Open the search dialog</value>
   </data>
+  <data name="StartRecordingText" xml:space="preserve">
+    <value>Record session</value>
+  </data>
+  <data name="StopRecordingText" xml:space="preserve">
+    <value>Stop recording</value>
+  </data>
+  <data name="StartRecordingToolTip" xml:space="preserve">
+    <value>Record terminal output to an asciicast file</value>
+  </data>
   <data name="RenameTabToolTip" xml:space="preserve">
     <value>Rename this tab</value>
   </data>

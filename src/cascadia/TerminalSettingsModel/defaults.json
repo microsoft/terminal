@@ -607,6 +607,8 @@
         { "command": { "action": "swapPane", "direction": "previousInOrder"}, "id": "Terminal.SwapPanePreviousInOrder" },
         { "command": { "action": "swapPane", "direction": "nextInOrder"}, "id": "Terminal.SwapPaneNextInOrder" },
         { "command": { "action": "swapPane", "direction": "first" }, "id": "Terminal.SwapPaneFirst" },
+        { "command": "toggleRecording", "id": "Terminal.ToggleRecording" },
+        { "command": "openCastFile", "id": "Terminal.OpenCastFile" },
         { "command": "toggleBroadcastInput", "id": "Terminal.ToggleBroadcastInput" },
         { "command": "togglePaneZoom", "id": "Terminal.TogglePaneZoom" },
         { "command": "toggleSplitOrientation", "id": "Terminal.ToggleSplitOrientation" },
@@ -782,6 +784,8 @@
         { "keys": "shift+insert", "id": "Terminal.PasteFromClipboard" },
         { "keys": "ctrl+shift+a", "id": "Terminal.SelectAll" },
         { "keys": "ctrl+shift+m", "id": "Terminal.ToggleMarkMode" },
+        { "keys": "ctrl+shift+r", "id": "Terminal.ToggleRecording" },
+        { "keys": "ctrl+shift+o", "id": "Terminal.OpenCastFile" },
         { "keys": "menu", "id": "Terminal.ShowContextMenu" },
 
         // Scrollback
