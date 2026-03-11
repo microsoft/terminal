@@ -14,7 +14,7 @@ Handle Handle::Create()
     handle._impl = new Implementation();
     if (FAILED(handle._impl->Initialize()))
     {
-        delete handle._impl;
+        handle._destroy();
         handle._impl = nullptr;
     }
     return handle;
@@ -32,11 +32,7 @@ void Handle::SetDefaultScopeAlphanumericHalfWidth(bool enable)
 
 Handle::~Handle()
 {
-    if (_impl)
-    {
-        _impl->Uninitialize();
-        _impl->Release();
-    }
+    _destroy();
 }
 
 Handle::Handle(Handle&& other) noexcept :
@@ -93,4 +89,13 @@ void Handle::Unfocus(IDataProvider* provider) const
 bool Handle::HasActiveComposition() const noexcept
 {
     return _impl ? _impl->HasActiveComposition() : false;
+}
+
+void Handle::_destroy() noexcept
+{
+    if (_impl)
+    {
+        _impl->Uninitialize();
+        _impl->Release();
+    }
 }
