@@ -270,6 +270,16 @@ constexpr T saturate(auto val)
     }
     CATCH_RETURN();
 
+    if (a->ProcessControlZ)
+    {
+        // ProcessControlZ is only set for CONSOLE_IO_RAW_READ. To restore
+        // the behavior from Windows 7 (see filehops.c:123) we need to honor
+        // ^Z only if PROCESSED_INPUT is enabled.
+        ULONG InputMode{ 0 };
+        m->_pApiRoutines->GetConsoleInputModeImpl(*pInputBuffer, InputMode);
+        a->ProcessControlZ = (InputMode & ENABLE_PROCESSED_INPUT) != 0;
+    }
+
     TraceConsoleAPICallWithOrigin(
         "ReadConsole",
         TraceLoggingBoolean(a->Unicode, "Unicode"),
