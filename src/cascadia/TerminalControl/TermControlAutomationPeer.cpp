@@ -121,6 +121,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#13978: If the TermControl has already been removed from the UI tree, XAML might run into weird bugs.
         // This will prevent the `dispatcher.RunAsync` calls below from raising UIA events on the main thread.
         _termControl = {};
+
+        // Solve the circular reference between us and the content automation peer.
+        _contentAutomationPeer.ParentProvider(nullptr);
     }
 
     // Method Description:
