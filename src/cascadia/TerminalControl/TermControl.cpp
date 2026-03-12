@@ -1955,7 +1955,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto point = args.GetCurrentPoint(*this);
         const auto type = ptr.PointerDeviceType();
 
-        if (!_focused)
+        // GH#19908: _focused can be true even when the search box has
+        // keyboard focus, because GotFocus bubbles from the search box
+        // child and _GotFocusHandler sets _focused=true. If the user
+        // click-drags in the terminal while the search box is focused,
+        // we need to explicitly call Focus() to move keyboard focus back
+        // to the terminal so that Ctrl+C copies the selection.
+        if (!_focused || (_searchBox && _searchBox->ContainsFocus()))
         {
             Focus(FocusState::Pointer);
         }
