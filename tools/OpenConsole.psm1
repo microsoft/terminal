@@ -1,12 +1,11 @@
 #Requires -Version 7
 
 # The project's root directory.
-$script:OpenConsoleFallbackRoot="$PSScriptRoot\.."
+$script:OpenConsoleFallbackRoot = "$PSScriptRoot\.."
 
 #.SYNOPSIS
 # Finds the root of the current Terminal checkout.
-function Find-OpenConsoleRoot
-{
+function Find-OpenConsoleRoot {
     $root = (git rev-parse --show-toplevel 2>$null)
     If ($?) {
         return $root
@@ -18,11 +17,10 @@ function Find-OpenConsoleRoot
 # Finds and imports a module that should be local to the project
 #.PARAMETER ModuleName
 # The name of the module to import
-function Import-LocalModule
-{
+function Import-LocalModule {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory=$true, Position=0)]
+        [parameter(Mandatory = $true, Position = 0)]
         [string]$Name
     )
 
@@ -32,8 +30,7 @@ function Import-LocalModule
 
     $local = $null -eq (Get-Module -Name $Name)
 
-    if (-not $local)
-    {
+    if (-not $local) {
         return
     }
 
@@ -49,7 +46,8 @@ function Import-LocalModule
         Write-Verbose "Saving $Name to $modules_root"
         Save-Module -InputObject $module -Path $modules_root
         Import-Module "$modules_root\$Name\$version\$Name.psd1"
-    } else {
+    }
+    else {
         Write-Verbose "$Name already downloaded"
         $versions = Get-ChildItem "$modules_root\$Name" | Sort-Object
 
@@ -60,8 +58,7 @@ function Import-LocalModule
 #.SYNOPSIS
 # Grabs all environment variable set after vcvarsall.bat is called and pulls
 # them into the Powershell environment.
-function Set-MsbuildDevEnvironment
-{
+function Set-MsbuildDevEnvironment {
     [CmdletBinding()]
     param(
         [switch]$Prerelease
@@ -74,9 +71,9 @@ function Set-MsbuildDevEnvironment
     Write-Verbose 'Searching for VC++ instances'
     $vsinfo = `
         Get-VSSetupInstance  -All -Prerelease:$Prerelease `
-        | Select-VSSetupInstance `
-            -Latest -Product * `
-            -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
+    | Select-VSSetupInstance `
+        -Latest -Product * `
+        -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
 
     $vspath = $vsinfo.InstallationPath
 
@@ -114,20 +111,19 @@ function Set-MsbuildDevEnvironment
 #
 #.PARAMETER $TaefArgs
 # Any arguments to path to Taef.
-function Invoke-TaefInNewWindow()
-{
+function Invoke-TaefInNewWindow() {
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory=$true)]
+        [parameter(Mandatory = $true)]
         [string]$OpenConsolePath,
 
-        [parameter(Mandatory=$true)]
+        [parameter(Mandatory = $true)]
         [string]$TaefPath,
 
-        [parameter(Mandatory=$true)]
+        [parameter(Mandatory = $true)]
         [string]$TestDll,
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string[]]$TaefArgs
     )
 
@@ -160,28 +156,27 @@ function Invoke-TaefInNewWindow()
 #.PARAMETER Configuration
 # The configuration of the OpenConsole tests to run. Can be "Debug" or
 # "Release". Defaults to "Debug".
-function Invoke-OpenConsoleTests()
-{
+function Invoke-OpenConsoleTests() {
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [switch]$AllTests,
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [switch]$FTOnly,
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia', 'textbuffer', 'til', 'types', 'terminalCore', 'terminalApp', 'localTerminalApp', 'unitSettingsModel', 'unitControl', 'winconpty')]
         [string]$Test,
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string[]]$TaefArgs,
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [ValidateSet('x64', 'x86')]
         [string]$Platform = "x64",
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [ValidateSet('Debug', 'Release')]
         [string]$Configuration = "Debug"
 
@@ -189,14 +184,12 @@ function Invoke-OpenConsoleTests()
 
     $root = Find-OpenConsoleRoot
 
-    if (($AllTests -and $FTOnly) -or ($AllTests -and $Test) -or ($FTOnly -and $Test))
-    {
+    if (($AllTests -and $FTOnly) -or ($AllTests -and $Test) -or ($FTOnly -and $Test)) {
         Write-Host "Invalid combination of flags" -ForegroundColor Red
         return
     }
     $OpenConsolePlatform = $Platform
-    if ($Platform -eq 'x86')
-    {
+    if ($Platform -eq 'x86') {
         $OpenConsolePlatform = 'Win32'
     }
     $OpenConsolePath = "$root\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
@@ -207,57 +200,46 @@ function Invoke-OpenConsoleTests()
 
     # check if WinAppDriver needs to be started
     $WinAppDriverExe = $null
-    if ($AllTests -or $FtOnly -or $Test -eq "uia")
-    {
+    if ($AllTests -or $FtOnly -or $Test -eq "uia") {
         $WinAppDriverExe = [Diagnostics.Process]::Start("$root\dep\WinAppDriver\WinAppDriver.exe")
     }
 
     # select tests to run
-    if ($AllTests)
-    {
+    if ($AllTests) {
         $TestsToRun = $TestConfig.tests.test
     }
-    elseif ($FTOnly)
-    {
+    elseif ($FTOnly) {
         $TestsToRun = $TestConfig.tests.test | Where-Object { $_.type -eq "ft" }
     }
-    elseif ($Test)
-    {
+    elseif ($Test) {
         $TestsToRun = $TestConfig.tests.test | Where-Object { $_.name -eq $Test }
     }
-    else
-    {
+    else {
         # run unit tests by default
         $TestsToRun = $TestConfig.tests.test | Where-Object { $_.type -eq "unit" }
     }
 
     # run selected tests
-    foreach ($t in $TestsToRun)
-    {
+    foreach ($t in $TestsToRun) {
         $currentTaefExe = $TaefExePath
-        if ($t.isolatedTaef -eq "true")
-        {
+        if ($t.isolatedTaef -eq "true") {
             $currentTaefExe = (Join-Path (Split-Path (Join-Path $BinDir $t.binary)) "te.exe")
         }
 
-        if ($t.type -eq "unit")
-        {
+        if ($t.type -eq "unit") {
             & $currentTaefExe "$BinDir\$($t.binary)" $TaefArgs
         }
-        elseif ($t.type -eq "ft")
-        {
+        elseif ($t.type -eq "ft") {
             Invoke-TaefInNewWindow -OpenConsolePath $OpenConsolePath -TaefPath $currentTaefExe -TestDll "$BinDir\$($t.binary)" -TaefArgs $TaefArgs
         }
-        else
-        {
+        else {
             Write-Host "Invalid test type $t.type for test: $t.name" -ForegroundColor Red
             return
         }
     }
 
     # stop running WinAppDriver if it was launched
-    if ($WinAppDriverExe)
-    {
+    if ($WinAppDriverExe) {
         Stop-Process -Id $WinAppDriverExe.Id
     }
 }
@@ -265,8 +247,7 @@ function Invoke-OpenConsoleTests()
 
 #.SYNOPSIS
 # Builds OpenConsole.slnx using msbuild. Any arguments get passed on to msbuild.
-function Invoke-OpenConsoleBuild()
-{
+function Invoke-OpenConsoleBuild() {
     $root = Find-OpenConsoleRoot
     & "$root\dep\nuget\nuget.exe" restore "$root\OpenConsole.slnx"
     & "$root\dep\nuget\nuget.exe" restore "$root\dep\nuget\packages.config"
@@ -283,18 +264,16 @@ function Invoke-OpenConsoleBuild()
 #.PARAMETER Configuration
 # The configuration of the OpenConsole executable to launch. Can be "Debug" or
 # "Release". Defaults to "Debug".
-function Start-OpenConsole()
-{
+function Start-OpenConsole() {
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string]$Platform = "x64",
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string]$Configuration = "Debug"
     )
-    if ($Platform -like "x86")
-    {
+    if ($Platform -like "x86") {
         $Platform = "Win32"
     }
     & "$(Find-OpenConsoleRoot)\bin\$Platform\$Configuration\OpenConsole.exe"
@@ -310,18 +289,16 @@ function Start-OpenConsole()
 #.PARAMETER Configuration
 # The configuration of the OpenConsole executable to launch. Can be "Debug" or
 # "Release". Defaults to "Debug".
-function Debug-OpenConsole()
-{
+function Debug-OpenConsole() {
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string]$Platform = "x64",
 
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string]$Configuration = "Debug"
     )
-    if ($Platform -like "x86")
-    {
+    if ($Platform -like "x86") {
         $Platform = "Win32"
     }
     $process = [Diagnostics.Process]::Start("$(Find-OpenConsoleRoot)\bin\$Platform\$Configuration\OpenConsole.exe")
@@ -336,10 +313,10 @@ function Debug-OpenConsole()
 function Invoke-ClangFormat {
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]$Path,
 
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [string]$ClangFormatPath = "clang-format" # (whichever one is in $PATH)
     )
 
@@ -349,16 +326,17 @@ function Invoke-ClangFormat {
     }
 
     Process {
-        ForEach($_ in $Path) {
+        ForEach ($_ in $Path) {
             $Paths += Get-Item $_ -ErrorAction Stop | Select -Expand FullName
         }
     }
 
     End {
-        For($i = [int]0; $i -Lt $Paths.Length; $i += $BatchSize) {
+        For ($i = [int]0; $i -Lt $Paths.Length; $i += $BatchSize) {
             Try {
                 & $ClangFormatPath -i $Paths[$i .. ($i + $BatchSize - 1)]
-            } Catch {
+            }
+            Catch {
                 Write-Error $_
             }
         }
@@ -412,23 +390,28 @@ function Invoke-CodeFormat() {
 
     [CmdletBinding()]
     Param (
-        [parameter(Mandatory=$false)]
-        [switch]$IgnoreXaml
+        [parameter(Mandatory = $false)]
+        [switch]$IgnoreXaml,
+
+        [Parameter(Mandatory = $false)]
+        [string]$ClangFormatPath
     )
 
-    $clangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -find "**\x64\bin\clang-format.exe"
-    If ([String]::IsNullOrEmpty($clangFormatPath)) {
-        Write-Error "No Visual Studio-supplied version of clang-format could be found."
+    if (!$ClangFormatPath) {
+        $ClangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -find "**\x64\bin\clang-format.exe"
+        If ([String]::IsNullOrEmpty($ClangFormatPath)) {
+            Write-Error "No Visual Studio-supplied version of clang-format could be found."
+        }
     }
 
     $root = Find-OpenConsoleRoot
-    Get-ChildItem -Recurse "$root\src" -Include *.cpp, *.hpp, *.h |
-      Where FullName -NotLike "*Generated Files*" |
-      Invoke-ClangFormat -ClangFormatPath $clangFormatPath
+    Get-ChildItem -Recurse "$root\src" -Include *.cpp, *.hpp, *.h
+    | Where-Object FullName -NotLike "*Generated Files*"
+    | Invoke-ClangFormat -ClangFormatPath $ClangFormatPath
 
     if (-Not $IgnoreXaml) {
         Invoke-XamlFormat
     }
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat
+Export-ModuleMember -Function Set-MsbuildDevEnvironment, Invoke-OpenConsoleTests, Invoke-OpenConsoleBuild, Start-OpenConsole, Debug-OpenConsole, Invoke-CodeFormat, Invoke-XamlFormat, Test-XamlFormat

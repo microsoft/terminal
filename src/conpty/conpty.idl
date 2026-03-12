@@ -1,0 +1,31 @@
+import "unknwnbase.idl";
+
+typedef struct _STARTUPINFOEXW* LPSTARTUPINFOEXW;
+typedef struct _STARTUPINFOW* LPSTARTUPINFOW;
+typedef struct _PROCESS_INFORMATION* LPPROCESS_INFORMATION;
+
+[uuid(9a727f67-09bd-429b-8f73-766a718070f0), object, local, pointer_default(unique)]
+interface IPtyServer : IUnknown
+{
+    HRESULT Run();
+
+    HRESULT FillStartupInfoEx(
+        [in, out] LPSTARTUPINFOEXW si,
+        [out] HANDLE* reference
+    );
+
+    // Identical to CreateProcessW(), except for the absence of lpStartupInfo.
+    HRESULT CreateProcessW(
+        [in] LPCWSTR lpApplicationName, // NOTE: optional
+        [in, out] LPWSTR lpCommandLine, // NOTE: optional
+        [in] LPSECURITY_ATTRIBUTES lpProcessAttributes, // NOTE: optional
+        [in] LPSECURITY_ATTRIBUTES lpThreadAttributes, // NOTE: optional
+        [in] BOOL bInheritHandles,
+        [in] DWORD dwCreationFlags,
+        [in] LPVOID lpEnvironment, // NOTE: optional
+        [in] LPCWSTR lpCurrentDirectory, // NOTE: optional
+        [out] LPPROCESS_INFORMATION lpProcessInformation
+    );
+}
+
+cpp_quote("HRESULT WINAPI PtyCreateServer(REFIID riid, void** server);")

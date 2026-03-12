@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{23a66bb9-dccf-420c-b1a1-fa9ecfe7db65}</ProjectGuid>
+    <ProjectName>conpty</ProjectName>
+    <RootNamespace>conpty</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <TargetName>$(ProjectName)_v2</TargetName>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.props" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OutDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="server.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="conpty.idl">
+      <!--
+        AKA: /out $(OutDir) /h %(Filename).h /dlldata NUL /iid NUL /proxy NUL /char unsigned /cstruct_out /prefix all VTbl_
+        ...but MSVC gets antsy about that. It already passes some of these on its own.
+      -->
+      <OutputDirectory>$(OutDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <DllDataFileName>nul</DllDataFileName>
+      <ProxyFileName>nul</ProxyFileName>
+      <DefaultCharType>Unsigned</DefaultCharType>
+      <InterfaceIdentifierFileName>nul</InterfaceIdentifierFileName>
+      <AdditionalOptions>/cstruct_out /prefix all VTbl_ %(AdditionalOptions)</AdditionalOptions>
+    </Midl>
+  </ItemGroup>
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
+</Project>

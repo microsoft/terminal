@@ -10,6 +10,12 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/Conhost/">
+    <Project Path="src/conpty/conpty-test/conpty-test.vcxproj" Id="10715020-e347-4d4e-a8f2-d11e4bced6ec">
+      <BuildType Solution="AuditMode|*" Project="Release" />
+      <BuildType Solution="Fuzzing|*" Project="Release" />
+      <Platform Solution="*|ARM64" Project="x64" />
+    </Project>
+    <Project Path="src/conpty/conpty.vcxproj" Id="23a66bb9-dccf-420c-b1a1-fa9ecfe7db65" />
     <Project Path="src/host/exe/Host.EXE.vcxproj" Id="9cbd7dfa-1754-4a9d-93d7-857a9d17cb1b">
       <BuildDependency Project="src/buffer/out/lib/bufferout.vcxproj" />
       <BuildDependency Project="src/host/proxy/Host.Proxy.vcxproj" />
