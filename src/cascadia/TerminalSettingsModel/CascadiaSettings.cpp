@@ -647,9 +647,12 @@ void CascadiaSettings::_validateMediaResources()
 
     _globals->ResolveMediaResources(mediaResourceResolver);
 
-    if (_foundInvalidUserResources)
+    if (Feature_WarnOnInvalidSettingsMediaResources::IsEnabled())
     {
-        _warnings.Append(SettingsLoadWarnings::InvalidMediaResource);
+        if (_foundInvalidUserResources)
+        {
+            _warnings.Append(SettingsLoadWarnings::InvalidMediaResource);
+        }
     }
 }
 
