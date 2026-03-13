@@ -35,7 +35,6 @@ namespace winrt::TerminalApp::implementation
         _activePane = nullptr;
 
         _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
-        _restartConnectionMenuItem.Visibility(WUX::Visibility::Collapsed);
 
         auto firstId = _nextPaneId;
 
@@ -86,6 +85,7 @@ namespace winrt::TerminalApp::implementation
 
         _MakeTabViewItem();
         _CreateContextMenu();
+        _UpdateMenuItemEnablement();
 
         _headerControl.TabStatus(_tabStatus);
 
@@ -1271,13 +1271,6 @@ namespace winrt::TerminalApp::implementation
 
             _tabStatus.IsConnectionClosed(isClosed);
         }
-
-        if (_activePane)
-        {
-            _restartConnectionMenuItem.Visibility(_activePane->IsConnectionClosed() ?
-                                                      WUX::Visibility::Visible :
-                                                      WUX::Visibility::Collapsed);
-        }
     }
 
     void Tab::_RestartActivePaneConnection()
@@ -1348,6 +1341,22 @@ namespace winrt::TerminalApp::implementation
                 }
             });
         }
+
+        _UpdateMenuItemEnablement();
+    }
+
+    void Tab::_UpdateMenuItemEnablement()
+    {
+        // Terminal-specific menu items
+        const auto content = _activePane ? _activePane->GetContent() : nullptr;
+        const auto isTerm = content && content.try_as<winrt::TerminalApp::TerminalPaneContent>() != nullptr;
+        _duplicateTabMenuItem.IsEnabled(isTerm);
+        _exportTabMenuItem.IsEnabled(isTerm);
+        _findMenuItem.IsEnabled(isTerm);
+        _restartConnectionMenuItem.IsEnabled(isTerm);
+
+        // Snippets Pane can technically be split
+        _splitTabMenuItem.IsEnabled(isTerm || (content && content.try_as<winrt::TerminalApp::SnippetsPaneContent>() != nullptr));
     }
 
     // Method Description:
@@ -1652,7 +1661,7 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(renameTabMenuItem, renameTabToolTip);
         }
 
-        Controls::MenuFlyoutItem duplicateTabMenuItem;
+        Controls::MenuFlyoutItem duplicateTabMenuItem = _duplicateTabMenuItem;
         {
             // "Duplicate tab"
             Controls::FontIcon duplicateTabSymbol;
@@ -1669,7 +1678,7 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(duplicateTabMenuItem, duplicateTabToolTip);
         }
 
-        Controls::MenuFlyoutItem splitTabMenuItem;
+        Controls::MenuFlyoutItem splitTabMenuItem = _splitTabMenuItem;
         {
             // "Split tab"
             Controls::FontIcon splitTabSymbol;
@@ -1698,7 +1707,7 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(closePaneMenuItem, closePaneToolTip);
         }
 
-        Controls::MenuFlyoutItem exportTabMenuItem;
+        Controls::MenuFlyoutItem exportTabMenuItem = _exportTabMenuItem;
         {
             // "Export tab"
             Controls::FontIcon exportTabSymbol;
@@ -1715,7 +1724,7 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(exportTabMenuItem, exportTabToolTip);
         }
 
-        Controls::MenuFlyoutItem findMenuItem;
+        Controls::MenuFlyoutItem findMenuItem = _findMenuItem;
         {
             // "Find"
             Controls::FontIcon findSymbol;
