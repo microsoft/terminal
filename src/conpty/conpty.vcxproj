@@ -18,11 +18,15 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(OutDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="server.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="PtyServer.cpp" />
+    <ClCompile Include="PtyServer.clients.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="conpty.idl">
@@ -38,6 +42,10 @@
       <InterfaceIdentifierFileName>nul</InterfaceIdentifierFileName>
       <AdditionalOptions>/cstruct_out /prefix all VTbl_ %(AdditionalOptions)</AdditionalOptions>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="PtyServer.h" />
   </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
