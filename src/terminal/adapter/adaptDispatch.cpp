@@ -2995,6 +2995,31 @@ void AdaptDispatch::SoftReset()
 // <none>
 void AdaptDispatch::HardReset()
 {
+    _hardResetCore(true);
+}
+
+// Routine Description:
+// - Performs a hard reset of all VT state without clearing the buffer content
+//   or scrollback. This is used when a connection is restarted to clean up
+//   any dirty state left behind by a crashed application (e.g., bracketed
+//   paste, mouse tracking, alternate buffer, kitty keyboard, etc.).
+// Arguments:
+// - None
+void AdaptDispatch::HardResetWithoutBufferClear()
+{
+    _hardResetCore(false);
+}
+
+// Routine Description:
+// - Shared implementation for HardReset and HardResetWithoutBufferClear.
+//   Resets all VT state (parser, input modes, display modes, character sets,
+//   color table, tab stops, macros, etc.) to initial defaults. When
+//   clearBuffers is true, the screen and scrollback are also erased (full
+//   RIS behavior). When false, buffer content is preserved.
+// Arguments:
+// - clearBuffers: if true, erase the screen and scrollback
+void AdaptDispatch::_hardResetCore(const bool clearBuffers)
+{
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
     {
@@ -3020,9 +3045,12 @@ void AdaptDispatch::HardReset()
     //      to ensure that it clears with the default background color.
     SoftReset();
 
-    // Clears the screen - Needs to be done in two operations.
-    EraseInDisplay(DispatchTypes::EraseType::All);
-    EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    if (clearBuffers)
+    {
+        // Clears the screen - Needs to be done in two operations.
+        EraseInDisplay(DispatchTypes::EraseType::All);
+        EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    }
 
     // Set the color table and render modes back to their initial startup values.
     _renderSettings.RestoreDefaultSettings();
@@ -3033,8 +3061,14 @@ void AdaptDispatch::HardReset()
         _renderer->SynchronizedOutputChanged();
     }
 
-    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
-    CursorPosition(1, 1);
+    if (clearBuffers)
+    {
+        // Cursor to 1,1 - the Soft Reset guarantees this is absolute.
+        // Only done when clearing buffers, because when preserving content
+        // the cursor should stay where the previous shell left it so the
+        // new shell prompt appears in the right place.
+        CursorPosition(1, 1);
+    }
 
     // We only reset the system line feed mode if the input mode is set. If it
     // isn't set, that either means they're both reset, and there's nothing for

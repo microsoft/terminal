@@ -127,6 +127,7 @@ public:
 
     void SoftReset() override {} // DECSTR
     void HardReset() override {} // RIS
+    void HardResetWithoutBufferClear() override {}
     void ScreenAlignmentPattern() override {} // DECALN
 
     void SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override {} // DECSCUSR

@@ -3742,7 +3742,13 @@ namespace winrt::TerminalApp::implementation
         // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            paneContent.GetTermControl().Connection(connection);
+            // Reset the terminal's VT state before attaching the new connection.
+            // The previous client may have left dirty modes (e.g., bracketed
+            // paste, mouse tracking, alternate buffer, kitty keyboard) that
+            // would corrupt input/output for the new shell process.
+            const auto& termControl = paneContent.GetTermControl();
+            termControl.ResetConnection();
+            termControl.Connection(connection);
             connection.Start();
         }
     }

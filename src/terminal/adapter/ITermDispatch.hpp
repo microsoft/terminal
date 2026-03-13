@@ -140,6 +140,7 @@ public:
 
     virtual void SoftReset() = 0; // DECSTR
     virtual void HardReset() = 0; // RIS
+    virtual void HardResetWithoutBufferClear() = 0;
     virtual void ScreenAlignmentPattern() = 0; // DECALN
 
     virtual void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR

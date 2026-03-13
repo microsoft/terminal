@@ -129,6 +129,7 @@ namespace Microsoft::Console::VirtualTerminal
         void AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         void SoftReset() override; // DECSTR
         void HardReset() override; // RIS
+        void HardResetWithoutBufferClear() override;
         void ScreenAlignmentPattern() override; // DECALN
         void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
 
@@ -195,6 +196,7 @@ namespace Microsoft::Console::VirtualTerminal
         void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
 
     private:
+        void _hardResetCore(const bool clearBuffers);
         enum class Mode
         {
             InsertReplace,
