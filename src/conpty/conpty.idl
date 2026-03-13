@@ -9,11 +9,6 @@ interface IPtyServer : IUnknown
 {
     HRESULT Run();
 
-    HRESULT FillStartupInfoEx(
-        [in, out] LPSTARTUPINFOEXW si,
-        [out] HANDLE* reference
-    );
-
     // Identical to CreateProcessW(), except for the absence of lpStartupInfo.
     HRESULT CreateProcessW(
         [in] LPCWSTR lpApplicationName, // NOTE: optional

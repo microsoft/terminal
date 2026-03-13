@@ -33,13 +33,15 @@
         wil::unique_handle ServerHandle;
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateServerHandle(ServerHandle.addressof(), FALSE));
 
+        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get(), args));
+        ServerHandle.release();
+        return S_OK;
+
         wil::unique_handle ReferenceHandle;
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(ReferenceHandle.addressof(),
                                                                    ServerHandle.get(),
                                                                    L"\\Reference",
                                                                    FALSE));
-
-        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get(), args));
 
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.
