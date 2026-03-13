@@ -27,6 +27,7 @@
     </ClCompile>
     <ClCompile Include="PtyServer.cpp" />
     <ClCompile Include="PtyServer.clients.cpp" />
+    <ClCompile Include="PtyServer.io.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="conpty.idl">

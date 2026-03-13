@@ -1,14 +1,12 @@
 #include "pch.h"
 #include "PtyServer.h"
 
-#include <algorithm>
-
 // Reads [part of] the input payload of the given message from the driver.
 // Analogous to the OG ReadMessageInput() in csrutil.cpp.
 //
 // For CONSOLE_IO_CONNECT, offset is 0 and the payload is a CONSOLE_SERVER_MSG.
 // For CONSOLE_IO_USER_DEFINED, offset would typically be past the message header.
-__declspec(noinline) void PtyServer::readInput(const CD_IO_DESCRIPTOR& desc, ULONG offset, void* buffer, ULONG size)
+void PtyServer::readInput(const CD_IO_DESCRIPTOR& desc, ULONG offset, void* buffer, ULONG size)
 {
     CD_IO_OPERATION op{};
     op.Identifier = desc.Identifier;
@@ -27,6 +25,21 @@ __declspec(noinline) void PtyServer::readInput(const CD_IO_DESCRIPTOR& desc, ULO
 void PtyServer::completeIo(CD_IO_COMPLETE& completion)
 {
     THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_COMPLETE_IO, &completion, sizeof(completion), nullptr, 0));
+}
+
+// Writes data back to the client's output buffer for the given message.
+// Analogous to the IOCTL_CONDRV_WRITE_OUTPUT call in the OG ReleaseMessageBuffers() (csrutil.cpp).
+//
+// The driver matches the Identifier to the pending IO and copies data into
+// the client's buffer at the specified offset.
+void PtyServer::writeOutput(const CD_IO_DESCRIPTOR& desc, ULONG offset, const void* buffer, ULONG size)
+{
+    CD_IO_OPERATION op{};
+    op.Identifier = desc.Identifier;
+    op.Buffer.Offset = offset;
+    op.Buffer.Data = const_cast<void*>(buffer);
+    op.Buffer.Size = size;
+    THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_WRITE_OUTPUT, &op, sizeof(op), nullptr, 0));
 }
 
 PtyClient* PtyServer::findClient(ULONG_PTR handle)
@@ -81,10 +94,12 @@ void PtyServer::handleConnect(CONSOLE_API_MSG& msg)
     // 4. The first connection is the root process (console owner).
     client->rootProcess = !m_initialized;
 
-    // 5. Allocate opaque handle IDs for input and output.
-    //    The driver echoes these back in Descriptor.Object for future IO messages.
-    client->inputHandle = m_nextHandleId++;
-    client->outputHandle = m_nextHandleId++;
+    // 5. Allocate IO handles for input and output.
+    //    In the OG, AllocateIoHandle creates a CONSOLE_HANDLE_DATA pointing to
+    //    the input buffer or screen buffer. Here we create lightweight PtyHandle
+    //    objects. The driver echoes these back in Descriptor.Object.
+    client->inputHandle = allocateHandle(CONSOLE_INPUT_HANDLE, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE);
+    client->outputHandle = allocateHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE);
 
     if (!m_initialized)
     {
@@ -132,5 +147,110 @@ void PtyServer::handleDisconnect(CONSOLE_API_MSG& msg)
         return;
     }
 
+    // Cancel any pending IOs from this client.
+    cancelPendingIOs(msg.Descriptor.Process);
+
+    // Free the client's IO handles, mirroring OG FreeProcessData which calls
+    // ConsoleCloseHandle on InputHandle and OutputHandle.
+    if (client->inputHandle)
+    {
+        freeHandle(client->inputHandle);
+    }
+    if (client->outputHandle)
+    {
+        freeHandle(client->outputHandle);
+    }
+
     std::erase_if(m_clients, [client](const auto& c) { return c.get() == client; });
+}
+
+// Handle management.
+//
+// Analogous to OG AllocateIoHandle (handle.cpp). The OG creates a CONSOLE_HANDLE_DATA
+// with share/access tracking and a pointer to the underlying console object.
+// We create a lightweight PtyHandle and return its pointer cast to ULONG_PTR.
+ULONG_PTR PtyServer::allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode)
+{
+    auto h = std::make_unique<PtyHandle>();
+    h->handleType = handleType;
+    h->access = access;
+    h->shareMode = shareMode;
+    auto ptr = reinterpret_cast<ULONG_PTR>(h.get());
+    m_handles.push_back(std::move(h));
+    return ptr;
+}
+
+// Analogous to OG ConsoleCloseHandle → FreeConsoleHandle (handle.cpp).
+void PtyServer::freeHandle(ULONG_PTR handle)
+{
+    auto ptr = reinterpret_cast<PtyHandle*>(handle);
+    std::erase_if(m_handles, [ptr](const auto& h) { return h.get() == ptr; });
+}
+
+// Handles CONSOLE_IO_CREATE_OBJECT messages.
+//
+// Protocol (from OG ConsoleCreateObject in srvinit.cpp):
+//  1. Read CD_CREATE_OBJECT_INFORMATION from the message (already in msg.CreateObject).
+//  2. Resolve CD_IO_OBJECT_TYPE_GENERIC based on DesiredAccess.
+//  3. Allocate a handle of the appropriate type.
+//  4. Reply via completeIo with the handle value in IoStatus.Information.
+void PtyServer::handleCreateObject(CONSOLE_API_MSG& msg)
+{
+    auto& info = msg.CreateObject;
+
+    // Resolve generic object type based on desired access, matching OG behavior.
+    if (info.ObjectType == CD_IO_OBJECT_TYPE_GENERIC)
+    {
+        if ((info.DesiredAccess & (GENERIC_READ | GENERIC_WRITE)) == GENERIC_READ)
+        {
+            info.ObjectType = CD_IO_OBJECT_TYPE_CURRENT_INPUT;
+        }
+        else if ((info.DesiredAccess & (GENERIC_READ | GENERIC_WRITE)) == GENERIC_WRITE)
+        {
+            info.ObjectType = CD_IO_OBJECT_TYPE_CURRENT_OUTPUT;
+        }
+    }
+
+    ULONG_PTR handle = 0;
+
+    switch (info.ObjectType)
+    {
+    case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
+        handle = allocateHandle(CONSOLE_INPUT_HANDLE, info.DesiredAccess, info.ShareMode);
+        break;
+
+    case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
+        handle = allocateHandle(CONSOLE_OUTPUT_HANDLE, info.DesiredAccess, info.ShareMode);
+        break;
+
+    case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
+        // In the OG, this creates a new screen buffer via ConsoleCreateScreenBuffer.
+        // For now, we allocate a handle that tracks as an output handle.
+        handle = allocateHandle(CONSOLE_OUTPUT_HANDLE, info.DesiredAccess, info.ShareMode);
+        break;
+
+    default:
+        THROW_NTSTATUS(STATUS_INVALID_PARAMETER);
+    }
+
+    // Reply with the handle value in IoStatus.Information.
+    // The driver stores this and echoes it back in Descriptor.Object for future IO.
+    CD_IO_COMPLETE completion{};
+    completion.Identifier = msg.Descriptor.Identifier;
+    completion.IoStatus.Status = STATUS_SUCCESS;
+    completion.IoStatus.Information = handle;
+
+    completeIo(completion);
+}
+
+// Handles CONSOLE_IO_CLOSE_OBJECT messages.
+//
+// Protocol (from OG SrvCloseHandle in stream.cpp):
+//  1. Descriptor.Object contains the opaque handle value.
+//  2. Close/free the handle.
+//
+// The caller replies with STATUS_SUCCESS inline.
+void PtyServer::handleCloseObject(CONSOLE_API_MSG& msg)
+{
+    freeHandle(msg.Descriptor.Object);
 }

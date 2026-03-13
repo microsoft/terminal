@@ -1,8 +1,8 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define UMDF_USING_NTSTATUS
 #define NOMINMAX
+#define UMDF_USING_NTSTATUS
+#define WIN32_LEAN_AND_MEAN
 
 #include <ntstatus.h>
 #include <Windows.h>

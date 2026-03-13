@@ -135,23 +135,29 @@ HRESULT PtyServer::Run()
                 break;
             case CONSOLE_IO_CREATE_OBJECT:
                 printf("Received create object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
-                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
-                hasRes = true;
+                handleCreateObject(req);
                 break;
             case CONSOLE_IO_CLOSE_OBJECT:
                 printf("Received close object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
-                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
+                handleCloseObject(req);
+                res.IoStatus.Status = STATUS_SUCCESS;
                 hasRes = true;
                 break;
             case CONSOLE_IO_RAW_WRITE:
                 printf("Received raw write request of %lu bytes from process %llu\n", req.Descriptor.InputSize, req.Descriptor.Process);
-                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
-                hasRes = true;
+                if (handleRawWrite(req))
+                {
+                    res.IoStatus.Status = STATUS_SUCCESS;
+                    hasRes = true;
+                }
                 break;
             case CONSOLE_IO_RAW_READ:
                 printf("Received raw read request of %lu bytes from process %llu\n", req.Descriptor.OutputSize, req.Descriptor.Process);
-                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
-                hasRes = true;
+                if (handleRawRead(req))
+                {
+                    res.IoStatus.Status = STATUS_SUCCESS;
+                    hasRes = true;
+                }
                 break;
             case CONSOLE_IO_USER_DEFINED:
                 printf("Received user defined IO request: %lu\n", req.Descriptor.InputSize);
