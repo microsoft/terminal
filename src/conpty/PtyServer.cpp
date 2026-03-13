@@ -1,35 +1,14 @@
 #include "pch.h"
 #include "PtyServer.h"
 
+#include <cassert>
+
 #define ProcThreadAttributeConsoleReference 10
 
 #define PROC_THREAD_ATTRIBUTE_CONSOLE_REFERENCE \
     ProcThreadAttributeValue(10, FALSE, TRUE, FALSE)
 
 #pragma warning(disable : 4100 4189)
-
-struct CONSOLE_API_MSG
-{
-    CD_IO_DESCRIPTOR Descriptor;
-    union
-    {
-        struct
-        {
-            CD_CREATE_OBJECT_INFORMATION CreateObject;
-            CONSOLE_CREATESCREENBUFFER_MSG CreateScreenBuffer;
-        };
-        struct
-        {
-            CONSOLE_MSG_HEADER msgHeader;
-            union
-            {
-                CONSOLE_MSG_BODY_L1 consoleMsgL1;
-                CONSOLE_MSG_BODY_L2 consoleMsgL2;
-                CONSOLE_MSG_BODY_L3 consoleMsgL3;
-            } u;
-        };
-    };
-};
 
 HRESULT WINAPI PtyCreateServer(REFIID riid, void** server)
 try
@@ -104,58 +83,97 @@ ULONG PtyServer::Release()
 HRESULT PtyServer::Run()
 {
     CONSOLE_API_MSG req{};
-    CD_IO_COMPLETE resBuf{};
-    CD_IO_COMPLETE* res = nullptr;
+    CD_IO_COMPLETE res{};
+    bool hasRes = false;
 
     while (true)
     {
-        auto hr = ioctl(IOCTL_CONDRV_READ_IO, res, res ? sizeof(res) : 0, &req, sizeof(CONSOLE_API_MSG));
-
-        if (res)
+        NTSTATUS status;
         {
-            memset(res, 0, sizeof(resBuf));
-            res = nullptr;
-        }
+            void* in = nullptr;
+            DWORD inLen = 0;
 
-        if (FAILED_NTSTATUS_LOG(hr))
-        {
-            if (hr == STATUS_PIPE_DISCONNECTED)
+            if (hasRes)
             {
-                hr = S_OK;
+                res.Identifier = req.Descriptor.Identifier;
+                in = &res;
+                inLen = sizeof(res);
             }
-            return hr;
+
+            status = ioctl(IOCTL_CONDRV_READ_IO, in, inLen, &req, sizeof(req));
+
+            if (hasRes)
+            {
+                memset(&res, 0, sizeof(res));
+                hasRes = false;
+            }
+        }
+        if (!NT_SUCCESS(status))
+        {
+            if (status == STATUS_PIPE_DISCONNECTED)
+            {
+                return S_OK;
+            }
+            return HRESULT_FROM_NT(status);
         }
 
-        switch (req.Descriptor.Function)
+        try
         {
-        case CONSOLE_IO_CONNECT:
-            printf("Received connect request from process %llu\n", req.Descriptor.Process);
-            break;
-        case CONSOLE_IO_DISCONNECT:
-            printf("Received disconnect request from process %llu\n", req.Descriptor.Process);
-            break;
-        case CONSOLE_IO_CREATE_OBJECT:
-            printf("Received create object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
-            break;
-        case CONSOLE_IO_CLOSE_OBJECT:
-            printf("Received close object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
-            break;
-        case CONSOLE_IO_RAW_WRITE:
-            printf("Received raw write request of %lu bytes from process %llu\n", req.Descriptor.InputSize, req.Descriptor.Process);
-            break;
-        case CONSOLE_IO_RAW_READ:
-            printf("Received raw read request of %lu bytes from process %llu\n", req.Descriptor.OutputSize, req.Descriptor.Process);
-            break;
-        case CONSOLE_IO_USER_DEFINED:
-            printf("Received user defined IO request: %lu\n", req.Descriptor.InputSize);
-            break;
-        case CONSOLE_IO_RAW_FLUSH:
-            printf("Received raw flush request from process %llu\n", req.Descriptor.Process);
-            break;
-        default:
-            resBuf.IoStatus.Status = STATUS_UNSUCCESSFUL;
-            res = &resBuf;
-            break;
+            switch (req.Descriptor.Function)
+            {
+            case CONSOLE_IO_CONNECT:
+            {
+                printf("Received connect request from process %llu\n", req.Descriptor.Process);
+                handleConnect(req);
+                break;
+            }
+            case CONSOLE_IO_DISCONNECT:
+                printf("Received disconnect request from process %llu\n", req.Descriptor.Process);
+                handleDisconnect(req);
+                res.IoStatus.Status = STATUS_SUCCESS;
+                hasRes = true;
+                break;
+            case CONSOLE_IO_CREATE_OBJECT:
+                printf("Received create object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
+                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
+                hasRes = true;
+                break;
+            case CONSOLE_IO_CLOSE_OBJECT:
+                printf("Received close object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
+                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
+                hasRes = true;
+                break;
+            case CONSOLE_IO_RAW_WRITE:
+                printf("Received raw write request of %lu bytes from process %llu\n", req.Descriptor.InputSize, req.Descriptor.Process);
+                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
+                hasRes = true;
+                break;
+            case CONSOLE_IO_RAW_READ:
+                printf("Received raw read request of %lu bytes from process %llu\n", req.Descriptor.OutputSize, req.Descriptor.Process);
+                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
+                hasRes = true;
+                break;
+            case CONSOLE_IO_USER_DEFINED:
+                printf("Received user defined IO request: %lu\n", req.Descriptor.InputSize);
+                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
+                hasRes = true;
+                break;
+            case CONSOLE_IO_RAW_FLUSH:
+                printf("Received raw flush request from process %llu\n", req.Descriptor.Process);
+                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
+                hasRes = true;
+                break;
+            default:
+                res.IoStatus.Status = STATUS_UNSUCCESSFUL;
+                hasRes = true;
+                break;
+            }
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            res.IoStatus.Status = status;
+            hasRes = true;
         }
     }
 }
@@ -256,6 +274,9 @@ unique_nthandle PtyServer::createHandle(HANDLE parent, const wchar_t* typeName, 
 
 NTSTATUS PtyServer::ioctl(DWORD code, void* in, DWORD inLen, void* out, DWORD outLen) const
 {
+    assert((in == nullptr) == (inLen == 0));
+    assert((out == nullptr) == (outLen == 0));
+
     IO_STATUS_BLOCK iosb;
     auto status = NtDeviceIoControlFile(m_server.get(), nullptr, nullptr, nullptr, &iosb, code, in, inLen, out, outLen);
 
@@ -267,12 +288,6 @@ NTSTATUS PtyServer::ioctl(DWORD code, void* in, DWORD inLen, void* out, DWORD ou
         {
             status = iosb.Status;
         }
-    }
-
-    if (NT_SUCCESS(status) && outLen != static_cast<DWORD>(iosb.Information))
-    {
-        // Short read? Error.
-        status = STATUS_UNSUCCESSFUL;
     }
 
     return status;
