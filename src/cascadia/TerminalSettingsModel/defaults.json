@@ -25,6 +25,7 @@
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
+    "confirmCloseAllPanes": true,
     "theme": "dark",
     "snapToGridOnResize": true,
     "disableAnimations": false,

@@ -39,6 +39,7 @@ Author(s):
     X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
     X(bool, ConfirmCloseAllTabs, "warning.confirmCloseAllTabs", true)                                                                                                                                 \
+    X(bool, ConfirmCloseAllPanes, "warning.confirmCloseAllPanes", true)                                                                                                                               \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
     X(hstring, Language, "language")                                                                                                                                                                  \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \

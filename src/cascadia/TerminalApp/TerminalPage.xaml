@@ -104,6 +104,12 @@
                        x:Load="False"
                        DefaultButton="Close" />
 
+        <ContentDialog x:Name="CloseTabWarningDialog"
+                       x:Uid="CloseTabWarningDialog"
+                       Grid.Row="2"
+                       x:Load="False"
+                       DefaultButton="Primary" />
+
         <ContentDialog x:Name="MultiLinePasteDialog"
                        x:Uid="MultiLinePasteDialog"
                        Grid.Row="2"
