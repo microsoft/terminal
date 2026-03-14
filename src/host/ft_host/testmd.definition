@@ -40,6 +40,12 @@
       "Execution": {
         "AdditionalParameter": "/select:\"@IsPerfTest=true\""
       }
+    },
+    {
+      "Name": "NoAppPlatform",
+      "Execution": {
+        "AdditionalParameter": "/select:\"not(@Name='PolicyTests::*')\""
+      }
     }
   ]
 }
