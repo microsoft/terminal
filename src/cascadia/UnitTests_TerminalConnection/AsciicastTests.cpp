@@ -631,7 +631,7 @@ namespace TerminalConnectionUnitTests
 
     void AsciicastTests::UnescapeJsonString_UnicodeEscape()
     {
-        Log::Comment(L"Verify \\uXXXX sequences are decoded.");
+        Log::Comment(L"Verify unicode escape sequences are decoded.");
 
         // \u001b → ESC (0x1B)
         const auto result = _UnescapeJsonString(L"\\u001b[32m");
@@ -726,7 +726,7 @@ namespace TerminalConnectionUnitTests
 
     void AsciicastTests::ParseFile_MissingFile()
     {
-        Log::Comment(L"Parse a non-existent file — should return zero events gracefully.");
+        Log::Comment(L"Parse a nonexistent file, should return zero events gracefully.");
 
         const auto events = _ParseCastFile(L"C:\\nonexistent_path_12345\\fake.cast");
         VERIFY_ARE_EQUAL(static_cast<size_t>(0), events.size());

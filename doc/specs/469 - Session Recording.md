@@ -301,7 +301,7 @@ that's all wired through existing action/command infrastructure that's already
 tested elsewhere.
 
 Areas that still need coverage: recorder lifecycle (start/stop idempotency,
-bad file paths, event unsubscription), v2 vs v3 version detection, and playback
+bad file paths, event cleanup), v2 vs v3 version detection, and playback
 coroutine behavior (cancellation, delay capping). A detailed per-test checklist
 is tracked in [`TAEF-TEST-PLAN.md`](../../TAEF-TEST-PLAN.md).
 

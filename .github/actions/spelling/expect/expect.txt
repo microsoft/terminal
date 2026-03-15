@@ -963,7 +963,6 @@ lsconfig
 lstatus
 lstrcmp
 LTEXT
-lto
 ltsc
 LUID
 luma
@@ -1094,6 +1093,7 @@ NEWTEXTMETRICEX
 Newtonsoft
 NEXTLINE
 nfe
+nline
 NLSMODE
 NOACTIVATE
 NOACTIVATEKEYBOARDLAYOUT
@@ -1675,6 +1675,7 @@ TBM
 TCHAR
 TCHFORMAT
 TCI
+tcol
 tcommands
 tdbuild
 Tdd
@@ -1718,7 +1719,6 @@ titlebars
 TITLEISLINKNAME
 TLDP
 TLEN
-Tlgg
 TMAE
 TMPF
 tmultiple

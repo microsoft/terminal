@@ -44,6 +44,7 @@
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
 #include "ExportBufferArgs.g.cpp"
+#include "OpenCastFileArgs.g.cpp"
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 #include "AdjustOpacityArgs.g.cpp"
@@ -854,6 +855,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // "Export text"
             return RS_switchable_(L"ExportBufferCommandKey");
+        }
+    }
+
+    winrt::hstring OpenCastFileArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
+    {
+        if (!Path().empty())
+        {
+            return winrt::hstring{ RS_switchable_fmt(L"OpenCastFileCommandKey", Path()) };
+        }
+        else
+        {
+            return RS_switchable_(L"OpenCastFileCommandKey");
         }
     }
 

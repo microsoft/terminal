@@ -446,6 +446,12 @@ namespace Microsoft.Terminal.Settings.Model
         String Path { get; };
     };
 
+    [default_interface] runtimeclass OpenCastFileArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        OpenCastFileArgs(String path);
+        String Path { get; };
+    };
+
     [default_interface] runtimeclass ClearBufferArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
