@@ -802,6 +802,15 @@
   <data name="FindToolTip" xml:space="preserve">
     <value>Open the search dialog</value>
   </data>
+  <data name="AsciicastSubMenuText" xml:space="preserve">
+    <value>Recording</value>
+  </data>
+  <data name="OpenCastFileText" xml:space="preserve">
+    <value>Open cast file...</value>
+  </data>
+  <data name="OpenCastFileToolTip" xml:space="preserve">
+    <value>Open and play back an asciicast recording</value>
+  </data>
   <data name="StartRecordingText" xml:space="preserve">
     <value>Record session</value>
   </data>

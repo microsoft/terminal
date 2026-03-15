@@ -163,6 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ToggleShaderEffects, USES_RESOURCE(L"ToggleShaderEffectsCommandKey") },
                 { ShortcutAction::ToggleRecording, USES_RESOURCE(L"ToggleRecordingCommandKey") },
                 { ShortcutAction::OpenCastFile, USES_RESOURCE(L"OpenCastFileCommandKey") },
+                { ShortcutAction::MarkRecording, USES_RESOURCE(L"MarkRecordingCommandKey") },
                 { ShortcutAction::ToggleSplitOrientation, USES_RESOURCE(L"ToggleSplitOrientationCommandKey") },
             };
         }();

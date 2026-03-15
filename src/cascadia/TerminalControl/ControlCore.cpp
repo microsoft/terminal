@@ -1237,6 +1237,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _connection.Resize(vp.Height(), vp.Width());
         }
 
+        if (_recorder && _recorder->IsRecording())
+        {
+            _recorder->WriteResizeEvent(static_cast<uint32_t>(vp.Width()), static_cast<uint32_t>(vp.Height()));
+        }
+
         // TermControl will call Search() once the OutputIdle even fires after 100ms.
         // Until then we need to hide the now-stale search results from the renderer.
         ClearSearch();
@@ -2279,7 +2284,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _recorder = std::make_unique<winrt::Microsoft::Terminal::TerminalConnection::implementation::AsciicastRecorder>();
-        _recorder->StartRecording(_connection, std::wstring{ filePath }, width, height);
+        winrt::Microsoft::Terminal::TerminalConnection::implementation::AsciicastMetadata metadata;
+        metadata.termType = L"xterm-256color";
+        _recorder->StartRecording(_connection, std::wstring{ filePath }, width, height, metadata);
 
         // Inject the prompt snapshot as the first recorded event.
         if (!snapshot.empty())
@@ -2303,6 +2310,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::IsRecording() const
     {
         return _recorder && _recorder->IsRecording();
+    }
+
+    void ControlCore::MarkRecording()
+    {
+        if (_recorder && _recorder->IsRecording())
+        {
+            _recorder->WriteMarkerEvent(L"");
+        }
     }
 
     void ControlCore::SetReadOnlyMode(const bool readOnlyState)

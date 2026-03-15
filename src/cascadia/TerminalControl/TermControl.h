@@ -134,6 +134,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void StartRecording(const winrt::hstring& filePath);
         void StopRecording();
         bool IsRecording() const noexcept;
+        void MarkRecording();
 
         void RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
         void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);

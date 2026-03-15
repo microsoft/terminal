@@ -129,6 +129,7 @@ namespace Microsoft.Terminal.Control
         void StartRecording(String filePath);
         void StopRecording();
         Boolean IsRecording { get; };
+        void MarkRecording();
         event Windows.Foundation.TypedEventHandler<Object, Object> RecordingChanged;
         void SendInput(String input);
         Boolean RawWriteKeyEvent(UInt16 vkey, UInt16 scanCode, Microsoft.Terminal.Core.ControlKeyStates modifiers, Boolean keyDown);

@@ -502,6 +502,9 @@
   <data name="OpenCastFileCommandKey" xml:space="preserve">
     <value>Open asciicast file...</value>
   </data>
+  <data name="MarkRecordingCommandKey" xml:space="preserve">
+    <value>Mark recording</value>
+  </data>
   <data name="EnablePaneReadOnlyCommandKey" xml:space="preserve">
     <value>Enable pane read-only mode</value>
   </data>

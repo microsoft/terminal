@@ -150,6 +150,7 @@ namespace Microsoft.Terminal.Control
         void StartRecording(String filePath);
         void StopRecording();
         Boolean IsRecording { get; };
+        void MarkRecording();
         event Windows.Foundation.TypedEventHandler<Object, Object> RecordingStateChanged;
         void ToggleReadOnlyMode();
         void SetReadOnlyMode(Boolean readOnlyState);

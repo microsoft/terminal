@@ -1713,6 +1713,19 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleMarkRecording(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            if (control.IsRecording())
+            {
+                control.MarkRecording();
+            }
+        }
+        args.Handled(true);
+    }
+
     safe_void_coroutine TerminalPage::_openCastFileHelper()
     {
         auto strongThis{ get_strong() };
@@ -1754,6 +1767,7 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::AsciicastConnection connection;
         Windows::Foundation::Collections::ValueSet settings;
         settings.Insert(L"CastFilePath", Windows::Foundation::PropertyValue::CreateString(path));
+        settings.Insert(L"AutoResizeForPlayback", Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().AutoResizeForPlayback()));
         connection.Initialize(settings);
 
         NewTerminalArgs newTerminalArgs;
@@ -1766,7 +1780,11 @@ namespace winrt::TerminalApp::implementation
             newPane->WalkTree([](const auto& pane) {
                 pane->FinalizeConfigurationGivenDefault();
             });
-            _CreateNewTabFromPane(newPane);
+            const auto newTab = _CreateNewTabFromPane(newPane);
+            if (newTab)
+            {
+                newTab.TabStatus().IsPlaybackActive(true);
+            }
         }
     }
 }

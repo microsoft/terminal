@@ -26,6 +26,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns) noexcept;
         void Close() noexcept;
 
+        uint32_t InitialCols() const noexcept { return _initialCols; }
+        uint32_t InitialRows() const noexcept { return _initialRows; }
+
         til::event<TerminalOutputHandler> TerminalOutput;
 
     private:
@@ -45,6 +48,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::atomic<bool> _cancelled{ false };
         std::atomic<bool> _playbackFinished{ false };
         int _formatVersion{ 2 };
+        double _idleTimeLimit{ 300.0 }; // Default 5 minutes, overridden by header
+        uint32_t _initialCols{ 0 };
+        uint32_t _initialRows{ 0 };
+        bool _autoResize{ false };
 
 #ifdef UNIT_TESTING
         friend class TerminalConnectionUnitTests::AsciicastTests;

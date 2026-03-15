@@ -947,6 +947,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.IsRecording();
     }
 
+    void TermControl::MarkRecording()
+    {
+        _core.MarkRecording();
+    }
+
     // Method Description:
     // - Style our UI elements based on the values in our settings, and set up
     //   other control-specific settings. This method will be called whenever

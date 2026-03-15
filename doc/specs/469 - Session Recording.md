@@ -275,6 +275,41 @@ Recording also stops when the tab is closed or the connection exits.
 - **Playback**: Events are loaded into memory on start. Even long sessions
   consume only a few MB of RAM.
 
+## Testing
+
+Most of the testing is handled in the `AsciicastTests` class in the
+`UnitTests_TerminalConnection` project. The bulk of it covers the JSON escaping
+and unescaping logic, since that's where data corruption would show up first -
+making sure quotes, backslashes, newlines, control characters, and Unicode all
+survive the round trip through the `.cast` file.
+
+Because `AsciicastConnection` is a WinRT class and the generated headers are
+awkward to pull into a plain TAEF DLL, the test file has a standalone copy of
+`_unescapeJsonString` that mirrors the production code. A round-trip test
+confirms that escaping then unescaping gives back the original string, including
+strings with VT color sequences and mixed special characters.
+
+There are also a few integration-style tests that create a real
+`AsciicastRecorder`, write to a temp file, read it back, and verify the
+structure looks right (header has version/dimensions/timestamp, events have the
+`[time, "o", "data"]` shape, etc.). The parser is tested against valid files,
+empty files, missing files, and files with garbage lines mixed in - it should
+skip bad lines and parse whatever it can.
+
+There shouldn't really be a need for tests on the UI integration side, since
+that's all wired through existing action/command infrastructure that's already
+tested elsewhere.
+
+Areas that still need coverage: recorder lifecycle (start/stop idempotency,
+bad file paths, event unsubscription), v2 vs v3 version detection, and playback
+coroutine behavior (cancellation, delay capping). A detailed per-test checklist
+is tracked in [`TAEF-TEST-PLAN.md`](../../TAEF-TEST-PLAN.md).
+
+In terms of manual testing, the full workflow was validated across PowerShell,
+cmd, WSL, and SSH. Cross-tool compatibility was also verified - v3 recordings
+play correctly in asciinema-player (web), and v2 files from asciinema.org play
+back in Terminal.
+
 ## Potential Issues
 
 1. **Large recordings**: Sessions with heavy output (e.g., build logs) can
@@ -291,7 +326,8 @@ Recording also stops when the tab is closed or the connection exits.
 
 ## Future Considerations
 
-- **Input recording**: Add `"i"` (input) events to record keystrokes. Requires
+- **Input recording**: Hook `WriteInput` on the connection to capture keystrokes
+  and write them as asciicast `"i"` (input) data in the `.cast` file. Requires
   careful handling of security implications.
 
 - **Playback controls**: Pause, resume, speed multiplier, seek.

@@ -4,16 +4,15 @@
 #include "pch.h"
 #include "AsciicastRecorder.h"
 
+#include <cmath>
 #include <cstdio>
 #include <ctime>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    void AsciicastRecorder::StartRecording(const ITerminalConnection& connection, const std::wstring& filePath, uint32_t width, uint32_t height)
+    void AsciicastRecorder::StartRecording(const ITerminalConnection& connection, const std::wstring& filePath, uint32_t width, uint32_t height, const AsciicastMetadata& metadata)
     {
-        std::lock_guard<std::mutex> lock{ _mutex };
-
-        if (_isRecording)
+        if (_isRecording.load(std::memory_order_acquire))
         {
             return;
         }
@@ -25,8 +24,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         _connection = connection;
-        _WriteHeader(width, height);
+
+        // Write the header synchronously before the channel exists (no contention).
+        _WriteHeader(width, height, metadata);
+
         _lastEventTime = std::chrono::high_resolution_clock::now();
+        _timingError = 0.0;
+        _writeError.store(false, std::memory_order_relaxed);
+
+        // Create the SPSC channel and start the writer thread.
+        auto [tx, rx] = til::spsc::channel<AsciicastRecord>(4096);
+        _channel = std::move(tx);
+        _writerThread = std::thread([this, rx = std::move(rx)]() mutable {
+            _WriterThread(std::move(rx));
+        });
+
+        _isRecording.store(true, std::memory_order_release);
 
         // Safe to capture `this`: ControlCore owns the recorder via unique_ptr
         // and calls StopRecording() (which revokes this token) before destruction.
@@ -34,93 +47,225 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const std::wstring wstr{ data.begin(), data.end() };
             _WriteEvent(wstr);
         });
-
-        _isRecording = true;
     }
 
     void AsciicastRecorder::StopRecording()
     {
-        std::lock_guard<std::mutex> lock{ _mutex };
-
-        if (!_isRecording)
+        // Atomically transition from recording to not-recording. Only one
+        // caller can succeed here; subsequent calls are no-ops.
+        bool expected = true;
+        if (!_isRecording.compare_exchange_strong(expected, false, std::memory_order_seq_cst))
         {
             return;
         }
 
+        // Revoke the callback so no new invocations will be dispatched.
         _connection.TerminalOutput(_outputToken);
         _outputToken = {};
         _connection = nullptr;
-        _isRecording = false;
-        _WriteExitEvent();
+
+        // An in-flight callback that already passed the _isRecording check may
+        // still be computing its record and calling emplace. Spin until it
+        // finishes so we can safely enqueue our exit event.
+        while (_producerBusy.load(std::memory_order_seq_cst))
+        {
+            std::this_thread::yield();
+        }
+
+        // Compute the exit event interval from the last event.
+        const auto now = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<double> interval = now - _lastEventTime;
+        const double rawInterval = interval.count() + _timingError;
+        const double roundedInterval = std::round(rawInterval * 1000.0) / 1000.0;
+
+        _channel.emplace(AsciicastRecord::Type::Exit, roundedInterval, std::string("0"));
+
+        // Close the channel by destroying the producer. The consumer loop
+        // in _WriterThread will drain remaining records and then exit.
+        { auto discard = std::move(_channel); }
+
+        if (_writerThread.joinable())
+        {
+            _writerThread.join();
+        }
+
         _file.close();
     }
 
     void AsciicastRecorder::WriteInitialSnapshot(const std::wstring_view& data)
     {
-        std::lock_guard<std::mutex> lock{ _mutex };
-
-        if (!_isRecording || data.empty())
+        if (!_isRecording.load(std::memory_order_seq_cst) || data.empty())
         {
             return;
         }
 
+        _producerBusy.store(true, std::memory_order_seq_cst);
+        if (!_isRecording.load(std::memory_order_seq_cst))
+        {
+            _producerBusy.store(false, std::memory_order_seq_cst);
+            return;
+        }
+
         const auto escaped = _EscapeJsonString(data);
-        _file << "[0.000, \"o\", \"" << escaped << "\"]\n";
-        _file.flush();
+        _channel.emplace(AsciicastRecord::Type::Output, 0.0, std::move(escaped));
+
+        _producerBusy.store(false, std::memory_order_seq_cst);
+    }
+
+    void AsciicastRecorder::WriteResizeEvent(uint32_t cols, uint32_t rows)
+    {
+        if (!_isRecording.load(std::memory_order_seq_cst) || _writeError.load(std::memory_order_relaxed))
+        {
+            return;
+        }
+
+        _producerBusy.store(true, std::memory_order_seq_cst);
+        if (!_isRecording.load(std::memory_order_seq_cst))
+        {
+            _producerBusy.store(false, std::memory_order_seq_cst);
+            return;
+        }
+
+        const double roundedInterval = _ComputeInterval();
+
+        char dataBuf[64];
+        snprintf(dataBuf, sizeof(dataBuf), "%ux%u", cols, rows);
+
+        _channel.emplace(AsciicastRecord::Type::Resize, roundedInterval, std::string(dataBuf));
+
+        _producerBusy.store(false, std::memory_order_seq_cst);
+    }
+
+    void AsciicastRecorder::WriteMarkerEvent(const std::wstring_view& label)
+    {
+        if (!_isRecording.load(std::memory_order_seq_cst) || _writeError.load(std::memory_order_relaxed))
+        {
+            return;
+        }
+
+        _producerBusy.store(true, std::memory_order_seq_cst);
+        if (!_isRecording.load(std::memory_order_seq_cst))
+        {
+            _producerBusy.store(false, std::memory_order_seq_cst);
+            return;
+        }
+
+        const double roundedInterval = _ComputeInterval();
+        const auto escaped = _EscapeJsonString(label);
+
+        _channel.emplace(AsciicastRecord::Type::Marker, roundedInterval, std::move(escaped));
+
+        _producerBusy.store(false, std::memory_order_seq_cst);
     }
 
     bool AsciicastRecorder::IsRecording() const noexcept
     {
-        std::lock_guard<std::mutex> lock{ _mutex };
-        return _isRecording;
+        return _isRecording.load(std::memory_order_acquire);
     }
 
-    void AsciicastRecorder::_WriteHeader(uint32_t width, uint32_t height)
+    void AsciicastRecorder::_WriteHeader(uint32_t width, uint32_t height, const AsciicastMetadata& metadata)
     {
         const auto timestamp = std::time(nullptr);
+
         _file << "{\"version\": 3, \"term\": {\"cols\": " << width
-              << ", \"rows\": " << height
-              << "}, \"timestamp\": " << timestamp << "}\n";
+              << ", \"rows\": " << height;
+
+        if (!metadata.termType.empty())
+        {
+            _file << ", \"type\": \"" << _EscapeJsonString(metadata.termType) << "\"";
+        }
+
+        // Write theme if we have at least fg and bg
+        if (!metadata.themeFg.empty() && !metadata.themeBg.empty())
+        {
+            _file << ", \"theme\": {\"fg\": \"" << _EscapeJsonString(metadata.themeFg)
+                  << "\", \"bg\": \"" << _EscapeJsonString(metadata.themeBg) << "\"";
+            if (!metadata.themePalette.empty())
+            {
+                _file << ", \"palette\": \"" << _EscapeJsonString(metadata.themePalette) << "\"";
+            }
+            _file << "}";
+        }
+
+        _file << "}, \"timestamp\": " << timestamp;
+
+        if (!metadata.title.empty())
+        {
+            _file << ", \"title\": \"" << _EscapeJsonString(metadata.title) << "\"";
+        }
+
+        if (!metadata.command.empty())
+        {
+            _file << ", \"command\": \"" << _EscapeJsonString(metadata.command) << "\"";
+        }
+
+        _file << "}\n";
         _file.flush();
     }
 
     void AsciicastRecorder::_WriteEvent(const std::wstring_view& data)
     {
-        std::lock_guard<std::mutex> lock{ _mutex };
-
-        if (!_isRecording)
+        if (!_isRecording.load(std::memory_order_seq_cst) || _writeError.load(std::memory_order_relaxed))
         {
             return;
         }
 
-        const auto now = std::chrono::high_resolution_clock::now();
-        const std::chrono::duration<double> interval = now - _lastEventTime;
-        _lastEventTime = now;
+        // Mark that we are about to emplace. StopRecording spins on this
+        // flag so it does not destroy the producer while we are using it.
+        _producerBusy.store(true, std::memory_order_seq_cst);
+
+        // Double-check: if StopRecording set _isRecording=false between
+        // our first load and the store above, bail out immediately.
+        if (!_isRecording.load(std::memory_order_seq_cst))
+        {
+            _producerBusy.store(false, std::memory_order_seq_cst);
+            return;
+        }
+
+        const double roundedInterval = _ComputeInterval();
         const auto escaped = _EscapeJsonString(data);
 
-        char timeBuf[32];
-        snprintf(timeBuf, sizeof(timeBuf), "%.3f", interval.count());
+        _channel.emplace(AsciicastRecord::Type::Output, roundedInterval, std::move(escaped));
 
-        _file << "[" << timeBuf << ", \"o\", \"" << escaped << "\"]\n";
-        _file.flush();
-
-        if (!_file.good())
-        {
-            _isRecording = false;
-            return;
-        }
+        _producerBusy.store(false, std::memory_order_seq_cst);
     }
 
-    void AsciicastRecorder::_WriteExitEvent()
+    double AsciicastRecorder::_ComputeInterval()
     {
         const auto now = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<double> interval = now - _lastEventTime;
+        _lastEventTime = now;
 
-        char timeBuf[32];
-        snprintf(timeBuf, sizeof(timeBuf), "%.3f", interval.count());
+        // Error diffusion: carry over sub-millisecond rounding remainder to keep
+        // total elapsed time accurate over long recordings (v3 spec recommendation).
+        const double rawInterval = interval.count() + _timingError;
+        const double roundedInterval = std::round(rawInterval * 1000.0) / 1000.0;
+        _timingError = rawInterval - roundedInterval;
 
-        _file << "[" << timeBuf << ", \"x\", \"0\"]\n";
-        _file.flush();
+        return roundedInterval;
+    }
+
+    void AsciicastRecorder::_WriterThread(til::spsc::consumer<AsciicastRecord> rx)
+    {
+        std::optional<AsciicastRecord> item;
+        while ((item = rx.pop()))
+        {
+            auto& record = *item;
+
+            char timeBuf[32];
+            snprintf(timeBuf, sizeof(timeBuf), "%.3f", record.interval);
+
+            const char typeChar = static_cast<char>(record.type);
+            _file << "[" << timeBuf << ", \"" << typeChar << "\", \"" << record.data << "\"]\n";
+            _file.flush();
+
+            if (!_file.good())
+            {
+                _writeError.store(true, std::memory_order_release);
+                return;
+            }
+        }
+        // Channel closed -- all records have been drained.
     }
 
     std::string AsciicastRecorder::_EscapeJsonString(const std::wstring_view& input)

@@ -9,6 +9,9 @@ namespace Microsoft.Terminal.TerminalConnection
     runtimeclass AsciicastConnection : ITerminalConnection
     {
         AsciicastConnection();
+
+        UInt32 InitialCols { get; };
+        UInt32 InitialRows { get; };
     };
 
 }

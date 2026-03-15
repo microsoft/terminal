@@ -1743,21 +1743,49 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
         }
 
-        Controls::MenuFlyoutItem recordingMenuItem = _recordingMenuItem;
+        // Asciicast submenu with Record and Open items
         {
-            // "Record session" / "Stop recording"
+            // "Record session" / "Stop recording" sub-item
             Controls::FontIcon recordingSymbol;
             recordingSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             recordingSymbol.Glyph(L"\xEA3B"); // Record
 
-            recordingMenuItem.Click({ get_weak(), &Tab::_toggleRecordingClicked });
-            recordingMenuItem.Text(RS_(L"StartRecordingText"));
-            recordingMenuItem.Icon(recordingSymbol);
+            _recordingSubMenuItem.Click({ get_weak(), &Tab::_toggleRecordingClicked });
+            _recordingSubMenuItem.Text(RS_(L"StartRecordingText"));
+            _recordingSubMenuItem.Icon(recordingSymbol);
 
             const auto recordingToolTip = RS_(L"StartRecordingToolTip");
+            WUX::Controls::ToolTipService::SetToolTip(_recordingSubMenuItem, box_value(recordingToolTip));
+            Automation::AutomationProperties::SetHelpText(_recordingSubMenuItem, recordingToolTip);
 
-            WUX::Controls::ToolTipService::SetToolTip(recordingMenuItem, box_value(recordingToolTip));
-            Automation::AutomationProperties::SetHelpText(recordingMenuItem, recordingToolTip);
+            // "Open cast file..." sub-item
+            Controls::FontIcon openCastSymbol;
+            openCastSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            openCastSymbol.Glyph(L"\xE768"); // Play
+
+            _openCastSubMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    ActionAndArgs actionAndArgs{ ShortcutAction::OpenCastFile, nullptr };
+                    tab->_dispatch.DoAction(*tab, actionAndArgs);
+                }
+            });
+            _openCastSubMenuItem.Text(RS_(L"OpenCastFileText"));
+            _openCastSubMenuItem.Icon(openCastSymbol);
+
+            const auto openCastToolTip = RS_(L"OpenCastFileToolTip");
+            WUX::Controls::ToolTipService::SetToolTip(_openCastSubMenuItem, box_value(openCastToolTip));
+            Automation::AutomationProperties::SetHelpText(_openCastSubMenuItem, openCastToolTip);
+
+            // Build the Asciicast submenu
+            Controls::FontIcon asciicastSymbol;
+            asciicastSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+            asciicastSymbol.Glyph(L"\xE714"); // Video
+
+            _asciicastSubMenu.Icon(asciicastSymbol);
+            _asciicastSubMenu.Text(RS_(L"AsciicastSubMenuText"));
+            _asciicastSubMenu.Items().Append(_recordingSubMenuItem);
+            _asciicastSubMenu.Items().Append(_openCastSubMenuItem);
         }
 
         Controls::MenuFlyoutItem restartConnectionMenuItem = _restartConnectionMenuItem;
@@ -1792,7 +1820,7 @@ namespace winrt::TerminalApp::implementation
         _AppendMoveMenuItems(contextMenuFlyout);
         contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(findMenuItem);
-        contextMenuFlyout.Items().Append(recordingMenuItem);
+        contextMenuFlyout.Items().Append(_asciicastSubMenu);
         contextMenuFlyout.Items().Append(restartConnectionMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
@@ -2152,7 +2180,7 @@ namespace winrt::TerminalApp::implementation
         {
             const auto isRecording = control.IsRecording();
             _tabStatus.IsRecordingActive(isRecording);
-            _recordingMenuItem.Text(isRecording ? RS_(L"StopRecordingText") : RS_(L"StartRecordingText"));
+            _recordingSubMenuItem.Text(isRecording ? RS_(L"StopRecordingText") : RS_(L"StartRecordingText"));
         }
     }
 

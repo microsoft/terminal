@@ -17,11 +17,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void AsciicastConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
         _filePath = unbox_prop_or<winrt::hstring>(settings, L"CastFilePath", winrt::hstring{});
+        _autoResize = unbox_prop_or<bool>(settings, L"AutoResizeForPlayback", false);
+        _parseFile();
     }
 
     void AsciicastConnection::Start()
     {
-        _parseFile();
         _replayEvents();
     }
 
@@ -169,6 +170,94 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                         }
                     }
                 }
+                // Parse idle_time_limit if present
+                auto idlePos = line.find("\"idle_time_limit\"");
+                if (idlePos != std::string::npos)
+                {
+                    auto colonPos = line.find(':', idlePos + 17);
+                    if (colonPos != std::string::npos)
+                    {
+                        try
+                        {
+                            _idleTimeLimit = std::stod(line.substr(colonPos + 1));
+                        }
+                        catch (...)
+                        {
+                            // Keep default
+                        }
+                    }
+                }
+
+                // Parse terminal dimensions from header.
+                // v3: "term": {"cols": X, "rows": Y}
+                // v2: "width": X, "height": Y
+                if (_formatVersion >= 3)
+                {
+                    auto colsPos = line.find("\"cols\"");
+                    if (colsPos != std::string::npos)
+                    {
+                        auto colonPos = line.find(':', colsPos + 6);
+                        if (colonPos != std::string::npos)
+                        {
+                            try
+                            {
+                                _initialCols = static_cast<uint32_t>(std::stoi(line.substr(colonPos + 1)));
+                            }
+                            catch (...)
+                            {
+                            }
+                        }
+                    }
+                    auto rowsPos = line.find("\"rows\"");
+                    if (rowsPos != std::string::npos)
+                    {
+                        auto colonPos = line.find(':', rowsPos + 6);
+                        if (colonPos != std::string::npos)
+                        {
+                            try
+                            {
+                                _initialRows = static_cast<uint32_t>(std::stoi(line.substr(colonPos + 1)));
+                            }
+                            catch (...)
+                            {
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    auto widthPos = line.find("\"width\"");
+                    if (widthPos != std::string::npos)
+                    {
+                        auto colonPos = line.find(':', widthPos + 7);
+                        if (colonPos != std::string::npos)
+                        {
+                            try
+                            {
+                                _initialCols = static_cast<uint32_t>(std::stoi(line.substr(colonPos + 1)));
+                            }
+                            catch (...)
+                            {
+                            }
+                        }
+                    }
+                    auto heightPos = line.find("\"height\"");
+                    if (heightPos != std::string::npos)
+                    {
+                        auto colonPos = line.find(':', heightPos + 8);
+                        if (colonPos != std::string::npos)
+                        {
+                            try
+                            {
+                                _initialRows = static_cast<uint32_t>(std::stoi(line.substr(colonPos + 1)));
+                            }
+                            catch (...)
+                            {
+                            }
+                        }
+                    }
+                }
+
                 isFirstLine = false;
                 continue;
             }
@@ -261,6 +350,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         _transitionToState(ConnectionState::Connected);
 
+        // If auto-resize is enabled and we have header dimensions, emit a VT
+        // XTWINOPS sequence (CSI 8;rows;cols t) to resize the terminal to match
+        // the recording. The terminal's existing VT parser handles this natively.
+        if (_autoResize && _initialCols > 0 && _initialRows > 0)
+        {
+            co_await winrt::resume_after(std::chrono::milliseconds{ 100 });
+            wchar_t resizeSeq[64];
+            swprintf_s(resizeSeq, L"\x1b[8;%u;%ut", _initialRows, _initialCols);
+            const std::wstring_view sv{ resizeSeq };
+            TerminalOutput.raise(winrt_wstring_to_array_view(sv));
+            co_await winrt::resume_after(std::chrono::milliseconds{ 200 });
+        }
+
         double prevTimestamp = 0.0;
 
         for (const auto& event : _events)
@@ -270,18 +372,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 break;
             }
 
-            // Only replay output events.
-            if (event.type != L"o")
-            {
-                continue;
-            }
-
             // v2: absolute timestamps, compute delta. v3: intervals, use directly.
             const auto delay = (_formatVersion >= 3) ? event.timestamp : (event.timestamp - prevTimestamp);
+            prevTimestamp = event.timestamp;
+
             if (delay > 0.0)
             {
-                // Cap at 5 minutes to guard against malformed files.
-                const auto cappedDelay = std::min(delay, 300.0);
+                // Cap delay using idle_time_limit from header (defaults to 300s).
+                const auto cappedDelay = std::min(delay, _idleTimeLimit);
                 const auto delayMs = static_cast<int64_t>(cappedDelay * 1000.0);
                 co_await winrt::resume_after(std::chrono::milliseconds{ delayMs });
             }
@@ -291,8 +389,30 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 break;
             }
 
-            TerminalOutput.raise(winrt_wstring_to_array_view(event.data));
-            prevTimestamp = event.timestamp;
+            if (event.type == L"o")
+            {
+                TerminalOutput.raise(winrt_wstring_to_array_view(event.data));
+            }
+            else if (event.type == L"r" && _autoResize)
+            {
+                const auto xPos = event.data.find(L'x');
+                if (xPos != std::wstring::npos)
+                {
+                    try
+                    {
+                        const auto cols = static_cast<uint32_t>(std::stoi(event.data.substr(0, xPos)));
+                        const auto rows = static_cast<uint32_t>(std::stoi(event.data.substr(xPos + 1)));
+                        wchar_t resizeSeq[64];
+                        swprintf_s(resizeSeq, L"\x1b[8;%u;%ut", rows, cols);
+                        const std::wstring_view sv{ resizeSeq };
+                        TerminalOutput.raise(winrt_wstring_to_array_view(sv));
+                    }
+                    catch (...)
+                    {
+                    }
+                }
+            }
+            // Other event types ("m", "x") are recognized but not acted upon during playback.
         }
 
         if (!_cancelled.load())

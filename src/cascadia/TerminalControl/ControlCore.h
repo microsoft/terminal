@@ -143,6 +143,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void StartRecording(const winrt::hstring& filePath);
         void StopRecording();
         bool IsRecording() const;
+        void MarkRecording();
         void AdjustOpacity(const float adjustment);
         void ResumeRendering();
 

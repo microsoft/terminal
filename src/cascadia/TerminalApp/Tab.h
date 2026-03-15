@@ -161,7 +161,9 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::Controls::MenuFlyoutItem _closePaneMenuItem;
         Windows::UI::Xaml::Controls::MenuFlyoutItem _restartConnectionMenuItem;
-        Windows::UI::Xaml::Controls::MenuFlyoutItem _recordingMenuItem;
+        Windows::UI::Xaml::Controls::MenuFlyoutSubItem _asciicastSubMenu;
+        Windows::UI::Xaml::Controls::MenuFlyoutItem _recordingSubMenuItem;
+        Windows::UI::Xaml::Controls::MenuFlyoutItem _openCastSubMenuItem;
 
         winrt::Microsoft::Terminal::Settings::Model::IconStyle _lastIconStyle;
         winrt::hstring _lastIconPath{};
