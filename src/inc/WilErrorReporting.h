@@ -57,11 +57,24 @@ namespace Microsoft::Console::ErrorReporting
         // Don't log anything. We just failed to trace, where will we go now?
     }
 
+    // Suppress debug output (OutputDebugString) for XAML_E_NOT_SUPPORTED (0x80131515).
+    // ReportFailureToFallbackProvider already suppresses this from telemetry, but that
+    // doesn't cover the debugger output path. Setting RequestSuppressTelemetry on the
+    // FailureInfo prevents WIL from emitting an OutputDebugString for this expected error.
+    inline void __stdcall SuppressExpectedFailures(_Inout_ wil::FailureInfo* pFailure) noexcept
+    {
+        if (pFailure && pFailure->hr == 0x80131515L)
+        {
+            WI_SetFlag(pFailure->flags, wil::FailureFlags::RequestSuppressTelemetry);
+        }
+    }
+
     __declspec(noinline) inline void EnableFallbackFailureReporting(TraceLoggingHProvider provider) noexcept
     try
     {
         FallbackProvider = provider;
         ::wil::SetResultTelemetryFallback(::Microsoft::Console::ErrorReporting::ReportFailureToFallbackProvider);
+        ::wil::details::g_pfnNotifyFailure = &SuppressExpectedFailures;
     }
     catch (...)
     {
