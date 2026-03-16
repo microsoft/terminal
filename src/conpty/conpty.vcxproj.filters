@@ -23,13 +23,25 @@
     <ClCompile Include="PtyServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PtyServer.clients.cpp">
+    <ClCompile Include="PtyServer.handles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PtyServer.io.cpp">
+    <ClCompile Include="PtyServer.raw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PtyServer.msg.l1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PtyServer.msg.l2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PtyServer.msg.l3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PtyServer.msg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

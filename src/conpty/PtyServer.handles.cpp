@@ -1,60 +1,6 @@
 #include "pch.h"
 #include "PtyServer.h"
 
-// Reads [part of] the input payload of the given message from the driver.
-// Analogous to the OG ReadMessageInput() in csrutil.cpp.
-//
-// For CONSOLE_IO_CONNECT, offset is 0 and the payload is a CONSOLE_SERVER_MSG.
-// For CONSOLE_IO_USER_DEFINED, offset would typically be past the message header.
-void PtyServer::readInput(const CD_IO_DESCRIPTOR& desc, ULONG offset, void* buffer, ULONG size)
-{
-    CD_IO_OPERATION op{};
-    op.Identifier = desc.Identifier;
-    op.Buffer.Offset = offset;
-    op.Buffer.Data = buffer;
-    op.Buffer.Size = size;
-    THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_READ_INPUT, &op, sizeof(op), nullptr, 0));
-}
-
-// Completes a message with the given completion descriptor.
-// Analogous to the OG ConsoleComplete() in csrutil.cpp.
-//
-// This sends the reply out-of-band (via IOCTL_CONDRV_COMPLETE_IO) rather than
-// piggybacking on the next IOCTL_CONDRV_READ_IO call. Used when the reply
-// carries write data (e.g. CD_CONNECTION_INFORMATION for CONNECT).
-void PtyServer::completeIo(CD_IO_COMPLETE& completion)
-{
-    THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_COMPLETE_IO, &completion, sizeof(completion), nullptr, 0));
-}
-
-// Writes data back to the client's output buffer for the given message.
-// Analogous to the IOCTL_CONDRV_WRITE_OUTPUT call in the OG ReleaseMessageBuffers() (csrutil.cpp).
-//
-// The driver matches the Identifier to the pending IO and copies data into
-// the client's buffer at the specified offset.
-void PtyServer::writeOutput(const CD_IO_DESCRIPTOR& desc, ULONG offset, const void* buffer, ULONG size)
-{
-    CD_IO_OPERATION op{};
-    op.Identifier = desc.Identifier;
-    op.Buffer.Offset = offset;
-    op.Buffer.Data = const_cast<void*>(buffer);
-    op.Buffer.Size = size;
-    THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_WRITE_OUTPUT, &op, sizeof(op), nullptr, 0));
-}
-
-PtyClient* PtyServer::findClient(ULONG_PTR handle)
-{
-    auto ptr = reinterpret_cast<PtyClient*>(handle);
-    for (auto& c : m_clients)
-    {
-        if (c.get() == ptr)
-        {
-            return ptr;
-        }
-    }
-    return nullptr;
-}
-
 // Handles CONSOLE_IO_CONNECT messages.
 //
 // Protocol (from the OG ConsoleHandleConnectionRequest in srvinit.cpp):
@@ -253,4 +199,17 @@ void PtyServer::handleCreateObject(CONSOLE_API_MSG& msg)
 void PtyServer::handleCloseObject(CONSOLE_API_MSG& msg)
 {
     freeHandle(msg.Descriptor.Object);
+}
+
+PtyClient* PtyServer::findClient(ULONG_PTR handle)
+{
+    auto ptr = reinterpret_cast<PtyClient*>(handle);
+    for (auto& c : m_clients)
+    {
+        if (c.get() == ptr)
+        {
+            return ptr;
+        }
+    }
+    return nullptr;
 }

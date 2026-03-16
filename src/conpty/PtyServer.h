@@ -120,6 +120,8 @@ private:
     void handleCloseObject(CONSOLE_API_MSG& msg);
     bool handleRawWrite(CONSOLE_API_MSG& msg);
     bool handleRawRead(CONSOLE_API_MSG& msg);
+    void handleUserDefined(CONSOLE_API_MSG& msg);
+    void handleRawFlush(CONSOLE_API_MSG& msg);
 
     // Complete pending IOs (called when state changes make progress possible).
     void completePendingRead(const void* data, ULONG size);

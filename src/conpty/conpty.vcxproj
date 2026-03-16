@@ -26,8 +26,12 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="PtyServer.cpp" />
-    <ClCompile Include="PtyServer.clients.cpp" />
-    <ClCompile Include="PtyServer.io.cpp" />
+    <ClCompile Include="PtyServer.handles.cpp" />
+    <ClCompile Include="PtyServer.msg.cpp" />
+    <ClCompile Include="PtyServer.msg.l1.cpp" />
+    <ClCompile Include="PtyServer.msg.l2.cpp" />
+    <ClCompile Include="PtyServer.msg.l3.cpp" />
+    <ClCompile Include="PtyServer.raw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="conpty.idl">

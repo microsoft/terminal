@@ -78,6 +78,33 @@ bool PtyServer::handleRawRead(CONSOLE_API_MSG& msg)
     return false; // reply pending
 }
 
+// Handles CONSOLE_IO_RAW_FLUSH messages.
+//
+// Protocol (from OG SrvFlushConsoleInputBuffer in getset.cpp + FlushInputBuffer in input.cpp):
+//  1. Descriptor.Object contains the handle to flush.
+//  2. DereferenceIoHandle validates it is a CONSOLE_INPUT_HANDLE with GENERIC_WRITE access.
+//  3. FlushInputBuffer resets the circular buffer (In = Out = InputBuffer)
+//     and resets the InputWaitEvent.
+//
+// In the prototype there is no circular input buffer yet, so we just
+// validate the handle and reset the input-available event.
+void PtyServer::handleRawFlush(CONSOLE_API_MSG& msg)
+{
+    // Validate the handle exists and is an input handle with write access,
+    // mirroring DereferenceIoHandle(obj, CONSOLE_INPUT_HANDLE, GENERIC_WRITE).
+    auto ptr = reinterpret_cast<PtyHandle*>(msg.Descriptor.Object);
+    auto it = std::find_if(m_handles.begin(), m_handles.end(),
+                           [ptr](const auto& h) { return h.get() == ptr; });
+    THROW_HR_IF(E_HANDLE, it == m_handles.end());
+    THROW_HR_IF(E_HANDLE, !((*it)->handleType & CONSOLE_INPUT_HANDLE));
+    THROW_HR_IF(E_ACCESSDENIED, !((*it)->access & GENERIC_WRITE));
+
+    // TODO: Clear the input event queue when one is implemented.
+
+    // Reset the input-available event, matching the OG ResetEvent(pInputInfo->InputWaitEvent).
+    m_inputAvailableEvent.ResetEvent();
+}
+
 // Completes the oldest pending read with the given data.
 // Called when input data becomes available (e.g. from the terminal's input pipeline).
 //
