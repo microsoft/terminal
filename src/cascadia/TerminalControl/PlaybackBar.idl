@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Control
+{
+    [default_interface] runtimeclass PlaybackBar : Windows.UI.Xaml.Controls.UserControl
+    {
+        PlaybackBar();
+        void Show(Microsoft.Terminal.TerminalConnection.AsciicastConnection connection);
+        void Hide();
+        Boolean IsOpen { get; };
+    }
+}

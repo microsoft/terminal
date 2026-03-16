@@ -12,6 +12,20 @@ namespace Microsoft.Terminal.TerminalConnection
 
         UInt32 InitialCols { get; };
         UInt32 InitialRows { get; };
+
+        Double TotalDuration { get; };
+        Double CurrentPosition { get; };
+        Double PlaybackSpeed { get; set; };
+
+        void PausePlayback();
+        void ResumePlayback();
+        void SeekPlayback(Double position);
+        void RestartPlayback();
+
+        Boolean IsPaused { get; };
+
+        event Windows.Foundation.TypedEventHandler<AsciicastConnection, Object> PlaybackPositionChanged;
+        event Windows.Foundation.TypedEventHandler<AsciicastConnection, Object> PlaybackStateChanged;
     };
 
 }

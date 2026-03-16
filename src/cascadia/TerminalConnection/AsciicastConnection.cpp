@@ -42,7 +42,74 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void AsciicastConnection::Close() noexcept
     {
         _cancelled.store(true);
+        _paused.store(false); // unblock if paused
         _transitionToState(ConnectionState::Closed);
+    }
+
+    void AsciicastConnection::PausePlayback()
+    {
+        if (!_paused.exchange(true))
+        {
+            PlaybackStateChanged.raise(*this, nullptr);
+        }
+    }
+
+    void AsciicastConnection::ResumePlayback()
+    {
+        if (_paused.exchange(false))
+        {
+            PlaybackStateChanged.raise(*this, nullptr);
+        }
+    }
+
+    void AsciicastConnection::SeekPlayback(double position)
+    {
+        // Find the event index closest to the requested position.
+        size_t targetIdx = 0;
+        for (size_t i = 0; i < _events.size(); ++i)
+        {
+            if (_events[i].cumulativeTime > position)
+            {
+                break;
+            }
+            targetIdx = i;
+        }
+        _seekTarget.store(targetIdx);
+    }
+
+    void AsciicastConnection::RestartPlayback()
+    {
+        if (_playbackFinished.load())
+        {
+            // Playback ended, need to re-launch the coroutine.
+            _playbackFinished.store(false);
+            _cancelled.store(false);
+            _paused.store(false);
+            _currentPosition.store(0.0);
+            _currentEventIndex = 0;
+            _seekTarget.store(SIZE_MAX);
+            PlaybackStateChanged.raise(*this, nullptr);
+            _replayEvents();
+        }
+        else
+        {
+            SeekPlayback(0.0);
+        }
+    }
+
+    void AsciicastConnection::_emitAllOutputUpTo(size_t endIndex)
+    {
+        // Clear the terminal and replay all output events up to endIndex.
+        static constexpr std::wstring_view clearSeq{ L"\x1b[2J\x1b[H\x1b[0m" };
+        TerminalOutput.raise(winrt_wstring_to_array_view(clearSeq));
+
+        for (size_t i = 0; i <= endIndex && i < _events.size(); ++i)
+        {
+            if (_events[i].type == L"o")
+            {
+                TerminalOutput.raise(winrt_wstring_to_array_view(_events[i].data));
+            }
+        }
     }
 
     // Unescape a JSON string value, handling standard JSON escape sequences.
@@ -339,8 +406,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto wRawData = til::u8u16(rawData);
             const auto wData = _unescapeJsonString(wRawData);
 
-            _events.push_back({ timestamp, std::wstring{ wType }, wData });
+            _events.push_back({ timestamp, 0.0, std::wstring{ wType }, wData });
         }
+
+        // Compute cumulative timestamps and total duration.
+        double cumulative = 0.0;
+        double prevTs = 0.0;
+        for (auto& evt : _events)
+        {
+            const auto interval = (_formatVersion >= 3) ? evt.timestamp : (evt.timestamp - prevTs);
+            prevTs = evt.timestamp;
+            cumulative += std::max(0.0, std::min(interval, _idleTimeLimit));
+            evt.cumulativeTime = cumulative;
+        }
+        _totalDuration = cumulative;
     }
 
     winrt::fire_and_forget AsciicastConnection::_replayEvents()
@@ -363,25 +442,55 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             co_await winrt::resume_after(std::chrono::milliseconds{ 200 });
         }
 
-        double prevTimestamp = 0.0;
-
-        for (const auto& event : _events)
+        for (size_t i = 0; i < _events.size(); ++i)
         {
             if (_cancelled.load())
             {
                 break;
             }
 
-            // v2: absolute timestamps, compute delta. v3: intervals, use directly.
-            const auto delay = (_formatVersion >= 3) ? event.timestamp : (event.timestamp - prevTimestamp);
-            prevTimestamp = event.timestamp;
-
-            if (delay > 0.0)
+            // Handle seek requests.
+            const auto seekIdx = _seekTarget.exchange(SIZE_MAX);
+            if (seekIdx != SIZE_MAX && !_events.empty())
             {
-                // Cap delay using idle_time_limit from header (defaults to 300s).
-                const auto cappedDelay = std::min(delay, _idleTimeLimit);
-                const auto delayMs = static_cast<int64_t>(cappedDelay * 1000.0);
-                co_await winrt::resume_after(std::chrono::milliseconds{ delayMs });
+                const auto clampedIdx = std::min(seekIdx, _events.size() - 1);
+                _emitAllOutputUpTo(clampedIdx);
+                _currentPosition.store(_events[clampedIdx].cumulativeTime);
+                PlaybackPositionChanged.raise(*this, nullptr);
+                // Set i so the loop continues from the target event.
+                i = (clampedIdx > 0) ? clampedIdx - 1 : 0;
+                continue;
+            }
+
+            // Handle pause - poll with short sleeps to stay responsive.
+            while (_paused.load() && !_cancelled.load())
+            {
+                // Check for seek while paused.
+                const auto postSeek = _seekTarget.exchange(SIZE_MAX);
+                if (postSeek != SIZE_MAX && !_events.empty())
+                {
+                    const auto clampedPost = std::min(postSeek, _events.size() - 1);
+                    _emitAllOutputUpTo(clampedPost);
+                    _currentPosition.store(_events[clampedPost].cumulativeTime);
+                    PlaybackPositionChanged.raise(*this, nullptr);
+                    i = (clampedPost > 0) ? clampedPost - 1 : 0;
+                }
+                co_await winrt::resume_after(std::chrono::milliseconds{ 50 });
+            }
+
+            const auto& event = _events[i];
+
+            // Compute delay with speed factor.
+            const auto interval = (i == 0) ? 0.0 :
+                (event.cumulativeTime - _events[i - 1].cumulativeTime);
+            const auto speed = _playbackSpeed.load();
+            if (interval > 0.0 && speed > 0.0)
+            {
+                const auto delayMs = static_cast<int64_t>((interval / speed) * 1000.0);
+                if (delayMs > 0)
+                {
+                    co_await winrt::resume_after(std::chrono::milliseconds{ delayMs });
+                }
             }
 
             if (_cancelled.load())
@@ -389,6 +498,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 break;
             }
 
+            // Emit the event.
             if (event.type == L"o")
             {
                 TerminalOutput.raise(winrt_wstring_to_array_view(event.data));
@@ -412,20 +522,24 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     }
                 }
             }
-            // Other event types ("m", "x") are recognized but not acted upon during playback.
+
+            // Update position.
+            _currentPosition.store(event.cumulativeTime);
+            _currentEventIndex = i;
+            PlaybackPositionChanged.raise(*this, nullptr);
         }
 
         if (!_cancelled.load())
         {
-            // Brief pause so the final frame is visible before we clear.
             co_await winrt::resume_after(std::chrono::milliseconds{ 500 });
 
-            // Move to bottom of viewport and show message below content.
             static constexpr std::wstring_view completionMsg{
                 L"\x1b[999;1H\r\n\x1b[1;36m--- Playback complete. Press any key to close. ---\x1b[0m"
             };
             TerminalOutput.raise(winrt_wstring_to_array_view(completionMsg));
             _playbackFinished.store(true);
+            _paused.store(true);
+            PlaybackStateChanged.raise(*this, nullptr);
         }
         else
         {

@@ -1336,6 +1336,10 @@
                                         Closed="_CloseSearchBoxControl"
                                         Search="_Search"
                                         SearchChanged="_SearchChanged" />
+
+                <local:PlaybackBar x:Name="PlaybackBarControl"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Bottom" />
             </Grid>
 
             <ScrollBar x:Name="ScrollBar"

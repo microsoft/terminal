@@ -1423,6 +1423,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else
             {
                 _core.Connection().Start();
+
+                // Show playback bar for asciicast connections.
+                if (const auto castConn = _core.Connection().try_as<TerminalConnection::AsciicastConnection>())
+                {
+                    if (auto bar = PlaybackBarControl())
+                    {
+                        bar.Show(castConn);
+                    }
+                }
             }
         }
         else
