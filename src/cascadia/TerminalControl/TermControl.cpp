@@ -2507,9 +2507,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _updateScrollBar->Run(update);
 
-        // if a selection marker is already visible,
-        // update the position of those markers
-        if (SelectionStartMarker().Visibility() == Visibility::Visible || SelectionEndMarker().Visibility() == Visibility::Visible)
+        // if we have a selection, update the position of the markers
+        // (they may have been hidden when the endpoint scrolled out of view)
+        if (_core.HasSelection())
         {
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
