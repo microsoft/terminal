@@ -99,11 +99,56 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    void AsciicastConnection::_emitAllOutputUpTo(size_t endIndex)
+    void AsciicastConnection::_clearScreen()
     {
-        // Clear the terminal and replay all output events up to endIndex.
-        static constexpr std::wstring_view clearSeq{ L"\x1b[2J\x1b[H\x1b[0m" };
+        // Erase viewport, erase scrollback, cursor home, reset attributes.
+        static constexpr std::wstring_view clearSeq{ L"\x1b[2J\x1b[3J\x1b[H\x1b[0m" };
         TerminalOutput.raise(winrt_wstring_to_array_view(clearSeq));
+    }
+
+    winrt::Windows::Foundation::IAsyncAction AsciicastConnection::_emitAllOutputUpTo(size_t endIndex)
+    {
+        auto strongThis{ get_strong() };
+
+        // Find the effective terminal size at the seek position: start from
+        // header dimensions, then apply the last "r" event before endIndex.
+        uint32_t effectiveCols = _initialCols;
+        uint32_t effectiveRows = _initialRows;
+        if (_autoResize)
+        {
+            for (size_t i = 0; i <= endIndex && i < _events.size(); ++i)
+            {
+                if (_events[i].type == L"r")
+                {
+                    const auto xPos = _events[i].data.find(L'x');
+                    if (xPos != std::wstring::npos)
+                    {
+                        try
+                        {
+                            effectiveCols = static_cast<uint32_t>(std::stoi(_events[i].data.substr(0, xPos)));
+                            effectiveRows = static_cast<uint32_t>(std::stoi(_events[i].data.substr(xPos + 1)));
+                        }
+                        catch (...)
+                        {
+                        }
+                    }
+                }
+            }
+        }
+
+        // Resize to whatever the terminal would have been at this point.
+        if (_autoResize && effectiveCols > 0 && effectiveRows > 0)
+        {
+            wchar_t resizeSeq[64];
+            swprintf_s(resizeSeq, L"\x1b[8;%u;%ut", effectiveRows, effectiveCols);
+            const std::wstring_view sv{ resizeSeq };
+            TerminalOutput.raise(winrt_wstring_to_array_view(sv));
+            // Wait for the terminal to process the resize before replaying
+            // content, otherwise it renders at the old (wrong) width.
+            co_await winrt::resume_after(std::chrono::milliseconds{ 200 });
+        }
+
+        _clearScreen();
 
         for (size_t i = 0; i <= endIndex && i < _events.size(); ++i)
         {
@@ -450,6 +495,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             co_await winrt::resume_after(std::chrono::milliseconds{ 200 });
         }
 
+        // Clear the screen before starting playback. This ensures a clean
+        // slate on both first play and restart-from-finished.
+        _clearScreen();
+
         size_t i = 0;
         while (i < _events.size())
         {
@@ -463,10 +512,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (seekIdx != SIZE_MAX && !_events.empty())
             {
                 const auto clampedIdx = std::min(seekIdx, _events.size() - 1);
-                _emitAllOutputUpTo(clampedIdx);
+                co_await _emitAllOutputUpTo(clampedIdx);
                 _currentPosition.store(_events[clampedIdx].cumulativeTime);
                 PlaybackPositionChanged.raise(*this, nullptr);
-                i = clampedIdx;
+                // Resume from the next event — _emitAllOutputUpTo already
+                // emitted everything up to and including clampedIdx.
+                i = clampedIdx + 1;
                 continue;
             }
 
@@ -478,10 +529,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 if (postSeek != SIZE_MAX && !_events.empty())
                 {
                     const auto clampedPost = std::min(postSeek, _events.size() - 1);
-                    _emitAllOutputUpTo(clampedPost);
+                    co_await _emitAllOutputUpTo(clampedPost);
                     _currentPosition.store(_events[clampedPost].cumulativeTime);
                     PlaybackPositionChanged.raise(*this, nullptr);
-                    i = clampedPost;
+                    i = clampedPost + 1;
                 }
                 co_await winrt::resume_after(std::chrono::milliseconds{ 50 });
             }

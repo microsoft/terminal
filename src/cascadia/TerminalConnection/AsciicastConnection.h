@@ -57,7 +57,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static std::wstring _unescapeJsonString(std::wstring_view input);
         void _parseFile();
         winrt::fire_and_forget _replayEvents();
-        void _emitAllOutputUpTo(size_t endIndex);
+        winrt::Windows::Foundation::IAsyncAction _emitAllOutputUpTo(size_t endIndex);
+        void _clearScreen();
 
         hstring _filePath;
         std::vector<AsciicastEvent> _events;
