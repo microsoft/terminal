@@ -13,11 +13,11 @@
 //
 // Returns STATUS_SUCCESS if the reply was sent via completeIo.
 // Returns a failure NTSTATUS if the caller should reply inline with that status.
-void PtyServer::handleConnect(CONSOLE_API_MSG& msg)
+NTSTATUS PtyServer::handleConnect()
 {
     // 1. Read the CONSOLE_SERVER_MSG payload from the client.
     CONSOLE_SERVER_MSG data{};
-    readInput(msg.Descriptor, 0, &data, sizeof(data));
+    readInput(0, &data, sizeof(data));
 
     // 2. Validate that strings are within the buffers and null-terminated.
     if ((data.ApplicationNameLength > (sizeof(data.ApplicationName) - sizeof(WCHAR))) ||
@@ -31,7 +31,7 @@ void PtyServer::handleConnect(CONSOLE_API_MSG& msg)
     }
 
     // 3. Allocate per-process tracking data.
-    const auto processId = static_cast<DWORD>(msg.Descriptor.Process);
+    const auto processId = static_cast<DWORD>(m_req.Descriptor.Process);
 
     auto client = std::make_unique<PtyClient>();
     client->processId = processId;
@@ -41,9 +41,6 @@ void PtyServer::handleConnect(CONSOLE_API_MSG& msg)
     client->rootProcess = !m_initialized;
 
     // 5. Allocate IO handles for input and output.
-    //    In the OG, AllocateIoHandle creates a CONSOLE_HANDLE_DATA pointing to
-    //    the input buffer or screen buffer. Here we create lightweight PtyHandle
-    //    objects. The driver echoes these back in Descriptor.Object.
     client->inputHandle = allocateHandle(CONSOLE_INPUT_HANDLE, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE);
     client->outputHandle = allocateHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE);
 
@@ -56,26 +53,20 @@ void PtyServer::handleConnect(CONSOLE_API_MSG& msg)
     m_clients.push_back(std::move(client));
 
     // 6. Build the reply with connection information.
-    //    The driver stores these opaque values and echoes them back in future messages:
-    //    - Process  → Descriptor.Process  (for DISCONNECT, etc.)
-    //    - Input    → Descriptor.Object   (for RAW_READ, etc.)
-    //    - Output   → Descriptor.Object   (for RAW_WRITE, etc.)
     CD_CONNECTION_INFORMATION connInfo{};
     connInfo.Process = reinterpret_cast<ULONG_PTR>(clientPtr);
     connInfo.Input = clientPtr->inputHandle;
     connInfo.Output = clientPtr->outputHandle;
 
     CD_IO_COMPLETE completion{};
-    completion.Identifier = msg.Descriptor.Identifier;
+    completion.Identifier = m_req.Descriptor.Identifier;
     completion.IoStatus.Status = STATUS_SUCCESS;
     completion.IoStatus.Information = sizeof(CD_CONNECTION_INFORMATION);
     completion.Write.Data = &connInfo;
     completion.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
     completeIo(completion);
-
-    // TODO: Failed to deliver the reply — clean up the client we just added.
-    //std::erase_if(m_clients, [clientPtr](const auto& c) { return c.get() == clientPtr; });
+    return STATUS_NO_RESPONSE;
 }
 
 // Handles CONSOLE_IO_DISCONNECT messages.
@@ -85,16 +76,16 @@ void PtyServer::handleConnect(CONSOLE_API_MSG& msg)
 //  2. Free per-process data (handles, command history, etc.).
 //
 // The caller always replies with STATUS_SUCCESS inline.
-void PtyServer::handleDisconnect(CONSOLE_API_MSG& msg)
+NTSTATUS PtyServer::handleDisconnect()
 {
-    auto client = findClient(msg.Descriptor.Process);
+    auto client = findClient(m_req.Descriptor.Process);
     if (!client)
     {
-        return;
+        return STATUS_SUCCESS;
     }
 
     // Cancel any pending IOs from this client.
-    cancelPendingIOs(msg.Descriptor.Process);
+    cancelPendingIOs(m_req.Descriptor.Process);
 
     // Free the client's IO handles, mirroring OG FreeProcessData which calls
     // ConsoleCloseHandle on InputHandle and OutputHandle.
@@ -108,6 +99,7 @@ void PtyServer::handleDisconnect(CONSOLE_API_MSG& msg)
     }
 
     std::erase_if(m_clients, [client](const auto& c) { return c.get() == client; });
+    return STATUS_SUCCESS;
 }
 
 // Handle management.
@@ -140,9 +132,9 @@ void PtyServer::freeHandle(ULONG_PTR handle)
 //  2. Resolve CD_IO_OBJECT_TYPE_GENERIC based on DesiredAccess.
 //  3. Allocate a handle of the appropriate type.
 //  4. Reply via completeIo with the handle value in IoStatus.Information.
-void PtyServer::handleCreateObject(CONSOLE_API_MSG& msg)
+NTSTATUS PtyServer::handleCreateObject()
 {
-    auto& info = msg.CreateObject;
+    auto& info = m_req.CreateObject;
 
     // Resolve generic object type based on desired access, matching OG behavior.
     if (info.ObjectType == CD_IO_OBJECT_TYPE_GENERIC)
@@ -182,11 +174,12 @@ void PtyServer::handleCreateObject(CONSOLE_API_MSG& msg)
     // Reply with the handle value in IoStatus.Information.
     // The driver stores this and echoes it back in Descriptor.Object for future IO.
     CD_IO_COMPLETE completion{};
-    completion.Identifier = msg.Descriptor.Identifier;
+    completion.Identifier = m_req.Descriptor.Identifier;
     completion.IoStatus.Status = STATUS_SUCCESS;
     completion.IoStatus.Information = handle;
 
     completeIo(completion);
+    return STATUS_NO_RESPONSE;
 }
 
 // Handles CONSOLE_IO_CLOSE_OBJECT messages.
@@ -196,9 +189,10 @@ void PtyServer::handleCreateObject(CONSOLE_API_MSG& msg)
 //  2. Close/free the handle.
 //
 // The caller replies with STATUS_SUCCESS inline.
-void PtyServer::handleCloseObject(CONSOLE_API_MSG& msg)
+NTSTATUS PtyServer::handleCloseObject()
 {
-    freeHandle(msg.Descriptor.Object);
+    freeHandle(m_req.Descriptor.Object);
+    return STATUS_SUCCESS;
 }
 
 PtyClient* PtyServer::findClient(ULONG_PTR handle)

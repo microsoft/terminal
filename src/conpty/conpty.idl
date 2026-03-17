@@ -4,9 +4,18 @@ typedef struct _STARTUPINFOEXW* LPSTARTUPINFOEXW;
 typedef struct _STARTUPINFOW* LPSTARTUPINFOW;
 typedef struct _PROCESS_INFORMATION* LPPROCESS_INFORMATION;
 
+[uuid(e9b4897e-19f8-4833-af28-f777deeba7e6), object, local, pointer_default(unique)]
+interface IPtyHost : IUnknown
+{
+    void HandleUTF8Output(LPCSTR data, SIZE_T length);
+    void HandleUTF16Output(LPCWSTR data, SIZE_T length);
+}
+
 [uuid(9a727f67-09bd-429b-8f73-766a718070f0), object, local, pointer_default(unique)]
 interface IPtyServer : IUnknown
 {
+    HRESULT SetHost(IPtyHost* host);
+
     HRESULT Run();
 
     // Identical to CreateProcessW(), except for the absence of lpStartupInfo.

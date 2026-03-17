@@ -2,6 +2,7 @@
 #include "PtyServer.h"
 
 #include <cassert>
+#include <wil/nt_result_macros.h>
 
 #define ProcThreadAttributeConsoleReference 10
 
@@ -76,37 +77,40 @@ ULONG PtyServer::Release()
     return count;
 }
 
+HRESULT PtyServer::SetHost(IPtyHost* host)
+{
+    m_host = host;
+    return S_OK;
+}
+
 #pragma endregion
 
 #pragma region IPtyServer
 
 HRESULT PtyServer::Run()
 {
-    CONSOLE_API_MSG req{};
     CD_IO_COMPLETE res{};
-    bool hasRes = false;
+    NTSTATUS status = STATUS_NO_RESPONSE;
 
     while (true)
     {
-        NTSTATUS status;
         {
             void* in = nullptr;
             DWORD inLen = 0;
 
-            if (hasRes)
+            if (status != STATUS_NO_RESPONSE)
             {
-                res.Identifier = req.Descriptor.Identifier;
+                res.Identifier = m_req.Descriptor.Identifier;
+                res.IoStatus.Status = status;
+                res.Write.Data = m_resBuffer.data();
+                res.Write.Size = m_resBuffer.size();
                 in = &res;
                 inLen = sizeof(res);
             }
 
-            status = ioctl(IOCTL_CONDRV_READ_IO, in, inLen, &req, sizeof(req));
+            status = ioctl(IOCTL_CONDRV_READ_IO, in, inLen, &m_req, sizeof(m_req));
 
-            if (hasRes)
-            {
-                memset(&res, 0, sizeof(res));
-                hasRes = false;
-            }
+            m_resBuffer = std::vector<uint8_t>();
         }
         if (!NT_SUCCESS(status))
         {
@@ -119,68 +123,40 @@ HRESULT PtyServer::Run()
 
         try
         {
-            switch (req.Descriptor.Function)
+            switch (m_req.Descriptor.Function)
             {
             case CONSOLE_IO_CONNECT:
-            {
-                printf("Received connect request from process %llu\n", req.Descriptor.Process);
-                handleConnect(req);
+                status = handleConnect();
                 break;
-            }
             case CONSOLE_IO_DISCONNECT:
-                printf("Received disconnect request from process %llu\n", req.Descriptor.Process);
-                handleDisconnect(req);
-                res.IoStatus.Status = STATUS_SUCCESS;
-                hasRes = true;
+                status = handleDisconnect();
                 break;
             case CONSOLE_IO_CREATE_OBJECT:
-                printf("Received create object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
-                handleCreateObject(req);
+                status = handleCreateObject();
                 break;
             case CONSOLE_IO_CLOSE_OBJECT:
-                printf("Received close object request for object %llu from process %llu\n", req.Descriptor.Object, req.Descriptor.Process);
-                handleCloseObject(req);
-                res.IoStatus.Status = STATUS_SUCCESS;
-                hasRes = true;
+                status = handleCloseObject();
                 break;
             case CONSOLE_IO_RAW_WRITE:
-                printf("Received raw write request of %lu bytes from process %llu\n", req.Descriptor.InputSize, req.Descriptor.Process);
-                if (handleRawWrite(req))
-                {
-                    res.IoStatus.Status = STATUS_SUCCESS;
-                    hasRes = true;
-                }
+                status = handleRawWrite();
                 break;
             case CONSOLE_IO_RAW_READ:
-                printf("Received raw read request of %lu bytes from process %llu\n", req.Descriptor.OutputSize, req.Descriptor.Process);
-                if (handleRawRead(req))
-                {
-                    res.IoStatus.Status = STATUS_SUCCESS;
-                    hasRes = true;
-                }
+                status = handleRawRead();
                 break;
             case CONSOLE_IO_USER_DEFINED:
-                printf("Received user defined IO request: %lu\n", req.Descriptor.InputSize);
-                res.IoStatus.Status = STATUS_NOT_IMPLEMENTED;
-                hasRes = true;
+                status = handleUserDefined();
                 break;
             case CONSOLE_IO_RAW_FLUSH:
-                printf("Received raw flush request from process %llu\n", req.Descriptor.Process);
-                handleRawFlush(req);
-                res.IoStatus.Status = STATUS_SUCCESS;
-                hasRes = true;
+                status = handleRawFlush();
                 break;
             default:
-                res.IoStatus.Status = STATUS_UNSUCCESSFUL;
-                hasRes = true;
+                status = STATUS_UNSUCCESSFUL;
                 break;
             }
         }
         catch (...)
         {
-            LOG_CAUGHT_EXCEPTION();
-            res.IoStatus.Status = status;
-            hasRes = true;
+            status = wil::StatusFromCaughtException();
         }
     }
 }
@@ -302,30 +278,30 @@ NTSTATUS PtyServer::ioctl(DWORD code, void* in, DWORD inLen, void* out, DWORD ou
     return status;
 }
 
-// Reads [part of] the input payload of the given message from the driver.
+// Reads [part of] the input payload of the current message from the driver.
 // Analogous to the OG ReadMessageInput() in csrutil.cpp.
 //
 // For CONSOLE_IO_CONNECT, offset is 0 and the payload is a CONSOLE_SERVER_MSG.
 // For CONSOLE_IO_USER_DEFINED, offset would typically be past the message header.
-void PtyServer::readInput(const CD_IO_DESCRIPTOR& desc, ULONG offset, void* buffer, ULONG size)
+void PtyServer::readInput(ULONG offset, void* buffer, ULONG size)
 {
     CD_IO_OPERATION op{};
-    op.Identifier = desc.Identifier;
+    op.Identifier = m_req.Descriptor.Identifier;
     op.Buffer.Offset = offset;
     op.Buffer.Data = buffer;
     op.Buffer.Size = size;
     THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_READ_INPUT, &op, sizeof(op), nullptr, 0));
 }
 
-// Writes data back to the client's output buffer for the given message.
+// Writes data back to the client's output buffer for the current message.
 // Analogous to the IOCTL_CONDRV_WRITE_OUTPUT call in the OG ReleaseMessageBuffers() (csrutil.cpp).
 //
 // The driver matches the Identifier to the pending IO and copies data into
 // the client's buffer at the specified offset.
-void PtyServer::writeOutput(const CD_IO_DESCRIPTOR& desc, ULONG offset, const void* buffer, ULONG size)
+void PtyServer::writeOutput(ULONG offset, const void* buffer, ULONG size)
 {
     CD_IO_OPERATION op{};
-    op.Identifier = desc.Identifier;
+    op.Identifier = m_req.Descriptor.Identifier;
     op.Buffer.Offset = offset;
     op.Buffer.Data = const_cast<void*>(buffer);
     op.Buffer.Size = size;

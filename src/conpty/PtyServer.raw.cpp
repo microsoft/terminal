@@ -16,16 +16,16 @@
 //
 // Returns true if the reply is pending (caller must NOT reply inline).
 // Returns false if the write completed immediately (caller replies inline).
-bool PtyServer::handleRawWrite(CONSOLE_API_MSG& msg)
+NTSTATUS PtyServer::handleRawWrite()
 {
-    const auto size = msg.Descriptor.InputSize;
+    const auto size = m_req.Descriptor.InputSize;
 
     // Read the client's write payload from the driver upfront, regardless
     // of whether we can process it now. The driver expects us to consume it.
     std::vector<uint8_t> buffer(size);
     if (size > 0)
     {
-        readInput(msg.Descriptor, 0, buffer.data(), size);
+        readInput(0, buffer.data(), size);
     }
 
     // If output is paused, defer this write. The OG creates a wait block
@@ -33,17 +33,17 @@ bool PtyServer::handleRawWrite(CONSOLE_API_MSG& msg)
     if (m_outputPaused)
     {
         PendingIO pending;
-        pending.identifier = msg.Descriptor.Identifier;
-        pending.process = msg.Descriptor.Process;
-        pending.object = msg.Descriptor.Object;
+        pending.identifier = m_req.Descriptor.Identifier;
+        pending.process = m_req.Descriptor.Process;
+        pending.object = m_req.Descriptor.Object;
         pending.function = CONSOLE_IO_RAW_WRITE;
         pending.inputData = std::move(buffer);
         m_pendingWrites.push_back(std::move(pending));
-        return false; // reply pending
+        return STATUS_NO_RESPONSE;
     }
 
-    printf("  %*s\r\n", static_cast<int>(buffer.size()), reinterpret_cast<const char*>(buffer.data()));
-    return true; // reply immediately
+    m_host->HandleUTF8Output((const char*)buffer.data(), buffer.size());
+    return STATUS_SUCCESS;
 }
 
 // Handles CONSOLE_IO_RAW_READ messages.
@@ -60,22 +60,22 @@ bool PtyServer::handleRawWrite(CONSOLE_API_MSG& msg)
 //
 // Returns true if the reply is pending (caller must NOT reply inline).
 // Returns false if the read completed immediately.
-bool PtyServer::handleRawRead(CONSOLE_API_MSG& msg)
+NTSTATUS PtyServer::handleRawRead()
 {
-    const auto maxBytes = msg.Descriptor.OutputSize;
+    const auto maxBytes = m_req.Descriptor.OutputSize;
 
     // TODO: Try to read data from the input queue.
     // For now, we always pend — there's no input source yet.
     // When input data becomes available, call completePendingRead().
 
     PendingIO pending;
-    pending.identifier = msg.Descriptor.Identifier;
-    pending.process = msg.Descriptor.Process;
-    pending.object = msg.Descriptor.Object;
+    pending.identifier = m_req.Descriptor.Identifier;
+    pending.process = m_req.Descriptor.Process;
+    pending.object = m_req.Descriptor.Object;
     pending.function = CONSOLE_IO_RAW_READ;
     pending.outputSize = maxBytes;
     m_pendingReads.push_back(std::move(pending));
-    return false; // reply pending
+    return STATUS_NO_RESPONSE;
 }
 
 // Handles CONSOLE_IO_RAW_FLUSH messages.
@@ -88,11 +88,11 @@ bool PtyServer::handleRawRead(CONSOLE_API_MSG& msg)
 //
 // In the prototype there is no circular input buffer yet, so we just
 // validate the handle and reset the input-available event.
-void PtyServer::handleRawFlush(CONSOLE_API_MSG& msg)
+NTSTATUS PtyServer::handleRawFlush()
 {
     // Validate the handle exists and is an input handle with write access,
     // mirroring DereferenceIoHandle(obj, CONSOLE_INPUT_HANDLE, GENERIC_WRITE).
-    auto ptr = reinterpret_cast<PtyHandle*>(msg.Descriptor.Object);
+    auto ptr = reinterpret_cast<PtyHandle*>(m_req.Descriptor.Object);
     auto it = std::find_if(m_handles.begin(), m_handles.end(),
                            [ptr](const auto& h) { return h.get() == ptr; });
     THROW_HR_IF(E_HANDLE, it == m_handles.end());
@@ -103,6 +103,7 @@ void PtyServer::handleRawFlush(CONSOLE_API_MSG& msg)
 
     // Reset the input-available event, matching the OG ResetEvent(pInputInfo->InputWaitEvent).
     m_inputAvailableEvent.ResetEvent();
+    return STATUS_SUCCESS;
 }
 
 // Completes the oldest pending read with the given data.

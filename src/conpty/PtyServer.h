@@ -2,10 +2,6 @@
 
 #include <conpty.h>
 
-#include <deque>
-#include <memory>
-#include <vector>
-
 using unique_nthandle = wil::unique_any_handle_null<decltype(&::NtClose), ::NtClose>;
 
 // Mirrors the payload of IOCTL_CONDRV_READ_IO.
@@ -89,6 +85,7 @@ struct PtyServer : IPtyServer
 
 #pragma region IPtyServer
 
+    HRESULT SetHost(IPtyHost* host) override;
     HRESULT Run() override;
     HRESULT CreateProcessW(
         LPCWSTR lpApplicationName,
@@ -103,25 +100,88 @@ struct PtyServer : IPtyServer
 
 #pragma endregion
 
-private:
+    // Positive NTSTATUS sentinel: "no piggyback reply for this iteration."
+    // NTSTATUS is a signed LONG, so status <= 0 catches both success (0) and
+    // errors (negative), while this positive value skips the piggyback path.
+    static constexpr NTSTATUS STATUS_NO_RESPONSE = 1;
+
     static unique_nthandle createHandle(HANDLE parent, const wchar_t* typeName, bool inherit, bool synchronous);
     NTSTATUS ioctl(DWORD code, void* in, DWORD inLen, void* out, DWORD outLen) const;
 
     // ConDrv communication helpers.
-    void readInput(const CD_IO_DESCRIPTOR& desc, ULONG offset, void* buffer, ULONG size);
-    void writeOutput(const CD_IO_DESCRIPTOR& desc, ULONG offset, const void* buffer, ULONG size);
+    // These operate on m_req (the current message being processed).
+    void readInput(ULONG offset, void* buffer, ULONG size);
+    void writeOutput(ULONG offset, const void* buffer, ULONG size);
     void completeIo(CD_IO_COMPLETE& completion);
 
-    // Message handlers (implemented in PtyServer.clients.cpp).
-    // Handlers returning bool: true = reply pending (don't reply inline), false = reply inline.
-    void handleConnect(CONSOLE_API_MSG& msg);
-    void handleDisconnect(CONSOLE_API_MSG& msg);
-    void handleCreateObject(CONSOLE_API_MSG& msg);
-    void handleCloseObject(CONSOLE_API_MSG& msg);
-    bool handleRawWrite(CONSOLE_API_MSG& msg);
-    bool handleRawRead(CONSOLE_API_MSG& msg);
-    void handleUserDefined(CONSOLE_API_MSG& msg);
-    void handleRawFlush(CONSOLE_API_MSG& msg);
+    // Message handlers.
+    // All handlers read from m_req and return NTSTATUS:
+    //  - STATUS_SUCCESS / error → piggyback reply on next READ_IO
+    //  - STATUS_NO_RESPONSE     → handler already replied (completeIo) or deferred
+    NTSTATUS handleConnect();
+    NTSTATUS handleDisconnect();
+    NTSTATUS handleCreateObject();
+    NTSTATUS handleCloseObject();
+    NTSTATUS handleRawWrite();
+    NTSTATUS handleRawRead();
+    NTSTATUS handleUserDefined();
+    NTSTATUS handleRawFlush();
+
+    NTSTATUS handleUserDeprecatedApi();
+
+    NTSTATUS handleUserL1GetConsoleCP();
+    NTSTATUS handleUserL1GetConsoleMode();
+    NTSTATUS handleUserL1SetConsoleMode();
+    NTSTATUS handleUserL1GetNumberOfConsoleInputEvents();
+    NTSTATUS handleUserL1GetConsoleInput();
+    NTSTATUS handleUserL1ReadConsole();
+    NTSTATUS handleUserL1WriteConsole();
+    NTSTATUS handleUserL1GetConsoleLangId();
+
+    NTSTATUS handleUserL2FillConsoleOutput();
+    NTSTATUS handleUserL2GenerateConsoleCtrlEvent();
+    NTSTATUS handleUserL2SetConsoleActiveScreenBuffer();
+    NTSTATUS handleUserL2FlushConsoleInputBuffer();
+    NTSTATUS handleUserL2SetConsoleCP();
+    NTSTATUS handleUserL2GetConsoleCursorInfo();
+    NTSTATUS handleUserL2SetConsoleCursorInfo();
+    NTSTATUS handleUserL2GetConsoleScreenBufferInfo();
+    NTSTATUS handleUserL2SetConsoleScreenBufferInfo();
+    NTSTATUS handleUserL2SetConsoleScreenBufferSize();
+    NTSTATUS handleUserL2SetConsoleCursorPosition();
+    NTSTATUS handleUserL2GetLargestConsoleWindowSize();
+    NTSTATUS handleUserL2ScrollConsoleScreenBuffer();
+    NTSTATUS handleUserL2SetConsoleTextAttribute();
+    NTSTATUS handleUserL2SetConsoleWindowInfo();
+    NTSTATUS handleUserL2ReadConsoleOutputString();
+    NTSTATUS handleUserL2WriteConsoleInput();
+    NTSTATUS handleUserL2WriteConsoleOutput();
+    NTSTATUS handleUserL2WriteConsoleOutputString();
+    NTSTATUS handleUserL2ReadConsoleOutput();
+    NTSTATUS handleUserL2GetConsoleTitle();
+    NTSTATUS handleUserL2SetConsoleTitle();
+
+    NTSTATUS handleUserL3GetConsoleMouseInfo();
+    NTSTATUS handleUserL3GetConsoleFontSize();
+    NTSTATUS handleUserL3GetConsoleCurrentFont();
+    NTSTATUS handleUserL3SetConsoleDisplayMode();
+    NTSTATUS handleUserL3GetConsoleDisplayMode();
+    NTSTATUS handleUserL3AddConsoleAlias();
+    NTSTATUS handleUserL3GetConsoleAlias();
+    NTSTATUS handleUserL3GetConsoleAliasesLength();
+    NTSTATUS handleUserL3GetConsoleAliasExesLength();
+    NTSTATUS handleUserL3GetConsoleAliases();
+    NTSTATUS handleUserL3GetConsoleAliasExes();
+    NTSTATUS handleUserL3ExpungeConsoleCommandHistory();
+    NTSTATUS handleUserL3SetConsoleNumberOfCommands();
+    NTSTATUS handleUserL3GetConsoleCommandHistoryLength();
+    NTSTATUS handleUserL3GetConsoleCommandHistory();
+    NTSTATUS handleUserL3GetConsoleWindow();
+    NTSTATUS handleUserL3GetConsoleSelectionInfo();
+    NTSTATUS handleUserL3GetConsoleProcessList();
+    NTSTATUS handleUserL3GetConsoleHistory();
+    NTSTATUS handleUserL3SetConsoleHistory();
+    NTSTATUS handleUserL3SetConsoleCurrentFont();
 
     // Complete pending IOs (called when state changes make progress possible).
     void completePendingRead(const void* data, ULONG size);
@@ -137,7 +197,13 @@ private:
 
     std::atomic<ULONG> m_refCount{ 1 };
     unique_nthandle m_server;
+    wil::com_ptr<IPtyHost> m_host;
     wil::unique_event m_inputAvailableEvent;
+
+    // Per-message state. Set by Run() before dispatching, read by handlers.
+    CONSOLE_API_MSG m_req{};
+    // Piggyback response data. Gets sent back to the client on the next IOCTL_CONDRV_READ_IO.
+    std::vector<uint8_t> m_resBuffer;
 
     bool m_initialized = false;
     bool m_outputPaused = false;

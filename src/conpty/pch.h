@@ -17,4 +17,9 @@
 
 #include <array>
 #include <atomic>
-#include <wil/win32_helpers.h>
+#include <span>
+#include <cassert>
+#include <deque>
+#include <memory>
+#include <vector>
+#include <wil/com.h>
