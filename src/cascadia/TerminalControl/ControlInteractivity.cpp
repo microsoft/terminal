@@ -401,14 +401,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
 
-            // Don't update the selection endpoint while still tracking
-            // the touchdown point — the initial selection from MultiClickSelection
-            // should remain visible until the drag threshold is met and
-            // the anchor is properly set based on drag direction.
-            if (!_singleClickTouchdownPos)
-            {
-                SetEndSelectionPoint(pixelPosition);
-            }
+            SetEndSelectionPoint(pixelPosition);
         }
 
         _core->SetHoveredCell(terminalPosition.to_core_point());
