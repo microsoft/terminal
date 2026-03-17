@@ -6,7 +6,7 @@
     "type": "Bug",
     "unique_fields": [
       "Microsoft.VSTS.Common.CustomString03"
-    ],
+    ],  
     "comment": "<a href='{{ input_url }}'>This input</a> caused the <a href='{{ target_url }}'>fuzz target</a> {{ report.executable }} to crash. The faulting input SHA256 hash is {{ report.input_sha256 }} <br>",
     "ado_fields": {
       "System.AssignedTo": "INSERT_ASSIGNED_HERE",
