@@ -116,7 +116,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (const auto item = sender.try_as<Windows::UI::Xaml::Controls::MenuFlyoutItem>())
             {
                 const auto tag = winrt::unbox_value<winrt::hstring>(item.Tag());
-                const auto speed = std::stod(std::wstring{ tag });
+                double speed = 1.0;
+                if (tag == L"0.5") speed = 0.5;
+                else if (tag == L"2") speed = 2.0;
+                else if (tag == L"4") speed = 4.0;
                 _connection.PlaybackSpeed(speed);
                 SpeedButton().Content(winrt::box_value(item.Text()));
             }

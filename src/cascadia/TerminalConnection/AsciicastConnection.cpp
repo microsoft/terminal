@@ -42,6 +42,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void AsciicastConnection::Close() noexcept
     {
         _cancelled.store(true);
+        _generation.fetch_add(1);
         _paused.store(false); // unblock if paused
         _transitionToState(ConnectionState::Closed);
     }
@@ -82,6 +83,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (_playbackFinished.load())
         {
             // Playback ended, need to re-launch the coroutine.
+            _generation.fetch_add(1);
             _playbackFinished.store(false);
             _cancelled.store(false);
             _paused.store(false);
@@ -427,6 +429,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         auto strongThis{ get_strong() };
         co_await winrt::resume_background();
 
+        const auto myGeneration = _generation.load();
+
         _transitionToState(ConnectionState::Connected);
 
         // If auto-resize is enabled and we have header dimensions, emit a VT
@@ -434,17 +438,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // the recording. The terminal's existing VT parser handles this natively.
         if (_autoResize && _initialCols > 0 && _initialRows > 0)
         {
+            // Wait for terminal init — the VT parser needs time to connect
+            // before it can process the resize sequence.
             co_await winrt::resume_after(std::chrono::milliseconds{ 100 });
             wchar_t resizeSeq[64];
             swprintf_s(resizeSeq, L"\x1b[8;%u;%ut", _initialRows, _initialCols);
             const std::wstring_view sv{ resizeSeq };
             TerminalOutput.raise(winrt_wstring_to_array_view(sv));
+            // Wait for resize reflow — the terminal needs time to reflow
+            // content after changing dimensions.
             co_await winrt::resume_after(std::chrono::milliseconds{ 200 });
         }
 
-        for (size_t i = 0; i < _events.size(); ++i)
+        size_t i = 0;
+        while (i < _events.size())
         {
-            if (_cancelled.load())
+            if (_cancelled.load() || _generation.load() != myGeneration)
             {
                 break;
             }
@@ -457,13 +466,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _emitAllOutputUpTo(clampedIdx);
                 _currentPosition.store(_events[clampedIdx].cumulativeTime);
                 PlaybackPositionChanged.raise(*this, nullptr);
-                // Set i so the loop continues from the target event.
-                i = (clampedIdx > 0) ? clampedIdx - 1 : 0;
+                i = clampedIdx;
                 continue;
             }
 
             // Handle pause - poll with short sleeps to stay responsive.
-            while (_paused.load() && !_cancelled.load())
+            while (_paused.load() && !_cancelled.load() && _generation.load() == myGeneration)
             {
                 // Check for seek while paused.
                 const auto postSeek = _seekTarget.exchange(SIZE_MAX);
@@ -473,7 +481,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     _emitAllOutputUpTo(clampedPost);
                     _currentPosition.store(_events[clampedPost].cumulativeTime);
                     PlaybackPositionChanged.raise(*this, nullptr);
-                    i = (clampedPost > 0) ? clampedPost - 1 : 0;
+                    i = clampedPost;
                 }
                 co_await winrt::resume_after(std::chrono::milliseconds{ 50 });
             }
@@ -493,7 +501,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 }
             }
 
-            if (_cancelled.load())
+            if (_cancelled.load() || _generation.load() != myGeneration)
             {
                 break;
             }
@@ -527,10 +535,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _currentPosition.store(event.cumulativeTime);
             _currentEventIndex = i;
             PlaybackPositionChanged.raise(*this, nullptr);
+
+            ++i;
         }
 
-        if (!_cancelled.load())
+        if (!_cancelled.load() && _generation.load() == myGeneration)
         {
+            // Wait before showing completion overlay so the final frame
+            // remains visible before the message appears.
             co_await winrt::resume_after(std::chrono::milliseconds{ 500 });
 
             static constexpr std::wstring_view completionMsg{

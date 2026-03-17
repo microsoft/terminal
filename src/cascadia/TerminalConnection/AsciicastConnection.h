@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::atomic<size_t> _seekTarget{ SIZE_MAX };
         double _totalDuration{ 0.0 };
         std::atomic<size_t> _currentEventIndex{ 0 };
+        std::atomic<uint64_t> _generation{ 0 };
         int _formatVersion{ 2 };
         double _idleTimeLimit{ 300.0 };
         uint32_t _initialCols{ 0 };

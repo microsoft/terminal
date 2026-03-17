@@ -191,6 +191,11 @@ namespace TerminalConnectionUnitTests
         GetTempFileNameW(tempDir, L"asc", 0, tempFile);
 
         std::ofstream out(tempFile, std::ios::out | std::ios::trunc | std::ios::binary);
+        if (!out.is_open())
+        {
+            std::filesystem::remove(tempFile);
+            return {};
+        }
         out << contents;
         out.close();
 

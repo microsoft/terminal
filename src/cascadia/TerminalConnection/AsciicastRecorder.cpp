@@ -67,9 +67,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // An in-flight callback that already passed the _isRecording check may
         // still be computing its record and calling emplace. Spin until it
         // finishes so we can safely enqueue our exit event.
+        constexpr int maxSpins = 10000;
+        int spins = 0;
         while (_producerBusy.load(std::memory_order_seq_cst))
         {
-            std::this_thread::yield();
+            if (++spins < maxSpins)
+                std::this_thread::yield();
+            else
+                Sleep(1);
         }
 
         // Compute the exit event interval from the last event.
@@ -94,7 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void AsciicastRecorder::WriteInitialSnapshot(const std::wstring_view& data)
     {
-        if (!_isRecording.load(std::memory_order_seq_cst) || data.empty())
+        if (!_isRecording.load(std::memory_order_seq_cst) || data.empty() || _writeError.load(std::memory_order_relaxed))
         {
             return;
         }
