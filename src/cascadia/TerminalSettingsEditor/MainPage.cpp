@@ -48,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Popups and set the theme on their Child element. In XAML Islands,
     // popup children render in the PopupRoot (separate from the content
     // tree), so they don't inherit our page's RequestedTheme
-    static void _ThemeSearchPopup(const winrt::Windows::UI::Xaml::DependencyObject& element,
+    static void _setThemeOnPopups(const winrt::Windows::UI::Xaml::DependencyObject& element,
                                   const winrt::Windows::UI::Xaml::ElementTheme theme)
     {
         const auto childCount = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetChildrenCount(element);
@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     popupChild.RequestedTheme(theme);
                 }
             }
-            _ThemeSearchPopup(child, theme);
+            _setThemeOnPopups(child, theme);
         }
     }
 
@@ -378,7 +378,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
         const bool hasThemeForSettings{ theme.Settings() != nullptr };
         const auto& requestedTheme = hasThemeForSettings ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
-        _ThemeSearchPopup(SettingsSearchBox(), requestedTheme);
+        _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
     }
 
     // Function Description:
@@ -1136,7 +1136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // GH#19927 - Theme the search box's internal popup so its
         // dropdown matches the app theme instead of the system theme
-        _ThemeSearchPopup(SettingsSearchBox(), requestedTheme);
+        _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
 
         // Mica gets it's appearance from the app's theme, not necessarily the
         // Page's theme. In the case of dark app, light settings, mica will be a
