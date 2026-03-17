@@ -144,7 +144,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const std::wstring_view sv{ resizeSeq };
             TerminalOutput.raise(winrt_wstring_to_array_view(sv));
             // Wait for the terminal to process the resize before replaying
-            // content, otherwise it renders at the old (wrong) width.
+            // content. Without this delay it renders at the old width.
             co_await winrt::resume_after(std::chrono::milliseconds{ 200 });
         }
 
