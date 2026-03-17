@@ -431,4 +431,22 @@ function Invoke-CodeFormat() {
     }
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat
+Function Get-Git2GitIgnoresAsExcludes() {
+    $filters = (Get-Content (Join-Path (Find-OpenConsoleRoot) consolegit2gitfilters.json) | ConvertFrom-Json)
+    $excludes = $filters.ContainsFilters | ? { $_ -Ne "/." } | % { $_ -Replace "^/","" }
+    $excludes += $filters.SuffixFilters | % { "**/*$_"; "*$_" }
+    $excludes += $filters.PrefixFilters | % { "**/$_*"; "$_*" }
+    $excludes | % { ":(top,exclude)$_" }
+}
+
+Function New-ConhostIngestionArchive() {
+    [CmdletBinding()]
+    param(
+        [parameter(Mandatory=$true, Position=0)]
+        [string]$Path
+    )
+    & git archive -o $Path HEAD (Get-Git2GitIgnoresAsExcludes)
+    Get-Item $Path
+}
+
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat,Invoke-XamlFormat,Test-XamlFormat,Get-Git2GitIgnoresAsExcludes,New-ConhostIngestionArchive

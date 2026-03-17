@@ -33,13 +33,7 @@ Function Mangle-CommitMessage($object) {
     $s
 }
 
-Function Get-Git2GitIgnoresAsExcludes() {
-    $filters = (Get-Content (Join-Path (& git rev-parse --show-toplevel) consolegit2gitfilters.json) | ConvertFrom-Json)
-    $excludes = $filters.ContainsFilters | ? { $_ -Ne "/." } | % { $_ -Replace "^/","" }
-    $excludes += $filters.SuffixFilters | % { "**/*$_"; "*$_" }
-    $excludes += $filters.PrefixFilters | % { "**/$_*"; "$_*" }
-    $excludes | % { ":(top,exclude)$_" }
-}
+Import-Module "$PSScriptRoot\OpenConsole.psd1"
 
 $Excludes = Get-Git2GitIgnoresAsExcludes
 Write-Verbose "IGNORING: $Excludes"
