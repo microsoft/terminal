@@ -102,15 +102,16 @@ HRESULT PtyServer::Run()
             {
                 res.Identifier = m_req.Descriptor.Identifier;
                 res.IoStatus.Status = status;
-                res.Write.Data = m_resBuffer.data();
-                res.Write.Size = m_resBuffer.size();
+                res.Write.Data = const_cast<uint8_t*>(m_resData.data());
+                res.Write.Size = static_cast<ULONG>(m_resData.size());
                 in = &res;
                 inLen = sizeof(res);
             }
 
             status = ioctl(IOCTL_CONDRV_READ_IO, in, inLen, &m_req, sizeof(m_req));
 
-            m_resBuffer = std::vector<uint8_t>();
+            m_resData = {};
+            m_resBuffer.clear();
         }
         if (!NT_SUCCESS(status))
         {
@@ -293,6 +294,24 @@ void PtyServer::readInput(ULONG offset, void* buffer, ULONG size)
     THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_READ_INPUT, &op, sizeof(op), nullptr, 0));
 }
 
+// Reads the trailing input payload (after the API descriptor struct) for
+// USER_DEFINED messages. Analogous to OG GetInputBuffer() in csrutil.cpp.
+std::vector<uint8_t> PtyServer::readTrailingInput()
+{
+    const auto readOffset = m_req.msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
+    if (readOffset > m_req.Descriptor.InputSize)
+    {
+        THROW_NTSTATUS(STATUS_UNSUCCESSFUL);
+    }
+    const auto size = m_req.Descriptor.InputSize - readOffset;
+    std::vector<uint8_t> buf(size);
+    if (size > 0)
+    {
+        readInput(readOffset, buf.data(), size);
+    }
+    return buf;
+}
+
 // Writes data back to the client's output buffer for the current message.
 // Analogous to the IOCTL_CONDRV_WRITE_OUTPUT call in the OG ReleaseMessageBuffers() (csrutil.cpp).
 //
@@ -317,4 +336,108 @@ void PtyServer::writeOutput(ULONG offset, const void* buffer, ULONG size)
 void PtyServer::completeIo(CD_IO_COMPLETE& completion)
 {
     THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_COMPLETE_IO, &completion, sizeof(completion), nullptr, 0));
+}
+
+// Validates a handle against expected type and access mask.
+// Analogous to OG DereferenceIoHandle() in handle.cpp.
+// Returns nullptr if not found, wrong type, or insufficient access.
+PtyHandle* PtyServer::findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access)
+{
+    auto ptr = reinterpret_cast<PtyHandle*>(obj);
+    for (auto& h : m_handles)
+    {
+        if (h.get() == ptr && (h->handleType & type) && (h->access & access) == access)
+        {
+            return ptr;
+        }
+    }
+    return nullptr;
+}
+
+// VT output helpers.
+// These accumulate VT sequences into m_vtBuf. Call vtFlush() to send them.
+
+void PtyServer::vtFlush()
+{
+    if (!m_vtBuf.empty() && m_host)
+    {
+        m_host->HandleUTF8Output(m_vtBuf.data(), m_vtBuf.size());
+        m_vtBuf.clear();
+    }
+}
+
+void PtyServer::vtAppend(std::string_view sv)
+{
+    m_vtBuf.append(sv);
+}
+
+void PtyServer::vtAppendFmt(const char* fmt, ...)
+{
+    char buf[256];
+    va_list args;
+    va_start(args, fmt);
+    const auto n = vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    if (n > 0)
+        m_vtBuf.append(buf, static_cast<size_t>(n));
+}
+
+void PtyServer::vtAppendUTF16(std::wstring_view str)
+{
+    if (str.empty())
+        return;
+    const auto len = static_cast<int>(str.size());
+    const auto utf8Len = WideCharToMultiByte(CP_UTF8, 0, str.data(), len, nullptr, 0, nullptr, nullptr);
+    if (utf8Len <= 0)
+        return;
+    const auto offset = m_vtBuf.size();
+    m_vtBuf.resize(offset + utf8Len);
+    WideCharToMultiByte(CP_UTF8, 0, str.data(), len, m_vtBuf.data() + offset, utf8Len, nullptr, nullptr);
+}
+
+void PtyServer::vtAppendCUP(SHORT row, SHORT col)
+{
+    vtAppendFmt("\x1b[%d;%dH", row + 1, col + 1);
+}
+
+void PtyServer::vtAppendSGR(WORD attr)
+{
+    // Default attribute (white-on-black, no flags) maps to SGR reset.
+    if (attr == (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE))
+    {
+        vtAppend("\x1b[m");
+        return;
+    }
+
+    // BGR→RGB mapping: Console uses Blue=bit0, Green=bit1, Red=bit2,
+    // but VT SGR uses Red=bit0, Green=bit1, Blue=bit2 within each color group.
+    static constexpr uint8_t lut[] = {
+        30, 34, 32, 36, 31, 35, 33, 37, // Normal: Black, Blue, Green, Cyan, Red, Magenta, Yellow, White
+        90, 94, 92, 96, 91, 95, 93, 97, // Bright variants
+    };
+
+    const auto fg = lut[attr & 0x0f];
+    const auto bg = lut[(attr >> 4) & 0x0f] + 10;
+
+    if (attr & COMMON_LVB_REVERSE_VIDEO)
+        vtAppendFmt("\x1b[0;7;%d;%dm", fg, bg);
+    else
+        vtAppendFmt("\x1b[0;%d;%dm", fg, bg);
+}
+
+void PtyServer::vtAppendTitle(std::wstring_view title)
+{
+    vtAppend("\x1b]0;");
+
+    // Strip C0/C1 control characters to prevent OSC injection.
+    std::wstring safe;
+    safe.reserve(title.size());
+    for (const auto ch : title)
+    {
+        if (ch >= 0x20 && ch != 0x7F)
+            safe += ch;
+    }
+    vtAppendUTF16(safe);
+
+    vtAppend("\x1b\\");
 }

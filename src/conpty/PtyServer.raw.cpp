@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "PtyServer.h"
 
-#include <algorithm>
-
 // Handles CONSOLE_IO_RAW_WRITE messages.
 //
 // Protocol (from OG ConsoleIoThread RAW_WRITE case + SrvWriteConsole in stream.cpp):
@@ -90,14 +88,9 @@ NTSTATUS PtyServer::handleRawRead()
 // validate the handle and reset the input-available event.
 NTSTATUS PtyServer::handleRawFlush()
 {
-    // Validate the handle exists and is an input handle with write access,
-    // mirroring DereferenceIoHandle(obj, CONSOLE_INPUT_HANDLE, GENERIC_WRITE).
-    auto ptr = reinterpret_cast<PtyHandle*>(m_req.Descriptor.Object);
-    auto it = std::find_if(m_handles.begin(), m_handles.end(),
-                           [ptr](const auto& h) { return h.get() == ptr; });
-    THROW_HR_IF(E_HANDLE, it == m_handles.end());
-    THROW_HR_IF(E_HANDLE, !((*it)->handleType & CONSOLE_INPUT_HANDLE));
-    THROW_HR_IF(E_ACCESSDENIED, !((*it)->access & GENERIC_WRITE));
+    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
+    if (!h)
+        return STATUS_INVALID_HANDLE;
 
     // TODO: Clear the input event queue when one is implemented.
 

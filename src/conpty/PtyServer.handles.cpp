@@ -47,6 +47,20 @@ NTSTATUS PtyServer::handleConnect()
     if (!m_initialized)
     {
         m_initialized = true;
+
+        // Capture the initial title from the client's startup info.
+        m_title.assign(data.Title, data.TitleLength / sizeof(WCHAR));
+        m_originalTitle = m_title;
+
+        // Capture initial buffer/window sizes if the client provided them.
+        if (data.ScreenBufferSize.X > 0 && data.ScreenBufferSize.Y > 0)
+        {
+            m_bufferSize = data.ScreenBufferSize;
+        }
+        if (data.WindowSize.X > 0 && data.WindowSize.Y > 0)
+        {
+            m_viewSize = data.WindowSize;
+        }
     }
 
     auto clientPtr = client.get();

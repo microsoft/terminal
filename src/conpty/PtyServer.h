@@ -111,8 +111,13 @@ struct PtyServer : IPtyServer
     // ConDrv communication helpers.
     // These operate on m_req (the current message being processed).
     void readInput(ULONG offset, void* buffer, ULONG size);
+    std::vector<uint8_t> readTrailingInput();
     void writeOutput(ULONG offset, const void* buffer, ULONG size);
     void completeIo(CD_IO_COMPLETE& completion);
+
+    // Handle validation. Returns nullptr if the handle doesn't exist,
+    // doesn't match the expected type, or lacks the required access.
+    PtyHandle* findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access);
 
     // Message handlers.
     // All handlers read from m_req and return NTSTATUS:
@@ -195,6 +200,15 @@ struct PtyServer : IPtyServer
     ULONG_PTR allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode);
     void freeHandle(ULONG_PTR handle);
 
+    // VT output helpers.
+    void vtFlush();
+    void vtAppend(std::string_view sv);
+    void vtAppendFmt(_Printf_format_string_ const char* fmt, ...);
+    void vtAppendUTF16(std::wstring_view str);
+    void vtAppendCUP(SHORT row, SHORT col);
+    void vtAppendSGR(WORD attr);
+    void vtAppendTitle(std::wstring_view title);
+
     std::atomic<ULONG> m_refCount{ 1 };
     unique_nthandle m_server;
     wil::com_ptr<IPtyHost> m_host;
@@ -202,7 +216,9 @@ struct PtyServer : IPtyServer
 
     // Per-message state. Set by Run() before dispatching, read by handlers.
     CONSOLE_API_MSG m_req{};
-    // Piggyback response data. Gets sent back to the client on the next IOCTL_CONDRV_READ_IO.
+    // Piggyback response. m_resData points to either m_req.u (zero-copy, set by
+    // handleUserDefined for most APIs) or m_resBuffer.data() (for bulk responses).
+    std::span<const uint8_t> m_resData;
     std::vector<uint8_t> m_resBuffer;
 
     bool m_initialized = false;
@@ -211,4 +227,29 @@ struct PtyServer : IPtyServer
     std::vector<std::unique_ptr<PtyHandle>> m_handles;
     std::deque<PendingIO> m_pendingReads;
     std::deque<PendingIO> m_pendingWrites;
+
+    // Console state — code pages.
+    UINT m_inputCP = CP_UTF8;
+    UINT m_outputCP = CP_UTF8;
+
+    // Console state — mode flags (global; per-handle tracking deferred).
+    DWORD m_inputMode = ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+    DWORD m_outputMode = ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT;
+
+    // Console state — screen buffer.
+    COORD m_bufferSize{ 120, 30 };
+    COORD m_viewSize{ 120, 30 };
+    COORD m_cursorPosition{ 0, 0 };
+    WORD m_attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+    WORD m_popupAttributes = 0;
+    COLORREF m_colorTable[16]{};
+    DWORD m_cursorSize = 25;
+    bool m_cursorVisible = true;
+
+    // Console state — title.
+    std::wstring m_title;
+    std::wstring m_originalTitle;
+
+    // VT output accumulation buffer.
+    std::string m_vtBuf;
 };

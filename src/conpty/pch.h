@@ -21,5 +21,6 @@
 #include <cassert>
 #include <deque>
 #include <memory>
+#include <string>
 #include <vector>
 #include <wil/com.h>

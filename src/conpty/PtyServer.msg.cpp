@@ -128,11 +128,10 @@ NTSTATUS PtyServer::handleUserDefined()
         THROW_NTSTATUS(STATUS_ILLEGAL_FUNCTION);
     }
 
-    // Pre-configure the Write blob for the piggyback response.
+    // Pre-configure the response span to point at m_req.u (zero-copy).
     // Handlers that write results into m_req.u have them sent back automatically.
     // Mirrors the OG ConsoleDispatchRequest setting Complete.Write before calling the API.
-    m_resWriteData = &m_req.u;
-    m_resWriteSize = m_req.msgHeader.ApiDescriptorSize;
+    m_resData = { reinterpret_cast<const uint8_t*>(&m_req.u), m_req.msgHeader.ApiDescriptorSize };
 
     return (this->*descriptor.routine)();
 }
