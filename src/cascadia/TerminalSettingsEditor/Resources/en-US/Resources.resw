@@ -2748,9 +2748,8 @@
     <value>Type to filter icons</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
   </data>
-</root>
   <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
-    <value>Drag/Drop delimiter</value>
+    <value>Drag and drop delimiter</value>
     <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
   </data>
   <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">

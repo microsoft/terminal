@@ -273,7 +273,8 @@
             </local:SettingContainer>
 
             <!--  Drag Drop Delimiter  -->
-            <local:SettingContainer x:Uid="Profile_DragDropDelimiter"
+            <local:SettingContainer x:Name="DragDropDelimiter"
+                                    x:Uid="Profile_DragDropDelimiter"
                                     ClearSettingValue="{x:Bind Profile.ClearDragDropDelimiter}"
                                     HasSettingValue="{x:Bind Profile.HasDragDropDelimiter, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.DragDropDelimiterOverrideSource, Mode=OneWay}">
