@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "PtyServer.h"
+#include "Server.h"
 
 #include <cassert>
 #include <wil/nt_result_macros.h>
@@ -23,7 +23,7 @@ try
 
     if (riid == __uuidof(IPtyServer))
     {
-        *server = static_cast<IPtyServer*>(new PtyServer());
+        *server = static_cast<IPtyServer*>(new Server());
         return S_OK;
     }
 
@@ -31,7 +31,7 @@ try
 }
 CATCH_RETURN()
 
-PtyServer::PtyServer()
+Server::Server()
 {
     m_server = createHandle(nullptr, L"\\Device\\ConDrv\\Server", false, false);
     m_inputAvailableEvent.create(wil::EventOptions::ManualReset);
@@ -44,7 +44,7 @@ PtyServer::PtyServer()
 
 #pragma region IUnknown
 
-HRESULT PtyServer::QueryInterface(const IID& riid, void** ppvObject)
+HRESULT Server::QueryInterface(const IID& riid, void** ppvObject)
 {
     if (ppvObject == nullptr)
     {
@@ -62,12 +62,12 @@ HRESULT PtyServer::QueryInterface(const IID& riid, void** ppvObject)
     return E_NOINTERFACE;
 }
 
-ULONG PtyServer::AddRef()
+ULONG Server::AddRef()
 {
     return m_refCount.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
-ULONG PtyServer::Release()
+ULONG Server::Release()
 {
     const auto count = m_refCount.fetch_sub(1, std::memory_order_relaxed) - 1;
     if (count == 0)
@@ -77,7 +77,7 @@ ULONG PtyServer::Release()
     return count;
 }
 
-HRESULT PtyServer::SetHost(IPtyHost* host)
+HRESULT Server::SetHost(IPtyHost* host)
 {
     m_host = host;
     return S_OK;
@@ -87,7 +87,25 @@ HRESULT PtyServer::SetHost(IPtyHost* host)
 
 #pragma region IPtyServer
 
-HRESULT PtyServer::Run()
+HRESULT Server::WriteUTF8(PTY_UTF8_STRING input)
+try
+{
+    m_input.write({ input.data, input.length });
+    m_inputAvailableEvent.SetEvent();
+    drainPendingInputReads();
+    return S_OK;
+}
+CATCH_RETURN()
+
+HRESULT Server::WriteUTF16(PTY_UTF16_STRING input)
+try
+{
+    // TODO
+    return S_OK;
+}
+CATCH_RETURN()
+
+HRESULT Server::Run()
 {
     CD_IO_COMPLETE res{};
     NTSTATUS status = STATUS_NO_RESPONSE;
@@ -162,7 +180,7 @@ HRESULT PtyServer::Run()
     }
 }
 
-HRESULT PtyServer::CreateProcessW(
+HRESULT Server::CreateProcessW(
     LPCWSTR lpApplicationName,
     LPWSTR lpCommandLine,
     LPSECURITY_ATTRIBUTES lpProcessAttributes,
@@ -227,7 +245,7 @@ CATCH_RETURN()
 
 #pragma endregion
 
-unique_nthandle PtyServer::createHandle(HANDLE parent, const wchar_t* typeName, bool inherit, bool synchronous)
+unique_nthandle Server::createHandle(HANDLE parent, const wchar_t* typeName, bool inherit, bool synchronous)
 {
     UNICODE_STRING name;
     RtlInitUnicodeString(&name, typeName);
@@ -258,7 +276,7 @@ unique_nthandle PtyServer::createHandle(HANDLE parent, const wchar_t* typeName, 
     return unique_nthandle{ handle };
 }
 
-NTSTATUS PtyServer::ioctl(DWORD code, void* in, DWORD inLen, void* out, DWORD outLen) const
+NTSTATUS Server::ioctl(DWORD code, void* in, DWORD inLen, void* out, DWORD outLen) const
 {
     assert((in == nullptr) == (inLen == 0));
     assert((out == nullptr) == (outLen == 0));
@@ -284,7 +302,7 @@ NTSTATUS PtyServer::ioctl(DWORD code, void* in, DWORD inLen, void* out, DWORD ou
 //
 // For CONSOLE_IO_CONNECT, offset is 0 and the payload is a CONSOLE_SERVER_MSG.
 // For CONSOLE_IO_USER_DEFINED, offset would typically be past the message header.
-void PtyServer::readInput(ULONG offset, void* buffer, ULONG size)
+void Server::readInput(ULONG offset, void* buffer, ULONG size)
 {
     CD_IO_OPERATION op{};
     op.Identifier = m_req.Descriptor.Identifier;
@@ -296,7 +314,7 @@ void PtyServer::readInput(ULONG offset, void* buffer, ULONG size)
 
 // Reads the trailing input payload (after the API descriptor struct) for
 // USER_DEFINED messages. Analogous to OG GetInputBuffer() in csrutil.cpp.
-std::vector<uint8_t> PtyServer::readTrailingInput()
+std::vector<uint8_t> Server::readTrailingInput()
 {
     const auto readOffset = m_req.msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
     if (readOffset > m_req.Descriptor.InputSize)
@@ -307,7 +325,7 @@ std::vector<uint8_t> PtyServer::readTrailingInput()
     std::vector<uint8_t> buf(size);
     if (size > 0)
     {
-        readInput(readOffset, buf.data(), size);
+        readInput(static_cast<ULONG>(readOffset), buf.data(), static_cast<ULONG>(size));
     }
     return buf;
 }
@@ -317,7 +335,7 @@ std::vector<uint8_t> PtyServer::readTrailingInput()
 //
 // The driver matches the Identifier to the pending IO and copies data into
 // the client's buffer at the specified offset.
-void PtyServer::writeOutput(ULONG offset, const void* buffer, ULONG size)
+void Server::writeOutput(ULONG offset, const void* buffer, ULONG size)
 {
     CD_IO_OPERATION op{};
     op.Identifier = m_req.Descriptor.Identifier;
@@ -333,7 +351,7 @@ void PtyServer::writeOutput(ULONG offset, const void* buffer, ULONG size)
 // This sends the reply out-of-band (via IOCTL_CONDRV_COMPLETE_IO) rather than
 // piggybacking on the next IOCTL_CONDRV_READ_IO call. Used when the reply
 // carries write data (e.g. CD_CONNECTION_INFORMATION for CONNECT).
-void PtyServer::completeIo(CD_IO_COMPLETE& completion)
+void Server::completeIo(CD_IO_COMPLETE& completion)
 {
     THROW_IF_NTSTATUS_FAILED(ioctl(IOCTL_CONDRV_COMPLETE_IO, &completion, sizeof(completion), nullptr, 0));
 }
@@ -341,9 +359,9 @@ void PtyServer::completeIo(CD_IO_COMPLETE& completion)
 // Validates a handle against expected type and access mask.
 // Analogous to OG DereferenceIoHandle() in handle.cpp.
 // Returns nullptr if not found, wrong type, or insufficient access.
-PtyHandle* PtyServer::findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access)
+Handle* Server::findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access)
 {
-    auto ptr = reinterpret_cast<PtyHandle*>(obj);
+    auto ptr = reinterpret_cast<Handle*>(obj);
     for (auto& h : m_handles)
     {
         if (h.get() == ptr && (h->handleType & type) && (h->access & access) == access)
@@ -357,21 +375,21 @@ PtyHandle* PtyServer::findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access)
 // VT output helpers.
 // These accumulate VT sequences into m_vtBuf. Call vtFlush() to send them.
 
-void PtyServer::vtFlush()
+void Server::vtFlush()
 {
     if (!m_vtBuf.empty() && m_host)
     {
-        m_host->HandleUTF8Output(m_vtBuf.data(), m_vtBuf.size());
+        m_host->WriteUTF8({ m_vtBuf.data(), m_vtBuf.size() });
         m_vtBuf.clear();
     }
 }
 
-void PtyServer::vtAppend(std::string_view sv)
+void Server::vtAppend(std::string_view sv)
 {
     m_vtBuf.append(sv);
 }
 
-void PtyServer::vtAppendFmt(const char* fmt, ...)
+void Server::vtAppendFmt(const char* fmt, ...)
 {
     char buf[256];
     va_list args;
@@ -382,7 +400,7 @@ void PtyServer::vtAppendFmt(const char* fmt, ...)
         m_vtBuf.append(buf, static_cast<size_t>(n));
 }
 
-void PtyServer::vtAppendUTF16(std::wstring_view str)
+void Server::vtAppendUTF16(std::wstring_view str)
 {
     if (str.empty())
         return;
@@ -395,12 +413,12 @@ void PtyServer::vtAppendUTF16(std::wstring_view str)
     WideCharToMultiByte(CP_UTF8, 0, str.data(), len, m_vtBuf.data() + offset, utf8Len, nullptr, nullptr);
 }
 
-void PtyServer::vtAppendCUP(SHORT row, SHORT col)
+void Server::vtAppendCUP(SHORT row, SHORT col)
 {
     vtAppendFmt("\x1b[%d;%dH", row + 1, col + 1);
 }
 
-void PtyServer::vtAppendSGR(WORD attr)
+void Server::vtAppendSGR(WORD attr)
 {
     // Default attribute (white-on-black, no flags) maps to SGR reset.
     if (attr == (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE))
@@ -413,7 +431,14 @@ void PtyServer::vtAppendSGR(WORD attr)
     // but VT SGR uses Red=bit0, Green=bit1, Blue=bit2 within each color group.
     static constexpr uint8_t lut[] = {
         30, 34, 32, 36, 31, 35, 33, 37, // Normal: Black, Blue, Green, Cyan, Red, Magenta, Yellow, White
-        90, 94, 92, 96, 91, 95, 93, 97, // Bright variants
+        90,
+        94,
+        92,
+        96,
+        91,
+        95,
+        93,
+        97, // Bright variants
     };
 
     const auto fg = lut[attr & 0x0f];
@@ -425,7 +450,7 @@ void PtyServer::vtAppendSGR(WORD attr)
         vtAppendFmt("\x1b[0;%d;%dm", fg, bg);
 }
 
-void PtyServer::vtAppendTitle(std::wstring_view title)
+void Server::vtAppendTitle(std::wstring_view title)
 {
     vtAppend("\x1b]0;");
 

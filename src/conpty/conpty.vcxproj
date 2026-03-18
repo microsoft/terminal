@@ -25,13 +25,14 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="PtyServer.cpp" />
-    <ClCompile Include="PtyServer.handles.cpp" />
-    <ClCompile Include="PtyServer.msg.cpp" />
-    <ClCompile Include="PtyServer.msg.l1.cpp" />
-    <ClCompile Include="PtyServer.msg.l2.cpp" />
-    <ClCompile Include="PtyServer.msg.l3.cpp" />
-    <ClCompile Include="PtyServer.raw.cpp" />
+    <ClCompile Include="InputBuffer.cpp" />
+    <ClCompile Include="Server.cpp" />
+    <ClCompile Include="Server.handles.cpp" />
+    <ClCompile Include="Server.msg.cpp" />
+    <ClCompile Include="Server.msg.l1.cpp" />
+    <ClCompile Include="Server.msg.l2.cpp" />
+    <ClCompile Include="Server.msg.l3.cpp" />
+    <ClCompile Include="Server.raw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="conpty.idl">
@@ -50,7 +51,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PtyServer.h" />
+    <ClInclude Include="InputBuffer.h" />
+    <ClInclude Include="Server.h" />
   </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />

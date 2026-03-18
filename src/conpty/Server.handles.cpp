@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "PtyServer.h"
+#include "Server.h"
 
 // Handles CONSOLE_IO_CONNECT messages.
 //
@@ -13,7 +13,7 @@
 //
 // Returns STATUS_SUCCESS if the reply was sent via completeIo.
 // Returns a failure NTSTATUS if the caller should reply inline with that status.
-NTSTATUS PtyServer::handleConnect()
+NTSTATUS Server::handleConnect()
 {
     // 1. Read the CONSOLE_SERVER_MSG payload from the client.
     CONSOLE_SERVER_MSG data{};
@@ -33,7 +33,7 @@ NTSTATUS PtyServer::handleConnect()
     // 3. Allocate per-process tracking data.
     const auto processId = static_cast<DWORD>(m_req.Descriptor.Process);
 
-    auto client = std::make_unique<PtyClient>();
+    auto client = std::make_unique<Client>();
     client->processId = processId;
     client->processGroupId = data.ProcessGroupId;
 
@@ -90,7 +90,7 @@ NTSTATUS PtyServer::handleConnect()
 //  2. Free per-process data (handles, command history, etc.).
 //
 // The caller always replies with STATUS_SUCCESS inline.
-NTSTATUS PtyServer::handleDisconnect()
+NTSTATUS Server::handleDisconnect()
 {
     auto client = findClient(m_req.Descriptor.Process);
     if (!client)
@@ -120,10 +120,10 @@ NTSTATUS PtyServer::handleDisconnect()
 //
 // Analogous to OG AllocateIoHandle (handle.cpp). The OG creates a CONSOLE_HANDLE_DATA
 // with share/access tracking and a pointer to the underlying console object.
-// We create a lightweight PtyHandle and return its pointer cast to ULONG_PTR.
-ULONG_PTR PtyServer::allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode)
+// We create a lightweight Handle and return its pointer cast to ULONG_PTR.
+ULONG_PTR Server::allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode)
 {
-    auto h = std::make_unique<PtyHandle>();
+    auto h = std::make_unique<Handle>();
     h->handleType = handleType;
     h->access = access;
     h->shareMode = shareMode;
@@ -133,9 +133,9 @@ ULONG_PTR PtyServer::allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG 
 }
 
 // Analogous to OG ConsoleCloseHandle → FreeConsoleHandle (handle.cpp).
-void PtyServer::freeHandle(ULONG_PTR handle)
+void Server::freeHandle(ULONG_PTR handle)
 {
-    auto ptr = reinterpret_cast<PtyHandle*>(handle);
+    auto ptr = reinterpret_cast<Handle*>(handle);
     std::erase_if(m_handles, [ptr](const auto& h) { return h.get() == ptr; });
 }
 
@@ -146,7 +146,7 @@ void PtyServer::freeHandle(ULONG_PTR handle)
 //  2. Resolve CD_IO_OBJECT_TYPE_GENERIC based on DesiredAccess.
 //  3. Allocate a handle of the appropriate type.
 //  4. Reply via completeIo with the handle value in IoStatus.Information.
-NTSTATUS PtyServer::handleCreateObject()
+NTSTATUS Server::handleCreateObject()
 {
     auto& info = m_req.CreateObject;
 
@@ -203,15 +203,15 @@ NTSTATUS PtyServer::handleCreateObject()
 //  2. Close/free the handle.
 //
 // The caller replies with STATUS_SUCCESS inline.
-NTSTATUS PtyServer::handleCloseObject()
+NTSTATUS Server::handleCloseObject()
 {
     freeHandle(m_req.Descriptor.Object);
     return STATUS_SUCCESS;
 }
 
-PtyClient* PtyServer::findClient(ULONG_PTR handle)
+Client* Server::findClient(ULONG_PTR handle)
 {
-    auto ptr = reinterpret_cast<PtyClient*>(handle);
+    auto ptr = reinterpret_cast<Client*>(handle);
     for (auto& c : m_clients)
     {
         if (c.get() == ptr)

@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <winioctl.h>
 #include <winternl.h>
+#include <ntcon.h>
 
 // NOTE: These headers depend on Windows/winternl being included first.
 #include <condrv.h>
@@ -20,6 +21,7 @@
 #include <span>
 #include <cassert>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>

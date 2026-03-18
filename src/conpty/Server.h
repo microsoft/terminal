@@ -1,6 +1,7 @@
 #pragma once
 
 #include <conpty.h>
+#include "InputBuffer.h"
 
 using unique_nthandle = wil::unique_any_handle_null<decltype(&::NtClose), ::NtClose>;
 
@@ -35,11 +36,13 @@ struct CONSOLE_API_MSG
 #define CONSOLE_INPUT_HANDLE           0x00000001
 #define CONSOLE_OUTPUT_HANDLE          0x00000002
 
+struct Server;
+
 // Handle tracking data, analogous to the OG CONSOLE_HANDLE_DATA.
 // In the OG, handles are raw pointers to CONSOLE_HANDLE_DATA which contain
 // share mode/access tracking and a pointer to the underlying object
 // (INPUT_INFORMATION or SCREEN_INFORMATION). We simplify this for now.
-struct PtyHandle
+struct Handle
 {
     ULONG handleType = 0; // CONSOLE_INPUT_HANDLE or CONSOLE_OUTPUT_HANDLE
     ACCESS_MASK access = 0;
@@ -47,7 +50,7 @@ struct PtyHandle
 };
 
 // Per-client tracking data, analogous to the OG CONSOLE_PROCESS_HANDLE.
-struct PtyClient
+struct Client
 {
     DWORD processId = 0;
     ULONG processGroupId = 0;
@@ -57,23 +60,29 @@ struct PtyClient
 };
 
 // A pending IO request that couldn't be completed immediately.
-// For writes: the output is paused (e.g. the user hit Pause).
-// For reads: the input queue is empty; we'll complete it when data arrives.
+//
+// Analogous to the OG CONSOLE_WAIT_BLOCK. When new input arrives (or output
+// is unpaused), the server walks its pending-IO queues and calls `retry()`.
+// If retry() returns true, the IO was satisfied and the block is removed.
+// If false, it stays queued for a future attempt.
+//
+// retry() is responsible for calling writeOutput() and completeIo() itself.
 struct PendingIO
 {
-    LUID identifier{};       // ConDrv message identifier, needed for completeIo/writeOutput.
+    LUID identifier{};       // ConDrv message identifier, for completeIo/writeOutput.
     ULONG_PTR process = 0;   // Descriptor.Process, for cleanup on disconnect.
-    ULONG_PTR object = 0;    // Descriptor.Object, the handle this IO targets.
-    ULONG function = 0;      // CONSOLE_IO_RAW_READ or CONSOLE_IO_RAW_WRITE.
-    ULONG outputSize = 0;    // For reads: max bytes the client accepts.
-    std::vector<uint8_t> inputData; // For writes: the data the client sent.
+
+    // Retry callback. Called when conditions change (new input, output unpaused).
+    // Returns true if the IO was completed, false if it should stay queued.
+    // Signature: bool retry(Server& server)
+    std::function<bool(Server&)> retry;
 };
 
-struct PtyServer : IPtyServer
+struct Server : IPtyServer
 {
-    PtyServer();
+    Server();
 
-    virtual ~PtyServer() = default;
+    virtual ~Server() = default;
 
 #pragma region IUnknown
 
@@ -86,6 +95,10 @@ struct PtyServer : IPtyServer
 #pragma region IPtyServer
 
     HRESULT SetHost(IPtyHost* host) override;
+
+    HRESULT WriteUTF8(PTY_UTF8_STRING input) override;
+    HRESULT WriteUTF16(PTY_UTF16_STRING input) override;
+
     HRESULT Run() override;
     HRESULT CreateProcessW(
         LPCWSTR lpApplicationName,
@@ -117,7 +130,7 @@ struct PtyServer : IPtyServer
 
     // Handle validation. Returns nullptr if the handle doesn't exist,
     // doesn't match the expected type, or lacks the required access.
-    PtyHandle* findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access);
+    Handle* findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access);
 
     // Message handlers.
     // All handlers read from m_req and return NTSTATUS:
@@ -189,12 +202,19 @@ struct PtyServer : IPtyServer
     NTSTATUS handleUserL3SetConsoleCurrentFont();
 
     // Complete pending IOs (called when state changes make progress possible).
-    void completePendingRead(const void* data, ULONG size);
-    void completePendingWrites();
+    void drainPendingInputReads();
+    void drainPendingOutputWrites();
     void cancelPendingIOs(ULONG_PTR process);
 
-    // Client lookup by opaque handle value (the raw PtyClient pointer cast to ULONG_PTR).
-    PtyClient* findClient(ULONG_PTR handle);
+    // Helpers to pend a read or write IO. Both return STATUS_NO_RESPONSE.
+    NTSTATUS pendRead(std::function<bool(Server&)> retry);
+    NTSTATUS pendWrite(std::function<bool(Server&)> retry);
+
+    // Helper to complete a single pending IO with status + information.
+    void completePendingIo(const LUID& identifier, NTSTATUS status, ULONG_PTR information = 0);
+
+    // Client lookup by opaque handle value (the raw Client pointer cast to ULONG_PTR).
+    Client* findClient(ULONG_PTR handle);
 
     // Handle management.
     ULONG_PTR allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode);
@@ -223,8 +243,8 @@ struct PtyServer : IPtyServer
 
     bool m_initialized = false;
     bool m_outputPaused = false;
-    std::vector<std::unique_ptr<PtyClient>> m_clients;
-    std::vector<std::unique_ptr<PtyHandle>> m_handles;
+    std::vector<std::unique_ptr<Client>> m_clients;
+    std::vector<std::unique_ptr<Handle>> m_handles;
     std::deque<PendingIO> m_pendingReads;
     std::deque<PendingIO> m_pendingWrites;
 
@@ -252,4 +272,7 @@ struct PtyServer : IPtyServer
 
     // VT output accumulation buffer.
     std::string m_vtBuf;
+
+    // Input buffer with integrated VT parser.
+    InputBuffer m_input;
 };

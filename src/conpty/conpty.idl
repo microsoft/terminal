@@ -4,17 +4,32 @@ typedef struct _STARTUPINFOEXW* LPSTARTUPINFOEXW;
 typedef struct _STARTUPINFOW* LPSTARTUPINFOW;
 typedef struct _PROCESS_INFORMATION* LPPROCESS_INFORMATION;
 
+typedef struct PTY_UTF8_STRING
+{
+    [size_is(length)] const char* data;
+    SIZE_T length;
+} PTY_UTF8_STRING;
+
+typedef struct PTY_UTF16_STRING
+{
+    [size_is(length)] const wchar_t* data;
+    SIZE_T length;
+} PTY_UTF16_STRING;
+
 [uuid(e9b4897e-19f8-4833-af28-f777deeba7e6), object, local, pointer_default(unique)]
 interface IPtyHost : IUnknown
 {
-    void HandleUTF8Output(LPCSTR data, SIZE_T length);
-    void HandleUTF16Output(LPCWSTR data, SIZE_T length);
+    void WriteUTF8(PTY_UTF8_STRING text);
+    void WriteUTF16(PTY_UTF16_STRING text);
 }
 
 [uuid(9a727f67-09bd-429b-8f73-766a718070f0), object, local, pointer_default(unique)]
 interface IPtyServer : IUnknown
 {
     HRESULT SetHost(IPtyHost* host);
+
+    HRESULT WriteUTF8(PTY_UTF8_STRING input);
+    HRESULT WriteUTF16(PTY_UTF16_STRING input);
 
     HRESULT Run();
 

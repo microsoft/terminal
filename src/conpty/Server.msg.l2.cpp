@@ -1,12 +1,12 @@
 #include "pch.h"
-#include "PtyServer.h"
+#include "Server.h"
 
 // L2: FillConsoleOutput
 // OG: SrvFillConsoleOutput in directio.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->WriteCoord, a->ElementType, a->Element, a->Length.
 // Returns a->Length (actual count filled).
-NTSTATUS PtyServer::handleUserL2FillConsoleOutput()
+NTSTATUS Server::handleUserL2FillConsoleOutput()
 {
     auto& a = m_req.u.consoleMsgL2.FillConsoleOutput;
 
@@ -25,7 +25,7 @@ NTSTATUS PtyServer::handleUserL2FillConsoleOutput()
 // L2: GenerateConsoleCtrlEvent
 // OG: SrvGenerateConsoleCtrlEvent in getset.cpp — no handle validation.
 // Reads a->CtrlEvent, a->ProcessGroupId.
-NTSTATUS PtyServer::handleUserL2GenerateConsoleCtrlEvent()
+NTSTATUS Server::handleUserL2GenerateConsoleCtrlEvent()
 {
     auto& a = m_req.u.consoleMsgL2.GenerateConsoleCtrlEvent;
 
@@ -39,7 +39,7 @@ NTSTATUS PtyServer::handleUserL2GenerateConsoleCtrlEvent()
 // L2: SetConsoleActiveScreenBuffer
 // OG: SrvSetConsoleActiveScreenBuffer in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT|GRAPHICS_OUTPUT, GENERIC_WRITE)
-NTSTATUS PtyServer::handleUserL2SetConsoleActiveScreenBuffer()
+NTSTATUS Server::handleUserL2SetConsoleActiveScreenBuffer()
 {
     auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!h)
@@ -54,7 +54,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleActiveScreenBuffer()
 // L2: FlushConsoleInputBuffer
 // OG: SrvFlushConsoleInputBuffer in getset.cpp
 // DereferenceIoHandle(obj, INPUT, GENERIC_WRITE)
-NTSTATUS PtyServer::handleUserL2FlushConsoleInputBuffer()
+NTSTATUS Server::handleUserL2FlushConsoleInputBuffer()
 {
     auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
     if (!h)
@@ -63,6 +63,7 @@ NTSTATUS PtyServer::handleUserL2FlushConsoleInputBuffer()
     }
 
     // TODO: Clear input queue and reset input-available event.
+    m_input.flush();
     m_inputAvailableEvent.ResetEvent();
     return STATUS_SUCCESS;
 }
@@ -70,7 +71,7 @@ NTSTATUS PtyServer::handleUserL2FlushConsoleInputBuffer()
 // L2: SetConsoleCP / SetConsoleOutputCP
 // OG: SrvSetConsoleCP in getset.cpp — no handle validation.
 // Reads a->CodePage, a->Output.
-NTSTATUS PtyServer::handleUserL2SetConsoleCP()
+NTSTATUS Server::handleUserL2SetConsoleCP()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleCP;
 
@@ -89,7 +90,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleCP()
 // OG: SrvGetConsoleCursorInfo in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
 // Returns a->CursorSize, a->Visible.
-NTSTATUS PtyServer::handleUserL2GetConsoleCursorInfo()
+NTSTATUS Server::handleUserL2GetConsoleCursorInfo()
 {
     auto& a = m_req.u.consoleMsgL2.GetConsoleCursorInfo;
 
@@ -108,7 +109,7 @@ NTSTATUS PtyServer::handleUserL2GetConsoleCursorInfo()
 // OG: SrvSetConsoleCursorInfo in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->CursorSize, a->Visible.
-NTSTATUS PtyServer::handleUserL2SetConsoleCursorInfo()
+NTSTATUS Server::handleUserL2SetConsoleCursorInfo()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleCursorInfo;
 
@@ -139,7 +140,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleCursorInfo()
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
 // Returns Size, CursorPosition, ScrollPosition, Attributes, CurrentWindowSize,
 //         MaximumWindowSize, PopupAttributes, FullscreenSupported, ColorTable[16].
-NTSTATUS PtyServer::handleUserL2GetConsoleScreenBufferInfo()
+NTSTATUS Server::handleUserL2GetConsoleScreenBufferInfo()
 {
     auto& a = m_req.u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
@@ -166,7 +167,7 @@ NTSTATUS PtyServer::handleUserL2GetConsoleScreenBufferInfo()
 // OG: SrvSetConsoleScreenBufferInfo in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads Size, CurrentWindowSize, Attributes, PopupAttributes, ColorTable, etc.
-NTSTATUS PtyServer::handleUserL2SetConsoleScreenBufferInfo()
+NTSTATUS Server::handleUserL2SetConsoleScreenBufferInfo()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleScreenBufferInfo;
 
@@ -195,7 +196,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleScreenBufferInfo()
 // OG: SrvSetConsoleScreenBufferSize in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->Size.
-NTSTATUS PtyServer::handleUserL2SetConsoleScreenBufferSize()
+NTSTATUS Server::handleUserL2SetConsoleScreenBufferSize()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleScreenBufferSize;
 
@@ -217,7 +218,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleScreenBufferSize()
 // OG: SrvSetConsoleCursorPosition in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->CursorPosition.
-NTSTATUS PtyServer::handleUserL2SetConsoleCursorPosition()
+NTSTATUS Server::handleUserL2SetConsoleCursorPosition()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleCursorPosition;
 
@@ -242,7 +243,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleCursorPosition()
 // OG: SrvGetLargestConsoleWindowSize in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE) — yes, WRITE for a getter.
 // Returns a->Size.
-NTSTATUS PtyServer::handleUserL2GetLargestConsoleWindowSize()
+NTSTATUS Server::handleUserL2GetLargestConsoleWindowSize()
 {
     auto& a = m_req.u.consoleMsgL2.GetLargestConsoleWindowSize;
 
@@ -261,7 +262,7 @@ NTSTATUS PtyServer::handleUserL2GetLargestConsoleWindowSize()
 // OG: SrvScrollConsoleScreenBuffer in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads ScrollRectangle, ClipRectangle, Clip, DestinationOrigin, Fill, Unicode.
-NTSTATUS PtyServer::handleUserL2ScrollConsoleScreenBuffer()
+NTSTATUS Server::handleUserL2ScrollConsoleScreenBuffer()
 {
     auto& a = m_req.u.consoleMsgL2.ScrollConsoleScreenBuffer;
 
@@ -281,7 +282,7 @@ NTSTATUS PtyServer::handleUserL2ScrollConsoleScreenBuffer()
 // OG: SrvSetConsoleTextAttribute in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->Attributes.
-NTSTATUS PtyServer::handleUserL2SetConsoleTextAttribute()
+NTSTATUS Server::handleUserL2SetConsoleTextAttribute()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleTextAttribute;
 
@@ -302,7 +303,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleTextAttribute()
 // OG: SrvSetConsoleWindowInfo in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->Absolute, a->Window.
-NTSTATUS PtyServer::handleUserL2SetConsoleWindowInfo()
+NTSTATUS Server::handleUserL2SetConsoleWindowInfo()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleWindowInfo;
 
@@ -337,7 +338,7 @@ NTSTATUS PtyServer::handleUserL2SetConsoleWindowInfo()
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
 // Reads a->ReadCoord, a->StringType (CONSOLE_ASCII / CONSOLE_REAL_UNICODE / CONSOLE_ATTRIBUTE).
 // Writes char/attr data via writeOutput(). Returns a->NumRecords.
-NTSTATUS PtyServer::handleUserL2ReadConsoleOutputString()
+NTSTATUS Server::handleUserL2ReadConsoleOutputString()
 {
     auto& a = m_req.u.consoleMsgL2.ReadConsoleOutputString;
 
@@ -358,7 +359,7 @@ NTSTATUS PtyServer::handleUserL2ReadConsoleOutputString()
 // DereferenceIoHandle(obj, INPUT, GENERIC_WRITE)
 // Reads a->Unicode, a->Append. Trailing input = INPUT_RECORD array.
 // Returns a->NumRecords (count actually written).
-NTSTATUS PtyServer::handleUserL2WriteConsoleInput()
+NTSTATUS Server::handleUserL2WriteConsoleInput()
 {
     auto& a = m_req.u.consoleMsgL2.WriteConsoleInput;
 
@@ -371,8 +372,37 @@ NTSTATUS PtyServer::handleUserL2WriteConsoleInput()
     auto payload = readTrailingInput();
     auto numRecords = static_cast<ULONG>(payload.size() / sizeof(INPUT_RECORD));
 
-    // TODO: Write INPUT_RECORD events from payload into input queue.
-    //       Handle Unicode vs ANSI conversion if !a->Unicode.
+    // TODO: Handle Unicode vs ANSI conversion if !a->Unicode.
+    // For now, inject the INPUT_RECORDs by serializing them as W32IM VT sequences
+    // into the input buffer, so they come back out correctly on dequeue.
+    // This is a simplification — the OG directly inserts into the input queue.
+    const auto* records = reinterpret_cast<const INPUT_RECORD*>(payload.data());
+    for (ULONG i = 0; i < numRecords; i++)
+    {
+        const auto& rec = records[i];
+        if (rec.EventType == KEY_EVENT)
+        {
+            const auto& ke = rec.Event.KeyEvent;
+            char buf[128];
+            const auto n = snprintf(buf, sizeof(buf), "\x1b[%u;%u;%u;%u;%lu;%u_",
+                ke.wVirtualKeyCode,
+                ke.wVirtualScanCode,
+                static_cast<unsigned>(ke.uChar.UnicodeChar),
+                ke.bKeyDown ? 1u : 0u,
+                ke.dwControlKeyState,
+                ke.wRepeatCount);
+            if (n > 0)
+                m_input.write({ buf, static_cast<size_t>(n) });
+        }
+        // TODO: Handle MOUSE_EVENT, WINDOW_BUFFER_SIZE_EVENT, etc.
+    }
+
+    if (numRecords > 0 && m_input.hasData())
+    {
+        m_inputAvailableEvent.SetEvent();
+        drainPendingInputReads();
+    }
+
     a.NumRecords = numRecords;
     return STATUS_SUCCESS;
 }
@@ -382,7 +412,7 @@ NTSTATUS PtyServer::handleUserL2WriteConsoleInput()
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->Unicode, a->CharRegion. Trailing input = CHAR_INFO array.
 // Returns a->CharRegion (actual region written).
-NTSTATUS PtyServer::handleUserL2WriteConsoleOutput()
+NTSTATUS Server::handleUserL2WriteConsoleOutput()
 {
     auto& a = m_req.u.consoleMsgL2.WriteConsoleOutput;
 
@@ -406,7 +436,7 @@ NTSTATUS PtyServer::handleUserL2WriteConsoleOutput()
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->WriteCoord, a->StringType. Trailing input = char/attr data.
 // Returns a->NumRecords.
-NTSTATUS PtyServer::handleUserL2WriteConsoleOutputString()
+NTSTATUS Server::handleUserL2WriteConsoleOutputString()
 {
     auto& a = m_req.u.consoleMsgL2.WriteConsoleOutputString;
 
@@ -429,7 +459,7 @@ NTSTATUS PtyServer::handleUserL2WriteConsoleOutputString()
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
 // Reads a->Unicode, a->CharRegion.
 // Writes CHAR_INFO array via writeOutput(). Returns a->CharRegion.
-NTSTATUS PtyServer::handleUserL2ReadConsoleOutput()
+NTSTATUS Server::handleUserL2ReadConsoleOutput()
 {
     auto& a = m_req.u.consoleMsgL2.ReadConsoleOutput;
 
@@ -449,7 +479,7 @@ NTSTATUS PtyServer::handleUserL2ReadConsoleOutput()
 // OG: SrvGetConsoleTitle in cmdline.cpp — no handle validation.
 // Reads a->Unicode, a->Original.
 // Writes title string via writeOutput(). Returns a->TitleLength.
-NTSTATUS PtyServer::handleUserL2GetConsoleTitle()
+NTSTATUS Server::handleUserL2GetConsoleTitle()
 {
     auto& a = m_req.u.consoleMsgL2.GetConsoleTitle;
 
@@ -486,7 +516,7 @@ NTSTATUS PtyServer::handleUserL2GetConsoleTitle()
 // L2: SetConsoleTitle
 // OG: SrvSetConsoleTitle in cmdline.cpp — no handle validation.
 // Reads a->Unicode. Trailing input = title string.
-NTSTATUS PtyServer::handleUserL2SetConsoleTitle()
+NTSTATUS Server::handleUserL2SetConsoleTitle()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleTitle;
 

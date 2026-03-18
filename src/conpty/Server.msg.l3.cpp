@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "PtyServer.h"
+#include "Server.h"
 
 // L3: GetConsoleMouseInfo (GetNumberOfConsoleMouseButtons)
 // OG: SrvGetConsoleMouseInfo in getset.cpp — no handle validation.
 // Returns a->NumButtons.
-NTSTATUS PtyServer::handleUserL3GetConsoleMouseInfo()
+NTSTATUS Server::handleUserL3GetConsoleMouseInfo()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleMouseInfo;
 
@@ -17,7 +17,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleMouseInfo()
 // OG: SrvGetConsoleFontSize in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
 // Reads a->FontIndex. Returns a->FontSize.
-NTSTATUS PtyServer::handleUserL3GetConsoleFontSize()
+NTSTATUS Server::handleUserL3GetConsoleFontSize()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleFontSize;
 
@@ -38,7 +38,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleFontSize()
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
 // Reads a->MaximumWindow.
 // Returns a->FontIndex, a->FontSize, a->FontFamily, a->FontWeight, a->FaceName.
-NTSTATUS PtyServer::handleUserL3GetConsoleCurrentFont()
+NTSTATUS Server::handleUserL3GetConsoleCurrentFont()
 {
     auto& a = m_req.u.consoleMsgL3.GetCurrentConsoleFont;
 
@@ -62,7 +62,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleCurrentFont()
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->dwFlags (CONSOLE_FULLSCREEN_MODE / CONSOLE_WINDOWED_MODE).
 // Returns a->ScreenBufferDimensions.
-NTSTATUS PtyServer::handleUserL3SetConsoleDisplayMode()
+NTSTATUS Server::handleUserL3SetConsoleDisplayMode()
 {
     auto& a = m_req.u.consoleMsgL3.SetConsoleDisplayMode;
 
@@ -81,7 +81,7 @@ NTSTATUS PtyServer::handleUserL3SetConsoleDisplayMode()
 // L3: GetConsoleDisplayMode
 // OG: SrvGetConsoleDisplayMode in getset.cpp — no handle validation.
 // Returns a->ModeFlags.
-NTSTATUS PtyServer::handleUserL3GetConsoleDisplayMode()
+NTSTATUS Server::handleUserL3GetConsoleDisplayMode()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleDisplayMode;
 
@@ -94,7 +94,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleDisplayMode()
 // OG: SrvAddConsoleAlias in cmdline.cpp — no handle validation.
 // Reads a->SourceLength, a->TargetLength, a->ExeLength, a->Unicode.
 // Trailing input contains three packed strings: source, target, exe name.
-NTSTATUS PtyServer::handleUserL3AddConsoleAlias()
+NTSTATUS Server::handleUserL3AddConsoleAlias()
 {
     auto& a = m_req.u.consoleMsgL3.AddConsoleAliasW;
 
@@ -118,7 +118,7 @@ NTSTATUS PtyServer::handleUserL3AddConsoleAlias()
 // Reads a->SourceLength, a->ExeLength, a->Unicode.
 // Trailing input = source + exe strings.
 // Writes target string via writeOutput(). Returns a->TargetLength.
-NTSTATUS PtyServer::handleUserL3GetConsoleAlias()
+NTSTATUS Server::handleUserL3GetConsoleAlias()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleAliasW;
 
@@ -140,7 +140,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleAlias()
 // OG: SrvGetConsoleAliasesLength in cmdline.cpp — no handle validation.
 // Reads a->Unicode. Trailing input = exe name string.
 // Returns a->AliasesLength (bytes needed for all aliases of that exe).
-NTSTATUS PtyServer::handleUserL3GetConsoleAliasesLength()
+NTSTATUS Server::handleUserL3GetConsoleAliasesLength()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleAliasesLengthW;
 
@@ -156,7 +156,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleAliasesLength()
 // OG: SrvGetConsoleAliasExesLength in cmdline.cpp — no handle validation.
 // Reads a->Unicode.
 // Returns a->AliasExesLength.
-NTSTATUS PtyServer::handleUserL3GetConsoleAliasExesLength()
+NTSTATUS Server::handleUserL3GetConsoleAliasExesLength()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleAliasExesLengthW;
 
@@ -170,7 +170,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleAliasExesLength()
 // OG: SrvGetConsoleAliases in cmdline.cpp — no handle validation.
 // Reads a->Unicode. Trailing input = exe name.
 // Writes all aliases for that exe via writeOutput(). Returns a->AliasesBufferLength.
-NTSTATUS PtyServer::handleUserL3GetConsoleAliases()
+NTSTATUS Server::handleUserL3GetConsoleAliases()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleAliasesW;
 
@@ -186,7 +186,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleAliases()
 // OG: SrvGetConsoleAliasExes in cmdline.cpp — no handle validation.
 // Reads a->Unicode.
 // Writes exe name list via writeOutput(). Returns a->AliasExesBufferLength.
-NTSTATUS PtyServer::handleUserL3GetConsoleAliasExes()
+NTSTATUS Server::handleUserL3GetConsoleAliasExes()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleAliasExesW;
 
@@ -199,7 +199,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleAliasExes()
 // L3: ExpungeConsoleCommandHistory
 // OG: SrvExpungeConsoleCommandHistory in cmdline.cpp — no handle validation.
 // Reads a->Unicode. Trailing input = exe name.
-NTSTATUS PtyServer::handleUserL3ExpungeConsoleCommandHistory()
+NTSTATUS Server::handleUserL3ExpungeConsoleCommandHistory()
 {
     auto& a = m_req.u.consoleMsgL3.ExpungeConsoleCommandHistoryW;
 
@@ -213,7 +213,7 @@ NTSTATUS PtyServer::handleUserL3ExpungeConsoleCommandHistory()
 // L3: SetConsoleNumberOfCommands
 // OG: SrvSetConsoleNumberOfCommands in cmdline.cpp — no handle validation.
 // Reads a->NumCommands, a->Unicode. Trailing input = exe name.
-NTSTATUS PtyServer::handleUserL3SetConsoleNumberOfCommands()
+NTSTATUS Server::handleUserL3SetConsoleNumberOfCommands()
 {
     auto& a = m_req.u.consoleMsgL3.SetConsoleNumberOfCommandsW;
 
@@ -229,7 +229,7 @@ NTSTATUS PtyServer::handleUserL3SetConsoleNumberOfCommands()
 // OG: SrvGetConsoleCommandHistoryLength in cmdline.cpp — no handle validation.
 // Reads a->Unicode. Trailing input = exe name.
 // Returns a->CommandHistoryLength.
-NTSTATUS PtyServer::handleUserL3GetConsoleCommandHistoryLength()
+NTSTATUS Server::handleUserL3GetConsoleCommandHistoryLength()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleCommandHistoryLengthW;
 
@@ -245,7 +245,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleCommandHistoryLength()
 // OG: SrvGetConsoleCommandHistory in cmdline.cpp — no handle validation.
 // Reads a->CommandBufferLength, a->Unicode. Trailing input = exe name.
 // Writes command strings via writeOutput(). Returns a->CommandBufferLength (actual).
-NTSTATUS PtyServer::handleUserL3GetConsoleCommandHistory()
+NTSTATUS Server::handleUserL3GetConsoleCommandHistory()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleCommandHistoryW;
 
@@ -260,7 +260,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleCommandHistory()
 // L3: GetConsoleWindow
 // OG: SrvGetConsoleWindow in getset.cpp — no handle validation.
 // Returns a->hwnd.
-NTSTATUS PtyServer::handleUserL3GetConsoleWindow()
+NTSTATUS Server::handleUserL3GetConsoleWindow()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleWindow;
 
@@ -272,7 +272,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleWindow()
 // L3: GetConsoleSelectionInfo
 // OG: SrvGetConsoleSelectionInfo in getset.cpp — no handle validation.
 // Returns a->SelectionInfo (dwFlags, dwSelectionAnchor, srSelection).
-NTSTATUS PtyServer::handleUserL3GetConsoleSelectionInfo()
+NTSTATUS Server::handleUserL3GetConsoleSelectionInfo()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleSelectionInfo;
 
@@ -286,7 +286,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleSelectionInfo()
 // Reads a->dwProcessCount (buffer capacity in DWORDs).
 // Writes DWORD array of PIDs via writeOutput().
 // Returns a->dwProcessCount (actual count).
-NTSTATUS PtyServer::handleUserL3GetConsoleProcessList()
+NTSTATUS Server::handleUserL3GetConsoleProcessList()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleProcessList;
 
@@ -315,7 +315,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleProcessList()
 // L3: GetConsoleHistoryInfo
 // OG: SrvGetConsoleHistoryInfo in getset.cpp — no handle validation.
 // Returns a->HistoryBufferSize, a->NumberOfHistoryBuffers, a->dwFlags.
-NTSTATUS PtyServer::handleUserL3GetConsoleHistory()
+NTSTATUS Server::handleUserL3GetConsoleHistory()
 {
     auto& a = m_req.u.consoleMsgL3.GetConsoleHistory;
 
@@ -329,7 +329,7 @@ NTSTATUS PtyServer::handleUserL3GetConsoleHistory()
 // L3: SetConsoleHistoryInfo
 // OG: SrvSetConsoleHistoryInfo in getset.cpp — no handle validation.
 // Reads a->HistoryBufferSize, a->NumberOfHistoryBuffers, a->dwFlags.
-NTSTATUS PtyServer::handleUserL3SetConsoleHistory()
+NTSTATUS Server::handleUserL3SetConsoleHistory()
 {
     auto& a = m_req.u.consoleMsgL3.SetConsoleHistory;
 
@@ -344,7 +344,7 @@ NTSTATUS PtyServer::handleUserL3SetConsoleHistory()
 // OG: SrvSetConsoleCurrentFont in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
 // Reads a->FaceName, a->FontFamily, a->FontWeight, a->FontSize.
-NTSTATUS PtyServer::handleUserL3SetConsoleCurrentFont()
+NTSTATUS Server::handleUserL3SetConsoleCurrentFont()
 {
     auto& a = m_req.u.consoleMsgL3.SetCurrentConsoleFont;
 
