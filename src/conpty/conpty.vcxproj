@@ -33,6 +33,7 @@
     <ClCompile Include="Server.msg.l2.cpp" />
     <ClCompile Include="Server.msg.l3.cpp" />
     <ClCompile Include="Server.raw.cpp" />
+    <ClCompile Include="VtParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="conpty.idl">
@@ -53,6 +54,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="InputBuffer.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="VtParser.h" />
   </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.post.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.targets" />
