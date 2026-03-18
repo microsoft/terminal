@@ -310,6 +310,9 @@ public:
     void SetScrollbarData(ScrollbarData mark, til::CoordType y);
     void ManuallyMarkRowAsPrompt(til::CoordType y);
 
+    bool ContainsBlinkAttributeInRegion(const Microsoft::Console::Types::Viewport& region) const;
+    bool IsGlyphDoubleWidthAt(const til::point at) const;
+
 private:
     void _reserve(til::size screenBufferSize, const TextAttribute& defaultAttributes);
     void _commit(const std::byte* row);
@@ -319,6 +322,7 @@ private:
     ROW& _getRowByOffsetDirect(size_t offset);
     ROW& _getRow(til::CoordType y) const;
     til::CoordType _estimateOffsetOfLastCommittedRow() const noexcept;
+    bool _isRowCommitted(til::CoordType y) const noexcept;
 
     void _SetFirstRowIndex(const til::CoordType FirstRowIndex) noexcept;
     void _ExpandTextRow(til::inclusive_rect& selectionRow) const;
