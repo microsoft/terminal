@@ -285,8 +285,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             const auto isOnOriginalPosition = _lastMouseClickPosNoSelection == pixelPosition;
 
-            // Rounded coordinates for text selection
-            _core->LeftClickOnTerminal(_getTerminalPosition(til::point{ pixelPosition }, true),
+            // Rounded coordinates for text selection.
+            // Don't round in VT mouse mode; cell-level precision matters more
+            const auto round = !_core->IsVtMouseModeEnabled();
+            _core->LeftClickOnTerminal(_getTerminalPosition(til::point{ pixelPosition }, round),
                                        multiClickMapper,
                                        altEnabled,
                                        shiftEnabled,
@@ -296,8 +298,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_core->HasSelection())
             {
                 // GH#9787: if selection is active we don't want to track the touchdown position
-                // so that dragging the mouse will extend the selection rather than starting the new one
-                _singleClickTouchdownPos = std::nullopt;
+                // so that dragging the mouse will extend the selection rather than starting the new one.
+                // In VT mouse mode, keep tracking the touchdown point so that PointerMoved
+                // can re-anchor the selection based on drag direction (the dx < 0 adjustment).
+                // Without this, dragging left wouldn't include the initially clicked cell
+                // because floored coordinates place the anchor on the cell's left edge.
+                if (!_core->IsVtMouseModeEnabled())
+                {
+                    _singleClickTouchdownPos = std::nullopt;
+                }
             }
         }
         else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
@@ -682,7 +691,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void ControlInteractivity::SetEndSelectionPoint(const Core::Point pixelPosition)
     {
-        _core->SetEndSelectionPoint(_getTerminalPosition(til::point{ pixelPosition }, true));
+        // Don't round in VT mouse mode; cell-level precision matters more
+        const auto round = !_core->IsVtMouseModeEnabled();
+        _core->SetEndSelectionPoint(_getTerminalPosition(til::point{ pixelPosition }, round));
         _selectionNeedsToBeCopied = true;
     }
 
