@@ -37,13 +37,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             return L"VsDevShell" + instance.GetInstanceId();
         }
 
-        std::wstring GetProfileIconPath() const
+        std::wstring GetProfileIconPath(bool isPwsh) const
         {
-            return L"ms-appx:///ProfileIcons/vs-powershell.png";
+            return isPwsh ? L"ms-appx:///ProfileIcons/vs-pwsh.png" :
+                            L"ms-appx:///ProfileIcons/vs-powershell.png";
         }
 
         std::wstring GetProfileName(const VsSetupConfiguration::VsSetupInstance& instance) const;
-        std::wstring GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const;
+        std::wstring GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance, bool& isPwsh) const;
         std::wstring GetDevShellModulePath(const VsSetupConfiguration::VsSetupInstance& instance) const;
     };
 };
