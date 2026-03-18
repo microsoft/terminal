@@ -16,11 +16,76 @@ typedef struct PTY_UTF16_STRING
     SIZE_T length;
 } PTY_UTF16_STRING;
 
+// Screen buffer info. Mirrors CONSOLE_SCREEN_BUFFER_INFOEX.
+// Passed between Server and Host for Get/SetConsoleScreenBufferInfoEx.
+typedef struct PTY_SCREEN_BUFFER_INFO
+{
+    COORD Size;
+    COORD CursorPosition;
+    WORD Attributes;
+    SMALL_RECT Window;           // In the OG, this is the viewport rect within the buffer.
+    COORD MaximumWindowSize;
+    WORD PopupAttributes;
+    BOOLEAN FullscreenSupported;
+    COLORREF ColorTable[16];
+    ULONG CursorSize;            // 1..100
+    BOOLEAN CursorVisible;
+    // Font info.
+    ULONG FontIndex;
+    COORD FontSize;
+    ULONG FontFamily;
+    ULONG FontWeight;
+    WCHAR FaceName[32];          // LF_FACESIZE
+} PTY_SCREEN_BUFFER_INFO;
+
+// Partial update to screen buffer info. Non-null pointers indicate which
+// fields should be changed. Mirrors the spec's CONSRV_INFO_CHANGE.
+typedef struct PTY_SCREEN_BUFFER_INFO_CHANGE
+{
+    [unique] COORD* Size;
+    [unique] COORD* CursorPosition;
+    [unique] WORD* Attributes;
+    [unique] SMALL_RECT* Window;
+    [unique] WORD* PopupAttributes;
+    [unique] COLORREF* ColorTable;   // Always 16 entries if non-null.
+    [unique] ULONG* CursorSize;
+    [unique] BOOLEAN* CursorVisible;
+} PTY_SCREEN_BUFFER_INFO_CHANGE;
+
+// A single cell in a console screen buffer.
+// Binary-compatible with CHAR_INFO.
+typedef struct PTY_CHAR_INFO
+{
+    WCHAR Char;
+    WORD Attributes;
+} PTY_CHAR_INFO;
+
 [uuid(e9b4897e-19f8-4833-af28-f777deeba7e6), object, local, pointer_default(unique)]
 interface IPtyHost : IUnknown
 {
+    // Output: the server sends VT or text to the host for rendering.
     void WriteUTF8(PTY_UTF8_STRING text);
     void WriteUTF16(PTY_UTF16_STRING text);
+
+    // Screen buffer lifecycle.
+    // Returns an opaque buffer ID. NULL = main buffer (never explicitly created).
+    HRESULT CreateBuffer([out] void** buffer);
+    HRESULT ReleaseBuffer([in] void* buffer);
+    HRESULT ActivateBuffer([in] void* buffer);
+
+    // Query the full state of the currently active screen buffer.
+    HRESULT GetScreenBufferInfo([out] PTY_SCREEN_BUFFER_INFO* info);
+
+    // Apply a partial change to the currently active screen buffer.
+    HRESULT SetScreenBufferInfo([in] const PTY_SCREEN_BUFFER_INFO_CHANGE* change);
+
+    // Read cells from the active buffer. The host fills `infos` with
+    // `count` cells starting at column pos.X on row pos.Y.
+    // Coordinates are buffer-relative (0-indexed).
+    HRESULT ReadBuffer([in] COORD pos, [in] LONG count, [out, size_is(count)] PTY_CHAR_INFO* infos);
+
+    // Returns the console window handle. Used for GetConsoleWindow.
+    HRESULT GetConsoleWindow([out] HWND* hwnd);
 }
 
 [uuid(9a727f67-09bd-429b-8f73-766a718070f0), object, local, pointer_default(unique)]

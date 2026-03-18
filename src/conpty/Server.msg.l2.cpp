@@ -1,6 +1,14 @@
 #include "pch.h"
 #include "Server.h"
 
+// Helper: call an IPtyHost method that returns HRESULT, and convert failure
+// to an NTSTATUS return from the calling handler.
+#define HOST_CALL(expr) \
+    do { \
+        const auto _hr = (expr); \
+        if (FAILED(_hr)) return STATUS_UNSUCCESSFUL; \
+    } while (0)
+
 // L2: FillConsoleOutput
 // OG: SrvFillConsoleOutput in directio.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
@@ -10,14 +18,12 @@ NTSTATUS Server::handleUserL2FillConsoleOutput()
 {
     auto& a = m_req.u.consoleMsgL2.FillConsoleOutput;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Fill screen buffer at a->WriteCoord with a->Element
-    //       for a->Length cells. a->ElementType selects char vs attribute.
+    // TODO: Read existing cells via ReadBuffer, modify per ElementType, WriteUTF16 back.
+    //       This requires the host to support cell-level read/write.
     a.Length = 0;
     return STATUS_SUCCESS;
 }
@@ -43,11 +49,16 @@ NTSTATUS Server::handleUserL2SetConsoleActiveScreenBuffer()
 {
     auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
+
+    if (h->screenBuffer != m_activeScreenBuffer && m_host)
+    {
+        const auto hr = m_host->ActivateBuffer(h->screenBuffer);
+        if (FAILED(hr))
+            return STATUS_UNSUCCESSFUL;
+        m_activeScreenBuffer = h->screenBuffer;
     }
 
-    // TODO: Switch active screen buffer to the handle's buffer.
     return STATUS_SUCCESS;
 }
 
@@ -58,11 +69,8 @@ NTSTATUS Server::handleUserL2FlushConsoleInputBuffer()
 {
     auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Clear input queue and reset input-available event.
     m_input.flush();
     m_inputAvailableEvent.ResetEvent();
     return STATUS_SUCCESS;
@@ -94,14 +102,15 @@ NTSTATUS Server::handleUserL2GetConsoleCursorInfo()
 {
     auto& a = m_req.u.consoleMsgL2.GetConsoleCursorInfo;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
+    auto* h = activateOutputBuffer(GENERIC_READ);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    a.CursorSize = m_cursorSize;
-    a.Visible = m_cursorVisible;
+    PTY_SCREEN_BUFFER_INFO info{};
+    HOST_CALL(m_host->GetScreenBufferInfo(&info));
+
+    a.CursorSize = info.CursorSize;
+    a.Visible = info.CursorVisible;
     return STATUS_SUCCESS;
 }
 
@@ -113,24 +122,19 @@ NTSTATUS Server::handleUserL2SetConsoleCursorInfo()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleCursorInfo;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
     if (a.CursorSize < 1 || a.CursorSize > 100)
         return STATUS_INVALID_PARAMETER;
 
-    m_cursorSize = a.CursorSize;
-
-    // Emit DECTCEM when visibility changes.
-    if (m_cursorVisible != static_cast<bool>(a.Visible))
-    {
-        m_cursorVisible = static_cast<bool>(a.Visible);
-        vtAppendFmt("\x1b[?25%c", m_cursorVisible ? 'h' : 'l');
-        vtFlush();
-    }
+    ULONG cursorSize = a.CursorSize;
+    BOOLEAN cursorVisible = a.Visible;
+    PTY_SCREEN_BUFFER_INFO_CHANGE change{};
+    change.CursorSize = &cursorSize;
+    change.CursorVisible = &cursorVisible;
+    HOST_CALL(m_host->SetScreenBufferInfo(&change));
 
     return STATUS_SUCCESS;
 }
@@ -138,142 +142,127 @@ NTSTATUS Server::handleUserL2SetConsoleCursorInfo()
 // L2: GetConsoleScreenBufferInfo (GetConsoleScreenBufferInfoEx)
 // OG: SrvGetConsoleScreenBufferInfo in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
-// Returns Size, CursorPosition, ScrollPosition, Attributes, CurrentWindowSize,
-//         MaximumWindowSize, PopupAttributes, FullscreenSupported, ColorTable[16].
 NTSTATUS Server::handleUserL2GetConsoleScreenBufferInfo()
 {
     auto& a = m_req.u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
+    auto* h = activateOutputBuffer(GENERIC_READ);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Fill from actual screen buffer state.
-    a.Size = m_bufferSize;
-    a.CursorPosition = m_cursorPosition;
-    a.ScrollPosition = { 0, 0 };
-    a.Attributes = m_attributes;
-    a.CurrentWindowSize = m_viewSize;
-    a.MaximumWindowSize = m_viewSize;
-    a.PopupAttributes = m_popupAttributes;
-    a.FullscreenSupported = FALSE;
-    memcpy(a.ColorTable, m_colorTable, sizeof(m_colorTable));
+    PTY_SCREEN_BUFFER_INFO info{};
+    HOST_CALL(m_host->GetScreenBufferInfo(&info));
+
+    a.Size = info.Size;
+    a.CursorPosition = info.CursorPosition;
+    a.ScrollPosition = { info.Window.Left, info.Window.Top };
+    a.Attributes = info.Attributes;
+    a.CurrentWindowSize = {
+        static_cast<SHORT>(info.Window.Right - info.Window.Left + 1),
+        static_cast<SHORT>(info.Window.Bottom - info.Window.Top + 1),
+    };
+    a.MaximumWindowSize = info.MaximumWindowSize;
+    a.PopupAttributes = info.PopupAttributes;
+    a.FullscreenSupported = info.FullscreenSupported;
+    memcpy(a.ColorTable, info.ColorTable, sizeof(a.ColorTable));
     return STATUS_SUCCESS;
 }
 
 // L2: SetConsoleScreenBufferInfoEx
 // OG: SrvSetConsoleScreenBufferInfo in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads Size, CurrentWindowSize, Attributes, PopupAttributes, ColorTable, etc.
 NTSTATUS Server::handleUserL2SetConsoleScreenBufferInfo()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleScreenBufferInfo;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Apply screen buffer settings from a->*.
+    WORD attributes = a.Attributes;
+    WORD popupAttributes = a.PopupAttributes;
+    SMALL_RECT window = { 0, 0, static_cast<SHORT>(a.CurrentWindowSize.X - 1), static_cast<SHORT>(a.CurrentWindowSize.Y - 1) };
+
+    PTY_SCREEN_BUFFER_INFO_CHANGE change{};
     if (a.Size.X > 0 && a.Size.Y > 0)
-        m_bufferSize = a.Size;
-    if (a.CurrentWindowSize.X > 0 && a.CurrentWindowSize.Y > 0)
-        m_viewSize = a.CurrentWindowSize;
+        change.Size = &a.Size;
+    change.Attributes = &attributes;
+    change.PopupAttributes = &popupAttributes;
+    change.Window = &window;
+    change.ColorTable = a.ColorTable;
 
-    m_attributes = a.Attributes;
-    m_popupAttributes = a.PopupAttributes;
-    memcpy(m_colorTable, a.ColorTable, sizeof(m_colorTable));
-
-    vtAppendSGR(m_attributes);
-    vtFlush();
+    HOST_CALL(m_host->SetScreenBufferInfo(&change));
     return STATUS_SUCCESS;
 }
 
 // L2: SetConsoleScreenBufferSize
 // OG: SrvSetConsoleScreenBufferSize in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads a->Size.
 NTSTATUS Server::handleUserL2SetConsoleScreenBufferSize()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleScreenBufferSize;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Resize screen buffer to a->Size.
     if (a.Size.X <= 0 || a.Size.Y <= 0)
         return STATUS_INVALID_PARAMETER;
 
-    m_bufferSize = a.Size;
+    PTY_SCREEN_BUFFER_INFO_CHANGE change{};
+    change.Size = &a.Size;
+    HOST_CALL(m_host->SetScreenBufferInfo(&change));
     return STATUS_SUCCESS;
 }
 
 // L2: SetConsoleCursorPosition
 // OG: SrvSetConsoleCursorPosition in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads a->CursorPosition.
 NTSTATUS Server::handleUserL2SetConsoleCursorPosition()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleCursorPosition;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Move cursor to a->CursorPosition, scrolling if needed.
-    if (a.CursorPosition.X < 0 || a.CursorPosition.X >= m_bufferSize.X ||
-        a.CursorPosition.Y < 0 || a.CursorPosition.Y >= m_bufferSize.Y)
-        return STATUS_INVALID_PARAMETER;
-
-    m_cursorPosition = a.CursorPosition;
-    vtAppendCUP(m_cursorPosition.Y, m_cursorPosition.X);
-    vtFlush();
+    PTY_SCREEN_BUFFER_INFO_CHANGE change{};
+    change.CursorPosition = &a.CursorPosition;
+    HOST_CALL(m_host->SetScreenBufferInfo(&change));
     return STATUS_SUCCESS;
 }
 
 // L2: GetLargestConsoleWindowSize
 // OG: SrvGetLargestConsoleWindowSize in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE) — yes, WRITE for a getter.
-// Returns a->Size.
 NTSTATUS Server::handleUserL2GetLargestConsoleWindowSize()
 {
     auto& a = m_req.u.consoleMsgL2.GetLargestConsoleWindowSize;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Return actual largest window size.
-    a.Size = m_viewSize;
+    PTY_SCREEN_BUFFER_INFO info{};
+    HOST_CALL(m_host->GetScreenBufferInfo(&info));
+
+    a.Size = info.MaximumWindowSize;
     return STATUS_SUCCESS;
 }
 
 // L2: ScrollConsoleScreenBuffer
 // OG: SrvScrollConsoleScreenBuffer in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads ScrollRectangle, ClipRectangle, Clip, DestinationOrigin, Fill, Unicode.
 NTSTATUS Server::handleUserL2ScrollConsoleScreenBuffer()
 {
     auto& a = m_req.u.consoleMsgL2.ScrollConsoleScreenBuffer;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Scroll region from a->ScrollRectangle to a->DestinationOrigin,
-    //       clipping by a->ClipRectangle if a->Clip, filling with a->Fill.
+    // TODO: Read source rectangle via ReadBuffer, write to destination,
+    //       fill vacated area with a->Fill. Needs host ReadBuffer + WriteUTF16 support.
     (void)a;
     return STATUS_SUCCESS;
 }
@@ -281,101 +270,147 @@ NTSTATUS Server::handleUserL2ScrollConsoleScreenBuffer()
 // L2: SetConsoleTextAttribute
 // OG: SrvSetConsoleTextAttribute in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads a->Attributes.
 NTSTATUS Server::handleUserL2SetConsoleTextAttribute()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleTextAttribute;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Set current text attributes on screen buffer.
-    m_attributes = a.Attributes;
-    vtAppendSGR(m_attributes);
-    vtFlush();
+    PTY_SCREEN_BUFFER_INFO_CHANGE change{};
+    change.Attributes = &a.Attributes;
+    HOST_CALL(m_host->SetScreenBufferInfo(&change));
     return STATUS_SUCCESS;
 }
 
 // L2: SetConsoleWindowInfo
 // OG: SrvSetConsoleWindowInfo in getset.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads a->Absolute, a->Window.
 NTSTATUS Server::handleUserL2SetConsoleWindowInfo()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleWindowInfo;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
-    // TODO: Set window to a->Window (absolute or relative based on a->Absolute).
-    auto window = a.Window;
+    SMALL_RECT window = a.Window;
     if (!a.Absolute)
     {
-        // In the OG, relative mode adds offsets to each edge of the current window.
-        // Our viewport always starts at (0,0), so current window is {0, 0, viewSize-1}.
-        window.Right += m_viewSize.X - 1;
-        window.Bottom += m_viewSize.Y - 1;
+        // Relative mode: get current window position first.
+        PTY_SCREEN_BUFFER_INFO info{};
+        HOST_CALL(m_host->GetScreenBufferInfo(&info));
+        window.Left += info.Window.Left;
+        window.Top += info.Window.Top;
+        window.Right += info.Window.Right;
+        window.Bottom += info.Window.Bottom;
     }
 
-    const SHORT newWidth = window.Right - window.Left + 1;
-    const SHORT newHeight = window.Bottom - window.Top + 1;
-    if (newWidth > 0 && newHeight > 0)
-    {
-        m_viewSize = { newWidth, newHeight };
-    }
-
+    PTY_SCREEN_BUFFER_INFO_CHANGE change{};
+    change.Window = &window;
+    HOST_CALL(m_host->SetScreenBufferInfo(&change));
     return STATUS_SUCCESS;
 }
 
 // L2: ReadConsoleOutputString (ReadConsoleOutputCharacter / ReadConsoleOutputAttribute)
 // OG: SrvReadConsoleOutputString in directio.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
-// Reads a->ReadCoord, a->StringType (CONSOLE_ASCII / CONSOLE_REAL_UNICODE / CONSOLE_ATTRIBUTE).
-// Writes char/attr data via writeOutput(). Returns a->NumRecords.
 NTSTATUS Server::handleUserL2ReadConsoleOutputString()
 {
     auto& a = m_req.u.consoleMsgL2.ReadConsoleOutputString;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
+    auto* h = activateOutputBuffer(GENERIC_READ);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
+
+    const auto outputOffset = m_req.msgHeader.ApiDescriptorSize;
+    const auto maxOutputBytes = (m_req.Descriptor.OutputSize > outputOffset) ? (m_req.Descriptor.OutputSize - outputOffset) : 0u;
+
+    // Compute how many cells we can read based on the output capacity and string type.
+    ULONG maxCells = 0;
+    switch (a.StringType)
+    {
+    case CONSOLE_ASCII:
+        maxCells = maxOutputBytes; // 1 byte per cell
+        break;
+    case CONSOLE_REAL_UNICODE:
+        maxCells = maxOutputBytes / sizeof(WCHAR); // 2 bytes per cell
+        break;
+    case CONSOLE_ATTRIBUTE:
+        maxCells = maxOutputBytes / sizeof(WORD); // 2 bytes per cell
+        break;
+    default:
+        return STATUS_INVALID_PARAMETER;
     }
 
-    // TODO: Read chars/attrs from screen buffer at a->ReadCoord.
-    //       Write result via writeOutput() at offset a->ApiDescriptorSize.
-    a.NumRecords = 0;
+    if (maxCells == 0)
+    {
+        a.NumRecords = 0;
+        return STATUS_SUCCESS;
+    }
+
+    // Read cells from the host.
+    std::vector<PTY_CHAR_INFO> cells(maxCells);
+    const auto hr = m_host->ReadBuffer(a.ReadCoord, maxCells, cells.data());
+    if (FAILED(hr))
+    {
+        a.NumRecords = 0;
+        return STATUS_SUCCESS;
+    }
+
+    // Convert to the requested string type.
+    if (a.StringType == CONSOLE_REAL_UNICODE)
+    {
+        std::vector<WCHAR> chars(maxCells);
+        for (ULONG i = 0; i < maxCells; i++)
+            chars[i] = cells[i].Char;
+        writeOutput(outputOffset, chars.data(), maxCells * sizeof(WCHAR));
+    }
+    else if (a.StringType == CONSOLE_ASCII)
+    {
+        // Convert each Unicode char to the output code page.
+        std::vector<WCHAR> wchars(maxCells);
+        for (ULONG i = 0; i < maxCells; i++)
+            wchars[i] = cells[i].Char;
+        const auto ansiLen = WideCharToMultiByte(m_outputCP, 0, wchars.data(), maxCells, nullptr, 0, nullptr, nullptr);
+        if (ansiLen > 0)
+        {
+            std::vector<char> ansi(ansiLen);
+            WideCharToMultiByte(m_outputCP, 0, wchars.data(), maxCells, ansi.data(), ansiLen, nullptr, nullptr);
+            const auto toWrite = std::min(static_cast<ULONG>(ansiLen), maxOutputBytes);
+            writeOutput(outputOffset, ansi.data(), toWrite);
+            // For ASCII, the cell count may differ from byte count due to DBCS.
+            // We return the number of cells consumed (= maxCells).
+        }
+    }
+    else if (a.StringType == CONSOLE_ATTRIBUTE)
+    {
+        std::vector<WORD> attrs(maxCells);
+        for (ULONG i = 0; i < maxCells; i++)
+            attrs[i] = cells[i].Attributes;
+        writeOutput(outputOffset, attrs.data(), maxCells * sizeof(WORD));
+    }
+
+    a.NumRecords = maxCells;
     return STATUS_SUCCESS;
 }
 
 // L2: WriteConsoleInput
 // OG: SrvWriteConsoleInput in directio.cpp
 // DereferenceIoHandle(obj, INPUT, GENERIC_WRITE)
-// Reads a->Unicode, a->Append. Trailing input = INPUT_RECORD array.
-// Returns a->NumRecords (count actually written).
 NTSTATUS Server::handleUserL2WriteConsoleInput()
 {
     auto& a = m_req.u.consoleMsgL2.WriteConsoleInput;
 
     auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
     auto payload = readTrailingInput();
     auto numRecords = static_cast<ULONG>(payload.size() / sizeof(INPUT_RECORD));
 
     // TODO: Handle Unicode vs ANSI conversion if !a->Unicode.
-    // For now, inject the INPUT_RECORDs by serializing them as W32IM VT sequences
-    // into the input buffer, so they come back out correctly on dequeue.
-    // This is a simplification — the OG directly inserts into the input queue.
     const auto* records = reinterpret_cast<const INPUT_RECORD*>(payload.data());
     for (ULONG i = 0; i < numRecords; i++)
     {
@@ -410,22 +445,18 @@ NTSTATUS Server::handleUserL2WriteConsoleInput()
 // L2: WriteConsoleOutput
 // OG: SrvWriteConsoleOutput in directio.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads a->Unicode, a->CharRegion. Trailing input = CHAR_INFO array.
-// Returns a->CharRegion (actual region written).
 NTSTATUS Server::handleUserL2WriteConsoleOutput()
 {
     auto& a = m_req.u.consoleMsgL2.WriteConsoleOutput;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
     auto payload = readTrailingInput();
 
     // TODO: Write CHAR_INFO grid from payload into screen buffer at a->CharRegion.
-    //       Handle Unicode vs ANSI. Update a->CharRegion to actual written region.
+    //       This requires a WriteBuffer-like host callback or per-row WriteUTF16.
     (void)payload;
     a.CharRegion = {};
     return STATUS_SUCCESS;
@@ -434,21 +465,18 @@ NTSTATUS Server::handleUserL2WriteConsoleOutput()
 // L2: WriteConsoleOutputString (WriteConsoleOutputCharacter / WriteConsoleOutputAttribute)
 // OG: SrvWriteConsoleOutputString in directio.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_WRITE)
-// Reads a->WriteCoord, a->StringType. Trailing input = char/attr data.
-// Returns a->NumRecords.
 NTSTATUS Server::handleUserL2WriteConsoleOutputString()
 {
     auto& a = m_req.u.consoleMsgL2.WriteConsoleOutputString;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    auto* h = activateOutputBuffer(GENERIC_WRITE);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
-    }
 
     auto payload = readTrailingInput();
 
     // TODO: Write chars/attrs from payload to screen buffer at a->WriteCoord.
+    //       Requires per-cell write support on the host.
     (void)payload;
     a.NumRecords = 0;
     return STATUS_SUCCESS;
@@ -457,28 +485,68 @@ NTSTATUS Server::handleUserL2WriteConsoleOutputString()
 // L2: ReadConsoleOutput
 // OG: SrvReadConsoleOutput in directio.cpp
 // DereferenceIoHandle(obj, OUTPUT, GENERIC_READ)
-// Reads a->Unicode, a->CharRegion.
-// Writes CHAR_INFO array via writeOutput(). Returns a->CharRegion.
 NTSTATUS Server::handleUserL2ReadConsoleOutput()
 {
     auto& a = m_req.u.consoleMsgL2.ReadConsoleOutput;
 
-    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
+    auto* h = activateOutputBuffer(GENERIC_READ);
     if (!h)
-    {
         return STATUS_INVALID_HANDLE;
+
+    const auto outputOffset = m_req.msgHeader.ApiDescriptorSize;
+    const auto maxOutputBytes = (m_req.Descriptor.OutputSize > outputOffset) ? (m_req.Descriptor.OutputSize - outputOffset) : 0u;
+
+    const SHORT width = a.CharRegion.Right - a.CharRegion.Left + 1;
+    const SHORT height = a.CharRegion.Bottom - a.CharRegion.Top + 1;
+
+    if (width <= 0 || height <= 0)
+    {
+        a.CharRegion = {};
+        return STATUS_SUCCESS;
     }
 
-    // TODO: Read CHAR_INFO grid from screen buffer at a->CharRegion.
-    //       Write result via writeOutput(). Update a->CharRegion to actual read region.
-    a.CharRegion = {};
+    const auto totalCells = static_cast<ULONG>(width) * height;
+    const auto maxCells = maxOutputBytes / sizeof(CHAR_INFO);
+
+    if (maxCells == 0)
+    {
+        a.CharRegion = {};
+        return STATUS_SUCCESS;
+    }
+
+    // Read row by row from the host.
+    std::vector<CHAR_INFO> result(totalCells);
+    for (SHORT row = 0; row < height; row++)
+    {
+        COORD readPos = { a.CharRegion.Left, static_cast<SHORT>(a.CharRegion.Top + row) };
+        std::vector<PTY_CHAR_INFO> cells(width);
+        const auto hr = m_host->ReadBuffer(readPos, width, cells.data());
+        if (FAILED(hr))
+            break;
+
+        for (SHORT col = 0; col < width; col++)
+        {
+            auto& ci = result[row * width + col];
+            ci.Char.UnicodeChar = cells[col].Char;
+            ci.Attributes = cells[col].Attributes;
+        }
+    }
+
+    const auto cellsToWrite = std::min(totalCells, static_cast<ULONG>(maxCells));
+    if (cellsToWrite > 0)
+        writeOutput(outputOffset, result.data(), cellsToWrite * sizeof(CHAR_INFO));
+
+    a.CharRegion = {
+        a.CharRegion.Left,
+        a.CharRegion.Top,
+        static_cast<SHORT>(a.CharRegion.Left + width - 1),
+        static_cast<SHORT>(a.CharRegion.Top + height - 1),
+    };
     return STATUS_SUCCESS;
 }
 
 // L2: GetConsoleTitle
 // OG: SrvGetConsoleTitle in cmdline.cpp — no handle validation.
-// Reads a->Unicode, a->Original.
-// Writes title string via writeOutput(). Returns a->TitleLength.
 NTSTATUS Server::handleUserL2GetConsoleTitle()
 {
     auto& a = m_req.u.consoleMsgL2.GetConsoleTitle;
@@ -492,9 +560,7 @@ NTSTATUS Server::handleUserL2GetConsoleTitle()
         const auto bytes = static_cast<ULONG>(title.size() * sizeof(WCHAR));
         const auto bytesToWrite = std::min(bytes, outputCapacity);
         if (bytesToWrite > 0)
-        {
             writeOutput(outputOffset, title.data(), bytesToWrite);
-        }
         a.TitleLength = bytes;
     }
     else
@@ -515,7 +581,6 @@ NTSTATUS Server::handleUserL2GetConsoleTitle()
 
 // L2: SetConsoleTitle
 // OG: SrvSetConsoleTitle in cmdline.cpp — no handle validation.
-// Reads a->Unicode. Trailing input = title string.
 NTSTATUS Server::handleUserL2SetConsoleTitle()
 {
     auto& a = m_req.u.consoleMsgL2.SetConsoleTitle;
@@ -541,6 +606,7 @@ NTSTATUS Server::handleUserL2SetConsoleTitle()
         }
     }
 
+    // Emit the title to the host as an OSC sequence.
     vtAppendTitle(m_title);
     vtFlush();
     return STATUS_SUCCESS;

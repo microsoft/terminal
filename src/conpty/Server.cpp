@@ -372,6 +372,30 @@ Handle* Server::findHandle(ULONG_PTR obj, ULONG type, ACCESS_MASK access)
     return nullptr;
 }
 
+// Validates an output handle and temporarily activates the associated screen
+// buffer on the host if it differs from the currently active one.
+// All IPtyHost calls that operate on screen buffer content (GetScreenBufferInfo,
+// SetScreenBufferInfo, ReadBuffer, WriteUTF8/16) operate on the active buffer,
+// so we ensure the right one is activated before each API call.
+//
+// Returns nullptr if the handle is invalid. The caller must check for nullptr
+// and return STATUS_INVALID_HANDLE.
+Handle* Server::activateOutputBuffer(ACCESS_MASK requiredAccess)
+{
+    auto* h = findHandle(m_req.Descriptor.Object, CONSOLE_OUTPUT_HANDLE, requiredAccess);
+    if (!h)
+        return nullptr;
+
+    // If the handle's buffer differs from the active one, ask the host to switch.
+    if (h->screenBuffer != m_activeScreenBuffer && m_host)
+    {
+        m_host->ActivateBuffer(h->screenBuffer);
+        m_activeScreenBuffer = h->screenBuffer;
+    }
+
+    return h;
+}
+
 // VT output helpers.
 // These accumulate VT sequences into m_vtBuf. Call vtFlush() to send them.
 
@@ -411,43 +435,6 @@ void Server::vtAppendUTF16(std::wstring_view str)
     const auto offset = m_vtBuf.size();
     m_vtBuf.resize(offset + utf8Len);
     WideCharToMultiByte(CP_UTF8, 0, str.data(), len, m_vtBuf.data() + offset, utf8Len, nullptr, nullptr);
-}
-
-void Server::vtAppendCUP(SHORT row, SHORT col)
-{
-    vtAppendFmt("\x1b[%d;%dH", row + 1, col + 1);
-}
-
-void Server::vtAppendSGR(WORD attr)
-{
-    // Default attribute (white-on-black, no flags) maps to SGR reset.
-    if (attr == (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE))
-    {
-        vtAppend("\x1b[m");
-        return;
-    }
-
-    // BGR→RGB mapping: Console uses Blue=bit0, Green=bit1, Red=bit2,
-    // but VT SGR uses Red=bit0, Green=bit1, Blue=bit2 within each color group.
-    static constexpr uint8_t lut[] = {
-        30, 34, 32, 36, 31, 35, 33, 37, // Normal: Black, Blue, Green, Cyan, Red, Magenta, Yellow, White
-        90,
-        94,
-        92,
-        96,
-        91,
-        95,
-        93,
-        97, // Bright variants
-    };
-
-    const auto fg = lut[attr & 0x0f];
-    const auto bg = lut[(attr >> 4) & 0x0f] + 10;
-
-    if (attr & COMMON_LVB_REVERSE_VIDEO)
-        vtAppendFmt("\x1b[0;7;%d;%dm", fg, bg);
-    else
-        vtAppendFmt("\x1b[0;%d;%dm", fg, bg);
 }
 
 void Server::vtAppendTitle(std::wstring_view title)

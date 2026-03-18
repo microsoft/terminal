@@ -41,12 +41,16 @@ struct Server;
 // Handle tracking data, analogous to the OG CONSOLE_HANDLE_DATA.
 // In the OG, handles are raw pointers to CONSOLE_HANDLE_DATA which contain
 // share mode/access tracking and a pointer to the underlying object
-// (INPUT_INFORMATION or SCREEN_INFORMATION). We simplify this for now.
+// (INPUT_INFORMATION or SCREEN_INFORMATION).
+//
+// For output handles, `screenBuffer` is the opaque buffer ID returned by
+// IPtyHost::CreateBuffer. NULL means the main (default) screen buffer.
 struct Handle
 {
     ULONG handleType = 0; // CONSOLE_INPUT_HANDLE or CONSOLE_OUTPUT_HANDLE
     ACCESS_MASK access = 0;
     ULONG shareMode = 0;
+    void* screenBuffer = nullptr; // Only for CONSOLE_OUTPUT_HANDLE. NULL = main buffer.
 };
 
 // Per-client tracking data, analogous to the OG CONSOLE_PROCESS_HANDLE.
@@ -57,6 +61,43 @@ struct Client
     bool rootProcess = false;
     ULONG_PTR inputHandle = 0;
     ULONG_PTR outputHandle = 0;
+};
+
+// Console aliases, keyed by executable name.
+// Each executable has a map of source → target alias pairs.
+// OG: ALIAS_LIST_ENTRY chain in cmdline.cpp.
+struct AliasStore
+{
+    // Case-insensitive exe name → (case-insensitive source → target).
+    std::unordered_map<std::wstring, std::unordered_map<std::wstring, std::wstring>> exes;
+
+    void add(std::wstring_view exe, std::wstring_view source, std::wstring_view target);
+    void remove(std::wstring_view exe, std::wstring_view source);
+    const std::wstring* find(std::wstring_view exe, std::wstring_view source) const;
+    void expunge(std::wstring_view exe);
+};
+
+// Per-exe command history buffer.
+// OG: COMMAND_HISTORY in cmdline.cpp / commandHistory.h.
+struct CommandHistory
+{
+    std::vector<std::wstring> commands;
+    ULONG maxCommands = 50;
+    bool allowDuplicates = true;
+
+    void add(std::wstring_view cmd);
+    void clear();
+};
+
+struct CommandHistoryStore
+{
+    std::unordered_map<std::wstring, CommandHistory> exes;
+    ULONG defaultBufferSize = 50;
+    ULONG numberOfBuffers = 4;
+    DWORD flags = 0; // HISTORY_NO_DUP_FLAG = 1
+
+    CommandHistory& getOrCreate(std::wstring_view exe);
+    void expunge(std::wstring_view exe);
 };
 
 // A pending IO request that couldn't be completed immediately.
@@ -217,16 +258,19 @@ struct Server : IPtyServer
     Client* findClient(ULONG_PTR handle);
 
     // Handle management.
-    ULONG_PTR allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode);
+    ULONG_PTR allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode, void* screenBuffer = nullptr);
     void freeHandle(ULONG_PTR handle);
+
+    // Resolve the output handle from the current message and ensure the
+    // correct buffer is temporarily activated on the host.
+    // Returns the Handle pointer, or nullptr (STATUS_INVALID_HANDLE) on failure.
+    Handle* activateOutputBuffer(ACCESS_MASK requiredAccess);
 
     // VT output helpers.
     void vtFlush();
     void vtAppend(std::string_view sv);
     void vtAppendFmt(_Printf_format_string_ const char* fmt, ...);
     void vtAppendUTF16(std::wstring_view str);
-    void vtAppendCUP(SHORT row, SHORT col);
-    void vtAppendSGR(WORD attr);
     void vtAppendTitle(std::wstring_view title);
 
     std::atomic<ULONG> m_refCount{ 1 };
@@ -252,23 +296,20 @@ struct Server : IPtyServer
     UINT m_inputCP = CP_UTF8;
     UINT m_outputCP = CP_UTF8;
 
-    // Console state — mode flags (global; per-handle tracking deferred).
+    // Console state — mode flags (global, not per-buffer).
     DWORD m_inputMode = ENABLE_PROCESSED_INPUT | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
     DWORD m_outputMode = ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT;
 
-    // Console state — screen buffer.
-    COORD m_bufferSize{ 120, 30 };
-    COORD m_viewSize{ 120, 30 };
-    COORD m_cursorPosition{ 0, 0 };
-    WORD m_attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-    WORD m_popupAttributes = 0;
-    COLORREF m_colorTable[16]{};
-    DWORD m_cursorSize = 25;
-    bool m_cursorVisible = true;
-
-    // Console state — title.
+    // Console state — title (global, not per-buffer).
     std::wstring m_title;
     std::wstring m_originalTitle;
+
+    // The currently active screen buffer handle. NULL = main buffer.
+    void* m_activeScreenBuffer = nullptr;
+
+    // Alias and command history storage (global, not per-buffer).
+    AliasStore m_aliases;
+    CommandHistoryStore m_history;
 
     // VT output accumulation buffer.
     std::string m_vtBuf;

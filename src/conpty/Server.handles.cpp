@@ -52,15 +52,9 @@ NTSTATUS Server::handleConnect()
         m_title.assign(data.Title, data.TitleLength / sizeof(WCHAR));
         m_originalTitle = m_title;
 
-        // Capture initial buffer/window sizes if the client provided them.
-        if (data.ScreenBufferSize.X > 0 && data.ScreenBufferSize.Y > 0)
-        {
-            m_bufferSize = data.ScreenBufferSize;
-        }
-        if (data.WindowSize.X > 0 && data.WindowSize.Y > 0)
-        {
-            m_viewSize = data.WindowSize;
-        }
+        // NOTE: Screen buffer size/window size from CONSOLE_SERVER_MSG are
+        // NOT stored here — they live on the host. The host should be
+        // initialized with appropriate defaults before Run() is called.
     }
 
     auto clientPtr = client.get();
@@ -121,12 +115,13 @@ NTSTATUS Server::handleDisconnect()
 // Analogous to OG AllocateIoHandle (handle.cpp). The OG creates a CONSOLE_HANDLE_DATA
 // with share/access tracking and a pointer to the underlying console object.
 // We create a lightweight Handle and return its pointer cast to ULONG_PTR.
-ULONG_PTR Server::allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode)
+ULONG_PTR Server::allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG shareMode, void* screenBuffer)
 {
     auto h = std::make_unique<Handle>();
     h->handleType = handleType;
     h->access = access;
     h->shareMode = shareMode;
+    h->screenBuffer = screenBuffer;
     auto ptr = reinterpret_cast<ULONG_PTR>(h.get());
     m_handles.push_back(std::move(h));
     return ptr;
@@ -136,6 +131,30 @@ ULONG_PTR Server::allocateHandle(ULONG handleType, ACCESS_MASK access, ULONG sha
 void Server::freeHandle(ULONG_PTR handle)
 {
     auto ptr = reinterpret_cast<Handle*>(handle);
+
+    // If this is an output handle with a non-null screen buffer (i.e. not the
+    // main buffer), check if any other handle still references it. If not,
+    // tell the host to release it.
+    if (ptr && (ptr->handleType & CONSOLE_OUTPUT_HANDLE) && ptr->screenBuffer)
+    {
+        const auto buf = ptr->screenBuffer;
+        bool otherRef = false;
+        for (auto& h : m_handles)
+        {
+            if (h.get() != ptr && h->screenBuffer == buf)
+            {
+                otherRef = true;
+                break;
+            }
+        }
+        if (!otherRef && m_host)
+        {
+            m_host->ReleaseBuffer(buf);
+            if (m_activeScreenBuffer == buf)
+                m_activeScreenBuffer = nullptr;
+        }
+    }
+
     std::erase_if(m_handles, [ptr](const auto& h) { return h.get() == ptr; });
 }
 
@@ -176,10 +195,15 @@ NTSTATUS Server::handleCreateObject()
         break;
 
     case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
-        // In the OG, this creates a new screen buffer via ConsoleCreateScreenBuffer.
-        // For now, we allocate a handle that tracks as an output handle.
-        handle = allocateHandle(CONSOLE_OUTPUT_HANDLE, info.DesiredAccess, info.ShareMode);
+    {
+        // Create a new screen buffer via the host.
+        void* screenBuffer = nullptr;
+        const auto hr = m_host->CreateBuffer(&screenBuffer);
+        if (FAILED(hr))
+            THROW_NTSTATUS(STATUS_NO_MEMORY);
+        handle = allocateHandle(CONSOLE_OUTPUT_HANDLE, info.DesiredAccess, info.ShareMode, screenBuffer);
         break;
+    }
 
     default:
         THROW_NTSTATUS(STATUS_INVALID_PARAMETER);
