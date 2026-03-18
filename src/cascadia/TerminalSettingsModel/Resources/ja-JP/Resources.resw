@@ -229,7 +229,7 @@
     <value>以前</value>
   </data>
   <data name="DuplicatePaneCommandKey" xml:space="preserve">
-    <value>ペインの複製する</value>
+    <value>ペインを複製する</value>
   </data>
   <data name="DuplicateTabCommandKey" xml:space="preserve">
     <value>タブを複製する</value>
@@ -976,4 +976,5 @@
   <data name="SplitSizeActionArgumentLocalized" xml:space="preserve">
     <value>分割サイズ</value>
   </data>
+
 </root>
