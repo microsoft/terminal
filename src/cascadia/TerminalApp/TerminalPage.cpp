@@ -2647,6 +2647,13 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        std::vector<winrt::TerminalApp::Tab> existingTabs{};
+        existingTabs.reserve(_tabs.Size());
+        for (const auto& tab : _tabs)
+        {
+            existingTabs.emplace_back(tab);
+        }
+
         const auto& firstAction = args.GetAt(0);
         const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
 
@@ -2673,17 +2680,12 @@ namespace winrt::TerminalApp::implementation
         // made into position.
         if (!firstIsSplitPane && tabIndex != -1)
         {
-            // Move the currently active tab to the requested index Use the
-            // currently focused tab index, because we don't know if the new tab
-            // opened at the end of the list, or adjacent to the previously
-            // active tab. This is affected by the user's "newTabPosition"
-            // setting.
-            if (const auto focusedTabIndex = _GetFocusedTabIndex())
+            const auto newTabs = _CollectNewTabs(existingTabs);
+            if (!newTabs.empty())
             {
-                const auto source = *focusedTabIndex;
-                _TryMoveTab(source, tabIndex);
+                _MoveTabsToIndex(newTabs, tabIndex);
+                _SetSelectedTabs(newTabs, newTabs.front());
             }
-            // else: This shouldn't really be possible, because the tab we _just_ opened should be active.
         }
     }
 
@@ -5537,16 +5539,21 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
                                           const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
     {
-        // Get the tab impl from this event.
         const auto eventTab = e.Tab();
-        const auto tabBase = _GetTabByTabViewItem(eventTab);
-        winrt::com_ptr<Tab> tabImpl;
-        tabImpl.copy_from(winrt::get_self<Tab>(tabBase));
-        if (tabImpl)
+        const auto draggedTab = _GetTabByTabViewItem(eventTab);
+        if (draggedTab)
         {
-            // First: stash the tab we started dragging.
-            // We're going to be asked for this.
-            _stashed.draggedTab = tabImpl;
+            auto draggedTabs = _IsTabSelected(draggedTab) ? _GetSelectedTabsInDisplayOrder() :
+                                                        std::vector<winrt::TerminalApp::Tab>{};
+            if (draggedTabs.empty() ||
+                !std::ranges::any_of(draggedTabs, [&](const auto& tab) { return tab == draggedTab; }))
+            {
+                draggedTabs = { draggedTab };
+                _SetSelectedTabs(draggedTabs, draggedTab);
+            }
+
+            _stashed.draggedTabs = std::move(draggedTabs);
+            _stashed.dragAnchor = draggedTab;
 
             // Stash the offset from where we started the drag to the
             // tab's origin. We'll use that offset in the future to help
@@ -5653,6 +5660,11 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        if (index < 0)
+        {
+            index = gsl::narrow_cast<int32_t>(_tabView.TabItems().Size());
+        }
+
         // `this` is safe to use
         const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
 
@@ -5676,12 +5688,12 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
-        if (!_stashed.draggedTab)
+        if (_stashed.draggedTabs.empty())
         {
             return;
         }
 
-        _sendDraggedTabToWindow(winrt::to_hstring(args.TargetWindow()), args.TabIndex(), std::nullopt);
+        _sendDraggedTabsToWindow(winrt::to_hstring(args.TargetWindow()), args.TabIndex(), std::nullopt);
     }
 
     void TerminalPage::_onTabDroppedOutside(winrt::IInspectable /*sender*/,
@@ -5695,7 +5707,7 @@ namespace winrt::TerminalApp::implementation
         // invoke a moveTab action with the target window being -1. That will
         // force the creation of a new window.
 
-        if (!_stashed.draggedTab)
+        if (_stashed.draggedTabs.empty())
         {
             return;
         }
@@ -5711,19 +5723,48 @@ namespace winrt::TerminalApp::implementation
             pointerPoint.X - _stashed.dragOffset.X,
             pointerPoint.Y - _stashed.dragOffset.Y,
         };
-        _sendDraggedTabToWindow(winrt::hstring{ L"-1" }, 0, adjusted);
+        _sendDraggedTabsToWindow(winrt::hstring{ L"-1" }, 0, adjusted);
     }
 
-    void TerminalPage::_sendDraggedTabToWindow(const winrt::hstring& windowId,
-                                               const uint32_t tabIndex,
-                                               std::optional<winrt::Windows::Foundation::Point> dragPoint)
+    void TerminalPage::_sendDraggedTabsToWindow(const winrt::hstring& windowId,
+                                                const uint32_t tabIndex,
+                                                std::optional<winrt::Windows::Foundation::Point> dragPoint)
     {
-        auto startupActions = _stashed.draggedTab->BuildStartupActions(BuildStartupKind::Content);
-        _DetachTabFromWindow(_stashed.draggedTab);
+        if (_stashed.draggedTabs.empty())
+        {
+            return;
+        }
+
+        auto draggedTabs = _stashed.draggedTabs;
+        auto startupActions = _BuildStartupActionsForTabs(draggedTabs);
+        if (dragPoint.has_value() && draggedTabs.size() > 1 && _stashed.dragAnchor)
+        {
+            const auto draggedAnchorIt = std::ranges::find_if(draggedTabs, [&](const auto& tab) {
+                return tab == _stashed.dragAnchor;
+            });
+            if (draggedAnchorIt != draggedTabs.end())
+            {
+                ActionAndArgs switchToTabAction{};
+                switchToTabAction.Action(ShortcutAction::SwitchToTab);
+                switchToTabAction.Args(SwitchToTabArgs{ gsl::narrow_cast<uint32_t>(std::distance(draggedTabs.begin(), draggedAnchorIt)) });
+                startupActions.emplace_back(std::move(switchToTabAction));
+            }
+        }
+
+        for (const auto& tab : draggedTabs)
+        {
+            if (const auto tabImpl{ _GetTabImpl(tab) })
+            {
+                _DetachTabFromWindow(tabImpl);
+            }
+        }
 
         _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);
-        // _RemoveTab will make sure to null out the _stashed.draggedTab
-        _RemoveTab(*_stashed.draggedTab);
+
+        for (auto it = draggedTabs.rbegin(); it != draggedTabs.rend(); ++it)
+        {
+            _RemoveTab(*it);
+        }
     }
 
     /// <summary>

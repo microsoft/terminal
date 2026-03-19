@@ -10,6 +10,7 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
+#include "TabDragDropHelpers.h"
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/til/string.h"
@@ -453,9 +454,18 @@ namespace winrt::TerminalApp::implementation
             _settingsTab = nullptr;
         }
 
-        if (_stashed.draggedTab && *_stashed.draggedTab == tab)
+        _RemoveSelectedTab(tab);
+
+        if (!_stashed.draggedTabs.empty())
         {
-            _stashed.draggedTab = nullptr;
+            std::erase_if(_stashed.draggedTabs, [&](const auto& draggedTab) {
+                return draggedTab == tab;
+            });
+
+            if (_stashed.dragAnchor == tab)
+            {
+                _stashed.dragAnchor = nullptr;
+            }
         }
 
         _tabs.RemoveAt(tabIndex);
@@ -897,6 +907,13 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
     {
+        const auto tab = _GetTabByTabViewItem(sender);
+        if (tab &&
+            e.GetCurrentPoint(nullptr).Properties().IsLeftButtonPressed())
+        {
+            _UpdateSelectionFromPointer(tab);
+        }
+
         if (!_tabItemMiddleClickHookEnabled || !e.GetCurrentPoint(nullptr).Properties().IsMiddleButtonPressed())
         {
             return;
@@ -1039,6 +1056,10 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto tab{ _tabs.GetAt(selectedIndex) };
                 _UpdatedSelectedTab(tab);
+                if (_selectedTabs.empty() && _TabSupportsMultiSelection(tab))
+                {
+                    _SetSelectedTabs({ tab }, tab);
+                }
             }
         }
     }
@@ -1077,6 +1098,258 @@ namespace winrt::TerminalApp::implementation
                 _mruTabs.InsertAt(0, tab);
             }
         }
+    }
+
+    bool TerminalPage::_TabSupportsMultiSelection(const winrt::TerminalApp::Tab& tab) const noexcept
+    {
+        return tab && _GetTabImpl(tab) != nullptr;
+    }
+
+    bool TerminalPage::_IsTabSelected(const winrt::TerminalApp::Tab& tab) const noexcept
+    {
+        return std::ranges::any_of(_selectedTabs, [&](const auto& selectedTab) {
+            return selectedTab == tab;
+        });
+    }
+
+    void TerminalPage::_ApplyMultiSelectionVisuals()
+    {
+        for (const auto& tab : _tabs)
+        {
+            if (const auto tabImpl{ _GetTabImpl(tab) })
+            {
+                tabImpl->SetMultiSelected(_IsTabSelected(tab));
+            }
+        }
+    }
+
+    void TerminalPage::_SetSelectedTabs(std::vector<winrt::TerminalApp::Tab> tabs, const winrt::TerminalApp::Tab& anchor)
+    {
+        std::vector<winrt::TerminalApp::Tab> sanitizedTabs{};
+        sanitizedTabs.reserve(tabs.size());
+
+        for (const auto& tab : tabs)
+        {
+            if (_TabSupportsMultiSelection(tab) &&
+                !std::ranges::any_of(sanitizedTabs, [&](const auto& existingTab) { return existingTab == tab; }))
+            {
+                sanitizedTabs.emplace_back(tab);
+            }
+        }
+
+        _selectedTabs = std::move(sanitizedTabs);
+        if (_TabSupportsMultiSelection(anchor))
+        {
+            _selectionAnchor = anchor;
+        }
+        else if (_selectedTabs.empty())
+        {
+            _selectionAnchor = nullptr;
+        }
+        else if (!_TabSupportsMultiSelection(_selectionAnchor) || !_IsTabSelected(_selectionAnchor))
+        {
+            _selectionAnchor = _selectedTabs.front();
+        }
+
+        _ApplyMultiSelectionVisuals();
+    }
+
+    void TerminalPage::_RemoveSelectedTab(const winrt::TerminalApp::Tab& tab)
+    {
+        auto eraseIt = std::remove_if(_selectedTabs.begin(), _selectedTabs.end(), [&](const auto& selectedTab) {
+            return selectedTab == tab;
+        });
+        if (eraseIt != _selectedTabs.end())
+        {
+            _selectedTabs.erase(eraseIt, _selectedTabs.end());
+        }
+
+        if (_selectionAnchor == tab)
+        {
+            _selectionAnchor = !_selectedTabs.empty() ? _selectedTabs.front() : nullptr;
+        }
+
+        _ApplyMultiSelectionVisuals();
+    }
+
+    std::vector<winrt::TerminalApp::Tab> TerminalPage::_GetSelectedTabsInDisplayOrder() const
+    {
+        std::vector<winrt::TerminalApp::Tab> selectedTabs{};
+        selectedTabs.reserve(_selectedTabs.size());
+
+        for (const auto& tab : _tabs)
+        {
+            if (_IsTabSelected(tab))
+            {
+                selectedTabs.emplace_back(tab);
+            }
+        }
+
+        return selectedTabs;
+    }
+
+    std::vector<winrt::TerminalApp::Tab> TerminalPage::_GetTabRange(const winrt::TerminalApp::Tab& start, const winrt::TerminalApp::Tab& end) const
+    {
+        std::vector<winrt::TerminalApp::Tab> tabs{};
+        const auto startIndex = _GetTabIndex(start);
+        const auto endIndex = _GetTabIndex(end);
+        if (!startIndex.has_value() || !endIndex.has_value())
+        {
+            return tabs;
+        }
+
+        const auto first = std::min(startIndex.value(), endIndex.value());
+        const auto last = std::max(startIndex.value(), endIndex.value());
+        tabs.reserve(last - first + 1);
+
+        for (auto i = first; i <= last; ++i)
+        {
+            const auto tab = _tabs.GetAt(i);
+            if (_TabSupportsMultiSelection(tab))
+            {
+                tabs.emplace_back(tab);
+            }
+        }
+
+        return tabs;
+    }
+
+    void TerminalPage::_UpdateSelectionFromPointer(const winrt::TerminalApp::Tab& tab)
+    {
+        const bool ctrlPressed = WI_IsFlagSet(static_cast<uint16_t>(GetKeyState(VK_CONTROL)), 0x8000);
+        const bool shiftPressed = WI_IsFlagSet(static_cast<uint16_t>(GetKeyState(VK_SHIFT)), 0x8000);
+
+        if (!_TabSupportsMultiSelection(tab))
+        {
+            _SetSelectedTabs({}, nullptr);
+            return;
+        }
+
+        if (shiftPressed)
+        {
+            const auto anchor = _TabSupportsMultiSelection(_selectionAnchor) ?
+                                    _selectionAnchor :
+                                    (_TabSupportsMultiSelection(_GetFocusedTab()) ? _GetFocusedTab() : tab);
+            auto range = _GetTabRange(anchor, tab);
+            if (range.empty())
+            {
+                range.emplace_back(tab);
+            }
+            _SetSelectedTabs(std::move(range), anchor);
+            return;
+        }
+
+        if (ctrlPressed)
+        {
+            auto tabs = _GetSelectedTabsInDisplayOrder();
+            const auto selected = _IsTabSelected(tab);
+            if (selected)
+            {
+                if (tabs.size() > 1)
+                {
+                    std::erase_if(tabs, [&](const auto& selectedTab) { return selectedTab == tab; });
+                }
+            }
+            else
+            {
+                tabs.emplace_back(tab);
+            }
+            _SetSelectedTabs(std::move(tabs), tab);
+            return;
+        }
+
+        if (!_IsTabSelected(tab) || _selectedTabs.size() <= 1)
+        {
+            _SetSelectedTabs({ tab }, tab);
+        }
+        else
+        {
+            _selectionAnchor = tab;
+        }
+    }
+
+    void TerminalPage::_MoveTabsToIndex(const std::vector<winrt::TerminalApp::Tab>& tabs, const uint32_t suggestedNewTabIndex)
+    {
+        if (tabs.empty() || _tabs.Size() == 0)
+        {
+            return;
+        }
+
+        auto orderedTabs = tabs;
+        std::ranges::sort(orderedTabs, [&](const auto& lhs, const auto& rhs) {
+            return _GetTabIndex(lhs).value_or(0) < _GetTabIndex(rhs).value_or(0);
+        });
+
+        std::vector<uint32_t> indices{};
+        indices.reserve(orderedTabs.size());
+        for (const auto& tab : orderedTabs)
+        {
+            if (const auto currentIndex = _GetTabIndex(tab))
+            {
+                indices.emplace_back(*currentIndex);
+            }
+        }
+
+        if (indices.empty())
+        {
+            return;
+        }
+
+        const auto insertIndex = ::TerminalApp::TabDragDrop::ComputeAdjustedInsertIndex(suggestedNewTabIndex, _tabs.Size(), indices);
+        if (::TerminalApp::TabDragDrop::IsNoOpMove(indices, insertIndex))
+        {
+            _tabView.SelectedItem(orderedTabs.front().TabViewItem());
+            return;
+        }
+
+        std::vector<winrt::Microsoft::UI::Xaml::Controls::TabViewItem> tabItems{};
+        tabItems.reserve(orderedTabs.size());
+        for (const auto& tab : orderedTabs)
+        {
+            tabItems.emplace_back(tab.TabViewItem());
+        }
+
+        for (auto it = indices.rbegin(); it != indices.rend(); ++it)
+        {
+            _tabs.RemoveAt(*it);
+            _tabView.TabItems().RemoveAt(*it);
+        }
+
+        for (uint32_t i = 0; i < orderedTabs.size(); ++i)
+        {
+            _tabs.InsertAt(insertIndex + i, orderedTabs[i]);
+            _tabView.TabItems().InsertAt(insertIndex + i, tabItems[i]);
+        }
+
+        _UpdateTabIndices();
+        _tabView.SelectedItem(orderedTabs.front().TabViewItem());
+    }
+
+    std::vector<winrt::TerminalApp::Tab> TerminalPage::_CollectNewTabs(const std::vector<winrt::TerminalApp::Tab>& existingTabs) const
+    {
+        std::vector<winrt::TerminalApp::Tab> newTabs{};
+        for (const auto& tab : _tabs)
+        {
+            if (!std::ranges::any_of(existingTabs, [&](const auto& existingTab) { return existingTab == tab; }))
+            {
+                newTabs.emplace_back(tab);
+            }
+        }
+        return newTabs;
+    }
+
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> TerminalPage::_BuildStartupActionsForTabs(const std::vector<winrt::TerminalApp::Tab>& tabs) const
+    {
+        std::vector<ActionAndArgs> actions{};
+        for (const auto& tab : tabs)
+        {
+            if (const auto tabImpl{ _GetTabImpl(tab) })
+            {
+                auto tabActions = tabImpl->BuildStartupActions(BuildStartupKind::Content);
+                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
+            }
+        }
+        return actions;
     }
 
     // Method Description:
@@ -1141,6 +1414,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         _rearranging = false;
+        _stashed.draggedTabs.clear();
+        _stashed.dragAnchor = nullptr;
 
         if (to.has_value() &&
             *to < gsl::narrow_cast<int32_t>(TabRow().TabView().TabItems().Size()))

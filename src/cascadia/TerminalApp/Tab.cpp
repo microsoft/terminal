@@ -502,6 +502,33 @@ namespace winrt::TerminalApp::implementation
         _UpdateToolTip();
     }
 
+    void Tab::SetMultiSelected(const bool multiSelected)
+    {
+        ASSERT_UI_THREAD();
+        _multiSelected = multiSelected;
+
+        if (multiSelected)
+        {
+            auto accentBrush = TabViewItem().Resources().TryLookup(box_value(L"SystemControlForegroundAccentBrush")).try_as<Media::Brush>();
+            if (!accentBrush)
+            {
+                accentBrush = Media::SolidColorBrush{ winrt::Windows::UI::Colors::DodgerBlue() };
+            }
+            TabViewItem().BorderBrush(accentBrush);
+            TabViewItem().BorderThickness(ThicknessHelper::FromUniformLength(1.0));
+        }
+        else
+        {
+            TabViewItem().BorderBrush(nullptr);
+            TabViewItem().BorderThickness(ThicknessHelper::FromUniformLength(0.0));
+        }
+    }
+
+    bool Tab::IsMultiSelected() const noexcept
+    {
+        return _multiSelected;
+    }
+
     // Method Description:
     // - Move the viewport of the terminal up or down a number of lines. Negative
     //      values of `delta` will move the view up, and positive values will move

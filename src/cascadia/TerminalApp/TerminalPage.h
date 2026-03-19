@@ -249,6 +249,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom{};
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
+        std::vector<winrt::TerminalApp::Tab> _selectedTabs{};
+        winrt::TerminalApp::Tab _selectionAnchor{ nullptr };
 
         bool _activated{ false };
         bool _visible{ true };
@@ -287,7 +289,8 @@ namespace winrt::TerminalApp::implementation
 
         struct StashedDragData
         {
-            winrt::com_ptr<winrt::TerminalApp::implementation::Tab> draggedTab{ nullptr };
+            std::vector<winrt::TerminalApp::Tab> draggedTabs{};
+            winrt::TerminalApp::Tab dragAnchor{ nullptr };
             winrt::Windows::Foundation::Point dragOffset{ 0, 0 };
         } _stashed;
 
@@ -495,6 +498,17 @@ namespace winrt::TerminalApp::implementation
         static uint32_t _ReadSystemRowsToScroll();
 
         void _UpdateMRUTab(const winrt::TerminalApp::Tab& tab);
+        bool _TabSupportsMultiSelection(const winrt::TerminalApp::Tab& tab) const noexcept;
+        bool _IsTabSelected(const winrt::TerminalApp::Tab& tab) const noexcept;
+        void _SetSelectedTabs(std::vector<winrt::TerminalApp::Tab> tabs, const winrt::TerminalApp::Tab& anchor = nullptr);
+        void _RemoveSelectedTab(const winrt::TerminalApp::Tab& tab);
+        std::vector<winrt::TerminalApp::Tab> _GetSelectedTabsInDisplayOrder() const;
+        std::vector<winrt::TerminalApp::Tab> _GetTabRange(const winrt::TerminalApp::Tab& start, const winrt::TerminalApp::Tab& end) const;
+        void _ApplyMultiSelectionVisuals();
+        void _UpdateSelectionFromPointer(const winrt::TerminalApp::Tab& tab);
+        void _MoveTabsToIndex(const std::vector<winrt::TerminalApp::Tab>& tabs, uint32_t suggestedNewTabIndex);
+        std::vector<winrt::TerminalApp::Tab> _CollectNewTabs(const std::vector<winrt::TerminalApp::Tab>& existingTabs) const;
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _BuildStartupActionsForTabs(const std::vector<winrt::TerminalApp::Tab>& tabs) const;
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
 
@@ -558,7 +572,7 @@ namespace winrt::TerminalApp::implementation
                           const winrt::hstring& windowName,
                           const uint32_t tabIndex,
                           const std::optional<winrt::Windows::Foundation::Point>& dragPoint = std::nullopt);
-        void _sendDraggedTabToWindow(const winrt::hstring& windowId, const uint32_t tabIndex, std::optional<winrt::Windows::Foundation::Point> dragPoint);
+        void _sendDraggedTabsToWindow(const winrt::hstring& windowId, const uint32_t tabIndex, std::optional<winrt::Windows::Foundation::Point> dragPoint);
 
         void _PopulateContextMenu(const Microsoft::Terminal::Control::TermControl& control, const Microsoft::UI::Xaml::Controls::CommandBarFlyout& sender, const bool withSelection);
         void _PopulateQuickFixMenu(const Microsoft::Terminal::Control::TermControl& control, const Windows::UI::Xaml::Controls::MenuFlyout& sender);
