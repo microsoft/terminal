@@ -46,6 +46,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool isMainBuffer;
         };
 
+        virtual bool IsConPTY() const noexcept = 0;
         virtual StateMachine& GetStateMachine() = 0;
         virtual BufferState GetBufferAndViewport() = 0;
         virtual void SetViewportPosition(const til::point position) = 0;
