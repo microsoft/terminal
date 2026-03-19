@@ -377,7 +377,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // visual tree is ready and control templates are applied
         const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
         const auto hasThemeForSettings{ theme.Settings() != nullptr };
-        const auto& requestedTheme = hasThemeForSettings ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
+        const auto requestedTheme = hasThemeForSettings ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
         _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
     }
 
@@ -1127,10 +1127,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-        const bool hasThemeForSettings{ theme.Settings() != nullptr };
-        const auto& appTheme = theme.RequestedTheme();
-        const auto& requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto hasThemeForSettings{ theme.Settings() != nullptr };
+        const auto appTheme = theme.RequestedTheme();
+        const auto requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
 
         RequestedTheme(requestedTheme);
 
