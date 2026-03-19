@@ -219,6 +219,17 @@ til::CoordType TextBuffer::_estimateOffsetOfLastCommittedRow() const noexcept
     return std::max(0, gsl::narrow_cast<til::CoordType>(lastRowOffset - 2));
 }
 
+bool TextBuffer::_isRowCommitted(til::CoordType y) const noexcept
+{
+    auto offset = (_firstRow + y + 1 /* account for the scratch row */) % _height;
+    if (offset < 0)
+    {
+        offset += _height;
+    }
+    const auto row = _buffer.get() + _bufferRowStride * offset;
+    return row < _commitWatermark;
+}
+
 // Retrieves a row from the buffer by its offset from the first row of the text buffer
 // (what corresponds to the top row of the screen buffer).
 const ROW& TextBuffer::GetRowByOffset(const til::CoordType index) const
@@ -934,6 +945,10 @@ void TextBuffer::ResetLineRenditionRange(const til::CoordType startRow, const ti
 
 LineRendition TextBuffer::GetLineRendition(const til::CoordType row) const
 {
+    if (!_isRowCommitted(row)) [[unlikely]]
+    {
+        return LineRendition::SingleWidth;
+    }
     return GetRowByOffset(row).GetLineRendition();
 }
 
@@ -3511,4 +3526,35 @@ void TextBuffer::ManuallyMarkRowAsPrompt(til::CoordType y)
     {
         attr.SetMarkAttributes(MarkKind::Prompt);
     }
+}
+
+// This is an optimization used by the renderer to avoid scheduling a timer if not necessary;
+// unlike the renderer, we know the committed range of our own buffer.
+bool TextBuffer::ContainsBlinkAttributeInRegion(const Microsoft::Console::Types::Viewport& region) const
+{
+    const auto top = region.Top();
+    auto bottom = std::min(region.BottomInclusive(), _estimateOffsetOfLastCommittedRow());
+
+    for (auto row = top; row < bottom; ++row)
+    {
+        const auto& r = GetRowByOffset(row);
+        for (const auto& attr : r.Attributes())
+        {
+            if (attr.IsBlinking())
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool TextBuffer::IsGlyphDoubleWidthAt(const til::point at) const
+{
+    if (!_isRowCommitted(at.y)) [[unlikely]]
+    {
+        return false;
+    }
+    return _getRow(at.y).DbcsAttrAt(at.x) != DbcsAttribute::Single;
 }
