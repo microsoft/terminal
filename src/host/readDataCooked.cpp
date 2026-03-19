@@ -1313,7 +1313,7 @@ COOKED_READ_DATA::LayoutResult COOKED_READ_DATA::_layoutLine(std::wstring& outpu
             til::CoordType cols = 0;
             const auto len = textBuffer.FitTextIntoColumns(text, columnLimit - column, cols);
 
-            // GH#19922: We need to account for terminals that are just 1 column wide, otherwise we may deadlock.
+            // GH#19922: We need to account for terminals that are just 1 column wide, as we may deadlock otherwise.
             // `columnLimit - column == 1` will then prevent `FitTextIntoColumns` from fitting any wide glyphs.
             // We can detect this by checking for `len == 0`, skip the offending glyph and break out of the deadlock.
             if (len == 0) [[unlikely]]
