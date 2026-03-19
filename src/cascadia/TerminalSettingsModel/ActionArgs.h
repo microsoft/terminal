@@ -46,6 +46,7 @@
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
 #include "ExportBufferArgs.g.h"
+#include "OpenCastFileArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 #include "AdjustOpacityArgs.g.h"
@@ -264,6 +265,10 @@ protected:                                                                  \
 
 ////////////////////////////////////////////////////////////////////////////////
 #define EXPORT_BUFFER_ARGS(X) \
+    X(winrt::hstring, Path, "path", false, ArgTypeHint::FilePath, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define OPEN_CAST_FILE_ARGS(X) \
     X(winrt::hstring, Path, "path", false, ArgTypeHint::FilePath, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -964,6 +969,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(ExportBufferArgs, EXPORT_BUFFER_ARGS);
 
+    ACTION_ARGS_STRUCT(OpenCastFileArgs, OPEN_CAST_FILE_ARGS);
+
     ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS);
 
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
@@ -1072,6 +1079,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(PrevTabArgs);
     BASIC_FACTORY(NextTabArgs);
     BASIC_FACTORY(ExportBufferArgs);
+    BASIC_FACTORY(OpenCastFileArgs);
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
     BASIC_FACTORY(AdjustOpacityArgs);

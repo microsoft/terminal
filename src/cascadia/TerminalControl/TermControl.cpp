@@ -930,6 +930,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ToggleShaderEffects();
     }
 
+    void TermControl::StartRecording(const winrt::hstring& filePath)
+    {
+        _core.StartRecording(filePath);
+        RecordingChanged.raise(*this, nullptr);
+    }
+
+    void TermControl::StopRecording()
+    {
+        _core.StopRecording();
+        RecordingChanged.raise(*this, nullptr);
+    }
+
+    bool TermControl::IsRecording() const noexcept
+    {
+        return _core.IsRecording();
+    }
+
+    void TermControl::MarkRecording()
+    {
+        _core.MarkRecording();
+    }
+
     // Method Description:
     // - Style our UI elements based on the values in our settings, and set up
     //   other control-specific settings. This method will be called whenever
@@ -1401,6 +1423,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             else
             {
                 _core.Connection().Start();
+
+                // Show playback bar for asciicast connections.
+                if (const auto castConn = _core.Connection().try_as<TerminalConnection::AsciicastConnection>())
+                {
+                    if (auto bar = PlaybackBarControl())
+                    {
+                        bar.Show(castConn);
+                    }
+                }
             }
         }
         else

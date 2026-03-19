@@ -10,6 +10,8 @@
 #include "../../types/inc/utils.hpp"
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "Utils.h"
+#include <Utils.h>
+#include <ShlObj_core.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -1631,6 +1633,185 @@ namespace winrt::TerminalApp::implementation
         {
             const auto handled = control.OpenQuickFixMenu();
             args.Handled(handled);
+        }
+    }
+
+    void TerminalPage::_HandleToggleRecording(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            if (control.IsRecording())
+            {
+                // Stop recording.
+                control.StopRecording();
+            }
+            else
+            {
+                // Show save dialog and start recording.
+                _toggleRecordingHelper();
+            }
+        }
+        args.Handled(true);
+    }
+
+    safe_void_coroutine TerminalPage::_toggleRecordingHelper()
+    {
+        auto strongThis{ get_strong() };
+
+        if (!_hostingHwnd.has_value())
+        {
+            co_return;
+        }
+
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Asciicast Files (*.cast)", L"*.cast" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+        static constexpr winrt::guid clientGuidRecordFile{ 0x8C4B9E2A, 0x3D5F, 0x4B6A, { 0xC7, 0x1A, 0xE2, 0xF4, 0xB3, 0xD5, 0xA9, 0x6C } };
+
+        // Default filename with timestamp.
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        wchar_t defaultName[64];
+        swprintf_s(defaultName, L"recording_%04d%02d%02d_%02d%02d%02d.cast", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+
+        winrt::hstring path;
+        try
+        {
+            path = co_await SaveFilePicker(*_hostingHwnd, [&defaultName](auto&& dialog) {
+                THROW_IF_FAILED(dialog->SetClientGuid(clientGuidRecordFile));
+                try
+                {
+                    auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Desktop, KF_FLAG_DEFAULT, nullptr) };
+                    dialog->SetDefaultFolder(folderShellItem.get());
+                }
+                CATCH_LOG(); // non-fatal
+                THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                THROW_IF_FAILED(dialog->SetFileTypeIndex(1));
+                THROW_IF_FAILED(dialog->SetDefaultExtension(L"cast"));
+                THROW_IF_FAILED(dialog->SetFileName(defaultName));
+            });
+        }
+        CATCH_LOG();
+
+        if (path.empty())
+        {
+            co_return;
+        }
+
+        if (const auto& control{ _GetActiveControl() })
+        {
+            control.StartRecording(path);
+        }
+    }
+
+    void TerminalPage::_HandleOpenCastFile(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        winrt::hstring path;
+        if (args && args.ActionArgs())
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<OpenCastFileArgs>())
+            {
+                path = realArgs.Path();
+            }
+        }
+        _openCastFileHelper(path);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleMarkRecording(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (const auto& control{ _GetActiveControl() })
+        {
+            if (control.IsRecording())
+            {
+                control.MarkRecording();
+            }
+        }
+        args.Handled(true);
+    }
+
+    safe_void_coroutine TerminalPage::_openCastFileHelper(winrt::hstring pathArg)
+    {
+        auto strongThis{ get_strong() };
+
+        if (!_hostingHwnd.has_value())
+        {
+            co_return;
+        }
+
+        winrt::hstring path = pathArg;
+
+        if (path.empty())
+        {
+            static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+                { L"Asciicast Files (*.cast)", L"*.cast" },
+                { L"All Files (*.*)", L"*.*" }
+            };
+            static constexpr winrt::guid clientGuidCastFile{ 0x7B3A8E1F, 0x2C4D, 0x4A5E, { 0xB6, 0x09, 0xD1, 0xF3, 0xA2, 0xE4, 0xC8, 0x5B } };
+
+            try
+            {
+                path = co_await OpenFilePicker(*_hostingHwnd, [](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidCastFile));
+                    try
+                    {
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Desktop, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1));
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"cast"));
+                });
+            }
+            CATCH_LOG();
+
+            if (path.empty())
+            {
+                co_return;
+            }
+        }
+
+        // When autoResizeForPlayback is on and no path arg, open in a new window.
+        // A dedicated window has 1 tab + 1 pane so XTWINOPS resize works.
+        if (pathArg.empty() && _settings.GlobalSettings().AutoResizeForPlayback())
+        {
+            ActionAndArgs openAction{};
+            openAction.Action(ShortcutAction::OpenCastFile);
+            openAction.Args(OpenCastFileArgs{ path });
+
+            std::vector<ActionAndArgs> actions;
+            actions.push_back(std::move(openAction));
+            _MoveContent(std::move(actions), L"new", 0);
+            co_return;
+        }
+
+        // Create the playback tab in this window.
+        TerminalConnection::AsciicastConnection connection;
+        Windows::Foundation::Collections::ValueSet settings;
+        settings.Insert(L"CastFilePath", Windows::Foundation::PropertyValue::CreateString(path));
+        settings.Insert(L"AutoResizeForPlayback", Windows::Foundation::PropertyValue::CreateBoolean(_settings.GlobalSettings().AutoResizeForPlayback()));
+        connection.Initialize(settings);
+
+        NewTerminalArgs newTerminalArgs;
+        newTerminalArgs.TabTitle(path);
+        newTerminalArgs.Elevate(false);
+
+        const auto newPane = _MakePane(newTerminalArgs, nullptr, std::move(connection));
+        if (newPane)
+        {
+            newPane->WalkTree([](const auto& pane) {
+                pane->FinalizeConfigurationGivenDefault();
+            });
+            const auto newTab = _CreateNewTabFromPane(newPane);
+            if (newTab)
+            {
+                newTab.TabStatus().IsPlaybackActive(true);
+            }
         }
     }
 }

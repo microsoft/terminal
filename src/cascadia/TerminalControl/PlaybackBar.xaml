@@ -1,0 +1,129 @@
+<UserControl x:Class="Microsoft.Terminal.Control.PlaybackBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             x:Name="Root"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Bottom"
+             Visibility="Collapsed"
+             mc:Ignorable="d">
+
+    <Grid>
+        <!-- Invisible hover detection area at the bottom -->
+        <Border x:Name="HoverZone"
+                Height="60"
+                VerticalAlignment="Bottom"
+                Background="Transparent"
+                PointerEntered="OnPointerEnteredBar"
+                PointerExited="OnPointerExitedBar" />
+
+        <!-- The actual playback bar -->
+        <Grid x:Name="BarPanel"
+              Margin="8"
+              Padding="8,6"
+              VerticalAlignment="Bottom"
+              Background="{ThemeResource FlyoutPresenterBackground}"
+              BorderBrush="{ThemeResource FlyoutBorderThemeBrush}"
+              BorderThickness="{ThemeResource FlyoutBorderThemeThickness}"
+              CornerRadius="{ThemeResource OverlayCornerRadius}"
+              Opacity="0"
+              PointerEntered="OnPointerEnteredBar"
+              PointerExited="OnPointerExitedBar">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Restart button -->
+            <Button x:Name="RestartButton"
+                    Grid.Column="0"
+                    Width="32"
+                    Height="32"
+                    Margin="0,0,4,0"
+                    Padding="0"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="OnRestartClicked"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    FontSize="14"
+                    Content="&#xE72C;"
+                    ToolTipService.ToolTip="Restart" />
+
+            <!-- Play/Pause button -->
+            <Button x:Name="PlayPauseButton"
+                    Grid.Column="1"
+                    Width="32"
+                    Height="32"
+                    Margin="0,0,4,0"
+                    Padding="0"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="OnPlayPauseClicked"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    FontSize="14"
+                    Content="&#xE769;"
+                    ToolTipService.ToolTip="Pause" />
+
+            <!-- Speed button -->
+            <Button x:Name="SpeedButton"
+                    Grid.Column="2"
+                    Height="32"
+                    MinWidth="40"
+                    Margin="0,0,8,0"
+                    Padding="4,0"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    FontSize="12"
+                    Content="1x">
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem Text="0.5x" Click="OnSpeedClicked" Tag="0.5" />
+                        <MenuFlyoutItem Text="1x" Click="OnSpeedClicked" Tag="1" />
+                        <MenuFlyoutItem Text="2x" Click="OnSpeedClicked" Tag="2" />
+                        <MenuFlyoutItem Text="4x" Click="OnSpeedClicked" Tag="4" />
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+
+            <!-- Timeline slider -->
+            <Slider x:Name="TimelineSlider"
+                    Grid.Column="3"
+                    VerticalAlignment="Center"
+                    Margin="0,0,8,0"
+                    Minimum="0"
+                    Maximum="100"
+                    Value="0"
+                    PointerPressed="OnSliderPressed"
+                    PointerReleased="OnSliderReleased"
+                    PointerCaptureLost="OnSliderReleased" />
+
+            <!-- Time display -->
+            <TextBlock x:Name="TimeDisplay"
+                       Grid.Column="4"
+                       VerticalAlignment="Center"
+                       Margin="0,0,4,0"
+                       FontSize="12"
+                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                       Text="0:00 / 0:00" />
+
+            <!-- Close button -->
+            <Button x:Name="CloseButton"
+                    Grid.Column="5"
+                    Width="32"
+                    Height="32"
+                    Padding="0"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="OnCloseClicked"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    FontSize="12"
+                    Content="&#xE711;"
+                    ToolTipService.ToolTip="Close" />
+        </Grid>
+    </Grid>
+</UserControl>

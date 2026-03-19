@@ -45,6 +45,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TabColorChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TaskbarProgressChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, Object> RecordingChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> FocusRequested;
     };
 

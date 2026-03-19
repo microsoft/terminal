@@ -161,6 +161,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::TogglePaneReadOnly, USES_RESOURCE(L"TogglePaneReadOnlyCommandKey") },
                 { ShortcutAction::TogglePaneZoom, USES_RESOURCE(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::ToggleShaderEffects, USES_RESOURCE(L"ToggleShaderEffectsCommandKey") },
+                { ShortcutAction::ToggleRecording, USES_RESOURCE(L"ToggleRecordingCommandKey") },
+                { ShortcutAction::OpenCastFile, USES_RESOURCE(L"OpenCastFileCommandKey") },
+                { ShortcutAction::MarkRecording, USES_RESOURCE(L"MarkRecordingCommandKey") },
                 { ShortcutAction::ToggleSplitOrientation, USES_RESOURCE(L"ToggleSplitOrientationCommandKey") },
             };
         }();

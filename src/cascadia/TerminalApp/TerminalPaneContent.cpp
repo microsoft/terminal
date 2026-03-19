@@ -41,6 +41,7 @@ namespace winrt::TerminalApp::implementation
         _controlEvents._TabColorChanged = _control.TabColorChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlTabColorChanged });
         _controlEvents._SetTaskbarProgress = _control.SetTaskbarProgress(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlSetTaskbarProgress });
         _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlReadOnlyChanged });
+        _controlEvents._RecordingChanged = _control.RecordingChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlRecordingChanged });
         _controlEvents._FocusFollowMouseRequested = _control.FocusFollowMouseRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlFocusFollowMouseRequested });
     }
     void TerminalPaneContent::_removeControlEvents()
@@ -176,6 +177,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_controlReadOnlyChanged(const IInspectable&, const IInspectable&)
     {
         ReadOnlyChanged.raise(*this, nullptr);
+    }
+    void TerminalPaneContent::_controlRecordingChanged(const IInspectable&, const IInspectable&)
+    {
+        RecordingChanged.raise(*this, nullptr);
     }
     void TerminalPaneContent::_controlFocusFollowMouseRequested(const IInspectable&, const IInspectable&)
     {
