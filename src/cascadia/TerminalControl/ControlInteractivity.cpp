@@ -54,6 +54,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 self->Attached.raise(*self, nullptr);
             }
         });
+
+        // GH#14464: Mark mode and quick-edit (shift+arrow) selections update
+        // the selection through ControlCore, bypassing SetEndSelectionPoint.
+        // Listen for selection changes so _selectionNeedsToBeCopied is set
+        // for ALL selection types, not just mouse drag.
+        _core->UpdateSelectionMarkers([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakThis.get() })
+            {
+                if (self->_core->HasSelection())
+                {
+                    self->_selectionNeedsToBeCopied = true;
+                }
+            }
+        });
     }
 
     uint64_t ControlInteractivity::Id()
@@ -323,13 +337,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else
             {
-                // Try to copy the text and clear the selection
-                const auto successfulCopy = CopySelectionToClipboard(shiftEnabled, false, _core->Settings().CopyFormatting());
+                // GH#19942, GH#14464: Don't re-copy a selection that was
+                // already copied via copyOnSelect on mouse-up. But DO copy
+                // if the selection was made via mark mode or modified with
+                // quick-edit keys (shift+arrow), since those paths never
+                // triggered an automatic copy.
+                const auto copied = (_selectionNeedsToBeCopied || !_core->CopyOnSelect()) &&
+                                    CopySelectionToClipboard(shiftEnabled, false, _core->Settings().CopyFormatting());
                 _core->ClearSelection();
-                if (_core->CopyOnSelect() || !successfulCopy)
+                if (_core->CopyOnSelect() || !copied)
                 {
-                    // CopyOnSelect: right click always pastes!
-                    // Otherwise: no selection --> paste
+                    // CopyOnSelect: right-click always pastes.
+                    // Otherwise: no selection → paste.
                     RequestPasteTextFromClipboard();
                 }
             }
