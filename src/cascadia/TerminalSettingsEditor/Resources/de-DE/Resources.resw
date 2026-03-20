@@ -2598,7 +2598,7 @@
     <comment>Name for a control to select how file and directory paths are translated.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
-    <value>Steuert, wie Datei- und Verzeichnispfade bei Drag &amp;amp; Drop-Vorgängen übersetzt werden.</value>
+    <value>Steuert, wie Datei- und Verzeichnispfade bei Drag &amp; Drop-Vorgängen übersetzt werden.</value>
     <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
   </data>
   <data name="Profile_PathTranslationStyleNone.Content" xml:space="preserve">
