@@ -914,6 +914,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog to warn the user that they are about to close a tab with
+    //   multiple panes open. Once the user clicks the "Close tab" button, close the tab.
+    //   If "Cancel" is clicked, the dialog will close.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseTabWarningDialog()
+    {
+        return _ShowDialogHelper(L"CloseTabWarningDialog");
+    }
+
+    // Method Description:
     // - Displays a dialog to warn the user about the fact that the text that
     //   they are trying to paste contains the "new line" character which can
     //   have the effect of starting commands without the user's knowledge if
