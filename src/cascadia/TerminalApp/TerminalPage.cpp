@@ -907,6 +907,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog for warnings found while closing a tab that has
+    //   multiple panes or other conditions that warrant a warning.
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseTabWarningDialog()
+    {
+        return _ShowDialogHelper(L"CloseTabDialog");
+    }
+
+    // Method Description:
+    // - Displays a dialog for warnings found while closing a single pane
+    //   (e.g. when confirmCloseOn includes "always").
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowClosePaneWarningDialog()
+    {
+        return _ShowDialogHelper(L"ClosePaneDialog");
+    }
+
+    // Method Description:
     // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
     winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
     {
@@ -2308,12 +2324,84 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the terminal app. If there is more
-    //   than one tab opened, show a warning dialog.
+    // - Determines whether a close-window action should show a confirmation
+    //   dialog, based on the confirmCloseOn flags and the current window state.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if a warning dialog should be shown before closing the window.
+    bool TerminalPage::_ShouldWarnOnClose() const
+    {
+        const auto flags = _settings.GlobalSettings().ConfirmCloseOn();
+
+        // Always flag means warn unconditionally.
+        if (WI_IsFlagSet(flags, ConfirmCloseOn::Always))
+        {
+            return true;
+        }
+
+        // MultipleTabs: warn if there's more than one tab.
+        if (WI_IsFlagSet(flags, ConfirmCloseOn::MultipleTabs) && _HasMultipleTabs())
+        {
+            return true;
+        }
+
+        // MultiplePanes: warn if any tab has more than one pane.
+        if (WI_IsFlagSet(flags, ConfirmCloseOn::MultiplePanes))
+        {
+            for (const auto tab : _tabs)
+            {
+                if (const auto impl = _GetTabImpl(tab))
+                {
+                    if (impl->GetLeafPaneCount() > 1)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // TODO GH#6549: ConfirmCloseOn::MultipleProcesses
+        // Needs TermControl to expose whether >1 client process is connected.
+
+        return false;
+    }
+
+    // Method Description:
+    // - Determines whether closing a specific tab should show a confirmation
+    //   dialog, based on the confirmCloseOn flags and the tab's state.
+    // Arguments:
+    // - tab: The tab being closed.
+    // Return Value:
+    // - true if a warning dialog should be shown before closing the tab.
+    bool TerminalPage::_ShouldWarnOnCloseTab(const winrt::com_ptr<Tab>& tab) const
+    {
+        const auto flags = _settings.GlobalSettings().ConfirmCloseOn();
+
+        // Always flag means warn unconditionally.
+        if (WI_IsFlagSet(flags, ConfirmCloseOn::Always))
+        {
+            return true;
+        }
+
+        // MultiplePanes: warn if this tab has more than one pane.
+        if (WI_IsFlagSet(flags, ConfirmCloseOn::MultiplePanes) && tab->GetLeafPaneCount() > 1)
+        {
+            return true;
+        }
+
+        // TODO GH#6549: ConfirmCloseOn::MultipleProcesses
+        // Needs TermControl to expose whether >1 client process is connected.
+
+        return false;
+    }
+
+    // Method Description:
+    // - Close the terminal app. If the confirmCloseOn flags indicate we should
+    //   warn for the current window state, show a warning dialog.
     safe_void_coroutine TerminalPage::CloseWindow()
     {
-        if (_HasMultipleTabs() &&
-            _settings.GlobalSettings().ConfirmCloseAllTabs() &&
+        if (_ShouldWarnOnClose() &&
             !_displayingCloseDialog)
         {
             if (_newTabButton && _newTabButton.Flyout())
