@@ -420,6 +420,11 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
     return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
 }
 
+bool ConhostInternalGetSet::IsConhost() const
+{
+    return true;
+}
+
 // Routine Description:
 // - Implements conhost-specific behavior when the buffer is rotated.
 // Arguments:

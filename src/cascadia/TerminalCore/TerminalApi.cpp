@@ -352,6 +352,11 @@ bool Terminal::IsVtInputEnabled() const noexcept
     return false;
 }
 
+bool Terminal::IsConhost() const noexcept
+{
+    return false;
+}
+
 void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
 {
     if (_pfnCompletionsChanged)
