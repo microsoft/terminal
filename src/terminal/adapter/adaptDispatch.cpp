@@ -2073,6 +2073,13 @@ void AdaptDispatch::SetAnsiMode(const bool ansiMode)
 // CSI = flags ; mode u - Sets kitty keyboard protocol flags
 void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept
 {
+    // Avoid setting KKP flags in `_terminalInput` when we're ConPTY. Otherwise, we'd be translating
+    // W32IM to KKP, even when KKP is not supported by the hosting terminal (possibly intentionally).
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
     const auto KittyKeyboardProtocol = static_cast<TerminalInput::KittyKeyboardProtocolMode>(mode.value_or(1));
     _terminalInput.SetKittyKeyboardProtocol(kittyFlags, KittyKeyboardProtocol);
@@ -2081,6 +2088,11 @@ void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTPa
 // CSI ? u - Queries current kitty keyboard protocol flags
 void AdaptDispatch::QueryKittyKeyboardProtocol()
 {
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto flags = static_cast<VTInt>(_terminalInput.GetKittyFlags());
     _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"?{}u"), flags));
 }
@@ -2088,6 +2100,11 @@ void AdaptDispatch::QueryKittyKeyboardProtocol()
 // CSI > flags u - Pushes current kitty keyboard flags onto the stack and sets new flags
 void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
 {
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
     _terminalInput.PushKittyFlags(kittyFlags);
 }
@@ -2095,6 +2112,11 @@ void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
 // CSI < count u - Pops one or more entries from the kitty keyboard stack
 void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count)
 {
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto popCount = static_cast<size_t>(count.value_or(1));
     _terminalInput.PopKittyFlags(popCount);
 }

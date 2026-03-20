@@ -48,6 +48,12 @@ void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
     _io.GetActiveInputBuffer()->WriteString(response);
 }
 
+bool ConhostInternalGetSet::IsConPTY() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsInVtIoMode();
+}
+
 // Routine Description:
 // - Retrieves the state machine for the active output buffer.
 // Arguments:

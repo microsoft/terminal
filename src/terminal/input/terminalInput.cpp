@@ -228,7 +228,8 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     // GH#4999 - If we're in win32-input mode, skip straight to doing that.
     // Since this mode handles all types of key events, do nothing else.
     //
-    // The kitty keyboard protocol takes precedence, because it's cross-platform.
+    // ConPTY assumes that W32IM always remains enabled. We have to prefer
+    // the kitty keyboard protocol, because otherwise it would never be used.
     if (_inputMode.test(Mode::Win32) && !_forceDisableWin32InputMode && !_kittyFlags)
     {
         return _makeWin32Output(event.Event.KeyEvent);
