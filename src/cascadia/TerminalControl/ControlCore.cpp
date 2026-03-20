@@ -1028,6 +1028,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 .scheme = renderSettings.GetColorTable(),
                 .foregroundAlias = renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground),
                 .backgroundAlias = renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground),
+                .generatePalette = renderSettings.GetRenderMode(Render::RenderSettings::Mode::Generate256Colors),
             };
         }
         _terminal->UpdateColorScheme(scheme);
@@ -1047,6 +1048,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, stashedScheme.foregroundAlias);
             renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, stashedScheme.backgroundAlias);
+            renderSettings.SetRenderMode(Render::RenderSettings::Mode::Generate256Colors, stashedScheme.generatePalette);
             _renderer->TriggerRedrawAll(true);
         }
         _stashedColorScheme.reset();

@@ -230,21 +230,21 @@ namespace winrt::Microsoft::Terminal::Settings
             break;
         }
 
-        if (appearance.Foreground())
+        if (const auto v = appearance.Foreground())
         {
-            _DefaultForeground = til::color{ appearance.Foreground().Value() };
+            _DefaultForeground = til::color{ v.Value() };
         }
-        if (appearance.Background())
+        if (const auto v = appearance.Background())
         {
-            _DefaultBackground = til::color{ appearance.Background().Value() };
+            _DefaultBackground = til::color{ v.Value() };
         }
-        if (appearance.SelectionBackground())
+        if (const auto v = appearance.SelectionBackground())
         {
-            _SelectionBackground = til::color{ appearance.SelectionBackground().Value() };
+            _SelectionBackground = til::color{ v.Value() };
         }
-        if (appearance.CursorColor())
+        if (const auto v = appearance.CursorColor())
         {
-            _CursorColor = til::color{ appearance.CursorColor().Value() };
+            _CursorColor = til::color{ v.Value() };
         }
 
         if (const auto backgroundImage{ appearance.BackgroundImagePath() })
@@ -272,6 +272,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
         _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
+        _GeneratePalette = appearance.GeneratePalette();
         _Opacity = appearance.Opacity();
         _UseAcrylic = appearance.UseAcrylic();
     }
