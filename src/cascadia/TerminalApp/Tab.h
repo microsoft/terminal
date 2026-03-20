@@ -73,6 +73,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> GetTabColor();
         void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
         void ResetRuntimeTabColor();
+        uint32_t NextPaneId() const noexcept { return _nextPaneId; }
 
         void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
