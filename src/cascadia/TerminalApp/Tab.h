@@ -223,7 +223,7 @@ namespace winrt::TerminalApp::implementation
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
-        void _UpdateMenuItemEnablement();
+        void _UpdateMenuItemStates();
 
         winrt::hstring _GetActiveTitle() const;
 
