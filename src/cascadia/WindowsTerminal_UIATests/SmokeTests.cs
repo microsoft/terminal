@@ -196,15 +196,15 @@ namespace WindowsTerminal.UIA.Tests
         [TestProperty("IsPGO", "true")]
         public void DragMultipleTabsAcrossWindows()
         {
-            const string sourceATitle = "DragTabA";
-            const string sourceBTitle = "DragTabB";
-            const string sourceCTitle = "DragTabC";
+            const string detachedTabTitle = "DragTabA";
+            const string firstAttachedTabTitle = "DragTabB";
+            const string secondAttachedTabTitle = "DragTabC";
             const string rootTitle = "WindowsTerminal.UIA.Tests";
 
             var launchArgs =
-                $"new-tab --title \"{sourceATitle}\" --suppressApplicationTitle \"powershell.exe\" ; " +
-                $"new-tab --title \"{sourceBTitle}\" --suppressApplicationTitle \"powershell.exe\" ; " +
-                $"new-tab --title \"{sourceCTitle}\" --suppressApplicationTitle \"powershell.exe\" ; " +
+                $"new-tab --title \"{detachedTabTitle}\" --suppressApplicationTitle \"powershell.exe\" ; " +
+                $"new-tab --title \"{firstAttachedTabTitle}\" --suppressApplicationTitle \"powershell.exe\" ; " +
+                $"new-tab --title \"{secondAttachedTabTitle}\" --suppressApplicationTitle \"powershell.exe\" ; " +
                 $"new-tab --title \"{rootTitle}\" --suppressApplicationTitle \"powershell.exe\"";
 
             using (TerminalApp app = new TerminalApp(TestContext, launchArgs: launchArgs, windowTitleToFind: rootTitle))
@@ -212,26 +212,26 @@ namespace WindowsTerminal.UIA.Tests
                 var windowA = app.WaitForTopLevelWindowByName(rootTitle);
                 app.ArrangeWindowOnPrimaryMonitor(windowA, 0);
                 app.ActivateWindow(windowA);
-                var firstTab = app.FindTabElementByName(windowA, sourceATitle);
+                var firstTab = app.FindTabElementByName(windowA, detachedTabTitle);
                 app.LogWindowDetails("initialWindowA", windowA);
                 app.LogElementDetails("firstTab", windowA, firstTab);
 
                 app.DragByOffset(firstTab, windowA.Width + 80, 80);
                 Globals.WaitForLongTimeout();
 
-                var windowB = app.TryWaitForTopLevelWindowByName(sourceATitle, windowA, 5000) ??
+                var windowB = app.TryWaitForTopLevelWindowByName(detachedTabTitle, windowA, 5000) ??
                               app.WaitForTopLevelWindowByName(rootTitle, windowA);
                 Verify.IsNotNull(windowB, "Expected dragging a tab outside the window to create a new top-level window.");
                 Verify.IsTrue(windowA.Handle != windowB.Handle, "Expected dragging a tab outside the window to create a distinct top-level window.");
-                Verify.IsTrue(app.HasElementByName(windowB, sourceATitle), "Expected the detached window to contain the dragged tab.");
+                Verify.IsTrue(app.HasElementByName(windowB, detachedTabTitle), "Expected the detached window to contain the dragged tab.");
 
                 windowA = app.WaitForTopLevelWindowByName(rootTitle, windowB);
                 app.ArrangeWindowOnPrimaryMonitor(windowA, 0);
                 app.ArrangeWindowOnPrimaryMonitor(windowB, 1);
                 app.ActivateWindow(windowA);
 
-                var secondTab = app.FindTabElementByName(windowA, sourceBTitle);
-                var thirdTab = app.FindTabElementByName(windowA, sourceCTitle);
+                var secondTab = app.FindTabElementByName(windowA, firstAttachedTabTitle);
+                var thirdTab = app.FindTabElementByName(windowA, secondAttachedTabTitle);
 
                 app.LogWindowDetails("windowA", windowA);
                 app.LogWindowDetails("windowB", windowB);
@@ -242,9 +242,9 @@ namespace WindowsTerminal.UIA.Tests
 
                 app.SelectTabRangeForTesting(windowA, 0, 1);
                 Globals.WaitForTimeout();
-                secondTab = app.FindTabElementByName(windowA, sourceBTitle);
+                secondTab = app.FindTabElementByName(windowA, firstAttachedTabTitle);
 
-                var existingWindowTab = app.FindTabElementByName(windowB, sourceATitle);
+                var existingWindowTab = app.FindTabElementByName(windowB, detachedTabTitle);
                 app.LogElementDetails("existingWindowTab", windowB, existingWindowTab);
                 app.LogElementAncestors("existingWindowTabAncestors", existingWindowTab);
                 app.ActivateWindow(windowA);
@@ -253,16 +253,16 @@ namespace WindowsTerminal.UIA.Tests
                 Globals.WaitForLongTimeout();
 
                 Verify.IsNull(
-                    app.TryWaitForTopLevelWindowByName(sourceBTitle, windowB, 1500),
+                    app.TryWaitForTopLevelWindowByName(firstAttachedTabTitle, windowB, 1500),
                     "Expected dropping DragTabB + DragTabC onto DragTabA to move the tabs into the existing window, not create a new top-level window.");
 
-                Verify.IsTrue(app.HasElementByName(windowB, sourceATitle), "Expected the destination window to keep its original tab.");
-                Verify.IsTrue(app.HasElementByName(windowB, sourceBTitle), "Expected the destination window to receive the first dragged tab.");
-                Verify.IsTrue(app.HasElementByName(windowB, sourceCTitle), "Expected the destination window to receive the second dragged tab.");
+                Verify.IsTrue(app.HasElementByName(windowB, detachedTabTitle), "Expected the destination window to keep its original tab.");
+                Verify.IsTrue(app.HasElementByName(windowB, firstAttachedTabTitle), "Expected the destination window to receive the first dragged tab.");
+                Verify.IsTrue(app.HasElementByName(windowB, secondAttachedTabTitle), "Expected the destination window to receive the second dragged tab.");
 
-                var tabAInWindowB = app.FindTabElementByName(windowB, sourceATitle);
-                var tabBInWindowB = app.FindTabElementByName(windowB, sourceBTitle);
-                var tabCInWindowB = app.FindTabElementByName(windowB, sourceCTitle);
+                var tabAInWindowB = app.FindTabElementByName(windowB, detachedTabTitle);
+                var tabBInWindowB = app.FindTabElementByName(windowB, firstAttachedTabTitle);
+                var tabCInWindowB = app.FindTabElementByName(windowB, secondAttachedTabTitle);
 
                 tabCInWindowB.Click();
                 Globals.WaitForTimeout();
@@ -271,8 +271,8 @@ namespace WindowsTerminal.UIA.Tests
                 Verify.IsTrue(tabBInWindowB.Location.X < tabCInWindowB.Location.X, "Expected dragged tabs to preserve their source order.");
 
                 windowA = app.WaitForTopLevelWindowByName(rootTitle, windowB);
-                Verify.IsFalse(app.HasElementByName(windowA, sourceBTitle), "Expected the source window to no longer contain the first moved tab.");
-                Verify.IsFalse(app.HasElementByName(windowA, sourceCTitle), "Expected the source window to no longer contain the second moved tab.");
+                Verify.IsFalse(app.HasElementByName(windowA, firstAttachedTabTitle), "Expected the source window to no longer contain the first moved tab.");
+                Verify.IsFalse(app.HasElementByName(windowA, secondAttachedTabTitle), "Expected the source window to no longer contain the second moved tab.");
             }
         }
     }
