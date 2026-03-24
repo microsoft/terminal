@@ -24,6 +24,22 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 {
 }
 
+void ConhostInternalGetSet::UnknownSequence() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // VT sequences unknown to us may cause the cursor position to change in a way that
+    // we don't know about. In this case, we need to mark the cursor position as "dirty".
+    //
+    // The worst offender is likely PowerShell. It uses VT sequences but also calls
+    // GetConsoleScreenBufferInfoEx for *every single line of output* (!!!). This prevents
+    // us from using a more conservative solution (e.g. always fetching the cursor position).
+    if (gci.IsInVtIoMode())
+    {
+        gci.GetActiveOutputBuffer().SetConptyCursorPositionMayBeWrong();
+    }
+}
+
 // - Sends a string response to the input stream of the console.
 // - Used by various commands where the program attached would like a reply to one of the commands issued.
 // - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.

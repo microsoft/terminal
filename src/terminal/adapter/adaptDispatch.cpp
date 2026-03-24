@@ -48,6 +48,11 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettin
 {
 }
 
+void AdaptDispatch::UnknownSequence() noexcept
+{
+    _api.UnknownSequence();
+}
+
 // Routine Description:
 // - Translates and displays a single character
 // Arguments:
@@ -3607,6 +3612,10 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
         _pages.ActivePage().Buffer().StartCommand();
         _api.NotifyShellIntegrationMark();
     }
+    else
+    {
+        _api.UnknownSequence();
+    }
 }
 
 // Method Description:
@@ -3637,6 +3646,10 @@ void AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     {
         _pages.ActivePage().Buffer().StartPrompt();
         _api.NotifyShellIntegrationMark();
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 }
 
@@ -3708,8 +3721,13 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             break;
         }
         default:
+            _api.UnknownSequence();
             break;
         }
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a
@@ -3784,6 +3802,10 @@ void AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
         }
 
         // If it's poorly formatted, just eat it
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 }
 
