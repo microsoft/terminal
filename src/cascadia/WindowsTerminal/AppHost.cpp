@@ -27,6 +27,11 @@ using namespace std::chrono_literals;
 static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 static constexpr auto FrameUpdateInterval = std::chrono::milliseconds(16);
 
+static bool _uiaTestHooksEnabled() noexcept
+{
+    return GetEnvironmentVariableW(L"WT_UIA_ENABLE_TEST_HOOKS", nullptr, 0) != 0;
+}
+
 winrt::com_ptr<IVirtualDesktopManager> getDesktopManager()
 {
     static til::shared_mutex<winrt::com_ptr<IVirtualDesktopManager>> s_desktopManager;
@@ -70,6 +75,9 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = [this](auto&& PH1, auto&& PH2) { _HandleCreateWindow(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
     _window->SetCreateCallback(pfn);
+    _window->SetUiaSelectTabRangeCallback([this](const uint32_t startIndex, const uint32_t endIndex) {
+        return _SelectTabRangeForTesting(startIndex, endIndex);
+    });
 
     _windowCallbacks.MouseScrolled = _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _windowCallbacks.WindowActivated = _window->WindowActivated({ this, &AppHost::_WindowActivated });
@@ -91,6 +99,13 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
         return _windowLogic.OnDirectKeyEvent(vkey, scanCode, down);
     }
     return false;
+}
+
+bool AppHost::_SelectTabRangeForTesting(const uint32_t startIndex, const uint32_t endIndex)
+{
+    return _windowLogic &&
+           _uiaTestHooksEnabled() &&
+           _windowLogic.SelectTabRangeForTesting(startIndex, endIndex);
 }
 
 // Method Description:

@@ -175,6 +175,7 @@ namespace winrt::TerminalApp::implementation
         void SendContentToOther(winrt::TerminalApp::RequestReceiveContentArgs args);
 
         uint32_t NumberOfTabs() const;
+        bool SelectTabRangeForTesting(uint32_t startIndex, uint32_t endIndex);
 
         til::property_changed_event PropertyChanged;
 
@@ -442,7 +443,7 @@ namespace winrt::TerminalApp::implementation
         safe_void_coroutine _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
         void _TabDragStarted(const IInspectable& sender, const IInspectable& eventArgs);
-        void _TabDragCompleted(const IInspectable& sender, const IInspectable& eventArgs);
+        void _TabDragCompleted(const IInspectable& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragCompletedEventArgs& eventArgs);
 
         // BODGY: WinUI's TabView has a broken close event handler:
         // If the close button is disabled, middle-clicking the tab raises no close

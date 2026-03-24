@@ -213,6 +213,67 @@ namespace clipboard
     }
 } // namespace clipboard
 
+namespace
+{
+    std::wstring_view _uiaDragLogPath() noexcept
+    {
+        static const auto path = []() {
+            std::wstring buffer(MAX_PATH, L'\0');
+            const auto length = GetEnvironmentVariableW(L"WT_UIA_DRAG_LOG", buffer.data(), gsl::narrow_cast<DWORD>(buffer.size()));
+            if (length == 0 || length >= buffer.size())
+            {
+                return std::wstring{};
+            }
+
+            buffer.resize(length);
+            return buffer;
+        }();
+
+        return path;
+    }
+
+    void _appendUiaDragLog(const std::wstring& message) noexcept
+    {
+        const auto path = _uiaDragLogPath();
+        if (path.empty())
+        {
+            return;
+        }
+
+        const wil::unique_hfile file{ CreateFileW(path.data(),
+                                                  FILE_APPEND_DATA,
+                                                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                                  nullptr,
+                                                  OPEN_ALWAYS,
+                                                  FILE_ATTRIBUTE_NORMAL,
+                                                  nullptr) };
+        if (!file)
+        {
+            return;
+        }
+
+        SYSTEMTIME timestamp{};
+        GetLocalTime(&timestamp);
+
+        wchar_t buffer[256];
+        const auto written = swprintf_s(buffer,
+                                        L"%02u:%02u:%02u.%03u %s\r\n",
+                                        timestamp.wHour,
+                                        timestamp.wMinute,
+                                        timestamp.wSecond,
+                                        timestamp.wMilliseconds,
+                                        message.c_str());
+        if (written <= 0)
+        {
+            return;
+        }
+
+        const auto utf8 = winrt::to_string(std::wstring_view{ buffer, gsl::narrow_cast<size_t>(written) });
+        DWORD bytesWritten = 0;
+        WriteFile(file.get(), utf8.data(), gsl::narrow_cast<DWORD>(utf8.size()), &bytesWritten, nullptr);
+    }
+}
+
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage(TerminalApp::WindowProperties properties, const TerminalApp::ContentManager& manager) :
@@ -326,6 +387,7 @@ namespace winrt::TerminalApp::implementation
         _rearranging = false;
 
         const auto canDragDrop = CanDragDrop();
+        _appendUiaDragLog(std::wstring{ L"Create: canDragDrop=" } + (canDragDrop ? L"true" : L"false"));
 
         _tabView.CanReorderTabs(canDragDrop);
         _tabView.CanDragTabs(canDragDrop);
@@ -5539,6 +5601,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView&,
                                           const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e)
     {
+        _appendUiaDragLog(L"_onTabDragStarting: begin");
         const auto eventTab = e.Tab();
         const auto draggedTab = _GetTabByTabViewItem(eventTab);
         if (draggedTab)
@@ -5574,6 +5637,7 @@ namespace winrt::TerminalApp::implementation
             e.Data().Properties().Insert(L"windowId", winrt::box_value(id));
             e.Data().Properties().Insert(L"pid", winrt::box_value<uint32_t>(pid));
             e.Data().RequestedOperation(DataPackageOperation::Move);
+            _appendUiaDragLog(std::wstring{ L"_onTabDragStarting: stashed " } + std::to_wstring(_stashed.draggedTabs.size()) + L" tab(s)");
 
             // The next thing that will happen:
             //  * Another TerminalPage will get a TabStripDragOver, then get a
@@ -5699,6 +5763,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabDroppedOutside(winrt::IInspectable /*sender*/,
                                             winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs /*e*/)
     {
+        _appendUiaDragLog(L"_onTabDroppedOutside: begin");
         // Get the current pointer point from the CoreWindow
         const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
 
@@ -5723,6 +5788,7 @@ namespace winrt::TerminalApp::implementation
             pointerPoint.X - _stashed.dragOffset.X,
             pointerPoint.Y - _stashed.dragOffset.Y,
         };
+        _appendUiaDragLog(std::wstring{ L"_onTabDroppedOutside: moving " } + std::to_wstring(_stashed.draggedTabs.size()) + L" tab(s) to a new window");
         _sendDraggedTabsToWindow(winrt::hstring{ L"-1" }, 0, adjusted);
     }
 
@@ -5730,6 +5796,7 @@ namespace winrt::TerminalApp::implementation
                                                 const uint32_t tabIndex,
                                                 std::optional<winrt::Windows::Foundation::Point> dragPoint)
     {
+        _appendUiaDragLog(std::wstring{ L"_sendDraggedTabsToWindow: target=" } + windowId.c_str() + L", tabs=" + std::to_wstring(_stashed.draggedTabs.size()));
         if (_stashed.draggedTabs.empty())
         {
             return;
@@ -5765,6 +5832,9 @@ namespace winrt::TerminalApp::implementation
         {
             _RemoveTab(*it);
         }
+
+        _stashed.draggedTabs.clear();
+        _stashed.dragAnchor = nullptr;
     }
 
     /// <summary>
