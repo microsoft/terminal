@@ -2982,7 +2982,7 @@ void AdaptDispatch::SoftReset()
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
 //      * The soft font is reset in the renderer and the font buffer is deleted.
-//   - Clears the screen.
+//   - Clears the screen. (if erase=true)
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
 //      * CUP(1;1)
@@ -2992,33 +2992,8 @@ void AdaptDispatch::SoftReset()
 //   - Sets all character sets to the default.
 //      * G0(USASCII)
 //Arguments:
-// <none>
-void AdaptDispatch::HardReset()
-{
-    _hardResetCore(true);
-}
-
-// Routine Description:
-// - Performs a hard reset of all VT state without clearing the buffer content
-//   or scrollback. This is used when a connection is restarted to clean up
-//   any dirty state left behind by a crashed application (e.g., bracketed
-//   paste, mouse tracking, alternate buffer, kitty keyboard, etc.).
-// Arguments:
-// - None
-void AdaptDispatch::HardResetWithoutBufferClear()
-{
-    _hardResetCore(false);
-}
-
-// Routine Description:
-// - Shared implementation for HardReset and HardResetWithoutBufferClear.
-//   Resets all VT state (parser, input modes, display modes, character sets,
-//   color table, tab stops, macros, etc.) to initial defaults. When
-//   clearBuffers is true, the screen and scrollback are also erased (full
-//   RIS behavior). When false, buffer content is preserved.
-// Arguments:
-// - clearBuffers: if true, erase the screen and scrollback
-void AdaptDispatch::_hardResetCore(const bool clearBuffers)
+// - erase: if true, erase the screen and scrollback
+void AdaptDispatch::HardReset(bool erase)
 {
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
@@ -3045,7 +3020,7 @@ void AdaptDispatch::_hardResetCore(const bool clearBuffers)
     //      to ensure that it clears with the default background color.
     SoftReset();
 
-    if (clearBuffers)
+    if (erase)
     {
         // Clears the screen - Needs to be done in two operations.
         EraseInDisplay(DispatchTypes::EraseType::All);
@@ -3061,7 +3036,7 @@ void AdaptDispatch::_hardResetCore(const bool clearBuffers)
         _renderer->SynchronizedOutputChanged();
     }
 
-    if (clearBuffers)
+    if (erase)
     {
         // Cursor to 1,1 - the Soft Reset guarantees this is absolute.
         // Only done when clearing buffers, because when preserving content

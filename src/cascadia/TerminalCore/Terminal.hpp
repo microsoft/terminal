@@ -85,7 +85,7 @@ public:
     void Create(til::size viewportSize,
                 til::CoordType scrollbackLines,
                 Microsoft::Console::Render::Renderer& renderer);
-    void ResetConnection();
+    void HardResetWithoutErase();
 
     void CreateFromSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings,
                             Microsoft::Console::Render::Renderer& renderer);

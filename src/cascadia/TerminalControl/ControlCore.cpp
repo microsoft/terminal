@@ -355,10 +355,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::ResetConnection()
+    void ControlCore::HardResetWithoutErase()
     {
         const auto lock = _terminal->LockForWriting();
-        _terminal->ResetConnection();
+        _terminal->HardResetWithoutErase();
     }
 
     bool ControlCore::Initialize(const float actualWidth,

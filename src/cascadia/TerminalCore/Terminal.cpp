@@ -59,12 +59,12 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 // - Resets all VT state to defaults without clearing the buffer content.
 // Called when a connection is restarted so that any dirty modes left
 // behind by a crashed application don't affect the new connection.
-void Terminal::ResetConnection()
+void Terminal::HardResetWithoutErase()
 {
     _assertLocked();
     _stateMachine->ResetState();
     auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
-    engine.Dispatch().HardResetWithoutBufferClear();
+    engine.Dispatch().HardReset(false);
 }
 
 // Method Description:

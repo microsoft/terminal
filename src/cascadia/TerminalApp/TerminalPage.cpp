@@ -3747,7 +3747,7 @@ namespace winrt::TerminalApp::implementation
             // paste, mouse tracking, alternate buffer, kitty keyboard) that
             // would corrupt input/output for the new shell process.
             const auto& termControl = paneContent.GetTermControl();
-            termControl.ResetConnection();
+            termControl.HardResetWithoutErase();
             termControl.Connection(connection);
             connection.Start();
         }

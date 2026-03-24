@@ -98,7 +98,7 @@ namespace Microsoft.Terminal.Control
         void ApplyAppearance(Boolean focused);
 
         Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
-        void ResetConnection();
+        void HardResetWithoutErase();
 
         IControlSettings Settings { get; };
         IControlAppearance FocusedAppearance { get; };

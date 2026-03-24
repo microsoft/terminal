@@ -1651,7 +1651,7 @@ public:
 
         Log::Comment(L"Test 3: Verify space reset");
         _testGetSet->PrepData();
-        _pDispatch->HardReset();
+        _pDispatch->HardReset(true);
         _pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MacroSpaceReport, {});
 
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
