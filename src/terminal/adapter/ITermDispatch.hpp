@@ -35,6 +35,7 @@ public:
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
 
+    virtual void UnknownSequence() noexcept = 0;
     virtual void Print(const wchar_t wchPrintable) = 0;
     virtual void PrintString(const std::wstring_view string) = 0;
 

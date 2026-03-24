@@ -24,6 +24,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch);
 
+        void UnknownSequence() noexcept override;
         bool EncounteredWin32InputModeSequence() const noexcept override;
 
         bool ActionExecute(const wchar_t wch) override;
@@ -203,13 +204,14 @@ namespace Microsoft::Console::VirtualTerminal
             ExitVt52Mode = VTID("<")
         };
 
-        enum OscActionCodes : unsigned int
+        enum OscActionCodes : size_t
         {
             SetIconAndWindowTitle = 0,
             SetWindowIcon = 1,
             SetWindowTitle = 2,
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
+            CurrentWorkingDirectory = 7,
             Hyperlink = 8,
             ConEmuAction = 9,
             SetForegroundColor = 10,

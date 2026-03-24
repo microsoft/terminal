@@ -166,6 +166,7 @@ namespace Microsoft::Console::VirtualTerminal
         void CaptureNextCursorPositionReport() noexcept;
         til::enumset<DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) noexcept;
 
+        void UnknownSequence() noexcept override;
         bool EncounteredWin32InputModeSequence() const noexcept override;
 
         bool ActionExecute(const wchar_t wch) override;

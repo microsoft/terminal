@@ -1522,6 +1522,10 @@ void Terminal::SerializeMainBuffer(HANDLE handle) const
     _mainBuffer->SerializeTo(handle);
 }
 
+void Terminal::UnknownSequence() noexcept
+{
+}
+
 void Terminal::ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode)
 {
     const auto colorSelection = [this](const til::point coordStartInclusive, const til::point coordEndExclusive, const TextAttribute& attr) {
