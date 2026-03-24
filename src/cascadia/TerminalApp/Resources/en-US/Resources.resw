@@ -739,6 +739,18 @@
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
+  <data name="NotificationTitle" xml:space="preserve">
+    <value>Windows Terminal</value>
+    <comment>Title shown in desktop toast notifications sent by the terminal.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>Activity in tab "{0}"</value>
+    <comment>{0} is the tab title. Shown as the body of a desktop notification when tab activity is detected.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>Activity in tab "{0}" (window "{1}")</value>
+    <comment>{0} is the tab title, {1} is the window name. Shown as the body of a desktop notification when tab activity is detected and the window has a name.</comment>
+  </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Open a new tab in given starting directory</value>
   </data>

@@ -570,6 +570,8 @@ namespace winrt::TerminalApp::implementation
         void _activePaneChanged(winrt::TerminalApp::Tab tab, Windows::Foundation::IInspectable args);
         safe_void_coroutine _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
 
+        void _SendDesktopNotification(const winrt::hstring& tabTitle, const winrt::hstring& body, uint32_t tabIndex);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);
