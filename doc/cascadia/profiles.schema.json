@@ -60,7 +60,8 @@
             "enum": [
               "audible",
               "window",
-              "taskbar"
+              "taskbar",
+              "notification"
             ]
           }
         },
@@ -70,6 +71,7 @@
             "audible",
             "taskbar",
             "window",
+            "notification",
             "all",
             "none"
           ]
