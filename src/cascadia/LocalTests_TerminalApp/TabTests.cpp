@@ -210,8 +210,11 @@ namespace TerminalAppLocalTests
 
         uint32_t actualCount{};
         uint32_t actualTabItemCount{};
+        uint32_t consecutiveMatches{};
         for (auto attempt = 0; attempt < 20; ++attempt)
         {
+            _yieldToLowPriorityDispatcher(page);
+
             const auto result = RunOnUIThread([&]() {
                 page->_tabView.UpdateLayout();
                 actualCount = page->_tabs.Size();
@@ -221,7 +224,14 @@ namespace TerminalAppLocalTests
 
             if (actualCount == expectedCount && actualTabItemCount == expectedCount)
             {
-                return;
+                if (++consecutiveMatches >= 2)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                consecutiveMatches = 0;
             }
 
             Sleep(50);
@@ -236,31 +246,45 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(page);
 
         uint32_t latestCount{};
-        bool sawZero = false;
+        uint32_t stableBaselineSamples{};
+        uint32_t repairs{};
 
-        for (auto attempt = 0; attempt < 20; ++attempt)
+        for (auto attempt = 0; attempt < 40; ++attempt)
         {
             _yieldToLowPriorityDispatcher(page);
 
             auto result = RunOnUIThread([&]() {
+                page->_tabView.UpdateLayout();
                 latestCount = page->_tabs.Size();
             });
             VERIFY_SUCCEEDED(result);
 
             if (latestCount == 0)
             {
-                sawZero = true;
-                break;
+                stableBaselineSamples = 0;
+                ++repairs;
+                _openProfileTab(page, 0, 1);
+                continue;
+            }
+
+            if (latestCount == 1)
+            {
+                if (++stableBaselineSamples >= 3)
+                {
+                    Log::Comment(NoThrowString().Format(L"Stable baseline final count=%u repairs=%u", latestCount, repairs));
+                    return;
+                }
+            }
+            else
+            {
+                stableBaselineSamples = 0;
             }
 
             Sleep(50);
         }
 
-        Log::Comment(NoThrowString().Format(L"Stable baseline final count=%u sawZero=%d", latestCount, sawZero ? 1 : 0));
-        if (sawZero)
-        {
-            _openProfileTab(page, 0, 1);
-        }
+        Log::Comment(NoThrowString().Format(L"Stable baseline final count=%u repairs=%u stableSamples=%u", latestCount, repairs, stableBaselineSamples));
+        VERIFY_ARE_EQUAL(1u, latestCount);
     }
 
     void TabTests::_openProfileTab(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page, const int32_t profileIndex, const uint32_t expectedCount)
@@ -641,7 +665,11 @@ namespace TerminalAppLocalTests
             Sleep(50);
         }
 
-        result = RunOnUIThread([&page, tabCount, tabItemCount, hasSelectedItem]() {
+        const auto selectFirstTab = [&page]() {
+            const auto tabCount = page->_tabs.Size();
+            const auto tabItemCount = page->_tabView.TabItems().Size();
+            const auto hasSelectedItem = static_cast<bool>(page->_tabView.SelectedItem());
+
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
@@ -660,7 +688,22 @@ namespace TerminalAppLocalTests
             Log::Comment(L"About to call _UpdatedSelectedTab");
             page->_UpdatedSelectedTab(tab);
             Log::Comment(L"Selected first tab successfully");
-        });
+        };
+
+        result = RunOnUIThread(selectFirstTab);
+        VERIFY_SUCCEEDED(result);
+
+        _ensureStableBaselineTab(page);
+        _waitForTabCount(page, 1);
+
+        result = RunOnUIThread(selectFirstTab);
+        VERIFY_SUCCEEDED(result);
+
+        _yieldToLowPriorityDispatcher(page);
+        _ensureStableBaselineTab(page);
+        _waitForTabCount(page, 1);
+
+        result = RunOnUIThread(selectFirstTab);
         VERIFY_SUCCEEDED(result);
     }
 
@@ -700,6 +743,8 @@ namespace TerminalAppLocalTests
         // it's weird.
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
         _initializeTerminalPage(page, settings0);
+        _ensureStableBaselineTab(page);
+        _waitForTabCount(page, 1);
 
         auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
