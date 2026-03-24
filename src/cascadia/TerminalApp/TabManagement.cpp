@@ -48,71 +48,6 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-namespace
-{
-    void _appendUiaDragLog(const wchar_t* message) noexcept
-    {
-        std::wstring buffer(MAX_PATH, L'\0');
-        const auto length = GetEnvironmentVariableW(L"WT_UIA_DRAG_LOG", buffer.data(), gsl::narrow_cast<DWORD>(buffer.size()));
-        if (length == 0 || length >= buffer.size())
-        {
-            return;
-        }
-
-        buffer.resize(length);
-
-        const wil::unique_hfile file{ CreateFileW(buffer.c_str(),
-                                                  FILE_APPEND_DATA,
-                                                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                                                  nullptr,
-                                                  OPEN_ALWAYS,
-                                                  FILE_ATTRIBUTE_NORMAL,
-                                                  nullptr) };
-        if (!file)
-        {
-            return;
-        }
-
-        const auto line = winrt::to_string(std::wstring{ message } + L"\r\n");
-        DWORD bytesWritten = 0;
-        WriteFile(file.get(), line.data(), gsl::narrow_cast<DWORD>(line.size()), &bytesWritten, nullptr);
-    }
-
-    std::wstring _tabTitleForUiaLog(const winrt::TerminalApp::Tab& tab)
-    {
-        if (!tab)
-        {
-            return L"<null>";
-        }
-
-        const auto title = tab.Title();
-        return title.empty() ? L"<empty>" : std::wstring{ title };
-    }
-
-    void _appendUiaSelectionLog(const std::vector<winrt::TerminalApp::Tab>& tabs, const winrt::TerminalApp::Tab& anchor) noexcept
-    {
-        std::wstring message{ L"_SetSelectedTabs: count=" };
-        message += std::to_wstring(tabs.size());
-        message += L", anchor=";
-        message += _tabTitleForUiaLog(anchor);
-        message += L", tabs=[";
-
-        bool first = true;
-        for (const auto& tab : tabs)
-        {
-            if (!first)
-            {
-                message += L", ";
-            }
-            first = false;
-            message += _tabTitleForUiaLog(tab);
-        }
-
-        message += L"]";
-        _appendUiaDragLog(message.c_str());
-    }
-}
-
 namespace winrt::TerminalApp::implementation
 {
     // Method Description:
@@ -1216,7 +1151,6 @@ namespace winrt::TerminalApp::implementation
             _selectionAnchor = _selectedTabs.front();
         }
 
-        _appendUiaSelectionLog(_selectedTabs, _selectionAnchor);
         _ApplyMultiSelectionVisuals();
     }
 
@@ -1285,11 +1219,6 @@ namespace winrt::TerminalApp::implementation
         const auto tabCount = _tabs.Size();
         if (tabCount == 0 || startIndex >= tabCount || endIndex >= tabCount)
         {
-            const auto message = til::hstring_format(FMT_COMPILE(L"SelectTabRangeForTesting: invalid range {}-{} count={}"),
-                                                     startIndex,
-                                                     endIndex,
-                                                     tabCount);
-            _appendUiaDragLog(message.c_str());
             return false;
         }
 
@@ -1297,10 +1226,6 @@ namespace winrt::TerminalApp::implementation
         const auto endTab = _tabs.GetAt(endIndex);
         if (!_TabSupportsMultiSelection(startTab) || !_TabSupportsMultiSelection(endTab))
         {
-            const auto message = til::hstring_format(FMT_COMPILE(L"SelectTabRangeForTesting: unsupported tabs start={} end={}"),
-                                                     _tabTitleForUiaLog(startTab),
-                                                     _tabTitleForUiaLog(endTab));
-            _appendUiaDragLog(message.c_str());
             return false;
         }
 
@@ -1308,17 +1233,9 @@ namespace winrt::TerminalApp::implementation
         auto range = _GetTabRange(startTab, endTab);
         if (range.empty())
         {
-            const auto message = til::hstring_format(FMT_COMPILE(L"SelectTabRangeForTesting: empty range start={} end={}"),
-                                                     _tabTitleForUiaLog(startTab),
-                                                     _tabTitleForUiaLog(endTab));
-            _appendUiaDragLog(message.c_str());
             return false;
         }
 
-        const auto message = til::hstring_format(FMT_COMPILE(L"SelectTabRangeForTesting: start={} end={}"),
-                                                 _tabTitleForUiaLog(startTab),
-                                                 _tabTitleForUiaLog(endTab));
-        _appendUiaDragLog(message.c_str());
         _SetSelectedTabs(std::move(range), startTab);
         return true;
     }
@@ -1327,12 +1244,6 @@ namespace winrt::TerminalApp::implementation
     {
         const bool ctrlPressed = WI_IsFlagSet(static_cast<uint16_t>(GetKeyState(VK_CONTROL)), 0x8000);
         const bool shiftPressed = WI_IsFlagSet(static_cast<uint16_t>(GetKeyState(VK_SHIFT)), 0x8000);
-        const auto clickedTitle = _tabTitleForUiaLog(tab);
-        const auto pointerMessage = til::hstring_format(FMT_COMPILE(L"_UpdateSelectionFromPointer: tab={}, ctrl={}, shift={}"),
-                                                        clickedTitle,
-                                                        ctrlPressed ? 1 : 0,
-                                                        shiftPressed ? 1 : 0);
-        _appendUiaDragLog(pointerMessage.c_str());
 
         if (!_TabSupportsMultiSelection(tab))
         {
@@ -1504,17 +1415,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_TabDragStarted(const IInspectable& /*sender*/,
                                        const IInspectable& /*eventArgs*/)
     {
-        _appendUiaDragLog(L"_TabDragStarted");
         _rearranging = true;
         _rearrangeFrom = std::nullopt;
         _rearrangeTo = std::nullopt;
     }
 
     void TerminalPage::_TabDragCompleted(const IInspectable& /*sender*/,
-                                         const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragCompletedEventArgs& eventArgs)
+                                         const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragCompletedEventArgs& /*eventArgs*/)
     {
-        const auto dropResultLog = std::wstring{ L"_TabDragCompleted: dropResult=" } + std::to_wstring(static_cast<uint32_t>(eventArgs.DropResult()));
-        _appendUiaDragLog(dropResultLog.c_str());
         auto& from{ _rearrangeFrom };
         auto& to{ _rearrangeTo };
 
@@ -1534,13 +1442,8 @@ namespace winrt::TerminalApp::implementation
         _rearranging = false;
         if (from.has_value() || to.has_value())
         {
-            _appendUiaDragLog(L"_TabDragCompleted: clearing stashed drag data after in-window reorder");
             _stashed.draggedTabs.clear();
             _stashed.dragAnchor = nullptr;
-        }
-        else
-        {
-            _appendUiaDragLog(L"_TabDragCompleted: preserving stashed drag data for post-complete drop handlers");
         }
 
         if (to.has_value() &&

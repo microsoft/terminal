@@ -213,8 +213,6 @@ namespace WindowsTerminal.UIA.Tests
                 app.ArrangeWindowOnPrimaryMonitor(windowA, 0);
                 app.ActivateWindow(windowA);
                 var firstTab = app.FindTabElementByName(windowA, detachedTabTitle);
-                app.LogWindowDetails("initialWindowA", windowA);
-                app.LogElementDetails("firstTab", windowA, firstTab);
 
                 app.DragByOffset(firstTab, windowA.Width + 80, 80);
                 Globals.WaitForLongTimeout();
@@ -231,22 +229,12 @@ namespace WindowsTerminal.UIA.Tests
                 app.ActivateWindow(windowA);
 
                 var secondTab = app.FindTabElementByName(windowA, firstAttachedTabTitle);
-                var thirdTab = app.FindTabElementByName(windowA, secondAttachedTabTitle);
-
-                app.LogWindowDetails("windowA", windowA);
-                app.LogWindowDetails("windowB", windowB);
-                app.LogElementDetails("secondTab", windowA, secondTab);
-                app.LogElementDetails("thirdTab", windowA, thirdTab);
-                app.LogElementAncestors("secondTabAncestors", secondTab);
-                app.LogElementAncestors("thirdTabAncestors", thirdTab);
 
                 app.SelectTabRangeForTesting(windowA, 0, 1);
                 Globals.WaitForTimeout();
                 secondTab = app.FindTabElementByName(windowA, firstAttachedTabTitle);
 
                 var existingWindowTab = app.FindTabElementByName(windowB, detachedTabTitle);
-                app.LogElementDetails("existingWindowTab", windowB, existingWindowTab);
-                app.LogElementAncestors("existingWindowTabAncestors", existingWindowTab);
                 app.ActivateWindow(windowA);
                 var dropOffset = System.Math.Max(24, existingWindowTab.Size.Width / 3);
                 app.DragToElement(secondTab, existingWindowTab, dropOffset, 0);
