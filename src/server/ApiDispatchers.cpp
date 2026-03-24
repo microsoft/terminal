@@ -595,7 +595,7 @@ constexpr T saturate(auto val)
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
     // See ConptyCursorPositionMayBeWrong() for details.
-    //if (pObj->ConptyCursorPositionMayBeWrong())
+    if (pObj->ConptyCursorPositionMayBeWrong())
     {
         pObj->WaitForConptyCursorPositionToBeSynchronized();
     }
