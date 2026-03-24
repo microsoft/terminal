@@ -1230,13 +1230,14 @@ namespace winrt::TerminalApp::implementation
             {
                 message = RS_fmt(L"NotificationMessage_TabActivity", std::wstring_view{ tabTitle });
             }
-            notificationTitle = RS_(L"NotificationTitle");
+            notificationTitle = CascadiaSettings::ApplicationDisplayName();
         }
 
-        implementation::DesktopNotificationArgs args;
-        args.Title = notificationTitle;
-        args.Message = message;
-        args.TabIndex = tabIndex;
+        const implementation::DesktopNotificationArgs args{
+            .Title = notificationTitle,
+            .Message = message,
+            .TabIndex = tabIndex,
+        };
 
         implementation::DesktopNotification::SendNotification(args, [weakThis{ get_weak() }](uint32_t idx) {
             if (const auto page{ weakThis.get() })
