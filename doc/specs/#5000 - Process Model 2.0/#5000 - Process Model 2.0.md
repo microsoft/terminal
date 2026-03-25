@@ -1155,7 +1155,7 @@ prompt the user for permission, but that's an acceptable user experience.
 ## Addenda
 
 This spec also has a follow-up spec which introduces further changes upon this
-original draft. Please also refer to:
+original draft. Please refer to:
 
 * November 2020: Windows Terminal Window Management
 

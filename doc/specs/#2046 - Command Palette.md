@@ -525,7 +525,7 @@ default. These are largely the actions that are bound by default.
 ## Addenda
 
 This spec also has a follow-up spec which introduces further changes upon this
-original draft. Please also refer to:
+original draft. Please refer to:
 
 * June 2020: Unified keybindings and commands, and synthesized action names.
 
