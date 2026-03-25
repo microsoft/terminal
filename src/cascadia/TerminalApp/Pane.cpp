@@ -2264,7 +2264,7 @@ SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitDirection& 
 //   creates a new Pane to host the control, registers event handlers.
 // Arguments:
 // - splitType: what type of split we should create.
-// - splitSize: what fraction of the pane the new pane should get
+// - splitSize: the fraction of the pane that the new pane should get
 // - newPane: the pane to add as a child
 // Return Value:
 // - The two newly created Panes, with the original pane as the first pane.
