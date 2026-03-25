@@ -851,11 +851,11 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
     <value>Active pane moved to "{0}" tab</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
     <value>"{0}" tab moved to "{1}" window</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window to which the tab was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>"{0}" tab moved to new window</value>
