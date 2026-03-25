@@ -886,7 +886,7 @@ Here, we've got two tabs that have been serialized.
   - The second pane is also a `TermControl`, takes up 70% of the parent, and is
     attached to the content process `{2-2-2-2}`
 * The second tab has a single pane, with a SettingsPage. The settings page has
-  also specified in it's `payload` that its current page is the "globals" page.
+  also specified in its `payload` that its current page is the "globals" page.
 
 When we send this serialized state to another window, it can use the content
 GUIDs to initialize new `TermControl`s connected to the appropriate content
