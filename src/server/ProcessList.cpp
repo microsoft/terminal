@@ -11,7 +11,7 @@
 using namespace Microsoft::Console::Interactivity;
 
 // Routine Description:
-// - Allocates and stores in a list the process information given.
+// - Allocates and stores the given process information in a list.
 // - Will not create a new entry in the list given information matches a known process. Will instead return existing entry.
 // Arguments:
 // - dwProcessId - Process ID of connecting client
