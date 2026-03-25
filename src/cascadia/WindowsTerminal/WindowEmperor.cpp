@@ -373,17 +373,21 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     {
         std::wstring aumid;
 #if defined(WT_BRANDING_RELEASE)
-        aumid = L"Microsoft.WindowsTerminal";
+        aumid = L"WindowsTerminal";
 #elif defined(WT_BRANDING_PREVIEW)
-        aumid = L"Microsoft.WindowsTerminalPreview";
+        aumid = L"WindowsTerminalPreview";
 #elif defined(WT_BRANDING_CANARY)
-        aumid = L"Microsoft.WindowsTerminalCanary";
+        aumid = L"WindowsTerminalCanary";
 #else
-        aumid = L"Microsoft.WindowsTerminalDev";
+        aumid = L"WindowsTerminalDev";
 #endif
         const auto path = wil::QueryFullProcessImageNameW<std::wstring>();
         const auto hash = til::hash(path);
+#ifdef _WIN64
         fmt::format_to(std::back_inserter(aumid), FMT_COMPILE(L".{:016x}"), hash);
+#else
+        fmt::format_to(std::back_inserter(aumid), FMT_COMPILE(L".{:08x}"), hash);
+#endif
         LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(aumid.c_str()));
     }
 
