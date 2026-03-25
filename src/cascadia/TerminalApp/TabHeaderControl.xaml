@@ -32,6 +32,12 @@
                   FontSize="12"
                   Glyph="&#xEA8F;"
                   Visibility="{x:Bind TabStatus.BellIndicator, Mode=OneWay}" />
+        <FontIcon x:Name="HeaderActivityIndicator"
+                  Margin="0,0,8,0"
+                  FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                  FontSize="8"
+                  Glyph="&#xF127;"
+                  Visibility="{x:Bind TabStatus.ActivityIndicator, Mode=OneWay}" />
         <FontIcon x:Name="HeaderZoomIcon"
                   Margin="0,0,8,0"
                   FontFamily="{ThemeResource SymbolThemeFontFamily}"

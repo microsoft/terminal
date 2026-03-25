@@ -47,6 +47,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
 
+        // notify on inactive output bits
+        hstring NotifyOnInactiveOutputPreview() const;
+        bool IsNotifyOnInactiveOutputFlagSet(const uint32_t flag);
+        void SetNotifyOnInactiveOutputTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnInactiveOutputAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnInactiveOutputTab(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnInactiveOutputNotification(winrt::Windows::Foundation::IReference<bool> on);
+
+        // notify on next prompt bits
+        hstring NotifyOnNextPromptPreview() const;
+        bool IsNotifyOnNextPromptFlagSet(const uint32_t flag);
+        void SetNotifyOnNextPromptTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptTab(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptNotification(winrt::Windows::Foundation::IReference<bool> on);
+
         hstring BellSoundPreview();
         void RequestAddBellSound(hstring path);
         void RequestDeleteBellSound(const Editor::BellSoundViewModel& vm);
@@ -145,6 +161,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
         OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
         OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnInactiveOutput);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnNextPrompt);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AutoDetectRunningCommand);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
@@ -152,6 +171,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, ScrollState);
         GETSET_BINDABLE_ENUM_SETTING(PathTranslationStyle, Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle);
+        GETSET_BINDABLE_ENUM_SETTING(AutoDetectRunningCommand, Microsoft::Terminal::Control::AutoDetectRunningCommand, AutoDetectRunningCommand);
 
     private:
         Model::Profile _profile;

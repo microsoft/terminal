@@ -10,6 +10,7 @@
 #include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
+#include "NotificationEventArgs.g.cpp"
 #include "TerminalPaneContent.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -34,6 +35,8 @@ namespace winrt::TerminalApp::implementation
     {
         _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_controlConnectionStateChangedHandler });
         _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlWarningBellHandler });
+        _controlEvents._PromptStarted = _control.PromptStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlPromptStartedHandler });
+        _controlEvents._OutputStarted = _control.OutputStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputStartedHandler });
         _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_closeTerminalRequestedHandler });
         _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_restartTerminalRequestedHandler });
 
@@ -42,6 +45,7 @@ namespace winrt::TerminalApp::implementation
         _controlEvents._SetTaskbarProgress = _control.SetTaskbarProgress(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlSetTaskbarProgress });
         _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlReadOnlyChanged });
         _controlEvents._FocusFollowMouseRequested = _control.FocusFollowMouseRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlFocusFollowMouseRequested });
+        _controlEvents._OutputIdle = _control.OutputIdle(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputIdleHandler });
     }
     void TerminalPaneContent::_removeControlEvents()
     {
@@ -173,6 +177,30 @@ namespace winrt::TerminalApp::implementation
     {
         TaskbarProgressChanged.raise(*this, nullptr);
     }
+
+    uint64_t TerminalPaneContent::TaskbarState()
+    {
+        const auto vtState = _control.TaskbarState();
+        if (vtState != 0)
+        {
+            return vtState;
+        }
+        if (_autoDetectActive)
+        {
+            return 3; // Indeterminate
+        }
+        return 0;
+    }
+
+    uint64_t TerminalPaneContent::TaskbarProgress()
+    {
+        const auto vtState = _control.TaskbarState();
+        if (vtState != 0)
+        {
+            return _control.TaskbarProgress();
+        }
+        return 0;
+    }
     void TerminalPaneContent::_controlReadOnlyChanged(const IInspectable&, const IInspectable&)
     {
         ReadOnlyChanged.raise(*this, nullptr);
@@ -261,6 +289,25 @@ namespace winrt::TerminalApp::implementation
     //   has the 'visual' flag set
     // Arguments:
     // - <unused>
+    void TerminalPaneContent::PlayNotificationSound()
+    {
+        if (_profile)
+        {
+            auto sounds{ _profile.BellSound() };
+            if (sounds && sounds.Size() > 0)
+            {
+                winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                winrt::Windows::Foundation::Uri uri{ soundPath };
+                _playBellSound(uri);
+            }
+            else
+            {
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+        }
+    }
+
     void TerminalPaneContent::_controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
@@ -272,18 +319,7 @@ namespace winrt::TerminalApp::implementation
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
                 {
                     // Audible is set, play the sound
-                    auto sounds{ _profile.BellSound() };
-                    if (sounds && sounds.Size() > 0)
-                    {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        winrt::Windows::Foundation::Uri uri{ soundPath };
-                        _playBellSound(uri);
-                    }
-                    else
-                    {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                    }
+                    PlayNotificationSound();
                 }
 
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
@@ -294,6 +330,55 @@ namespace winrt::TerminalApp::implementation
                 // raise the event with the bool value corresponding to the taskbar flag
                 BellRequested.raise(*this,
                                     *winrt::make_self<TerminalApp::implementation::BellEventArgs>(WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar)));
+            }
+        }
+    }
+
+    void TerminalPaneContent::_controlPromptStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            const auto notifyStyle = _profile.NotifyOnNextPrompt();
+            if (static_cast<int>(notifyStyle) != 0)
+            {
+                NotificationRequested.raise(*this,
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, true));
+            }
+
+            const auto autoDetect = _profile.AutoDetectRunningCommand();
+            if (autoDetect != AutoDetectRunningCommand::Disabled && _autoDetectActive)
+            {
+                _autoDetectActive = false;
+                TaskbarProgressChanged.raise(*this, nullptr);
+            }
+        }
+    }
+
+    void TerminalPaneContent::_controlOutputStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            const auto autoDetect = _profile.AutoDetectRunningCommand();
+            if (autoDetect != AutoDetectRunningCommand::Disabled && !_autoDetectActive)
+            {
+                _autoDetectActive = true;
+                TaskbarProgressChanged.raise(*this, nullptr);
+            }
+        }
+    }
+
+    void TerminalPaneContent::_controlOutputIdleHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                        const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            const auto notifyStyle = _profile.NotifyOnInactiveOutput();
+            if (static_cast<int>(notifyStyle) != 0)
+            {
+                NotificationRequested.raise(*this,
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, true));
             }
         }
     }

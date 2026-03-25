@@ -18,6 +18,8 @@ namespace TerminalApp
 
     runtimeclass NotificationEventArgs
     {
+        Microsoft.Terminal.Control.OutputNotificationStyle Style { get; };
+        Boolean OnlyWhenInactive { get; };
         String Title { get; };
         String Body { get; };
     };

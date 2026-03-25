@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle, L"Profile_PathTranslationStyle", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AutoDetectRunningCommand, AutoDetectRunningCommand, winrt::Microsoft::Terminal::Control::AutoDetectRunningCommand, L"Profile_AutoDetectRunningCommand", L"Content");
 
         _InitializeCurrentBellSounds();
 
@@ -105,6 +106,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"PathTranslationStyle")
             {
                 _NotifyChanges(L"CurrentPathTranslationStyle");
+            }
+            else if (viewModelProperty == L"NotifyOnInactiveOutput")
+            {
+                _NotifyChanges(L"IsNotifyOnInactiveOutputFlagSet", L"NotifyOnInactiveOutputPreview");
+            }
+            else if (viewModelProperty == L"NotifyOnNextPrompt")
+            {
+                _NotifyChanges(L"IsNotifyOnNextPromptFlagSet", L"NotifyOnNextPromptPreview");
+            }
+            else if (viewModelProperty == L"AutoDetectRunningCommand")
+            {
+                _NotifyChanges(L"CurrentAutoDetectRunningCommand");
             }
             else if (viewModelProperty == L"Padding")
             {
@@ -638,6 +651,170 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto currentStyle = BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
+    }
+
+    // ===================== NotifyOnInactiveOutput =====================
+
+    hstring ProfileViewModel::NotifyOnInactiveOutputPreview() const
+    {
+        using Ons = Control::OutputNotificationStyle;
+        const auto style = NotifyOnInactiveOutput();
+        if (WI_AreAllFlagsSet(style, Ons::Taskbar | Ons::Audible | Ons::Tab | Ons::Notification))
+        {
+            return RS_(L"Profile_OutputNotificationStyleAll/Content");
+        }
+        else if (style == static_cast<Ons>(0))
+        {
+            return RS_(L"Profile_OutputNotificationStyleNone/Content");
+        }
+
+        std::vector<hstring> resultList;
+        resultList.reserve(4);
+        if (WI_IsFlagSet(style, Ons::Taskbar))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleTaskbar/Content"));
+        }
+        if (WI_IsFlagSet(style, Ons::Audible))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleAudible/Content"));
+        }
+        if (WI_IsFlagSet(style, Ons::Tab))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleTab/Content"));
+        }
+        if (WI_IsFlagSet(style, Ons::Notification))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleNotification/Content"));
+        }
+
+        hstring result{};
+        for (auto&& entry : resultList)
+        {
+            if (result.empty())
+            {
+                result = entry;
+            }
+            else
+            {
+                result = result + L", " + entry;
+            }
+        }
+        return result;
+    }
+
+    bool ProfileViewModel::IsNotifyOnInactiveOutputFlagSet(const uint32_t flag)
+    {
+        return (WI_EnumValue(NotifyOnInactiveOutput()) & flag) == flag;
+    }
+
+    void ProfileViewModel::SetNotifyOnInactiveOutputTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnInactiveOutput();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Taskbar, winrt::unbox_value<bool>(on));
+        NotifyOnInactiveOutput(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnInactiveOutputAudible(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnInactiveOutput();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Audible, winrt::unbox_value<bool>(on));
+        NotifyOnInactiveOutput(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnInactiveOutputTab(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnInactiveOutput();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Tab, winrt::unbox_value<bool>(on));
+        NotifyOnInactiveOutput(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnInactiveOutputNotification(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnInactiveOutput();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Notification, winrt::unbox_value<bool>(on));
+        NotifyOnInactiveOutput(currentStyle);
+    }
+
+    // ===================== NotifyOnNextPrompt =====================
+
+    hstring ProfileViewModel::NotifyOnNextPromptPreview() const
+    {
+        using Ons = Control::OutputNotificationStyle;
+        const auto style = NotifyOnNextPrompt();
+        if (WI_AreAllFlagsSet(style, Ons::Taskbar | Ons::Audible | Ons::Tab | Ons::Notification))
+        {
+            return RS_(L"Profile_OutputNotificationStyleAll/Content");
+        }
+        else if (style == static_cast<Ons>(0))
+        {
+            return RS_(L"Profile_OutputNotificationStyleNone/Content");
+        }
+
+        std::vector<hstring> resultList;
+        resultList.reserve(4);
+        if (WI_IsFlagSet(style, Ons::Taskbar))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleTaskbar/Content"));
+        }
+        if (WI_IsFlagSet(style, Ons::Audible))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleAudible/Content"));
+        }
+        if (WI_IsFlagSet(style, Ons::Tab))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleTab/Content"));
+        }
+        if (WI_IsFlagSet(style, Ons::Notification))
+        {
+            resultList.emplace_back(RS_(L"Profile_OutputNotificationStyleNotification/Content"));
+        }
+
+        hstring result{};
+        for (auto&& entry : resultList)
+        {
+            if (result.empty())
+            {
+                result = entry;
+            }
+            else
+            {
+                result = result + L", " + entry;
+            }
+        }
+        return result;
+    }
+
+    bool ProfileViewModel::IsNotifyOnNextPromptFlagSet(const uint32_t flag)
+    {
+        return (WI_EnumValue(NotifyOnNextPrompt()) & flag) == flag;
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Taskbar, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptAudible(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Audible, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptTab(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Tab, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptNotification(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Notification, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
     }
 
     // Method Description:

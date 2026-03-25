@@ -48,6 +48,9 @@ namespace winrt::TerminalApp::implementation
         void ShowBellIndicator(const bool show);
         void ActivateBellIndicatorTimer();
 
+        void ShowActivityIndicator(const bool show);
+        void ActivateActivityIndicatorTimer();
+
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                                                         const float splitSize,
@@ -211,6 +214,9 @@ namespace winrt::TerminalApp::implementation
 
         SafeDispatcherTimer _bellIndicatorTimer;
         void _BellIndicatorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
+
+        SafeDispatcherTimer _activityIndicatorTimer;
+        void _ActivityIndicatorTimerTick(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& e);
 
         void _UpdateHeaderControlMaxWidth();
 

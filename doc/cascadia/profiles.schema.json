@@ -2849,6 +2849,78 @@
           "description": "Sets the sound played when the application emits a BEL. When set to an array, the terminal will pick one of those sounds at random.",
           "$ref": "#/$defs/BellSound"
         },
+        "notifyOnInactiveOutput": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "taskbar",
+                  "audible",
+                  "tab",
+                  "notification"
+                ]
+              }
+            },
+            {
+              "type": "string",
+              "enum": [
+                "taskbar",
+                "audible",
+                "tab",
+                "notification",
+                "all",
+                "none"
+              ]
+            }
+          ],
+          "description": "Controls how you are notified when an inactive tab produces new output."
+        },
+        "notifyOnNextPrompt": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "taskbar",
+                  "audible",
+                  "tab",
+                  "notification"
+                ]
+              }
+            },
+            {
+              "type": "string",
+              "enum": [
+                "taskbar",
+                "audible",
+                "tab",
+                "notification",
+                "all",
+                "none"
+              ]
+            }
+          ],
+          "description": "Controls how you are notified when a new shell prompt is detected. Requires shell integration."
+        },
+        "autoDetectRunningCommand": {
+          "default": "disabled",
+          "description": "Automatically detect when a command is running and show a progress indicator in the tab and taskbar.",
+          "enum": [
+            "disabled",
+            "automatic",
+            "progress"
+          ],
+          "type": "string"
+        },
         "closeOnExit": {
           "default": "automatic",
           "description": "Sets how the profile reacts to termination or failure to launch. Possible values:\n -\"graceful\" (close when exit is typed or the process exits normally)\n -\"always\" (always close)\n -\"automatic\" (behave as \"graceful\" only for processes launched by terminal, behave as \"always\" otherwise)\n -\"never\" (never close).\ntrue and false are accepted as synonyms for \"graceful\" and \"never\" respectively.",

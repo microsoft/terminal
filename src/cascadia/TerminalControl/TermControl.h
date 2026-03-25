@@ -212,6 +212,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, IInspectable> FocusFollowMouseRequested;
         til::typed_event<Control::TermControl, Windows::UI::Xaml::RoutedEventArgs> Initialized;
         til::typed_event<> WarningBell;
+        til::typed_event<> PromptStarted;
+        til::typed_event<> OutputStarted;
+        til::typed_event<> OutputIdle;
         til::typed_event<IInspectable, Control::KeySentEventArgs> KeySent;
         til::typed_event<IInspectable, Control::CharSentEventArgs> CharSent;
         til::typed_event<IInspectable, Control::StringSentEventArgs> StringSent;
@@ -425,6 +428,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
+        void _corePromptStarted(const IInspectable& sender, const IInspectable& args);
+        void _coreOutputStarted(const IInspectable& sender, const IInspectable& args);
         void _coreOutputIdle(const IInspectable& sender, const IInspectable& args);
 
         winrt::Windows::Foundation::Point _toPosInDips(const Core::Point terminalCellPos);
@@ -450,6 +455,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             Control::ControlCore::ScrollPositionChanged_revoker coreScrollPositionChanged;
             Control::ControlCore::WarningBell_revoker WarningBell;
+            Control::ControlCore::PromptStarted_revoker PromptStarted;
+            Control::ControlCore::OutputStarted_revoker OutputStarted;
             Control::ControlCore::RendererEnteredErrorState_revoker RendererEnteredErrorState;
             Control::ControlCore::BackgroundColorChanged_revoker BackgroundColorChanged;
             Control::ControlCore::FontSizeChanged_revoker FontSizeChanged;

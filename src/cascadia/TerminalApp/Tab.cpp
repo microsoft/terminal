@@ -123,6 +123,12 @@ namespace winrt::TerminalApp::implementation
         _bellIndicatorTimer.Stop();
     }
 
+    void Tab::_ActivityIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
+    {
+        ShowActivityIndicator(false);
+        _activityIndicatorTimer.Stop();
+    }
+
     // Method Description:
     // - Initializes a TabViewItem for this Tab instance.
     // Arguments:
@@ -329,6 +335,10 @@ namespace winrt::TerminalApp::implementation
             {
                 ShowBellIndicator(false);
             }
+            if (_tabStatus.ActivityIndicator())
+            {
+                ShowActivityIndicator(false);
+            }
         }
     }
 
@@ -457,6 +467,26 @@ namespace winrt::TerminalApp::implementation
         }
 
         _bellIndicatorTimer.Start();
+    }
+
+    void Tab::ShowActivityIndicator(const bool show)
+    {
+        ASSERT_UI_THREAD();
+
+        _tabStatus.ActivityIndicator(show);
+    }
+
+    void Tab::ActivateActivityIndicatorTimer()
+    {
+        ASSERT_UI_THREAD();
+
+        if (!_activityIndicatorTimer)
+        {
+            _activityIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+            _activityIndicatorTimer.Tick({ get_weak(), &Tab::_ActivityIndicatorTimerTick });
+        }
+
+        _activityIndicatorTimer.Start();
     }
 
     // Method Description:
@@ -1068,6 +1098,7 @@ namespace winrt::TerminalApp::implementation
             dispatcher,
             til::throttled_func_options{
                 .delay = std::chrono::milliseconds{ 200 },
+                .leading = true,
                 .trailing = true,
             },
             [weakThis]() {
@@ -1168,13 +1199,50 @@ namespace winrt::TerminalApp::implementation
 
         events.NotificationRequested = content.NotificationRequested(
             winrt::auto_revoke,
-            [dispatcher, weakThis](TerminalApp::IPaneContent /*sender*/, auto notifArgs) -> safe_void_coroutine {
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto notifArgs) -> safe_void_coroutine {
                 const auto weakThisCopy = weakThis;
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
                 {
-                    const auto title = notifArgs.Title().empty() ? tab->Title() : notifArgs.Title();
-                    tab->TabToastNotificationRequested.raise(title, notifArgs.Body());
+                    const auto activeContent = tab->GetActiveContent();
+                    const auto isActivePaneContent = activeContent && activeContent == sender;
+
+                    if (notifArgs.OnlyWhenInactive() && isActivePaneContent &&
+                        tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        co_return;
+                    }
+
+                    const auto style = notifArgs.Style();
+
+                    if (WI_IsFlagSet(style, OutputNotificationStyle::Taskbar))
+                    {
+                        tab->TabRaiseVisualBell.raise();
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Audible))
+                    {
+                        if (const auto termContent{ sender.try_as<TerminalApp::TerminalPaneContent>() })
+                        {
+                            termContent.PlayNotificationSound();
+                        }
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Tab))
+                    {
+                        tab->ShowActivityIndicator(true);
+
+                        if (tab->_focusState != WUX::FocusState::Unfocused)
+                        {
+                            tab->ActivateActivityIndicatorTimer();
+                        }
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Notification))
+                    {
+                        const auto title = notifArgs.Title().empty() ? tab->Title() : notifArgs.Title();
+                        tab->TabToastNotificationRequested.raise(title, notifArgs.Body());
+                    }
                 }
             });
 
@@ -1404,6 +1472,10 @@ namespace winrt::TerminalApp::implementation
                 if (tab->_tabStatus.BellIndicator())
                 {
                     tab->ShowBellIndicator(false);
+                }
+                if (tab->_tabStatus.ActivityIndicator())
+                {
+                    tab->ShowActivityIndicator(false);
                 }
             }
         });
