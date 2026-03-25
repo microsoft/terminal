@@ -183,7 +183,7 @@ namespace til::spsc
         // Wait, what? [7, 0)? How does that work? As all positions are modulo _capacity, 0 mod 10 is the same as 10 mod 10.
         // If we only want to read forward in the buffer [7, 0) is thus the same as [7, 10).
         //
-        // If we read 3 items from the queue the contents will be:
+        // If we read 3 items from the queue, the contents will be:
         //   [ _ | _ | _ | 3 | 4 | 5 | 6 | _ | _ | _ | _ ]
         //                 ^               ^
         //          _consumer = 3      _producer = 7
