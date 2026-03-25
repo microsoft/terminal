@@ -169,7 +169,7 @@ namespace til::spsc
         //   https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem
         //
         // arc follows the classic spsc design and manages a ring buffer with two positions: _producer and _consumer.
-        // They contain the position the producer / consumer will next write to / read from respectively.
+        // They contain the position that the producer / consumer will next write to / read from respectively.
         // As usual with ring buffers, these positions are modulo to the _capacity of the underlying buffer.
         // The producer's writable range is [_producer, _consumer) and the consumer's readable is [_consumer, _producer).
         //

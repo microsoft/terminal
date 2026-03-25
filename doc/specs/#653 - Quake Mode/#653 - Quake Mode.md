@@ -69,7 +69,7 @@ To implement this feature, we'll add the following settings:
 
 ### `globalSummon` Action
 
-The `globalSummon` action will be a keybinding the user can use to summon a
+The `globalSummon` action will be a keybinding that the user can use to summon a
 Terminal window from anywhere in the OS. Various arguments to the action will
 specify which window is summoned, to where, and how the window should behave on
 summon.

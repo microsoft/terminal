@@ -103,7 +103,7 @@
         <!-- Blank the SourceProject here to vend all files into the root of the package. -->
         <SourceProject>
         </SourceProject>
-        <!-- Replace the filename for wt/wtd.exe with the one the manifest wants. -->
+        <!-- Replace the filename for wt/wtd.exe with the one that the manifest wants. -->
         <TargetPath Condition="'%(Filename)' == 'wt' and '%(Extension)' == '.exe'">$(OCExecutionAliasName).exe</TargetPath>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>

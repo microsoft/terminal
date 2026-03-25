@@ -983,7 +983,7 @@ of each other.
    all the logic concerning input. The core will expose these methods that the
    UI layer calls as projected methods
 
-8. (Dependent on 7): Expose the methods the UI layer calls on the core as
+8. (Dependent on 7): Expose the methods that the UI layer calls on the core as
    projected methods. The control is still fundamentally in-proc, and the UI
    layer calls directly into the implementation of the control core, but the
    methods _could_ be used x-proc.

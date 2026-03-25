@@ -505,8 +505,8 @@ like so:
 // To view the default settings, open the defaults.json file in this directory
 ```
 
-The "Settings" button would then only open the file the user needs to edit, and
-provide them instructions on how to open the defaults file.
+The "Settings" button would then only open the file that the user needs to edit,
+and provide them instructions on how to open the defaults file.
 
 There could alternatively be a hidden option for the "Open Settings" button,
 where holding <kbd>Alt</kbd> while clicking on the button would open the
