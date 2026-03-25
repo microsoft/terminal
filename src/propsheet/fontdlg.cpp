@@ -579,7 +579,7 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
                 continue;
             }
 
-            // if we're being asked to add bold fonts, add unconditionally according to weight. Otherwise, only this
+            // if we're being asked to add bold fonts, add unconditionally according to weight. Otherwise, only add this
             // entry to the list of it's in line with user choice. Raster fonts aren't available in bold.
             if (!fAddBoldFonts && gbBold != IS_BOLD(FontInfo[i].Weight))
             {
