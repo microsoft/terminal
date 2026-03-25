@@ -791,7 +791,7 @@ namespace winrt::TerminalApp::implementation
                     _close();
 
                     // But make an exception for the Toggle Command Palette action: we don't want the dispatch
-                    // make the command palette - that was just closed - visible again.
+                    // to make the command palette - that was just closed - visible again.
                     // All other actions can just be dispatched.
                     if (command.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
                     {

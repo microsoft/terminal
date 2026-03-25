@@ -55,7 +55,7 @@ Above is the `SearchBoxControl` in dark theme and light theme.
 
 ![SearchBox mockup, arrow button clicked](images/SearchBoxUpSelected.png)
 
-The search box defaults to be on the top right corner of the Terminal window. If the current tab is split into panes, each pane will have an individual searchbox.
+The search box defaults to the top right corner of the Terminal window. If the current tab is split into panes, each pane will have an individual searchbox.
 
 #### Search process
 1. The user presses <kbd>ctrl+shift+f</kbd> (or user's custom key binding) to open the search box. Focus will move to the TextBox.
