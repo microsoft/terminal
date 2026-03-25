@@ -4727,7 +4727,7 @@ namespace winrt::TerminalApp::implementation
 
     // Function Description:
     // - Helper to launch a new WT instance elevated. It'll do this by spawning
-    //   a helper process, who will asking the shell to elevate the process for
+    //   a helper process, that will ask the shell to elevate the process for
     //   us. This might cause a UAC prompt. The elevation is performed on a
     //   background thread, as to not block the UI thread.
     // Arguments:
