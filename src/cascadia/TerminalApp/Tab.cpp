@@ -654,7 +654,7 @@ namespace winrt::TerminalApp::implementation
 
         _activePane = original;
 
-        // Add a event handlers to the new panes' GotFocus event. When the pane
+        // Add event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
         _AttachEventHandlersToPane(original);
 
