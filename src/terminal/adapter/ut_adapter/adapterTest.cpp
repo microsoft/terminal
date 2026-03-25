@@ -1648,7 +1648,7 @@ public:
 
         Log::Comment(L"Test 2: Verify space decrease");
         _testGetSet->PrepData();
-        // Define four 8-byte macros, i.e. 32 byes (2 macro blocks).
+        // Define four 8-byte macros, i.e. 32 bytes (2 macro blocks).
         _stateMachine->ProcessString(L"\033P1;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P2;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P3;0;0!z12345678\033\\");
