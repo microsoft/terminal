@@ -551,7 +551,7 @@ this works as expected.
 
 Painfully, powershell uses `;` as a separator between commands as well. So, if
 someone wanted to call a `wt` commandline in powershell with multiple commands,
-the user would need to also escape those semicolons for powershell first. That
+the user would also need to escape those semicolons for powershell first. That
 means a command like ```wt new-tab ; split-pane``` would need to be ```wt new-tab
 `; split-pane``` in powershell, and ```wt new-tab ; split-pane commandline \; with
 \; semicolons``` would need to become ```wt new-tab `; split-pane commandline \`;
