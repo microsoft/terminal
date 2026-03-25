@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "DesktopNotification.h"
 
+#include <WtExeUtils.h>
+
 using namespace winrt::Windows::UI::Notifications;
 using namespace winrt::Windows::Data::Xml::Dom;
 
@@ -96,10 +98,26 @@ namespace winrt::TerminalApp::implementation
             }
 
             // For packaged apps, CreateToastNotifier() uses the package identity automatically.
-            // For unpackaged apps, we need to provide an AUMID, but that case is less common
-            // and toast notifications may not be supported without additional setup.
-            auto notifier = ToastNotificationManager::CreateToastNotifier();
-            notifier.Show(toast);
+            // For unpackaged apps, we must pass the explicit AUMID that was registered
+            // at startup via SetCurrentProcessExplicitAppUserModelID.
+            winrt::Windows::UI::Notifications::ToastNotifier notifier{ nullptr };
+            if (IsPackaged())
+            {
+                notifier = ToastNotificationManager::CreateToastNotifier();
+            }
+            else
+            {
+                // Retrieve the AUMID that was set by WindowEmperor at startup.
+                wil::unique_cotaskmem_string aumid;
+                if (SUCCEEDED(GetCurrentProcessExplicitAppUserModelID(&aumid)))
+                {
+                    notifier = ToastNotificationManager::CreateToastNotifier(aumid.get());
+                }
+            }
+            if (notifier)
+            {
+                notifier.Show(toast);
+            }
         }
         catch (...)
         {
