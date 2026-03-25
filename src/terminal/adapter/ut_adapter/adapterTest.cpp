@@ -60,6 +60,10 @@ using namespace Microsoft::Console::VirtualTerminal;
 class TestGetSet final : public ITerminalApi
 {
 public:
+    void UnknownSequence() noexcept override
+    {
+    }
+
     void ReturnResponse(const std::wstring_view response) override
     {
         Log::Comment(L"ReturnResponse MOCK called...");
