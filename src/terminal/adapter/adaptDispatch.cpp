@@ -3845,6 +3845,35 @@ void AdaptDispatch::DoWTAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - OSC 777 - Handles desktop notification requests.
+//   The format is: OSC 777;notify;title;body ST
+// Arguments:
+// - string: contains the parameters that define the notification
+void AdaptDispatch::DoDesktopNotification(const std::wstring_view string)
+{
+    if (!_optionalFeatures.test(OptionalFeature::DesktopNotification))
+    {
+        return;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return;
+    }
+
+    const auto action = til::at(parts, 0);
+
+    if (action == L"notify")
+    {
+        const auto title = parts.size() >= 2 ? til::at(parts, 1) : std::wstring_view{};
+        const auto body = parts.size() >= 3 ? til::at(parts, 2) : std::wstring_view{};
+        _api.ShowNotification(title, body);
+    }
+}
+
+// Method Description:
 // - SIXEL - Defines an image transmitted in sixel format via the returned
 //   StringHandler function.
 // Arguments:
