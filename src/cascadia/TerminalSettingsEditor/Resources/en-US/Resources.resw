@@ -2147,7 +2147,7 @@
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Shortcut</value>
-    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+    <comment>The label for a "key chord listener" control that sets the keys to which a key binding is bound.</comment>
   </data>
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>Text Formatting</value>
