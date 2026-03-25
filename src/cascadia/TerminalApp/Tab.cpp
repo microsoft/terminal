@@ -2353,7 +2353,7 @@ namespace winrt::TerminalApp::implementation
         auto deselectedTabColor = color.with_alpha(77); // 255 * .3 = 77
 
         // If we DON'T have a color set from the color picker, or the profile's
-        // tabColor, but we do have a unfocused color in the theme, use the
+        // tabColor, but if we have an unfocused color in the theme, use the
         // unfocused theme color here instead.
         if (!GetTabColor().has_value() &&
             _unfocusedThemeColor != nullptr)
