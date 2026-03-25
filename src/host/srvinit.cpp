@@ -395,7 +395,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 //    all necessary callback information for all subsequent API calls.
 // Return Value:
 // - COM errors, registry errors, pipe errors, handle manipulation errors,
-//   errors from the creating the thread for the
+//   errors from creating the thread for the
 //   standard IO thread loop for the server to process messages
 //   from the driver... or an S_OK success.
 [[nodiscard]] HRESULT ConsoleEstablishHandoff([[maybe_unused]] _In_ HANDLE Server,
