@@ -167,7 +167,7 @@ private:
         DWORD dwSelectionFlags{ 0 };
 
         // -- Current Selection Data --
-        // Anchor is the point the selection was started from (and will be one of the corners of the rectangle).
+        // Anchor is the point from which the selection was started (and will be one of the corners of the rectangle).
         til::point coordSelectionAnchor{};
         // Rectangle is the area inscribing the selection. It is extended to screen edges in a particular way for line selection.
         til::inclusive_rect srSelectionRect{};
