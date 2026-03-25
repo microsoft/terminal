@@ -222,7 +222,7 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(L"not-null.png", profile0->Icon().Path());
 
         Log::Comment(NoThrowString().Format(
-            L"Verify that layering an object the key set to null will clear the key"));
+            L"Verify that layering an object with the key set to null will clear the key"));
         profile0->LayerJson(profile1Json);
         VERIFY_IS_TRUE(profile0->Icon().Path().empty());
 
