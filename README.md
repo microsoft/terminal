@@ -253,7 +253,7 @@ releases](https://github.com/microsoft/terminal/releases).
 
 ---
 
-## Resources
+## Resource
 
 For more information about Windows Terminal, you may find some of these
 resources useful and interesting:
