@@ -166,7 +166,7 @@ public:
 
     virtual void DoWTAction(const std::wstring_view string) = 0;
 
-    virtual void DoDesktopNotification(const std::wstring_view string) = 0;
+    virtual void DoUrxvtAction(const std::wstring_view string) = 0;
 
     virtual StringHandler DefineSixelImage(const VTInt macroParameter,
                                            const DispatchTypes::SixelBackground backgroundSelect,

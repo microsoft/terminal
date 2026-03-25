@@ -910,9 +910,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         _dispatch->DoWTAction(string);
         break;
     }
-    case OscActionCodes::DesktopNotification:
+    case OscActionCodes::UrxvtAction:
     {
-        _dispatch->DoDesktopNotification(string);
+        _dispatch->DoUrxvtAction(string);
         break;
     }
     default:
