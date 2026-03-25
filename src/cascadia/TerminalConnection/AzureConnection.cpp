@@ -879,7 +879,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Arguments:
     // - the device code that would have been received when authentication was initiated
     // - the polling interval duration
-    // - the duration the code is still valid for
+    // - the duration for which the code is still valid
     // Return value:
     // - if authentication is done successfully, then return the response from the server
     // - else, throw an exception
