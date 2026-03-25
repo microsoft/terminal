@@ -69,6 +69,7 @@ public:
     void BackIndex() override {} // DECBI
     void ForwardIndex() override {} // DECFI
     void SetWindowTitle(std::wstring_view /*title*/) override {} // DECSWT, OscWindowTitle
+    void SetCurrentWorkingDirectory(std::wstring_view /*uri*/) override {} // OSC 7
     void HorizontalTabSet() override {} // HTS
     void ForwardTab(const VTInt /*numTabs*/) override {} // CHT, HT
     void BackwardsTab(const VTInt /*numTabs*/) override {} // CBT
