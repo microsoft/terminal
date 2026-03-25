@@ -364,29 +364,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         __assume(false);
     }
 
-    // When running without package identity, set an explicit AppUserModelID so
-    // that toast notifications (and other shell features like taskbar grouping)
-    // work correctly. We include a hash of the executable path to prevent
-    // crosstalk between different portable/unpackaged installations — the same
-    // isolation strategy used for the single-instance mutex above.
-    if (!IsPackaged())
-    {
-        std::wstring aumid;
-#if defined(WT_BRANDING_RELEASE)
-        aumid = L"Microsoft.WindowsTerminal";
-#elif defined(WT_BRANDING_PREVIEW)
-        aumid = L"Microsoft.WindowsTerminalPreview";
-#elif defined(WT_BRANDING_CANARY)
-        aumid = L"Microsoft.WindowsTerminalCanary";
-#else
-        aumid = L"Microsoft.WindowsTerminalDev";
-#endif
-        const auto path = wil::QueryFullProcessImageNameW<std::wstring>();
-        const auto hash = til::hash(path);
-        fmt::format_to(std::back_inserter(aumid), FMT_COMPILE(L".{:016x}"), hash);
-        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(aumid.c_str()));
-    }
-
     _app = winrt::TerminalApp::App{};
     _app.Logic().ReloadSettings();
 
