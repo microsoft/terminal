@@ -1765,7 +1765,7 @@
       ]
     },
     "ExportBufferAction": {
-      "description": "Arguments corresponding to a exportBuffer Action",
+      "description": "Arguments corresponding to an exportBuffer Action",
       "allOf": [
         {
           "$ref": "#/$defs/ShortcutAction"
@@ -2242,7 +2242,7 @@
           "$ref": "#/$defs/Icon"
         },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is an object, the key property of the object will be used to lookup a localized string resource for the command",
           "type": [
             "string",
             "object",

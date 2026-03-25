@@ -861,7 +861,7 @@ namespace winrt::TerminalApp::implementation
     // - Used to tell the app that the titlebar has been clicked. The App won't
     //   actually receive any clicks in the titlebar area, so this is a helper
     //   to clue the app in that a click has happened. The App will use this as
-    //   a indicator that it needs to dismiss any open flyouts.
+    //   an indicator that it needs to dismiss any open flyouts.
     // Arguments:
     // - <none>
     // Return Value:

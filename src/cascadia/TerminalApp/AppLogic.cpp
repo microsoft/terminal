@@ -294,7 +294,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Registers for changes to the settings folder and upon a updated settings
+    // - Registers for changes to the settings folder and upon an updated settings
     //      profile calls ReloadSettings().
     // Arguments:
     // - <none>

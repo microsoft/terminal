@@ -1132,7 +1132,7 @@ prompt the user for permission, but that's an acceptable user experience.
 
 ## TODOs
 
-* [x] Experimentally prove that a elevated window can host an unelevated content
+* [x] Experimentally prove that an elevated window can host an unelevated content
   - Research proved the opposite actually.
 * [ ] Experimentally prove that I can toss content process IDs from one window
   to another

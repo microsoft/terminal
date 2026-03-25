@@ -229,7 +229,7 @@ with the default profile running `wsl` in it.
 
 We'll add another action that can be used to toggle the visibility of the
 command palette. Pressing that keybinding will bring up the command palette. We
-should make sure to add a argument to this action that specifies whether the
+should make sure to add an argument to this action that specifies whether the
 palette should be opened directly in Action Mode or Commandline Mode.
 
 When the command palette appears, we'll want it to appear as a single overlay

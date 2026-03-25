@@ -3649,7 +3649,7 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 }
 
 // Method Description:
-// - Performs a iTerm2 action
+// - Performs an iTerm2 action
 // - Ascribes to the ITermDispatch interface
 // - Currently, the actions we support are:
 //   * `OSC1337;SetMark`: mark a line as a prompt line

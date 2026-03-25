@@ -682,7 +682,7 @@ namespace ControlUnitTests
     void ControlCoreTests::TestSelectOutputExactWrap()
     {
         // Just like the TestSelectOutputScrolling test, but these lines will
-        // exactly wrap to the right edge of the buffer, to catch a edge case
+        // exactly wrap to the right edge of the buffer, to catch an edge case
         // present in `ControlCore::_selectSpan`
         auto [settings, conn] = _createSettingsAndConnection();
         Log::Comment(L"Create ControlCore object");

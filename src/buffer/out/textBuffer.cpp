@@ -100,7 +100,7 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
     const auto rowStride = rowSize + charsBufferSize + charOffsetsBufferSize;
     assert(rowStride % alignof(ROW) == 0);
 
-    // 65535*65535 cells would result in a allocSize of 8GiB.
+    // 65535*65535 cells would result in an allocSize of 8GiB.
     // --> Use uint64_t so that we can safely do our calculations even on x86.
     // We allocate 1 additional row, which will be used for GetScratchpadRow().
     const auto rowCount = ::base::strict_cast<uint64_t>(h) + 1;
