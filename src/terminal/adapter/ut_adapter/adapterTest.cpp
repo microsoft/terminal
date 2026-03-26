@@ -3151,7 +3151,7 @@ public:
 
         _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
-        Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
+        Log::Comment(L"Test 1: Change Indexed Foreground without index parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
@@ -3226,7 +3226,7 @@ public:
 
         _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
-        Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
+        Log::Comment(L"Test 1: Change Indexed Foreground without index sub parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         _testGetSet->MakeSubParamsAndRanges({ { 5 } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
