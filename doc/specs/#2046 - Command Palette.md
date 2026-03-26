@@ -578,7 +578,7 @@ original draft. Please also refer to:
   in commandline mode before we try to auto-parse their commandline, to check
   for errors. Might be useful to help sanity check users. We can always parse
   their `wt` commandlines safely without having to execute them.
-* It would be cool if the commands the user typed in Commandline Mode could be
+* It would be cool if commands the user typed in Commandline Mode could be
   saved to a history of some sort, so they could easily be re-entered.
   - It would be especially cool if it could do this across launches.
     - We don't really have any way of storing transient data like that in the
