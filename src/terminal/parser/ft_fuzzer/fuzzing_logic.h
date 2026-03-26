@@ -348,7 +348,7 @@ namespace fuzz
 
                 // Performance optimization: 95% of the time the buffer returned from eval will not be reallocated
                 // and thus will still be pointing at pszReallocTemp.  In this case, it is not necessary to duplicate
-                // the string a second time, just transfer ownership to the calling function.
+                // the string again, just transfer ownership to the calling function.
                 if ((LPSTR)eval == pszReallocTemp)
                 {
                     pszRealloc = pszReallocTemp;
