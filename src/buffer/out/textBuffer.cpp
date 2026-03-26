@@ -2844,7 +2844,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             // We don't need to be smart about this. Reset() is fast and shrinking doesn't occur often.
             if (newY >= newHeight && newX == 0)
             {
-                // We need to ensure not to overwrite the row the cursor is on.
+                // We need to ensure not to overwrite the row containing the cursor.
                 if (newY >= newYLimit)
                 {
                     break;
