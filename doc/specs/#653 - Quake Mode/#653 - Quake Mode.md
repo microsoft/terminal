@@ -182,7 +182,7 @@ for pure markdown, sorry. -->
 <tr>
 <td><code>"any"</code><br> Summon the MRU window</td>
 
-<td>Go to the desktop the window is on  (leave position alone)</td>
+<td>Go to the desktop the window is on (leave position alone)</td>
 <td>Move the window to this desktop (leave position alone)</td>
 <td>
 
