@@ -317,9 +317,11 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     // When running without package identity, set an explicit AppUserModelID so
     // that toast notifications (and other shell features like taskbar grouping)
-    // work correctly. We include a hash of the executable path to prevent
-    // crosstalk between different portable/unpackaged installations — the same
-    // isolation strategy used for the single-instance mutex below.
+    // work correctly. We include...
+    // - a hash of the executable path
+    // - a hash of the user SID
+    // This prevents crosstalk between different portable/unpackaged installations.
+    // The same isolation strategy is used for the single-instance mutex below.
     std::wstring unpackagedAumid;
 
     std::wstring windowClassName;
@@ -352,7 +354,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
         fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:08x}"), hash);
 #endif
-        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(unpackagedAumid.c_str()));
     }
 
     {
@@ -365,6 +366,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 #else
         fmt::format_to(std::back_inserter(windowClassName), FMT_COMPILE(L" {:08x}"), hash);
 #endif
+        if (!IsPackaged())
+        {
+#ifdef _WIN64
+            fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:016x}"), hash);
+#else
+            fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:08x}"), hash);
+#endif
+            LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(unpackagedAumid.c_str()));
+        }
     }
 
     // Windows Terminal is a single-instance application. Either acquire ownership
