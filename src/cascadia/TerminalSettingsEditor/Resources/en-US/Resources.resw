@@ -293,7 +293,7 @@
     <comment>Header for a control to set the query URL when using the "search web" action.</comment>
   </data>
   <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
-    <value>The placeholder "%s" will replaced with the search query.</value>
+    <value>The placeholder "%s" will be replaced with the search query.</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
