@@ -2098,7 +2098,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Calculates if the tab is read-only.
     // The tab is considered read-only if one of the panes is read-only.
-    // If after the calculation the tab is read-only we hide the close button on the tab view item
+    // If, after the calculation, the tab is read-only we hide the close button on the tab view item
     void Tab::_RecalculateAndApplyReadOnly()
     {
         const auto control = GetActiveTerminalControl();
