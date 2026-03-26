@@ -33,7 +33,7 @@ GOTO :END_DATA_SEGMENT
 
 :: Complete matrix of SGR parameters available
 :: This definition also demonstrates the various configuration changes
-:: which are used to control the way the table is generated
+:: which are used to control the way that the table is generated
 __DATA__
 :: Select Graphic Rendition (SGR) parameters
 :: #NUL# is treated as a special case to provide cells in that column

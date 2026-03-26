@@ -1018,7 +1018,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _terminalID = terminalResponse.GetNamedString(L"id");
 
         // we have to do some post-handling to get the proper socket endpoint
-        // the logic here is based on the way the cloud shell team itself does it
+        // the logic here is based on the way that the cloud shell team itself does it
         winrt::hstring finalSocketUri;
         const std::wstring_view wCloudShellUri{ _cloudShellUri };
 
