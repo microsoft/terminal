@@ -67,14 +67,14 @@ Install the [Windows Terminal from the Microsoft Store][store-install-link].
 This allows you to always be on the latest version when we release new builds
 with automatic upgrades.
 
-This is our preferred method.
+This is the recommended installation method.
 
 ### Other install methods
 
 #### Via GitHub
 
-For users who are unable to install Windows Terminal from the Microsoft Store,
-released builds can be manually downloaded from this repository's [Releases
+If you are unable to install Windows Terminal from the Microsoft Store,
+you can manually download released builds from the repository's Releases page. [Releases
 page](https://github.com/microsoft/terminal/releases).
 
 Download the `Microsoft.WindowsTerminal_<versionNumber>.msixbundle` file from
@@ -104,6 +104,8 @@ Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
 [winget](https://github.com/microsoft/winget-cli) users can download and install
 the latest Terminal release by installing the `Microsoft.WindowsTerminal`
 package:
+
+For example, to install Windows Terminal using winget:
 
 ```powershell
 winget install --id Microsoft.WindowsTerminal -e
