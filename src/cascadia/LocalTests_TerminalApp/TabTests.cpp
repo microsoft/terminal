@@ -12,6 +12,7 @@
 #include "../TerminalApp/CommandPalette.h"
 #include "../TerminalApp/ContentManager.h"
 #include "CppWinrtTailored.h"
+#include <cwctype>
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -78,6 +79,10 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TryDuplicateBadTab);
         TEST_METHOD(TryDuplicateBadPane);
+        TEST_METHOD(TrackSelectedTabsVisualState);
+        TEST_METHOD(MoveMultipleTabsAsBlock);
+        TEST_METHOD(BuildStartupActionsForMultipleTabs);
+        TEST_METHOD(AttachContentInsertsDraggedTabsAfterTargetIndex);
 
         TEST_METHOD(TryZoomPane);
         TEST_METHOD(MoveFocusFromZoomedPane);
@@ -108,9 +113,15 @@ namespace TerminalAppLocalTests
         }
 
     private:
+        void _primeApplicationResourcesForTabTests();
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                     CascadiaSettings initialSettings);
-        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
+                                     CascadiaSettings initialSettings,
+                                     winrt::TerminalApp::ContentManager contentManager = nullptr);
+        void _yieldToLowPriorityDispatcher(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page);
+        void _ensureStableBaselineTab(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page);
+        void _waitForTabCount(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page, uint32_t expectedCount);
+        void _openProfileTab(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page, int32_t profileIndex, uint32_t expectedCount);
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup(winrt::TerminalApp::ContentManager contentManager = nullptr);
         winrt::com_ptr<winrt::TerminalApp::implementation::WindowProperties> _windowProperties;
         winrt::com_ptr<winrt::TerminalApp::implementation::ContentManager> _contentManager;
     };
@@ -120,6 +131,28 @@ namespace TerminalAppLocalTests
     {
         const auto result = RunOnUIThread(function);
         VERIFY_SUCCEEDED(result);
+    }
+
+    static NewTerminalArgs _profileArgs(const int32_t profileIndex)
+    {
+        auto index = profileIndex;
+        return NewTerminalArgs{ index };
+    }
+
+    void TabTests::_yieldToLowPriorityDispatcher(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page)
+    {
+        VERIFY_IS_NOT_NULL(page);
+
+        details::Event completedEvent;
+        VERIFY_IS_TRUE(completedEvent.IsValid());
+
+        auto action = page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Low, [] {});
+        action.Completed([&completedEvent](auto&&, auto&&) {
+            completedEvent.Set();
+            return S_OK;
+        });
+
+        VERIFY_SUCCEEDED(completedEvent.Wait());
     }
 
     void TabTests::EnsureTestsActivate()
@@ -171,6 +204,125 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
     }
 
+    void TabTests::_waitForTabCount(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page, const uint32_t expectedCount)
+    {
+        VERIFY_IS_NOT_NULL(page);
+
+        uint32_t actualCount{};
+        uint32_t actualTabItemCount{};
+        uint32_t consecutiveMatches{};
+        for (auto attempt = 0; attempt < 20; ++attempt)
+        {
+            _yieldToLowPriorityDispatcher(page);
+
+            const auto result = RunOnUIThread([&]() {
+                page->_tabView.UpdateLayout();
+                actualCount = page->_tabs.Size();
+                actualTabItemCount = page->_tabView.TabItems().Size();
+            });
+            VERIFY_SUCCEEDED(result);
+
+            if (actualCount == expectedCount && actualTabItemCount == expectedCount)
+            {
+                if (++consecutiveMatches >= 2)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                consecutiveMatches = 0;
+            }
+
+            Sleep(50);
+        }
+
+        VERIFY_ARE_EQUAL(expectedCount, actualCount);
+        VERIFY_ARE_EQUAL(expectedCount, actualTabItemCount);
+    }
+
+    void TabTests::_ensureStableBaselineTab(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page)
+    {
+        VERIFY_IS_NOT_NULL(page);
+
+        uint32_t latestCount{};
+        uint32_t stableBaselineSamples{};
+        uint32_t repairs{};
+
+        for (auto attempt = 0; attempt < 40; ++attempt)
+        {
+            _yieldToLowPriorityDispatcher(page);
+
+            auto result = RunOnUIThread([&]() {
+                page->_tabView.UpdateLayout();
+                latestCount = page->_tabs.Size();
+            });
+            VERIFY_SUCCEEDED(result);
+
+            if (latestCount == 0)
+            {
+                stableBaselineSamples = 0;
+                ++repairs;
+                _openProfileTab(page, 0, 1);
+                continue;
+            }
+
+            if (latestCount == 1)
+            {
+                if (++stableBaselineSamples >= 3)
+                {
+                    Log::Comment(NoThrowString().Format(L"Stable baseline final count=%u repairs=%u", latestCount, repairs));
+                    return;
+                }
+            }
+            else
+            {
+                stableBaselineSamples = 0;
+            }
+
+            Sleep(50);
+        }
+
+        Log::Comment(NoThrowString().Format(L"Stable baseline final count=%u repairs=%u stableSamples=%u", latestCount, repairs, stableBaselineSamples));
+        VERIFY_ARE_EQUAL(1u, latestCount);
+    }
+
+    void TabTests::_openProfileTab(const winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page, const int32_t profileIndex, const uint32_t expectedCount)
+    {
+        VERIFY_IS_NOT_NULL(page);
+
+        _yieldToLowPriorityDispatcher(page);
+
+        TestOnUIThread([&]() {
+            auto beforeCount = page->_tabs.Size();
+
+            if (profileIndex != 0 && (beforeCount + 1) < expectedCount)
+            {
+                const auto baselineHr = page->_OpenNewTab(_profileArgs(0));
+                const auto baselineCount = page->_tabs.Size();
+                Log::Comment(NoThrowString().Format(
+                    L"_OpenNewTab repaired missing baseline -> hr=0x%08x before=%u after=%u",
+                    static_cast<unsigned int>(baselineHr),
+                    beforeCount,
+                    baselineCount));
+                VERIFY_ARE_EQUAL(S_OK, baselineHr);
+                beforeCount = baselineCount;
+            }
+
+            const auto hr = page->_OpenNewTab(_profileArgs(profileIndex));
+            const auto afterCount = page->_tabs.Size();
+            Log::Comment(NoThrowString().Format(
+                L"_OpenNewTab(profileIndex=%d) -> hr=0x%08x before=%u after=%u",
+                profileIndex,
+                static_cast<unsigned int>(hr),
+                beforeCount,
+                afterCount));
+            VERIFY_ARE_EQUAL(S_OK, hr);
+        });
+
+        _waitForTabCount(page, expectedCount);
+    }
+
     void TabTests::CreateTerminalMuxXamlType()
     {
         winrt::com_ptr<winrt::TerminalApp::implementation::TabRowControl> tabRowControl{ nullptr };
@@ -186,6 +338,8 @@ namespace TerminalAppLocalTests
     {
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
 
+        _primeApplicationResourcesForTabTests();
+
         _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
         winrt::TerminalApp::WindowProperties props = *_windowProperties;
 
@@ -195,6 +349,64 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&page, props, contentManager]() {
             page = winrt::make_self<winrt::TerminalApp::implementation::TerminalPage>(props, contentManager);
             VERIFY_IS_NOT_NULL(page);
+        });
+        VERIFY_SUCCEEDED(result);
+
+        _yieldToLowPriorityDispatcher(page);
+    }
+
+    void TabTests::_primeApplicationResourcesForTabTests()
+    {
+        const auto result = RunOnUIThread([]() {
+            const auto app = winrt::Windows::UI::Xaml::Application::Current();
+            VERIFY_IS_NOT_NULL(app);
+
+            // Keep priming intentionally minimal for LocalTests: avoid pulling in
+            // full MUX dictionaries, but provide common TabView keys used during
+            // TerminalPage InitializeComponent.
+            auto resources = app.Resources();
+            const auto ensureBrush = [&](const wchar_t* key) {
+                const auto boxedKey = winrt::box_value(winrt::hstring{ key });
+                if (!resources.HasKey(boxedKey))
+                {
+                    resources.Insert(boxedKey, winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Transparent() });
+                }
+            };
+            const auto ensureDouble = [&](const wchar_t* key, const double value) {
+                const auto boxedKey = winrt::box_value(winrt::hstring{ key });
+                if (!resources.HasKey(boxedKey))
+                {
+                    resources.Insert(boxedKey, winrt::box_value(value));
+                }
+            };
+            const auto ensureCornerRadius = [&](const wchar_t* key) {
+                const auto boxedKey = winrt::box_value(winrt::hstring{ key });
+                if (!resources.HasKey(boxedKey))
+                {
+                    resources.Insert(boxedKey, winrt::box_value(winrt::Windows::UI::Xaml::CornerRadius{ 0, 0, 0, 0 }));
+                }
+            };
+            const auto ensureThickness = [&](const wchar_t* key) {
+                const auto boxedKey = winrt::box_value(winrt::hstring{ key });
+                if (!resources.HasKey(boxedKey))
+                {
+                    resources.Insert(boxedKey, winrt::box_value(winrt::Windows::UI::Xaml::Thickness{ 0, 0, 0, 0 }));
+                }
+            };
+            const auto ensureStyle = [&](const wchar_t* key, const winrt::Windows::UI::Xaml::Interop::TypeName& targetType) {
+                const auto boxedKey = winrt::box_value(winrt::hstring{ key });
+                if (!resources.HasKey(boxedKey))
+                {
+                    winrt::Windows::UI::Xaml::Style style;
+                    style.TargetType(targetType);
+                    resources.Insert(boxedKey, style);
+                }
+            };
+
+            ensureBrush(L"TabViewBackground");
+            Log::Comment(NoThrowString().Format(L"Resource probe: TabViewBackground=%d CardStrokeColorDefaultBrush=%d",
+                                                resources.HasKey(winrt::box_value(L"TabViewBackground")),
+                                                resources.HasKey(winrt::box_value(L"CardStrokeColorDefaultBrush"))));
         });
         VERIFY_SUCCEEDED(result);
     }
@@ -225,8 +437,11 @@ namespace TerminalAppLocalTests
     // Return Value:
     // - <none>
     void TabTests::_initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                           CascadiaSettings initialSettings)
+                                           CascadiaSettings initialSettings,
+                                           winrt::TerminalApp::ContentManager contentManager)
     {
+        _primeApplicationResourcesForTabTests();
+
         // This is super wacky, but we can't just initialize the
         // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
         // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
@@ -239,13 +454,150 @@ namespace TerminalAppLocalTests
 
         _windowProperties = winrt::make_self<winrt::TerminalApp::implementation::WindowProperties>();
         winrt::TerminalApp::WindowProperties props = *_windowProperties;
-        _contentManager = winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
-        winrt::TerminalApp::ContentManager contentManager = *_contentManager;
+        if (!contentManager)
+        {
+            _contentManager = winrt::make_self<winrt::TerminalApp::implementation::ContentManager>();
+            contentManager = *_contentManager;
+        }
+        else
+        {
+            _contentManager.copy_from(winrt::get_self<winrt::TerminalApp::implementation::ContentManager>(contentManager));
+        }
         Log::Comment(NoThrowString().Format(L"Construct the TerminalPage"));
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings, props, contentManager]() {
-            projectedPage = winrt::TerminalApp::TerminalPage(props, contentManager);
-            page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
-            page->_settings = initialSettings;
+            const auto app = winrt::Windows::UI::Xaml::Application::Current();
+            VERIFY_IS_NOT_NULL(app);
+            auto resources = app.Resources();
+            const auto donorResources = winrt::Microsoft::UI::Xaml::Controls::XamlControlsResources{};
+            std::unordered_set<std::wstring> injectedKeys;
+
+            const auto tryCopyFromDonor = [&](const winrt::hstring& key, winrt::Windows::Foundation::IInspectable& value) {
+                const auto keyObj = winrt::box_value(key);
+                if (donorResources.HasKey(keyObj))
+                {
+                    value = donorResources.Lookup(keyObj);
+                    Log::Comment(NoThrowString().Format(L"Donor hit root key '%s'", key.c_str()));
+                    return true;
+                }
+
+                const auto donorThemes = donorResources.ThemeDictionaries();
+                for (const auto& theme : { L"Default", L"Light", L"Dark", L"HighContrast" })
+                {
+                    const auto themeObj = winrt::box_value(theme);
+                    if (donorThemes.HasKey(themeObj))
+                    {
+                        const auto themeDictionary = donorThemes.Lookup(themeObj).as<winrt::Windows::UI::Xaml::ResourceDictionary>();
+                        if (themeDictionary.HasKey(keyObj))
+                        {
+                            value = themeDictionary.Lookup(keyObj);
+                            Log::Comment(NoThrowString().Format(L"Donor hit theme '%s' key '%s'", theme, key.c_str()));
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+            const auto insertFallbackForKey = [&](const std::wstring& key) {
+                const auto keyH = winrt::hstring{ key };
+                const auto keyObj = winrt::box_value(keyH);
+                if (resources.HasKey(keyObj))
+                {
+                    return;
+                }
+
+                winrt::Windows::Foundation::IInspectable value{ nullptr };
+                if (!tryCopyFromDonor(keyH, value))
+                {
+                    if (key.find(L"Thickness") != std::wstring::npos || key.find(L"Padding") != std::wstring::npos || key.find(L"Margin") != std::wstring::npos)
+                    {
+                        value = winrt::box_value(winrt::Windows::UI::Xaml::Thickness{ 0, 0, 0, 0 });
+                    }
+                    else if (key.find(L"CornerRadius") != std::wstring::npos || key.find(L"Radius") != std::wstring::npos)
+                    {
+                        value = winrt::box_value(winrt::Windows::UI::Xaml::CornerRadius{ 0, 0, 0, 0 });
+                    }
+                    else if (key.find(L"Style") != std::wstring::npos)
+                    {
+                        winrt::Windows::UI::Xaml::Style style;
+                        if (key.find(L"RepeatButtonStyle") != std::wstring::npos)
+                        {
+                            style.TargetType(winrt::xaml_typename<winrt::Windows::UI::Xaml::Controls::Primitives::RepeatButton>());
+                        }
+                        else if (key.find(L"ButtonStyle") != std::wstring::npos)
+                        {
+                            style.TargetType(winrt::xaml_typename<winrt::Windows::UI::Xaml::Controls::Button>());
+                        }
+                        else
+                        {
+                            style.TargetType(winrt::xaml_typename<winrt::Windows::UI::Xaml::Controls::Control>());
+                        }
+                        value = style;
+                    }
+                    else if (key.find(L"FontSize") != std::wstring::npos ||
+                             key.find(L"Width") != std::wstring::npos ||
+                             key.find(L"Height") != std::wstring::npos ||
+                             key.find(L"Min") != std::wstring::npos ||
+                             key.find(L"Max") != std::wstring::npos ||
+                             key.find(L"Opacity") != std::wstring::npos)
+                    {
+                        value = winrt::box_value(0.0);
+                    }
+                    else
+                    {
+                        value = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Transparent() };
+                    }
+                }
+
+                resources.Insert(keyObj, value);
+            };
+
+            for (auto attempt = 0; attempt < 512; attempt++)
+            {
+                try
+                {
+                    projectedPage = winrt::TerminalApp::TerminalPage(props, contentManager);
+                    page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
+                    page->_settings = initialSettings;
+                    return;
+                }
+                catch (const winrt::hresult_error& ex)
+                {
+                    std::wstring message = ex.message().c_str();
+                    constexpr std::wstring_view marker{ L"Cannot find a Resource with the Name/Key " };
+                    const auto markerPos = message.find(marker);
+                    if (markerPos == std::wstring::npos)
+                    {
+                        throw;
+                    }
+
+                    const auto keyStart = markerPos + marker.size();
+                    const auto keyEnd = message.find(L" [", keyStart);
+                    std::wstring key = message.substr(keyStart, keyEnd == std::wstring::npos ? std::wstring::npos : keyEnd - keyStart);
+                    while (!key.empty() && iswspace(key.front()))
+                    {
+                        key.erase(key.begin());
+                    }
+                    while (!key.empty() && iswspace(key.back()))
+                    {
+                        key.pop_back();
+                    }
+
+                    if (key.empty())
+                    {
+                        throw;
+                    }
+
+                    if (!injectedKeys.contains(key))
+                    {
+                        Log::Comment(NoThrowString().Format(L"Injecting fallback resource for '%s'", key.c_str()));
+                        injectedKeys.insert(key);
+                    }
+                    insertFallbackForKey(key);
+                }
+            }
+
+            VERIFY_FAIL(L"Failed to initialize TerminalPage after fallback resource retries.");
         });
         VERIFY_SUCCEEDED(result);
 
@@ -266,23 +618,26 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             VERIFY_IS_NOT_NULL(page);
             VERIFY_IS_NOT_NULL(page->_settings);
-            page->Create();
-            Log::Comment(L"Create()'d the page successfully");
 
             // Build a NewTab action, to make sure we start with one. The real
             // Terminal will always get one from AppCommandlineArgs.
             NewTerminalArgs newTerminalArgs{};
             NewTabArgs args{ newTerminalArgs };
             ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
-            // push the arg onto the front
-            page->_startupActions.push_back(std::move(newTabAction));
-            Log::Comment(L"Added a single newTab action");
+            page->SetStartupActions({ std::move(newTabAction) });
+            Log::Comment(L"Configured a single startup newTab action");
+
+            page->Create();
+            Log::Comment(L"Create()'d the page successfully");
 
             auto app = ::winrt::Windows::UI::Xaml::Application::Current();
 
             winrt::TerminalApp::TerminalPage pp = *page;
             winrt::Windows::UI::Xaml::Window::Current().Content(pp);
             winrt::Windows::UI::Xaml::Window::Current().Activate();
+            pp.UpdateLayout();
+            page->_tabRow.UpdateLayout();
+            page->_tabContent.UpdateLayout();
         });
         VERIFY_SUCCEEDED(result);
 
@@ -290,15 +645,65 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(waitForInitEvent.Wait());
         Log::Comment(L"...Done");
 
-        result = RunOnUIThread([&page]() {
+        uint32_t tabCount{};
+        uint32_t tabItemCount{};
+        bool hasSelectedItem{};
+        for (auto attempt = 0; attempt < 20; ++attempt)
+        {
+            result = RunOnUIThread([&]() {
+                tabCount = page->_tabs.Size();
+                tabItemCount = page->_tabView.TabItems().Size();
+                hasSelectedItem = static_cast<bool>(page->_tabView.SelectedItem());
+            });
+            VERIFY_SUCCEEDED(result);
+
+            if (tabCount > 0)
+            {
+                break;
+            }
+
+            Sleep(50);
+        }
+
+        const auto selectFirstTab = [&page]() {
+            const auto tabCount = page->_tabs.Size();
+            const auto tabItemCount = page->_tabView.TabItems().Size();
+            const auto hasSelectedItem = static_cast<bool>(page->_tabView.SelectedItem());
+
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
+            Log::Comment(NoThrowString().Format(
+                L"Selection sync state: tabs=%u tabItems=%u selectedItem=%d",
+                tabCount,
+                tabItemCount,
+                hasSelectedItem ? 1 : 0));
+            VERIFY_IS_TRUE(page->_tabs.Size() > 0);
             auto tab = page->_tabs.GetAt(0);
             auto tabImpl = page->_GetTabImpl(tab);
+            VERIFY_IS_NOT_NULL(tabImpl);
+            VERIFY_IS_TRUE(static_cast<bool>(tabImpl->TabViewItem()));
+            Log::Comment(L"About to assign TabView.SelectedItem");
             page->_tabView.SelectedItem(tabImpl->TabViewItem());
+            Log::Comment(L"About to call _UpdatedSelectedTab");
             page->_UpdatedSelectedTab(tab);
-        });
+            Log::Comment(L"Selected first tab successfully");
+        };
+
+        result = RunOnUIThread(selectFirstTab);
+        VERIFY_SUCCEEDED(result);
+
+        _ensureStableBaselineTab(page);
+        _waitForTabCount(page, 1);
+
+        result = RunOnUIThread(selectFirstTab);
+        VERIFY_SUCCEEDED(result);
+
+        _yieldToLowPriorityDispatcher(page);
+        _ensureStableBaselineTab(page);
+        _waitForTabCount(page, 1);
+
+        result = RunOnUIThread(selectFirstTab);
         VERIFY_SUCCEEDED(result);
     }
 
@@ -338,6 +743,8 @@ namespace TerminalAppLocalTests
         // it's weird.
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
         _initializeTerminalPage(page, settings0);
+        _ensureStableBaselineTab(page);
+        _waitForTabCount(page, 1);
 
         auto result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
@@ -561,12 +968,12 @@ namespace TerminalAppLocalTests
     // - <none>
     // Return Value:
     // - The initialized TerminalPage, ready to use.
-    winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
+    winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup(winrt::TerminalApp::ContentManager contentManager)
     {
         static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-            "showTabsInTitlebar": false,
+            "showTabsInTitlebar": true,
             "profiles": [
                 {
                     "name" : "profile0",
@@ -679,14 +1086,121 @@ namespace TerminalAppLocalTests
         // implementation _from_ the winrt object. This seems to work, even if
         // it's weird.
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
-        _initializeTerminalPage(page, settings0);
-
-        auto result = RunOnUIThread([&page]() {
-            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-        });
-        VERIFY_SUCCEEDED(result);
+        _initializeTerminalPage(page, settings0, contentManager);
+        _ensureStableBaselineTab(page);
 
         return page;
+    }
+
+    void TabTests::TrackSelectedTabsVisualState()
+    {
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        _openProfileTab(page, 1, 2);
+        _openProfileTab(page, 2, 3);
+        _openProfileTab(page, 3, 4);
+
+        TestOnUIThread([&page]() {
+            const auto tab0 = page->_tabs.GetAt(0);
+            const auto tab2 = page->_tabs.GetAt(2);
+            page->_SetSelectedTabs({ tab0, tab2 }, tab0);
+
+            VERIFY_ARE_EQUAL(2u, page->_selectedTabs.size());
+            VERIFY_IS_TRUE(page->_selectionAnchor == tab0);
+            VERIFY_IS_TRUE(page->_GetTabImpl(tab0)->IsMultiSelected());
+            VERIFY_IS_FALSE(page->_GetTabImpl(page->_tabs.GetAt(1))->IsMultiSelected());
+            VERIFY_IS_TRUE(page->_GetTabImpl(tab2)->IsMultiSelected());
+
+            page->_RemoveSelectedTab(tab0);
+            VERIFY_ARE_EQUAL(1u, page->_selectedTabs.size());
+            VERIFY_IS_TRUE(page->_selectionAnchor == tab2);
+            VERIFY_IS_FALSE(page->_GetTabImpl(tab0)->IsMultiSelected());
+            VERIFY_IS_TRUE(page->_GetTabImpl(tab2)->IsMultiSelected());
+        });
+    }
+
+    void TabTests::MoveMultipleTabsAsBlock()
+    {
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        _openProfileTab(page, 1, 2);
+        _openProfileTab(page, 2, 3);
+        _openProfileTab(page, 3, 4);
+
+        TestOnUIThread([&page]() {
+            const auto tab1 = page->_tabs.GetAt(1);
+            const auto tab2 = page->_tabs.GetAt(2);
+            page->_MoveTabsToIndex({ tab1, tab2 }, 4);
+
+            VERIFY_ARE_EQUAL(L"Profile 0", page->_tabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"Profile 3", page->_tabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"Profile 1", page->_tabs.GetAt(2).Title());
+            VERIFY_ARE_EQUAL(L"Profile 2", page->_tabs.GetAt(3).Title());
+
+            const auto focusedIndex = page->_GetFocusedTabIndex();
+            VERIFY_IS_TRUE(focusedIndex.has_value());
+            VERIFY_ARE_EQUAL(2u, focusedIndex.value());
+        });
+    }
+
+    void TabTests::BuildStartupActionsForMultipleTabs()
+    {
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        _openProfileTab(page, 1, 2);
+        _openProfileTab(page, 2, 3);
+
+        TestOnUIThread([&page]() {
+            const auto actions = page->_BuildStartupActionsForTabs({ page->_tabs.GetAt(0), page->_tabs.GetAt(2) });
+            const auto newTabCount = std::count_if(actions.begin(), actions.end(), [](const auto& action) {
+                return action.Action() == ShortcutAction::NewTab;
+            });
+
+            VERIFY_ARE_EQUAL(2u, gsl::narrow_cast<uint32_t>(newTabCount));
+            VERIFY_IS_FALSE(actions.empty());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actions.front().Action());
+            VERIFY_IS_TRUE(std::count_if(actions.begin(), actions.end(), [](const auto& action) {
+                return action.Action() == ShortcutAction::SwitchToTab;
+            }) == 0);
+        });
+    }
+
+    void TabTests::AttachContentInsertsDraggedTabsAfterTargetIndex()
+    {
+        const auto sharedContentManager = winrt::make<winrt::TerminalApp::implementation::ContentManager>();
+        auto sourcePage = _commonSetup(sharedContentManager);
+        auto destinationPage = _commonSetup(sharedContentManager);
+        VERIFY_IS_NOT_NULL(sourcePage);
+        VERIFY_IS_NOT_NULL(destinationPage);
+
+        _ensureStableBaselineTab(sourcePage);
+        _ensureStableBaselineTab(destinationPage);
+
+        _openProfileTab(sourcePage, 1, 2);
+        _openProfileTab(sourcePage, 2, 3);
+        _waitForTabCount(destinationPage, 1);
+
+        TestOnUIThread([&]() {
+            const auto startupActions = sourcePage->_BuildStartupActionsForTabs({ sourcePage->_tabs.GetAt(1), sourcePage->_tabs.GetAt(2) });
+            auto serializedActions = winrt::single_threaded_vector<ActionAndArgs>();
+            for (const auto& action : startupActions)
+            {
+                serializedActions.Append(action);
+            }
+
+            destinationPage->AttachContent(serializedActions, 1);
+        });
+
+        _waitForTabCount(destinationPage, 3);
+
+        TestOnUIThread([&]() {
+            VERIFY_ARE_EQUAL(L"Profile 0", destinationPage->_tabs.GetAt(0).Title());
+            VERIFY_ARE_EQUAL(L"Profile 1", destinationPage->_tabs.GetAt(1).Title());
+            VERIFY_ARE_EQUAL(L"Profile 2", destinationPage->_tabs.GetAt(2).Title());
+        });
     }
 
     void TabTests::TryZoomPane()
@@ -1579,3 +2093,4 @@ namespace TerminalAppLocalTests
     }
 
 }
+

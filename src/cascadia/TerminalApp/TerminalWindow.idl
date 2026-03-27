@@ -140,5 +140,6 @@ namespace TerminalApp
 
         void AttachContent(String content, UInt32 tabIndex);
         void SendContentToOther(RequestReceiveContentArgs args);
+        Boolean SelectTabRangeForTesting(UInt32 startIndex, UInt32 endIndex);
     }
 }

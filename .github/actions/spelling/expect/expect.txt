@@ -963,7 +963,6 @@ lsconfig
 lstatus
 lstrcmp
 LTEXT
-lto
 ltsc
 LUID
 luma
@@ -1718,7 +1717,6 @@ titlebars
 TITLEISLINKNAME
 TLDP
 TLEN
-Tlgg
 TMAE
 TMPF
 tmultiple

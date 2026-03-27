@@ -1295,6 +1295,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalWindow::SelectTabRangeForTesting(const uint32_t startIndex, const uint32_t endIndex)
+    {
+        return _root ? _root->SelectTabRangeForTesting(startIndex, endIndex) : false;
+    }
+
     bool TerminalWindow::ShouldImmediatelyHandoffToElevated()
     {
         return _root != nullptr ? _root->ShouldImmediatelyHandoffToElevated(_settings) : false;

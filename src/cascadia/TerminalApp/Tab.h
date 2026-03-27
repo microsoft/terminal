@@ -60,6 +60,8 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
         void UpdateTitle();
+        void SetMultiSelected(bool multiSelected);
+        bool IsMultiSelected() const noexcept;
 
         void Close();
         void Shutdown();
@@ -154,6 +156,7 @@ namespace winrt::TerminalApp::implementation
         til::color _tabRowColor;
 
         Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility _closeButtonVisibility{ Microsoft::Terminal::Settings::Model::TabCloseButtonVisibility::Always };
+        bool _multiSelected{ false };
 
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
