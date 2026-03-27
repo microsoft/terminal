@@ -3868,7 +3868,15 @@ void AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
     if (action == L"notify")
     {
         const auto title = parts.size() >= 2 ? til::at(parts, 1) : std::wstring_view{};
-        const auto body = parts.size() >= 3 ? til::at(parts, 2) : std::wstring_view{};
+        // The body is everything after "notify;title;". We can't just use
+        // parts[2] because the body itself may contain semicolons.
+        std::wstring_view body;
+        if (parts.size() >= 3)
+        {
+            const auto bodyStart = til::at(parts, 2).data();
+            const auto stringEnd = string.data() + string.size();
+            body = { bodyStart, static_cast<size_t>(stringEnd - bodyStart) };
+        }
         _api.ShowNotification(title, body);
     }
     else
