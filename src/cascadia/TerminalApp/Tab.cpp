@@ -1153,7 +1153,7 @@ namespace winrt::TerminalApp::implementation
                     // sending repeated toasts for repeated BEL characters.
                     if (bellArgs.SendNotification() && !tab->_tabStatus.BellIndicator())
                     {
-                        tab->TabToastNotificationRequested.raise(tab->Title(), L"", tab->TabViewIndex());
+                        tab->TabToastNotificationRequested.raise(tab->Title(), L"");
                     }
 
                     // Show the bell indicator in the tab header
