@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void Close();
         void PersistTo(HANDLE handle) const;
-        void RestoreFromPath(const wchar_t* path) const;
+        void RestoreFromPath(const wchar_t* path);
 
         void ClearQuickFix();
 
@@ -276,6 +276,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::TitleChangedEventArgs> TitleChanged;
         til::typed_event<IInspectable, Control::WriteToClipboardEventArgs> WriteToClipboard;
         til::typed_event<> WarningBell;
+        til::typed_event<> PromptStarted;
+        til::typed_event<> OutputStarted;
         til::typed_event<> TabColorChanged;
         til::typed_event<> BackgroundColorChanged;
         til::typed_event<IInspectable, Control::ScrollPositionChangedArgs> ScrollPositionChanged;
@@ -324,6 +326,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 #pragma region TerminalCoreCallbacks
         void _terminalWarningBell();
+        void _terminalPromptStarted();
+        void _terminalOutputStarted();
         void _terminalTitleChanged(std::wstring_view wstr);
         void _terminalScrollPositionChanged(const int viewTop,
                                             const int viewHeight,
@@ -420,6 +424,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::optional<til::point> _lastHoveredCell;
         uint16_t _lastHoveredId{ 0 };
         std::atomic<bool> _initializedTerminal{ false };
+        std::atomic<bool> _restoring{ false };
         bool _isReadOnly{ false };
         bool _closing{ false };
 

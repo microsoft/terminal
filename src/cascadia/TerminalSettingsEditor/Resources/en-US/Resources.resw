@@ -1553,6 +1553,66 @@
     <value>Flash window</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
   </data>
+  <data name="Profile_OutputNotificationStyleNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the notification style setting. When selected, no notification is sent.</comment>
+  </data>
+  <data name="Profile_OutputNotificationStyleAll.Content" xml:space="preserve">
+    <value>All</value>
+    <comment>An option to choose from for the notification style setting. When selected, all notification methods are used.</comment>
+  </data>
+  <data name="Profile_OutputNotificationStyleTaskbar.Content" xml:space="preserve">
+    <value>Flash taskbar</value>
+    <comment>An option to choose from for the notification style setting. Flashes the taskbar icon.</comment>
+  </data>
+  <data name="Profile_OutputNotificationStyleAudible.Content" xml:space="preserve">
+    <value>Play sound</value>
+    <comment>An option to choose from for the notification style setting. Plays an audible notification sound.</comment>
+  </data>
+  <data name="Profile_OutputNotificationStyleTab.Content" xml:space="preserve">
+    <value>Show tab indicator</value>
+    <comment>An option to choose from for the notification style setting. Shows an activity indicator on the tab.</comment>
+  </data>
+  <data name="Profile_OutputNotificationStyleNotification.Content" xml:space="preserve">
+    <value>Desktop notification</value>
+    <comment>An option to choose from for the notification style setting. Sends a Windows desktop notification (toast).</comment>
+  </data>
+  <data name="Profile_NotifyOnInactiveOutput.Header" xml:space="preserve">
+    <value>Notify on inactive tab output</value>
+    <comment>Header for a control to set the notification style when an inactive tab produces output.</comment>
+  </data>
+  <data name="Profile_NotifyOnInactiveOutput.HelpText" xml:space="preserve">
+    <value>Choose how to be notified when a background tab produces new output.</value>
+    <comment>Help text for the notify on inactive output setting.</comment>
+  </data>
+  <data name="Profile_NotifyOnNextPrompt.Header" xml:space="preserve">
+    <value>Notify on next prompt</value>
+    <comment>Header for a control to set the notification style when a new shell prompt is detected (requires shell integration).</comment>
+  </data>
+  <data name="Profile_NotifyOnNextPrompt.HelpText" xml:space="preserve">
+    <value>Choose how to be notified when a command finishes and a new prompt appears. Requires shell integration.</value>
+    <comment>Help text for the notify on next prompt setting.</comment>
+  </data>
+  <data name="Profile_AutoDetectRunningCommand.Header" xml:space="preserve">
+    <value>Auto-detect running command</value>
+    <comment>Header for a control to configure automatic detection of a running command's progress state.</comment>
+  </data>
+  <data name="Profile_AutoDetectRunningCommand.HelpText" xml:space="preserve">
+    <value>Automatically show a progress indicator when a command is running. Requires shell integration.</value>
+    <comment>Help text for the auto-detect running command setting.</comment>
+  </data>
+  <data name="Profile_AutoDetectRunningCommand_Disabled.Content" xml:space="preserve">
+    <value>Disabled</value>
+    <comment>An option for the auto-detect running command setting. When selected, automatic command detection is off.</comment>
+  </data>
+  <data name="Profile_AutoDetectRunningCommand_Automatic.Content" xml:space="preserve">
+    <value>Automatic</value>
+    <comment>An option for the auto-detect running command setting. When selected, the terminal automatically detects running commands and shows a progress indicator.</comment>
+  </data>
+  <data name="Profile_AutoDetectRunningCommand_Progress.Content" xml:space="preserve">
+    <value>Progress</value>
+    <comment>An option for the auto-detect running command setting. When selected, the terminal shows command progress by walking the buffer (not yet implemented).</comment>
+  </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>Add new</value>
     <comment>Button label that creates a new color scheme.</comment>

@@ -196,6 +196,58 @@
                 </StackPanel>
             </local:SettingContainer>
 
+            <!--  Notify On Inactive Output  -->
+            <local:SettingContainer x:Name="NotifyOnInactiveOutput"
+                                    x:Uid="Profile_NotifyOnInactiveOutput"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnInactiveOutput}"
+                                    CurrentValue="{x:Bind Profile.NotifyOnInactiveOutputPreview, Mode=OneWay}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnInactiveOutput, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnInactiveOutputOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <StackPanel>
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTaskbar"
+                              IsChecked="{x:Bind Profile.IsNotifyOnInactiveOutputFlagSet(1), BindBack=Profile.SetNotifyOnInactiveOutputTaskbar, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleAudible"
+                              IsChecked="{x:Bind Profile.IsNotifyOnInactiveOutputFlagSet(2), BindBack=Profile.SetNotifyOnInactiveOutputAudible, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTab"
+                              IsChecked="{x:Bind Profile.IsNotifyOnInactiveOutputFlagSet(4), BindBack=Profile.SetNotifyOnInactiveOutputTab, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleNotification"
+                              IsChecked="{x:Bind Profile.IsNotifyOnInactiveOutputFlagSet(8), BindBack=Profile.SetNotifyOnInactiveOutputNotification, Mode=TwoWay}" />
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Notify On Next Prompt  -->
+            <local:SettingContainer x:Name="NotifyOnNextPrompt"
+                                    x:Uid="Profile_NotifyOnNextPrompt"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnNextPrompt}"
+                                    CurrentValue="{x:Bind Profile.NotifyOnNextPromptPreview, Mode=OneWay}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnNextPrompt, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnNextPromptOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
+                <StackPanel>
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTaskbar"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(1), BindBack=Profile.SetNotifyOnNextPromptTaskbar, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleAudible"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(2), BindBack=Profile.SetNotifyOnNextPromptAudible, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleTab"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(4), BindBack=Profile.SetNotifyOnNextPromptTab, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_OutputNotificationStyleNotification"
+                              IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(8), BindBack=Profile.SetNotifyOnNextPromptNotification, Mode=TwoWay}" />
+                </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Auto Detect Running Command  -->
+            <local:SettingContainer x:Name="AutoDetectRunningCommand"
+                                    x:Uid="Profile_AutoDetectRunningCommand"
+                                    ClearSettingValue="{x:Bind Profile.ClearAutoDetectRunningCommand}"
+                                    HasSettingValue="{x:Bind Profile.HasAutoDetectRunningCommand, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AutoDetectRunningCommandOverrideSource, Mode=OneWay}">
+                <ComboBox ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
+                          ItemsSource="{x:Bind Profile.AutoDetectRunningCommandList, Mode=OneWay}"
+                          SelectedItem="{x:Bind Profile.CurrentAutoDetectRunningCommand, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
             <!--  RightClickContextMenu  -->
             <local:SettingContainer x:Name="RightClickContextMenu"
                                     x:Uid="Profile_RightClickContextMenu"

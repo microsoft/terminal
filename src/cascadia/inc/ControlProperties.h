@@ -60,31 +60,34 @@
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
-#define CONTROL_SETTINGS(X)                                                                                                                              \
-    X(winrt::guid, SessionId)                                                                                                                            \
-    X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
-    X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
-    X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
-    X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                \
-    X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
-    X(IFontFeatureMap, FontFeatures)                                                                                                                     \
-    X(IFontAxesMap, FontAxes)                                                                                                                            \
-    X(bool, EnableBuiltinGlyphs, true)                                                                                                                   \
-    X(bool, EnableColorGlyphs, true)                                                                                                                     \
-    X(winrt::hstring, CellWidth)                                                                                                                         \
-    X(winrt::hstring, CellHeight)                                                                                                                        \
-    X(winrt::hstring, Commandline)                                                                                                                       \
-    X(winrt::hstring, StartingDirectory)                                                                                                                 \
-    X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
-    X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
-    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI)                                                                                     \
-    X(bool, DisablePartialInvalidation, false)                                                                                                           \
-    X(bool, SoftwareRendering, false)                                                                                                                    \
-    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
-    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                  \
-    X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope::Default)        \
-    X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
-    X(bool, ShowMarks, false)                                                                                                                            \
-    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
-    X(bool, RightClickContextMenu, false)                                                                                                                \
-    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)
+#define CONTROL_SETTINGS(X)                                                                                                                                    \
+    X(winrt::guid, SessionId)                                                                                                                                  \
+    X(bool, EnableUnfocusedAcrylic, false)                                                                                                                     \
+    X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                                \
+    X(winrt::hstring, FontFace, L"Consolas")                                                                                                                   \
+    X(float, FontSize, DEFAULT_FONT_SIZE)                                                                                                                      \
+    X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                        \
+    X(IFontFeatureMap, FontFeatures)                                                                                                                           \
+    X(IFontAxesMap, FontAxes)                                                                                                                                  \
+    X(bool, EnableBuiltinGlyphs, true)                                                                                                                         \
+    X(bool, EnableColorGlyphs, true)                                                                                                                           \
+    X(winrt::hstring, CellWidth)                                                                                                                               \
+    X(winrt::hstring, CellHeight)                                                                                                                              \
+    X(winrt::hstring, Commandline)                                                                                                                             \
+    X(winrt::hstring, StartingDirectory)                                                                                                                       \
+    X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                          \
+    X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale)       \
+    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI)                                                                                           \
+    X(bool, DisablePartialInvalidation, false)                                                                                                                 \
+    X(bool, SoftwareRendering, false)                                                                                                                          \
+    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                                   \
+    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                        \
+    X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope::Default)              \
+    X(bool, UseBackgroundImageForWindow, false)                                                                                                                \
+    X(bool, ShowMarks, false)                                                                                                                                  \
+    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                      \
+    X(bool, RightClickContextMenu, false)                                                                                                                      \
+    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)        \
+    X(winrt::Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnInactiveOutput, winrt::Microsoft::Terminal::Control::OutputNotificationStyle{ 0 }) \
+    X(winrt::Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnNextPrompt, winrt::Microsoft::Terminal::Control::OutputNotificationStyle{ 0 })     \
+    X(winrt::Microsoft::Terminal::Control::AutoDetectRunningCommand, AutoDetectRunningCommand, winrt::Microsoft::Terminal::Control::AutoDetectRunningCommand::Disabled)
