@@ -14,10 +14,11 @@ namespace winrt::TerminalApp::implementation
     struct BellEventArgs : public BellEventArgsT<BellEventArgs>
     {
     public:
-        BellEventArgs(bool flashTaskbar) :
-            FlashTaskbar(flashTaskbar) {}
+        BellEventArgs(bool flashTaskbar, bool sendNotification) :
+            FlashTaskbar(flashTaskbar), SendNotification(sendNotification) {}
 
         til::property<bool> FlashTaskbar;
+        til::property<bool> SendNotification;
     };
 
     struct NotificationEventArgs : public NotificationEventArgsT<NotificationEventArgs>
