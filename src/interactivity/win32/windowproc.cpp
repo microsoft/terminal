@@ -79,7 +79,7 @@ struct TsfDataProvider : Microsoft::Console::TSF::IDataProvider
         coordCursor.y = std::clamp(coordCursor.y, 0, viewport.height() - 1);
 
         // Convert from columns/rows to pixels.
-        const auto coordFont = screenBuffer.GetCurrentFont().GetSize();
+        const auto coordFont = screenBuffer.GetCurrentFont().GetCellSizeInPhysicalPx();
         POINT ptSuggestion{
             .x = coordCursor.x * coordFont.width,
             .y = coordCursor.y * coordFont.height,
@@ -853,19 +853,18 @@ LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) con
     // Get the current DPI and font size.
     HWND hwnd = GetWindowHandle();
     UINT dpiCurrent = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetDpiForWindow(hwnd);
-    const auto& fontInfoCurrent = GetScreenInfo().GetCurrentFont();
-    til::size fontSizeCurrent = fontInfoCurrent.GetSize();
+    const auto& si = GetScreenInfo();
+    const auto& fontInfoDesired = si.GetDesiredFont();
+    til::size fontSizeCurrent = si.GetCurrentFont().GetCellSizeInPhysicalPx();
 
     // Scale the current font to the new DPI and get the new font size.
-    FontInfoDesired fontInfoDesired(fontInfoCurrent);
-    FontInfo fontInfoNew(L"", 0, 0, { 0, 0 }, 0);
-    if (!SUCCEEDED(ServiceLocator::LocateGlobals().pRender->GetProposedFont(
-            dpiNew, fontInfoDesired, fontInfoNew)))
+    FontInfo fontInfoNew;
+    if (!SUCCEEDED(ServiceLocator::LocateGlobals().pRender->GetProposedFont(dpiNew, fontInfoDesired, fontInfoNew)))
     {
         // On failure, return FALSE, which scales the window linearly for DPI.
         return FALSE;
     }
-    til::size fontSizeNew = fontInfoNew.GetSize();
+    til::size fontSizeNew = fontInfoNew.GetCellSizeInPhysicalPx();
 
     // The provided size is the window rect, which includes non-client area
     // (caption bars, resize borders, scroll bars, etc). We want to scale the
