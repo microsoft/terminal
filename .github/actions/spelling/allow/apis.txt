@@ -213,6 +213,8 @@ xlocnum
 xloctime
 XMax
 xmemory
+XMVECTOR
+XMVECTORF
 XParse
 xpath
 xstddef

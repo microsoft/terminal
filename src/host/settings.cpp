@@ -111,9 +111,6 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uHistoryBufferSize = 50;
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
-
-    _renderSettings.ResetColorTable();
-
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
     _uScrollScale = 1;
@@ -233,7 +230,7 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
 // - <none>
 // Return Value:
 // - a CONSOLE_STATE_INFO with the current state of this settings structure.
-CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
+CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo()
 {
     CONSOLE_STATE_INFO csi = { 0 };
     csi.ScreenAttributes = _wFillAttribute;
@@ -709,7 +706,7 @@ void Settings::SetColorTableEntry(const size_t index, const COLORREF color)
     _renderSettings.SetColorTableEntry(index, color);
 }
 
-COLORREF Settings::GetColorTableEntry(const size_t index) const
+COLORREF Settings::GetColorTableEntry(const size_t index)
 {
     return _renderSettings.GetColorTableEntry(index);
 }
@@ -719,7 +716,7 @@ void Settings::SetLegacyColorTableEntry(const size_t index, const COLORREF color
     SetColorTableEntry(TextColor::TransposeLegacyIndex(index), color);
 }
 
-COLORREF Settings::GetLegacyColorTableEntry(const size_t index) const
+COLORREF Settings::GetLegacyColorTableEntry(const size_t index)
 {
     return GetColorTableEntry(TextColor::TransposeLegacyIndex(index));
 }

@@ -4,6 +4,8 @@
 #include "precomp.h"
 #include "inc/ColorFix.hpp"
 
+using namespace ColorFix;
+
 // This table contains a direct mapping from 8-bit sRGB to linear RGB.
 // It was generated using the following code:
 //   #include <charconv>
@@ -87,20 +89,6 @@ __forceinline float cbrtf_est(float a) noexcept
 // The only change I made is to replace cbrtf() with cbrtf_est() to cut the CPU cost by a third.
 namespace oklab
 {
-    struct Lab
-    {
-        float l;
-        float a;
-        float b;
-    };
-
-    struct RGB
-    {
-        float r;
-        float g;
-        float b;
-    };
-
     __forceinline Lab linear_srgb_to_oklab(const RGB& c) noexcept
     {
         const auto l = 0.4122214708f * c.r + 0.5363325363f * c.g + 0.0514459929f * c.b;
@@ -115,6 +103,7 @@ namespace oklab
             0.2104542553f * l_ + 0.7936177850f * m_ - 0.0040720468f * s_,
             1.9779984951f * l_ - 2.4285922050f * m_ + 0.4505937099f * s_,
             0.0259040371f * l_ + 0.7827717662f * m_ - 0.8086757660f * s_,
+            0,
         };
     }
 
@@ -132,6 +121,7 @@ namespace oklab
             +4.0767416621f * l - 3.3077115913f * m + 0.2309699292f * s,
             -1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s,
             -0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s,
+            0,
         };
     }
 }
@@ -140,17 +130,17 @@ namespace oklab
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 
-__forceinline oklab::RGB colorrefToLinear(COLORREF c) noexcept
+__forceinline RGB colorrefToLinear(COLORREF c) noexcept
 {
     const auto r = srgbToRgbLUT[(c >> 0) & 0xff];
     const auto g = srgbToRgbLUT[(c >> 8) & 0xff];
     const auto b = srgbToRgbLUT[(c >> 16) & 0xff];
-    return { r, g, b };
+    return { r, g, b, 0 };
 }
 
 #pragma warning(pop)
 
-__forceinline COLORREF linearToColorref(const oklab::RGB& c) noexcept
+__forceinline COLORREF linearToColorref(const RGB& c) noexcept
 {
     auto r = saturate(c.r);
     auto g = saturate(c.g);
@@ -161,13 +151,23 @@ __forceinline COLORREF linearToColorref(const oklab::RGB& c) noexcept
     return lrintf(r) | (lrintf(g) << 8) | (lrintf(b) << 16);
 }
 
+Lab ColorFix::ColorrefToOklab(COLORREF color) noexcept
+{
+    return oklab::linear_srgb_to_oklab(colorrefToLinear(color));
+}
+
+COLORREF ColorFix::OklabToColorref(const Lab& color) noexcept
+{
+    return linearToColorref(oklab::oklab_to_linear_srgb(color));
+}
+
 // This function changes `color` so that it is visually different
 // enough from `reference` that it's (much more easily) readable.
 // See /doc/color_nudging.html
 COLORREF ColorFix::GetPerceivableColor(COLORREF color, COLORREF reference, float minSquaredDistance) noexcept
 {
-    const auto referenceOklab = oklab::linear_srgb_to_oklab(colorrefToLinear(reference));
-    auto colorOklab = oklab::linear_srgb_to_oklab(colorrefToLinear(color));
+    const auto referenceOklab = ColorrefToOklab(reference);
+    auto colorOklab = ColorrefToOklab(color);
 
     // To determine whether the two colors are too close to each other we use the ΔEOK metric
     // based on the Oklab color space. It's defined as the simple euclidean distance between.
@@ -206,19 +206,19 @@ COLORREF ColorFix::GetPerceivableColor(COLORREF color, COLORREF reference, float
         colorOklab.l = referenceOklab.l - deltaL;
     }
 
-    return linearToColorref(oklab::oklab_to_linear_srgb(colorOklab)) | (color & 0xff000000);
+    return OklabToColorref(colorOklab) | (color & 0xff000000);
 }
 
 COLORREF ColorFix::AdjustLightness(COLORREF color, float delta) noexcept
 {
-    auto lab = oklab::linear_srgb_to_oklab(colorrefToLinear(color));
+    auto lab = ColorrefToOklab(color);
     lab.l = saturate(lab.l + delta);
-    return linearToColorref(oklab::oklab_to_linear_srgb(lab)) | (color & 0xff000000);
+    return OklabToColorref(lab) | (color & 0xff000000);
 }
 
 float ColorFix::GetLightness(COLORREF color) noexcept
 {
-    return oklab::linear_srgb_to_oklab(colorrefToLinear(color)).l;
+    return ColorrefToOklab(color).l;
 }
 
 TIL_FAST_MATH_END
