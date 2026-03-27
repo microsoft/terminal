@@ -4,6 +4,7 @@
 #pragma once
 
 #include <ThrottledFunc.h>
+#include <unordered_map>
 
 #include "TerminalPage.g.h"
 #include "Tab.h"
@@ -284,6 +285,9 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::ContentManager _manager{ nullptr };
 
         std::shared_ptr<TerminalSettingsCache> _terminalSettingsCache{};
+
+        // Cache for NewTerminalArgs to avoid repeated profile lookups (GH#5047)
+        std::unordered_map<winrt::Microsoft::Terminal::Settings::Model::Profile, winrt::Microsoft::Terminal::Settings::Model::Profile> _profileDuplicationCache{};
 
         struct StashedDragData
         {

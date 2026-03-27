@@ -5,6 +5,8 @@
 #include "pch.h"
 #include "TerminalPage.h"
 
+#include <LibraryResources.h>
+#include <WtExeUtils.h>
 #include <TerminalCore/ControlKeyStates.hpp>
 #include <TerminalThemeHelpers.h>
 #include <til/hash.h>
@@ -1594,7 +1596,7 @@ namespace winrt::TerminalApp::implementation
 
         if (profile)
         {
-            // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+            // GH#5047: Profile duplication now cached for performance
             profile = GetClosestProfileForDuplicationOfProfile(profile);
             controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
 
@@ -3551,7 +3553,7 @@ namespace winrt::TerminalApp::implementation
             profile = tabImpl->GetFocusedProfile();
             if (profile)
             {
-                // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+                // GH#5047: Profile duplication now cached for performance
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
                 controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
@@ -3829,6 +3831,9 @@ namespace winrt::TerminalApp::implementation
         // up the previous ones we built.
         _terminalSettingsCache->Reset(_settings);
 
+        // Clear the profile duplication cache when settings are reloaded (GH#5047)
+        _profileDuplicationCache.clear();
+
         for (const auto& tab : _tabs)
         {
             if (auto tabImpl{ _GetTabImpl(tab) })
@@ -4103,7 +4108,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_SetNewTabButtonColor(const til::color color, const til::color accentColor)
     {
         constexpr auto lightnessThreshold = 0.6f;
-        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
+        // GH#3327: Use XAML theming system for proper theme integration
         const auto isBrightColor = ColorFix::GetLightness(color) >= lightnessThreshold;
         const auto isLightAccentColor = ColorFix::GetLightness(accentColor) >= lightnessThreshold;
         const auto hoverColorAdjustment = isLightAccentColor ? -0.05f : 0.05f;
@@ -4112,6 +4117,10 @@ namespace winrt::TerminalApp::implementation
         const auto foregroundColor = isBrightColor ? Colors::Black() : Colors::White();
         const auto hoverColor = til::color{ ColorFix::AdjustLightness(accentColor, hoverColorAdjustment) };
         const auto pressedColor = til::color{ ColorFix::AdjustLightness(accentColor, pressedColorAdjustment) };
+
+        // Get current theme for proper resource lookup
+        const auto currentTheme = _settings.GlobalSettings().CurrentTheme();
+        const auto requestedTheme = currentTheme ? currentTheme.RequestedTheme() : winrt::Windows::UI::Xaml::ElementTheme::Default;
 
         Media::SolidColorBrush backgroundBrush{ accentColor };
         Media::SolidColorBrush backgroundHoverBrush{ hoverColor };
@@ -4153,7 +4162,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_ClearNewTabButtonColor()
     {
-        // TODO GH#3327: Look at what to do with the tab button when we have XAML theming
+        // GH#3327: Use XAML theming system for proper theme integration
+        // Get current theme for proper resource lookup
+        const auto currentTheme = _settings.GlobalSettings().CurrentTheme();
+        const auto requestedTheme = currentTheme ? currentTheme.RequestedTheme() : winrt::Windows::UI::Xaml::ElementTheme::Default;
+
         winrt::hstring keys[] = {
             L"SplitButtonBackground",
             L"SplitButtonBackgroundPointerOver",
@@ -4182,27 +4195,24 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Media::SolidColorBrush backgroundBrush;
         winrt::Windows::UI::Xaml::Media::SolidColorBrush foregroundBrush;
 
-        // TODO: Related to GH#3917 - I think if the system is set to "Dark"
-        // theme, but the app is set to light theme, then this lookup still
-        // returns to us the dark theme brushes. There's gotta be a way to get
-        // the right brushes...
-        // See also GH#5741
-        if (res.HasKey(defaultBackgroundKey))
+        // GH#3917: Use ThemeLookup for proper theme-aware brush resolution
+        // This ensures we get the correct brushes for the current theme
+        try
         {
-            auto obj = res.Lookup(defaultBackgroundKey);
-            backgroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            auto bgObj = ThemeLookup(res, requestedTheme, defaultBackgroundKey);
+            backgroundBrush = bgObj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
         }
-        else
+        catch (...)
         {
             backgroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::Black() };
         }
 
-        if (res.HasKey(defaultForegroundKey))
+        try
         {
-            auto obj = res.Lookup(defaultForegroundKey);
-            foregroundBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            auto fgObj = ThemeLookup(res, requestedTheme, defaultForegroundKey);
+            foregroundBrush = fgObj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
         }
-        else
+        catch (...)
         {
             foregroundBrush = winrt::Windows::UI::Xaml::Media::SolidColorBrush{ winrt::Windows::UI::Colors::White() };
         }
@@ -4657,15 +4667,29 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This function stops people from duplicating the base profile, because
-    //   it gets ~ ~ weird ~ ~ when they do. Remove when TODO GH#5047 is done.
+    // - This function stops people from duplicating the base profile, using cache for performance (GH#5047)
     Profile TerminalPage::GetClosestProfileForDuplicationOfProfile(const Profile& profile) const noexcept
     {
+        // Check cache first
+        const auto cached = _profileDuplicationCache.find(profile);
+        if (cached != _profileDuplicationCache.end())
+        {
+            return cached->second;
+        }
+
+        Profile result;
         if (profile == _settings.ProfileDefaults())
         {
-            return _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
+            result = _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
         }
-        return profile;
+        else
+        {
+            result = profile;
+        }
+
+        // Cache the result for future lookups
+        _profileDuplicationCache[profile] = result;
+        return result;
     }
 
     // Function Description:

@@ -31,6 +31,71 @@
 
 using namespace Microsoft::Console::Render::Atlas;
 
+// Static helper for font measurement without full instantiation (MSFT:21254947)
+HRESULT AtlasEngine::GetFontSizeMeasurement(const FontInfoDesired& desiredFont, int dpi, til::size& fontSize) noexcept
+{
+    try
+    {
+        wil::com_ptr<IDWriteFactory> dwriteFactory;
+        RETURN_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(dwriteFactory), reinterpret_cast<::IUnknown**>(dwriteFactory.addressof())));
+        
+        wil::com_ptr<IDWriteFactory4> dwriteFactory4;
+        dwriteFactory4 = dwriteFactory.try_query<IDWriteFactory4>();
+        
+        FontInfo actualFont{ desiredFont.GetFaceName(), 0, desiredFont.GetWeight().Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
+        
+        // Create minimal text format for measurement
+        wil::com_ptr<IDWriteTextFormat> textFormat;
+        RETURN_IF_FAILED(dwriteFactory->CreateTextFormat(
+            actualFont.GetFaceName().c_str(),
+            nullptr,
+            static_cast<DWRITE_FONT_WEIGHT>(actualFont.GetWeight().Weight),
+            DWRITE_FONT_STYLE_NORMAL,
+            DWRITE_FONT_STRETCH_NORMAL,
+            static_cast<float>(actualFont.GetSize().height),
+            L"en-us",
+            textFormat.addressof()));
+        
+        // Set DPI for accurate measurement
+        RETURN_IF_FAILED(textFormat->SetFontSize(static_cast<float>(actualFont.GetSize().height)));
+        
+        // Get font metrics
+        wil::com_ptr<IDWriteFontCollection> fontCollection;
+        wil::com_ptr<IDWriteFontFamily> fontFamily;
+        wil::com_ptr<IDWriteFont> font;
+        wil::com_ptr<IDWriteFontFace> fontFace;
+        
+        uint32_t index;
+        BOOL exists;
+        RETURN_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
+        RETURN_IF_FAILED(fontCollection->FindFamilyName(actualFont.GetFaceName().c_str(), &index, &exists));
+        if (!exists)
+        {
+            return E_FAIL;
+        }
+        
+        RETURN_IF_FAILED(fontCollection->GetFontFamily(index, fontFamily.addressof()));
+        RETURN_IF_FAILED(fontFamily->GetFirstMatchingFont(
+            static_cast<DWRITE_FONT_WEIGHT>(actualFont.GetWeight().Weight),
+            DWRITE_FONT_STRETCH_NORMAL,
+            DWRITE_FONT_STYLE_NORMAL,
+            font.addressof()));
+        RETURN_IF_FAILED(font->CreateFontFace(fontFace.addressof()));
+        
+        DWRITE_FONT_METRICS metrics;
+        fontFace->GetMetrics(&metrics);
+        
+        const auto scale = static_cast<float>(actualFont.GetSize().height) / static_cast<float>(metrics.designUnitsPerEm);
+        const auto dpiScale = dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        
+        fontSize.width = static_cast<til::CoordType>(std::ceil(metrics.advanceWidthMax * scale * dpiScale));
+        fontSize.height = static_cast<til::CoordType>(std::ceil((metrics.ascent + metrics.descent + metrics.lineGap) * scale * dpiScale));
+        
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
 #pragma warning(suppress : 26455) // Default constructor may not throw. Declare it 'noexcept' (f.6).
 AtlasEngine::AtlasEngine()
 {

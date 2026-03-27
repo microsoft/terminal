@@ -18,6 +18,11 @@ namespace Microsoft::Console::Render::Atlas
     public:
         explicit AtlasEngine();
 
+        // Static helper for font measurement without full instantiation (MSFT:21254947)
+        [[nodiscard]] static HRESULT GetFontSizeMeasurement(const FontInfoDesired& desiredFont,
+                                                            int dpi,
+                                                            til::size& fontSize) noexcept;
+
         AtlasEngine(const AtlasEngine&) = delete;
         AtlasEngine& operator=(const AtlasEngine&) = delete;
 

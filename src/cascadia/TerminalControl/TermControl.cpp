@@ -2774,19 +2774,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         desiredFont.SetCellSize(cellWidth, cellHeight);
         FontInfo actualFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
 
-        // Create a DX engine and initialize it with our font and DPI. We'll
-        // then use it to measure how much space the requested rows and columns
-        // will take up.
-        // TODO: MSFT:21254947 - use a static function to do this instead of
-        // instantiating a AtlasEngine.
+        // Get font size measurement using optimized static method (MSFT:21254947)
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
-        const auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
-        LOG_IF_FAILED(engine->UpdateDpi(dpi));
-        LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
+        til::size actualFontSize{ 0, 0 };
+        LOG_IF_FAILED(::Microsoft::Console::Render::AtlasEngine::GetFontSizeMeasurement(desiredFont, dpi, actualFontSize));
+        if (actualFontSize.width == 0 || actualFontSize.height == 0)
+        {
+            // Fallback to original method if static measurement fails
+            const auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+            LOG_IF_FAILED(engine->UpdateDpi(dpi));
+            FontInfo fallbackFont{ fontFace, 0, fontWeight.Weight, desiredFont.GetEngineSize(), CP_UTF8, false };
+            LOG_IF_FAILED(engine->UpdateFont(desiredFont, fallbackFont));
+            actualFontSize = fallbackFont.GetSize();
+        }
 
         const auto scale = dpi / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-        const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
