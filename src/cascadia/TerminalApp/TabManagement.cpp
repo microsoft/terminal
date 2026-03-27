@@ -153,10 +153,13 @@ namespace winrt::TerminalApp::implementation
 
         // When a tab requests a desktop toast notification, send the toast
         // and handle activation by summoning this window and switching to the tab.
-        newTabImpl->TabToastNotificationRequested([weakThis{ get_weak() }](const winrt::hstring& title, const winrt::hstring& body, uint32_t tabIndex) {
+        newTabImpl->TabToastNotificationRequested([weakThis{ get_weak() }, weakTab{ newTabImpl->get_weak() }](const winrt::hstring& title, const winrt::hstring& body) {
             if (const auto page{ weakThis.get() })
             {
-                page->_SendDesktopNotification(title, body, tabIndex);
+                if (const auto tab{ weakTab.get() })
+                {
+                    page->_SendDesktopNotification(title, body, tab);
+                }
             }
         });
 
@@ -1197,14 +1200,30 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Attempts to find and focus the given tab in this window.
+    // Arguments:
+    // - tab: The tab to focus.
+    // Return Value:
+    // - true if the tab was found and focused, false otherwise.
+    bool TerminalPage::FocusTab(const winrt::TerminalApp::Tab& tab)
+    {
+        if (const auto tabIndex{ _GetTabIndex(tab) })
+        {
+            _SelectTab(tabIndex.value());
+            return true;
+        }
+        return false;
+    }
+
+    // Method Description:
     // - Sends a desktop toast notification with the given title and body.
     //   When the toast is activated (clicked), the window is summoned and
-    //   the tab at tabIndex is focused.
+    //   the originating tab is focused.
     // Arguments:
     // - tabTitle: The title to display in the notification.
     // - body: The body text. If empty, a standard tab-activity message is built.
-    // - tabIndex: The index of the tab to switch to when the toast is activated.
-    void TerminalPage::_SendDesktopNotification(const winrt::hstring& tabTitle, const winrt::hstring& body, uint32_t tabIndex)
+    // - tab: The tab to switch to when the toast is activated.
+    void TerminalPage::_SendDesktopNotification(const winrt::hstring& tabTitle, const winrt::hstring& body, const winrt::com_ptr<Tab>& tab)
     {
         // Build the notification message.
         // If a custom body is provided (e.g. from OSC 777), use the title/body directly.
@@ -1233,24 +1252,45 @@ namespace winrt::TerminalApp::implementation
             notificationTitle = CascadiaSettings::ApplicationDisplayName();
         }
 
+        // Use the Tab object's identity hash as a stable toast tag.
+        // This survives tab reordering and cross-window moves.
+        const auto tabHash = std::hash<winrt::Windows::Foundation::IUnknown>{}(*tab);
+        const hstring tabTag{ fmt::format(FMT_COMPILE(L"wt-tab-{:016x}"), tabHash) };
+
         const implementation::DesktopNotificationArgs args{
             .Title = notificationTitle,
             .Message = message,
-            .TabIndex = tabIndex,
+            .Tag = tabTag
         };
 
-        implementation::DesktopNotification::SendNotification(args, [weakThis{ get_weak() }](uint32_t idx) {
+        implementation::DesktopNotification::SendNotification(args, [weakThis{ get_weak() }, weakTab{ tab->get_weak() }]() {
             if (const auto page{ weakThis.get() })
             {
                 // The toast Activated callback runs on a background thread.
-                // Marshal both the summon and tab-switch to the UI thread.
-                page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakPage{ page->get_weak() }, idx]() {
+                // Marshal to the UI thread for tab focus and window summon.
+                page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakPage{ page->get_weak() }, weakTab]() {
                     if (const auto p{ weakPage.get() })
                     {
-                        p->SummonWindowRequested.raise(nullptr, nullptr);
-                        if (idx < p->_tabs.Size())
+                        if (const auto t{ weakTab.get() })
                         {
-                            p->_SelectTab(idx);
+                            // Try to find and focus the tab in this window first.
+                            if (const auto tabIndex{ p->_GetTabIndex(*t) })
+                            {
+                                p->SummonWindowRequested.raise(nullptr, nullptr);
+                                p->_SelectTab(tabIndex.value());
+                            }
+                            else
+                            {
+                                // The tab may have moved to another window.
+                                // Raise FocusTabRequested so the emperor can
+                                // search all windows for it.
+                                p->FocusTabRequested.raise(nullptr, *t);
+                            }
+                        }
+                        else
+                        {
+                            // Tab was closed. Just summon this window.
+                            p->SummonWindowRequested.raise(nullptr, nullptr);
                         }
                     }
                 });

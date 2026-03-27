@@ -19,14 +19,14 @@ namespace winrt::TerminalApp::implementation
     {
         winrt::hstring Title;
         winrt::hstring Message;
-        uint32_t TabIndex{ 0 };
+        winrt::hstring Tag;
     };
 
     class DesktopNotification
     {
     public:
         static bool ShouldSendNotification();
-        static void SendNotification(const DesktopNotificationArgs& args, std::function<void(uint32_t tabIndex)> activatedFunc);
+        static void SendNotification(const DesktopNotificationArgs& args, std::function<void()> activatedFunc);
 
     private:
         static std::atomic<int64_t> _lastNotificationTime;

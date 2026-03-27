@@ -1173,16 +1173,8 @@ namespace winrt::TerminalApp::implementation
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
                 {
-                    const auto notifTitle = notifArgs.Title();
-                    const auto notifBody = notifArgs.Body();
-                    if (!notifTitle.empty())
-                    {
-                        tab->TabToastNotificationRequested.raise(notifTitle, notifBody, tab->TabViewIndex());
-                    }
-                    else
-                    {
-                        tab->TabToastNotificationRequested.raise(tab->Title(), L"", tab->TabViewIndex());
-                    }
+                    const auto title = notifArgs.Title().empty() ? tab->Title() : notifArgs.Title();
+                    tab->TabToastNotificationRequested.raise(title, notifArgs.Body());
                 }
             });
 

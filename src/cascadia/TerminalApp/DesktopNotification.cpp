@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
     // - args: The title, message, and tab index to include in the notification.
     // - activated: A callback invoked on the background thread when the
     //              toast is clicked. The uint32_t parameter is the tab index.
-    void DesktopNotification::SendNotification(const DesktopNotificationArgs& args, std::function<void(uint32_t tabIndex)> activatedFunc)
+    void DesktopNotification::SendNotification(const DesktopNotificationArgs& args, std::function<void()> activatedFunc)
     {
         try
         {
@@ -83,17 +83,16 @@ namespace winrt::TerminalApp::implementation
             auto toast = ToastNotification{ toastXml };
 
             // Set the tag and group to enable notification replacement.
-            // Using the tab index as a tag means repeated output from the same tab
-            // replaces the previous notification rather than stacking.
-            toast.Tag(fmt::format(FMT_COMPILE(L"wt-tab-{}"), args.TabIndex));
+            // Repeated notifications with the same tag replace the previous one
+            // rather than stacking in the notification center.
+            toast.Tag(args.Tag);
             toast.Group(L"WindowsTerminal");
 
             // When the user activates (clicks) the toast, fire the callback.
             if (activatedFunc)
             {
-                const auto tabIndex = args.TabIndex;
-                toast.Activated([activatedFunc, tabIndex](const auto& /*sender*/, const auto& /*eventArgs*/) {
-                    activatedFunc(tabIndex);
+                toast.Activated([activatedFunc](const auto& /*sender*/, const auto& /*eventArgs*/) {
+                    activatedFunc();
                 });
             }
 

@@ -1205,6 +1205,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    bool TerminalWindow::FocusTab(const winrt::TerminalApp::Tab& tab)
+    {
+        if (_root)
+        {
+            return _root->FocusTab(tab);
+        }
+        return false;
+    }
+
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();

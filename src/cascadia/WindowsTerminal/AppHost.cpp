@@ -265,6 +265,7 @@ void AppHost::Initialize()
 
     _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
     _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
+    _revokers.FocusTabRequested = _windowLogic.FocusTabRequested(winrt::auto_revoke, { this, &AppHost::_FocusTabRequested });
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
@@ -1062,6 +1063,14 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     HandleSummon(std::move(summonArgs));
+}
+
+void AppHost::_FocusTabRequested(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::TerminalApp::Tab& tab)
+{
+    // The tab may have moved to another window. Ask the emperor to
+    // search all windows and focus the tab wherever it currently lives.
+    _windowManager->FocusTabInAnyWindow(tab);
 }
 
 void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
