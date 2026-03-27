@@ -532,6 +532,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.Connection(newConnection);
     }
 
+    void TermControl::HardResetWithoutErase()
+    {
+        _core.HardResetWithoutErase();
+    }
+
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
     {
         if (!_initializedTerminal)

@@ -1660,7 +1660,7 @@ public:
 
         Log::Comment(L"Test 3: Verify space reset");
         _testGetSet->PrepData();
-        _pDispatch->HardReset();
+        _pDispatch->HardReset(true);
         _pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MacroSpaceReport, {});
 
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%zu*{", availableSpace);
@@ -1692,7 +1692,7 @@ public:
 
         Log::Comment(L"Test 3: Verify checksum resets to 0");
         _testGetSet->PrepData();
-        _pDispatch->HardReset();
+        _pDispatch->HardReset(true);
         _pDispatch->DeviceStatusReport(DispatchTypes::StatusType::MemoryChecksum, 56);
 
         _testGetSet->ValidateInputEvent(L"\033P56!~0000\033\\");

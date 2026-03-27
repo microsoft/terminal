@@ -355,6 +355,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::HardResetWithoutErase()
+    {
+        const auto lock = _terminal->LockForWriting();
+        _terminal->HardResetWithoutErase();
+    }
+
     bool ControlCore::Initialize(const float actualWidth,
                                  const float actualHeight,
                                  const float compositionScale)

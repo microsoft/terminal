@@ -3009,7 +3009,7 @@ void AdaptDispatch::SoftReset()
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
 //      * The soft font is reset in the renderer and the font buffer is deleted.
-//   - Clears the screen.
+//   - Clears the screen. (if erase=true)
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
 //      * CUP(1;1)
@@ -3019,8 +3019,8 @@ void AdaptDispatch::SoftReset()
 //   - Sets all character sets to the default.
 //      * G0(USASCII)
 //Arguments:
-// <none>
-void AdaptDispatch::HardReset()
+// - erase: if true, erase the screen and scrollback
+void AdaptDispatch::HardReset(bool erase)
 {
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
@@ -3047,9 +3047,12 @@ void AdaptDispatch::HardReset()
     //      to ensure that it clears with the default background color.
     SoftReset();
 
-    // Clears the screen - Needs to be done in two operations.
-    EraseInDisplay(DispatchTypes::EraseType::All);
-    EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    if (erase)
+    {
+        // Clears the screen - Needs to be done in two operations.
+        EraseInDisplay(DispatchTypes::EraseType::All);
+        EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    }
 
     // Set the color table and render modes back to their initial startup values.
     _renderSettings.RestoreDefaultSettings();
@@ -3060,8 +3063,14 @@ void AdaptDispatch::HardReset()
         _renderer->SynchronizedOutputChanged();
     }
 
-    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
-    CursorPosition(1, 1);
+    if (erase)
+    {
+        // Cursor to 1,1 - the Soft Reset guarantees this is absolute.
+        // Only done when clearing buffers, because when preserving content
+        // the cursor should stay where the previous shell left it so the
+        // new shell prompt appears in the right place.
+        CursorPosition(1, 1);
+    }
 
     // We only reset the system line feed mode if the input mode is set. If it
     // isn't set, that either means they're both reset, and there's nothing for

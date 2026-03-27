@@ -235,7 +235,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         _dispatch->DeviceAttributes();
         break;
     case EscActionCodes::RIS_ResetToInitialState:
-        _dispatch->HardReset();
+        _dispatch->HardReset(true);
         break;
     case EscActionCodes::SS2_SingleShift:
         _dispatch->SingleShift(2);

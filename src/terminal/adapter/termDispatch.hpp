@@ -127,7 +127,7 @@ public:
     void AnnounceCodeStructure(const VTInt /*ansiLevel*/) override {} // ACS
 
     void SoftReset() override {} // DECSTR
-    void HardReset() override {} // RIS
+    void HardReset(bool /*erase*/) override {} // RIS
     void ScreenAlignmentPattern() override {} // DECALN
 
     void SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override {} // DECSCUSR

@@ -129,7 +129,7 @@ namespace Microsoft::Console::VirtualTerminal
         void SendC1Controls(const bool enabled) override; // S8C1T, S7C1T
         void AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         void SoftReset() override; // DECSTR
-        void HardReset() override; // RIS
+        void HardReset(bool erase) override; // RIS
         void ScreenAlignmentPattern() override; // DECALN
         void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
 

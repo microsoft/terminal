@@ -140,7 +140,7 @@ public:
     virtual void AnnounceCodeStructure(const VTInt ansiLevel) = 0; // ACS
 
     virtual void SoftReset() = 0; // DECSTR
-    virtual void HardReset() = 0; // RIS
+    virtual void HardReset(bool erase) = 0; // RIS
     virtual void ScreenAlignmentPattern() = 0; // DECALN
 
     virtual void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
