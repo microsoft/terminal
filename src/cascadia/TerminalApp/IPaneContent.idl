@@ -16,6 +16,12 @@ namespace TerminalApp
         Boolean FlashTaskbar { get; };
     };
 
+    runtimeclass NotificationEventArgs
+    {
+        String Title { get; };
+        String Body { get; };
+    };
+
     interface IPaneContent
     {
         Windows.UI.Xaml.FrameworkElement GetRoot();
@@ -46,6 +52,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TaskbarProgressChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> FocusRequested;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, NotificationEventArgs> NotificationRequested;
     };
 
 

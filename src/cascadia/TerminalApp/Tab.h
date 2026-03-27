@@ -121,6 +121,7 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<TerminalApp::Tab, IInspectable> ActivePaneChanged;
         til::event<winrt::delegate<>> TabRaiseVisualBell;
+        til::event<winrt::delegate<winrt::hstring /*title*/, winrt::hstring /*body*/>> TabToastNotificationRequested;
         til::typed_event<IInspectable, IInspectable> TaskbarProgressChanged;
 
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
@@ -182,6 +183,7 @@ namespace winrt::TerminalApp::implementation
             winrt::TerminalApp::IPaneContent::ConnectionStateChanged_revoker ConnectionStateChanged;
             winrt::TerminalApp::IPaneContent::ReadOnlyChanged_revoker ReadOnlyChanged;
             winrt::TerminalApp::IPaneContent::FocusRequested_revoker FocusRequested;
+            winrt::TerminalApp::IPaneContent::NotificationRequested_revoker NotificationRequested;
 
             // These events literally only apply if the content is a TermControl.
             winrt::Microsoft::Terminal::Control::TermControl::KeySent_revoker KeySent;

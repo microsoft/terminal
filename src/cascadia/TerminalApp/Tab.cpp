@@ -1166,6 +1166,18 @@ namespace winrt::TerminalApp::implementation
             events.RestartTerminalRequested = terminal.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &Tab::_bubbleRestartTerminalRequested });
         }
 
+        events.NotificationRequested = content.NotificationRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](TerminalApp::IPaneContent /*sender*/, auto notifArgs) -> safe_void_coroutine {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (const auto tab{ weakThisCopy.get() })
+                {
+                    const auto title = notifArgs.Title().empty() ? tab->Title() : notifArgs.Title();
+                    tab->TabToastNotificationRequested.raise(title, notifArgs.Body());
+                }
+            });
+
         if (_tabStatus.IsInputBroadcastActive())
         {
             if (const auto& termContent{ content.try_as<TerminalApp::TerminalPaneContent>() })

@@ -4,6 +4,7 @@
 #pragma once
 #include "TerminalPaneContent.g.h"
 #include "BellEventArgs.g.h"
+#include "NotificationEventArgs.g.h"
 #include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation
@@ -17,6 +18,16 @@ namespace winrt::TerminalApp::implementation
             FlashTaskbar(flashTaskbar) {}
 
         til::property<bool> FlashTaskbar;
+    };
+
+    struct NotificationEventArgs : public NotificationEventArgsT<NotificationEventArgs>
+    {
+    public:
+        NotificationEventArgs(const winrt::hstring& title = {}, const winrt::hstring& body = {}) :
+            Title(title), Body(body) {}
+
+        til::property<winrt::hstring> Title;
+        til::property<winrt::hstring> Body;
     };
 
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>, BasicPaneEvents

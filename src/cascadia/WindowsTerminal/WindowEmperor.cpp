@@ -775,6 +775,25 @@ bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
     return true;
 }
 
+void WindowEmperor::FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const
+{
+    _assertIsMainThread();
+
+    for (const auto& w : _windows)
+    {
+        if (w->Logic().FocusTab(tab))
+        {
+            winrt::TerminalApp::SummonWindowBehavior summonArgs;
+            summonArgs.MoveToCurrentDesktop(false);
+            summonArgs.DropdownDuration(0);
+            summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+            summonArgs.ToggleVisibility(false);
+            w->HandleSummon(std::move(summonArgs));
+            return;
+        }
+    }
+}
+
 void WindowEmperor::_summonAllWindows() const
 {
     _assertIsMainThread();
@@ -1033,7 +1052,14 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             {
                 const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
                 const auto argv = commandlineToArgArray(handoff.args.c_str());
-                _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
+                // When a toast notification is clicked, Windows launches a new
+                // wt.exe with "__fromToast". That instance hands off here via
+                // WM_COPYDATA. We already handle activation in-process via the
+                // toast's Activated event, so just ignore this handoff.
+                if (argv.size() != 2 || argv[1] != L"__fromToast")
+                {
+                    _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
+                }
             }
             return 0;
         case WM_HOTKEY:

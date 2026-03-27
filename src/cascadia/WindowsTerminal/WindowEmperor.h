@@ -35,6 +35,7 @@ public:
     AppHost* GetWindowByName(std::wstring_view name) const noexcept;
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
+    void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
 
 private:
     struct SummonWindowSelectionArgs
