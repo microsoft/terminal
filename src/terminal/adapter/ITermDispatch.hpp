@@ -29,6 +29,7 @@ public:
     {
         ChecksumReport,
         ClipboardWrite,
+        DesktopNotification,
     };
 
 #pragma warning(push)
@@ -164,6 +165,8 @@ public:
     virtual void DoVsCodeAction(const std::wstring_view string) = 0;
 
     virtual void DoWTAction(const std::wstring_view string) = 0;
+
+    virtual void DoUrxvtAction(const std::wstring_view string) = 0;
 
     virtual StringHandler DefineSixelImage(const VTInt macroParameter,
                                            const DispatchTypes::SixelBackground backgroundSelect,

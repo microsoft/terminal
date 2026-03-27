@@ -233,6 +233,11 @@ public:
         Log::Comment(L"SearchMissingCommand MOCK called...");
     }
 
+    void ShowNotification(const std::wstring_view /*title*/, const std::wstring_view /*body*/) override
+    {
+        Log::Comment(L"ShowNotification MOCK called...");
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.

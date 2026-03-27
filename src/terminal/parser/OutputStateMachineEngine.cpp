@@ -910,6 +910,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         _dispatch->DoWTAction(string);
         break;
     }
+    case OscActionCodes::UrxvtAction:
+    {
+        _dispatch->DoUrxvtAction(string);
+        break;
+    }
     default:
         _dispatch->UnknownSequence();
         break;
