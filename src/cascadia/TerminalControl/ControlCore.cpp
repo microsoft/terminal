@@ -1622,7 +1622,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Called for the Terminal's TitleChanged callback.This will re-raise
+    // - Called for the Terminal's TitleChanged callback. This will re-raise
     //   a new winrt TypedEvent that can be listened to.
     // - The listeners to this event will re-query the control for the current
     //   value of Title().
