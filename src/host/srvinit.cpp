@@ -687,6 +687,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 {
     auto Status = STATUS_NOT_SUPPORTED;
 
+    // Notes (miniksa):
     // -- WARNING -- LOAD BEARING CODE --
     // Only attempt to return the Lang ID if the Windows ACP on console launch was an East Asian Code Page.
     // -
@@ -711,6 +712,19 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     // I would also highly advise against expanding the LANGIDs returned here or modifying them in any way until the cascading impacts
     // discovered in MSFT: 9808579 are vetted against any changes.
     // -- END WARNING --
+
+    // Notes (lhecker):
+    // To summarize, this hidden console function gets called by the OS when a new process is created.
+    // The returned language, if any, is then used as the default locale for all new threads.
+    // The problem with is that it has worked like this virtually unchanged since at least Windows 2000,
+    // including the bug where it returns STATUS_SUCCESS when pLangId is null.
+    //
+    // In 2025 I added handling of the CP_UTF8 codepage, because while this special treatment doesn't
+    // make much sense to me in the first place [^1], it almost certainly makes no sense for CP_UTF8
+    // to return an US English locale to override a valid user locale.
+    //
+    // [^1]: Why was this ever added? Couldn't we just patch it up now? Maybe YOU will do it? :)
+
     if (IsAvailableEastAsianCodePage(ServiceLocator::LocateGlobals().uiWindowsCP))
     {
         if (pLangId != nullptr)
@@ -729,6 +743,8 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
             case CP_CHINESE_TRADITIONAL:
                 *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
                 break;
+            case CP_UTF8:
+                return STATUS_NOT_SUPPORTED;
             default:
                 *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
                 break;
