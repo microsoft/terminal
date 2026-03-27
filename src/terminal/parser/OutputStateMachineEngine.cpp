@@ -865,8 +865,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const size_t parameter, const s
         break;
     }
     case OscActionCodes::CurrentWorkingDirectory:
-        // TODO: Add support for OSC 7 = CWD sequences?
-        // In GH#8214 it was decided that it's a bad idea due to WSL compat.
+        _dispatch->SetCurrentWorkingDirectory(string);
         break;
     case OscActionCodes::Hyperlink:
     {
