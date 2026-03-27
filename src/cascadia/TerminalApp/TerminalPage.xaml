@@ -98,6 +98,18 @@
                        x:Load="False"
                        DefaultButton="Primary" />
 
+        <ContentDialog x:Name="CloseTabDialog"
+                       x:Uid="CloseTabDialog"
+                       Grid.Row="2"
+                       x:Load="False"
+                       DefaultButton="Primary" />
+
+        <ContentDialog x:Name="ClosePaneDialog"
+                       x:Uid="ClosePaneDialog"
+                       Grid.Row="2"
+                       x:Load="False"
+                       DefaultButton="Primary" />
+
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"
                        Grid.Row="2"

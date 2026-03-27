@@ -30,7 +30,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WordDelimiters);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ConfirmCloseAllTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ConfirmCloseOn);
+        hstring ConfirmCloseOnPreview() const;
+        bool IsConfirmCloseOnFlagSet(const uint32_t flag);
+        void SetConfirmCloseOnAlways(winrt::Windows::Foundation::IReference<bool> on);
+        void SetConfirmCloseOnMultipleTabs(winrt::Windows::Foundation::IReference<bool> on);
+        void SetConfirmCloseOnMultiplePanes(winrt::Windows::Foundation::IReference<bool> on);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WarnAboutMultiLinePaste);

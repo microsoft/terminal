@@ -413,6 +413,25 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // Check if we should warn before closing this tab based on the
+        // confirmCloseOn flags (e.g. multiple panes, always, etc.)
+        {
+            const auto tabImpl = _GetTabImpl(tab);
+            if (tabImpl && _ShouldWarnOnCloseTab(tabImpl))
+            {
+                const auto weak = get_weak();
+
+                auto warningResult = co_await _ShowCloseTabWarningDialog();
+
+                strong = weak.get();
+
+                if (!strong || warningResult != ContentDialogResult::Primary)
+                {
+                    co_return;
+                }
+            }
+        }
+
         auto t = winrt::get_self<implementation::Tab>(tab);
         auto actions = t->BuildStartupActions(BuildStartupKind::None);
         _AddPreviouslyClosedPaneOrTab(std::move(actions));
@@ -782,6 +801,28 @@ namespace winrt::TerminalApp::implementation
             if (const auto pane{ activeTab->GetActivePane() })
             {
                 const auto weak = get_weak();
+
+                // Check if we should warn before closing a single pane
+                // (only triggers on Always — or MultipleProcesses in the future)
+                const auto flags = _settings.GlobalSettings().ConfirmCloseOn();
+                if (WI_IsFlagSet(flags, ConfirmCloseOn::Always))
+                {
+                    auto warningResult = co_await _ShowClosePaneWarningDialog();
+
+                    if (const auto strong = weak.get())
+                    {
+                        if (warningResult != ContentDialogResult::Primary)
+                        {
+                            co_return;
+                        }
+                    }
+                    else
+                    {
+                        co_return;
+                    }
+                }
+                // TODO GH#6549: ConfirmCloseOn::MultipleProcesses check here
+
                 if (co_await _PaneConfirmCloseReadOnly(pane))
                 {
                     if (const auto strong = weak.get())
