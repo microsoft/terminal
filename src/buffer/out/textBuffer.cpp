@@ -2724,7 +2724,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     til::point newCursorPos;
 
     // BODGY: We use oldCursorPos in two critical places below:
-    // * To compute an oldHeight that includes at a minimum the cursor row
+    // * To compute an oldHeight that includes, at a minimum, the cursor row
     // * For REFLOW_JANK_CURSOR_WRAP (see comment below)
     // Both of these would break the reflow algorithm, but the latter of the two in particular
     // would cause the main copy loop below to deadlock. In other words, these two lines
