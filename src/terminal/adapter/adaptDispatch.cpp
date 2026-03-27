@@ -3845,7 +3845,7 @@ void AdaptDispatch::DoWTAction(const std::wstring_view string)
 }
 
 // Method Description:
-// - OSC 777 - Handles uxrvt requests. Currently, the only supported request is for desktop notifications.
+// - OSC 777 - Handles urxvt requests. Currently, the only supported request is for desktop notifications.
 //   The format is: OSC 777;notify;title;body ST
 // Arguments:
 // - string: contains the parameters that define the notification

@@ -1798,7 +1798,6 @@ upss
 uregex
 URegular
 Urxvt
-urxvt
 usebackq
 USECALLBACK
 USECOLOR
