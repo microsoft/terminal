@@ -35,7 +35,6 @@ namespace winrt::TerminalApp::implementation
         _activePane = nullptr;
 
         _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
-        _restartConnectionMenuItem.Visibility(WUX::Visibility::Collapsed);
 
         auto firstId = _nextPaneId;
 
@@ -86,6 +85,7 @@ namespace winrt::TerminalApp::implementation
 
         _MakeTabViewItem();
         _CreateContextMenu();
+        _UpdateMenuItemStates();
 
         _headerControl.TabStatus(_tabStatus);
 
@@ -1271,13 +1271,6 @@ namespace winrt::TerminalApp::implementation
 
             _tabStatus.IsConnectionClosed(isClosed);
         }
-
-        if (_activePane)
-        {
-            _restartConnectionMenuItem.Visibility(_activePane->IsConnectionClosed() ?
-                                                      WUX::Visibility::Visible :
-                                                      WUX::Visibility::Collapsed);
-        }
     }
 
     void Tab::_RestartActivePaneConnection()
@@ -1348,6 +1341,22 @@ namespace winrt::TerminalApp::implementation
                 }
             });
         }
+
+        _UpdateMenuItemStates();
+    }
+
+    void Tab::_UpdateMenuItemStates()
+    {
+        // Terminal-specific menu items
+        const auto content = _activePane ? _activePane->GetContent() : nullptr;
+        const auto isTerm = content && content.try_as<winrt::TerminalApp::TerminalPaneContent>() != nullptr;
+        _duplicateTabMenuItem.IsEnabled(isTerm);
+        _exportTabMenuItem.IsEnabled(isTerm);
+        _findMenuItem.IsEnabled(isTerm);
+        _restartConnectionMenuItem.IsEnabled(isTerm);
+
+        // Snippets Pane can technically be split
+        _splitTabMenuItem.IsEnabled(isTerm || (content && content.try_as<winrt::TerminalApp::SnippetsPaneContent>() != nullptr));
     }
 
     // Method Description:
@@ -1652,106 +1661,100 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(renameTabMenuItem, renameTabToolTip);
         }
 
-        Controls::MenuFlyoutItem duplicateTabMenuItem;
         {
             // "Duplicate tab"
             Controls::FontIcon duplicateTabSymbol;
             duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             duplicateTabSymbol.Glyph(L"\xF5ED");
 
-            duplicateTabMenuItem.Click({ get_weak(), &Tab::_duplicateTabClicked });
-            duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
-            duplicateTabMenuItem.Icon(duplicateTabSymbol);
+            _duplicateTabMenuItem.Click({ get_weak(), &Tab::_duplicateTabClicked });
+            _duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
+            _duplicateTabMenuItem.Icon(duplicateTabSymbol);
 
             const auto duplicateTabToolTip = RS_(L"DuplicateTabToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(duplicateTabMenuItem, box_value(duplicateTabToolTip));
-            Automation::AutomationProperties::SetHelpText(duplicateTabMenuItem, duplicateTabToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_duplicateTabMenuItem, box_value(duplicateTabToolTip));
+            Automation::AutomationProperties::SetHelpText(_duplicateTabMenuItem, duplicateTabToolTip);
         }
 
-        Controls::MenuFlyoutItem splitTabMenuItem;
         {
             // "Split tab"
             Controls::FontIcon splitTabSymbol;
             splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
 
-            splitTabMenuItem.Click({ get_weak(), &Tab::_splitTabClicked });
-            splitTabMenuItem.Text(RS_(L"SplitTabText"));
-            splitTabMenuItem.Icon(splitTabSymbol);
+            _splitTabMenuItem.Click({ get_weak(), &Tab::_splitTabClicked });
+            _splitTabMenuItem.Text(RS_(L"SplitTabText"));
+            _splitTabMenuItem.Icon(splitTabSymbol);
 
             const auto splitTabToolTip = RS_(L"SplitTabToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(splitTabMenuItem, box_value(splitTabToolTip));
-            Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_splitTabMenuItem, box_value(splitTabToolTip));
+            Automation::AutomationProperties::SetHelpText(_splitTabMenuItem, splitTabToolTip);
         }
 
-        Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
             // "Close pane"
-            closePaneMenuItem.Click({ get_weak(), &Tab::_closePaneClicked });
-            closePaneMenuItem.Text(RS_(L"ClosePaneText"));
+            _closePaneMenuItem.Click({ get_weak(), &Tab::_closePaneClicked });
+            _closePaneMenuItem.Text(RS_(L"ClosePaneText"));
 
             const auto closePaneToolTip = RS_(L"ClosePaneToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(closePaneMenuItem, box_value(closePaneToolTip));
-            Automation::AutomationProperties::SetHelpText(closePaneMenuItem, closePaneToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_closePaneMenuItem, box_value(closePaneToolTip));
+            Automation::AutomationProperties::SetHelpText(_closePaneMenuItem, closePaneToolTip);
         }
 
-        Controls::MenuFlyoutItem exportTabMenuItem;
         {
             // "Export tab"
             Controls::FontIcon exportTabSymbol;
             exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
 
-            exportTabMenuItem.Click({ get_weak(), &Tab::_exportTextClicked });
-            exportTabMenuItem.Text(RS_(L"ExportTabText"));
-            exportTabMenuItem.Icon(exportTabSymbol);
+            _exportTabMenuItem.Click({ get_weak(), &Tab::_exportTextClicked });
+            _exportTabMenuItem.Text(RS_(L"ExportTabText"));
+            _exportTabMenuItem.Icon(exportTabSymbol);
 
             const auto exportTabToolTip = RS_(L"ExportTabToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(exportTabMenuItem, box_value(exportTabToolTip));
-            Automation::AutomationProperties::SetHelpText(exportTabMenuItem, exportTabToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_exportTabMenuItem, box_value(exportTabToolTip));
+            Automation::AutomationProperties::SetHelpText(_exportTabMenuItem, exportTabToolTip);
         }
 
-        Controls::MenuFlyoutItem findMenuItem;
         {
             // "Find"
             Controls::FontIcon findSymbol;
             findSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             findSymbol.Glyph(L"\xF78B"); // SearchMedium
 
-            findMenuItem.Click({ get_weak(), &Tab::_findClicked });
-            findMenuItem.Text(RS_(L"FindText"));
-            findMenuItem.Icon(findSymbol);
+            _findMenuItem.Click({ get_weak(), &Tab::_findClicked });
+            _findMenuItem.Text(RS_(L"FindText"));
+            _findMenuItem.Icon(findSymbol);
 
             const auto findToolTip = RS_(L"FindToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(findMenuItem, box_value(findToolTip));
-            Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_findMenuItem, box_value(findToolTip));
+            Automation::AutomationProperties::SetHelpText(_findMenuItem, findToolTip);
         }
 
-        Controls::MenuFlyoutItem restartConnectionMenuItem = _restartConnectionMenuItem;
         {
             // "Restart connection"
             Controls::FontIcon restartConnectionSymbol;
             restartConnectionSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             restartConnectionSymbol.Glyph(L"\xE72C");
 
-            restartConnectionMenuItem.Click([weakThis](auto&&, auto&&) {
+            _restartConnectionMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
                     tab->_RestartActivePaneConnection();
                 }
             });
-            restartConnectionMenuItem.Text(RS_(L"RestartConnectionText"));
-            restartConnectionMenuItem.Icon(restartConnectionSymbol);
+            _restartConnectionMenuItem.Text(RS_(L"RestartConnectionText"));
+            _restartConnectionMenuItem.Icon(restartConnectionSymbol);
 
             const auto restartConnectionToolTip = RS_(L"RestartConnectionToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(restartConnectionMenuItem, box_value(restartConnectionToolTip));
-            Automation::AutomationProperties::SetHelpText(restartConnectionMenuItem, restartConnectionToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_restartConnectionMenuItem, box_value(restartConnectionToolTip));
+            Automation::AutomationProperties::SetHelpText(_restartConnectionMenuItem, restartConnectionToolTip);
         }
 
         // Build the menu
@@ -1759,16 +1762,16 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutSeparator menuSeparator;
         contextMenuFlyout.Items().Append(chooseColorMenuItem);
         contextMenuFlyout.Items().Append(renameTabMenuItem);
-        contextMenuFlyout.Items().Append(duplicateTabMenuItem);
-        contextMenuFlyout.Items().Append(splitTabMenuItem);
+        contextMenuFlyout.Items().Append(_duplicateTabMenuItem);
+        contextMenuFlyout.Items().Append(_splitTabMenuItem);
         _AppendMoveMenuItems(contextMenuFlyout);
-        contextMenuFlyout.Items().Append(exportTabMenuItem);
-        contextMenuFlyout.Items().Append(findMenuItem);
-        contextMenuFlyout.Items().Append(restartConnectionMenuItem);
+        contextMenuFlyout.Items().Append(_exportTabMenuItem);
+        contextMenuFlyout.Items().Append(_findMenuItem);
+        contextMenuFlyout.Items().Append(_restartConnectionMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         auto closeSubMenu = _AppendCloseMenuItems(contextMenuFlyout);
-        closeSubMenu.Items().Append(closePaneMenuItem);
+        closeSubMenu.Items().Append(_closePaneMenuItem);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
         // back to our control.
