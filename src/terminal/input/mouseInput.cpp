@@ -292,8 +292,15 @@ bool TerminalInput::IsTrackingMouseInput() const noexcept
 // Return value:
 // - Returns an empty optional if we didn't handle the mouse event and the caller can opt to handle it in some other way.
 // - Returns a string if we successfully translated it into a VT input sequence.
-TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, const unsigned int button, const short modifierKeyState, const short delta, const MouseButtonState state)
+TerminalInput::OutputType TerminalInput::HandleMouse(const float viewportX, const float viewportY, const unsigned int button, const short modifierKeyState, const short delta, const MouseButtonState state)
 {
+    // Truncate float cell coordinates to integer for cell-based modes and
+    // for tracking the last position (used to detect same-cell moves).
+    const til::point position{
+        static_cast<til::CoordType>(viewportX),
+        static_cast<til::CoordType>(viewportY)
+    };
+
     if (Utils::Sign(delta) != Utils::Sign(_mouseInputState.accumulatedDelta))
     {
         // This works for wheel and non-wheel events and transitioning between wheel/non-wheel.
@@ -364,6 +371,18 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
             if (_inputMode.test(Mode::Utf8MouseEncoding))
             {
                 return _GenerateUtf8Sequence(position, realButton, isHover, modifierKeyState, delta);
+            }
+            else if (_inputMode.test(Mode::SgrPixelMouseEncoding))
+            {
+                // SGR-Pixel mode (1016) uses the same format as SGR (1006),
+                // but with virtual pixel coordinates (10x20 per cell) instead of cell coordinates.
+                // This matches the DEC VT340 character cell size convention.
+                const til::point virtualPixelPos{
+                    static_cast<til::CoordType>(viewportX * 10),
+                    static_cast<til::CoordType>(viewportY * 20)
+                };
+                const auto effectiveButton = physicalButtonPressed ? realButton : button;
+                return _GenerateSGRSequence(virtualPixelPos, effectiveButton, _isButtonUp(button), isHover, modifierKeyState, delta);
             }
             else if (_inputMode.test(Mode::SgrMouseEncoding))
             {
