@@ -5,6 +5,7 @@
 #include "TerminalPaneContent.h"
 
 #include <mmsystem.h>
+#include <shlwapi.h>
 
 #include "TerminalSettingsCache.h"
 #include "../../types/inc/utils.hpp"
@@ -292,47 +293,27 @@ namespace winrt::TerminalApp::implementation
         // URI parsing if a file URI string makes it this far.
         if (til::starts_with_insensitive_ascii(soundPath, L"file:"))
         {
-            try
+            // PathCreateFromUrlW supports writing to the input pointer,
+            // and the resulting path can never be longer than the URI.
+            const auto ptr = filePath.data();
+            auto len = gsl::narrow<DWORD>(filePath.size());
+            if (FAILED_LOG(PathCreateFromUrlW(ptr, ptr, &len, 0)))
             {
-                const auto resourceUri{ winrt::Windows::Foundation::Uri{ soundPath } };
-                if (resourceUri)
-                {
-                    const auto uriPath{ winrt::Windows::Foundation::Uri::UnescapeComponent(resourceUri.Path()) };
-                    if (uriPath.empty())
-                    {
-                        return;
-                    }
-
-                    const auto host{ resourceUri.Host() };
-                    if (!host.empty())
-                    {
-                        // file://server/share/path.wav -> \\server\share\path.wav
-                        std::wstring normalizedPath{ uriPath };
-                        std::replace(normalizedPath.begin(), normalizedPath.end(), L'/', L'\\');
-                        if (normalizedPath.front() != L'\\')
-                        {
-                            normalizedPath.insert(normalizedPath.begin(), L'\\');
-                        }
-                        filePath = L"\\\\" + std::wstring{ host } + normalizedPath;
-                    }
-                    else
-                    {
-                        // file:///C:/path.wav -> /C:/path.wav -> C:/path.wav
-                        if (uriPath.size() < 2)
-                        {
-                            return;
-                        }
-                        filePath = til::safe_slice_abs(uriPath, 1, SIZE_T_MAX);
-                    }
-                }
+                return;
             }
-            CATCH_LOG();
+            filePath.resize(len);
+        }
+
+        if (!til::is_legal_path(filePath))
+        {
+            return;
         }
 
         // GH#17733: Play bell sounds with Win32 audio APIs so per-app mixer
         // volume persists across terminal restarts.
         PlaySoundW(filePath.c_str(), nullptr, SND_FILENAME | SND_ASYNC | SND_SENTRY | SND_NODEFAULT);
     }
+
     void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                              const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
