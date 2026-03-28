@@ -548,6 +548,21 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IAsyncAction _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
         static Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackageAsync(hstring query);
 
+        // Tab Preview Feature
+        void _ShowTabPreview(const winrt::TerminalApp::Tab& tab);
+        void _HideTabPreview();
+        void _OnTabPointerEntered(const IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerEventArgs& e);
+        void _OnTabPointerExited(const IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerEventArgs& e);
+        Windows::UI::Xaml::Controls::ContentDialog _tabPreviewDialog{ nullptr };
+        winrt::weak_ref<Tab> _currentPreviewTab{ nullptr };
+
+        // Tab Color History Feature
+        void _AddTabColorToHistory(const winrt::Windows::UI::Color& color);
+        std::vector<winrt::Windows::UI::Color> _GetRecentTabColors() const;
+        void _ClearTabColorHistory();
+        static constexpr size_t MAX_RECENT_COLORS{ 10 };
+        std::vector<winrt::Windows::UI::Color> _recentTabColors{};
+
         void _WindowSizeChanged(const IInspectable sender, const winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs args);
         void _windowPropertyChanged(const IInspectable& sender, const winrt::Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
 
