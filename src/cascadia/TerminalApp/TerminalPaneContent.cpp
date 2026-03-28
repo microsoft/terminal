@@ -297,12 +297,33 @@ namespace winrt::TerminalApp::implementation
                 const auto resourceUri{ winrt::Windows::Foundation::Uri{ soundPath } };
                 if (resourceUri)
                 {
-                    const auto uriPath{ resourceUri.Path() };
-                    if (uriPath.size() < 2)
+                    const auto uriPath{ winrt::Windows::Foundation::Uri::UnescapeComponent(resourceUri.Path()) };
+                    if (uriPath.empty())
                     {
                         return;
                     }
-                    filePath = til::safe_slice_abs(winrt::Windows::Foundation::Uri::UnescapeComponent(uriPath), 1, SIZE_T_MAX);
+
+                    const auto host{ resourceUri.Host() };
+                    if (!host.empty())
+                    {
+                        // file://server/share/path.wav -> \\server\share\path.wav
+                        std::wstring normalizedPath{ uriPath };
+                        std::replace(normalizedPath.begin(), normalizedPath.end(), L'/', L'\\');
+                        if (normalizedPath.front() != L'\\')
+                        {
+                            normalizedPath.insert(normalizedPath.begin(), L'\\');
+                        }
+                        filePath = L"\\\\" + std::wstring{ host } + normalizedPath;
+                    }
+                    else
+                    {
+                        // file:///C:/path.wav -> /C:/path.wav -> C:/path.wav
+                        if (uriPath.size() < 2)
+                        {
+                            return;
+                        }
+                        filePath = til::safe_slice_abs(uriPath, 1, SIZE_T_MAX);
+                    }
                 }
             }
             CATCH_LOG();
