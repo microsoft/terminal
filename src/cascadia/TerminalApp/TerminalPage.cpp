@@ -2649,6 +2649,9 @@ namespace winrt::TerminalApp::implementation
 
         const auto& firstAction = args.GetAt(0);
         const bool firstIsSplitPane{ firstAction.Action() == ShortcutAction::SplitPane };
+        std::optional<uint32_t> relativeFocusPaneId;
+        winrt::com_ptr<Tab> targetTabImpl;
+        uint32_t targetPaneIdBase = 0;
 
         // `splitPane` allows the user to specify which tab to split. In that
         // case, split specifically the requested pane.
@@ -2660,11 +2663,39 @@ namespace winrt::TerminalApp::implementation
         if (firstIsSplitPane && tabIndex < _tabs.Size())
         {
             _SelectTab(tabIndex);
+
+            targetTabImpl = _GetFocusedTabImpl();
+            if (targetTabImpl)
+            {
+                targetPaneIdBase = targetTabImpl->NextPaneId();
+            }
+
+            const auto& lastAction = args.GetAt(args.Size() - 1);
+            if (lastAction.Action() == ShortcutAction::FocusPane)
+            {
+                if (const auto focusArgs = lastAction.Args().try_as<FocusPaneArgs>())
+                {
+                    relativeFocusPaneId = focusArgs.Id();
+                }
+            }
         }
 
-        for (const auto& action : args)
+        for (uint32_t i = 0; i < args.Size(); ++i)
         {
+            const auto& action = args.GetAt(i);
+            if (relativeFocusPaneId.has_value() &&
+                i == args.Size() - 1 &&
+                action.Action() == ShortcutAction::FocusPane)
+            {
+                continue;
+            }
+
             _actionDispatch->DoAction(action);
+        }
+
+        if (relativeFocusPaneId.has_value() && targetTabImpl)
+        {
+            targetTabImpl->FocusPane(targetPaneIdBase + *relativeFocusPaneId);
         }
 
         // After handling all the actions, then re-check the tabIndex. We might
@@ -5563,9 +5594,11 @@ namespace winrt::TerminalApp::implementation
 
             // Get our PID
             const auto pid{ GetCurrentProcessId() };
+            const auto canAttachAsPane = tabImpl->GetRootPane() && !(*tabImpl == _settingsTab);
 
             e.Data().Properties().Insert(L"windowId", winrt::box_value(id));
             e.Data().Properties().Insert(L"pid", winrt::box_value<uint32_t>(pid));
+            e.Data().Properties().Insert(L"canAttachAsPane", winrt::box_value<bool>(canAttachAsPane));
             e.Data().RequestedOperation(DataPackageOperation::Move);
 
             // The next thing that will happen:
@@ -5585,12 +5618,27 @@ namespace winrt::TerminalApp::implementation
     {
         // We must mark that we can accept the drag/drop. The system will never
         // call TabStripDrop on us if we don't indicate that we're willing.
-        const auto& props{ e.DataView().Properties() };
-        if (props.HasKey(L"windowId") &&
-            props.HasKey(L"pid") &&
-            (winrt::unbox_value_or<uint32_t>(props.TryLookup(L"pid"), 0u) == GetCurrentProcessId()))
+        if (const auto sourceWindowId = _draggedTabSourceWindow(e))
         {
             e.AcceptedOperation(DataPackageOperation::Move);
+
+            if (const auto splitTargetIndex = _tabIndexFromSplitDrop(e);
+                _draggedTabCanSplit(e) && splitTargetIndex && _canSplitDraggedTab(*sourceWindowId, *splitTargetIndex))
+            {
+                _showTabContentSplitOverlay(*splitTargetIndex);
+                e.DragUIOverride().Caption(RS_(L"DropPathTabSplit/Text"));
+                e.DragUIOverride().IsCaptionVisible(true);
+                e.DragUIOverride().IsContentVisible(false);
+                e.DragUIOverride().IsGlyphVisible(false);
+            }
+            else
+            {
+                _hideTabContentSplitOverlay(true);
+            }
+        }
+        else
+        {
+            _hideTabContentSplitOverlay(true);
         }
 
         // You may think to yourself, this is a great place to increase the
@@ -5606,29 +5654,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_onTabStripDrop(winrt::Windows::Foundation::IInspectable /*sender*/,
                                        winrt::Windows::UI::Xaml::DragEventArgs e)
     {
-        // Get the PID and make sure it is the same as ours.
-        if (const auto& pidObj{ e.DataView().Properties().TryLookup(L"pid") })
+        const auto sourceWindowId = _draggedTabSourceWindow(e);
+        if (!sourceWindowId)
         {
-            const auto pid{ winrt::unbox_value_or<uint32_t>(pidObj, 0u) };
-            if (pid != GetCurrentProcessId())
-            {
-                // The PID doesn't match ours. We can't handle this drop.
-                return;
-            }
-        }
-        else
-        {
-            // No PID? We can't handle this drop. Bail.
             return;
         }
 
-        const auto& windowIdObj{ e.DataView().Properties().TryLookup(L"windowId") };
-        if (windowIdObj == nullptr)
+        if (const auto splitTargetIndex = _tabIndexFromSplitDrop(e);
+            _draggedTabCanSplit(e) && splitTargetIndex && _canSplitDraggedTab(*sourceWindowId, *splitTargetIndex))
         {
-            // No windowId? Bail.
+            _hideTabContentSplitOverlay(false);
+            const auto request = winrt::make_self<RequestReceiveContentArgs>(*sourceWindowId,
+                                                                             _WindowProperties.WindowId(),
+                                                                             *splitTargetIndex,
+                                                                             true,
+                                                                             static_cast<uint32_t>(SplitDirection::Automatic));
+            RequestReceiveContent.raise(*this, *request);
             return;
         }
-        const uint64_t src{ winrt::unbox_value<uint64_t>(windowIdObj) };
+
+        _hideTabContentSplitOverlay(true);
 
         // Figure out where in the tab strip we're dropping this tab. Add that
         // index to the request. This is largely taken from the WinUI sample
@@ -5654,12 +5699,313 @@ namespace winrt::TerminalApp::implementation
         }
 
         // `this` is safe to use
-        const auto request = winrt::make_self<RequestReceiveContentArgs>(src, _WindowProperties.WindowId(), index);
+        const auto request = winrt::make_self<RequestReceiveContentArgs>(*sourceWindowId,
+                                                                         _WindowProperties.WindowId(),
+                                                                         index,
+                                                                         false,
+                                                                         0u);
 
         // This will go up to the monarch, who will then dispatch the request
         // back down to the source TerminalPage, who will then perform a
         // RequestMoveContent to move their tab to us.
         RequestReceiveContent.raise(*this, *request);
+    }
+
+    void TerminalPage::_onTabContentDragOver(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             const winrt::Windows::UI::Xaml::DragEventArgs& e)
+    {
+        const auto sourceWindowId = _draggedTabSourceWindow(e);
+        if (!sourceWindowId ||
+            !_draggedTabCanSplit(e) ||
+            !_dragSplitTargetTabIndex ||
+            !_canSplitDraggedTab(*sourceWindowId, *_dragSplitTargetTabIndex))
+        {
+            _hideTabContentSplitOverlay(true);
+            return;
+        }
+
+        e.AcceptedOperation(DataPackageOperation::Move);
+        e.DragUIOverride().Caption(RS_(L"DropPathTabSplit/Text"));
+        e.DragUIOverride().IsCaptionVisible(true);
+        e.DragUIOverride().IsContentVisible(false);
+        e.DragUIOverride().IsGlyphVisible(false);
+
+        _updateTabContentSplitPreview(_splitDirectionFromContentDrag(e.GetPosition(TabDragSplitOverlay())));
+    }
+
+    void TerminalPage::_onTabContentDragLeave(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                              const winrt::Windows::UI::Xaml::DragEventArgs& /*e*/)
+    {
+        _hideTabContentSplitOverlay(true);
+    }
+
+    void TerminalPage::_onTabContentDrop(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                         winrt::Windows::UI::Xaml::DragEventArgs e)
+    {
+        const auto sourceWindowId = _draggedTabSourceWindow(e);
+        if (!sourceWindowId ||
+            !_dragSplitTargetTabIndex ||
+            !_draggedTabCanSplit(e) ||
+            !_canSplitDraggedTab(*sourceWindowId, *_dragSplitTargetTabIndex))
+        {
+            _hideTabContentSplitOverlay(true);
+            return;
+        }
+
+        const auto targetTabIndex = *_dragSplitTargetTabIndex;
+        const auto splitDirection = _splitDirectionFromContentDrag(e.GetPosition(TabDragSplitOverlay()));
+        _hideTabContentSplitOverlay(false);
+
+        const auto request = winrt::make_self<RequestReceiveContentArgs>(*sourceWindowId,
+                                                                         _WindowProperties.WindowId(),
+                                                                         targetTabIndex,
+                                                                         true,
+                                                                         static_cast<uint32_t>(splitDirection));
+        RequestReceiveContent.raise(*this, *request);
+    }
+
+    std::optional<uint64_t> TerminalPage::_draggedTabSourceWindow(const winrt::Windows::UI::Xaml::DragEventArgs& e) const
+    {
+        const auto& props{ e.DataView().Properties() };
+        if (!props.HasKey(L"windowId") ||
+            !props.HasKey(L"pid") ||
+            (winrt::unbox_value_or<uint32_t>(props.TryLookup(L"pid"), 0u) != GetCurrentProcessId()))
+        {
+            return std::nullopt;
+        }
+
+        if (const auto windowIdObj{ props.TryLookup(L"windowId") })
+        {
+            return winrt::unbox_value<uint64_t>(windowIdObj);
+        }
+
+        return std::nullopt;
+    }
+
+    bool TerminalPage::_draggedTabCanSplit(const winrt::Windows::UI::Xaml::DragEventArgs& e) const
+    {
+        const auto& props{ e.DataView().Properties() };
+        return props.HasKey(L"canAttachAsPane") &&
+               winrt::unbox_value_or<bool>(props.TryLookup(L"canAttachAsPane"), false);
+    }
+
+    std::optional<uint32_t> TerminalPage::_tabIndexFromSplitDrop(const winrt::Windows::UI::Xaml::DragEventArgs& e) const
+    {
+        for (auto i = 0u; i < _tabView.TabItems().Size(); i++)
+        {
+            if (const auto& item{ _tabView.ContainerFromIndex(i).try_as<winrt::MUX::Controls::TabViewItem>() })
+            {
+                const auto pos{ e.GetPosition(item) };
+                const auto itemWidth{ item.ActualWidth() };
+                const auto itemHeight{ item.ActualHeight() };
+
+                if (pos.Y >= 0 &&
+                    pos.Y <= itemHeight &&
+                    pos.X >= itemWidth * 0.4f &&
+                    pos.X <= itemWidth * 0.6f)
+                {
+                    return i;
+                }
+            }
+        }
+
+        return std::nullopt;
+    }
+
+    bool TerminalPage::_canSplitDraggedTab(const uint64_t sourceWindowId,
+                                           const uint32_t targetTabIndex) const
+    {
+        if (targetTabIndex >= _tabs.Size())
+        {
+            return false;
+        }
+
+        const auto targetTab{ _GetTabImpl(_tabs.GetAt(targetTabIndex)) };
+        if (!targetTab ||
+            *targetTab == _settingsTab ||
+            !targetTab->GetRootPane())
+        {
+            return false;
+        }
+
+        if (sourceWindowId != _WindowProperties.WindowId())
+        {
+            return true;
+        }
+
+        if (!_stashed.draggedTab ||
+            *_stashed.draggedTab == _settingsTab ||
+            !_stashed.draggedTab->GetRootPane())
+        {
+            return false;
+        }
+
+        if (const auto draggedTabIndex = _GetTabIndex(*_stashed.draggedTab);
+            draggedTabIndex && *draggedTabIndex == targetTabIndex)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    void TerminalPage::_showTabContentSplitOverlay(const uint32_t targetTabIndex)
+    {
+        if (!_dragSplitOriginalTabIndex)
+        {
+            _dragSplitOriginalTabIndex = _GetFocusedTabIndex();
+        }
+
+        _dragSplitTargetTabIndex = targetTabIndex;
+
+        if (const auto focusedTabIndex = _GetFocusedTabIndex();
+            !focusedTabIndex || *focusedTabIndex != targetTabIndex)
+        {
+            _SelectTab(targetTabIndex);
+        }
+
+        _updateTabContentSplitPreview(SplitDirection::Automatic);
+        TabDragSplitOverlay().Visibility(Visibility::Visible);
+    }
+
+    void TerminalPage::_hideTabContentSplitOverlay(const bool restoreOriginalSelection)
+    {
+        if (TabDragSplitOverlay().Visibility() == Visibility::Collapsed && !_dragSplitOriginalTabIndex && !_dragSplitTargetTabIndex)
+        {
+            return;
+        }
+
+        const auto originalTabIndex = _dragSplitOriginalTabIndex;
+        _dragSplitOriginalTabIndex.reset();
+        _dragSplitTargetTabIndex.reset();
+        TabDragSplitOverlay().Visibility(Visibility::Collapsed);
+
+        if (restoreOriginalSelection && originalTabIndex && *originalTabIndex < _tabs.Size())
+        {
+            _SelectTab(*originalTabIndex);
+        }
+    }
+
+    void TerminalPage::_updateTabContentSplitPreview(const SplitDirection splitDirection)
+    {
+        auto setZoneState = [](auto&& zone, const bool active) {
+            zone.Opacity(active ? 0.72 : 0.32);
+            const auto thickness = active ? 2.0 : 1.0;
+            zone.BorderThickness({ thickness, thickness, thickness, thickness });
+        };
+
+        setZoneState(TabDragSplitZoneUp(), splitDirection == SplitDirection::Up);
+        setZoneState(TabDragSplitZoneRight(), splitDirection == SplitDirection::Right);
+        setZoneState(TabDragSplitZoneDown(), splitDirection == SplitDirection::Down);
+        setZoneState(TabDragSplitZoneLeft(), splitDirection == SplitDirection::Left);
+        setZoneState(TabDragSplitZoneCenter(), splitDirection == SplitDirection::Automatic);
+
+        auto preview = TabDragSplitPreview();
+        Grid::SetRowSpan(preview, 1);
+        Grid::SetColumnSpan(preview, 1);
+
+        switch (splitDirection)
+        {
+        case SplitDirection::Up:
+            Grid::SetRow(preview, 0);
+            Grid::SetColumn(preview, 0);
+            Grid::SetRowSpan(preview, 1);
+            Grid::SetColumnSpan(preview, 3);
+            break;
+        case SplitDirection::Right:
+            Grid::SetRow(preview, 0);
+            Grid::SetColumn(preview, 2);
+            Grid::SetRowSpan(preview, 3);
+            Grid::SetColumnSpan(preview, 1);
+            break;
+        case SplitDirection::Down:
+            Grid::SetRow(preview, 2);
+            Grid::SetColumn(preview, 0);
+            Grid::SetRowSpan(preview, 1);
+            Grid::SetColumnSpan(preview, 3);
+            break;
+        case SplitDirection::Left:
+            Grid::SetRow(preview, 0);
+            Grid::SetColumn(preview, 0);
+            Grid::SetRowSpan(preview, 3);
+            Grid::SetColumnSpan(preview, 1);
+            break;
+        default:
+            Grid::SetRow(preview, 1);
+            Grid::SetColumn(preview, 1);
+            break;
+        }
+    }
+
+    SplitDirection TerminalPage::_splitDirectionFromContentDrag(const winrt::Windows::Foundation::Point& point)
+    {
+        const auto width = static_cast<float>(TabDragSplitOverlay().ActualWidth());
+        const auto height = static_cast<float>(TabDragSplitOverlay().ActualHeight());
+        if (width <= 0 || height <= 0)
+        {
+            return SplitDirection::Automatic;
+        }
+
+        const auto xRatio = point.X / width;
+        const auto yRatio = point.Y / height;
+
+        if (xRatio <= 0.3f)
+        {
+            return SplitDirection::Left;
+        }
+        if (xRatio >= 0.7f)
+        {
+            return SplitDirection::Right;
+        }
+        if (yRatio <= 0.3f)
+        {
+            return SplitDirection::Up;
+        }
+        if (yRatio >= 0.7f)
+        {
+            return SplitDirection::Down;
+        }
+
+        return SplitDirection::Automatic;
+    }
+
+    std::vector<ActionAndArgs> TerminalPage::_buildDraggedTabActionsForSplit(const winrt::com_ptr<Tab>& tab,
+                                                                             const SplitDirection splitDirection) const
+    {
+        std::vector<ActionAndArgs> actions{};
+        if (!tab)
+        {
+            return actions;
+        }
+
+        if (const auto rootPane = tab->GetRootPane())
+        {
+            auto state = rootPane->BuildStartupActions(0, 1, BuildStartupKind::Content);
+            if (state.firstPane)
+            {
+                actions.reserve(state.args.size() + 1);
+
+                ActionAndArgs splitAction{};
+                splitAction.Action(ShortcutAction::SplitPane);
+                splitAction.Args(SplitPaneArgs{ SplitType::Manual,
+                                               splitDirection,
+                                               0.5f,
+                                               state.firstPane->GetTerminalArgsForPane(BuildStartupKind::Content) });
+
+                actions.emplace_back(std::move(splitAction));
+                actions.insert(actions.end(), std::make_move_iterator(state.args.begin()), std::make_move_iterator(state.args.end()));
+
+                if (state.focusedPaneId.has_value())
+                {
+                    ActionAndArgs focusAction{};
+                    focusAction.Action(ShortcutAction::FocusPane);
+                    focusAction.Args(FocusPaneArgs{ state.focusedPaneId.value() });
+                    actions.emplace_back(std::move(focusAction));
+                }
+            }
+        }
+
+        return actions;
     }
 
     // Method Description:
@@ -5681,12 +6027,39 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        _sendDraggedTabToWindow(winrt::to_hstring(args.TargetWindow()), args.TabIndex(), std::nullopt);
+        std::optional<SplitDirection> splitDirection;
+        if (args.AttachAsPane())
+        {
+            if (*_stashed.draggedTab == _settingsTab ||
+                !_stashed.draggedTab->GetRootPane())
+            {
+                return;
+            }
+
+            const auto requestedSplitDirection = args.SplitDirection();
+            switch (requestedSplitDirection)
+            {
+            case static_cast<uint32_t>(SplitDirection::Automatic):
+            case static_cast<uint32_t>(SplitDirection::Up):
+            case static_cast<uint32_t>(SplitDirection::Right):
+            case static_cast<uint32_t>(SplitDirection::Down):
+            case static_cast<uint32_t>(SplitDirection::Left):
+                splitDirection = static_cast<SplitDirection>(requestedSplitDirection);
+                break;
+            default:
+                splitDirection = SplitDirection::Automatic;
+                break;
+            }
+        }
+
+        _sendDraggedTabToWindow(winrt::to_hstring(args.TargetWindow()), args.TabIndex(), std::nullopt, splitDirection);
     }
 
     void TerminalPage::_onTabDroppedOutside(winrt::IInspectable /*sender*/,
                                             winrt::MUX::Controls::TabViewTabDroppedOutsideEventArgs /*e*/)
     {
+        _hideTabContentSplitOverlay(true);
+
         // Get the current pointer point from the CoreWindow
         const auto& pointerPoint{ CoreWindow::GetForCurrentThread().PointerPosition() };
 
@@ -5716,9 +6089,17 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_sendDraggedTabToWindow(const winrt::hstring& windowId,
                                                const uint32_t tabIndex,
-                                               std::optional<winrt::Windows::Foundation::Point> dragPoint)
+                                               std::optional<winrt::Windows::Foundation::Point> dragPoint,
+                                               std::optional<SplitDirection> splitDirection)
     {
-        auto startupActions = _stashed.draggedTab->BuildStartupActions(BuildStartupKind::Content);
+        auto startupActions = splitDirection.has_value() ?
+                                  _buildDraggedTabActionsForSplit(_stashed.draggedTab, splitDirection.value()) :
+                                  _stashed.draggedTab->BuildStartupActions(BuildStartupKind::Content);
+        if (startupActions.empty())
+        {
+            return;
+        }
+
         _DetachTabFromWindow(_stashed.draggedTab);
 
         _MoveContent(std::move(startupActions), windowId, tabIndex, dragPoint);

@@ -290,6 +290,8 @@ namespace winrt::TerminalApp::implementation
             winrt::com_ptr<winrt::TerminalApp::implementation::Tab> draggedTab{ nullptr };
             winrt::Windows::Foundation::Point dragOffset{ 0, 0 };
         } _stashed;
+        std::optional<uint32_t> _dragSplitOriginalTabIndex{ std::nullopt };
+        std::optional<uint32_t> _dragSplitTargetTabIndex{ std::nullopt };
 
         safe_void_coroutine _NewTerminalByDrop(const Windows::Foundation::IInspectable&, winrt::Windows::UI::Xaml::DragEventArgs e);
 
@@ -550,7 +552,19 @@ namespace winrt::TerminalApp::implementation
         void _onTabDragStarting(const winrt::Microsoft::UI::Xaml::Controls::TabView& sender, const winrt::Microsoft::UI::Xaml::Controls::TabViewTabDragStartingEventArgs& e);
         void _onTabStripDragOver(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
         void _onTabStripDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
+        void _onTabContentDragOver(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
+        void _onTabContentDragLeave(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::UI::Xaml::DragEventArgs& e);
+        void _onTabContentDrop(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::DragEventArgs e);
         void _onTabDroppedOutside(winrt::Windows::Foundation::IInspectable sender, winrt::Microsoft::UI::Xaml::Controls::TabViewTabDroppedOutsideEventArgs e);
+        std::optional<uint64_t> _draggedTabSourceWindow(const winrt::Windows::UI::Xaml::DragEventArgs& e) const;
+        bool _draggedTabCanSplit(const winrt::Windows::UI::Xaml::DragEventArgs& e) const;
+        std::optional<uint32_t> _tabIndexFromSplitDrop(const winrt::Windows::UI::Xaml::DragEventArgs& e) const;
+        bool _canSplitDraggedTab(const uint64_t sourceWindowId, const uint32_t targetTabIndex) const;
+        void _showTabContentSplitOverlay(const uint32_t targetTabIndex);
+        void _hideTabContentSplitOverlay(const bool restoreOriginalSelection);
+        void _updateTabContentSplitPreview(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitDirection);
+        winrt::Microsoft::Terminal::Settings::Model::SplitDirection _splitDirectionFromContentDrag(const winrt::Windows::Foundation::Point& point);
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _buildDraggedTabActionsForSplit(const winrt::com_ptr<Tab>& tab, const winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitDirection) const;
 
         void _DetachPaneFromWindow(std::shared_ptr<Pane> pane);
         void _DetachTabFromWindow(const winrt::com_ptr<Tab>& tabImpl);
@@ -558,7 +572,10 @@ namespace winrt::TerminalApp::implementation
                           const winrt::hstring& windowName,
                           const uint32_t tabIndex,
                           const std::optional<winrt::Windows::Foundation::Point>& dragPoint = std::nullopt);
-        void _sendDraggedTabToWindow(const winrt::hstring& windowId, const uint32_t tabIndex, std::optional<winrt::Windows::Foundation::Point> dragPoint);
+        void _sendDraggedTabToWindow(const winrt::hstring& windowId,
+                                     const uint32_t tabIndex,
+                                     std::optional<winrt::Windows::Foundation::Point> dragPoint,
+                                     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> splitDirection = std::nullopt);
 
         void _PopulateContextMenu(const Microsoft::Terminal::Control::TermControl& control, const Microsoft::UI::Xaml::Controls::CommandBarFlyout& sender, const bool withSelection);
         void _PopulateQuickFixMenu(const Microsoft::Terminal::Control::TermControl& control, const Windows::UI::Xaml::Controls::MenuFlyout& sender);
