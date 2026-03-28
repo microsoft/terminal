@@ -3073,6 +3073,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             co_return;
         }
 
+        if (const auto hwnd = reinterpret_cast<HWND>(OwningHwnd()))
+        {
+            SetForegroundWindow(hwnd);
+        }
+
         const auto weak = get_weak();
 
         if (e.DataView().Contains(StandardDataFormats::ApplicationLink()))
