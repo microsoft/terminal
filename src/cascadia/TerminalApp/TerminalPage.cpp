@@ -4453,6 +4453,7 @@ namespace winrt::TerminalApp::implementation
     {
         _recentTabColors.clear();
     }
+// end todo
 
     // Function Description:
     // - This is a helper method to get the commandline out of a

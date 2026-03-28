@@ -548,7 +548,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::IAsyncAction _SearchMissingCommandHandler(const IInspectable sender, const winrt::Microsoft::Terminal::Control::SearchMissingCommandEventArgs args);
         static Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Management::Deployment::MatchResult>> _FindPackageAsync(hstring query);
 
-        // Tab Preview Feature
+        // Tab Preview Feature, TODO
         void _ShowTabPreview(const winrt::TerminalApp::Tab& tab);
         void _HideTabPreview();
         void _OnTabPointerEntered(const IInspectable& sender, const winrt::Windows::UI::Xaml::Input::PointerEventArgs& e);
