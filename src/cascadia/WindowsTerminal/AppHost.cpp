@@ -304,6 +304,8 @@ void AppHost::Initialize()
     // set that content as well.
     _window->SetContent(_windowLogic.GetRoot());
     _window->OnAppInitialized();
+
+    _PopulateNewTabSubmenu();
 }
 
 void AppHost::Close()
@@ -1022,6 +1024,9 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
     _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
     _updateTheme();
+
+    // Rebuild the "New Tab" submenu in the system menu to reflect any profile changes
+    _PopulateNewTabSubmenu();
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -1089,6 +1094,73 @@ void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInsp
     {
     }
     }
+}
+
+// Method Description:
+// - Populates a "New Tab" submenu in the system menu (Alt+Space) with
+//   the user's active profiles.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::_PopulateNewTabSubmenu()
+{
+    if (!_window || !_windowLogic)
+    {
+        return;
+    }
+
+    _window->RemoveSystemSubMenu(L"New Tab");
+
+    const auto settings = _appLogic.Settings();
+    if (!settings)
+    {
+        return;
+    }
+
+    const auto activeProfiles = settings.ActiveProfiles();
+    if (!activeProfiles || activeProfiles.Size() == 0)
+    {
+        return;
+    }
+
+    const auto defaultProfileGuid = settings.GlobalSettings().DefaultProfile();
+
+    std::vector<std::pair<winrt::hstring, winrt::delegate<void()>>> profileItems;
+    profileItems.reserve(activeProfiles.Size());
+
+    for (uint32_t i = 0; i < activeProfiles.Size(); i++)
+    {
+        const auto profile = activeProfiles.GetAt(i);
+        auto profileName = profile.Name();
+
+        if (profile.Guid() == defaultProfileGuid)
+        {
+            profileName = profileName + L" (default)";
+        }
+
+        auto callback = winrt::delegate<void()>([weakThis = weak_from_this(), name = winrt::hstring{ profileName }]() {
+            if (auto strongThis = weakThis.lock())
+            {
+                if (strongThis->_windowLogic)
+                {
+                    const std::array<winrt::hstring, 4> args{
+                        winrt::hstring{ L"wt.exe" },
+                        winrt::hstring{ L"new-tab" },
+                        winrt::hstring{ L"--profile" },
+                        name,
+                    };
+                    winrt::TerminalApp::CommandlineArgs cmdArgs;
+                    cmdArgs.Commandline(args);
+                    strongThis->_windowLogic.ExecuteCommandline(std::move(cmdArgs));
+                }
+            }
+        });
+
+        profileItems.emplace_back(std::move(profileName), std::move(callback));
+    }
+
+    _window->AddSystemSubMenu(L"New Tab", profileItems);
 }
 
 // Method Description:

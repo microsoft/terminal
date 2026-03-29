@@ -1808,6 +1808,52 @@ void IslandWindow::AddToSystemMenu(const winrt::hstring& itemLabel, winrt::deleg
     _systemMenuNextItemId++;
 }
 
+void IslandWindow::AddSystemSubMenu(const winrt::hstring& menuLabel, const std::vector<std::pair<winrt::hstring, winrt::delegate<void()>>>& items)
+{
+
+    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+
+    HMENU subMenu = CreatePopupMenu();
+    if (!subMenu)
+    {
+        LOG_LAST_ERROR();
+        return;
+    }
+
+    for (const auto& [label, callback] : items)
+    {
+        auto wID = _systemMenuNextItemId;
+
+        MENUITEMINFOW item;
+        item.cbSize = sizeof(MENUITEMINFOW);
+        item.fMask = MIIM_STATE | MIIM_ID | MIIM_STRING;
+        item.fState = MF_ENABLED;
+        item.wID = wID;
+        item.dwTypeData = const_cast<LPWSTR>(label.c_str());
+        item.cch = static_cast<UINT>(label.size());
+
+        if (LOG_LAST_ERROR_IF(!InsertMenuItemW(subMenu, wID, FALSE, &item)))
+        {
+            continue;
+        }
+        _systemMenuItems.insert({ wID, { label, callback } });
+        _systemMenuNextItemId++;
+    }
+
+    MENUITEMINFOW subMenuItem;
+    subMenuItem.cbSize = sizeof(MENUITEMINFOW);
+    subMenuItem.fMask = MIIM_STRING | MIIM_SUBMENU;
+    subMenuItem.hSubMenu = subMenu;
+    subMenuItem.dwTypeData = const_cast<LPWSTR>(menuLabel.c_str());
+    subMenuItem.cch = static_cast<UINT>(menuLabel.size());
+
+    if (LOG_LAST_ERROR_IF(!InsertMenuItemW(systemMenu, _systemMenuNextItemId, FALSE, &subMenuItem)))
+    {
+        DestroyMenu(subMenu);
+        return;
+    }
+}
+
 void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
 {
     const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
@@ -1830,6 +1876,53 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
         return;
     }
     _systemMenuItems.erase(it->first);
+}
+
+// Method Description:
+// - Removes a submenu from the system menu by its label. Also removes all
+//   child items from the _systemMenuItems tracking map. The submenu HMENU
+//   is destroyed automatically by DeleteMenu.
+// Arguments:
+// - menuLabel: The label of the submenu to remove.
+void IslandWindow::RemoveSystemSubMenu(const winrt::hstring& menuLabel)
+{
+    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+    const auto itemCount = GetMenuItemCount(systemMenu);
+    if (LOG_LAST_ERROR_IF(itemCount == -1))
+    {
+        return;
+    }
+
+    for (int i = 0; i < itemCount; i++)
+    {
+        wchar_t buffer[256]{};
+        MENUITEMINFOW mii{};
+        mii.cbSize = sizeof(MENUITEMINFOW);
+        mii.fMask = MIIM_STRING | MIIM_SUBMENU;
+        mii.dwTypeData = buffer;
+        mii.cch = ARRAYSIZE(buffer);
+
+        if (!GetMenuItemInfoW(systemMenu, static_cast<UINT>(i), TRUE, &mii))
+        {
+            continue;
+        }
+
+        if (mii.hSubMenu && menuLabel == std::wstring_view{ buffer })
+        {
+            const auto subItemCount = GetMenuItemCount(mii.hSubMenu);
+            for (int j = 0; j < subItemCount; j++)
+            {
+                const auto subItemId = GetMenuItemID(mii.hSubMenu, j);
+                if (subItemId != static_cast<UINT>(-1))
+                {
+                    _systemMenuItems.erase(subItemId);
+                }
+            }
+
+            DeleteMenu(systemMenu, static_cast<UINT>(i), MF_BYPOSITION);
+            return;
+        }
+    }
 }
 
 void IslandWindow::_resetSystemMenu()

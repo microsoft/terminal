@@ -67,7 +67,9 @@ public:
 
     void OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept;
     void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
+    void AddSystemSubMenu(const winrt::hstring& menuLabel, const std::vector<std::pair<winrt::hstring, winrt::delegate<void()>>>& items);
     void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
+    void RemoveSystemSubMenu(const winrt::hstring& menuLabel);
 
     void UseDarkTheme(const bool v);
     virtual void UseMica(const bool newValue, const double titlebarOpacity);
