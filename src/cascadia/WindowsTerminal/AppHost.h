@@ -131,6 +131,8 @@ private:
     void _HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& sender,
                                       winrt::TerminalApp::LaunchPositionRequest args);
 
+    void _PopulateNewTabSubmenu();
+
     // Helper struct. By putting these all into one struct, we can revoke them
     // all at once, by assigning _revokers to a fresh Revokers instance. That'll
     // cause us to dtor the old one, which will immediately call revoke on all
