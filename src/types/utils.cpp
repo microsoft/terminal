@@ -1237,7 +1237,7 @@ plainSearch:
     return it;
 }
 
-// Returns `path` if it's a valid directory. Otherwise, returns an empty string.
+// Returns true if it's a valid path to a directory.
 bool Utils::IsValidDirectory(const wchar_t* path) noexcept
 {
     if (path == nullptr || *path == L'\0')
