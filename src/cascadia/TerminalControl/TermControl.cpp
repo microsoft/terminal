@@ -1790,6 +1790,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
+        // While TSF has an active composition, key events must not be forwarded
+        // to the PTY directly. The IME re-injects navigation/confirmation keys
+        // after composition ends, at which point HasActiveComposition() == false
+        // and they are forwarded normally. This mirrors conhost v1 behavior in
+        // src/interactivity/win32/windowio.cpp.
+        if (GetTSFHandle().HasActiveComposition())
+        {
+            return true;
+        }
+
         if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
         {
             return true;
