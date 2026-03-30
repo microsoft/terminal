@@ -2972,7 +2972,11 @@ namespace winrt::TerminalApp::implementation
             text = winrt::hstring{ Utils::TrimPaste(text) };
         }
 
-        if (text.empty())
+        // LOAD BEARING: Send an empty bracketed paste even if the clipboard was empty.
+        // Bracketed Paste provides an application a way to know whether the
+        // user pasted, even if there was no applicable content on it. This
+        // behavior is observed in GNOME Terminal, among others.
+        if (!bracketedPaste && text.empty())
         {
             co_return;
         }
