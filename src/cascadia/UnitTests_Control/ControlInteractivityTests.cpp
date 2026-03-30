@@ -411,6 +411,10 @@ namespace ControlUnitTests
         const til::size fontSize{ 9, 21 };
 
         interactivity->GotFocus();
+        // This test is sensitive to the number of rows scrolled per scroll wheel,
+        // which is reloaded from the system parameters when focus is received.
+        // Reset it.
+        interactivity->_rowsToScroll = 1;
 
         Log::Comment(L"Click on the terminal");
         const til::point terminalPosition0{ 5, 5 };
@@ -685,6 +689,10 @@ namespace ControlUnitTests
         auto expectedBufferHeight = 20;
 
         interactivity->GotFocus();
+        // This test is sensitive to the number of rows scrolled per scroll wheel,
+        // which is reloaded from the system parameters when focus is received.
+        // Reset it.
+        interactivity->_rowsToScroll = 1;
 
         auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
             VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
