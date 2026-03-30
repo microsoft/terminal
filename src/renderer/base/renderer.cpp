@@ -1090,6 +1090,37 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                     const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
                     off += len;
                 }
+
+                // After writing the composition text, copy the original characters
+                // that were at and after the cursor position into the space to the
+                // right of the composition text. This renders the in-progress
+                // composition as an insertion rather than an overwrite, so that
+                // existing characters to the right of the cursor are not hidden.
+                const auto compositionEnd = state.columnEnd;
+                const auto origCursorCol = _compositionCache->absoluteOrigin.x;
+                const auto colLimit = r.GetReadableColumnCount();
+
+                if (compositionEnd > origCursorCol && compositionEnd < colLimit)
+                {
+                    RowCopyTextFromState copyState{
+                        .source = scratch,
+                        .columnBegin = compositionEnd,
+                        .columnLimit = colLimit,
+                        .sourceColumnBegin = origCursorCol,
+                        .sourceColumnLimit = colLimit,
+                    };
+                    const_cast<ROW&>(r).CopyTextFrom(copyState);
+
+                    const auto srcBeg = gsl::narrow_cast<uint16_t>(origCursorCol);
+                    const auto srcEnd = gsl::narrow_cast<uint16_t>(scratch.GetReadableColumnCount());
+                    const auto dstBeg = gsl::narrow_cast<uint16_t>(compositionEnd);
+                    const auto dstEnd = gsl::narrow_cast<uint16_t>(colLimit);
+                    if (srcBeg < srcEnd && dstBeg < dstEnd)
+                    {
+                        const_cast<ROW&>(r).Attributes().replace(
+                            dstBeg, dstEnd, scratch.Attributes().slice(srcBeg, srcEnd));
+                    }
+                }
             }
             const auto restore = wil::scope_exit([&] {
                 if (rowBackup)
