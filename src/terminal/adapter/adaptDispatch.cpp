@@ -2621,8 +2621,8 @@ void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 void AdaptDispatch::SetCurrentWorkingDirectory(std::wstring_view uri)
 {
     // Ensure that the URI has a null terminator.
-    std::wstring path{uri}; 
-    
+    std::wstring path{ uri };
+
     // PathCreateFromUrlW supports writing to the input pointer,
     // and the resulting path can never be longer than the URI.
     const auto ptr = path.data();
