@@ -332,7 +332,7 @@ static HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL ke
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the clear message to the pty.
-HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const BOOL show)
+HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const BOOL show) noexcept
 {
     if (pPty == nullptr)
     {
