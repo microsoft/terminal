@@ -2512,9 +2512,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _updateScrollBar->Run(update);
 
-        // if we have a selection, update the position of the markers
-        // (they may have been hidden when the endpoint scrolled out of view)
-        if (_core.HasSelection())
+        // If we have a selection with markers (exposed via selection mode),
+        //   update the position of the markers
+        if (_core.HasSelection() && _core.SelectionMode() >= SelectionInteractionMode::Keyboard)
         {
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
