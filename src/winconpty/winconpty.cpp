@@ -340,7 +340,7 @@ HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const BOOL 
     }
     unsigned short signalPacket[2];
     signalPacket[0] = PTY_SIGNAL_SHOWHIDE_WINDOW;
-    signalPacket[1] = show;
+    signalPacket[1] = show ? 1 : 0;
 
     const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
