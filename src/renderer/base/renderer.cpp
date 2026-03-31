@@ -1090,6 +1090,77 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                     const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
                     off += len;
                 }
+
+                // Render the composition as an insertion by copying original
+                // characters from the cursor position to the right of the
+                // composition text, absorbing up to W whitespace columns in the
+                // process. This keeps TUI box borders at their original column
+                // when there is sufficient whitespace padding to the right.
+                //
+                // Algorithm: walk the original row (scratch) from origCursorCol,
+                // skipping up to W whitespace columns ("absorbing" them), and
+                // copying non-whitespace glyphs to r starting at compositionEnd.
+                // When the whitespace budget reaches 0, srcCol == dstCol and the
+                // remaining content in r is already correct, so we stop early.
+                const auto compositionWidth = state.columnEnd - _compositionCache->absoluteOrigin.x;
+                const auto origCursorCol = _compositionCache->absoluteOrigin.x;
+                const auto colLimit = r.GetReadableColumnCount();
+
+                if (compositionWidth > 0 && state.columnEnd < colLimit)
+                {
+                    auto srcCol = origCursorCol;
+                    auto dstCol = state.columnEnd;
+                    auto whitespaceToAbsorb = compositionWidth;
+
+                    while (srcCol < colLimit)
+                    {
+                        // All whitespace absorbed: srcCol == dstCol, r already correct.
+                        if (whitespaceToAbsorb == 0)
+                        {
+                            break;
+                        }
+
+                        const auto glyphEnd = scratch.NavigateToNext(srcCol);
+                        const auto glyphWidth = glyphEnd - srcCol;
+                        const auto glyphText = scratch.GetText(srcCol, glyphEnd);
+
+                        // Absorb half-width (U+0020) or full-width (U+3000) spaces
+                        // only when the budget covers the glyph's full width.
+                        const bool absorb =
+                            whitespaceToAbsorb >= glyphWidth &&
+                            !glyphText.empty() &&
+                            (glyphText[0] == L' ' || glyphText[0] == L'\u3000');
+
+                        if (absorb)
+                        {
+                            whitespaceToAbsorb -= glyphWidth;
+                            srcCol = glyphEnd;
+                        }
+                        else
+                        {
+                            if (dstCol < colLimit)
+                            {
+                                RowCopyTextFromState cs{
+                                    .source = scratch,
+                                    .columnBegin = dstCol,
+                                    .columnLimit = dstCol + glyphWidth,
+                                    .sourceColumnBegin = srcCol,
+                                    .sourceColumnLimit = glyphEnd,
+                                };
+                                const_cast<ROW&>(r).CopyTextFrom(cs);
+
+                                const_cast<ROW&>(r).Attributes().replace(
+                                    gsl::narrow_cast<uint16_t>(dstCol),
+                                    gsl::narrow_cast<uint16_t>(dstCol + glyphWidth),
+                                    scratch.Attributes().slice(
+                                        gsl::narrow_cast<uint16_t>(srcCol),
+                                        gsl::narrow_cast<uint16_t>(glyphEnd)));
+                            }
+                            srcCol = glyphEnd;
+                            dstCol += glyphWidth;
+                        }
+                    }
+                }
             }
             const auto restore = wil::scope_exit([&] {
                 if (rowBackup)
