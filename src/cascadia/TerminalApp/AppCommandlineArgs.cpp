@@ -620,7 +620,7 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
                                                                    RS_A(L"CmdSessionIdArgDesc"));
     subcommand.startingDirectoryOption = subcommand.subcommand->add_option("-d,--startingDirectory",
                                                                            _startingDirectory,
-                                                                           RS_A(L"CmdStartingDirArgDesc"));
+                                                                           "Specify the starting directory for the new tab or pane.");
     subcommand.titleOption = subcommand.subcommand->add_option("--title",
                                                                _startingTitle,
                                                                RS_A(L"CmdTitleArgDesc"));
