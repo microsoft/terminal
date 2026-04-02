@@ -80,6 +80,7 @@ private:
     bool _skipPersistence = false;
     bool _needsPersistenceCleanup = false;
     SafeDispatcherTimer _persistStateTimer;
+    SafeDispatcherTimer _handoffTimeoutTimer;
     std::optional<bool> _currentSystemThemeIsDark;
     int32_t _windowCount = 0;
     int32_t _messageBoxCount = 0;

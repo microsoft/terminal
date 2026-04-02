@@ -268,6 +268,8 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     auto host = std::make_shared<AppHost>(this, _app.Logic(), std::move(args));
     host->Initialize();
 
+    _handoffTimeoutTimer.Stop();
+
     _windowCount += 1;
     _windows.emplace_back(std::move(host));
 
@@ -435,9 +437,12 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         if (args.size() == 2 && args[1] == L"-Embedding")
         {
             // We were launched for ConPTY handoff. We have no windows and also don't want to exit.
-            //
-            // TODO: Here we could start a timer and exit after, say, 5 seconds
-            // if no windows are created. But that's a minor concern.
+            // But if we don't receive any handoff within a reasonable timeout, we should exit.
+            _handoffTimeoutTimer.Interval(5s);
+            _handoffTimeoutTimer.Tick([this](auto&&, auto&&) {
+                _postQuitMessageIfNeeded();
+            });
+            _handoffTimeoutTimer.Start();
         }
         else
         {
