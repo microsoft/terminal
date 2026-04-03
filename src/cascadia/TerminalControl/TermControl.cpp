@@ -1935,8 +1935,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: event data
     void TermControl::_TappedHandler(const IInspectable& /*sender*/, const TappedRoutedEventArgs& e)
     {
-        Focus(FocusState::Pointer);
-
         if (e.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             // Normally TSF would be responsible for showing the touch keyboard, but it's buggy for us:

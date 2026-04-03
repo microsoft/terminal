@@ -3085,18 +3085,42 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG();
 
-    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
         try
         {
-            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri());
+            auto uriString{ eventArgs.Uri() };
+            auto parsed = winrt::Windows::Foundation::Uri(uriString);
             if (_IsUriSupported(parsed))
             {
-                ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+
+                if (!shouldLaunch)
+                {
+                    if (auto presenter{ _dialogPresenter.get() })
+                    {
+                        // FindName needs to be called first to actually load the xaml object
+                        auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
+
+                        // Insert the reason and the URI
+                        unopenedUriDialog.SecondaryButtonText(RS_(L"UnsafeUrlConfirmAllowAction"));
+                        CouldNotOpenUriReason().Text(RS_(L"UnsafeUrlConfirmText"));
+                        UnopenedUri().Text(uriString);
+
+                        // Show the dialog
+                        auto result = co_await presenter.ShowDialog(unopenedUriDialog);
+                        shouldLaunch = result == ContentDialogResult::Secondary;
+                    }
+                }
+
+                if (shouldLaunch)
+                {
+                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
             }
             else
             {
-                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri());
+                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), uriString);
             }
         }
         catch (...)
@@ -3116,9 +3140,10 @@ namespace winrt::TerminalApp::implementation
         if (auto presenter{ _dialogPresenter.get() })
         {
             // FindName needs to be called first to actually load the xaml object
-            auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
+            auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
 
             // Insert the reason and the URI
+            unopenedUriDialog.SecondaryButtonText({});
             CouldNotOpenUriReason().Text(reason);
             UnopenedUri().Text(uri);
 
@@ -3169,6 +3194,30 @@ namespace winrt::TerminalApp::implementation
         // clicking on those sorts of links.
         // See discussion in GH#7562 for more details.
         return true;
+    }
+
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri)
+    {
+        if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
+        {
+            return true;
+        }
+        if (parsedUri.SchemeName() == L"file")
+        {
+            static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
+            const auto filename = parsedUri.Path();
+            for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
+            {
+                if (til::ends_with_insensitive_ascii(filename, e))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     // Important! Don't take this eventArgs by reference, we need to extend the
