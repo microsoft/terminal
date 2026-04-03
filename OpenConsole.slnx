@@ -454,7 +454,8 @@
       <BuildType Solution="AuditMode|x64" Project="Release" />
       <BuildType Solution="AuditMode|x86" Project="Release" />
       <BuildType Solution="Fuzzing|*" Project="Debug" />
-      <Platform Solution="*|Any CPU" Project="x86" />
+      <Platform Solution="*|Any CPU" Project="Win32" />
+      <Platform Solution="*|x86" Project="Win32" />
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
@@ -1058,3 +1059,4 @@
     </Project>
   </Folder>
 </Solution>
+
