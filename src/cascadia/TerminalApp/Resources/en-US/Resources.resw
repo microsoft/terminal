@@ -673,7 +673,7 @@
     <value>Cancel</value>
   </data>
   <data name="UnsafeUrlConfirmText" xml:space="preserve">
-    <value>This link may lead to an unsafe location. Hyperlinks can be harmful to your computer and data. To protect your computer, click only those hyperlinks from trusted sources.</value>
+    <value>This link may lead to an unsafe location. Hyperlinks can be harmful to your computer and data. To protect your computer, only click links from trusted sources.</value>
   </data>
   <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
     <value>Open anyway</value>
