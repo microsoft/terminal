@@ -102,6 +102,7 @@ private:
     std::string _startingTitle;
     std::string _startingTabColor;
     std::string _startingColorScheme;
+    std::string _tabPosition;
     bool _suppressApplicationTitle{ false };
     bool _inheritEnvironment{ false };
 
@@ -126,6 +127,7 @@ private:
     std::string _saveInputName;
     std::string _keyChordOption;
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
+    // Note: _tabPosition is reset in _resetStateToDefault too.
 
     const Commandline* _currentCommandline{ nullptr };
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };

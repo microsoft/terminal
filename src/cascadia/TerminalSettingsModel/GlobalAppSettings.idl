@@ -44,12 +44,6 @@ namespace Microsoft.Terminal.Settings.Model
         PersistedLayoutAndContent,
     };
 
-    enum NewTabPosition
-    {
-        AfterLastTab,
-        AfterCurrentTab,
-    };
-
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
 

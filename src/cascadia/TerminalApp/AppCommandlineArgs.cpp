@@ -226,17 +226,34 @@ void AppCommandlineArgs::_buildNewTabParser()
     auto setupSubcommand = [this](auto& subcommand) {
         _addNewTerminalArgs(subcommand);
 
+        auto* positionOption = subcommand.subcommand->add_option("--position",
+                                                                 _tabPosition,
+                                                                 RS_A(L"CmdTabPositionArgDesc"));
+
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
         // that `this` will still be safe - this function just lets us know this
         // command was parsed.
-        subcommand.subcommand->callback([&, this]() {
+        subcommand.subcommand->callback([&, positionOption, this]() {
             // Build the NewTab action from the values we've parsed on the commandline.
             ActionAndArgs newTabAction{};
             newTabAction.Action(ShortcutAction::NewTab);
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
             NewTabArgs args{ _getNewTerminalArgs(subcommand) };
+
+            if (*positionOption)
+            {
+                if (_tabPosition == "afterCurrentTab")
+                {
+                    args.Position(NewTabPosition::AfterCurrentTab);
+                }
+                else if (_tabPosition == "afterLastTab")
+                {
+                    args.Position(NewTabPosition::AfterLastTab);
+                }
+            }
+
             newTabAction.Args(args);
             _startupActions.push_back(newTabAction);
         });
@@ -798,6 +815,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _commandline.clear();
     _suppressApplicationTitle = false;
     _appendCommandLineOption = false;
+    _tabPosition.clear();
 
     _splitVertical = false;
     _splitHorizontal = false;

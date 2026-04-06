@@ -381,6 +381,10 @@
   <data name="CmdTabColorArgDesc" xml:space="preserve">
     <value>Open the tab with the specified color, in #rrggbb format</value>
   </data>
+  <data name="CmdTabPositionArgDesc" xml:space="preserve">
+    <value>Position to place the new tab at. Accepts "afterLastTab" or "afterCurrentTab"</value>
+    <comment>{Locked="\"afterLastTab\""}{Locked="\"afterCurrentTab\""}</comment>
+  </data>
   <data name="CmdSuppressApplicationTitleDesc" xml:space="preserve">
     <value>Open the tab with tabTitle overriding default title and suppressing title change messages from the application</value>
     <comment>{Locked="\"tabTitle\""}</comment>

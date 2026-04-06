@@ -472,7 +472,25 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs()));
+            const auto position = realArgs.Position();
+            uint32_t insertPosition = static_cast<uint32_t>(-1);
+            if (position)
+            {
+                if (position.Value() == NewTabPosition::AfterCurrentTab)
+                {
+                    auto currentTabIndex = _GetFocusedTabIndex();
+                    if (currentTabIndex.has_value())
+                    {
+                        insertPosition = currentTabIndex.value() + 1;
+                    }
+                }
+                else
+                {
+                    insertPosition = _tabs.Size();
+                }
+            }
+
+            LOG_IF_FAILED(_OpenNewTab(realArgs.ContentArgs(), insertPosition));
             args.Handled(true);
         }
     }
