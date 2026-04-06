@@ -74,6 +74,7 @@ int main()
                 // Cleanup attribute list
                 DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
                 free(startupInfo.lpAttributeList);
+                startupInfo.lpAttributeList = nullptr;
             }
 
             // Close ConPTY - this will terminate client process if running
