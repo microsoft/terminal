@@ -2744,4 +2744,12 @@
     <value>键入以筛选图标</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
   </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>拖放分隔符</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>此文本将在放置到终端的多个文件的路径之间插入。</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
 </root>

@@ -2744,4 +2744,12 @@
     <value>입력하여 아이콘 필터링</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
   </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>끌어서 놓기 구분 기호</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>이 텍스트는 터미널에 놓인 여러 파일의 경로 사이에 삽입됩니다.</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
 </root>

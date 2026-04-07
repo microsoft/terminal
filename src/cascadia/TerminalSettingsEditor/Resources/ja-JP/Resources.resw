@@ -2744,4 +2744,12 @@
     <value>入力してアイコンをフィルター処理します</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
   </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>ドラッグ アンド ドロップ区切り記号</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>このテキストは、ターミナルにドロップされた複数のファイルのパスの間に挿入されます。</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
 </root>

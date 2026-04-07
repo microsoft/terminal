@@ -2744,4 +2744,12 @@
     <value>Taper pour filtrer les icônes</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
   </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>Glisser-déplacer le délimiteur</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>Ce texte sera inséré entre les chemins d’accès de plusieurs fichiers déposés dans le terminal.</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
 </root>
