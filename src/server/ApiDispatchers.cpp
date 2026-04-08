@@ -595,9 +595,12 @@ constexpr T saturate(auto val)
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
 
     // See ConptyCursorPositionMayBeWrong() for details.
-    if (pObj->ConptyCursorPositionMayBeWrong())
+    auto& activeBuffer = pObj->GetActiveBuffer();
+    // GetConsoleScreenBufferInfoExImpl uses GetActiveBuffer internally, but
+    // under the console lock.
+    if (activeBuffer.ConptyCursorPositionMayBeWrong())
     {
-        pObj->WaitForConptyCursorPositionToBeSynchronized();
+        activeBuffer.WaitForConptyCursorPositionToBeSynchronized();
     }
 
     m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);
