@@ -1569,6 +1569,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool TermControl::_KeyHandler(WORD vkey, WORD scanCode, ControlKeyStates modifiers, bool keyDown)
     {
+        const auto updateHyperlinkPointerCursor = wil::scope_exit([&]() noexcept {
+            if (vkey == VK_LCONTROL || vkey == VK_RCONTROL || vkey == VK_CONTROL)
+            {
+                _updateHyperlinkPointerCursor(Windows::Devices::Input::PointerDeviceType::Mouse, modifiers);
+            }
+        });
+
         // If the current focused element is a child element of searchbox,
         // we do not send this event up to terminal
         if (_searchBox && _searchBox->ContainsFocus())
@@ -2082,6 +2089,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _interactivity.TouchMoved(newTouchPoint.to_core_point());
         }
 
+        _updateHyperlinkPointerCursor(type, ControlKeyStates(args.KeyModifiers()));
+
         args.Handled(true);
     }
 
@@ -2416,6 +2425,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         RestorePointerCursor.raise(*this, nullptr);
+        _restoreHyperlinkPointerCursor();
 
         _focused = false;
 
@@ -2651,6 +2661,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             RestorePointerCursor.raise(*this, nullptr);
+            _restoreHyperlinkPointerCursor();
 
             _revokers = {};
 
@@ -3467,6 +3478,59 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const Windows::UI::Xaml::Input::PointerRoutedEventArgs& /*e*/)
     {
         _core.ClearHoveredCell();
+        _restoreHyperlinkPointerCursor();
+    }
+
+    bool TermControl::_shouldUseHyperlinkPointerCursor(const Windows::Devices::Input::PointerDeviceType pointerDeviceType,
+                                                       const ControlKeyStates modifiers) const
+    {
+        return pointerDeviceType == Windows::Devices::Input::PointerDeviceType::Mouse &&
+               modifiers.IsCtrlPressed() &&
+               !_core.HoveredUriText().empty();
+    }
+
+    void TermControl::_updateHyperlinkPointerCursor(const Windows::Devices::Input::PointerDeviceType pointerDeviceType,
+                                                    const ControlKeyStates modifiers)
+    {
+        const auto window = CoreWindow::GetForCurrentThread();
+        if (!window)
+        {
+            return;
+        }
+
+        if (_shouldUseHyperlinkPointerCursor(pointerDeviceType, modifiers))
+        {
+            if (!_ownsHyperlinkPointerCursor)
+            {
+                _previousPointerCursor = window.PointerCursor();
+                _ownsHyperlinkPointerCursor = true;
+            }
+
+            if (window.PointerCursor() != _hyperlinkPointerCursor)
+            {
+                window.PointerCursor(_hyperlinkPointerCursor);
+            }
+        }
+        else
+        {
+            _restoreHyperlinkPointerCursor();
+        }
+    }
+
+    void TermControl::_restoreHyperlinkPointerCursor()
+    {
+        if (!_ownsHyperlinkPointerCursor)
+        {
+            return;
+        }
+
+        if (const auto window = CoreWindow::GetForCurrentThread())
+        {
+            window.PointerCursor(_previousPointerCursor);
+        }
+
+        _previousPointerCursor = nullptr;
+        _ownsHyperlinkPointerCursor = false;
     }
 
     void TermControl::_hoveredHyperlinkChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
