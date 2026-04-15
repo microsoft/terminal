@@ -106,20 +106,9 @@ namespace SettingsModelUnitTests
         TEST_METHOD(RealResolverUNCCases);
 
         // These are normalized by NormalizeCommandLine, which resolves to the on-disk casing.
-        // They must be computed lazily (not at static init) because on x86 the test class
-        // disables WoW64 filesystem redirection in TEST_CLASS_SETUP, and static init runs
-        // before that, which causes System32 paths to resolve to SysWOW64.
         // They are used in test cases where media paths fall back to profile command lines.
-        static const std::wstring& overrideCommandline()
-        {
-            static const std::wstring value{ implementation::Profile::NormalizeCommandLine(LR"(C:\Windows\System32\cscript.exe)") };
-            return value;
-        }
-        static const std::wstring& cmdCommandline()
-        {
-            static const std::wstring value{ implementation::Profile::NormalizeCommandLine(LR"(C:\Windows\System32\cmd.exe)") };
-            return value;
-        }
+        static inline std::wstring overrideCommandline;
+        static inline std::wstring cmdCommandline;
         static constexpr std::wstring_view fragmentBasePath1{ LR"(C:\Windows\Media)" };
 
     private:
@@ -230,6 +219,9 @@ namespace SettingsModelUnitTests
         // Some of our tests use paths under system32. Just don't redirect them.
         Wow64DisableWow64FsRedirection(&redirectionFlag);
 #endif
+        // Normalize these AFTER the call above so that we get the correctly redirected paths.
+        overrideCommandline = implementation::Profile::NormalizeCommandLine(LR"(C:\Windows\System32\cscript.exe)");
+        cmdCommandline = implementation::Profile::NormalizeCommandLine(LR"(C:\Windows\System32\cmd.exe)");
         return true;
     }
 
@@ -836,7 +828,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"Base") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
-        VERIFY_ARE_EQUAL(cmdCommandline(), icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the profile itself, which has its own commandline.
@@ -871,7 +863,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileSpecifiesInvalidIconAndCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
-        VERIFY_ARE_EQUAL(overrideCommandline(), icon.Resolved());
+        VERIFY_ARE_EQUAL(overrideCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the profile itself, where the commandline is the default value (profile.commandline default value is CMD.exe)
@@ -904,7 +896,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileSpecifiesInvalidIconAndNoCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok());
-        VERIFY_ARE_EQUAL(cmdCommandline(), icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the Defaults profile, where the commandline falls back to the default value of CMD.exe (PROFILE COMMANDLINE IGNORED)
@@ -937,7 +929,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileInheritsInvalidIconAndHasCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok());
-        VERIFY_ARE_EQUAL(cmdCommandline(), icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the Defaults profile, which has the default command line of CMD.exe (PROFILE COMMANDLINE MISSING)
@@ -969,7 +961,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileInheritsInvalidIconAndHasNoCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok());
-        VERIFY_ARE_EQUAL(cmdCommandline(), icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the profile itself, which has its own commandline.
@@ -1004,7 +996,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileSpecifiesNullIcon") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
-        VERIFY_ARE_EQUAL(overrideCommandline(), icon.Resolved());
+        VERIFY_ARE_EQUAL(overrideCommandline, icon.Resolved());
     }
 
     // The invalid resource came from the profile itself, where the commandline falls back to the default value of CMD.exe
@@ -1037,7 +1029,7 @@ namespace SettingsModelUnitTests
         auto profile{ settings->GetProfileByName(L"ProfileSpecifiesNullIconAndHasNoCommandline") };
         auto icon{ profile.Icon() };
         VERIFY_IS_TRUE(icon.Ok()); // Profile with commandline always has an icon
-        VERIFY_ARE_EQUAL(cmdCommandline(), icon.Resolved());
+        VERIFY_ARE_EQUAL(cmdCommandline, icon.Resolved());
     }
 
     // A profile replaces the bell sounds (2) in the base settings; all bell sounds retained
