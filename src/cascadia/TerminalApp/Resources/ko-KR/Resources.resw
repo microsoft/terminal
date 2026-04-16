@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>이 링크 형식은 현재 지원되지 않습니다.</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>취소</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>이 링크로 인해 안전하지 않은 위치가 발생할 수 있습니다. 하이퍼링크는 컴퓨터와 데이터를 손상시킬 수 있습니다. 컴퓨터를 보호하려면 신뢰할 수 있는 원본의 링크만 클릭하세요.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>열기</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>설정</value>

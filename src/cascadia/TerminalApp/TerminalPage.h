@@ -422,8 +422,9 @@ namespace winrt::TerminalApp::implementation
         safe_void_coroutine _PasteFromClipboardHandler(const IInspectable sender,
                                                        const Microsoft::Terminal::Control::PasteFromClipboardEventArgs eventArgs);
 
-        void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
-        bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
+        safe_void_coroutine _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
+        static bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
+        static bool _IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri);
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(bool dismissSelection, bool singleLine, bool withControlSequences, Microsoft::Terminal::Control::CopyFormat formats);

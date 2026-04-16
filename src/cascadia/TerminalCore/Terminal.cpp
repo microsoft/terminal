@@ -56,6 +56,18 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 }
 
 // Method Description:
+// - Resets all VT state to defaults without clearing the buffer content.
+// Called when a connection is restarted so that any dirty modes left
+// behind by a crashed application don't affect the new connection.
+void Terminal::HardResetWithoutErase()
+{
+    _assertLocked();
+    _stateMachine->ResetState();
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().HardReset(false);
+}
+
+// Method Description:
 // - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal

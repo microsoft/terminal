@@ -36,7 +36,7 @@ void ConhostInternalGetSet::UnknownSequence() noexcept
     // us from using a more conservative solution (e.g. always fetching the cursor position).
     if (gci.IsInVtIoMode())
     {
-        gci.GetActiveOutputBuffer().SetConptyCursorPositionMayBeWrong();
+        gci.GetActiveOutputBuffer().GetActiveBuffer().SetConptyCursorPositionMayBeWrong();
     }
 }
 

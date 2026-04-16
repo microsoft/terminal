@@ -119,12 +119,15 @@ DWORD WINAPI Renderer::s_renderThread(void* param) noexcept
 
 DWORD Renderer::_renderThread() noexcept
 {
-    while (true)
+    while (_threadKeepRunning.load(std::memory_order_relaxed))
     {
         _enable.wait();
         _waitUntilCanRender();
         _waitUntilTimerOrRedraw();
 
+        // We just completed what could have been a long wait;
+        // eagerly check again to prevent rendering if we don't
+        // need to.
         if (!_threadKeepRunning.load(std::memory_order_relaxed))
         {
             break;

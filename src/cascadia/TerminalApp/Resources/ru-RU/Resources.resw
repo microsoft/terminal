@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>Этот тип связи в настоящее время не поддерживается:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>Отмена</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>Эта ссылка может привести к небезопасному расположению. Гиперссылки могут нанести вред компьютеру и данным. Чтобы защитить компьютер, щелкните ссылки только из надежных источников.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Все равно открыть</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Параметры</value>

@@ -169,6 +169,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::GotFocus()
     {
+        _focused = true;
+
         if (_uiaEngine.get())
         {
             THROW_IF_FAILED(_uiaEngine->Enable());
@@ -181,6 +183,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlInteractivity::LostFocus()
     {
+        _focused = false;
+
         if (_uiaEngine.get())
         {
             THROW_IF_FAILED(_uiaEngine->Disable());
@@ -248,7 +252,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PasteFromClipboard.raise(*this, std::move(args));
     }
 
-    void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerPressed(const uint32_t /*pointerId*/,
+                                              Control::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -260,6 +265,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto altEnabled = modifiers.IsAltPressed();
         const auto shiftEnabled = modifiers.IsShiftPressed();
         const auto ctrlEnabled = modifiers.IsCtrlPressed();
+
+        // Mark that this pointer event actually started within our bounds.
+        // We'll need this later, for PointerMoved events.
+        _pointerPressedInBounds = true;
 
         // GH#9396: we prioritize hyper-link over VT mouse events
         auto hyperlink = _core->GetHyperlink(terminalPosition.to_core_point());
@@ -355,24 +364,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::TouchPressed(const winrt::Windows::Foundation::Point contactPoint)
+    void ControlInteractivity::TouchPressed(const Core::Point contactPoint)
     {
         _touchAnchor = contactPoint;
     }
 
-    bool ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
+    bool ControlInteractivity::PointerMoved(const uint32_t /*pointerId*/,
+                                            Control::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                                            const bool focused,
-                                            const Core::Point pixelPosition,
-                                            const bool pointerPressedInBounds)
+                                            const Core::Point pixelPosition)
     {
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
         // Returning true from this function indicates that the caller should do no further processing of this movement.
         bool handledCompletely = false;
 
         // Short-circuit isReadOnly check to avoid warning dialog
-        if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
+        if (_focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
             _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
             handledCompletely = true;
@@ -381,7 +389,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // actually start _in_ the control bounds. Case in point - someone drags
         // a file into the bounds of the control. That shouldn't send the
         // selection into space.
-        else if (focused && pointerPressedInBounds && WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
+        else if (_focused && _pointerPressedInBounds && WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
         {
             if (_singleClickTouchdownPos)
             {
@@ -427,10 +435,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return handledCompletely;
     }
 
-    void ControlInteractivity::TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
-                                          const bool focused)
+    void ControlInteractivity::TouchMoved(const Core::Point newTouchPoint)
     {
-        if (focused &&
+        if (_focused &&
             _touchAnchor)
         {
             const auto anchor = _touchAnchor.value();
@@ -464,11 +471,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::PointerReleased(Control::MouseButtonState buttonState,
+    void ControlInteractivity::PointerReleased(const uint32_t /*pointerId*/,
+                                               Control::MouseButtonState buttonState,
                                                const unsigned int pointerUpdateKind,
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const Core::Point pixelPosition)
     {
+        _pointerPressedInBounds = false;
+
         const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))

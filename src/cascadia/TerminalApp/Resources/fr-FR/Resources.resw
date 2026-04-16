@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>Ce type de lien n’est actuellement pas pris en charge :</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>Annuler</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>Ce lien peut entraîner un emplacement non sécurisé. Les liens hypertexte peuvent endommager votre ordinateur et vos données. Pour protéger votre ordinateur, cliquez uniquement sur des liens provenant de sources fiables.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Ouvrir quand même</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Paramètres</value>

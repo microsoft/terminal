@@ -241,7 +241,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     constexpr bool ends_with_insensitive_ascii(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& suffix) noexcept
     {
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-        return str.size() >= suffix.size() && equals_insensitive_ascii<>({ str.data() - suffix.size(), suffix.size() }, suffix);
+        return str.size() >= suffix.size() && equals_insensitive_ascii<>({ str.data() + str.size() - suffix.size(), suffix.size() }, suffix);
     }
 
     constexpr bool ends_with_insensitive_ascii(const std::string_view& str, const std::string_view& prefix) noexcept
@@ -251,7 +251,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     constexpr bool ends_with_insensitive_ascii(const std::wstring_view& str, const std::wstring_view& prefix) noexcept
     {
-        return ends_with<>(str, prefix);
+        return ends_with_insensitive_ascii<>(str, prefix);
     }
 
     template<typename T, typename Traits>

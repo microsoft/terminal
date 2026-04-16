@@ -355,6 +355,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::HardResetWithoutErase()
+    {
+        const auto lock = _terminal->LockForWriting();
+        _terminal->HardResetWithoutErase();
+    }
+
     bool ControlCore::Initialize(const float actualWidth,
                                  const float actualHeight,
                                  const float compositionScale)
@@ -2418,11 +2424,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         context->CurrentCommandline(trimmedCurrentCommand);
         context->QuickFixes(_cachedQuickFixes);
         return *context;
-    }
-
-    winrt::hstring ControlCore::CurrentWorkingDirectory() const
-    {
-        return winrt::hstring{ _terminal->GetWorkingDirectory() };
     }
 
     bool ControlCore::QuickFixesAvailable() const noexcept

@@ -117,8 +117,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ScrollToMark(const Control::ScrollToMarkDirection& direction);
         void SelectCommand(const bool goUp);
         void SelectOutput(const bool goUp);
-
-        winrt::hstring CurrentWorkingDirectory() const;
 #pragma endregion
 
         void ScrollViewport(int viewTop);
@@ -192,6 +190,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TerminalConnection::ITerminalConnection Connection();
         void Connection(const TerminalConnection::ITerminalConnection& connection);
+        void HardResetWithoutErase();
 
         Control::CursorDisplayState CursorVisibility() const noexcept;
         void CursorVisibility(Control::CursorDisplayState cursorVisibility);

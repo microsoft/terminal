@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>目前不支援此連結類型:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>取消</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>此連結可能通往不安全地點。超連結可能對你的電腦和資料造成傷害。為了保護你的電腦，只點擊來自可信來源的連結。</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>一律開啟</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>設定</value>
