@@ -1143,6 +1143,13 @@ til::CoordType ROW::GetTrailingColumnAtCharOffset(const ptrdiff_t offset) const 
     return _createCharToColumnMapper(offset).GetTrailingColumnAt(offset);
 }
 
+uint16_t ROW::GetCharOffset(til::CoordType col) const noexcept
+{
+    const auto columns = GetReadableColumnCount();
+    const auto colBeg = clamp(col, 0, columns);
+    return _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
+}
+
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept
 {
     const auto col = _clampedColumn(column);
