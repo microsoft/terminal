@@ -25,34 +25,29 @@ Author(s):
 
 #include "FontInfoBase.hpp"
 
-class FontInfo : public FontInfoBase
+struct CellSizeInDIP
 {
-public:
-    FontInfo(const std::wstring_view& faceName,
-             const unsigned char family,
-             const unsigned int weight,
-             const til::size coordSize,
-             const unsigned int codePage,
-             const bool fSetDefaultRasterFont = false) noexcept;
+    float width = 0;
+    float height = 0;
 
-    bool operator==(const FontInfo& other) noexcept;
+    til::size AsInteger_DoNotUse() const noexcept;
+};
 
-    til::size GetSize() const noexcept;
-    til::size GetUnscaledSize() const noexcept;
-    void SetFromEngine(const std::wstring_view& faceName,
-                       const unsigned char family,
-                       const unsigned int weight,
-                       const bool fSetDefaultRasterFont,
-                       const til::size coordSize,
-                       const til::size coordSizeUnscaled) noexcept;
-    bool GetFallback() const noexcept;
-    void SetFallback(const bool didFallback) noexcept;
-    void ValidateFont() noexcept;
+struct FontInfo : FontInfoBase
+{
+    float GetFontSizeInDIP() const noexcept;
+    CellSizeInDIP GetCellSizeInDIP() const noexcept;
+    til::size GetCellSizeInPhysicalPx() const noexcept;
+
+    // NOTE: Render backends are expected to call all of these setters, plus all FontInfoBase setters.
+    void SetFontSizeInPt(float fontSizeInPt) noexcept;
+    void SetCellSizeInDIP(CellSizeInDIP cellSizeInDIP) noexcept;
+    void SetCellSizeInPhysicalPx(til::size cellSizeInPhysicalPx) noexcept;
+
+    bool IsTrueTypeFont() const noexcept;
 
 private:
-    void _ValidateCoordSize() noexcept;
-
-    til::size _coordSize;
-    til::size _coordSizeUnscaled;
-    bool _didFallback;
+    float _fontSizeInPt = 0;
+    CellSizeInDIP _cellSizeInDIP;
+    til::size _cellSizeInPhysicalPx;
 };

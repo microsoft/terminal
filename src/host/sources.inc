@@ -80,7 +80,6 @@ SOURCES = \
     ..\readDataRaw.cpp \
     ..\writeData.cpp \
     ..\renderData.cpp \
-    ..\renderFontDefaults.cpp \
     ..\AccessibilityNotifier.cpp \
     ..\ConsoleArguments.cpp \
 

@@ -962,7 +962,7 @@ Terminal::TextCopyData Terminal::RetrieveSelectedTextFromBuffer(const bool singl
     {
         const auto bgColor = _renderSettings.GetAttributeColors({}).second;
         const auto isIntenseBold = _renderSettings.GetRenderMode(::Microsoft::Console::Render::RenderSettings::Mode::IntenseIsBold);
-        const auto fontSizePt = _fontInfo.GetUnscaledSize().height; // already in points
+        const auto fontSizePt = _fontInfo.GetCellSizeInDIP().height; // already in points
         const auto& fontName = _fontInfo.GetFaceName();
 
         if (html)

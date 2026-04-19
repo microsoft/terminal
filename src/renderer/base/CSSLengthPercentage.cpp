@@ -5,7 +5,7 @@
 
 #include "../inc/CSSLengthPercentage.h"
 
-CSSLengthPercentage CSSLengthPercentage::FromString(const wchar_t* str)
+CSSLengthPercentage CSSLengthPercentage::FromString(const wchar_t* str) noexcept
 {
     auto& errnoRef = errno; // Nonzero cost, pay it once.
     errnoRef = 0;
@@ -42,14 +42,33 @@ CSSLengthPercentage CSSLengthPercentage::FromString(const wchar_t* str)
         }
         else
         {
-            return {};
+            value = 0;
         }
+    }
+
+    // When we get weird input values we should pretend as if this instance is empty. To do so,
+    // we need to return ReferenceFrame::None, because otherwise we don't compare equal to a
+    // default constructed CSSLengthPercentage. This uses negation to properly handle NAN.
+    if (!(value > 0))
+    {
+        value = 0;
+        referenceFrame = ReferenceFrame::None;
     }
 
     CSSLengthPercentage obj;
     obj._value = value;
     obj._referenceFrame = referenceFrame;
     return obj;
+}
+
+bool CSSLengthPercentage::operator==(const CSSLengthPercentage& other) const noexcept
+{
+    return _referenceFrame == other._referenceFrame && abs(_value - other._value) < 0.0001;
+}
+
+CSSLengthPercentage::ReferenceFrame CSSLengthPercentage::Reference() const noexcept
+{
+    return _referenceFrame;
 }
 
 float CSSLengthPercentage::Resolve(float fallback, float dpi, float fontSize, float advanceWidth) const noexcept

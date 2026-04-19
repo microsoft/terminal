@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../../buffer/out/textBuffer.hpp"
+#include "../../renderer/inc/FontInfo.hpp"
 #include "../../renderer/inc/FontInfoDesired.hpp"
 #include "../../types/IControlAccessibilityInfo.h"
 #include "../../tsf/Handle.h"
@@ -26,8 +27,6 @@ namespace Microsoft::Terminal::Core
     class Terminal;
 }
 
-class FontInfo;
-class FontInfoDesired;
 class HwndTerminalAutomationPeer;
 
 // Keep in sync with TerminalTheme.cs

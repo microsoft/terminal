@@ -5,87 +5,46 @@
 
 #include "../inc/FontInfo.hpp"
 
-FontInfo::FontInfo(const std::wstring_view& faceName,
-                   const unsigned char family,
-                   const unsigned int weight,
-                   const til::size coordSize,
-                   const unsigned int codePage,
-                   const bool fSetDefaultRasterFont /* = false */) noexcept :
-    FontInfoBase(faceName, family, weight, fSetDefaultRasterFont, codePage),
-    _coordSize(coordSize),
-    _coordSizeUnscaled(coordSize),
-    _didFallback(false)
+// Truncates this size in DIPs to integers.
+//
+// "Do Not Use" because the conversion is lossy and doesn't roundtrip.
+// It exists because we have legacy code and this is a discoverable "marker".
+til::size CellSizeInDIP::AsInteger_DoNotUse() const noexcept
 {
-    ValidateFont();
+    return { til::math::rounding, width, height };
 }
 
-bool FontInfo::operator==(const FontInfo& other) noexcept
+float FontInfo::GetFontSizeInDIP() const noexcept
 {
-    return FontInfoBase::operator==(other) &&
-           _coordSize == other._coordSize &&
-           _coordSizeUnscaled == other._coordSizeUnscaled;
+    return _fontSizeInPt;
 }
 
-til::size FontInfo::GetUnscaledSize() const noexcept
+CellSizeInDIP FontInfo::GetCellSizeInDIP() const noexcept
 {
-    return _coordSizeUnscaled;
+    return _cellSizeInDIP;
 }
 
-til::size FontInfo::GetSize() const noexcept
+til::size FontInfo::GetCellSizeInPhysicalPx() const noexcept
 {
-    return _coordSize;
+    return _cellSizeInPhysicalPx;
 }
 
-void FontInfo::SetFromEngine(const std::wstring_view& faceName,
-                             const unsigned char family,
-                             const unsigned int weight,
-                             const bool fSetDefaultRasterFont,
-                             const til::size coordSize,
-                             const til::size coordSizeUnscaled) noexcept
+void FontInfo::SetFontSizeInPt(float fontSizeInPt) noexcept
 {
-    FontInfoBase::SetFromEngine(faceName,
-                                family,
-                                weight,
-                                fSetDefaultRasterFont);
-    _coordSize = coordSize;
-    _coordSizeUnscaled = coordSizeUnscaled;
-    _ValidateCoordSize();
+    _fontSizeInPt = fontSizeInPt;
 }
 
-bool FontInfo::GetFallback() const noexcept
+void FontInfo::SetCellSizeInDIP(CellSizeInDIP cellSizeInDIP) noexcept
 {
-    return _didFallback;
+    _cellSizeInDIP = cellSizeInDIP;
 }
 
-void FontInfo::SetFallback(const bool didFallback) noexcept
+void FontInfo::SetCellSizeInPhysicalPx(til::size cellSizeInPhysicalPx) noexcept
 {
-    _didFallback = didFallback;
+    _cellSizeInPhysicalPx = cellSizeInPhysicalPx;
 }
 
-void FontInfo::ValidateFont() noexcept
+bool FontInfo::IsTrueTypeFont() const noexcept
 {
-    _ValidateCoordSize();
-}
-
-void FontInfo::_ValidateCoordSize() noexcept
-{
-    // a (0,0) font is okay for the default raster font, as we will eventually set the dimensions based on the font GDI
-    // passes back to us.
-    if (!IsDefaultRasterFontNoSize())
-    {
-        // Initialize X to 1 so we don't divide by 0
-        if (_coordSize.width == 0)
-        {
-            _coordSize.width = 1;
-        }
-
-        // If we have no font size, we want to use 8x12 by default
-        if (_coordSize.height == 0)
-        {
-            _coordSize.width = 8;
-            _coordSize.height = 12;
-
-            _coordSizeUnscaled = _coordSize;
-        }
-    }
+    return WI_IsFlagSet(_family, TMPF_TRUETYPE);
 }

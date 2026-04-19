@@ -63,7 +63,6 @@ public:
     Microsoft::Console::Render::Renderer* pRender;
     Microsoft::Console::TSF::Handle tsf;
     Microsoft::Console::AccessibilityNotifier accessibilityNotifier;
-    Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
 

@@ -64,7 +64,7 @@ RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
     {
         const auto lock = _terminal->_terminal->LockForReading();
         cursorPos = _terminal->_terminal->GetTextBuffer().GetCursor().GetPosition(); // measured in terminal cells
-        fontSize = _terminal->_actualFont.GetSize(); // measured in pixels, not DIP
+        fontSize = _terminal->_actualFont.GetCellSizeInPhysicalPx(); // measured in pixels, not DIP
     }
     POINT ptSuggestion = {
         .x = cursorPos.x * fontSize.width,
@@ -239,8 +239,6 @@ static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 }
 
 HwndTerminal::HwndTerminal(HWND parentHwnd) noexcept :
-    _desiredFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, 14, CP_UTF8 },
-    _actualFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
     _pfnWriteCallback{ nullptr },
@@ -629,7 +627,7 @@ try
 
     const auto lock = _terminal->LockForWriting();
     const auto altPressed = GetKeyState(VK_MENU) < 0;
-    const til::size fontSize{ this->_actualFont.GetSize() };
+    const til::size fontSize{ this->_actualFont.GetCellSizeInPhysicalPx() };
 
     this->_terminal->SetBlockSelection(altPressed);
 
@@ -672,7 +670,7 @@ try
     };
 
     const auto lock = _terminal->LockForWriting();
-    const til::size fontSize{ this->_actualFont.GetSize() };
+    const til::size fontSize{ this->_actualFont.GetCellSizeInPhysicalPx() };
 
     RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.area() == 0); // either dimension = 0, area == 0
 
@@ -807,7 +805,7 @@ try
         GET_Y_LPARAM(lParam),
     };
 
-    const til::size fontSize{ this->_actualFont.GetSize() };
+    const til::size fontSize{ this->_actualFont.GetCellSizeInPhysicalPx() };
     short wheelDelta{ 0 };
     if (uMsg == WM_MOUSEWHEEL || uMsg == WM_MOUSEHWHEEL)
     {
@@ -967,7 +965,9 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 
         publicTerminal->_terminal->SetCursorStyle(static_cast<Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle>(theme.CursorStyle));
 
-        publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, static_cast<float>(fontSize), CP_UTF8 };
+        publicTerminal->_desiredFont.SetFaceName(fontFamily);
+        publicTerminal->_desiredFont.SetWeight(DEFAULT_FONT_WEIGHT);
+        publicTerminal->_desiredFont.SetFontSizeInPt(static_cast<float>(fontSize));
         publicTerminal->_desiredFont.SetEnableBuiltinGlyphs(true);
         publicTerminal->_UpdateFont(newDpi);
     }
@@ -1151,7 +1151,7 @@ void HwndTerminal::_PasteTextFromClipboard() noexcept
 
 til::size HwndTerminal::GetFontSize() const noexcept
 {
-    return _actualFont.GetSize();
+    return _actualFont.GetCellSizeInPhysicalPx();
 }
 
 til::rect HwndTerminal::GetBounds() const noexcept
