@@ -648,7 +648,6 @@
       <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
       <Deploy Solution="Debug|ARM64" />
-      <Deploy Solution="Debug|x64" />
       <Deploy Solution="Debug|x86" />
       <Deploy Solution="Release|ARM64" />
       <Deploy Solution="Release|x64" />
