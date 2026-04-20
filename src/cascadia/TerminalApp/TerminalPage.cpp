@@ -6039,36 +6039,51 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 // TODO(DH) the fuckin' delimiter from DragDropDelimiter
-                std::wstring allPathsString;
-                for (auto& fullPath : fullPaths)
+                std::unordered_map<PathTranslationStyle, winrt::hstring> translatedPaths;
+                for (auto&& target : broadcastGroup)
                 {
-                    // Join the paths with spaces
-                    if (!allPathsString.empty())
+                    const auto profile{ target.GetProfile() };
+                    auto translationStyle{ profile.PathTranslationStyle() };
+                    const auto broadcastTargetControl{ target.GetTermControl() };
+                    if (broadcastTargetControl.ReadOnly())
                     {
-                        allPathsString += L" ";
+                        continue;
                     }
 
-                    const auto translationStyle{ PathTranslationStyle::WSL };
-                    //const auto translationStyle{ _core.Settings().PathTranslationStyle() }; / TODO DH /
-                    _translatePathInPlace(fullPath, translationStyle);
-
-                    // All translated paths get quotes, and all strings spaces get quotes; all translated paths get single quotes
-                    const auto quotesNeeded = translationStyle != PathTranslationStyle::None || fullPath.find(L' ') != std::wstring::npos;
-                    const auto quotesChar = translationStyle != PathTranslationStyle::None ? L'\'' : L'"';
-
-                    // Append fullPath and also wrap it in quotes if needed
-                    if (quotesNeeded)
+                    auto [it, isNew] = translatedPaths.try_emplace(translationStyle, winrt::hstring{});
+                    if (isNew)
                     {
-                        allPathsString.push_back(quotesChar);
+                        std::wstring allPathsString;
+                        for (auto fullPath : fullPaths)
+                        {
+                            // Join the paths with spaces
+                            if (!allPathsString.empty())
+                            {
+                                allPathsString += L" ";
+                            }
+
+                            _translatePathInPlace(fullPath, translationStyle);
+
+                            // All translated paths get quotes, and all strings spaces get quotes; all translated paths get single quotes
+                            const auto quotesNeeded = translationStyle != PathTranslationStyle::None || fullPath.find(L' ') != std::wstring::npos;
+                            const auto quotesChar = translationStyle != PathTranslationStyle::None ? L'\'' : L'"';
+
+                            // Append fullPath and also wrap it in quotes if needed
+                            if (quotesNeeded)
+                            {
+                                allPathsString.push_back(quotesChar);
+                            }
+                            allPathsString.append(fullPath);
+                            if (quotesNeeded)
+                            {
+                                allPathsString.push_back(quotesChar);
+                            }
+                        }
+                        it->second = winrt::hstring{ allPathsString };
                     }
-                    allPathsString.append(fullPath);
-                    if (quotesNeeded)
-                    {
-                        allPathsString.push_back(quotesChar);
-                    }
+
+                    broadcastTargetControl.WriteInputString(it->second, WriteInputStringType::Clipboard);
                 }
-
-                _writeInputStringToBroadcastGroup(broadcastGroup, winrt::hstring{ allPathsString }, WriteInputStringType::Clipboard);
             }
         }
     }
