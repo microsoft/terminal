@@ -5928,8 +5928,10 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_ControlDragDropHandler(Windows::Foundation::IInspectable sender,
                                                               DragEventArgs e)
     {
+        auto dispatcher = Dispatcher();
         auto weak = get_weak();
         const auto control = sender.as<TermControl>();
+        const auto broadcastGroup = _getBroadcastGroupFromControl(control);
 
         if (_hostingHwnd)
         {
@@ -5943,7 +5945,7 @@ namespace winrt::TerminalApp::implementation
                 auto link{ co_await e.DataView().GetApplicationLinkAsync() };
                 if (const auto strong = weak.get())
                 {
-                    _writeInputStringToControlAndBroadcastGroup(control, link.AbsoluteUri(), WriteInputStringType::Clipboard);
+                    _writeInputStringToBroadcastGroup(broadcastGroup, link.AbsoluteUri(), WriteInputStringType::Clipboard);
                 }
             }
             CATCH_LOG();
@@ -5955,7 +5957,7 @@ namespace winrt::TerminalApp::implementation
                 auto link{ co_await e.DataView().GetWebLinkAsync() };
                 if (const auto strong = weak.get())
                 {
-                    _writeInputStringToControlAndBroadcastGroup(control, link.AbsoluteUri(), WriteInputStringType::Clipboard);
+                    _writeInputStringToBroadcastGroup(broadcastGroup, link.AbsoluteUri(), WriteInputStringType::Clipboard);
                 }
             }
             CATCH_LOG();
@@ -5967,7 +5969,7 @@ namespace winrt::TerminalApp::implementation
                 auto text{ co_await e.DataView().GetTextAsync() };
                 if (const auto strong = weak.get())
                 {
-                    _writeInputStringToControlAndBroadcastGroup(control, text, WriteInputStringType::Clipboard);
+                    _writeInputStringToBroadcastGroup(broadcastGroup, text, WriteInputStringType::Clipboard);
                 }
             }
             CATCH_LOG();
@@ -6066,7 +6068,7 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
 
-                _writeInputStringToControlAndBroadcastGroup(control, winrt::hstring{ allPathsString }, WriteInputStringType::Clipboard);
+                _writeInputStringToBroadcastGroup(broadcastGroup, winrt::hstring{ allPathsString }, WriteInputStringType::Clipboard);
             }
         }
     }
