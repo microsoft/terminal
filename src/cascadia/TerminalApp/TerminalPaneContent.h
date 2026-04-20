@@ -55,9 +55,13 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<TerminalApp::TerminalPaneContent, winrt::Windows::Foundation::IInspectable> RestartTerminalRequested;
 
+        static TerminalApp::TerminalPaneContent ContentFromControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
+
         // See BasicPaneEvents for most generic event definitions
 
     private:
+        static til::shared_mutex<std::unordered_map<void*, winrt::weak_ref<TerminalApp::implementation::TerminalPaneContent>>> _controlToContentMap;
+
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
