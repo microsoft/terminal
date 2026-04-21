@@ -448,9 +448,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         {
             _needsPersistenceCleanup = true;
 
-            // In headless mode, restore persisted sessions but keep the
-            // windows hidden. In minimized mode, restore them normally.
-            const auto restoreShowCmd = isHeadlessStartup ? gsl::narrow_cast<uint32_t>(SW_HIDE) : showCmd;
+            // I wanted minimized startup mode to restore the windows as
+            // minimized. However, this didn't seem to work. It would restore
+            // them, but leave them in a weird state where they couldn't be
+            // restored? But I could re-activated them via the tray icon? it was
+            // very weird. Leaving that as a note for now. 
+            // (headless mode will just restore them normally)
+            //
+            // const auto restoreShowCmd = isMinimizedStartup ? gsl::narrow_cast<uint32_t>(SW_SHOWMINIMIZED) : showCmd;
+            const auto restoreShowCmd = showCmd;
 
             uint32_t startIdx = 0;
             for (const auto layout : layouts)
