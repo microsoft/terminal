@@ -670,8 +670,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>このリンクの種類は現在サポートされていません:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>キャンセル</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>このリンクは安全でない可能性があります。ハイパーリンクは、コンピューターやデータに問題を起こす可能性があります。コンピューターを保護するには、信頼できるソースからのリンクのみをクリックしてください。</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>開く</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>設定</value>

@@ -24,6 +24,22 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 {
 }
 
+void ConhostInternalGetSet::UnknownSequence() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // VT sequences unknown to us may cause the cursor position to change in a way that
+    // we don't know about. In this case, we need to mark the cursor position as "dirty".
+    //
+    // The worst offender is likely PowerShell. It uses VT sequences but also calls
+    // GetConsoleScreenBufferInfoEx for *every single line of output* (!!!). This prevents
+    // us from using a more conservative solution (e.g. always fetching the cursor position).
+    if (gci.IsInVtIoMode())
+    {
+        gci.GetActiveOutputBuffer().GetActiveBuffer().SetConptyCursorPositionMayBeWrong();
+    }
+}
+
 // - Sends a string response to the input stream of the console.
 // - Used by various commands where the program attached would like a reply to one of the commands issued.
 // - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
@@ -46,6 +62,12 @@ void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
     // could collide with each other.
     _io.GetActiveInputBuffer()->WriteString(response);
+}
+
+bool ConhostInternalGetSet::IsConPTY() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsInVtIoMode();
 }
 
 // Routine Description:
@@ -282,7 +304,13 @@ unsigned int ConhostInternalGetSet::GetInputCodePage() const
 // - <none>
 void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 {
-    ServiceLocator::LocateGlobals().getConsoleInformation().CopyTextToClipboard(content);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Only allow VT clipboard writes when the console has focus
+    if (WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    {
+        gci.CopyTextToClipboard(content);
+    }
 }
 
 // Routine Description:

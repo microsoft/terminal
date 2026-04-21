@@ -166,6 +166,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void UpdateSettings(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         void AddNewCommand();
+        void ReSortCommandList();
 
         ActionsSubPage CurrentPage;
         Boolean DisplayBadge { get; };

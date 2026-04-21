@@ -951,6 +951,11 @@ LRESULT Window::_HandleGetDpiScaledSize(UINT dpiNew, _Inout_ SIZE* pSizeNew) con
 // - <none>
 void Window::_HandleDrop(const WPARAM wParam) const
 {
+    if (const auto hwnd = GetWindowHandle())
+    {
+        SetForegroundWindow(hwnd);
+    }
+
     const auto drop = reinterpret_cast<HDROP>(wParam);
     Clipboard::Instance().PasteDrop(drop);
     DragFinish(drop);

@@ -353,6 +353,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
         _PathTranslationStyle = profile.PathTranslationStyle();
+        _DragDropDelimiter = profile.DragDropDelimiter();
     }
 
     // Method Description:
@@ -376,6 +377,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _DisablePartialInvalidation = globalSettings.DisablePartialInvalidation();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _TextMeasurement = globalSettings.TextMeasurement();
+        _AmbiguousWidth = globalSettings.AmbiguousWidth();
         _DefaultInputScope = globalSettings.DefaultInputScope();
         _UseBackgroundImageForWindow = globalSettings.UseBackgroundImageForWindow();
         _TrimBlockSelection = globalSettings.TrimBlockSelection();

@@ -17,9 +17,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemesPageViewModel(const Model::CascadiaSettings& settings);
         void UpdateSettings(const Model::CascadiaSettings& settings);
 
-        hstring TakeElementToFocus();
-        void PutElementToFocus(const hstring& elementName) { _elementToFocus = elementName; }
-
         void CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme);
         Editor::ColorSchemeViewModel CurrentScheme();
         bool HasCurrentScheme() const noexcept;
@@ -44,7 +41,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Editor::ColorSchemeViewModel _CurrentScheme{ nullptr };
         Model::CascadiaSettings _settings;
-        hstring _elementToFocus;
         Windows::Foundation::Collections::IMap<Editor::ColorSchemeViewModel, Model::ColorScheme> _viewModelToSchemeMap;
 
         void _MakeColorSchemeVMsHelper();

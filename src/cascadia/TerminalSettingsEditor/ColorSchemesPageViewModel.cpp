@@ -55,13 +55,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    hstring ColorSchemesPageViewModel::TakeElementToFocus()
-    {
-        const auto elementToFocus = _elementToFocus;
-        _elementToFocus.clear();
-        return elementToFocus;
-    }
-
     void ColorSchemesPageViewModel::CurrentScheme(const Editor::ColorSchemeViewModel& newSelectedScheme)
     {
         if (_CurrentScheme != newSelectedScheme)

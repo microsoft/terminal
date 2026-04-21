@@ -1671,6 +1671,9 @@ namespace winrt::TerminalApp::implementation
                 return {};
             }
         }();
+        static const auto ambiguousIsWide = [&]() -> bool {
+            return _settings.GlobalSettings().AmbiguousWidth() == AmbiguousWidth::Wide;
+        }();
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -1736,6 +1739,10 @@ namespace winrt::TerminalApp::implementation
         {
             valueSet.Insert(L"textMeasurement", Windows::Foundation::PropertyValue::CreateString(textMeasurement));
         }
+        if (ambiguousIsWide)
+        {
+            valueSet.Insert(L"ambiguousIsWide", Windows::Foundation::PropertyValue::CreateBoolean(true));
+        }
 
         if (const auto id = settings.SessionId(); id != winrt::guid{})
         {
@@ -1782,8 +1789,7 @@ namespace winrt::TerminalApp::implementation
 
             // Replace the Starting directory with the CWD, if given
             const auto workingDirectory = control.WorkingDirectory();
-            const auto validWorkingDirectory = !workingDirectory.empty();
-            if (validWorkingDirectory)
+            if (Utils::IsValidDirectory(workingDirectory.c_str()))
             {
                 controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
             }
@@ -3155,7 +3161,11 @@ namespace winrt::TerminalApp::implementation
             text = winrt::hstring{ Utils::TrimPaste(text) };
         }
 
-        if (text.empty())
+        // LOAD BEARING: Send an empty bracketed paste even if the clipboard was empty.
+        // Bracketed Paste provides an application a way to know whether the
+        // user pasted, even if there was no applicable content on it. This
+        // behavior is observed in GNOME Terminal, among others.
+        if (!bracketedPaste && text.empty())
         {
             co_return;
         }
@@ -3264,18 +3274,42 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG();
 
-    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
         try
         {
-            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri());
+            auto uriString{ eventArgs.Uri() };
+            auto parsed = winrt::Windows::Foundation::Uri(uriString);
             if (_IsUriSupported(parsed))
             {
-                ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+
+                if (!shouldLaunch)
+                {
+                    if (auto presenter{ _dialogPresenter.get() })
+                    {
+                        // FindName needs to be called first to actually load the xaml object
+                        auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
+
+                        // Insert the reason and the URI
+                        unopenedUriDialog.SecondaryButtonText(RS_(L"UnsafeUrlConfirmAllowAction"));
+                        CouldNotOpenUriReason().Text(RS_(L"UnsafeUrlConfirmText"));
+                        UnopenedUri().Text(uriString);
+
+                        // Show the dialog
+                        auto result = co_await presenter.ShowDialog(unopenedUriDialog);
+                        shouldLaunch = result == ContentDialogResult::Secondary;
+                    }
+                }
+
+                if (shouldLaunch)
+                {
+                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
             }
             else
             {
-                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri());
+                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), uriString);
             }
         }
         catch (...)
@@ -3295,9 +3329,10 @@ namespace winrt::TerminalApp::implementation
         if (auto presenter{ _dialogPresenter.get() })
         {
             // FindName needs to be called first to actually load the xaml object
-            auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
+            auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
 
             // Insert the reason and the URI
+            unopenedUriDialog.SecondaryButtonText({});
             CouldNotOpenUriReason().Text(reason);
             UnopenedUri().Text(uri);
 
@@ -3348,6 +3383,30 @@ namespace winrt::TerminalApp::implementation
         // clicking on those sorts of links.
         // See discussion in GH#7562 for more details.
         return true;
+    }
+
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri)
+    {
+        if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
+        {
+            return true;
+        }
+        if (parsedUri.SchemeName() == L"file")
+        {
+            static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
+            const auto filename = parsedUri.Path();
+            for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
+            {
+                if (til::ends_with_insensitive_ascii(filename, e))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     // Important! Don't take this eventArgs by reference, we need to extend the
@@ -3737,8 +3796,7 @@ namespace winrt::TerminalApp::implementation
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
                 controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
-                const auto validWorkingDirectory = !workingDirectory.empty();
-                if (validWorkingDirectory)
+                if (Utils::IsValidDirectory(workingDirectory.c_str()))
                 {
                     controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
                 }
@@ -3924,7 +3982,13 @@ namespace winrt::TerminalApp::implementation
         // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            paneContent.GetTermControl().Connection(connection);
+            // Reset the terminal's VT state before attaching the new connection.
+            // The previous client may have left dirty modes (e.g., bracketed
+            // paste, mouse tracking, alternate buffer, kitty keyboard) that
+            // would corrupt input/output for the new shell process.
+            const auto& termControl = paneContent.GetTermControl();
+            termControl.HardResetWithoutErase();
+            termControl.Connection(connection);
             connection.Start();
         }
     }
@@ -5110,7 +5174,7 @@ namespace winrt::TerminalApp::implementation
                                                             theme.TabRow().UnfocusedBackground()) :
                                               ThemeColor{ nullptr } };
 
-        if (_settings.GlobalSettings().UseAcrylicInTabRow())
+        if (_settings.GlobalSettings().UseAcrylicInTabRow() && (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic()))
         {
             if (tabRowBg)
             {

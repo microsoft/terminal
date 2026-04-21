@@ -54,11 +54,12 @@ Este es un proyecto de fuente abierta y animamos a la comunidad a participar. Pa
     
   </DevStudio>
   <ReleaseNotes>
-    Versión __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-- Página Extensiones completamente nueva que muestra lo que se ha instalado en tu terminal
-- La paleta de comandos ahora se muestra en tu idioma nativo, así como en inglés
-- Nuevas características de VT, como la representación sincronizada, nuevos esquemas de color, configuración para acciones rápidas del ratón, como el zoom, y más
+- Por último, la capacidad de buscar cualquier configuración.
+- Nuevo editor nativo para asignaciones de teclas, acciones y entradas de la paleta de comandos.
+- Nuevas localizaciones comunitarias para serbio y ucraniano
+- Soporte para el protocolo de teclado "Kitty" para codificación de entrada de alta fidelidad
 
 Consulta la página de versiones de GitHub para más información.
   </ReleaseNotes>

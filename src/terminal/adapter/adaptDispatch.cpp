@@ -48,6 +48,11 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettin
 {
 }
 
+void AdaptDispatch::UnknownSequence() noexcept
+{
+    _api.UnknownSequence();
+}
+
 // Routine Description:
 // - Translates and displays a single character
 // Arguments:
@@ -2073,6 +2078,13 @@ void AdaptDispatch::SetAnsiMode(const bool ansiMode)
 // CSI = flags ; mode u - Sets kitty keyboard protocol flags
 void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept
 {
+    // Avoid setting KKP flags in `_terminalInput` when we're ConPTY. Otherwise, we'd be translating
+    // W32IM to KKP, even when KKP is not supported by the hosting terminal (possibly intentionally).
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
     const auto KittyKeyboardProtocol = static_cast<TerminalInput::KittyKeyboardProtocolMode>(mode.value_or(1));
     _terminalInput.SetKittyKeyboardProtocol(kittyFlags, KittyKeyboardProtocol);
@@ -2081,6 +2093,11 @@ void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTPa
 // CSI ? u - Queries current kitty keyboard protocol flags
 void AdaptDispatch::QueryKittyKeyboardProtocol()
 {
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto flags = static_cast<VTInt>(_terminalInput.GetKittyFlags());
     _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"?{}u"), flags));
 }
@@ -2088,6 +2105,11 @@ void AdaptDispatch::QueryKittyKeyboardProtocol()
 // CSI > flags u - Pushes current kitty keyboard flags onto the stack and sets new flags
 void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
 {
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
     _terminalInput.PushKittyFlags(kittyFlags);
 }
@@ -2095,6 +2117,11 @@ void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
 // CSI < count u - Pops one or more entries from the kitty keyboard stack
 void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count)
 {
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
     const auto popCount = static_cast<size_t>(count.value_or(1));
     _terminalInput.PopKittyFlags(popCount);
 }
@@ -2588,6 +2615,27 @@ void AdaptDispatch::SetWindowTitle(std::wstring_view title)
     _api.SetWindowTitle(title);
 }
 
+// OSC 7 - Set Current Working Directory
+// While ConEmu's OSC 9;9 works well for native Windows paths,
+// OSC 7 uses file URIs, which may not always work.
+void AdaptDispatch::SetCurrentWorkingDirectory(std::wstring_view uri)
+{
+    // Ensure that the URI has a null terminator.
+    std::wstring path{ uri };
+
+    // PathCreateFromUrlW supports writing to the input pointer,
+    // and the resulting path can never be longer than the URI.
+    const auto ptr = path.data();
+    auto len = gsl::narrow<DWORD>(path.size());
+    THROW_IF_FAILED(PathCreateFromUrlW(ptr, ptr, &len, 0));
+    path.resize(len);
+
+    if (til::is_legal_path(path))
+    {
+        _api.SetWorkingDirectory(path);
+    }
+}
+
 //Routine Description:
 // HTS - sets a VT tab stop in the cursor's current column.
 //Arguments:
@@ -2982,7 +3030,7 @@ void AdaptDispatch::SoftReset()
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
 //      * The soft font is reset in the renderer and the font buffer is deleted.
-//   - Clears the screen.
+//   - Clears the screen. (if erase=true)
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
 //      * CUP(1;1)
@@ -2992,8 +3040,8 @@ void AdaptDispatch::SoftReset()
 //   - Sets all character sets to the default.
 //      * G0(USASCII)
 //Arguments:
-// <none>
-void AdaptDispatch::HardReset()
+// - erase: if true, erase the screen and scrollback
+void AdaptDispatch::HardReset(bool erase)
 {
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
@@ -3020,9 +3068,12 @@ void AdaptDispatch::HardReset()
     //      to ensure that it clears with the default background color.
     SoftReset();
 
-    // Clears the screen - Needs to be done in two operations.
-    EraseInDisplay(DispatchTypes::EraseType::All);
-    EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    if (erase)
+    {
+        // Clears the screen - Needs to be done in two operations.
+        EraseInDisplay(DispatchTypes::EraseType::All);
+        EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    }
 
     // Set the color table and render modes back to their initial startup values.
     _renderSettings.RestoreDefaultSettings();
@@ -3033,8 +3084,14 @@ void AdaptDispatch::HardReset()
         _renderer->SynchronizedOutputChanged();
     }
 
-    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
-    CursorPosition(1, 1);
+    if (erase)
+    {
+        // Cursor to 1,1 - the Soft Reset guarantees this is absolute.
+        // Only done when clearing buffers, because when preserving content
+        // the cursor should stay where the previous shell left it so the
+        // new shell prompt appears in the right place.
+        CursorPosition(1, 1);
+    }
 
     // We only reset the system line feed mode if the input mode is set. If it
     // isn't set, that either means they're both reset, and there's nothing for
@@ -3585,6 +3642,10 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
         _pages.ActivePage().Buffer().StartCommand();
         _api.NotifyShellIntegrationMark();
     }
+    else
+    {
+        _api.UnknownSequence();
+    }
 }
 
 // Method Description:
@@ -3615,6 +3676,10 @@ void AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     {
         _pages.ActivePage().Buffer().StartPrompt();
         _api.NotifyShellIntegrationMark();
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 }
 
@@ -3686,8 +3751,13 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             break;
         }
         default:
+            _api.UnknownSequence();
             break;
         }
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a
@@ -3762,6 +3832,10 @@ void AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
         }
 
         // If it's poorly formatted, just eat it
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 }
 

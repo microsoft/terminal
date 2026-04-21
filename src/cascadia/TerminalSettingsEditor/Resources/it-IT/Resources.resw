@@ -371,6 +371,21 @@
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Windows Console</value>
   </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>Larghezza dei caratteri ambigui</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>Imposta la larghezza usata per i caratteri ambigui dell'Asia orientale. "Narrow" (impostazione predefinita) privilegia la compatibilità, mentre "Wide" privilegia la leggibilità con molti tipi di carattere CJK. In modalità "Wide", alcune applicazioni potrebbero non funzionare correttamente e causare movimenti irregolari del cursore. Per applicare questa modifica è necessario riavviare Terminale Windows e si applica solo alle applicazioni avviate all'interno.</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>Stretti</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>Ampiezza</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>Colonne</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
@@ -2591,19 +2606,19 @@
     <comment>An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
-    <value>WSL (C:\ -&gt; /mnt/c)</value>
+    <value>WSL (C:\ 🡒 /mnt/c)</value>
     <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
-    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
+    <value>Cygwin (C:\ 🡒 /cygdrive/c)</value>
     <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
-    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <value>MSYS2 (C:\ 🡒 /c)</value>
     <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
-    <value>MinGW (C:\ -&gt; C:/)</value>
+    <value>MinGW (C:\ 🡒 C:/)</value>
     <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
@@ -2728,5 +2743,13 @@
   <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
     <value>Digita per filtrare icone</value>
     <comment>Placeholder text for a text box to filter and select an icon.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>Trascina e rilascia il delimitatore</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>Questo testo verrà inserito tra i percorsi di più file trascinati nel terminale.</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
   </data>
 </root>

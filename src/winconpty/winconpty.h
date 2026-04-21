@@ -58,6 +58,9 @@ typedef struct _PseudoConsole
 #define PSEUDOCONSOLE_GLYPH_WIDTH_WCSWIDTH 0x10
 #define PSEUDOCONSOLE_GLYPH_WIDTH_CONSOLE 0x18
 #endif
+#ifndef PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE
+#define PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE 0x20
+#endif
 
 // Implementations of the various PseudoConsole functions.
 HRESULT _CreatePseudoConsole(const HANDLE hToken,

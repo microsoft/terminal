@@ -28,6 +28,7 @@ namespace Microsoft::Console::VirtualTerminal
         IStateMachineEngine& operator=(const IStateMachineEngine&) = default;
         IStateMachineEngine& operator=(IStateMachineEngine&&) = default;
 
+        virtual void UnknownSequence() noexcept = 0;
         virtual bool EncounteredWin32InputModeSequence() const noexcept = 0;
 
         virtual bool ActionExecute(const wchar_t wch) = 0;

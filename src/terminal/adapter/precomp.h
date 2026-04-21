@@ -13,7 +13,8 @@ Abstract:
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
-#include <cmath>
+#include <Shlwapi.h>
+
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 

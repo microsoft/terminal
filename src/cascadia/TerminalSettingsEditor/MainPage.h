@@ -90,14 +90,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel profile);
+        void _SetupColorSchemesEventHandling();
+        void _SetupActionsEventHandling();
+        void _NavigateToProfileSubPage(const Editor::ProfileViewModel& profile, ProfileSubPage page, const IInspectable& breadcrumbTag, const hstring& elementToFocus);
 
         void _PreNavigateHelper();
-        void _Navigate(hstring clickedItemTag, BreadcrumbSubPage subPage, hstring elementToFocus = {});
-        void _Navigate(const Editor::ProfileViewModel& profile, BreadcrumbSubPage subPage, hstring elementToFocus = {});
-        void _Navigate(const Editor::ColorSchemeViewModel& colorSchemeVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
-        void _Navigate(const Editor::NewTabMenuEntryViewModel& ntmEntryVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
-        void _Navigate(const Editor::ExtensionPackageViewModel& extPkgVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
-        void _Navigate(const Editor::CommandViewModel& commandVM, BreadcrumbSubPage subPage, hstring elementToFocus = {});
+        void _Navigate(const IInspectable& vm, BreadcrumbSubPage subPage, hstring elementToFocus = {});
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
         Microsoft::UI::Xaml::Controls::NavigationViewItem _FindProfileNavItem(winrt::guid profileGuid) const;

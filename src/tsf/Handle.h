@@ -51,6 +51,8 @@ namespace Microsoft::Console::TSF
         bool HasActiveComposition() const noexcept;
 
     private:
+        void _destroy() noexcept;
+
         Implementation* _impl = nullptr;
     };
 }

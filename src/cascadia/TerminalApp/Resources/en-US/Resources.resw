@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>This link type is currently not supported:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>This link may lead to an unsafe location. Hyperlinks can be harmful to your computer and data. To protect your computer, only click links from trusted sources.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Open anyway</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Settings</value>

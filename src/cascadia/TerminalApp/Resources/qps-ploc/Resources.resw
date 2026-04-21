@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>Ťђïś łϊηќ ŧурē ιş çũґѓзⁿτľÿ ñστ şΰρρоŕŧĕđ: !!! !!! !!! !!! </value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Сąñс℮ł !</value>
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
+    <value>Çдπсёľ !</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>Ŧђīś ℓîŋќ мαў ľêãδ τб áń úŉšàƒé ℓоćάŧίоñ. Ĥўрзŗℓĭŋķѕ çâⁿ ъέ ђąřмƒúļ τό ўôця ċómφύŧèґ аňδ ðáťǻ. Ţб ρгøťėçŧ ўòύг ςömφùţĕŕ, ŏŋľỳ čℓΐςķ łίŋκѕ ƒřöм ťŗμѕŧєđ śόυяčêś. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!!</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Őρέй ǻпŷŵãγ !!!</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Śëţťĩпğś !!</value>

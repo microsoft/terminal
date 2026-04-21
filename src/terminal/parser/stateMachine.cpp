@@ -1044,6 +1044,7 @@ void StateMachine::_EnterSosPmApcString() noexcept
 {
     _state = VTStates::SosPmApcString;
     _cachedSequence.reset();
+    _engine->UnknownSequence();
     _trace.TraceStateChange(L"SosPmApcString");
 }
 

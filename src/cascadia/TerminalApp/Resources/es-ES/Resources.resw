@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>Este tipo de vínculo no se admite actualmente:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>Cancelar</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>Este vínculo puede dar lugar a una ubicación no segura. Los hipervínculos pueden ser perjudiciales para el equipo y los datos. Para proteger el equipo, haga clic solo en vínculos de orígenes de confianza.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Abrir de todas formas</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Configuración</value>

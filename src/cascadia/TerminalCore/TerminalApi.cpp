@@ -28,6 +28,11 @@ void Terminal::ReturnResponse(const std::wstring_view response)
     }
 }
 
+bool Terminal::IsConPTY() const noexcept
+{
+    return false;
+}
+
 Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() noexcept
 {
     return *_stateMachine;
@@ -140,7 +145,7 @@ unsigned int Terminal::GetInputCodePage() const noexcept
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    if (_clipboardOperationsAllowed)
+    if (_clipboardOperationsAllowed && _focused)
     {
         _pfnCopyToClipboard(content);
     }

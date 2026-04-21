@@ -166,7 +166,7 @@ void InteractDispatch::MoveCursor(const VTInt row, const VTInt col)
 
     // Unblock any callers inside SCREEN_INFORMATION::WaitForConptyCursorPositionToBeSynchronized().
     // The cursor position has now been updated to the terminal's.
-    info.ResetConptyCursorPositionMayBeWrong();
+    info.GetActiveBuffer().ResetConptyCursorPositionMayBeWrong();
 }
 
 // Routine Description:

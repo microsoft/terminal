@@ -50,6 +50,11 @@ using namespace Microsoft::Console::Interactivity;
             CodepointWidthDetector::Singleton().Reset(mode);
         }
 
+        if (pArgs->GetAmbiguousIsWide())
+        {
+            CodepointWidthDetector::Singleton().SetAmbiguousWidth(2);
+        }
+
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.

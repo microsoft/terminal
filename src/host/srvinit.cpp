@@ -859,14 +859,15 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         return Status;
     }
 
-    // Allow the renderer to paint once the rest of the console is hooked up.
-    if (g.pRender)
+    if (ConsoleConnectionDeservesVisibleWindow(p))
     {
-        g.pRender->EnablePainting();
-    }
+        // Allow the renderer to paint once the rest of the console is hooked up,
+        // but only if there's actually something to paint on.
+        if (g.pRender)
+        {
+            g.pRender->EnablePainting();
+        }
 
-    if (SUCCEEDED_NTSTATUS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
-    {
         HANDLE Thread = nullptr;
 
         IConsoleInputThread* pNewThread = nullptr;

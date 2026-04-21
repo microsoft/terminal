@@ -81,9 +81,11 @@
     X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
+    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                  \
     X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope::Default)        \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
     X(bool, RightClickContextMenu, false)                                                                                                                \
-    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)
+    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)  \
+    X(winrt::hstring, DragDropDelimiter, L" ")

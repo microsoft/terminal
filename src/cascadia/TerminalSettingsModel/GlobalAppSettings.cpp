@@ -312,6 +312,10 @@ Json::Value GlobalAppSettings::ToJson()
     {
         _TextMeasurement.reset();
     }
+    if (_AmbiguousWidth == Control::AmbiguousWidth::Narrow)
+    {
+        _AmbiguousWidth.reset();
+    }
     if (_DefaultInputScope == Control::DefaultInputScope::Default)
     {
         _DefaultInputScope.reset();

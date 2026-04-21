@@ -105,14 +105,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void EditAction::ShortcutActionBox_SuggestionChosen(const AutoSuggestBox& sender, const AutoSuggestBoxSuggestionChosenEventArgs& args)
-    {
-        if (const auto selectedAction = args.SelectedItem().try_as<winrt::hstring>())
-        {
-            sender.Text(*selectedAction);
-        }
-    }
-
     void EditAction::ShortcutActionBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
     {
         const auto submittedText = args.QueryText();

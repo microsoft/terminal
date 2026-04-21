@@ -1,0 +1,14 @@
+{
+  "$schema": "http://universaltest/schema/testlist-3.json",
+  "Testlists": [
+    {
+      "FilePath": "Microsoft.Console.Tests.testlist"
+    }
+  ],
+  "TestMDs": [
+    {
+      "FilePath": "Microsoft.Console.Host.FeatureTests.testmd",
+      "Profile": "NoAppPlatform"
+    }
+  ]
+}

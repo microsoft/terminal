@@ -669,8 +669,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>Questo tipo di collegamento non è al momento supportato:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>Annulla</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>Questo collegamento potrebbe causare un percorso non sicuro. I collegamenti ipertestuali possono essere dannosi per il computer e i dati. Per proteggere il computer, fare clic solo su collegamenti da origini attendibili.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Apri comunque</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Impostazioni</value>

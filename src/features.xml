@@ -187,4 +187,11 @@
         <alwaysDisabledReleaseTokens/>
     </feature>
 
+    <feature>
+        <name>Feature_WarnOnInvalidSettingsMediaResources</name>
+	<description>Controls whether Terminal should display a warning dialog when icon, backgroundImage, shader, etc. could not be found.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+    </feature>
+
 </featureStaging>

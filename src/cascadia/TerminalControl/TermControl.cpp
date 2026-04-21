@@ -532,6 +532,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.Connection(newConnection);
     }
 
+    void TermControl::HardResetWithoutErase()
+    {
+        _core.HardResetWithoutErase();
+    }
+
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
     {
         if (!_initializedTerminal)
@@ -1790,6 +1795,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return true;
         }
 
+        // While TSF has an active composition, key events must not be forwarded
+        // to the PTY directly. The IME re-injects navigation/confirmation keys
+        // after composition ends, at which point HasActiveComposition() == false
+        // and they are forwarded normally. This mirrors conhost v1 behavior in
+        // src/interactivity/win32/windowio.cpp.
+        if (GetTSFHandle().HasActiveComposition())
+        {
+            return true;
+        }
+
         if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
         {
             return true;
@@ -1920,8 +1935,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - args: event data
     void TermControl::_TappedHandler(const IInspectable& /*sender*/, const TappedRoutedEventArgs& e)
     {
-        Focus(FocusState::Pointer);
-
         if (e.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             // Normally TSF would be responsible for showing the touch keyboard, but it's buggy for us:
@@ -1955,7 +1968,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto point = args.GetCurrentPoint(*this);
         const auto type = ptr.PointerDeviceType();
 
-        if (!_focused)
+        // GH#19908: _focused can be true even when the search box has
+        // keyboard focus, because GotFocus bubbles from the search box
+        // child and _GotFocusHandler sets _focused=true. If the user
+        // click-drags in the terminal while the search box is focused,
+        // we need to explicitly call Focus() to move keyboard focus back
+        // to the terminal so that Ctrl+C copies the selection.
+        if (!_focused || (_searchBox && _searchBox->ContainsFocus()))
         {
             Focus(FocusState::Pointer);
         }
@@ -1969,12 +1988,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // NB: I don't think this is correct because the touch should be in the center of the rect.
             //     I suspect the point.Position() would be correct.
             const auto contactRect = point.Properties().ContactRect();
-            _interactivity.TouchPressed({ contactRect.X, contactRect.Y });
+            til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
+            _interactivity.TouchPressed(newTouchPoint.to_core_point());
         }
         else
         {
             const auto cursorPosition = point.Position();
-            _interactivity.PointerPressed(TermControl::GetPressedMouseButtons(point),
+            _interactivity.PointerPressed(point.PointerId(),
+                                          TermControl::GetPressedMouseButtons(point),
                                           TermControl::GetPointerUpdateKind(point),
                                           point.Timestamp(),
                                           ControlKeyStates{ args.KeyModifiers() },
@@ -2013,12 +2034,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            auto suppressFurtherHandling = _interactivity.PointerMoved(TermControl::GetPressedMouseButtons(point),
+            auto suppressFurtherHandling = _interactivity.PointerMoved(point.PointerId(),
+                                                                       TermControl::GetPressedMouseButtons(point),
                                                                        TermControl::GetPointerUpdateKind(point),
                                                                        ControlKeyStates(args.KeyModifiers()),
-                                                                       _focused,
-                                                                       pixelPosition,
-                                                                       _pointerPressedInBounds);
+                                                                       pixelPosition);
 
             // GH#9109 - Only start an auto-scroll when the drag actually
             // started within our bounds. Otherwise, someone could start a drag
@@ -2057,7 +2077,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
-            _interactivity.TouchMoved({ contactRect.X, contactRect.Y }, _focused);
+            til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
+
+            _interactivity.TouchMoved(newTouchPoint.to_core_point());
         }
 
         args.Handled(true);
@@ -2090,7 +2112,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (type == Windows::Devices::Input::PointerDeviceType::Mouse ||
             type == Windows::Devices::Input::PointerDeviceType::Pen)
         {
-            _interactivity.PointerReleased(TermControl::GetPressedMouseButtons(point),
+            _interactivity.PointerReleased(point.PointerId(),
+                                           TermControl::GetPressedMouseButtons(point),
                                            TermControl::GetPointerUpdateKind(point),
                                            ControlKeyStates(args.KeyModifiers()),
                                            pixelPosition);
@@ -2501,9 +2524,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _updateScrollBar->Run(update);
 
-        // if a selection marker is already visible,
-        // update the position of those markers
-        if (SelectionStartMarker().Visibility() == Visibility::Visible || SelectionEndMarker().Visibility() == Visibility::Visible)
+        // If we have a selection with markers (exposed via selection mode),
+        //   update the position of the markers
+        if (_core.HasSelection() && _core.SelectionMode() >= SelectionInteractionMode::Keyboard)
         {
             _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
         }
@@ -2883,8 +2906,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            // Do we ever get here (= uninitialized terminal)? If so: How?
-            assert(false);
             return { 10, 10 };
         }
     }
@@ -3054,7 +3075,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   the full path of the file to our terminal connection. Like conhost, if
     //   the path contains a space, we'll wrap the path in quotes.
     // - Unlike conhost, if multiple files are dropped onto the terminal, we'll
-    //   write all the paths to the terminal, separated by spaces.
+    //   write all the paths to the terminal, separated by the configured delimiter.
     // Arguments:
     // - e: The DragEventArgs from the Drop event
     // Return Value:
@@ -3065,6 +3086,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_IsClosing())
         {
             co_return;
+        }
+
+        if (const auto hwnd = reinterpret_cast<HWND>(OwningHwnd()))
+        {
+            SetForegroundWindow(hwnd);
         }
 
         const auto weak = get_weak();
@@ -3170,12 +3196,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
 
                 std::wstring allPathsString;
+                const auto delimiter{ _core.Settings().DragDropDelimiter() };
                 for (auto& fullPath : fullPaths)
                 {
-                    // Join the paths with spaces
+                    // Join the paths with the delimiter
                     if (!allPathsString.empty())
                     {
-                        allPathsString += L" ";
+                        allPathsString += delimiter;
                     }
 
                     const auto translationStyle{ _core.Settings().PathTranslationStyle() };
@@ -3706,10 +3733,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::CommandHistoryContext TermControl::CommandHistory() const
     {
         return _core.CommandHistory();
-    }
-    winrt::hstring TermControl::CurrentWorkingDirectory() const
-    {
-        return _core.CurrentWorkingDirectory();
     }
 
     void TermControl::UpdateWinGetSuggestions(Windows::Foundation::Collections::IVector<hstring> suggestions)

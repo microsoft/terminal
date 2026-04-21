@@ -23,6 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::ActionsViewModel>();
+        _ViewModel.ReSortCommandList();
         auto vmImpl = get_self<ActionsViewModel>(_ViewModel);
         vmImpl->MarkAsVisited();
         _layoutUpdatedRevoker = LayoutUpdated(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {

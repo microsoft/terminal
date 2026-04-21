@@ -85,6 +85,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 break;
             }
             CodepointWidthDetector::Singleton().Reset(mode);
+
+            if (settings.AmbiguousWidth() == AmbiguousWidth::Wide)
+            {
+                CodepointWidthDetector::Singleton().SetAmbiguousWidth(2);
+            }
+
             return true;
         }();
 
@@ -347,6 +353,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // send the notification
             ConnectionStateChanged.raise(*this, nullptr);
         }
+    }
+
+    void ControlCore::HardResetWithoutErase()
+    {
+        const auto lock = _terminal->LockForWriting();
+        _terminal->HardResetWithoutErase();
     }
 
     bool ControlCore::Initialize(const float actualWidth,
@@ -2069,7 +2081,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //   the selection (we need to reset selection on double-click or
         //   triple-click, so it captures the word or the line, rather than
         //   extending the selection)
-        if (_terminal->IsSelectionActive() && (!shiftEnabled || isOnOriginalPosition))
+        // - GH#9608: VT mouse mode is enabled. In this mode, Shift is used
+        //   to override mouse input, so Shift+Click should start a fresh
+        //   selection rather than extending the previous one.
+        if (_terminal->IsSelectionActive() && (!shiftEnabled || isOnOriginalPosition || _terminal->IsTrackingMouseInput()))
         {
             // Reset the selection
             _terminal->ClearSelection();
@@ -2409,11 +2424,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         context->CurrentCommandline(trimmedCurrentCommand);
         context->QuickFixes(_cachedQuickFixes);
         return *context;
-    }
-
-    winrt::hstring ControlCore::CurrentWorkingDirectory() const
-    {
-        return winrt::hstring{ _terminal->GetWorkingDirectory() };
     }
 
     bool ControlCore::QuickFixesAvailable() const noexcept

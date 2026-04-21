@@ -572,6 +572,7 @@ FGHIJ
 fgidx
 FGs
 FILEDESCRIPTION
+filehops
 FILESUBTYPE
 FILESYSPATH
 FILEW
@@ -1772,6 +1773,7 @@ uldash
 uldb
 ULONGLONG
 ulwave
+Unaccess
 Unadvise
 unattend
 UNCPRIORITY

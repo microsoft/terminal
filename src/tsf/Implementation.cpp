@@ -71,33 +71,27 @@ void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
     s_wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
 }
 
-bool Implementation::Initialize()
+HRESULT Implementation::Initialize()
 {
-    _categoryMgr = wil::CoCreateInstanceNoThrow<ITfCategoryMgr>(CLSID_TF_CategoryMgr);
-    if (!_categoryMgr)
-    {
-        return false;
-    }
-
-    _displayAttributeMgr = wil::CoCreateInstance<ITfDisplayAttributeMgr>(CLSID_TF_DisplayAttributeMgr);
-
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_CategoryMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_categoryMgr.addressof())));
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_DisplayAttributeMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_displayAttributeMgr.addressof())));
     // There's no point in calling TF_GetThreadMgr. ITfThreadMgr is a per-thread singleton.
-    _threadMgrEx = wil::CoCreateInstance<ITfThreadMgrEx>(CLSID_TF_ThreadMgr, CLSCTX_INPROC_SERVER);
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_threadMgrEx.addressof())));
 
-    THROW_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, s_activationFlags.load(std::memory_order_relaxed)));
-    THROW_IF_FAILED(_threadMgrEx->CreateDocumentMgr(_documentMgr.addressof()));
+    RETURN_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, s_activationFlags.load(std::memory_order_relaxed)));
+    RETURN_IF_FAILED(_threadMgrEx->CreateDocumentMgr(_documentMgr.addressof()));
 
     TfEditCookie ecTextStore;
-    THROW_IF_FAILED(_documentMgr->CreateContext(_clientId, 0, static_cast<ITfContextOwnerCompositionSink*>(this), _context.addressof(), &ecTextStore));
+    RETURN_IF_FAILED(_documentMgr->CreateContext(_clientId, 0, static_cast<ITfContextOwnerCompositionSink*>(this), _context.addressof(), &ecTextStore));
 
     _ownerCompositionServices = _context.try_query<ITfContextOwnerCompositionServices>();
 
     _contextSource = _context.query<ITfSource>();
-    THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_cookieContextOwner));
-    THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
+    RETURN_IF_FAILED(_contextSource->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_cookieContextOwner));
+    RETURN_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
 
-    THROW_IF_FAILED(_documentMgr->Push(_context.get()));
-    return true;
+    RETURN_IF_FAILED(_documentMgr->Push(_context.get()));
+    return S_OK;
 }
 
 void Implementation::Uninitialize() noexcept

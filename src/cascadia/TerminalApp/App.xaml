@@ -192,7 +192,7 @@
                                             ResourceKey="TabViewBackground" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
-                                             Color="#0c0c0c" />
+                                             Color="#282828" />
 
                             <SolidColorBrush x:Key="BroadcastPaneBorderColor"
                                              Color="{StaticResource SystemAccentColorDark2}" />
@@ -211,7 +211,7 @@
                                             ResourceKey="TabViewBackground" />
 
                             <SolidColorBrush x:Key="SettingsUiTabBrush"
-                                             Color="#ffffff" />
+                                             Color="#F9F9F9" />
 
                             <SolidColorBrush x:Key="BroadcastPaneBorderColor"
                                              Color="{StaticResource SystemAccentColorLight2}" />
@@ -234,7 +234,7 @@
                                             ResourceKey="SystemColorButtonFaceColorBrush" />
 
                             <StaticResource x:Key="SettingsUiTabBrush"
-                                            ResourceKey="SystemControlBackgroundBaseLowBrush" />
+                                            ResourceKey="SystemColorWindowBrush" />
 
                             <SolidColorBrush x:Key="BroadcastPaneBorderColor"
                                              Color="{StaticResource SystemColorHighlightColor}" />

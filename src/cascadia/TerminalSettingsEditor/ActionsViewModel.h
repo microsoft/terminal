@@ -258,6 +258,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool DisplayBadge() const noexcept;
 
         void AddNewCommand();
+        void ReSortCommandList();
 
         void CurrentCommand(const Editor::CommandViewModel& newCommand);
         Editor::CommandViewModel CurrentCommand();
@@ -279,6 +280,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::CascadiaSettings _Settings;
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> _AvailableActionsAndNamesMap;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> _NameToActionMap;
+        bool _CommandListDirty{ false };
 
         void _MakeCommandVMsHelper();
         void _RegisterCmdVMEvents(com_ptr<implementation::CommandViewModel>& cmdVM);
