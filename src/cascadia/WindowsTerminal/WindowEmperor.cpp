@@ -435,14 +435,11 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 
         if (isHeadlessStartup)
         {
-            // In headless mode, we skip all window creation (including persisted
-            // window restoration) and keep the process alive in the background.
+            // In headless mode, keep the process alive in the background.
             // The user can summon windows later via global hotkeys, quake mode,
             // or running wt.exe from another shell.
             _allowHeadlessOverride = true;
         }
-        else
-        {
 
         // Restore persisted windows.
         const auto state = ApplicationState::SharedInstance();
@@ -451,11 +448,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         {
             _needsPersistenceCleanup = true;
 
+            // In headless mode, restore persisted sessions but keep the
+            // windows hidden. In minimized mode, restore them normally.
+            const auto restoreShowCmd = isHeadlessStartup ? gsl::narrow_cast<uint32_t>(SW_HIDE) : showCmd;
+
             uint32_t startIdx = 0;
             for (const auto layout : layouts)
             {
                 hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandlineCommon(args, cwd, env, showCmd);
+                _dispatchCommandlineCommon(args, cwd, env, restoreShowCmd);
                 startIdx += 1;
             }
         }
@@ -469,9 +470,10 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             // TODO: Here we could start a timer and exit after, say, 5 seconds
             // if no windows are created. But that's a minor concern.
         }
-        else
+        else if (!isHeadlessStartup)
         {
             // Create another window if needed: There aren't any yet, OR we got an explicit command line.
+            // In headless mode, we skip creating a new default window entirely.
             if (_windows.empty() || args.size() != 1)
             {
                 // If this is a startup task activation with minimized mode, and
@@ -484,8 +486,6 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             // If we created no windows, e.g. because the args are "/?" we can just exit now.
             _postQuitMessageIfNeeded();
         }
-
-        } // end of !isHeadlessStartup
     }
 
     // ALWAYS change the _real_ CWD of the Terminal to system32,
@@ -944,12 +944,14 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
         {
             const auto globalSettings = _app.Logic().Settings().GlobalSettings();
             // Keep the last window in the array so that we can persist it on exit.
-            // We check for AllowHeadless(), as that being true prevents us from ever quitting in the first place.
+            // We check for AllowHeadless() and _allowHeadlessOverride, as either
+            // being true prevents us from ever quitting in the first place.
             // (= If we avoided closing the last window you wouldn't be able to reach a headless state.)
             const auto shouldKeepWindow =
                 _windows.size() == 1 &&
                 globalSettings.ShouldUsePersistedLayout() &&
-                !globalSettings.AllowHeadless();
+                !globalSettings.AllowHeadless() &&
+                !_allowHeadlessOverride;
 
             if (!shouldKeepWindow)
             {
