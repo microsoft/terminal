@@ -50,6 +50,14 @@ namespace Microsoft.Terminal.Settings.Model
         AfterCurrentTab,
     };
 
+    enum StartOnLoginMode
+    {
+        Disabled,
+        Normal,
+        Minimized,
+        Headless,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
 
@@ -106,6 +114,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
+        INHERITABLE_SETTING(StartOnLoginMode, StartOnLoginMode);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();

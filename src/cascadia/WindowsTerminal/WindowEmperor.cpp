@@ -414,6 +414,36 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
         const auto showCmd = gsl::narrow_cast<uint32_t>(nCmdShow);
 
+        // Detect whether we were launched as a startup task (i.e. on user login).
+        // This is only available for packaged Terminal.
+        auto startOnLoginMode = Settings::Model::StartOnLoginMode::Disabled;
+        if (IsPackaged())
+        {
+            try
+            {
+                const auto activatedArgs = winrt::Windows::ApplicationModel::AppInstance::GetActivatedEventArgs();
+                if (activatedArgs && activatedArgs.Kind() == winrt::Windows::ApplicationModel::Activation::ActivationKind::StartupTask)
+                {
+                    startOnLoginMode = _app.Logic().Settings().GlobalSettings().StartOnLoginMode();
+                }
+            }
+            CATCH_LOG();
+        }
+
+        const auto isHeadlessStartup = startOnLoginMode == Settings::Model::StartOnLoginMode::Headless;
+        const auto isMinimizedStartup = startOnLoginMode == Settings::Model::StartOnLoginMode::Minimized;
+
+        if (isHeadlessStartup)
+        {
+            // In headless mode, we skip all window creation (including persisted
+            // window restoration) and keep the process alive in the background.
+            // The user can summon windows later via global hotkeys, quake mode,
+            // or running wt.exe from another shell.
+            _allowHeadlessOverride = true;
+        }
+        else
+        {
+
         // Restore persisted windows.
         const auto state = ApplicationState::SharedInstance();
         const auto layouts = state.PersistedWindowLayouts();
@@ -444,12 +474,18 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             // Create another window if needed: There aren't any yet, OR we got an explicit command line.
             if (_windows.empty() || args.size() != 1)
             {
-                _dispatchCommandlineCommon(args, cwd, env, showCmd);
+                // If this is a startup task activation with minimized mode, and
+                // we're creating a new default window (not restoring persisted
+                // windows), show it minimized.
+                const auto newShowCmd = isMinimizedStartup ? gsl::narrow_cast<uint32_t>(SW_SHOWMINIMIZED) : showCmd;
+                _dispatchCommandlineCommon(args, cwd, env, newShowCmd);
             }
 
             // If we created no windows, e.g. because the args are "/?" we can just exit now.
             _postQuitMessageIfNeeded();
         }
+
+        } // end of !isHeadlessStartup
     }
 
     // ALWAYS change the _real_ CWD of the Terminal to system32,
@@ -868,6 +904,7 @@ void WindowEmperor::_postQuitMessageIfNeeded() const
     if (
         _messageBoxCount <= 0 &&
         _windowCount <= 0 &&
+        !_allowHeadlessOverride &&
         !_app.Logic().Settings().GlobalSettings().AllowHeadless())
     {
         PostQuitMessage(0);

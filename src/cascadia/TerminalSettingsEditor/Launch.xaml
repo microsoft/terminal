@@ -169,9 +169,12 @@
                                     x:Uid="Globals_StartOnUserLogin"
                                     HelpText="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
                                     Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
-                <ToggleSwitch IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}"
-                              IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.StartOnLoginModeList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentStartOnLoginMode, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  First Window Behavior  -->
