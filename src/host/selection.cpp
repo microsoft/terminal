@@ -413,7 +413,7 @@ void Selection::ClearSelection(const bool fStartingNewSelection)
 
 // Routine Description:
 // - Colors all text in the given rectangle with the color attribute provided.
-// - This does not validate whether there is a valid selection right now or not.
+// - This does not validate whether or not there is a valid selection right now.
 //   It is assumed to already be in a proper selecting state and the given rectangle should be highlighted with the given color unconditionally.
 // Arguments:
 // - psrRect - Rectangular area to fill with color (exclusive)

@@ -528,7 +528,7 @@ FontDlgProc(
 // Iterate through all of our fonts to find the font entries that match the desired family, charset, name (TT), and
 // boldness (TT). Each entry in FontInfo represents a specific combination of font states. We expect to encounter
 // numerous entries for each size/boldness/charset of TT fonts. If fAddBoldFonts is true, we'll add a font even if it's
-// bold, regardless of whether the user has chosen bold fonts or not.
+// bold, regardless of whether or not the user has chosen bold fonts.
 void AddFontSizesToList(PCWSTR pwszTTFace,
                         PCWSTR pwszAltTTFace,
                         const LONG_PTR dwExStyle,

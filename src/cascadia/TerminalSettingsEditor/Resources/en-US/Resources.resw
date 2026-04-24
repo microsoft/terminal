@@ -507,7 +507,7 @@
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Hide the title bar (requires relaunch)</value>
-    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
+    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>When disabled, the title bar will appear above the tabs.</value>
