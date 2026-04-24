@@ -343,9 +343,9 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ settings.FindProfile(_profile.Guid()) };
         _profile = profile ? profile : settings.ProfileDefaults();
 
-        if (const auto settings{ _cache->TryLookup(_profile) })
+        if (const auto cachedSettings{ _cache->TryLookup(_profile, settings.WindowSettingsDefaults()) })
         {
-            _control.UpdateControlSettings(settings->DefaultSettings(), settings->UnfocusedSettings());
+            _control.UpdateControlSettings(cachedSettings->DefaultSettings(), cachedSettings->UnfocusedSettings());
         }
     }
 

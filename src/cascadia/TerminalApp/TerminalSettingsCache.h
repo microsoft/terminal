@@ -39,7 +39,7 @@ namespace winrt::TerminalApp::implementation
     struct TerminalSettingsCache
     {
         TerminalSettingsCache(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-        std::optional<TerminalSettingsPair> TryLookup(const Microsoft::Terminal::Settings::Model::Profile& profile);
+        std::optional<TerminalSettingsPair> TryLookup(const Microsoft::Terminal::Settings::Model::Profile& profile, const Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings);
         void Reset(const Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
 
     private:

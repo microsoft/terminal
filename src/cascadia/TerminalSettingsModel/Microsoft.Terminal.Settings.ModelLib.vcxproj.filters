@@ -24,7 +24,6 @@
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
-    <ClCompile Include="WindowSettings.cpp" />
     <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
@@ -67,7 +66,6 @@
     </ClInclude>
     <ClInclude Include="CascadiaSettings.h" />
     <ClInclude Include="GlobalAppSettings.h" />
-    <ClInclude Include="WindowSettings.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="KeyChordSerialization.h" />
     <ClInclude Include="Profile.h" />
@@ -106,7 +104,6 @@
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="WindowSettings.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />

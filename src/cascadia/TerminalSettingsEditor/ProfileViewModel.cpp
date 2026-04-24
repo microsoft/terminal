@@ -218,7 +218,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // This may look pricey, but it only resolves resources that have not been visited
         // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
-        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
+        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile, _appSettings.WindowSettingsDefaults());
     }
 
     // Method Description:
@@ -385,7 +385,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
     {
-        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme();
+        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme(_appSettings.WindowSettingsDefaults());
         if (const auto tabTheme = currentTheme.Tab())
         {
             // theme.tab.background: theme color must be evaluated

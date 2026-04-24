@@ -297,7 +297,7 @@ namespace winrt::TerminalApp::implementation
 
     Microsoft::Terminal::Settings::Model::Theme TerminalWindow::Theme()
     {
-        return _settings.GlobalSettings().CurrentTheme();
+        return _settings.GlobalSettings().CurrentTheme(_settings.WindowSettingsDefaults());
     }
 
     // WinUI can't show 2 dialogs simultaneously. Yes, really. If you do, you get an exception.
@@ -374,7 +374,7 @@ namespace winrt::TerminalApp::implementation
         auto themingLambda{ [weak](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
             if (const auto strong = weak.get())
             {
-                auto theme{ strong->_settings.GlobalSettings().CurrentTheme() };
+                auto theme{ strong->_settings.GlobalSettings().CurrentTheme(strong->_settings.WindowSettingsDefaults()) };
                 auto requestedTheme{ theme.RequestedTheme() };
                 auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
                 while (element)
@@ -621,7 +621,7 @@ namespace winrt::TerminalApp::implementation
         if ((_appArgs && _appArgs->ParsedArgs().GetSize().has_value()) || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
-            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, _settings.WindowSettingsDefaults()) };
 
             const til::size emptySize{};
             const auto commandlineSize = _appArgs ? _appArgs->ParsedArgs().GetSize().value_or(emptySize) : til::size{};

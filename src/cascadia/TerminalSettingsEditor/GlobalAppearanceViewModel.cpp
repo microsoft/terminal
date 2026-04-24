@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::Windows::Foundation::IInspectable GlobalAppearanceViewModel::CurrentTheme()
     {
-        return _GlobalSettings.CurrentTheme();
+        return _GlobalSettings.CurrentTheme(_WindowSettings);
     }
 
     // Get the name out of the newly selected item, stash that as the Theme name

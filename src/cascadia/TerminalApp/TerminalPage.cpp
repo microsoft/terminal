@@ -226,6 +226,11 @@ namespace winrt::TerminalApp::implementation
         _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
     }
 
+    winrt::Microsoft::Terminal::Settings::Model::WindowSettings TerminalPage::_currentWindowSettings() const
+    {
+        return _settings.WindowSettings(_WindowProperties.WindowName());
+    }
+
     // Method Description:
     // - implements the IInitializeWithWindow interface from shobjidl_core.
     // - We're going to use this HWND as the owner for the ConPTY windows, via
@@ -291,11 +296,6 @@ namespace winrt::TerminalApp::implementation
         // Upon settings update we reload the system settings for scrolling as well.
         // TODO: consider reloading this value periodically.
         _systemRowsToScroll = _ReadSystemRowsToScroll();
-    }
-
-    winrt::Microsoft::Terminal::Settings::Model::WindowSettings TerminalPage::_currentWindowSettings() const
-    {
-        return _settings.WindowSettings(_WindowProperties.WindowName());
     }
 
     bool TerminalPage::IsRunningElevated() const noexcept
@@ -375,7 +375,7 @@ namespace winrt::TerminalApp::implementation
 
         // Initialize the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
         {
             const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
 
@@ -525,7 +525,7 @@ namespace winrt::TerminalApp::implementation
 
             // It's possible that newTerminalArgs is null here.
             // GetProfileForArgs should be resilient to that.
-            const auto profile{ settings.GetProfileForArgs(newTerminalArgs) };
+            const auto profile{ settings.GetProfileForArgs(newTerminalArgs, settings.WindowSettingsDefaults()) };
             if (profile.Elevate())
             {
                 continue;
@@ -1404,7 +1404,7 @@ namespace winrt::TerminalApp::implementation
             if (newTerminalArgs.ProfileIndex() != nullptr)
             {
                 // We want to promote the index to a GUID because there is no "launch to profile index" command.
-                const auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+                const auto profile = _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings());
                 if (profile)
                 {
                     newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
@@ -1601,7 +1601,7 @@ namespace winrt::TerminalApp::implementation
         {
             // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
             profile = GetClosestProfileForDuplicationOfProfile(profile);
-            controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
+            controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile, _currentWindowSettings());
 
             // Replace the Starting directory with the CWD, if given
             const auto workingDirectory = control.WorkingDirectory();
@@ -3410,7 +3410,7 @@ namespace winrt::TerminalApp::implementation
         // - Only one pane exists
         // else:
         // - Reset conpty to its original size back
-        if (!WindowProperties().IsQuakeWindow() && !Fullscreen() &&
+        if (!_currentWindowSettings().DockWindow() && !Fullscreen() &&
             NumberOfTabs() == 1 && _GetFocusedTabImpl()->GetLeafPaneCount() == 1)
         {
             WindowSizeChanged.raise(*this, args);
@@ -3594,7 +3594,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Don't need to worry about duplicating or anything - we'll
             // serialize the actual profile's GUID along with the content guid.
-            const auto& profile = _settings.GetProfileForArgs(newTerminalArgs);
+            const auto& profile = _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings());
             const auto control = _AttachControlToContent(newTerminalArgs.ContentId());
             auto paneContent{ winrt::make<TerminalPaneContent>(profile, _terminalSettingsCache, control) };
             return std::make_shared<Pane>(paneContent);
@@ -3610,7 +3610,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
-                controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
+                controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile, _currentWindowSettings());
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
                 if (Utils::IsValidDirectory(workingDirectory.c_str()))
                 {
@@ -3620,8 +3620,8 @@ namespace winrt::TerminalApp::implementation
         }
         if (!profile)
         {
-            profile = _settings.GetProfileForArgs(newTerminalArgs);
-            controlSettings = Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs);
+            profile = _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings());
+            controlSettings = Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, _currentWindowSettings());
         }
 
         // Try to handle auto-elevation
@@ -3958,7 +3958,7 @@ namespace winrt::TerminalApp::implementation
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
         // Also update every tab's individual IsClosable to match the same property.
-        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
         const auto visibility = (theme && theme.Tab()) ?
                                     theme.Tab().ShowCloseButton() :
                                     Settings::Model::TabCloseButtonVisibility::Always;
@@ -4572,7 +4572,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
     {
-        auto theme{ _settings.GlobalSettings().CurrentTheme() };
+        auto theme{ _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()) };
         auto requestedTheme{ theme.RequestedTheme() };
         while (element)
         {
@@ -4946,7 +4946,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
         auto requestedTheme{ theme.RequestedTheme() };
 
         {

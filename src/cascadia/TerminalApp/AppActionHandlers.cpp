@@ -961,7 +961,7 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto& terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            const auto profile{ _settings.GetProfileForArgs(terminalArgs) };
+            const auto profile{ _settings.GetProfileForArgs(terminalArgs, _currentWindowSettings()) };
             terminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
         }
 

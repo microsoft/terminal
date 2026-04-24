@@ -66,14 +66,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& newTerminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs, _currentWindowSettings()) };
             // GH#11114: GetProfileForArgs can return null if the index is higher
             // than the number of available profiles.
             if (!profile)
             {
                 return S_FALSE;
             }
-            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, _currentWindowSettings()) };
 
             // Try to handle auto-elevation
             if (_maybeElevate(newTerminalArgs, settings, profile))
@@ -220,7 +220,7 @@ namespace winrt::TerminalApp::implementation
         if (const auto content{ tab.GetActiveContent() })
         {
             const auto& icon{ content.Icon() };
-            const auto theme = _settings.GlobalSettings().CurrentTheme();
+            const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
             const auto iconStyle = (theme && theme.Tab()) ? theme.Tab().IconStyle() : IconStyle::Default;
 
             tab.UpdateIcon(icon, iconStyle);
