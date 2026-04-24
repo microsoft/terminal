@@ -700,7 +700,23 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&,
 void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->FocusModeChanged(_windowLogic.FocusMode());
+    const auto focusMode = _windowLogic.FocusMode();
+
+    _window->FocusModeChanged(focusMode);
+
+    if (_windowLogic.IsQuakeWindow())
+    {
+        const auto state = ApplicationState::SharedInstance();
+        state.QuakeFocusMode(focusMode);
+        state.Flush();
+
+#ifdef _DEBUG
+        OutputDebugStringW(wil::str_printf<std::wstring>(
+            L"[IslandWindow] Persisted quake focus mode to disk: %s\n",
+            focusMode ? L"true" : L"false")
+                               .c_str());
+#endif
+    }
 }
 
 void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
@@ -1057,11 +1073,19 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
 
 void AppHost::_QuakeWindowSizeChanged(float sizePercent)
 {
-    // Persist the new quake window size to ApplicationState
-    ApplicationState::SharedInstance().QuakeWindowSizePercent(static_cast<double>(sizePercent));
+    const auto state = ApplicationState::SharedInstance();
+
+    state.QuakeWindowSizePercent(static_cast<double>(sizePercent));
+
+    // The ApplicationState setter schedules a throttled write.
+    // Force the write now so quake height survives process termination and reboot.
+    state.Flush();
 
 #ifdef _DEBUG
-    OutputDebugStringW(wil::str_printf<std::wstring>(L"[IslandWindow] Persisting size percent to state: %.1f%%\n", sizePercent * 100.0f).c_str());
+    OutputDebugStringW(wil::str_printf<std::wstring>(
+        L"[IslandWindow] Persisted quake size percent to disk: %.1f%%\n",
+        sizePercent * 100.0f)
+                           .c_str());
 #endif
 }
 

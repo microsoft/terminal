@@ -43,7 +43,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")                                                  \
     X(FileSource::Local, std::unordered_set<hstring>, DismissedBadges, "dismissedBadges")                                                                                 \
     X(FileSource::Shared, bool, SSHFolderGenerated, "sshFolderGenerated", false)                                                                                          \
-    X(FileSource::Shared, double, QuakeWindowSizePercent, "quakeWindowSizePercent", 0.5)
+    X(FileSource::Shared, double, QuakeWindowSizePercent, "quakeWindowSizePercent", 0.5)                                                                                  \
+    X(FileSource::Shared, bool, QuakeFocusMode, "quakeFocusMode", true)
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {

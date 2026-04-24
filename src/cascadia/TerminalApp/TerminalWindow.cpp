@@ -233,7 +233,12 @@ namespace winrt::TerminalApp::implementation
         // that the window size is _first_ set up as something sensible, so
         // leaving fullscreen returns to a reasonable size.
         const auto launchMode = this->GetLaunchMode();
-        if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+
+        if (_WindowProperties->IsQuakeWindow())
+        {
+            _root->SetFocusMode(ApplicationState::SharedInstance().QuakeFocusMode());
+        }
+        else if (WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
         {
             _root->SetFocusMode(true);
         }
