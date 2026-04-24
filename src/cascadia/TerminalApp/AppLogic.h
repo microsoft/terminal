@@ -40,6 +40,7 @@ namespace winrt::TerminalApp::implementation
         void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
+        bool IsHeadlessCommandline(winrt::hstring const& commandLine) const;
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings Settings() const noexcept;
 

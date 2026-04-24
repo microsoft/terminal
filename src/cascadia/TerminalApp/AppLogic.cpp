@@ -272,6 +272,42 @@ namespace winrt::TerminalApp::implementation
         return _hasSettingsStartupActions;
     }
 
+    // Method Description:
+    // - Parses the given commandline and returns true if it contains a top-level
+    //   --headless flag with no other subcommands. This is used by WindowEmperor
+    //   to decide whether to suppress window creation at startup.
+    // Arguments:
+    // - commandLine: the full commandline string (as from GetCommandLineW())
+    // Return Value:
+    // - true if --headless was provided and no window-creating subcommands were given
+    bool AppLogic::IsHeadlessCommandline(winrt::hstring const& commandLine) const
+    {
+        if (commandLine.empty())
+        {
+            return false;
+        }
+
+        int argc = 0;
+        LPWSTR* argv = CommandLineToArgvW(commandLine.c_str(), &argc);
+        if (!argv || argc <= 0)
+        {
+            return false;
+        }
+        const auto freeArgv = wil::scope_exit([argv] { LocalFree(argv); });
+
+        std::vector<winrt::hstring> args;
+        args.reserve(argc);
+        for (int i = 0; i < argc; i++)
+        {
+            args.emplace_back(argv[i]);
+        }
+
+        AppCommandlineArgs tempArgs;
+        tempArgs.ParseArgs(winrt::array_view<const winrt::hstring>{ args });
+        tempArgs.ValidateStartupCommands();
+        return tempArgs.IsHeadless() && tempArgs.GetStartupActions().empty();
+    }
+
     // Call this function after loading your _settings.
     // It handles any CPU intensive settings updates (like updating the Jumplist)
     // which should thus only occur if the settings file actually changed.

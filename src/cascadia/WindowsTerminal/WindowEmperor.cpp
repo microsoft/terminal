@@ -414,19 +414,28 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         const auto cwd = wil::GetCurrentDirectoryW<std::wstring>();
         const auto showCmd = gsl::narrow_cast<uint32_t>(nCmdShow);
 
-        // Restore persisted windows.
-        const auto state = ApplicationState::SharedInstance();
-        const auto layouts = state.PersistedWindowLayouts();
-        if (layouts && layouts.Size() > 0)
-        {
-            _needsPersistenceCleanup = true;
+        // Check whether the user launched with --headless (and no other subcommands)
+        // before restoring any persisted layouts. A headless launch should silently
+        // stay alive in the background so that global hotkeys (e.g. quake mode) work
+        // immediately, without ever opening a window.
+        _launchHeadless = _app.Logic().IsHeadlessCommandline(GetCommandLineW());
 
-            uint32_t startIdx = 0;
-            for (const auto layout : layouts)
+        // Restore persisted windows (skipped for headless launches).
+        if (!_launchHeadless)
+        {
+            const auto state = ApplicationState::SharedInstance();
+            const auto layouts = state.PersistedWindowLayouts();
+            if (layouts && layouts.Size() > 0)
             {
-                hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
-                _dispatchCommandlineCommon(args, cwd, env, showCmd);
-                startIdx += 1;
+                _needsPersistenceCleanup = true;
+
+                uint32_t startIdx = 0;
+                for (const auto layout : layouts)
+                {
+                    hstring args[] = { L"wt", L"-w", L"new", L"-s", winrt::to_hstring(startIdx) };
+                    _dispatchCommandlineCommon(args, cwd, env, showCmd);
+                    startIdx += 1;
+                }
             }
         }
 
@@ -438,6 +447,13 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
             //
             // TODO: Here we could start a timer and exit after, say, 5 seconds
             // if no windows are created. But that's a minor concern.
+        }
+        else if (_launchHeadless)
+        {
+            // Pure headless launch: don't create any window. The process stays alive
+            // waiting for the user to summon it via a global hotkey (e.g. Win+`).
+            // _postQuitMessageIfNeeded() won't exit because _launchHeadless is set.
+            _postQuitMessageIfNeeded();
         }
         else
         {
@@ -868,6 +884,7 @@ void WindowEmperor::_postQuitMessageIfNeeded() const
     if (
         _messageBoxCount <= 0 &&
         _windowCount <= 0 &&
+        !_launchHeadless &&
         !_app.Logic().Settings().GlobalSettings().AllowHeadless())
     {
         PostQuitMessage(0);

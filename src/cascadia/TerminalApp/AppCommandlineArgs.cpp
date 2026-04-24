@@ -183,6 +183,11 @@ void AppCommandlineArgs::_buildParser()
     maximized->excludes(fullscreen);
     focus->excludes(fullscreen);
 
+    auto headlessCallback = [this](int64_t /*count*/) {
+        _headless = true;
+    };
+    _app.add_flag_function("--headless", headlessCallback, RS_A(L"CmdHeadlessDesc"));
+
     auto positionCallback = [this](std::string string) {
         _position = LaunchPositionFromString(string);
     };
@@ -1002,6 +1007,14 @@ bool AppCommandlineArgs::ShouldExitEarly() const noexcept
 // - <none>
 void AppCommandlineArgs::ValidateStartupCommands()
 {
+    // If launched with --headless and no other subcommands/commandlines were
+    // provided, there's nothing to start — the process will wait silently in
+    // the background until the user summons it (e.g. via globalSummon/quakeMode).
+    if (_headless && _startupActions.empty())
+    {
+        return;
+    }
+
     // If we only have a single x-save command, then set our target to the
     // current terminal window. This will prevent us from spawning a new
     // window just to save the commandline.
@@ -1046,6 +1059,11 @@ std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchPosition> AppCo
 std::optional<til::size> AppCommandlineArgs::GetSize() const noexcept
 {
     return _size;
+}
+
+bool AppCommandlineArgs::IsHeadless() const noexcept
+{
+    return _headless;
 }
 
 // Method Description:
@@ -1169,6 +1187,7 @@ void AppCommandlineArgs::FullResetState()
 
     _currentCommandline = nullptr;
     _launchMode = std::nullopt;
+    _headless = false;
     _startupActions.clear();
     _exitMessage = "";
     _shouldExitEarly = false;

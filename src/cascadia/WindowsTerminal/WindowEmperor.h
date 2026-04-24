@@ -79,6 +79,7 @@ private:
     bool _notificationIconShown = false;
     bool _skipPersistence = false;
     bool _needsPersistenceCleanup = false;
+    bool _launchHeadless = false;
     SafeDispatcherTimer _persistStateTimer;
     std::optional<bool> _currentSystemThemeIsDark;
     int32_t _windowCount = 0;

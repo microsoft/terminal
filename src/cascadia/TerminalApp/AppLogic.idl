@@ -24,6 +24,11 @@ namespace TerminalApp
 
         Boolean HasSettingsStartupActions();
 
+        // Returns true if the given commandline contains a top-level --headless flag
+        // with no other subcommands, indicating the process should start without
+        // opening any window.
+        Boolean IsHeadlessCommandline(String commandLine);
+
         void ReloadSettings();
         void ReloadSettingsThrottled();
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };

@@ -402,6 +402,9 @@
   <data name="CmdFullscreenDesc" xml:space="preserve">
     <value>Launch the window in fullscreen mode</value>
   </data>
+  <data name="CmdHeadlessDesc" xml:space="preserve">
+    <value>Start without opening a window, staying alive in the background for global hotkeys (e.g. quake mode)</value>
+  </data>
   <data name="CmdMoveFocusDesc" xml:space="preserve">
     <value>Move focus to the adjacent pane in the specified direction</value>
   </data>
