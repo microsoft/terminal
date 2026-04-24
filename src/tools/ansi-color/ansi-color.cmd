@@ -1496,10 +1496,11 @@ IF NOT EXIST !DATA_FILE! (
 ::
 :USAGE
 SET "SCRIPT_NAME=%~nx0"
+SET BLANK_TO_EOL=                                                                                 z
 
 :: The following ECHO intentionally has 80 spaces to clear the 
 :: line any remaining on screen text on call.
-ECHO.                                                                                
+ECHO.%BLANK_TO_EOL:z=%
 IF [%1] NEQ [] (
   ECHO !%1!
   ECHO.
