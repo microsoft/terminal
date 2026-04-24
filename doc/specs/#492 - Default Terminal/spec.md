@@ -68,7 +68,7 @@ This workflow affords us several benefits:
     - This also makes it potentially possible to backport this portion of the code change to popular in-market versions of Windows 10. For instance, WSL2 has just backported to 1903 and 1909. The less churn and risk, the easier it is to sell a backport.
 
 *Potential future:*
-- ~~If no updated console exists, potentially check for registration of a terminal UX that is willing to use the inbox ConPTY bits, start it, and transition to being a PTY instead.~~ 
+- ~~If no updated console exists, potentially check for registration of a terminal UX that is willing to use the inbox ConPTY bits, start it, and transition to being a PTY instead.~~
 - **CUT FROM v1**: To simplify the story for end-users, we're offering this as a package deal in the first revision. Explaining the difference between consoles and terminals to end users is very difficult.
 
 The registration would operate as follows:
@@ -80,7 +80,7 @@ The registration would operate as follows:
     - **V1 NOTE:** The subkey `%%Startup` was chosen to separate these keys (this one and the `DelegationTerminal` one below) in case we needed to ACL them or protect them in some way. We want a per-user choice of which Terminal/Console are used, but we might need to take action to prevent these keys from being slammed at some point in the future. Why `%%`? The subkeys are traditionally used to resolve paths to client binaries that have their own console preferences set. The `%%` should never be resolvable as it won't lead to a valid path or expanded path variable.
 
 The delegation process would operate as follows:
-- A method contract is established between the existing inbox console and any updated console (an interface). 
+- A method contract is established between the existing inbox console and any updated console (an interface).
     - `HRESULT ConsoleEstablishHandoff(HANDLE server, HANDLE driverInputEvent, const PortableConnectMessage* const msg, HANDLE signalPipe, HANDLE inboxProcess, HANDLE* process)`
         - `HANDLE server`: This is the server side handle to the console driver, used with `DeviceIoControl` to receive/send messages with the client command-line application
         - `HANDLE driverInputEvent`: The input event is created and assigned to the driver immediately on first connection, before any messages are read from the driver, to ensure that it can track a blocking state should first message be an input request that we do not yet have data to fill. As such, the inbox console will have created this and assigned it to the driver before pulling off the connection packet and determining that it wants to delegate. Therefore, we will transfer ownership of this event to the updated console.
@@ -177,7 +177,7 @@ The settings experience includes:
         - Inside Windows Terminal
             - Inside the new Settings UI, we will likely need a page that configures the delegation keys in `HKCU\Console\%%Startup` ~~or a link out to the Windows Settings panel, should we manage to get the settings configurable there~~.
         - Inside the console property sheet
-            - Same as for Terminal but with `comctl` controls over XAML +/- a link to the Windows Settings panel
+            - Same as Terminal, but with `comctl` controls over XAML +/- a link to the Windows Settings panel
         - Inside the Settings panel for Windows (probably on the developer settings page)
             - The ultimate location for this is likely a panel directly inside Windows. This is the hardest one to accomplish because of the timelines of the Windows product. We may not get this in an initial revision, but it should likely be our ultimate goal. **V1 NOTE:** We did it!
     - Operation:
@@ -185,7 +185,7 @@ The settings experience includes:
         - Offer a list of registered servers or discovered manifests from the app catalog - This is the ideal scenario where we search the installed app catalog +/- the COM catalog and offer a list of apps that conform to the contract in a drop-down.
             - The final process was to use [App Extensions](https://docs.microsoft.com/windows/uwp/launch-resume/how-to-create-an-extension) inside the Terminal APPX package to declare the COM GUIDs that were available for the `DelegationConsole` and `DelegationTerminal` fields respectively. A configuration class `DelegationConfig` was added to `propslib.lib` that enables the lookup of these from the application state catalog and presents a list of them to choose from. It also manages reading and writing the registry keys.
             - **V1 NOTE:** Our configuration options currently allow pairings of replacement consoles and terminals to be adjusted in lock-step from the UI. That's not to say further combinations are not possible or even necessarily inhibited by the code. We just went for minimal confusion in our first round.
-    
+
 - Configuration of the legacy console state:
     - ~~Since we could end up in an experience where the default launch experience gets you directly into Windows Terminal, we believe that the Terminal will likely need an additional setting or settings in the new Settings UI that will allow the toggling of some of the `HKCU\Console` values to do things like set/remove the legacy console state.~~ **V1 NOTE:** Cut as low priority. Switch back to console and configure it that way or use the existing property sheet or tamper with registry keys.
     - We have left the per-launch debugging and advanced access hole of calling something like `conhost.exe cmd.exe` which will use the inbox conhost to launch `cmd.exe` even if there is a default specified.
@@ -209,9 +209,9 @@ The major players here that I am considering are NVDA, JAWS, and Narrator. As fa
 
 Let's hit the elephant in the room. "You plan on pulling a completely different binary inside the `conhost.exe` process and just... delegating all activity to it?" Yes.
 
-(**V1 NOTE:** Well, it's out of proc now. But it is at the same privilege level as the original one thanks to the mechanics of COM.) 
+(**V1 NOTE:** Well, it's out of proc now. But it is at the same privilege level as the original one thanks to the mechanics of COM.)
 
-As far as I'm concerned, the `conhost.exe` that is started to host the command-line client application is running at the same integrity level as the client binary that is partially started and waiting for its server to be ready. This is the long-standing existing protection that we have from the Windows operating system. Anything running in the same integrity level is already expected to be able to tamper with anything else at the same integrity level. The delegated binary that we would be loading into our process space will also be at the same integrity level. Nothing really stops a malicious actor from launching that binary in any other way in the same integrity level as a part of the command-line client application's startup. 
+As far as I'm concerned, the `conhost.exe` that is started to host the command-line client application is running at the same integrity level as the client binary that is partially started and waiting for its server to be ready. This is the long-standing existing protection that we have from the Windows operating system. Anything running in the same integrity level is already expected to be able to tamper with anything else at the same integrity level. The delegated binary that we would be loading into our process space will also be at the same integrity level. Nothing really stops a malicious actor from launching that binary in any other way in the same integrity level as a part of the command-line client application's startup.
 
 The mitigation here, if necessary, would be to use `WinVerifyTrust` to validate the certification path of the `OpenConsole.exe` binary to ensure that only one that is signed by Microsoft can be the substitute server host for the application. This doesn't stop third parties from redistributing our `OpenConsole.exe` off of GitHub if necessary with their products, but it would stop someone from introducing any random binary that met the signature interface of the delegation methods into `conhost.exe`. The only value I see this providing is stopping someone from being "tricked" into delegating their `conhost.exe` to another binary through the configuration methods we provide. It doesn't really stop someone (or an attacker) from taking ownership of the `conhost.exe` in System32 and replacing it directly. So this point might be moot. (It is expected that replacement of the System32 one is already protected, to some degree, by being owned by the SYSTEM account and requiring some measure of authority to replace.)
 
@@ -242,8 +242,8 @@ I expect to take some degree of performance, power, and efficiency hit by implem
 
 The mitigations to these losses are as follows:
 
-1. We will delay load any of the interface load and packaging data lookup libraries to only be pulled into process space should we determine that the application is non-interactive. 
-    1. That should save us some of the commit and power costs for the sorts of non-interactive scripts and applications that typically run early in OS startup (and leverage `conhost.exe` as their host environment). 
+1. We will delay load any of the interface load and packaging data lookup libraries to only be pulled into process space should we determine that the application is non-interactive.
+    1. That should save us some of the commit and power costs for the sorts of non-interactive scripts and applications that typically run early in OS startup (and leverage `conhost.exe` as their host environment).
     1. We will still likely get hit with the on-disk commit cost for the additional export libraries linked as well as additional code. That would be a by-design change.
 
 1. We plan to begin Profile Guided Optimization across our `OpenConsole.exe` and `WindowsTerminal.exe` binaries. This should allow us to optimize the startup paths for this scenario and bias the `OpenConsole.exe` binary that we redistribute to focus its efforts and efficiency on the ConPTY role specifically, ignoring all of the interactive Win32/GDI portions that aren't typically used.
