@@ -172,7 +172,7 @@ std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view str
 //      spec2: a color in the following format:
 //          "#<red><green><blue>"
 //
-//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
+//   In both specs, <color> is a value contains up to 4 hex digits, uppercase or lowercase.
 // Arguments:
 // - string - The string containing the color spec string to parse.
 // Return Value:
