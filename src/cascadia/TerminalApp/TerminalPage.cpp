@@ -2960,10 +2960,16 @@ namespace winrt::TerminalApp::implementation
         const auto control = sender.as<TermControl>();
         const auto broadcastGroup = _getBroadcastGroupFromControl(control);
         // Used to determine whether to emit empty pastes and strip extra whitespace
-        const auto anyHasBracketedPaste = control && !control.ReadOnly() && control.BracketedPasteEnabled();
+        const auto anyHasBracketedPaste = std::any_of(std::begin(broadcastGroup), std::end(broadcastGroup), [](auto&& content) {
+            const auto control{ content.GetTermControl() };
+            return control && !control.ReadOnly() && control.BracketedPasteEnabled();
+        });
         // Used to determine whether to warn on multi-line paste
         // If none lack bracketed paste, we can skip the warning.
-        const auto anyHasUnbracketedPaste = !anyHasBracketedPaste;
+        const auto anyHasUnbracketedPaste = !anyHasBracketedPaste || std::any_of(std::begin(broadcastGroup), std::end(broadcastGroup), [](auto&& content) {
+            const auto control{ content.GetTermControl() };
+            return control && !control.ReadOnly() && !control.BracketedPasteEnabled();
+        });
 
         // GetClipboardData might block for up to 30s for delay-rendered contents.
         co_await winrt::resume_background();
