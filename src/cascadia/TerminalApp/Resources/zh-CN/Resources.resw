@@ -851,11 +851,11 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
     <value>活动窗格已移动到“{0}”选项卡</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
     <value>“{0}”选项卡已移动到“{1}”窗口</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window to which the tab was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>“{0}”选项卡已移动到新窗口</value>
@@ -867,7 +867,7 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
     <value>活动窗格已移动到“{0}”选项卡</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>活动窗格已移动到新窗口</value>

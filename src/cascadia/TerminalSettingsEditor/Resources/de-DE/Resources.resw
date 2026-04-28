@@ -507,7 +507,7 @@
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Titelleiste ausblenden (Neustart erforderlich)</value>
-    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
+    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>Wenn diese Option deaktiviert ist, wird die Titelleiste über den Registerkarten angezeigt.</value>
@@ -1195,15 +1195,15 @@
   </data>
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Startverzeichnis</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>Startverzeichnis</value>
-    <comment>Header for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Startverzeichnis</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
     <value>Das Verzeichnis, in dem das Profil gestartet wird, wenn es geladen wird.</value>
@@ -1742,7 +1742,7 @@
     <comment>A supplementary setting to the "font face" setting. Toggling this control updates the font face control to show all of the fonts installed.</comment>
   </data>
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Wenn diese Option aktiviert ist, werden alle installierten Schriftarten in der Liste oben angezeigt. Andernfalls wird nur die Liste der Festbreitenschriftarten angezeigt.</value>
+    <value>Wenn diese Option aktiviert ist, werden alle installierten Schriftarten in der Liste oben angezeigt. Andernfalls wird nur die Liste der Schriftarten mit fester Breite angezeigt.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
@@ -2147,7 +2147,7 @@
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Verknüpfung</value>
-    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+    <comment>The label for a "key chord listener" control that sets the keys to which a key binding is bound.</comment>
   </data>
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>Textformatierung</value>

@@ -852,11 +852,11 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
     <value>アクティブなペインを [{0}] タブに移動しました</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
     <value>[{0}] タブを "{1}" ウィンドウに移動しました</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window to which the tab was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>[{0}] タブを新しいウィンドウに移動しました</value>
@@ -868,7 +868,7 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
     <value>アクティブなペインを "{0}" ウィンドウに移動しました</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>アクティブなペインを新しいウィンドウに移動しました</value>

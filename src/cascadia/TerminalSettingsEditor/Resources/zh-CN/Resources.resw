@@ -507,7 +507,7 @@
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>隐藏标题栏（需要重新启动）</value>
-    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
+    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>禁用后，标题栏将显示在选项卡上方。</value>
@@ -1195,15 +1195,15 @@
   </data>
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>启动目录</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>启动目录</value>
-    <comment>Header for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>正在启动目录</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
     <value>加载配置文件时启动的目录。</value>
@@ -2147,7 +2147,7 @@
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>快捷方式</value>
-    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+    <comment>The label for a "key chord listener" control that sets the keys to which a key binding is bound.</comment>
   </data>
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>文本格式</value>
