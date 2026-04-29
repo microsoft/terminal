@@ -6,7 +6,12 @@
 class ScopedResourceLoader
 {
 public:
+    struct NoResourcesT
+    {
+    };
     ScopedResourceLoader(const std::wstring_view resourceLocatorBase);
+    ScopedResourceLoader(const NoResourcesT&) :
+        _resourceMap{ nullptr }, _resourceContext{ nullptr } {}
     winrt::Windows::ApplicationModel::Resources::Core::ResourceMap GetResourceMap() const noexcept;
     winrt::hstring GetLocalizedString(const std::wstring_view resourceName) const;
     bool HasResourceWithName(const std::wstring_view resourceName) const;

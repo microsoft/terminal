@@ -6,6 +6,7 @@
 #include "../types/inc/colorTable.hpp"
 #include "../inc/DefaultSettings.h"
 #include "../inc/cppwinrt_utils.h"
+#include "../../tsf/Handle.h"
 
 #include "ControlCore.h"
 #include "ControlInteractivity.h"
@@ -99,11 +100,12 @@ public:
     PWRITECB _pfnWriteCallback{ nullptr };
     void OriginateOutputFromConnection(const wchar_t* data)
     {
-        _TerminalOutputHandlers(winrt::to_hstring(data));
+        std::wstring_view wsv{ data };
+        _TerminalOutputHandlers(winrt::array_view<const char16_t>(reinterpret_cast<const char16_t*>(wsv.data()), static_cast<uint32_t>(wsv.size())));
     }
 };
 
-struct CsBridgeTerminalSettings : winrt::implements<CsBridgeTerminalSettings, IControlSettings, ICoreSettings, IControlAppearance, ICoreAppearance>
+struct CsBridgeTerminalSettings : winrt::implements<CsBridgeTerminalSettings, IControlSettings, ICoreSettings, IControlAppearance, ICoreAppearance, ICoreScheme>
 {
     using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
     using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
@@ -116,9 +118,14 @@ struct CsBridgeTerminalSettings : winrt::implements<CsBridgeTerminalSettings, IC
     }
     ~CsBridgeTerminalSettings() = default;
 
-    winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+    void GetColorTable(winrt::com_array<::winrt::Microsoft::Terminal::Core::Color>& table) noexcept
     {
-        return til::color{ til::at(_theme.ColorTable, index) };
+        std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
+        std::transform(&_theme.ColorTable[0], &_theme.ColorTable[16], colorTable.begin(), [](auto&& color) {
+            return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
+        });
+
+        table = winrt::com_array(colorTable.begin(), colorTable.end());
     }
 
     til::color DefaultForeground() const
@@ -168,7 +175,6 @@ struct CsBridgeTerminalSettings : winrt::implements<CsBridgeTerminalSettings, IC
     HARDCODED_PROPERTY(bool, DetectURLs, true);
     HARDCODED_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr);
     HARDCODED_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
-    HARDCODED_PROPERTY(winrt::hstring, ProfileName);
     HARDCODED_PROPERTY(bool, UseAcrylic, false);
     HARDCODED_PROPERTY(float, Opacity, 1.0);
     HARDCODED_PROPERTY(winrt::hstring, Padding, DEFAULT_PADDING);
@@ -180,7 +186,6 @@ struct CsBridgeTerminalSettings : winrt::implements<CsBridgeTerminalSettings, IC
     HARDCODED_PROPERTY(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
     HARDCODED_PROPERTY(winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
     HARDCODED_PROPERTY(winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
-    HARDCODED_PROPERTY(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr);
     HARDCODED_PROPERTY(winrt::hstring, Commandline);
     HARDCODED_PROPERTY(winrt::hstring, StartingDirectory);
     HARDCODED_PROPERTY(winrt::hstring, StartingTitle);
@@ -219,6 +224,11 @@ struct CsBridgeTerminalSettings : winrt::implements<CsBridgeTerminalSettings, IC
     HARDCODED_PROPERTY(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, winrt::Microsoft::Terminal::Control::CopyFormat::All);
     HARDCODED_PROPERTY(bool, EnableColorGlyphs, true);
     HARDCODED_PROPERTY(bool, EnableBuiltinGlyphs, true);
+    HARDCODED_PROPERTY(bool, AllowKittyKeyboardMode, true);
+    HARDCODED_PROPERTY(winrt::hstring, DragDropDelimiter, L" ");
+    HARDCODED_PROPERTY(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow);
+    HARDCODED_PROPERTY(bool, ScrollToChangeOpacity, false);
+    HARDCODED_PROPERTY(bool, ScrollToZoom, false);
     HARDCODED_PROPERTY(winrt::guid, SessionId, winrt::guid{});
 
 public:
@@ -345,7 +355,7 @@ struct HwndTerminal
             ReleaseCapture();
             return 0;
         case WM_MOUSEWHEEL:
-            if (_interactivity->MouseWheel(getControlKeyState(), GET_WHEEL_DELTA_WPARAM(wParam), PointFromLParam(lParam), MouseButtonStateFromWParam(wParam)))
+            if (_interactivity->MouseWheel(getControlKeyState(), { 0, GET_WHEEL_DELTA_WPARAM(wParam) }, PointFromLParam(lParam), MouseButtonStateFromWParam(wParam)))
             {
                 return 0;
             }
@@ -512,12 +522,6 @@ struct HwndTerminal
         return S_OK;
     }
 
-    HRESULT SetCursorVisible(const bool visible)
-    {
-        _core->CursorOn(visible);
-        return S_OK;
-    }
-
     void Initialize()
     {
         RECT windowRect;
@@ -533,12 +537,6 @@ struct HwndTerminal
             reinterpret_cast<uint64_t>(_hwnd.get()));
         _interactivity->Initialize();
         _core->ApplyAppearance(_focused);
-
-        int blinkTime = GetCaretBlinkTime();
-        auto animationsEnabled = TRUE;
-        SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
-        _core->CursorBlinkTime(std::chrono::milliseconds(blinkTime == INFINITE ? 0 : blinkTime));
-        _core->VtBlinkEnabled(animationsEnabled);
 
         _core->EnablePainting();
 
@@ -562,6 +560,11 @@ private:
         }
     }
 };
+
+extern "C" void _stdcall AvoidBuggyTSFConsoleFlags()
+{
+    Microsoft::Console::TSF::Handle::AvoidBuggyTSFConsoleFlags();
+}
 
 #pragma region Implementation of IDispatcherQueue
 using PTRYENQUEUE = bool(_stdcall*)(int, void*);

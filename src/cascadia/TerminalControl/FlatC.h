@@ -30,8 +30,7 @@ using PWRITECB = void(_stdcall*)(const wchar_t*);
     XX(SetTheme, TerminalTheme, theme, LPCWSTR, fontFamily, til::CoordType, fontSize, int, newDpi)             \
     XX(RegisterWriteCallback, PWRITECB, callback)                                                              \
     XX(SendKeyEvent, WORD, vkey, WORD, scanCode, WORD, flags, bool, keyDown)                                   \
-    XX(SendCharEvent, wchar_t, ch, WORD, flags, WORD, scanCode)                                                \
-    XX(SetCursorVisible, const bool, visible)
+    XX(SendCharEvent, wchar_t, ch, WORD, flags, WORD, scanCode)
 
 extern "C" {
 #define API_NAME(name) Terminal##name
