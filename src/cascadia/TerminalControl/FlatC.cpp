@@ -355,11 +355,20 @@ struct HwndTerminal
             ReleaseCapture();
             return 0;
         case WM_MOUSEWHEEL:
-            if (_interactivity->MouseWheel(getControlKeyState(), { 0, GET_WHEEL_DELTA_WPARAM(wParam) }, PointFromLParam(lParam), MouseButtonStateFromWParam(wParam)))
+        case WM_MOUSEHWHEEL:
+        {
+            winrt::Microsoft::Terminal::Core::Point delta{ 0, GET_WHEEL_DELTA_WPARAM(wParam) };
+            if (uMsg == WM_MOUSEHWHEEL)
+            {
+                std::swap(delta.X, delta.Y);
+            }
+
+            if (_interactivity->MouseWheel(getControlKeyState(), delta, PointFromLParam(lParam), MouseButtonStateFromWParam(wParam)))
             {
                 return 0;
             }
             break;
+        }
         case WM_SETFOCUS:
             _interactivity->GotFocus();
             _focused = true;
