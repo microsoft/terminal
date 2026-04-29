@@ -56,7 +56,7 @@ Related repositories include:
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 * [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
 
-## Installing and running Windows Terminal
+## Installing and running Windows Terminal!!
 
 > [!NOTE]
 > Windows Terminal requires Windows 10 2004 (build 19041) or later
