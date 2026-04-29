@@ -1032,13 +1032,34 @@ void AtlasEngine::_mapCharacters(const wchar_t* text, const u32 textLength, u32*
 void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 length, ShapedRow& row)
 {
     _api.analysisResults.clear();
+    _api.bidiResults.clear();
 
     TextAnalysisSource analysisSource{ _p.userLocaleName.c_str(), _api.bufferLine.data(), gsl::narrow<UINT32>(_api.bufferLine.size()) };
-    TextAnalysisSink analysisSink{ _api.analysisResults };
+    TextAnalysisSink analysisSink{ _api.analysisResults, _api.bidiResults };
     THROW_IF_FAILED(_p.textAnalyzer->AnalyzeScript(&analysisSource, idx, length, &analysisSink));
+    THROW_IF_FAILED(_p.textAnalyzer->AnalyzeBidi(&analysisSource, idx, length, &analysisSink));
 
     for (const auto& a : _api.analysisResults)
     {
+        // Determine if this script run is RTL by intersecting with bidi runs.
+        // If all overlapping bidi runs agree on direction → use that.
+        // If mixed (RTL+LTR within the same script run) → fall back to LTR.
+        int direction = -1;
+        for (const auto& b : _api.bidiResults)
+        {
+            if (b.textPosition + b.textLength <= a.textPosition) continue;
+            if (b.textPosition >= a.textPosition + a.textLength) continue;
+            const int bdir = (b.resolvedLevel % 2 != 0) ? 1 : 0;
+            if (direction == -1)
+                direction = bdir;
+            else if (direction != bdir)
+            {
+                direction = 0;
+                break;
+            }
+        }
+        const BOOL isRTL = (direction == 1);
+
         u32 actualGlyphCount = 0;
 
 #pragma warning(push)
@@ -1076,7 +1097,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
                 /* textLength          */ a.textLength,
                 /* fontFace            */ mappedFontFace,
                 /* isSideways          */ false,
-                /* isRightToLeft       */ 0,
+                /* isRightToLeft       */ isRTL,
                 /* scriptAnalysis      */ &a.analysis,
                 /* localeName          */ _p.userLocaleName.c_str(),
                 /* numberSubstitution  */ nullptr,
@@ -1128,7 +1149,7 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* fontFace            */ mappedFontFace,
             /* fontEmSize          */ _p.s->font->fontSize,
             /* isSideways          */ false,
-            /* isRightToLeft       */ 0,
+            /* isRightToLeft       */ isRTL,
             /* scriptAnalysis      */ &a.analysis,
             /* localeName          */ _p.userLocaleName.c_str(),
             /* features            */ &features,
@@ -1138,6 +1159,56 @@ void AtlasEngine::_mapComplex(IDWriteFontFace2* mappedFontFace, u32 idx, u32 len
             /* glyphOffsets        */ _api.glyphOffsets.data()));
 
         _api.clusterMap[a.textLength] = gsl::narrow_cast<u16>(actualGlyphCount);
+
+        // For RTL runs, DirectWrite returns glyphs in right-to-left visual order
+        // with advances going right-to-left. Reverse to LTR order so backends draw
+        // glyphs correctly without per-direction logic.
+        if (isRTL)
+        {
+            const auto N = actualGlyphCount;
+
+            std::reverse(_api.glyphIndices.data(), _api.glyphIndices.data() + N);
+            if (N > 1)
+            {
+                std::reverse(_api.glyphAdvances.data(), _api.glyphAdvances.data() + N - 1);
+            }
+            std::reverse(_api.glyphOffsets.data(), _api.glyphOffsets.data() + N);
+            for (size_t i = 0; i < N; ++i)
+            {
+                _api.glyphOffsets[i].advanceOffset = -_api.glyphOffsets[i].advanceOffset;
+            }
+
+            // Build row output directly. The normal column loop below assumes ascending
+            // clusterMap values and LTR column ordering, both of which fail for RTL.
+            const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
+            const auto rowColors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;
+
+            // Compute total expected advance for the RTL run and adjust last glyph.
+            const auto colStart = _api.bufferLineColumn[a.textPosition];
+            const auto colEnd = _api.bufferLineColumn[a.textPosition + a.textLength];
+            const auto expectedTotal = static_cast<f32>((colEnd - colStart) * _p.s->font->cellSize.x);
+            f32 actualTotal = 0;
+            for (size_t i = 0; i < N; ++i)
+                actualTotal += _api.glyphAdvances[i];
+            if (N > 0)
+                _api.glyphAdvances[N - 1] += expectedTotal - actualTotal;
+
+            // After reversal, LTR glyph i corresponds to text position (textLength - 1 - i)
+            // in the RTL range, due to 1:1 clusterMap mapping before reversal.
+            for (size_t i = 0; i < N; ++i)
+            {
+                const auto textIdx = a.textPosition + a.textLength - 1 - i;
+                const auto col = _api.bufferLineColumn[textIdx];
+                row.colors.emplace_back(rowColors[static_cast<size_t>(col) << shift]);
+            }
+
+            row.glyphIndices.insert(row.glyphIndices.end(), _api.glyphIndices.begin(), _api.glyphIndices.begin() + N);
+            row.glyphAdvances.insert(row.glyphAdvances.end(), _api.glyphAdvances.begin(), _api.glyphAdvances.begin() + N);
+            row.glyphOffsets.insert(row.glyphOffsets.end(), _api.glyphOffsets.begin(), _api.glyphOffsets.begin() + N);
+
+            // RTL run fully handled. Skip the normal column loop below.
+            continue;
+        }
 
         const auto shift = gsl::narrow_cast<u8>(row.lineRendition != LineRendition::SingleWidth);
         const auto colors = _p.foregroundBitmap.begin() + _p.colorBitmapRowStride * _api.lastPaintBufferLineCoord.y;

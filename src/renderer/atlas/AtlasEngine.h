@@ -144,6 +144,7 @@ namespace Microsoft::Console::Render::Atlas
 
             std::array<Buffer<DWRITE_FONT_AXIS_VALUE>, 4> textFormatAxes;
             std::vector<TextAnalysisSinkResult> analysisResults;
+            std::vector<BidiRun> bidiResults;
             Buffer<u16> clusterMap;
             Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             Buffer<u16> glyphIndices;
