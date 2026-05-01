@@ -28,6 +28,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ParseNullWindowTheme);
         TEST_METHOD(ParseThemeWithNullThemeColor);
         TEST_METHOD(InvalidCurrentTheme);
+        TEST_METHOD(ParseMicaKindEnumValues);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -68,7 +69,7 @@ namespace SettingsModelUnitTests
 
         VERIFY_IS_NOT_NULL(theme->Window());
         VERIFY_ARE_EQUAL(winrt::Windows::UI::Xaml::ElementTheme::Light, theme->Window().RequestedTheme());
-        VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
+        VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::MicaKind::Mica, theme->Window().UseMica());
     }
 
     void ThemeTests::ParseEmptyTheme()
@@ -263,6 +264,95 @@ namespace SettingsModelUnitTests
             auto deserializationErrorMessage = til::u8u16(e.what());
             Log::Comment(NoThrowString().Format(deserializationErrorMessage.c_str()));
             throw e;
+        }
+    }
+    void ThemeTests::ParseMicaKindEnumValues()
+    {
+        Log::Comment(L"Test parsing of MicaKind enum values and backward compatibility with booleans");
+
+        // Test with boolean true (should map to Mica)
+        static constexpr std::string_view boolTrueJson{ R"(
+            {
+                "name": "booleanTrue",
+                "window": {
+                    "useMica": true
+                }
+            })" };
+
+        // Test with boolean false (should map to None)
+        static constexpr std::string_view boolFalseJson{ R"(
+            {
+                "name": "booleanFalse",
+                "window": {
+                    "useMica": false
+                }
+            })" };
+
+        // Test with string "mica" (should map to Mica)
+        static constexpr std::string_view micaJson{ R"(
+            {
+                "name": "stringMica",
+                "window": {
+                    "useMica": "mica"
+                }
+            })" };
+
+        // Test with string "micaAlt" (should map to MicaAlt)
+        static constexpr std::string_view micaAltJson{ R"(
+            {
+                "name": "stringMicaAlt",
+                "window": {
+                    "useMica": "micaAlt"
+                }
+            })" };
+
+        // Test with string "none" (should map to None)
+        static constexpr std::string_view noneJson{ R"(
+            {
+                "name": "stringNone",
+                "window": {
+                    "useMica": "none"
+                }
+            })" };
+
+        // Test boolean true
+        {
+            auto schemeObject = VerifyParseSucceeded(boolTrueJson);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_IS_NOT_NULL(theme->Window());
+            VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::MicaKind::Mica, theme->Window().UseMica());
+        }
+
+        // Test boolean false
+        {
+            auto schemeObject = VerifyParseSucceeded(boolFalseJson);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_IS_NOT_NULL(theme->Window());
+            VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::MicaKind::None, theme->Window().UseMica());
+        }
+
+        // Test string "mica"
+        {
+            auto schemeObject = VerifyParseSucceeded(micaJson);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_IS_NOT_NULL(theme->Window());
+            VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::MicaKind::Mica, theme->Window().UseMica());
+        }
+
+        // Test string "micaAlt"
+        {
+            auto schemeObject = VerifyParseSucceeded(micaAltJson);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_IS_NOT_NULL(theme->Window());
+            VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::MicaKind::MicaAlt, theme->Window().UseMica());
+        }
+
+        // Test string "none"
+        {
+            auto schemeObject = VerifyParseSucceeded(noneJson);
+            auto theme = Theme::FromJson(schemeObject);
+            VERIFY_IS_NOT_NULL(theme->Window());
+            VERIFY_ARE_EQUAL(winrt::Microsoft::Terminal::Settings::Model::MicaKind::None, theme->Window().UseMica());
         }
     }
 }

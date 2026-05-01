@@ -977,6 +977,8 @@ MENUITEMINFO
 MENUSELECT
 metaproj
 Mgrs
+MicaAlt
+micaAlt
 microsoftpublicsymbols
 midl
 mii
