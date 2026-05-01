@@ -72,5 +72,5 @@ jobs:
 
   - pwsh: |-
       $nupkg = Get-Item "$(Build.ArtifactStagingDirectory)/*.nupkg"
-      & nuget push -ApiKey az -Source "$(nugetFeed)" "$nupkg"
+      & nuget push -ApiKey $(NuGetApiKey) -Source "$(nugetFeed)" "$nupkg"
     displayName: NuGet push
