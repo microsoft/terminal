@@ -197,7 +197,6 @@
     </ClCompile>
     <Link>
       <SetChecksum>false</SetChecksum>
-      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
 
