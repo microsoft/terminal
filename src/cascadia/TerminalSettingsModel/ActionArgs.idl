@@ -125,6 +125,12 @@ namespace Microsoft.Terminal.Settings.Model
         Disabled,
     };
 
+    enum NewTabPosition
+    {
+        AfterLastTab,
+        AfterCurrentTab,
+    };
+
     enum DesktopBehavior
     {
         Any,
@@ -215,6 +221,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         NewTabArgs(INewContentArgs contentArgs);
         INewContentArgs ContentArgs { get; };
+        Windows.Foundation.IReference<NewTabPosition> Position;
     };
 
     [default_interface] runtimeclass MovePaneArgs : IActionArgs, IActionArgsDescriptorAccess

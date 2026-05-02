@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const INewContentArgs& newContentArgs)
+    HRESULT TerminalPage::_OpenNewTab(const INewContentArgs& newContentArgs, uint32_t insertPosition)
     try
     {
         if (const auto& newTerminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
@@ -88,7 +88,7 @@ namespace winrt::TerminalApp::implementation
 
         // This call to _MakePane won't return nullptr, we already checked that
         // case above with the _maybeElevate call.
-        _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr));
+        _CreateNewTabFromPane(_MakePane(newContentArgs, nullptr), insertPosition);
         return S_OK;
     }
     CATCH_RETURN();

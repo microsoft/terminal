@@ -936,6 +936,14 @@
             "action": {
               "type": "string",
               "const": "newTab"
+            },
+            "position": {
+              "type": "string",
+              "enum": [
+                "afterLastTab",
+                "afterCurrentTab"
+              ],
+              "description": "Where to place the new tab. When omitted, the global newTabPosition setting is used."
             }
           }
         }

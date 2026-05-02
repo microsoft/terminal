@@ -592,6 +592,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         NewTabArgs(const Model::INewContentArgs& terminalArgs) :
             _ContentArgs{ terminalArgs } {};
         WINRT_PROPERTY(Model::INewContentArgs, ContentArgs, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::IReference<Model::NewTabPosition>, Position, nullptr);
 
     public:
         hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
@@ -602,16 +603,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<NewTabArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_ContentArgs.Equals(_ContentArgs);
+                return otherAsUs->_ContentArgs.Equals(_ContentArgs) &&
+                       otherAsUs->_Position == _Position;
             }
             return false;
         }
+        static constexpr std::string_view PositionKey{ "position" };
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTabArgs>();
             auto [content, warnings] = ContentArgsFromJson(json);
             args->_ContentArgs = content;
+            JsonUtils::GetValueForKey(json, PositionKey, args->_Position);
             return { *args, warnings };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -621,18 +625,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             const auto args{ get_self<NewTabArgs>(val) };
-            return ContentArgsToJson(args->_ContentArgs);
+            auto json = ContentArgsToJson(args->_ContentArgs);
+            JsonUtils::SetValueForKey(json, PositionKey, args->_Position);
+            return json;
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<NewTabArgs>() };
             copy->_ContentArgs = _ContentArgs.Copy();
+            copy->_Position = _Position;
             return *copy;
         }
         size_t Hash() const
         {
             til::hasher h;
             h.write(ContentArgs());
+            h.write(Position());
             return h.finalize();
         }
         winrt::Windows::Foundation::Collections::IVectorView<ArgDescriptor> GetArgDescriptors()
