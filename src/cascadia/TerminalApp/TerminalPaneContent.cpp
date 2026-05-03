@@ -5,7 +5,6 @@
 #include "TerminalPaneContent.h"
 
 #include <mmsystem.h>
-#include <shlwapi.h>
 
 #include "TerminalSettingsCache.h"
 #include "../../types/inc/utils.hpp"
@@ -288,21 +287,9 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPaneContent::_playBellSound(winrt::hstring soundPath)
     {
-        std::wstring filePath{ soundPath };
-        // The settings model resolves bellSound to a filesystem path. We only need
-        // URI parsing if a file URI string makes it this far.
-        if (til::starts_with_insensitive_ascii(soundPath, L"file:"))
-        {
-            // PathCreateFromUrlW supports writing to the input pointer,
-            // and the resulting path can never be longer than the URI.
-            const auto ptr = filePath.data();
-            auto len = gsl::narrow<DWORD>(filePath.size());
-            if (FAILED_LOG(PathCreateFromUrlW(ptr, ptr, &len, 0)))
-            {
-                return;
-            }
-            filePath.resize(len);
-        }
+        // BellSound paths are already resolved to filesystem paths by
+        // IMediaResource::Resolved() before reaching this point.
+        const std::wstring filePath{ soundPath };
 
         if (!til::is_legal_path(filePath))
         {
