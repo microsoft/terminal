@@ -241,6 +241,7 @@ consoletaeftemplates
 consoleuwp
 CONSOLEWINDOWOWNER
 consrv
+consteval
 constexprable
 contentfiles
 conterm
