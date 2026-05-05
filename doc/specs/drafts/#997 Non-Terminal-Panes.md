@@ -94,7 +94,7 @@ should the control provide some sort of accessibility pattern.
   if the hosted control wants to use Ctrl+T for its own shortcut? The current
   keybindings model has the `TermControl` call into the App layer to see if a
   keystroke should be handled by the app first. We may want to make sure that
-  for non-terminal controls, we add a event handler to try and have the
+  for non-terminal controls, we add an event handler to try and have the
   `AppKeyBindings` handle the keypress if the control doesn't. This won't solve
   the case where the control wants to use a keybinding that is mapped by the
   Terminal App. In that case, non-terminal controls will actually behave

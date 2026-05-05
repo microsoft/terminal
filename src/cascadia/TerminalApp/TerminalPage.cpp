@@ -884,26 +884,78 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Displays a dialog to warn the user that they are about to close all open windows.
-    //   Once the user clicks the OK button, shut down the application.
-    //   If cancel is clicked, the dialog will close.
+    // - Displays the unified close confirmation dialog configured for the
+    //   given scenario. Resets the "don't ask me again" checkbox before showing.
+    //   If the user confirms and checked "don't ask me again", sets
+    //   confirmOnClose to Never and writes settings to disk.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowConfirmCloseDialog(ConfirmCloseDialogKind kind)
     {
-        return _ShowDialogHelper(L"QuitDialog");
-    }
+        // Load the dialog (triggers x:Load) and configure its strings.
+        const auto dialog = FindName(L"ConfirmCloseDialog").as<ContentDialog>();
 
-    // Method Description:
-    // - Displays a dialog for warnings found while closing the terminal app using
-    //   key binding with multiple tabs opened. Display messages to warn user
-    //   that more than 1 tab is opened, and once the user clicks the OK button, remove
-    //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
-    // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
-    {
-        return _ShowDialogHelper(L"CloseAllDialog");
+        winrt::hstring title;
+        winrt::hstring primary;
+        switch (kind)
+        {
+        case ConfirmCloseDialogKind::CloseAll:
+            title = RS_(L"ConfirmCloseDialog_CloseAllTitle");
+            primary = RS_(L"ConfirmCloseDialog_CloseAllPrimary");
+            break;
+        case ConfirmCloseDialogKind::Window:
+            title = RS_(L"ConfirmCloseDialog_WindowTitle");
+            primary = RS_(L"ConfirmCloseDialog_WindowPrimary");
+            break;
+        case ConfirmCloseDialogKind::Tab:
+            title = RS_(L"ConfirmCloseDialog_TabTitle");
+            primary = RS_(L"ConfirmCloseDialog_TabPrimary");
+            break;
+        case ConfirmCloseDialogKind::MultiplePanes:
+            title = RS_(L"ConfirmCloseDialog_MultiplePanesTitle");
+            primary = RS_(L"ConfirmCloseDialog_MultiplePanesPrimary");
+            break;
+        case ConfirmCloseDialogKind::MultipleTabs:
+            title = RS_(L"ConfirmCloseDialog_MultipleTabsTitle");
+            primary = RS_(L"ConfirmCloseDialog_MultipleTabsPrimary");
+            break;
+        case ConfirmCloseDialogKind::Pane:
+            title = RS_(L"ConfirmCloseDialog_PaneTitle");
+            primary = RS_(L"ConfirmCloseDialog_PanePrimary");
+            break;
+        }
+        dialog.Title(winrt::box_value(title));
+        dialog.PrimaryButtonText(primary);
+        dialog.CloseButtonText(RS_(L"ConfirmCloseDialog_Cancel"));
+
+        // BODGY: After a ContentDialog is dismissed, FindName() can no longer
+        // resolve children inside it. Use Content() to get the checkbox directly.
+        const auto checkbox = dialog.Content().as<CheckBox>();
+        checkbox.IsChecked(false);
+
+        auto result = ContentDialogResult::None;
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            const auto weak = get_weak();
+            result = co_await presenter.ShowDialog(dialog);
+
+            // ShowDialog blocks until the dialog is dismissed, so it is
+            // possible for `this` to be torn down while we wait. Re-acquire
+            // a strong reference before touching any of our state.
+            const auto strong = weak.get();
+            if (!strong)
+            {
+                co_return ContentDialogResult::None;
+            }
+
+            if (result == ContentDialogResult::Primary && checkbox.IsChecked().Value())
+            {
+                _settings.GlobalSettings().ConfirmOnClose(ConfirmOnClose::Never);
+                _settings.WriteSettingsToDisk();
+            }
+        }
+
+        co_return result;
     }
 
     // Method Description:
@@ -1600,8 +1652,7 @@ namespace winrt::TerminalApp::implementation
 
             // Replace the Starting directory with the CWD, if given
             const auto workingDirectory = control.WorkingDirectory();
-            const auto validWorkingDirectory = !workingDirectory.empty();
-            if (validWorkingDirectory)
+            if (Utils::IsValidDirectory(workingDirectory.c_str()))
             {
                 controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
             }
@@ -2210,12 +2261,13 @@ namespace winrt::TerminalApp::implementation
     //   signal that we want to close everything.
     safe_void_coroutine TerminalPage::RequestQuit()
     {
-        if (!_displayingCloseDialog)
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
+        if (setting != ConfirmOnClose::Never && !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
 
             const auto weak = get_weak();
-            auto warningResult = co_await _ShowQuitDialog();
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::CloseAll);
             const auto strong = weak.get();
             if (!strong)
             {
@@ -2228,9 +2280,9 @@ namespace winrt::TerminalApp::implementation
             {
                 co_return;
             }
-
-            QuitRequested.raise(nullptr, nullptr);
         }
+
+        QuitRequested.raise(nullptr, nullptr);
     }
 
     void TerminalPage::PersistState()
@@ -2308,12 +2360,59 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the terminal app. If there is more
-    //   than one tab opened, show a warning dialog.
+    // - Determines whether a close-window action should show a confirmation
+    //   dialog, based on the confirmOnClose setting and the current window state.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true, if a warning dialog should be shown before closing the window
+    bool TerminalPage::_ShouldWarnOnClose() const
+    {
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
+        switch (setting)
+        {
+        case ConfirmOnClose::Always:
+            return true;
+        case ConfirmOnClose::Automatic:
+        {
+            // Warn if there's more than one tab, or the one tab has more than one pane.
+            return _HasMultipleTabs() || _GetTabImpl(_tabs.GetAt(0))->GetLeafPaneCount() > 1;
+        }
+        case ConfirmOnClose::Never:
+        default:
+            return false;
+        }
+    }
+
+    // Method Description:
+    // - Determines whether closing a specific tab should show a confirmation
+    //   dialog, based on the confirmOnClose setting and the tab's state.
+    // Arguments:
+    // - tab: The tab being closed
+    // Return Value:
+    // - true, if a warning dialog should be shown before closing the tab
+    bool TerminalPage::_ShouldWarnOnCloseTab(const winrt::com_ptr<Tab>& tab) const
+    {
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
+        switch (setting)
+        {
+        case ConfirmOnClose::Always:
+            return true;
+        case ConfirmOnClose::Automatic:
+            // Warn if this tab has more than one pane.
+            return tab->GetLeafPaneCount() > 1;
+        case ConfirmOnClose::Never:
+        default:
+            return false;
+        }
+    }
+
+    // Method Description:
+    // - Close the terminal app. If the confirmOnClose setting indicates we should
+    //   warn for the current window state, show a warning dialog.
     safe_void_coroutine TerminalPage::CloseWindow()
     {
-        if (_HasMultipleTabs() &&
-            _settings.GlobalSettings().ConfirmCloseAllTabs() &&
+        if (_ShouldWarnOnClose() &&
             !_displayingCloseDialog)
         {
             if (_newTabButton && _newTabButton.Flyout())
@@ -2322,7 +2421,17 @@ namespace winrt::TerminalApp::implementation
             }
             _DismissTabContextMenus();
             _displayingCloseDialog = true;
-            auto warningResult = co_await _ShowCloseWarningDialog();
+
+            const auto weak = get_weak();
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::Window);
+            // Hold a strong reference to `this` after the co_await; we may
+            // be the last holder if the window was already being torn down.
+            auto strong = weak.get();
+            if (!strong)
+            {
+                co_return;
+            }
+
             _displayingCloseDialog = false;
 
             if (warningResult != ContentDialogResult::Primary)
@@ -2973,7 +3082,11 @@ namespace winrt::TerminalApp::implementation
             text = winrt::hstring{ Utils::TrimPaste(text) };
         }
 
-        if (text.empty())
+        // LOAD BEARING: Send an empty bracketed paste even if the clipboard was empty.
+        // Bracketed Paste provides an application a way to know whether the
+        // user pasted, even if there was no applicable content on it. This
+        // behavior is observed in GNOME Terminal, among others.
+        if (!bracketedPaste && text.empty())
         {
             co_return;
         }
@@ -3082,18 +3195,42 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG();
 
-    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
+    safe_void_coroutine TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs)
     {
         try
         {
-            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri());
+            auto uriString{ eventArgs.Uri() };
+            auto parsed = winrt::Windows::Foundation::Uri(uriString);
             if (_IsUriSupported(parsed))
             {
-                ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                bool shouldLaunch{ _IsUriConsideredSomewhatSafe(parsed) };
+
+                if (!shouldLaunch)
+                {
+                    if (auto presenter{ _dialogPresenter.get() })
+                    {
+                        // FindName needs to be called first to actually load the xaml object
+                        auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
+
+                        // Insert the reason and the URI
+                        unopenedUriDialog.SecondaryButtonText(RS_(L"UnsafeUrlConfirmAllowAction"));
+                        CouldNotOpenUriReason().Text(RS_(L"UnsafeUrlConfirmText"));
+                        UnopenedUri().Text(uriString);
+
+                        // Show the dialog
+                        auto result = co_await presenter.ShowDialog(unopenedUriDialog);
+                        shouldLaunch = result == ContentDialogResult::Secondary;
+                    }
+                }
+
+                if (shouldLaunch)
+                {
+                    ShellExecuteW(nullptr, L"open", uriString.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
             }
             else
             {
-                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri());
+                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), uriString);
             }
         }
         catch (...)
@@ -3113,9 +3250,10 @@ namespace winrt::TerminalApp::implementation
         if (auto presenter{ _dialogPresenter.get() })
         {
             // FindName needs to be called first to actually load the xaml object
-            auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
+            auto unopenedUriDialog = FindName(L"UriErrorDialog").try_as<WUX::Controls::ContentDialog>();
 
             // Insert the reason and the URI
+            unopenedUriDialog.SecondaryButtonText({});
             CouldNotOpenUriReason().Text(reason);
             UnopenedUri().Text(uri);
 
@@ -3166,6 +3304,30 @@ namespace winrt::TerminalApp::implementation
         // clicking on those sorts of links.
         // See discussion in GH#7562 for more details.
         return true;
+    }
+
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri)
+    {
+        if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
+        {
+            return true;
+        }
+        if (parsedUri.SchemeName() == L"file")
+        {
+            static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
+            const auto filename = parsedUri.Path();
+            for (const auto& e : til::split_iterator{ std::wstring_view{ pathext }, L';' })
+            {
+                if (til::ends_with_insensitive_ascii(filename, e))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     // Important! Don't take this eventArgs by reference, we need to extend the
@@ -3555,8 +3717,7 @@ namespace winrt::TerminalApp::implementation
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
                 controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
-                const auto validWorkingDirectory = !workingDirectory.empty();
-                if (validWorkingDirectory)
+                if (Utils::IsValidDirectory(workingDirectory.c_str()))
                 {
                     controlSettings.DefaultSettings()->StartingDirectory(workingDirectory);
                 }
@@ -3742,7 +3903,13 @@ namespace winrt::TerminalApp::implementation
         // for nulls
         if (const auto& connection{ _duplicateConnectionForRestart(paneContent) })
         {
-            paneContent.GetTermControl().Connection(connection);
+            // Reset the terminal's VT state before attaching the new connection.
+            // The previous client may have left dirty modes (e.g., bracketed
+            // paste, mouse tracking, alternate buffer, kitty keyboard) that
+            // would corrupt input/output for the new shell process.
+            const auto& termControl = paneContent.GetTermControl();
+            termControl.HardResetWithoutErase();
+            termControl.Connection(connection);
             connection.Start();
         }
     }
@@ -4670,7 +4837,7 @@ namespace winrt::TerminalApp::implementation
 
     // Function Description:
     // - Helper to launch a new WT instance elevated. It'll do this by spawning
-    //   a helper process, who will asking the shell to elevate the process for
+    //   a helper process, that will ask the shell to elevate the process for
     //   us. This might cause a UAC prompt. The elevation is performed on a
     //   background thread, as to not block the UI thread.
     // Arguments:

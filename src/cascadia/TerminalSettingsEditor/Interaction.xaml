@@ -135,11 +135,14 @@
             <TextBlock x:Uid="Globals_WarningsHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-            <!--  Close All Tabs Warning  -->
-            <local:SettingContainer x:Name="ConfirmCloseAllTabs"
-                                    x:Uid="Globals_ConfirmCloseAllTabs">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.ConfirmCloseAllTabs, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            <!--  Confirm Close On  -->
+            <local:SettingContainer x:Name="ConfirmOnClose"
+                                    x:Uid="Globals_ConfirmOnClose">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind ViewModel.ConfirmOnCloseList}"
+                          SelectedItem="{x:Bind ViewModel.CurrentConfirmOnClose, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
             <!--  Input Service Warning  -->

@@ -44,6 +44,28 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    // GH#19927 - Walk the visual tree of the given element to find any
+    // Popups and set the theme on their Child element. In XAML Islands,
+    // popup children render in the PopupRoot (separate from the content
+    // tree), so they don't inherit our page's RequestedTheme
+    static void _setThemeOnPopups(const winrt::Windows::UI::Xaml::DependencyObject& element,
+                                  const winrt::Windows::UI::Xaml::ElementTheme theme)
+    {
+        const auto childCount = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetChildrenCount(element);
+        for (int32_t i = 0; i < childCount; i++)
+        {
+            const auto child = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetChild(element, i);
+            if (const auto popup = child.try_as<winrt::Windows::UI::Xaml::Controls::Primitives::Popup>())
+            {
+                if (const auto popupChild = popup.Child().try_as<winrt::Windows::UI::Xaml::FrameworkElement>())
+                {
+                    popupChild.RequestedTheme(theme);
+                }
+            }
+            _setThemeOnPopups(child, theme);
+        }
+    }
+
     static WUX::Controls::FontIcon _fontIconForNavTag(const std::wstring_view navTag)
     {
         WUX::Controls::FontIcon icon{};
@@ -350,6 +372,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _Navigate(tag, BreadcrumbSubPage::None);
             }
         }
+
+        // GH#19927 - Theme the search box's internal popup now that the
+        // visual tree is ready and control templates are applied
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto hasThemeForSettings{ theme.Settings() != nullptr };
+        const auto requestedTheme = hasThemeForSettings ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
+        _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
     }
 
     // Function Description:
@@ -1098,12 +1127,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        const auto& theme = _settingsSource.GlobalSettings().CurrentTheme();
-        const bool hasThemeForSettings{ theme.Settings() != nullptr };
-        const auto& appTheme = theme.RequestedTheme();
-        const auto& requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto hasThemeForSettings{ theme.Settings() != nullptr };
+        const auto appTheme = theme.RequestedTheme();
+        const auto requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;
 
         RequestedTheme(requestedTheme);
+
+        // GH#19927 - Theme the search box's internal popup so its
+        // dropdown matches the app theme instead of the system theme
+        _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
 
         // Mica gets it's appearance from the app's theme, not necessarily the
         // Page's theme. In the case of dark app, light settings, mica will be a

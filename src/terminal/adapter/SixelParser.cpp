@@ -387,7 +387,7 @@ void SixelParser::_updateRasterAttributes(const VTParameters& rasterAttributes)
 
     // And while not documented, we know from testing on a VT330 that the raster
     // attributes command should also trigger a carriage return. This applies
-    // regardless of whether the requested aspect ratio is valid or not.
+    // regardless of whether or not the requested aspect ratio is valid.
     _executeCarriageReturn();
 }
 

@@ -129,6 +129,10 @@ til::enumset<DeviceAttribute, uint64_t> InputStateMachineEngine::WaitUntilDA1(DW
     return til::enumset<DeviceAttribute, uint64_t>::from_bits(val);
 }
 
+void InputStateMachineEngine::UnknownSequence() noexcept
+{
+}
+
 bool InputStateMachineEngine::EncounteredWin32InputModeSequence() const noexcept
 {
     return _encounteredWin32InputModeSequence;

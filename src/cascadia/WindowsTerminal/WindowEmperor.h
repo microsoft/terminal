@@ -35,6 +35,7 @@ public:
     AppHost* GetWindowByName(std::wstring_view name) const noexcept;
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
+    void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
 
 private:
     struct SummonWindowSelectionArgs
@@ -68,6 +69,7 @@ private:
     void _persistState(const winrt::Microsoft::Terminal::Settings::Model::ApplicationState& state) const;
     void _finalizeSessionPersistence() const;
     void _checkWindowsForNotificationIcon();
+    void _setupAumid(const std::wstring& aumid);
 
     wil::unique_hwnd _window;
     winrt::TerminalApp::App _app{ nullptr };
@@ -83,6 +85,8 @@ private:
     std::optional<bool> _currentSystemThemeIsDark;
     int32_t _windowCount = 0;
     int32_t _messageBoxCount = 0;
+    std::wstring _pendingAumidLnkPath;
+    std::wstring _pendingAumid;
 
 #if 0 // #ifdef NDEBUG
     static constexpr void _assertIsMainThread() noexcept

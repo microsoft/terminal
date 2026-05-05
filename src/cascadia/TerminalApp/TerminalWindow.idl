@@ -4,6 +4,7 @@
 import "IPaneContent.idl";
 import "TerminalPage.idl";
 import "ShortcutActionDispatch.idl";
+import "Tab.idl";
 
 namespace TerminalApp
 {
@@ -74,6 +75,7 @@ namespace TerminalApp
         Boolean ShowTabsFullscreen { get; };
 
         void IdentifyWindow();
+        Boolean FocusTab(TerminalApp.Tab tab);
         void SetPersistedLayoutIdx(UInt32 idx);
         void RequestExitFullscreen();
 
@@ -126,6 +128,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, TerminalApp.Tab> FocusTabRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
         event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;

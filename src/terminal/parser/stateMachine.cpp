@@ -288,7 +288,7 @@ static constexpr bool _isOscDelimiter(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character should be ignored in a operating system control sequence
+// - Determines if a character should be ignored in an operating system control sequence
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -1044,6 +1044,7 @@ void StateMachine::_EnterSosPmApcString() noexcept
 {
     _state = VTStates::SosPmApcString;
     _cachedSequence.reset();
+    _engine->UnknownSequence();
     _trace.TraceStateChange(L"SosPmApcString");
 }
 
@@ -1967,7 +1968,7 @@ bool StateMachine::FlushToTerminal()
 // Routine Description:
 // - Helper for entry to the state machine. Will take an array of characters
 //     and print as many as it can without encountering a character indicating
-//     a escape sequence, then feed characters into the state machine one at a
+//     an escape sequence, then feed characters into the state machine one at a
 //     time until we return to the ground state.
 // Arguments:
 // - string - Characters to operate upon
