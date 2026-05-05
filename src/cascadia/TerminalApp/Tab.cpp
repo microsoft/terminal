@@ -844,14 +844,14 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the separator in.
     // Return Value:
-    // - <none>
-    void Tab::ResizePane(const ResizeDirection& direction)
+    // - whether a pane was resized
+    bool Tab::ResizePane(const ResizeDirection& direction)
     {
         ASSERT_UI_THREAD();
 
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
-        _rootPane->ResizePane(direction);
+        return _rootPane->ResizePane(direction);
     }
 
     // Method Description:

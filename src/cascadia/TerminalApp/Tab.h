@@ -53,7 +53,7 @@ namespace winrt::TerminalApp::implementation
                                                                                                         const float splitSize,
                                                                                                         winrt::Windows::Foundation::Size availableSpace) const;
 
-        void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
