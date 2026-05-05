@@ -2908,6 +2908,7 @@ namespace winrt::TerminalApp::implementation
             _UnZoomIfNeeded();
             return tabImpl->ResizePane(direction);
         }
+        return false;
     }
 
     // Method Description:
