@@ -1553,6 +1553,10 @@
     <value>Fenêtre Flash</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
   </data>
+  <data name="Profile_BellStyleNotification.Content" xml:space="preserve">
+    <value>Notification de bureau</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a Windows desktop notification (toast) is sent to notify the user.</comment>
+  </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>Ajouter nouveau</value>
     <comment>Button label that creates a new color scheme.</comment>
@@ -2196,6 +2200,26 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>M'avertir lorsque je ferme plusieurs onglets</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
+    <value>Avertir lors de la fermeture</value>
+    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+    <value>Contrôle l’apparition d’une boîte de dialogue de confirmation avant la fermeture des onglets ou des fenêtres. « Toujours » affiche la boîte de dialogue lors de la fermeture de n’importe quel volet.</value>
+    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
+    <value>Jamais</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAlways.Content" xml:space="preserve">
+    <value>Toujours</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Always" means that the system will always display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAutomatic.Content" xml:space="preserve">
+    <value>Plusieurs onglets ou volets</value>
+    <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Avertir lorsque le « service clavier tactile et volet d’écriture manuscrite » est désactivé</value>

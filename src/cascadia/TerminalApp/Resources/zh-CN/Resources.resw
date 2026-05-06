@@ -496,22 +496,10 @@
     <value>第三方通知</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
-  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
-    <value>取消</value>
-  </data>
-  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
-    <value>全部关闭</value>
-  </data>
-  <data name="QuitDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllTitle" xml:space="preserve">
     <value>是否要关闭所有窗口?</value>
   </data>
-  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
-    <value>取消</value>
-  </data>
-  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
-    <value>全部关闭</value>
-  </data>
-  <data name="CloseAllDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_WindowTitle" xml:space="preserve">
     <value>是否要关闭所有标签页?</value>
   </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
@@ -745,6 +733,14 @@
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>选项卡“{0}”中的活动</value>
+    <comment>{0} is the tab title. Shown as the body of a desktop notification when tab activity is detected.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>选项卡“{0}”(窗口“{1}”)中的活动</value>
+    <comment>{0} is the tab title, {1} is the window name. Shown as the body of a desktop notification when tab activity is detected and the window has a name.</comment>
+  </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>在给定的起始目录中打开新选项卡</value>
   </data>
@@ -881,10 +877,10 @@
     <value>如果设置，该命令将追加到配置文件的默认命令，而不是替换它。</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>重新启动连接</value>
+    <value>重启会话</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
-    <value>重新启动活动窗格连接</value>
+    <value>重启活动窗格中的会话</value>
   </data>
   <data name="SnippetPaneTitle.Text" xml:space="preserve">
     <value>片段</value>

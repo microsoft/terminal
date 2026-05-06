@@ -1553,6 +1553,10 @@
     <value>플래시 창</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
   </data>
+  <data name="Profile_BellStyleNotification.Content" xml:space="preserve">
+    <value>데스크톱 알림</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a Windows desktop notification (toast) is sent to notify the user.</comment>
+  </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>새로 추가</value>
     <comment>Button label that creates a new color scheme.</comment>
@@ -2196,6 +2200,26 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>두 개 이상의 탭을 닫을 때 경고</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
+    <value>닫을 때 경고 표시</value>
+    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+    <value>탭이나 창을 닫기 전에 확인 대화 상자가 나타나는 시기를 제어합니다. "항상"은 창을 닫을 때 대화 상자를 표시합니다.</value>
+    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
+    <value>사용 안 함</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAlways.Content" xml:space="preserve">
+    <value>항상</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Always" means that the system will always display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAutomatic.Content" xml:space="preserve">
+    <value>여러 탭 또는 창</value>
+    <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>"터치 키보드 및 필기 패널 서비스"를 사용할 수 없는 경우 경고</value>

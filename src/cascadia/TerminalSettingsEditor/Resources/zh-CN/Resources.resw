@@ -1553,6 +1553,10 @@
     <value>闪烁窗口</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
   </data>
+  <data name="Profile_BellStyleNotification.Content" xml:space="preserve">
+    <value>桌面通知</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a Windows desktop notification (toast) is sent to notify the user.</comment>
+  </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>新增</value>
     <comment>Button label that creates a new color scheme.</comment>
@@ -2196,6 +2200,10 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>关闭多个选项卡时发出警告</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+    <value>控制在关闭选项卡或窗口之前何时显示确认对话框。“始终”在关闭任何窗格时显示对话框。</value>
+    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
   </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>禁用“触摸键盘和手写面板服务”时发出警告</value>
