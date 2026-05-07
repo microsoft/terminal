@@ -496,11 +496,47 @@
     <value>第三方通知</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
+  <data name="ConfirmCloseDialog_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
   <data name="ConfirmCloseDialog_CloseAllTitle" xml:space="preserve">
     <value>是否要关闭所有窗口?</value>
   </data>
+  <data name="ConfirmCloseDialog_CloseAllPrimary" xml:space="preserve">
+    <value>全部关闭</value>
+  </data>
   <data name="ConfirmCloseDialog_WindowTitle" xml:space="preserve">
     <value>是否要关闭所有标签页?</value>
+  </data>
+  <data name="ConfirmCloseDialog_WindowPrimary" xml:space="preserve">
+    <value>全部关闭</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabTitle" xml:space="preserve">
+    <value>是否要关闭此选项卡?</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabPrimary" xml:space="preserve">
+    <value>关闭选项卡</value>
+  </data>
+  <data name="ConfirmCloseDialog_PaneTitle" xml:space="preserve">
+    <value>是否要关闭此窗格?</value>
+  </data>
+  <data name="ConfirmCloseDialog_PanePrimary" xml:space="preserve">
+    <value>关闭窗格</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsTitle" xml:space="preserve">
+    <value>是否要关闭这些选项卡?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsPrimary" xml:space="preserve">
+    <value>关闭选项卡</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesTitle" xml:space="preserve">
+    <value>是否要关闭这些窗格?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesPrimary" xml:space="preserve">
+    <value>关闭窗格</value>
+  </data>
+  <data name="DontAskAgainCheckBox.Content" xml:space="preserve">
+    <value>不再询问</value>
   </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
     <value>取消</value>
