@@ -7,8 +7,6 @@
 #include "TabViewItem.h"
 #include "TabViewAutomationPeer.h"
 #include "DoubleUtil.h"
-#include "RuntimeProfiler.h"
-#include "ResourceAccessor.h"
 #include "SharedHelpers.h"
 #include <Vector.h>
 
@@ -27,8 +25,6 @@ bool TabViewTrace::s_IsVerboseDebugOutputEnabled{ false };
 
 TabView::TabView()
 {
-    __RP_Marker_ClassById(RuntimeProfiler::ProfId_TabView);
-
     auto items = winrt::make<Vector<winrt::IInspectable, MakeVectorParam<VectorFlag::Observable>()>>();
     SetValue(s_TabItemsProperty, items);
 
@@ -46,11 +42,11 @@ TabView::TabView()
         ctrlf4Accel.ScopeOwner(*this);
         KeyboardAccelerators().Append(ctrlf4Accel);
 
-        m_tabCloseButtonTooltipText = ResourceAccessor::GetLocalizedStringResource(SR_TabViewCloseButtonTooltipWithKA);
+        m_tabCloseButtonTooltipText = RS_(L"TabViewCloseButtonTooltipWithKA");
     }
     else
     {
-        m_tabCloseButtonTooltipText = ResourceAccessor::GetLocalizedStringResource(SR_TabViewCloseButtonTooltip);
+        m_tabCloseButtonTooltipText = RS_(L"TabViewCloseButtonTooltip");
     }
 
     // Ctrl+Tab as a KeyboardAccelerator only works on 19H1+
@@ -135,7 +131,7 @@ void TabView::OnApplyTemplate()
             // Do localization for the add button
             if (winrt::AutomationProperties::GetName(addButton).empty())
             {
-                auto addButtonName = ResourceAccessor::GetLocalizedStringResource(SR_TabViewAddButtonName);
+                auto addButtonName = RS_(L"TabViewAddButtonName");
                 winrt::AutomationProperties::SetName(addButton, addButtonName);
             }
 
@@ -143,7 +139,7 @@ void TabView::OnApplyTemplate()
             if (!toolTip)
             {
                 winrt::ToolTip tooltip = winrt::ToolTip();
-                tooltip.Content(box_value(ResourceAccessor::GetLocalizedStringResource(SR_TabViewAddButtonTooltip)));
+                tooltip.Content(box_value(RS_(L"TabViewAddButtonTooltip")));
                 winrt::ToolTipService::SetToolTip(addButton, tooltip);
             }
 
@@ -621,7 +617,7 @@ void TabView::OnScrollViewerLoaded(const winrt::IInspectable&, const winrt::Rout
                 if (!toolTip)
                 {
                     const auto tooltip = winrt::ToolTip();
-                    tooltip.Content(box_value(ResourceAccessor::GetLocalizedStringResource(SR_TabViewScrollDecreaseButtonTooltip)));
+                    tooltip.Content(box_value(RS_(L"TabViewScrollDecreaseButtonTooltip")));
                     winrt::ToolTipService::SetToolTip(decreaseButton, tooltip);
                 }
 
@@ -639,7 +635,7 @@ void TabView::OnScrollViewerLoaded(const winrt::IInspectable&, const winrt::Rout
                 if (!toolTip)
                 {
                     const auto tooltip = winrt::ToolTip();
-                    tooltip.Content(box_value(ResourceAccessor::GetLocalizedStringResource(SR_TabViewScrollIncreaseButtonTooltip)));
+                    tooltip.Content(box_value(RS_(L"TabViewScrollIncreaseButtonTooltip")));
                     winrt::ToolTipService::SetToolTip(increaseButton, tooltip);
                 }
 
