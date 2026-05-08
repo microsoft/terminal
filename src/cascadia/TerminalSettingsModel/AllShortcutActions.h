@@ -113,8 +113,8 @@
     ON_ALL_ACTIONS(OpenScratchpad)          \
     ON_ALL_ACTIONS(OpenAbout)               \
     ON_ALL_ACTIONS(QuickFix)                \
-    ON_ALL_ACTIONS(OpenCWD)                  \
-    ON_ALL_ACTIONS(OpenWorkspace)            \
+    ON_ALL_ACTIONS(OpenCWD)                 \
+    ON_ALL_ACTIONS(OpenWorkspace)           \
     ON_ALL_ACTIONS(Workspaces)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
