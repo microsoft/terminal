@@ -243,6 +243,8 @@ public:
 
     const std::optional<til::color> GetTabColor() const;
 
+    std::wstring GetStartingTitle() const;
+
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
@@ -370,6 +372,7 @@ private:
     bool _trimBlockSelection = true;
     bool _autoMarkPrompts = false;
     bool _rainbowSuggestions = false;
+    bool _initialUpdateWasDone = false;
 
     size_t _taskbarState = 0;
     size_t _taskbarProgress = 0;

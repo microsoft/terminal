@@ -98,11 +98,18 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _answerbackMessage = settings.AnswerbackMessage();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
-    _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
     _clipboardOperationsAllowed = settings.AllowVtClipboardWrite();
+
+    if (!_initialUpdateWasDone)
+    {
+        //Starting title can only be set once on start, it should never update.
+        _startingTitle = settings.StartingTitle();
+        _initialUpdateWasDone = true;
+    }
+
 
     if (_stateMachine)
     {
@@ -1260,6 +1267,15 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexce
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;
+}
+
+// Method Description:
+// - Gets the starting title value
+// Return Value:
+// - The starting title
+std::wstring Terminal::GetStartingTitle() const
+{
+    return _startingTitle;
 }
 
 void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept
