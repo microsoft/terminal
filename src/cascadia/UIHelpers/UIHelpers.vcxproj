@@ -48,6 +48,13 @@
     <ClCompile Include="TextMenuFlyout.cpp">
       <DependentUpon>TextMenuFlyout.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TabView.cpp">
+      <DependentUpon>TabView.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TabViewAutomationPeer.cpp" />
+    <ClCompile Include="TabViewItem.cpp" />
+    <ClCompile Include="TabViewItemAutomationPeer.cpp" />
+    <ClCompile Include="TabViewListView.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -56,6 +63,11 @@
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="ResourceString.idl" />
     <Midl Include="TextMenuFlyout.idl" />
+    <Midl Include="TabView.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="TabView.xaml" />
+    <Page Include="TabView_themeresources.xaml" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw">

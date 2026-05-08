@@ -5,8 +5,8 @@
                     xmlns:contract6Present="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract,6)"
                     xmlns:contract7NotPresent="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractNotPresent(Windows.Foundation.UniversalApiContract,7)"
                     xmlns:contract7Present="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract,7)"
-                    xmlns:local="using:Microsoft.UI.Xaml.Controls"
-                    xmlns:primitives="using:Microsoft.UI.Xaml.Controls.Primitives">
+                    xmlns:local="using:Microsoft.Terminal.UI"
+                    xmlns:primitives="using:Microsoft.Terminal.UI.Primitives">
 
     <Style BasedOn="{StaticResource DefaultTabViewStyle}"
            TargetType="local:TabView" />
