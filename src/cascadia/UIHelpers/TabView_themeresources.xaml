@@ -1,0 +1,295 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. See LICENSE in the project root for license information. -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.UI.Xaml.Controls">
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <StaticResource x:Key="TabViewBackground"                                       ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackground"                             ResourceKey="LayerOnMicaBaseAltFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundSelected"                     ResourceKey="SolidBackgroundFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundPointerOver"                  ResourceKey="LayerOnMicaBaseAltFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundPressed"                      ResourceKey="LayerOnMicaBaseAltFillColorDefaultBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundDisabled"                     ResourceKey="LayerOnMicaBaseAltFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForeground"                             ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundPressed"                      ResourceKey="TextFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundSelected"                     ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundPointerOver"                  ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundDisabled"                     ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewItemIconForeground"                               ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundPressed"                        ResourceKey="TextFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundSelected"                       ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundPointerOver"                    ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundDisabled"                       ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewButtonBackground"                                 ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundPressed"                          ResourceKey="SubtleFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundPointerOver"                      ResourceKey="SubtleFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundDisabled"                         ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonForeground"                                 ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundPressed"                          ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundPointerOver"                      ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundDisabled"                         ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrush"                                ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushPressed"                         ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushPointerOver"                     ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushDisabled"                        ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackground"                           ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundPressed"                    ResourceKey="SubtleFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundPointerOver"                ResourceKey="SubtleFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundDisabled"                   ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForeground"                           ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundPressed"                    ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundPointerOver"                ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundDisabled"                   ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrush"                          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushPressed"                   ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushPointerOver"               ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushDisabled"                  ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemSeparator"                                    ResourceKey="DividerStrokeColorDefaultBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackground"                  ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackgroundPressed"           ResourceKey="SubtleFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackgroundPointerOver"       ResourceKey="SubtleFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPressedCloseButtonBackground"           ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPointerOverCloseButtonBackground"       ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderSelectedCloseButtonBackground"          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderDisabledCloseButtonBackground"          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForeground"                  ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForegroundPressed"           ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForegroundPointerOver"       ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPressedCloseButtonForeground"           ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPointerOverCloseButtonForeground"       ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderSelectedCloseButtonForeground"          ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderDisabledCloseButtonForeground"          ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrush"                 ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushPointerOver"      ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushPressed"          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushSelected"         ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushDisabled"         ResourceKey="SubtleFillColorTransparentBrush" />
+
+            <!-- Note: These theme resources below are no longer used and might be removed in a future WinUI update. -->
+            <StaticResource x:Key="TabViewButtonBackgroundActiveTab"                        ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundActiveTab"                        ResourceKey="ControlStrongFillColorDefaultBrush" />
+
+            <StaticResource x:Key="TabViewBorderBrush"                                      ResourceKey="CardStrokeColorDefault" />
+            <StaticResource x:Key="TabViewItemBorderBrush"                                  ResourceKey="SubtleFillColorTransparentBrush" />
+            <Thickness x:Key="TabViewButtonBorderThickness">0</Thickness>
+            <Thickness x:Key="TabViewItemHeaderCloseButtonBorderThickness">0</Thickness>
+            <LinearGradientBrush x:Key="TabViewSelectedItemBorderBrush" MappingMode="Absolute" StartPoint="0,0" EndPoint="0,4">
+                <LinearGradientBrush.RelativeTransform>
+                    <ScaleTransform ScaleY="-1" CenterY="0.5"/>
+                </LinearGradientBrush.RelativeTransform>
+                <LinearGradientBrush.GradientStops>
+                    <GradientStop Offset="1.0" Color="Transparent"/>
+                    <GradientStop Offset="1.0" Color="{ThemeResource CardStrokeColorDefault}"/>
+                </LinearGradientBrush.GradientStops>
+            </LinearGradientBrush>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Dark">
+            <StaticResource x:Key="TabViewBackground"                                       ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackground"                             ResourceKey="LayerOnMicaBaseAltFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundSelected"                     ResourceKey="SolidBackgroundFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundPointerOver"                  ResourceKey="LayerOnMicaBaseAltFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundPressed"                      ResourceKey="LayerOnMicaBaseAltFillColorDefaultBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundDisabled"                     ResourceKey="LayerOnMicaBaseAltFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForeground"                             ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundPressed"                      ResourceKey="TextFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundSelected"                     ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundPointerOver"                  ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundDisabled"                     ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewItemIconForeground"                               ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundPressed"                        ResourceKey="TextFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundSelected"                       ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundPointerOver"                    ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundDisabled"                       ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewButtonBackground"                                 ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundPressed"                          ResourceKey="SubtleFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundPointerOver"                      ResourceKey="SubtleFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundDisabled"                         ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonForeground"                                 ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundPressed"                          ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundPointerOver"                      ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundDisabled"                         ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrush"                                ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushPressed"                         ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushPointerOver"                     ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushDisabled"                        ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackground"                           ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundPressed"                    ResourceKey="SubtleFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundPointerOver"                ResourceKey="SubtleFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundDisabled"                   ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForeground"                           ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundPressed"                    ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundPointerOver"                ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundDisabled"                   ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrush"                          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushPressed"                   ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushPointerOver"               ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushDisabled"                  ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemSeparator"                                    ResourceKey="DividerStrokeColorDefaultBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackground"                  ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackgroundPressed"           ResourceKey="SubtleFillColorTertiaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackgroundPointerOver"       ResourceKey="SubtleFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPressedCloseButtonBackground"           ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPointerOverCloseButtonBackground"       ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderSelectedCloseButtonBackground"          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderDisabledCloseButtonBackground"          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForeground"                  ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForegroundPressed"           ResourceKey="TextFillColorSecondaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForegroundPointerOver"       ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPressedCloseButtonForeground"           ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPointerOverCloseButtonForeground"       ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderSelectedCloseButtonForeground"          ResourceKey="TextFillColorPrimaryBrush" />
+            <StaticResource x:Key="TabViewItemHeaderDisabledCloseButtonForeground"          ResourceKey="TextFillColorDisabledBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrush"                 ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushPointerOver"      ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushPressed"          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushSelected"         ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushDisabled"         ResourceKey="SubtleFillColorTransparentBrush" />
+
+            <!-- Note: These theme resources below are no longer used and might be removed in a future WinUI update. -->
+            <StaticResource x:Key="TabViewButtonBackgroundActiveTab"                        ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundActiveTab"                        ResourceKey="ControlStrongFillColorDefaultBrush" />
+
+            <StaticResource x:Key="TabViewBorderBrush"                                      ResourceKey="CardStrokeColorDefault" />
+            <StaticResource x:Key="TabViewItemBorderBrush"                                  ResourceKey="SubtleFillColorTransparentBrush" />
+            <Thickness x:Key="TabViewButtonBorderThickness">0</Thickness>
+            <Thickness x:Key="TabViewItemHeaderCloseButtonBorderThickness">0</Thickness>
+            <LinearGradientBrush x:Key="TabViewSelectedItemBorderBrush" MappingMode="Absolute" StartPoint="0,0" EndPoint="0,4">
+                <LinearGradientBrush.RelativeTransform>
+                    <ScaleTransform ScaleY="-1" CenterY="0.5"/>
+                </LinearGradientBrush.RelativeTransform>
+                <LinearGradientBrush.GradientStops>
+                    <GradientStop Offset="1.0" Color="Transparent"/>
+                    <GradientStop Offset="1.0" Color="{ThemeResource CardStrokeColorDefault}"/>
+                </LinearGradientBrush.GradientStops>
+            </LinearGradientBrush>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="HighContrast">
+            <StaticResource x:Key="TabViewBackground"                                       ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackground"                             ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundSelected"                     ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundPointerOver"                  ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundPressed"                      ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderBackgroundDisabled"                     ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForeground"                             ResourceKey="SystemColorWindowTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundPressed"                      ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundSelected"                     ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundPointerOver"                  ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderForegroundDisabled"                     ResourceKey="SystemColorGrayTextColorBrush" />
+            <StaticResource x:Key="TabViewItemIconForeground"                               ResourceKey="SystemColorWindowTextColorBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundPressed"                        ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundSelected"                       ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundPointerOver"                    ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewItemIconForegroundDisabled"                       ResourceKey="SystemColorGrayTextColorBrush" />
+            <StaticResource x:Key="TabViewButtonBackground"                                 ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundPressed"                          ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundPointerOver"                      ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewButtonBackgroundDisabled"                         ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="TabViewButtonForeground"                                 ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundPressed"                          ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundPointerOver"                      ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundDisabled"                         ResourceKey="SystemColorGrayTextColorBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrush"                                ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushPressed"                         ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushPointerOver"                     ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewButtonBorderBrushDisabled"                        ResourceKey="SystemColorGrayTextColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackground"                           ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundPressed"                    ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundPointerOver"                ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBackgroundDisabled"                   ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForeground"                           ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundPressed"                    ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundPointerOver"                ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonForegroundDisabled"                   ResourceKey="SystemColorGrayTextColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrush"                          ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushPressed"                   ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushPointerOver"               ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewScrollButtonBorderBrushDisabled"                  ResourceKey="SystemColorGrayTextColorBrush" />
+            <StaticResource x:Key="TabViewItemSeparator"                                    ResourceKey="SystemColorWindowTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackground"                  ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackgroundPressed"           ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBackgroundPointerOver"       ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPressedCloseButtonBackground"           ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPointerOverCloseButtonBackground"       ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderSelectedCloseButtonBackground"          ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderDisabledCloseButtonBackground"          ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForeground"                  ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForegroundPressed"           ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonForegroundPointerOver"       ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPressedCloseButtonForeground"           ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderPointerOverCloseButtonForeground"       ResourceKey="SystemColorHighlightTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderSelectedCloseButtonForeground"          ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderDisabledCloseButtonForeground"          ResourceKey="SystemColorGrayTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrush"                 ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushPointerOver"      ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushPressed"          ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushSelected"         ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="TabViewItemHeaderCloseButtonBorderBrushDisabled"         ResourceKey="SubtleFillColorTransparentBrush" />
+
+            <!-- Note: These theme resources below are no longer used and might be removed in a future WinUI update. -->
+            <StaticResource x:Key="TabViewButtonBackgroundActiveTab"                        ResourceKey="SubtleFillColorTransparentBrush" />
+            <StaticResource x:Key="TabViewButtonForegroundActiveTab"                        ResourceKey="SystemControlBackgroundBaseMediumBrush" />
+
+            <SolidColorBrush x:Key="TabViewBorderBrush"                                     Color="{ThemeResource SystemColorHighlightColor}" />
+            <StaticResource x:Key="TabViewItemBorderBrush"                                  ResourceKey="SubtleFillColorTransparentBrush" />
+            <Thickness x:Key="TabViewButtonBorderThickness">1</Thickness>
+            <Thickness x:Key="TabViewItemHeaderCloseButtonBorderThickness">1</Thickness>
+            <LinearGradientBrush x:Key="TabViewSelectedItemBorderBrush" MappingMode="Absolute" StartPoint="0,0" EndPoint="0,4">
+                <LinearGradientBrush.RelativeTransform>
+                    <ScaleTransform ScaleY="-1" CenterY="0.5"/>
+                </LinearGradientBrush.RelativeTransform>
+                <LinearGradientBrush.GradientStops>
+                    <GradientStop Offset="1.0" Color="Transparent"/>
+                    <GradientStop Offset="1.0" Color="{ThemeResource SystemColorHighlightColor}"/>
+                </LinearGradientBrush.GradientStops>
+            </LinearGradientBrush>
+
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <Thickness x:Key="TabViewHeaderPadding">0,8,0,0</Thickness>
+    <Thickness x:Key="TabViewItemHeaderPadding">8,3,4,3</Thickness>
+    <Thickness x:Key="TabViewSelectedItemHeaderPadding">9,3,5,4</Thickness>
+
+    <x:Double x:Key="TabViewItemMinHeight">32</x:Double>
+    <x:Double x:Key="TabViewItemMaxWidth">240</x:Double>
+    <x:Double x:Key="TabViewItemMinWidth">100</x:Double>
+
+    <x:Double x:Key="TabViewItemHeaderFontSize">12</x:Double>
+    <x:Double x:Key="TabViewItemHeaderIconSize">16</x:Double>
+    <Thickness x:Key="TabViewItemHeaderIconMargin">0,0,10,0</Thickness>
+
+
+    <x:Double x:Key="TabViewItemHeaderCloseButtonHeight">24</x:Double>
+    <x:Double x:Key="TabViewItemHeaderCloseButtonWidth">32</x:Double>
+    
+    <x:Double x:Key="TabViewItemHeaderCloseButtonSize">16</x:Double>
+    <x:Double x:Key="TabViewItemHeaderCloseFontSize">12</x:Double>
+    <Thickness x:Key="TabViewItemHeaderCloseMargin">4,0,0,0</Thickness>
+
+    <x:Double x:Key="TabViewItemScrollButtonWidth">32</x:Double>
+    <x:Double x:Key="TabViewItemScrollButtonHeight">24</x:Double>
+    <x:Double x:Key="TabViewItemScrollButonFontSize">8</x:Double>
+    <Thickness x:Key="TabViewItemScrollButtonPadding">7,3,7,3</Thickness>
+    <Thickness x:Key="TabViewItemLeftScrollButtonContainerPadding">8,0,3,3</Thickness>
+    <Thickness x:Key="TabViewItemRightScrollButtonContainerPadding">3,0,8,3</Thickness>
+
+    <x:Double x:Key="TabViewItemAddButtonWidth">32</x:Double>
+    <x:Double x:Key="TabViewItemAddButtonHeight">24</x:Double>
+    <x:Double x:Key="TabViewItemAddButtonFontSize">12</x:Double>
+    <Thickness x:Key="TabViewItemAddButtonContainerPadding">3,0,0,3</Thickness>
+
+    <x:Double x:Key="TabViewShadowDepth">16</x:Double>
+
+    <Thickness x:Key="TabViewItemSeparatorMargin">0,8,0,8</Thickness>
+
+    <Thickness x:Key="TabViewItemBorderThickness">1</Thickness>
+    
+    <Thickness x:Key="TabViewSelectedItemBorderThickness">1,1,1,0</Thickness>
+
+    <Thickness x:Key="TabViewSelectedItemHeaderMargin">-1,0,-1,0</Thickness>
+
+</ResourceDictionary>
