@@ -24,7 +24,7 @@ parameters:
   - name: enableRustBuild
     displayName: "Build src/tools/wtr (requires RustInstaller extension + microsoft/Dart Azure Artifact feeds)"
     type: boolean
-    default: false
+    default: true
   - name: pgoBuildMode
     type: string
     default: None
