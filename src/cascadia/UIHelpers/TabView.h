@@ -18,12 +18,12 @@
 static constexpr double c_tabShadowDepth = 16.0;
 static constexpr wstring_view c_tabViewShadowDepthName{ L"TabViewShadowDepth"sv };
 
-
 class TabViewTabCloseRequestedEventArgs :
     public winrt::implementation::TabViewTabCloseRequestedEventArgsT<TabViewTabCloseRequestedEventArgs>
 {
 public:
-    TabViewTabCloseRequestedEventArgs(winrt::IInspectable const& item, winrt::TabViewItem tab) : m_item(item), m_tab(tab) {}
+    TabViewTabCloseRequestedEventArgs(winrt::IInspectable const& item, winrt::TabViewItem tab) :
+        m_item(item), m_tab(tab) {}
 
     winrt::IInspectable Item() { return m_item; }
     winrt::TabViewItem Tab() { return m_tab; }
@@ -33,12 +33,12 @@ private:
     winrt::TabViewItem m_tab{};
 };
 
-
 class TabViewTabDroppedOutsideEventArgs :
     public winrt::implementation::TabViewTabDroppedOutsideEventArgsT<TabViewTabDroppedOutsideEventArgs>
 {
 public:
-    TabViewTabDroppedOutsideEventArgs(winrt::IInspectable const& item, winrt::TabViewItem tab) : m_item(item), m_tab(tab) {}
+    TabViewTabDroppedOutsideEventArgs(winrt::IInspectable const& item, winrt::TabViewItem tab) :
+        m_item(item), m_tab(tab) {}
 
     winrt::IInspectable Item() { return m_item; }
     winrt::TabViewItem Tab() { return m_tab; }
@@ -52,7 +52,8 @@ class TabViewTabDragStartingEventArgs :
     public winrt::implementation::TabViewTabDragStartingEventArgsT<TabViewTabDragStartingEventArgs>
 {
 public:
-    TabViewTabDragStartingEventArgs(winrt::DragItemsStartingEventArgs const& args, winrt::IInspectable const& item, winrt::TabViewItem tab) : m_args(args), m_item(item), m_tab(tab) {}
+    TabViewTabDragStartingEventArgs(winrt::DragItemsStartingEventArgs const& args, winrt::IInspectable const& item, winrt::TabViewItem tab) :
+        m_args(args), m_item(item), m_tab(tab) {}
 
     bool Cancel() { return m_args.Cancel(); }
     void Cancel(bool value) { m_args.Cancel(value); }
@@ -70,7 +71,8 @@ class TabViewTabDragCompletedEventArgs :
     public winrt::implementation::TabViewTabDragCompletedEventArgsT<TabViewTabDragCompletedEventArgs>
 {
 public:
-    TabViewTabDragCompletedEventArgs(winrt::DragItemsCompletedEventArgs const& args, winrt::IInspectable const& item, winrt::TabViewItem tab) : m_args(args), m_item(item), m_tab(tab) {}
+    TabViewTabDragCompletedEventArgs(winrt::DragItemsCompletedEventArgs const& args, winrt::IInspectable const& item, winrt::TabViewItem tab) :
+        m_args(args), m_item(item), m_tab(tab) {}
 
     winrt::DataPackageOperation DropResult() { return m_args.DropResult(); }
     winrt::IInspectable Item() { return m_item; }
@@ -86,7 +88,6 @@ class TabView :
     public ReferenceTracker<TabView, winrt::implementation::TabViewT>,
     public TabViewProperties
 {
-
 public:
     TabView();
     ~TabView();
@@ -118,7 +119,7 @@ public:
     void OnItemsChanged(winrt::IInspectable const& item);
     void UpdateTabContent();
 
-    void RequestCloseTab(winrt::TabViewItem const& item,bool updateTabWidths);
+    void RequestCloseTab(winrt::TabViewItem const& item, bool updateTabWidths);
 
     winrt::UIElement GetShadowReceiver() { return m_shadowReceiver.get(); }
 

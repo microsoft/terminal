@@ -7,11 +7,10 @@
 #include "TabViewItemAutomationPeer.g.h"
 
 class TabViewItemAutomationPeer :
-    public ReferenceTracker < TabViewItemAutomationPeer,
-    winrt::implementation::TabViewItemAutomationPeerT,
-    winrt::ISelectionItemProvider >
+    public ReferenceTracker<TabViewItemAutomationPeer,
+                            winrt::implementation::TabViewItemAutomationPeerT,
+                            winrt::ISelectionItemProvider>
 {
-
 public:
     TabViewItemAutomationPeer(winrt::TabViewItem const& owner);
 

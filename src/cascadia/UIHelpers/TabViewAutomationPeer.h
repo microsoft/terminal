@@ -8,10 +8,9 @@
 
 class TabViewAutomationPeer :
     public ReferenceTracker<TabViewAutomationPeer,
-    winrt::implementation::TabViewAutomationPeerT,
-    winrt::ISelectionProvider>
+                            winrt::implementation::TabViewAutomationPeerT,
+                            winrt::ISelectionProvider>
 {
-
 public:
     TabViewAutomationPeer(winrt::TabView const& owner);
 

@@ -21,4 +21,3 @@ private:
     void OnSelectedIndexPropertyChanged(const winrt::DependencyObject& sender, const winrt::DependencyProperty& args);
     void UpdateBottomBorderVisualState();
 };
-

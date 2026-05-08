@@ -17,7 +17,6 @@ class TabViewItem :
     public ReferenceTracker<TabViewItem, winrt::implementation::TabViewItemT>,
     public TabViewItemProperties
 {
-
 public:
     TabViewItem();
 

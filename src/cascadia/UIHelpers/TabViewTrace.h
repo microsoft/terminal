@@ -11,55 +11,55 @@
 inline bool IsTabViewTracingEnabled()
 {
     return g_IsLoggingProviderEnabled &&
-        g_LoggingProviderLevel >= WINEVENT_LEVEL_INFO &&
-        (g_LoggingProviderMatchAnyKeyword & KEYWORD_TABVIEW || g_LoggingProviderMatchAnyKeyword == 0);
+           g_LoggingProviderLevel >= WINEVENT_LEVEL_INFO &&
+           (g_LoggingProviderMatchAnyKeyword & KEYWORD_TABVIEW || g_LoggingProviderMatchAnyKeyword == 0);
 }
 
 inline bool IsTabViewVerboseTracingEnabled()
 {
     return g_IsLoggingProviderEnabled &&
-        g_LoggingProviderLevel >= WINEVENT_LEVEL_VERBOSE &&
-        (g_LoggingProviderMatchAnyKeyword & KEYWORD_TABVIEW || g_LoggingProviderMatchAnyKeyword == 0);
+           g_LoggingProviderLevel >= WINEVENT_LEVEL_VERBOSE &&
+           (g_LoggingProviderMatchAnyKeyword & KEYWORD_TABVIEW || g_LoggingProviderMatchAnyKeyword == 0);
 }
 
 inline bool IsTabViewPerfTracingEnabled()
 {
     return g_IsPerfProviderEnabled &&
-        g_PerfProviderLevel >= WINEVENT_LEVEL_INFO &&
-        (g_PerfProviderMatchAnyKeyword & KEYWORD_TABVIEW || g_PerfProviderMatchAnyKeyword == 0);
+           g_PerfProviderLevel >= WINEVENT_LEVEL_INFO &&
+           (g_PerfProviderMatchAnyKeyword & KEYWORD_TABVIEW || g_PerfProviderMatchAnyKeyword == 0);
 }
 
 #define TABVIEW_TRACE_INFO_ENABLED(includeTraceLogging, sender, message, ...) \
-TabViewTrace::TraceInfo(includeTraceLogging, sender, message, __VA_ARGS__); \
+    TabViewTrace::TraceInfo(includeTraceLogging, sender, message, __VA_ARGS__);
 
-#define TABVIEW_TRACE_INFO(sender, message, ...) \
-if (IsTabViewTracingEnabled()) \
-{ \
-    TABVIEW_TRACE_INFO_ENABLED(true /*includeTraceLogging*/, sender, message, __VA_ARGS__); \
-} \
-else if (TabViewTrace::s_IsDebugOutputEnabled || TabViewTrace::s_IsVerboseDebugOutputEnabled) \
-{ \
-    TABVIEW_TRACE_INFO_ENABLED(false /*includeTraceLogging*/, sender, message, __VA_ARGS__); \
-} \
+#define TABVIEW_TRACE_INFO(sender, message, ...)                                                  \
+    if (IsTabViewTracingEnabled())                                                                \
+    {                                                                                             \
+        TABVIEW_TRACE_INFO_ENABLED(true /*includeTraceLogging*/, sender, message, __VA_ARGS__);   \
+    }                                                                                             \
+    else if (TabViewTrace::s_IsDebugOutputEnabled || TabViewTrace::s_IsVerboseDebugOutputEnabled) \
+    {                                                                                             \
+        TABVIEW_TRACE_INFO_ENABLED(false /*includeTraceLogging*/, sender, message, __VA_ARGS__);  \
+    }
 
 #define TABVIEW_TRACE_VERBOSE_ENABLED(includeTraceLogging, sender, message, ...) \
-TabViewTrace::TraceVerbose(includeTraceLogging, sender, message, __VA_ARGS__); \
+    TabViewTrace::TraceVerbose(includeTraceLogging, sender, message, __VA_ARGS__);
 
-#define TABVIEW_TRACE_VERBOSE(sender, message, ...) \
-if (IsTabViewVerboseTracingEnabled()) \
-{ \
-    TABVIEW_TRACE_VERBOSE_ENABLED(true /*includeTraceLogging*/, sender, message, __VA_ARGS__); \
-} \
-else if (TabViewTrace::s_IsVerboseDebugOutputEnabled) \
-{ \
-    TABVIEW_TRACE_VERBOSE_ENABLED(false /*includeTraceLogging*/, sender, message, __VA_ARGS__); \
-} \
+#define TABVIEW_TRACE_VERBOSE(sender, message, ...)                                                 \
+    if (IsTabViewVerboseTracingEnabled())                                                           \
+    {                                                                                               \
+        TABVIEW_TRACE_VERBOSE_ENABLED(true /*includeTraceLogging*/, sender, message, __VA_ARGS__);  \
+    }                                                                                               \
+    else if (TabViewTrace::s_IsVerboseDebugOutputEnabled)                                           \
+    {                                                                                               \
+        TABVIEW_TRACE_VERBOSE_ENABLED(false /*includeTraceLogging*/, sender, message, __VA_ARGS__); \
+    }
 
-#define TABVIEW_TRACE_PERF(info) \
-if (IsTabViewPerfTracingEnabled()) \
-{ \
-    TabViewTrace::TracePerfInfo(info); \
-} \
+#define TABVIEW_TRACE_PERF(info)           \
+    if (IsTabViewPerfTracingEnabled())     \
+    {                                      \
+        TabViewTrace::TracePerfInfo(info); \
+    }
 
 class TabViewTrace
 {
@@ -77,7 +77,7 @@ public:
             if (includeTraceLogging)
             {
                 // TraceViewers
-                // http://toolbox/pef 
+                // http://toolbox/pef
                 // http://fastetw/index.aspx
                 TraceLoggingWrite(
                     g_hLoggingProvider,
@@ -114,7 +114,7 @@ public:
             if (includeTraceLogging)
             {
                 // TraceViewers
-                // http://toolbox/pef 
+                // http://toolbox/pef
                 // http://fastetw/index.aspx
                 TraceLoggingWrite(
                     g_hLoggingProvider,
@@ -143,7 +143,7 @@ public:
     static void TracePerfInfo(PCWSTR info) noexcept
     {
         // TraceViewers
-        // http://toolbox/pef 
+        // http://toolbox/pef
         // http://fastetw/index.aspx
         TraceLoggingWrite(
             g_hPerfProvider,

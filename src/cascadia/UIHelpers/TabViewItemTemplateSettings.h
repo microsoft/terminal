@@ -11,5 +11,5 @@ class TabViewItemTemplateSettings :
     public TabViewItemTemplateSettingsProperties
 {
 public:
-    TabViewItemTemplateSettings() { EnsureProperties();  }
+    TabViewItemTemplateSettings() { EnsureProperties(); }
 };
