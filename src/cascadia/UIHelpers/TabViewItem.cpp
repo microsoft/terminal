@@ -46,21 +46,16 @@ void TabViewItem::OnApplyTemplate()
         if (const auto selectedBackgroundPath = m_selectedBackgroundPath.get())
         {
             m_selectedBackgroundPathSizeChangedRevoker = selectedBackgroundPath.SizeChanged(winrt::auto_revoke,
-            {
-                [this](auto const&, auto const&)
-                {
-                    UpdateSelectedBackgroundPathTranslateTransform();
-                }
-            });
+                                                                                            { [this](auto const&, auto const&) {
+                                                                                                UpdateSelectedBackgroundPathTranslateTransform();
+                                                                                            } });
         }
     }
 
     m_headerContentPresenter.set(GetTemplateChildT<winrt::ContentPresenter>(L"ContentPresenter", controlProtected));
 
     auto tabView = SharedHelpers::GetAncestorOfType<winrt::TabView>(winrt::VisualTreeHelper::GetParent(*this));
-    auto internalTabView = tabView
-        ? winrt::get_self<TabView>(tabView)
-        : nullptr;
+    auto internalTabView = tabView ? winrt::get_self<TabView>(tabView) : nullptr;
 
     m_closeButton.set([this, controlProtected, internalTabView]() {
         auto closeButton = GetTemplateChildT<winrt::Button>(L"CloseButton", controlProtected);
@@ -84,7 +79,7 @@ void TabViewItem::OnApplyTemplate()
             m_closeButtonClickRevoker = closeButton.Click(winrt::auto_revoke, { this, &TabViewItem::OnCloseButtonClick });
         }
         return closeButton;
-        }());
+    }());
 
     OnHeaderChanged();
     OnIconSourceChanged();
@@ -137,12 +132,7 @@ void TabViewItem::UpdateTabGeometry()
     auto data = L"<Geometry xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>F1 M0,%f  a 4,4 0 0 0 4,-4  L 4,%f  a %f,%f 0 0 1 %f,-%f  l %f,0  a %f,%f 0 0 1 %f,%f  l 0,%f  a 4,4 0 0 0 4,4 Z</Geometry>";
 
     WCHAR strOut[1024];
-    StringCchPrintf(strOut, ARRAYSIZE(strOut), data,
-        height,
-        leftCorner, leftCorner, leftCorner, leftCorner, leftCorner,
-        ActualWidth() - (leftCorner + rightCorner),
-        rightCorner, rightCorner, rightCorner, rightCorner,
-        height - (4.0f + rightCorner));
+    StringCchPrintf(strOut, ARRAYSIZE(strOut), data, height, leftCorner, leftCorner, leftCorner, leftCorner, leftCorner, ActualWidth() - (leftCorner + rightCorner), rightCorner, rightCorner, rightCorner, rightCorner, height - (4.0f + rightCorner));
 
     const auto geometry = winrt::XamlReader::Load(strOut).try_as<winrt::Geometry>();
 
@@ -161,15 +151,13 @@ void TabViewItem::OnLoaded(const winrt::IInspectable& sender, const winrt::Route
 
 void TabViewItem::OnSizeChanged(const winrt::IInspectable&, const winrt::SizeChangedEventArgs& args)
 {
-    m_dispatcherHelper.RunAsync([strongThis = get_strong()]()
-    {
+    m_dispatcherHelper.RunAsync([strongThis = get_strong()]() {
         strongThis->UpdateTabGeometry();
     });
 }
 
 void TabViewItem::OnIsSelectedPropertyChanged(const winrt::DependencyObject& sender, const winrt::DependencyProperty& args)
 {
-    
     if (const auto peer = winrt::FrameworkElementAutomationPeer::CreatePeerForElement(*this))
     {
         peer.RaiseAutomationEvent(winrt::AutomationEvents::SelectionItemPatternOnElementSelected);
@@ -212,10 +200,9 @@ void TabViewItem::UpdateForeground()
 
 void TabViewItem::UpdateShadow()
 {
-    
     if (SharedHelpers::IsThemeShadowAvailable() && !XamlControlsResources::IsUsingControlsResourcesVersion2())
     {
-        if (IsSelected() && !m_isDragging )
+        if (IsSelected() && !m_isDragging)
         {
             Shadow(m_shadow.as<winrt::ThemeShadow>());
         }
@@ -252,7 +239,6 @@ void TabViewItem::UpdateSelectedBackgroundPathTranslateTransform()
         }
     }
 }
-
 
 void TabViewItem::OnTabDragStarting(const winrt::IInspectable& sender, const winrt::TabViewTabDragStartingEventArgs& args)
 {
@@ -391,7 +377,7 @@ void TabViewItem::OnHeaderChanged()
                 toolTip.Placement(winrt::Controls::Primitives::PlacementMode::Mouse);
                 winrt::ToolTipService::SetToolTip(*this, toolTip);
                 return toolTip;
-                }());
+            }());
         }
     }
 
@@ -523,7 +509,6 @@ void TabViewItem::OnPointerCanceled(winrt::PointerRoutedEventArgs const& args)
         m_isMiddlePointerButtonPressed = false;
     }
     RestoreLeftAdjacentTabSeparatorVisibility();
-
 }
 
 void TabViewItem::OnPointerCaptureLost(winrt::PointerRoutedEventArgs const& args)
@@ -588,6 +573,6 @@ void TabViewItem::StartBringTabIntoView()
 {
     // we need to set the TargetRect to be slightly wider than the TabViewItem size in order to avoid cutting off the end of the Tab
     winrt::BringIntoViewOptions options;
-    options.TargetRect(winrt::Rect{ 0, 0, DesiredSize().Width + c_targetRectWidthIncrement, DesiredSize().Height});
+    options.TargetRect(winrt::Rect{ 0, 0, DesiredSize().Width + c_targetRectWidthIncrement, DesiredSize().Height });
     StartBringIntoView(options);
 }
