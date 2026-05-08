@@ -190,7 +190,8 @@
     </DataTemplate>
 
     <!--  A setting container for a setting that has no additional options  -->
-    <Style TargetType="local:SettingContainer">
+    <Style x:Key="DefaultSettingContainer"
+           TargetType="local:SettingContainer">
         <Setter Property="Margin" Value="0,4,0,0" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="MaxWidth" Value="1000" />
@@ -227,6 +228,10 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!--  Implicit default style for SettingContainer; just an alias of DefaultSettingContainer so the named style can be referenced from VisualState setters.  -->
+    <Style BasedOn="{StaticResource DefaultSettingContainer}"
+           TargetType="local:SettingContainer" />
 
     <!--  A basic setting container displaying immutable text as content  -->
     <Style x:Key="SettingContainerWithTextContent"
