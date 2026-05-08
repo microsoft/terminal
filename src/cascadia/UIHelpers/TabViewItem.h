@@ -1,20 +1,20 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 #pragma once
 
 #include "pch.h"
-#include "common.h"
+
+#include "MUXPorting.h"
 
 #include "TabView.h"
 #include "TabViewItem.g.h"
 #include "TabViewItem.properties.h"
 #include "TabViewItemAutomationPeer.h"
 #include "TabViewItemTemplateSettings.h"
-#include "TabViewTrace.h"
 
 class TabViewItem :
-    public ReferenceTracker<TabViewItem, winrt::implementation::TabViewItemT>,
+    public winrt::implementation::TabViewItemT<TabViewItem>,
     public TabViewItemProperties
 {
 public:

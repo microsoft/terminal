@@ -8,6 +8,7 @@
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <VersionInfoFileDescription>Windows Terminal UI Support Library</VersionInfoFileDescription>
+    <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
   </PropertyGroup>
   <PropertyGroup Label="NuGet Dependencies">
     <TerminalCppWinrt>true</TerminalCppWinrt>
@@ -30,6 +31,14 @@
     <ClInclude Include="TextMenuFlyout.h">
       <DependentUpon>TextMenuFlyout.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TabView.h">
+      <DependentUpon>TabView.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TabViewAutomationPeer.h" />
+    <ClInclude Include="TabViewItem.h" />
+    <ClInclude Include="TabViewItemAutomationPeer.h" />
+    <ClInclude Include="TabViewListView.h" />
+    <ClInclude Include="MUXPorting.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="init.cpp" />
@@ -51,8 +60,10 @@
     <ClCompile Include="TabView.cpp">
       <DependentUpon>TabView.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TabView.properties.cpp" />
     <ClCompile Include="TabViewAutomationPeer.cpp" />
     <ClCompile Include="TabViewItem.cpp" />
+    <ClCompile Include="TabViewItem.properties.cpp" />
     <ClCompile Include="TabViewItemAutomationPeer.cpp" />
     <ClCompile Include="TabViewListView.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />

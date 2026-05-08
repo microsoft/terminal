@@ -199,7 +199,7 @@ namespace Microsoft.Terminal.UI
         };
 
         //[MUX_PROPERTY_CHANGED_CALLBACK(TRUE)]
-        Microsoft.UI.Xaml.IconSource IconSource
+        Microsoft.UI.Xaml.Controls.IconSource IconSource
         {
             get;
             set;

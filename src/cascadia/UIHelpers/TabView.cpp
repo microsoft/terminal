@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 #include "pch.h"
@@ -6,9 +6,7 @@
 #include "TabView.h"
 #include "TabViewItem.h"
 #include "TabViewAutomationPeer.h"
-#include "DoubleUtil.h"
 #include "SharedHelpers.h"
-#include <Vector.h>
 
 static constexpr double c_tabMinimumWidth = 48.0;
 static constexpr double c_tabMaximumWidth = 200.0;
@@ -19,14 +17,12 @@ static constexpr wstring_view c_tabViewItemMaxWidthName{ L"TabViewItemMaxWidth"s
 // TODO: what is the right number and should this be customizable?
 static constexpr double c_scrollAmount = 50.0;
 
-// Change to 'true' to turn on debugging outputs in Output window
-bool TabViewTrace::s_IsDebugOutputEnabled{ false };
-bool TabViewTrace::s_IsVerboseDebugOutputEnabled{ false };
+using namespace ::winrt::Microsoft::Terminal::UI::implementation;
 
 TabView::TabView()
 {
-    auto items = winrt::make<Vector<winrt::IInspectable, MakeVectorParam<VectorFlag::Observable>()>>();
-    SetValue(s_TabItemsProperty, items);
+    std::vector<winrt::IInspectable> items{};
+    SetValue(s_TabItemsProperty, winrt::single_threaded_observable_vector(std::move(items)));
 
     SetDefaultStyleKey(this);
 
