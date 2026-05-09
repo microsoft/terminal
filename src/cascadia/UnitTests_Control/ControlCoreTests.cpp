@@ -598,7 +598,7 @@ namespace ControlUnitTests
         }
 
         Log::Comment(L"then move the cursor to the left");
-        // This emulates the state the buffer is in when pwsh does it's "ghost
+        // This emulates the state the buffer is in when pwsh does its "ghost
         // text" thing. We don't want to include all that ghost text in the
         // current commandline.
         conn->WriteInput(winrt_wstring_to_array_view(L"\x1b[D"));
@@ -682,7 +682,7 @@ namespace ControlUnitTests
     void ControlCoreTests::TestSelectOutputExactWrap()
     {
         // Just like the TestSelectOutputScrolling test, but these lines will
-        // exactly wrap to the right edge of the buffer, to catch a edge case
+        // exactly wrap to the right edge of the buffer, to catch an edge case
         // present in `ControlCore::_selectSpan`
         auto [settings, conn] = _createSettingsAndConnection();
         Log::Comment(L"Create ControlCore object");

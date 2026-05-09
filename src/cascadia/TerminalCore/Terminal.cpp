@@ -735,7 +735,7 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         }
 
         // GH#1527: When the user has auto mark prompts enabled, we're going to try
-        // and heuristically detect if this was the line the prompt was on.
+        // and heuristically detect if this was the line with the prompt.
         // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
         //   as prompts. That's omitted for now.)
         // * AND we're not in the alt buffer

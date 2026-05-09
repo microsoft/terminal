@@ -315,7 +315,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     }
     else
     {
-        // If we're trying to set the handle a second time, invalid.
+        // If we're trying to set the handle again, invalid.
         hr = E_INVALIDARG;
     }
 

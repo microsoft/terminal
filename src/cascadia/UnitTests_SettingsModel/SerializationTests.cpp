@@ -60,6 +60,12 @@ namespace SettingsModelUnitTests
 
         TEST_METHOD(ProfileWithInvalidIcon);
 
+        TEST_METHOD(ModifyProfileSettingAndRoundtrip);
+        TEST_METHOD(ModifyGlobalSettingAndRoundtrip);
+        TEST_METHOD(ModifyColorSchemeAndRoundtrip);
+        TEST_METHOD(FixupUserSettingsDetectsChanges);
+        TEST_METHOD(FixupCommandlinePatching);
+
     private:
         // Method Description:
         // - deserializes and reserializes a json string representing a settings object model of type T
@@ -125,7 +131,7 @@ namespace SettingsModelUnitTests
 
                 "trimPaste": true,
 
-                "warning.confirmCloseAllTabs" : true,
+                "warning.confirmOnClose": "automatic",
                 "warning.inputService" : true,
                 "warning.largePaste" : true,
                 "warning.multiLinePaste" : "automatic",
@@ -1324,5 +1330,289 @@ namespace SettingsModelUnitTests
         // not be reflected back in settings.json as null *or* as the commandline. The value should be exactly
         // what was written in the settings file.
         VERIFY_ARE_EQUAL(R"(c:\this_icon_had_better_not_exist.tiff)", newResult["profiles"]["list"][0]["icon"].asString());
+    }
+
+    void SerializationTests::ModifyProfileSettingAndRoundtrip()
+    {
+        // Load settings, modify a profile setting via setter, serialize,
+        // and verify the JSON output reflects the change.
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1000,
+                    "commandline": "cmd.exe"
+                }
+            ]
+        })" };
+
+        const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsJson) };
+
+        // Verify initial value
+        VERIFY_ARE_EQUAL(1000, settings->AllProfiles().GetAt(0).HistorySize());
+
+        // Modify the setting
+        settings->AllProfiles().GetAt(0).HistorySize(5000);
+        VERIFY_ARE_EQUAL(5000, settings->AllProfiles().GetAt(0).HistorySize());
+
+        // Serialize and verify the change is reflected in JSON
+        const auto result{ settings->ToJson() };
+        VERIFY_ARE_EQUAL(5000, result["profiles"]["list"][0]["historySize"].asInt());
+
+        // Verify other settings are preserved
+        VERIFY_ARE_EQUAL("cmd.exe", result["profiles"]["list"][0]["commandline"].asString());
+
+        // Also verify: modify a setting that wasn't previously set
+        settings->AllProfiles().GetAt(0).TabTitle(L"NewTitle");
+        const auto result2{ settings->ToJson() };
+        VERIFY_ARE_EQUAL("NewTitle", result2["profiles"]["list"][0]["tabTitle"].asString());
+    }
+
+    void SerializationTests::ModifyGlobalSettingAndRoundtrip()
+    {
+        // Load settings, modify a global setting, serialize, verify JSON.
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "initialRows": 30,
+            "alwaysOnTop": false,
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsJson) };
+
+        // Verify initial values
+        VERIFY_ARE_EQUAL(30, settings->GlobalSettings().InitialRows());
+        VERIFY_ARE_EQUAL(false, settings->GlobalSettings().AlwaysOnTop());
+
+        // Modify global settings
+        settings->GlobalSettings().InitialRows(50);
+        settings->GlobalSettings().AlwaysOnTop(true);
+
+        // Verify in-memory changes
+        VERIFY_ARE_EQUAL(50, settings->GlobalSettings().InitialRows());
+        VERIFY_ARE_EQUAL(true, settings->GlobalSettings().AlwaysOnTop());
+
+        // Serialize and verify
+        const auto result{ settings->ToJson() };
+        VERIFY_ARE_EQUAL(50, result["initialRows"].asInt());
+        VERIFY_ARE_EQUAL(true, result["alwaysOnTop"].asBool());
+    }
+
+    void SerializationTests::ModifyColorSchemeAndRoundtrip()
+    {
+        // Load settings with a user color scheme, modify it, serialize, verify.
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "MyScheme",
+                    "foreground": "#CCCCCC",
+                    "background": "#0C0C0C",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#0C0C0C",
+                    "red": "#C50F1F",
+                    "green": "#13A10E",
+                    "yellow": "#C19C00",
+                    "blue": "#0037DA",
+                    "purple": "#881798",
+                    "cyan": "#3A96DD",
+                    "white": "#CCCCCC",
+                    "brightBlack": "#767676",
+                    "brightRed": "#E74856",
+                    "brightGreen": "#16C60C",
+                    "brightYellow": "#F9F1A5",
+                    "brightBlue": "#3B78FF",
+                    "brightPurple": "#B4009E",
+                    "brightCyan": "#61D6D6",
+                    "brightWhite": "#F2F2F2"
+                }
+            ]
+        })" };
+
+        const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsJson) };
+
+        // Find and modify the color scheme
+        const auto schemes = settings->GlobalSettings().ColorSchemes();
+        VERIFY_IS_TRUE(schemes.HasKey(L"MyScheme"));
+        auto myScheme = schemes.Lookup(L"MyScheme");
+
+        const auto origForeground = myScheme.Foreground();
+        myScheme.Foreground(til::color{ 0xAA, 0xBB, 0xCC });
+
+        // Serialize and verify the change persists
+        const auto result{ settings->ToJson() };
+        const auto& schemesJson = result["schemes"];
+        bool found = false;
+        for (const auto& scheme : schemesJson)
+        {
+            if (scheme["name"].asString() == "MyScheme")
+            {
+                VERIFY_ARE_EQUAL("#AABBCC", scheme["foreground"].asString());
+                found = true;
+                break;
+            }
+        }
+        VERIFY_IS_TRUE(found, L"MyScheme should be present in serialized output");
+    }
+
+    void SerializationTests::FixupUserSettingsDetectsChanges()
+    {
+        // Verify that FixupUserSettings returns true when settings need
+        // to be written back (e.g., migration), and false when clean.
+        static constexpr std::string_view cleanSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "commandline": "cmd.exe"
+                }
+            ]
+        })" };
+
+        // Load, fixup, serialize. Reload and verify fixup returns false.
+        implementation::SettingsLoader loader1{ cleanSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader1.MergeInboxIntoUserSettings();
+        loader1.FinalizeLayering();
+        loader1.FixupUserSettings();
+        const auto settings1 = winrt::make_self<implementation::CascadiaSettings>(std::move(loader1));
+        const auto result1{ settings1->ToJson() };
+
+        // Reload from the serialized output (should be stable)
+        implementation::SettingsLoader loader2{ toString(result1), implementation::LoadStringResource(IDR_DEFAULTS) };
+        loader2.MergeInboxIntoUserSettings();
+        loader2.FinalizeLayering();
+        const auto fixupNeeded = loader2.FixupUserSettings();
+
+        // After a clean roundtrip, no further fixups should be needed
+        VERIFY_IS_FALSE(fixupNeeded, L"A clean roundtrip should not require further fixups");
+    }
+
+    void SerializationTests::FixupCommandlinePatching()
+    {
+        // Verify that FixupUserSettings patches "cmd.exe" to the full path
+        // for the Command Prompt profile, and "powershell.exe" for the
+        // Windows PowerShell profile, and returns true to indicate changes.
+
+        // Case 1: CMD profile with short commandline should be patched
+        static constexpr std::string_view cmdSettingsJson{ R"(
+        {
+            "defaultProfile": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+            "profiles": [
+                {
+                    "name": "Command Prompt",
+                    "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                    "commandline": "cmd.exe"
+                }
+            ]
+        })" };
+
+        {
+            implementation::SettingsLoader loader{ cmdSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+            loader.MergeInboxIntoUserSettings();
+            loader.FinalizeLayering();
+            const auto fixupNeeded = loader.FixupUserSettings();
+            VERIFY_IS_TRUE(fixupNeeded, L"FixupUserSettings should return true when cmd.exe is patched");
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+            const auto cmdProfile = settings->FindProfile(Utils::GuidFromString(L"{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"));
+            VERIFY_IS_NOT_NULL(cmdProfile);
+            VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\cmd.exe", cmdProfile.Commandline());
+        }
+
+        // Case 2: PowerShell profile with short commandline should be patched
+        static constexpr std::string_view psSettingsJson{ R"(
+        {
+            "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+            "profiles": [
+                {
+                    "name": "Windows PowerShell",
+                    "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                    "commandline": "powershell.exe"
+                }
+            ]
+        })" };
+
+        {
+            implementation::SettingsLoader loader{ psSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+            loader.MergeInboxIntoUserSettings();
+            loader.FinalizeLayering();
+            const auto fixupNeeded = loader.FixupUserSettings();
+            VERIFY_IS_TRUE(fixupNeeded, L"FixupUserSettings should return true when powershell.exe is patched");
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+            const auto psProfile = settings->FindProfile(Utils::GuidFromString(L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"));
+            VERIFY_IS_NOT_NULL(psProfile);
+            VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", psProfile.Commandline());
+        }
+
+        // Case 3: CMD profile with the full path should NOT trigger fixup
+        static constexpr std::string_view cleanCmdSettingsJson{ R"(
+        {
+            "defaultProfile": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+            "profiles": [
+                {
+                    "name": "Command Prompt",
+                    "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"
+                }
+            ]
+        })" };
+
+        {
+            implementation::SettingsLoader loader{ cleanCmdSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+            loader.MergeInboxIntoUserSettings();
+            loader.FinalizeLayering();
+            const auto fixupNeeded = loader.FixupUserSettings();
+            VERIFY_IS_FALSE(fixupNeeded, L"FixupUserSettings should return false when no patching is needed");
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+            const auto cmdProfile = settings->FindProfile(Utils::GuidFromString(L"{0caa0dad-35be-5f56-a8ff-afceeeaa6101}"));
+            VERIFY_IS_NOT_NULL(cmdProfile);
+            // Should still resolve to the full path via inbox defaults
+            VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\cmd.exe", cmdProfile.Commandline());
+        }
+
+        // Case 4: A non-builtin profile with "cmd.exe" should NOT be patched
+        static constexpr std::string_view customCmdSettingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "My Custom CMD",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "commandline": "cmd.exe"
+                }
+            ]
+        })" };
+
+        {
+            implementation::SettingsLoader loader{ customCmdSettingsJson, implementation::LoadStringResource(IDR_DEFAULTS) };
+            loader.MergeInboxIntoUserSettings();
+            loader.FinalizeLayering();
+            loader.FixupUserSettings();
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(std::move(loader));
+            const auto customProfile = settings->FindProfile(Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}"));
+            VERIFY_IS_NOT_NULL(customProfile);
+            // Custom profile should keep "cmd.exe" unchanged
+            VERIFY_ARE_EQUAL(L"cmd.exe", customProfile.Commandline());
+        }
     }
 }

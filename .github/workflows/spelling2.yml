@@ -55,7 +55,7 @@ name: Spell checking
 #   spelling:
 #     # remove `security-events: write` and `use_sarif: 1`
 #     # remove `experimental_apply_changes_via_bot: 1`
-#     ... otherwise adjust the `with:` as you wish
+#     ... otherwise, adjust the `with:` as you wish
 
 on:
   push:
@@ -74,6 +74,8 @@ on:
     types:
       - "created"
 
+permissions: {}
+
 jobs:
   spelling:
     name: Check Spelling
@@ -85,7 +87,7 @@ jobs:
     outputs:
       followup: ${{ steps.spelling.outputs.followup }}
     runs-on: ubuntu-latest
-    if: ${{ contains(github.event_name, 'pull_request') || github.event_name == 'push' }}
+    if: ${{ (contains(github.event_name, 'pull_request') && github.event.pull_request.state == 'open') || github.event_name == 'push' }}
     concurrency:
       group: spelling-${{ github.event.pull_request.number || github.ref }}
       # note: If you use only_check_changed_files, you do not want cancel-in-progress
@@ -105,47 +107,25 @@ jobs:
           warnings: bad-regex,binary-file,deprecated-feature,ignored-expect-variant,large-file,limited-references,no-newline-at-eof,noisy-file,non-alpha-in-dictionary,token-is-substring,unexpected-line-ending,whitespace-in-dictionary,minified-file,unsupported-configuration,no-files-to-check,unclosed-block-ignore-begin,unclosed-block-ignore-end
           experimental_apply_changes_via_bot: ${{ github.repository_owner != 'microsoft' && 1 }}
           use_sarif: 1
-          check_extra_dictionaries: ""
-          dictionary_source_prefixes: >
+          allow-hunspell: false
+          load-config-from: |
             {
-            "cspell": "https://raw.githubusercontent.com/check-spelling/cspell-dicts/v20241114/dictionaries/"
+              "pr-base-keys": [
+                ""
+              ],
+              "pr-trusted-keys": [
+                "check_extra_dictionaries",
+                "dictionary_source_prefixes",
+                "extra_dictionaries",
+                ""
+              ],
+              "": []
             }
-          extra_dictionaries: |
-            cspell:software-terms/softwareTerms.txt
-            cspell:cpp/stdlib-cpp.txt
-            cspell:cpp/stdlib-c.txt
-            cspell:python/python/python-lib.txt
-            cspell:php/php.txt
-            cspell:node/node.txt
-            cspell:dart/dart.txt
-            cspell:filetypes/filetypes.txt
-            cspell:java/java.txt
-            cspell:css/css.txt
-            cspell:dotnet/dotnet.txt
-            cspell:npm/npm.txt
-            cspell:fullstack/fullstack.txt
-            cspell:java/java-terms.txt
-            cspell:r/r.txt
-            cspell:golang/go.txt
-            cspell:cpp/stdlib-cmath.txt
-            cspell:typescript/typescript.txt
-            cspell:html/html.txt
-            cspell:cpp/compiler-msvc.txt
-            cspell:django/django.txt
-            cspell:aws/aws.txt
-            cspell:python/common/extra.txt
-            cspell:cpp/ecosystem.txt
-            cspell:cpp/lang-keywords.txt
-            cspell:csharp/csharp.txt
-            cspell:cpp/compiler-clang-attributes.txt
-            cspell:python/python/python.txt
-            cspell:mnemonics/mnemonics.txt
-            cspell:powershell/powershell.txt
 
   comment-push:
     name: Report (Push)
     # If your workflow isn't running on push, you can remove this job
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: spelling
     permissions:
       actions: read
@@ -161,11 +141,10 @@ jobs:
   comment-pr:
     name: Report (PR)
     # If you workflow isn't running on pull_request*, you can remove this job
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: spelling
     permissions:
       actions: read
-      contents: read
       pull-requests: write
     if: (success() || failure()) && needs.spelling.outputs.followup && contains(github.event_name, 'pull_request')
     steps:
@@ -182,12 +161,13 @@ jobs:
       contents: write
       pull-requests: write
       actions: read
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: ${{
       github.repository_owner != 'microsoft' &&
       github.event_name == 'issue_comment' &&
       github.event.issue.pull_request &&
-      contains(github.event.comment.body, '@check-spelling-bot apply') &&
+      contains(github.event.comment.body, '@check-spelling-bot') &&
+      contains(github.event.comment.body, 'apply') &&
       contains(github.event.comment.body, 'https://')
       }}
     concurrency:

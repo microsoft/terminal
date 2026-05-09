@@ -3649,7 +3649,7 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 }
 
 // Method Description:
-// - Performs a iTerm2 action
+// - Performs an iTerm2 action
 // - Ascribes to the ITermDispatch interface
 // - Currently, the actions we support are:
 //   * `OSC1337;SetMark`: mark a line as a prompt line
@@ -3878,7 +3878,7 @@ void AdaptDispatch::DoWTAction(const std::wstring_view string)
 // - SIXEL - Defines an image transmitted in sixel format via the returned
 //   StringHandler function.
 // Arguments:
-// - macroParameter - Selects one a of set of predefined aspect ratios.
+// - macroParameter - Selects one of a set of predefined aspect ratios.
 // - backgroundSelect - Whether the background should be transparent or opaque.
 // - backgroundColor - The color number used for the background (VT240).
 // Return Value:

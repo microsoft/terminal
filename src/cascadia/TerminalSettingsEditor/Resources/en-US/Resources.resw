@@ -293,7 +293,7 @@
     <comment>Header for a control to set the query URL when using the "search web" action.</comment>
   </data>
   <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
-    <value>The placeholder "%s" will replaced with the search query.</value>
+    <value>The placeholder "%s" will be replaced with the search query.</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
@@ -507,7 +507,7 @@
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>Hide the title bar (requires relaunch)</value>
-    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
+    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>When disabled, the title bar will appear above the tabs.</value>
@@ -1195,15 +1195,15 @@
   </data>
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Starting directory</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>Starting directory</value>
-    <comment>Header for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Starting directory</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
     <value>The directory the profile starts in when it is loaded.</value>
@@ -1552,6 +1552,10 @@
   <data name="Profile_BellStyleWindow.Content" xml:space="preserve">
     <value>Flash window</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
+  </data>
+  <data name="Profile_BellStyleNotification.Content" xml:space="preserve">
+    <value>Desktop notification</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a Windows desktop notification (toast) is sent to notify the user.</comment>
   </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>Add new</value>
@@ -2147,7 +2151,7 @@
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Shortcut</value>
-    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+    <comment>The label for a "key chord listener" control that sets the keys to which a key binding is bound.</comment>
   </data>
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>Text Formatting</value>
@@ -2196,6 +2200,26 @@
   <data name="Globals_ConfirmCloseAllTabs.Header" xml:space="preserve">
     <value>Warn when closing more than one tab</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
+    <value>Warn when closing</value>
+    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+    <value>Controls when a confirmation dialog appears before closing tabs or windows. "Always" presents the dialog when closing any pane.</value>
+    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
+    <value>Never</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAlways.Content" xml:space="preserve">
+    <value>Always</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Always" means that the system will always display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAutomatic.Content" xml:space="preserve">
+    <value>Multiple tabs or panes</value>
+    <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
   </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>

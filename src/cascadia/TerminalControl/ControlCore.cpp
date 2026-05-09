@@ -2309,7 +2309,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // The absolute cursor coordinate.
             const auto cursor = _terminal->GetViewportRelativeCursorPosition();
 
-            // GH#18732: Users want the row the cursor is on to be preserved across clears.
+            // GH#18732: Users want the row that the cursor is on to be preserved across clears.
             std::wstring sequence;
 
             if (clearType == ClearBufferType::Scrollback || clearType == ClearBufferType::All)
@@ -2859,7 +2859,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (markStart <= pos &&
                 markEnd >= pos)
             {
-                // ... select the part of the mark the caller told us about.
+                // ... select the part of the mark that the caller told us about.
                 _selectSpan(getSpan(m));
                 // And quick bail
                 return;

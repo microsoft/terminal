@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::TextMeasurement> TextMeasurement();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::AmbiguousWidth> AmbiguousWidth();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste> WarnAboutMultiLinePaste();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, ConfirmOnClose> ConfirmOnClose();
 
         // Profile Settings
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, CloseOnExitMode> CloseOnExitMode();

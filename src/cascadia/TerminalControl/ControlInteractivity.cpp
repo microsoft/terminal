@@ -309,8 +309,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto isOnOriginalPosition = _lastMouseClickPosNoSelection == pixelPosition;
 
             // Rounded coordinates for text selection.
-            // Don't round in VT mouse mode; cell-level precision matters more
-            const auto round = !_core->IsVtMouseModeEnabled();
+            // Don't round in VT mouse mode; cell-level precision matters more.
+            // Only round for single-click: for double/triple-click, rounding
+            // can push the position to the next cell, selecting the wrong word.
+            const auto round = multiClickMapper == 1 && !_core->IsVtMouseModeEnabled();
             _core->LeftClickOnTerminal(_getTerminalPosition(til::point{ pixelPosition }, round),
                                        multiClickMapper,
                                        altEnabled,

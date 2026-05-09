@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on);
 
         hstring BellSoundPreview();
         void RequestAddBellSound(hstring path);
