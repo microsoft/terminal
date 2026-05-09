@@ -170,19 +170,11 @@ jobs:
       .\build\scripts\Generate-ThirdPartyNotices.ps1 -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
     displayName: Generate NOTICE.html from NOTICE.md
 
-  - template: .\steps-install-vcpkg.yml
-
-  - template: .\steps-restore-nuget.yml
-
-  - pwsh: |-
-      .\build\scripts\Set-LatestVCToolsVersion.ps1
-    displayName: Work around DD-1541167 (VCToolsVersion)
-
-  - ${{ parameters.beforeBuildSteps }}
-
   - ${{ if eq(parameters.enableRustBuild, true) }}:
     # ────────────────────────────────────────────────────────────────────────
     # Rust toolchain for src/tools/wtr (1ES-compliant pattern).
+    # Placed early — before vcpkg/nuget/VC-tools setup — so that Rust pipeline
+    # validation is independent of any C++ build environment problems.
     #
     # Pipeline lives at: https://microsoft.visualstudio.com/Dart/
     # Reference for this pattern: microsoft/sudo (.pipelines/OneBranch.Common.yml)
@@ -230,6 +222,16 @@ jobs:
         Write-Host "Building wtr for $triple ($('$(BuildConfiguration)'))"
         cargo build --manifest-path src/tools/wtr/Cargo.toml --target $triple --frozen @profileArg
       displayName: Build src/tools/wtr (Cargo)
+
+  - template: .\steps-install-vcpkg.yml
+
+  - template: .\steps-restore-nuget.yml
+
+  - pwsh: |-
+      .\build\scripts\Set-LatestVCToolsVersion.ps1
+    displayName: Work around DD-1541167 (VCToolsVersion)
+
+  - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
     displayName: Build OpenConsole.slnx
