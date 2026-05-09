@@ -3307,13 +3307,15 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
-    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri)
+    bool TerminalPage::_IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const
     {
-        if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
+        const auto& schemeName = parsedUri.SchemeName();
+
+        if (schemeName == L"http" || schemeName == L"https")
         {
             return true;
         }
-        if (parsedUri.SchemeName() == L"file")
+        if (schemeName == L"file")
         {
             static const auto pathext{ wil::TryGetEnvironmentVariableW<std::wstring>(L"PATHEXT") };
             const auto filename = parsedUri.Path();
@@ -3326,6 +3328,16 @@ namespace winrt::TerminalApp::implementation
             }
 
             return true;
+        }
+        if (const auto& safeSchemes = _settings.GlobalSettings().SafeUriSchemes())
+        {
+            for (const auto& scheme : safeSchemes)
+            {
+                if (til::equals_insensitive_ascii(schemeName, scheme))
+                {
+                    return true;
+                }
+            }
         }
 
         return false;
