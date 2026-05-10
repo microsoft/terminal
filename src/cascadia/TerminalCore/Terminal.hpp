@@ -243,8 +243,6 @@ public:
 
     const std::optional<til::color> GetTabColor() const;
 
-    std::wstring GetStartingTitle() const;
-
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 

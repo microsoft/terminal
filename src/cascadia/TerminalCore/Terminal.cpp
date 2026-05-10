@@ -110,7 +110,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
         _initialUpdateWasDone = true;
     }
 
-
     if (_stateMachine)
     {
         SetOptionalFeatures(settings);
@@ -1267,15 +1266,6 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexce
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;
-}
-
-// Method Description:
-// - Gets the starting title value
-// Return Value:
-// - The starting title
-std::wstring Terminal::GetStartingTitle() const
-{
-    return _startingTitle;
 }
 
 void Microsoft::Terminal::Core::Terminal::CompletionsChangedCallback(std::function<void(std::wstring_view, unsigned int)> pfn) noexcept

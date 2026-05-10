@@ -1508,11 +1508,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     hstring ControlCore::Title()
     {
         const auto lock = _terminal->LockForReading();
-
-        const auto startingTitle = _terminal->GetStartingTitle();
-
-        // startingTitle always gets prioritized if it was set.
-        return hstring{ !startingTitle.empty() ? startingTitle : _terminal->GetConsoleTitle() };
+        return hstring{ _terminal->GetConsoleTitle() };
     }
 
     hstring ControlCore::WorkingDirectory() const
