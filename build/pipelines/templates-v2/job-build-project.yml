@@ -206,6 +206,16 @@ jobs:
         cratesIoFeedOverride: sparse+https://pkgs.dev.azure.com/microsoft/Dart/_packaging/sudo_public_cargo/Cargo/index/
         additionalTargets: 'x86_64-pc-windows-msvc aarch64-pc-windows-msvc'
 
+    # CargoAuthenticate issues a Bearer token (using System.AccessToken) for
+    # every Azure Artifacts Cargo feed referenced in the config file.
+    # Required: without it, Azure Artifacts returns 404 on the sparse index
+    # endpoint and cargo reports "config.json not found in registry".
+    # This is the canonical 1ES Rust auth pattern (mirrors microsoft/edit).
+    - task: CargoAuthenticate@0
+      displayName: Authenticate Cargo feeds
+      inputs:
+        configFile: src/tools/wtr/.cargo/config.toml
+
     # Separate fetch step: some 1ES pools disable network during the build
     # phase. Fetching upfront keeps `cargo build --frozen` fully offline.
     - script: cargo fetch --manifest-path src/tools/wtr/Cargo.toml --locked
