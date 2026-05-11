@@ -209,7 +209,7 @@ jobs:
         # Instead, the registry + source replacement lives in
         # src/tools/wtr/.cargo/config.toml — CargoAuthenticate@0 (next step)
         # tokens it, and cargo's normal config-file resolution picks it up.
-        additionalTargets: 'x86_64-pc-windows-msvc aarch64-pc-windows-msvc'
+        additionalTargets: 'x86_64-pc-windows-msvc i686-pc-windows-msvc aarch64-pc-windows-msvc'
 
     # CargoAuthenticate issues a Bearer token (using System.AccessToken) for
     # every Azure Artifacts Cargo feed referenced in the config file.
@@ -230,12 +230,18 @@ jobs:
         $ErrorActionPreference = 'Stop'
         $triple = switch ('$(BuildPlatform)') {
           'x64'   { 'x86_64-pc-windows-msvc' }
+          'x86'   { 'i686-pc-windows-msvc' }
           'arm64' { 'aarch64-pc-windows-msvc' }
           default { 'x86_64-pc-windows-msvc' }
         }
-        $profileArg = if ('$(BuildConfiguration)' -eq 'Debug') { @() } else { @('--release') }
-        Write-Host "Building wtr for $triple ($('$(BuildConfiguration)'))"
-        cargo build --manifest-path src/tools/wtr/Cargo.toml --target $triple --frozen @profileArg
+        $config = '$(BuildConfiguration)'
+        Write-Host "Building wtr for $triple ($config)"
+        if ($config -eq 'Release') {
+          cargo build --manifest-path src/tools/wtr/Cargo.toml --target $triple --frozen --release
+        } else {
+          cargo build --manifest-path src/tools/wtr/Cargo.toml --target $triple --frozen
+        }
+        if ($LASTEXITCODE -ne 0) { throw "cargo build failed with exit code $LASTEXITCODE" }
       displayName: Build src/tools/wtr (Cargo)
 
   - template: .\steps-install-vcpkg.yml
