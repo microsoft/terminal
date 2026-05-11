@@ -201,9 +201,14 @@ jobs:
       inputs:
         rustVersion: ms-prod-1.93
         toolchainFeed: https://pkgs.dev.azure.com/microsoft/_packaging/RustTools/nuget/v3/index.json
-        # Reusing the sudo team's `sudo_public_cargo` feed in microsoft/Dart for now.
-        # TODO(wtr): replace with our own `microsoft/Dart` Cargo feed once provisioned.
-        cratesIoFeedOverride: sparse+https://pkgs.dev.azure.com/microsoft/Dart/_packaging/sudo_public_cargo/Cargo/index/
+        # NOTE: we deliberately do NOT set `cratesIoFeedOverride` here. That
+        # parameter injects an env-var registry override named `ms_crates_io`
+        # which CargoAuthenticate cannot see (it scans config files, not env
+        # vars), so the override registry ends up unauthenticated and Azure
+        # Artifacts returns 404 on its sparse-index endpoint.
+        # Instead, the registry + source replacement lives in
+        # src/tools/wtr/.cargo/config.toml — CargoAuthenticate@0 (next step)
+        # tokens it, and cargo's normal config-file resolution picks it up.
         additionalTargets: 'x86_64-pc-windows-msvc aarch64-pc-windows-msvc'
 
     # CargoAuthenticate issues a Bearer token (using System.AccessToken) for
