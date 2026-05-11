@@ -1585,10 +1585,6 @@
     <value>Name</value>
     <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
   </data>
-  <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
-    <value>Transparency</value>
-    <comment>Header for a group of settings related to transparency, including the acrylic material background of the app.</comment>
-  </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
     <comment>Header for a group of settings that control the image presented on the background of the app. Presented near "Profile_BackgroundImage" and other keys starting with "Profile_BackgroundImage".</comment>
@@ -1608,10 +1604,6 @@
   <data name="Globals_WarningsHeader.Text" xml:space="preserve">
     <value>Warnings</value>
     <comment>Header for a group of settings that control the warnings in the app.</comment>
-  </data>
-  <data name="Profile_WindowHeader.Text" xml:space="preserve">
-    <value>Window</value>
-    <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
   </data>
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Open your settings.json file. Alt+Click to open your defaults.json file.</value>
@@ -2776,7 +2768,6 @@
     <value>This text will be inserted between the paths of multiple files dropped into the terminal.</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
   </data>
-  <!--  Section expander headers + help text. These group settings into collapsible sections on each Settings page.  -->
   <data name="Launch_Section_LaunchBehavior_Title.Text" xml:space="preserve">
     <value>Launch behavior</value>
     <comment>Title of a section that groups settings that control how the terminal opens and behaves when launched.</comment>
@@ -2900,6 +2891,10 @@
   <data name="Profile_Section_VisualUI_Title.Text" xml:space="preserve">
     <value>Visual/UI Affordance</value>
     <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
+  <data name="Profile_Section_Window_Title.Text" xml:space="preserve">
+    <value>Window settings</value>
+    <comment>Title of a section expander on the Profile Appearance page that groups window-level appearance settings (background opacity, acrylic, padding, scrollbar visibility).</comment>
   </data>
   <data name="Profile_NameSectionHeaderFormat" xml:space="preserve">
     <value>{0} profile</value>
