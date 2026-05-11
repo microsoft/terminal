@@ -112,6 +112,13 @@ bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType hei
         return false;
     }
 
+    const auto currentDimensions = _GetMutableViewport().Dimensions();
+
+    if (width == currentDimensions.width && height == currentDimensions.height)
+    {
+        return false;
+    }
+
     if (_pfnWindowSizeChanged)
     {
         _pfnWindowSizeChanged(width, height);
