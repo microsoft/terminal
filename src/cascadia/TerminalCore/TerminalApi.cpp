@@ -91,8 +91,12 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     _assertLocked();
     if (!_suppressApplicationTitle)
     {
-        _title.emplace(title.empty() ? _startingTitle : title);
-        _pfnTitleChanged(_title.value());
+        _title.reset();
+        if (!title.empty())
+        {
+            _title.emplace(title);
+        }
+        _pfnTitleChanged(GetConsoleTitle());
     }
 }
 
