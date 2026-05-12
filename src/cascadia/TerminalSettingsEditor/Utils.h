@@ -158,7 +158,7 @@ struct HasScrollViewer
                     // the next dispatcher tick so the target's final layout
                     // position is known before we scroll/focus.
                     page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakControl{ winrt::weak_ref{ controlToFocus } }]() {
-                        if (auto control = weakControl.get())
+                        if (const auto control = weakControl.get())
                         {
                             control.UpdateLayout();
                             control.StartBringIntoView();
