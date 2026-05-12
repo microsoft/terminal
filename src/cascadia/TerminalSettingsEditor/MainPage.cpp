@@ -513,7 +513,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - parentNavTag: optional nav tag of the parent page when this navigation is invoked from inside another
     //         landing page. Used by the Profiles landing page to keep itself selected and to prepend a
     //         "Profiles" breadcrumb when entering Color schemes / a profile / Defaults / Add Profile from there.
-    void MainPage::_Navigate(const IInspectable& vm, BreadcrumbSubPage subPage, hstring elementToFocus, hstring parentNavTag)
+    void MainPage::_Navigate(const IInspectable& vm, BreadcrumbSubPage subPage, hstring elementToFocus, const hstring& parentNavTag)
     {
         _PreNavigateHelper();
 
