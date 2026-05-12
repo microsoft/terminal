@@ -84,6 +84,7 @@ namespace Microsoft::Console::Render::Atlas
         void _recreateFontDependentResources();
         void _recreateCellCountDependentResources();
         void _flushBufferLine();
+        u32 _nextAnalysisBoundary(u32 pos) const noexcept;
         void _mapRegularText(size_t offBeg, size_t offEnd);
         void _mapBuiltinGlyphs(size_t offBeg, size_t offEnd);
         void _mapCharacters(const wchar_t* text, u32 textLength, u32* mappedLength, IDWriteFontFace2** mappedFontFace) const;
