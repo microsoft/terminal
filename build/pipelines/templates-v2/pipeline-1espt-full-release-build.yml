@@ -121,6 +121,10 @@ extends:
 
                 - template: ./build/pipelines/templates-v2/steps-install-terrapin.yml@self
 
+                - template: ./build/pipelines/templates-v2/steps-inject-secrets.yml@self
+                  parameters:
+                    githubClientSecret: $(GithubClientSecret)
+
                 - task: UniversalPackages@0
                   displayName: Download terminal-internal Universal Package
                   inputs:
