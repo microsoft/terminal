@@ -238,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto& profileTag{ destination.try_as<Editor::ProfileViewModel>() })
         {
             // Find the new profile VM by guid
-            if (const auto newProfileVM = _FindProfileVMByGuid(profileTag.OriginalProfileGuid()))
+            if (const auto newProfileVM = _FindProfileViewModelByGuid(profileTag.OriginalProfileGuid()))
             {
                 destination = newProfileVM;
             }
@@ -627,7 +627,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == colorSchemesTag)
             {
-                // Color Schemes page is a accessible from root level and within Profiles,
+                // Color Schemes page is accessible from root level and within Profiles,
                 // so we need to prepend the root crumb in the second case.
                 if (parentNavTag == profilesTag)
                 {
@@ -694,7 +694,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Suppress the handler to avoid double-navigation
             _colorSchemesPageViewModelChangedRevoker.revoke();
 
-            // Color Schemes page is a accessible from within Profiles and root level,
+            // Color Schemes page is accessible from within Profiles and root level,
             // so we need to prepend the root crumb in the first case.
             if (parentNavTag == profilesTag)
             {
@@ -969,14 +969,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_NavigateToProfileHandler(const IInspectable& /*sender*/, winrt::guid profileGuid)
     {
-        if (const auto profileVM = _FindProfileVMByGuid(profileGuid))
+        if (const auto profileVM = _FindProfileViewModelByGuid(profileGuid))
         {
             _Navigate(profileVM);
         }
         // Silently fail if the profile wasn't found
     }
 
-    Editor::ProfileViewModel MainPage::_FindProfileVMByGuid(winrt::guid profileGuid) const
+    Editor::ProfileViewModel MainPage::_FindProfileViewModelByGuid(winrt::guid profileGuid) const
     {
         for (const auto& profileVM : _profilesPageVM.Profiles())
         {
