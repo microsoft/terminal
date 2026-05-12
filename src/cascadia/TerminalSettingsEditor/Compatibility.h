@@ -28,7 +28,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(TextMeasurement, winrt::Microsoft::Terminal::Control::TextMeasurement, _settings.GlobalSettings().TextMeasurement);
         GETSET_BINDABLE_ENUM_SETTING(AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth, _settings.GlobalSettings().AmbiguousWidth);
 
-        // Settings merged in from the former RenderingViewModel.
         GETSET_BINDABLE_ENUM_SETTING(GraphicsAPI, winrt::Microsoft::Terminal::Control::GraphicsAPI, _settings.GlobalSettings().GraphicsAPI);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), DisablePartialInvalidation);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_settings.GlobalSettings(), SoftwareRendering);
