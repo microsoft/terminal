@@ -1866,8 +1866,12 @@
     <comment>Button label that creates a new key binding on the actions page.</comment>
   </data>
   <data name="Actions_ViewAllKeyChordsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>View all</value>
-    <comment>Tooltip for a button on each row of the Actions page that opens a flyout listing every key binding registered for that action. Shown only when the action has more than one key binding.</comment>
+    <value>View all key bindings</value>
+    <comment>Tooltip for a button on each row of the Actions page that opens a flyout listing every key binding registered for that action.</comment>
+  </data>
+  <data name="Actions_NoKeyBindings.Text" xml:space="preserve">
+    <value>No key bindings</value>
+    <comment>Empty-state message shown inside the "view all key bindings" flyout (opened from each row's "..." button on the Actions page) when the action has no key bindings registered.</comment>
   </data>
   <data name="EditAction_ActionType.Header" xml:space="preserve">
     <value>Action type</value>

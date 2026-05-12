@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _cachedDisplayName;
     }
 
-    winrt::hstring CommandViewModel::Name()
+    winrt::hstring CommandViewModel::Name() const noexcept
     {
         return _command.HasName() ? _command.Name() : L"";
     }
@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return result;
     }
 
-    winrt::hstring CommandViewModel::FirstKeyChordText()
+    winrt::hstring CommandViewModel::FirstKeyChordText() const
     {
         if (_KeyChordList.Size() != 0)
         {
@@ -163,7 +163,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return L"";
     }
 
-    Control::KeyChord CommandViewModel::FirstKeyChord()
+    Control::KeyChord CommandViewModel::FirstKeyChord() const noexcept
     {
         if (_KeyChordList.Size() != 0)
         {
@@ -172,12 +172,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return nullptr;
     }
 
-    bool CommandViewModel::HasNoKeyChords()
+    bool CommandViewModel::HasNoKeyChords() const noexcept
     {
         return _KeyChordList.Size() == 0;
     }
 
-    winrt::hstring CommandViewModel::AdditionalKeyChordCountText()
+    winrt::hstring CommandViewModel::AdditionalKeyChordCountText() const
     {
         const auto size = _KeyChordList.Size();
         if (size > 1)
@@ -187,7 +187,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return L"";
     }
 
-    winrt::hstring CommandViewModel::AdditionalKeyChordTooltipText()
+    winrt::hstring CommandViewModel::AdditionalKeyChordTooltipText() const
     {
         const auto size = _KeyChordList.Size();
         if (size <= 1)
@@ -206,12 +206,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::hstring{ result };
     }
 
-    winrt::hstring CommandViewModel::ID()
+    winrt::hstring CommandViewModel::ID() const noexcept
     {
         return _command.ID();
     }
 
-    bool CommandViewModel::IsUserAction()
+    bool CommandViewModel::IsUserAction() const noexcept
     {
         return _command.Origin() == OriginTag::User;
     }
@@ -252,17 +252,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    winrt::hstring CommandViewModel::ActionNameTextBoxAutomationPropName()
+    winrt::hstring CommandViewModel::ActionNameTextBoxAutomationPropName() const
     {
         return RS_(L"Actions_Name/Text");
     }
 
-    winrt::hstring CommandViewModel::ShortcutActionComboBoxAutomationPropName()
+    winrt::hstring CommandViewModel::ShortcutActionComboBoxAutomationPropName() const
     {
         return RS_(L"Actions_ShortcutAction/Text");
     }
 
-    winrt::hstring CommandViewModel::AdditionalArgumentsControlAutomationPropName()
+    winrt::hstring CommandViewModel::AdditionalArgumentsControlAutomationPropName() const
     {
         return RS_(L"Actions_Arguments/Text");
     }
@@ -1190,7 +1190,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring KeyChordViewModel::DeleteButtonName() const noexcept { return RS_(L"Actions_DeleteButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
     hstring KeyChordViewModel::EditButtonName() const noexcept { return RS_(L"Actions_EditButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
 
-    winrt::hstring KeyChordViewModel::DisplayLabel()
+    winrt::hstring KeyChordViewModel::DisplayLabel() const
     {
         return hstring{ RS_fmt(L"EditAction_KeyBindingNumberFormat", _Index) };
     }

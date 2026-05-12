@@ -157,6 +157,21 @@
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
     </Style>
 
+    <!--
+        Similar to a local:SettingContainer without actually being one.
+        Used by data-templated rows (i.e. Actions page).
+    -->
+    <Style x:Key="SettingsCardStyle"
+           TargetType="Grid">
+        <Setter Property="MinHeight" Value="64" />
+        <Setter Property="Padding" Value="16,8,8,8" />
+        <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
+        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+
     <Style x:Key="SettingsPageItemHeaderStyle"
            BasedOn="{StaticResource BodyTextBlockStyle}"
            TargetType="TextBlock">

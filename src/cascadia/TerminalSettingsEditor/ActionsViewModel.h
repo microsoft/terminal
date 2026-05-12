@@ -69,18 +69,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Initialize();
 
         winrt::hstring DisplayName();
-        winrt::hstring Name();
+        winrt::hstring Name() const noexcept;
         void Name(const winrt::hstring& newName);
         winrt::hstring DisplayNameAndKeyChordAutomationPropName();
 
-        winrt::hstring FirstKeyChordText();
-        Control::KeyChord FirstKeyChord();
-        bool HasNoKeyChords();
-        winrt::hstring AdditionalKeyChordCountText();
-        winrt::hstring AdditionalKeyChordTooltipText();
+        winrt::hstring FirstKeyChordText() const;
+        Control::KeyChord FirstKeyChord() const noexcept;
+        bool HasNoKeyChords() const noexcept;
+        winrt::hstring AdditionalKeyChordCountText() const;
+        winrt::hstring AdditionalKeyChordTooltipText() const;
 
-        winrt::hstring ID();
-        bool IsUserAction();
+        winrt::hstring ID() const noexcept;
+        bool IsUserAction() const noexcept;
 
         void Edit_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;
@@ -91,9 +91,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddKeybinding_Click();
 
         // UIA text
-        winrt::hstring ActionNameTextBoxAutomationPropName();
-        winrt::hstring ShortcutActionComboBoxAutomationPropName();
-        winrt::hstring AdditionalArgumentsControlAutomationPropName();
+        winrt::hstring ActionNameTextBoxAutomationPropName() const;
+        winrt::hstring ShortcutActionComboBoxAutomationPropName() const;
+        winrt::hstring AdditionalArgumentsControlAutomationPropName() const;
 
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
@@ -233,7 +233,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CancelChanges();
         void DeleteKeyChord();
 
-        winrt::hstring DisplayLabel();
+        winrt::hstring DisplayLabel() const;
 
         // UIA Text
         hstring CancelButtonName() const noexcept;

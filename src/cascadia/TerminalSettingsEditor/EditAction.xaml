@@ -148,6 +148,14 @@
                 </local:SettingContainer>
             </DataTemplate>
 
+            <!--
+                BODGY: Each ArgWrapper DataTemplate below wraps its editor control
+                in a <local:SettingContainer Header="{x:Bind Name}"> rather than sharing a
+                single outer template. This is because a bug in WinUI 2 prevents a
+                ContentPresenter + ContentTemplateSelector pattern from working correctly,
+                resulting in "Microsoft.Terminal.Settings.Editor.ArgWrapper" being shown.
+            -->
+
             <!--  Example shortcut action to test this template: Adjust Opacity  -->
             <!--  Currently that is the only Int32 arg, so just clamp the min/max values according to that  -->
             <DataTemplate x:Key="Int32Template"
@@ -436,6 +444,7 @@
             <!--  Key bindings expander  -->
             <local:SettingContainer x:Name="KeyBindingsContainer"
                                     x:Uid="EditAction_KeyBindings"
+                                    StartExpanded="{x:Bind mtu:Converters.InvertBoolean(ViewModel.HasNoKeyChords), Mode=OneWay}"
                                     Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel>
                     <!--  "New key binding" button  -->

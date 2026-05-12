@@ -18,17 +18,6 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!--  Styles  -->
-            <Style x:Key="ActionRowCardStyle"
-                   TargetType="Grid">
-                <Setter Property="MinHeight" Value="64" />
-                <Setter Property="Padding" Value="16,8,8,8" />
-                <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
-                <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
-                <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
-                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-                <Setter Property="HorizontalAlignment" Value="Stretch" />
-            </Style>
-
             <Style x:Key="ActionRowItemContainerStyle"
                    BasedOn="{StaticResource DefaultListViewItemStyle}"
                    TargetType="ListViewItem">
@@ -70,7 +59,7 @@
                           x:DataType="local:CommandViewModel">
                 <Grid AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}"
                       ColumnSpacing="8"
-                      Style="{StaticResource ActionRowCardStyle}">
+                      Style="{StaticResource SettingsCardStyle}">
                     <Grid.ColumnDefinitions>
                         <!--  command name  -->
                         <ColumnDefinition Width="*" />
@@ -105,21 +94,31 @@
                     <!--  "..." button + flyout  -->
                     <Button x:Uid="Actions_ViewAllKeyChordsButton"
                             Grid.Column="3"
-                            IsEnabled="{x:Bind mtu:Converters.InvertBoolean(HasNoKeyChords), Mode=OneWay}"
                             Style="{StaticResource ActionRowSubtleButtonStyle}">
                         <FontIcon FontSize="14"
                                   Glyph="&#xE712;" />
                         <Button.Flyout>
                             <Flyout Placement="Bottom">
-                                <ItemsControl ItemTemplate="{StaticResource AllKeyChordsFlyoutItemTemplate}"
-                                              ItemsSource="{x:Bind KeyChordList, Mode=OneWay}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Vertical"
-                                                        Spacing="4" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
+                                <Grid MinWidth="120">
+                                    <!--  Empty state: shown only when the action has no chords  -->
+                                    <TextBlock x:Uid="Actions_NoKeyBindings"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Style="{StaticResource SecondaryTextBlockStyle}"
+                                               Visibility="{x:Bind HasNoKeyChords, Mode=OneWay}" />
+                                    
+                                    <!--  Chord list: shown only when the action has at least one chord  -->
+                                    <ItemsControl ItemTemplate="{StaticResource AllKeyChordsFlyoutItemTemplate}"
+                                                  ItemsSource="{x:Bind KeyChordList, Mode=OneWay}"
+                                                  Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(HasNoKeyChords), Mode=OneWay}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Vertical"
+                                                            Spacing="4" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </Grid>
                             </Flyout>
                         </Button.Flyout>
                     </Button>
