@@ -98,7 +98,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _answerbackMessage = settings.AnswerbackMessage();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
-    _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
@@ -123,6 +122,11 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     // Save the changes made above and in UpdateAppearance as the new default render settings.
     GetRenderSettings().SaveDefaultSettings();
+
+    if (!_startingTitle)
+    {
+        _startingTitle = settings.StartingTitle();
+    }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
