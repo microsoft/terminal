@@ -35,7 +35,10 @@
                     Style="{StaticResource SettingsStackStyle}">
 
             <!--  Section: {Profile.Name} profile (or "Profile defaults")  -->
-            <local:SettingContainer x:Uid="Profile_Section_HeaderPlaceholder" Header="{x:Bind Profile.SectionHeaderText, Mode=OneWay}" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Profile_Section_HeaderPlaceholder"
+                                    Header="{x:Bind Profile.SectionHeaderText, Mode=OneWay}"
+                                    StartExpanded="True"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Name  -->
                     <!--
@@ -115,7 +118,8 @@
             </local:SettingContainer>
 
             <!--  Section: Visual/UI Affordance  -->
-            <local:SettingContainer x:Uid="Profile_Section_VisualUI" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Profile_Section_VisualUI"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Tab Title  -->
                     <local:SettingContainer x:Name="TabTitle"

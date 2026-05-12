@@ -28,7 +28,9 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Section: Visual style  -->
-        <local:SettingContainer x:Uid="Globals_Section_VisualStyle" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
+        <local:SettingContainer x:Uid="Globals_Section_VisualStyle"
+                                StartExpanded="True"
+                                Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Theme  -->
                 <local:SettingContainer x:Name="Theme"
@@ -70,7 +72,8 @@
         </local:SettingContainer>
 
         <!--  Section: Tabs and layout  -->
-        <local:SettingContainer x:Uid="Globals_Section_TabsLayout" Style="{StaticResource SectionExpanderStyle}">
+        <local:SettingContainer x:Uid="Globals_Section_TabsLayout"
+                                Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Position of new tab  -->
                 <local:SettingContainer x:Name="NewTabPosition"
@@ -118,7 +121,8 @@
         </local:SettingContainer>
 
         <!--  Section: Window behavior  -->
-        <local:SettingContainer x:Uid="Globals_Section_WindowBehavior" Style="{StaticResource SectionExpanderStyle}">
+        <local:SettingContainer x:Uid="Globals_Section_WindowBehavior"
+                                Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Always on Top  -->
                 <local:SettingContainer x:Name="AlwaysOnTop"
@@ -137,7 +141,8 @@
         </local:SettingContainer>
 
         <!--  Section: Title bar & identity  -->
-        <local:SettingContainer x:Uid="Globals_Section_TitleBarIdentity" Style="{StaticResource SectionExpanderStyle}">
+        <local:SettingContainer x:Uid="Globals_Section_TitleBarIdentity"
+                                Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Show Title in Titlebar (use active terminal title as application title)  -->
                 <local:SettingContainer x:Name="ShowTitleInTitlebar"
@@ -156,7 +161,8 @@
         </local:SettingContainer>
 
         <!--  Section: System integration & notifications  -->
-        <local:SettingContainer x:Uid="Globals_Section_SystemIntegration" Style="{StaticResource SectionExpanderStyle}">
+        <local:SettingContainer x:Uid="Globals_Section_SystemIntegration"
+                                Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Always Show Notification Icon  -->
                 <local:SettingContainer x:Name="AlwaysShowNotificationIcon"

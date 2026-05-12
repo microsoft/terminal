@@ -26,7 +26,9 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Section: Compatibility  -->
-        <local:SettingContainer x:Uid="Compatibility_Section_Compatibility" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
+        <local:SettingContainer x:Uid="Compatibility_Section_Compatibility"
+                                StartExpanded="True"
+                                Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Allow Headless  -->
                 <local:SettingContainer x:Name="AllowHeadless"
@@ -109,7 +111,8 @@
         </local:SettingContainer>
 
         <!--  Section: Rendering  -->
-        <local:SettingContainer x:Uid="Compatibility_Section_Rendering" Style="{StaticResource SectionExpanderStyle}">
+        <local:SettingContainer x:Uid="Compatibility_Section_Rendering"
+                                Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Graphics API  -->
                 <local:SettingContainer x:Name="GraphicsAPI"

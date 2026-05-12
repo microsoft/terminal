@@ -613,13 +613,7 @@
                     <muxc:Expander x:Name="Expander"
                                    HorizontalAlignment="Stretch"
                                    HorizontalContentAlignment="Stretch"
-                                   Content="{TemplateBinding Content}"
                                    IsExpanded="{TemplateBinding StartExpanded}">
-                        <muxc:Expander.Resources>
-                            <!--  Reduce top content padding so the gap between the header and the
-                                  first SettingContainer matches the 4 px gap between adjacent rows.  -->
-                            <Thickness x:Key="ExpanderContentPadding">16,0,16,16</Thickness>
-                        </muxc:Expander.Resources>
                         <muxc:Expander.Header>
                             <StackPanel MinHeight="64"
                                         Padding="0,12,0,12"
@@ -631,6 +625,8 @@
                                            Text="{TemplateBinding HelpText}" />
                             </StackPanel>
                         </muxc:Expander.Header>
+                        <ContentPresenter Margin="0,-4,0,0"
+                                          Content="{TemplateBinding Content}" />
                     </muxc:Expander>
                 </ControlTemplate>
             </Setter.Value>

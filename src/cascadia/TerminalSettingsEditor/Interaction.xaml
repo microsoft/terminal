@@ -27,7 +27,9 @@
     <StackPanel>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Section: Clipboard and paste behavior  -->
-            <local:SettingContainer x:Uid="Interaction_Section_Clipboard" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Interaction_Section_Clipboard"
+                                    StartExpanded="True"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Copy On Select  -->
                     <local:SettingContainer x:Name="CopyOnSelect"
@@ -63,7 +65,8 @@
             </local:SettingContainer>
 
             <!--  Section: Text selection & editing  -->
-            <local:SettingContainer x:Uid="Interaction_Section_TextSelection" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Interaction_Section_TextSelection"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Word Delimiters  -->
                     <local:SettingContainer x:Name="WordDelimiters"
@@ -85,7 +88,8 @@
             </local:SettingContainer>
 
             <!--  Section: Window and layout behavior  -->
-            <local:SettingContainer x:Uid="Interaction_Section_WindowLayout" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Interaction_Section_WindowLayout"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Snap On Resize  -->
                     <local:SettingContainer x:Name="SnapToGridOnResize"
@@ -114,7 +118,8 @@
             </local:SettingContainer>
 
             <!--  Section: Mouse & scrolling  -->
-            <local:SettingContainer x:Uid="Interaction_Section_MouseScrolling" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Interaction_Section_MouseScrolling"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Enable Font Size Changes with Scrolling  -->
                     <local:SettingContainer x:Name="ScrollToZoom"
@@ -133,7 +138,8 @@
             </local:SettingContainer>
 
             <!--  Section: URLs & external actions  -->
-            <local:SettingContainer x:Uid="Interaction_Section_UrlsExternal" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Interaction_Section_UrlsExternal"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Detect URLs  -->
                     <local:SettingContainer x:Name="DetectURLs"
@@ -155,7 +161,8 @@
             </local:SettingContainer>
 
             <!--  Section: Warnings  -->
-            <local:SettingContainer x:Uid="Interaction_Section_Warnings" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Interaction_Section_Warnings"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Confirm Close On  -->
                     <local:SettingContainer x:Name="ConfirmOnClose"

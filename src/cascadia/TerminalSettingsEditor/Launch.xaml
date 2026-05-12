@@ -44,7 +44,9 @@
     <StackPanel>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Section: Launch behavior  -->
-            <local:SettingContainer x:Uid="Launch_Section_LaunchBehavior" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Launch_Section_LaunchBehavior"
+                                    StartExpanded="True"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Default Profile  -->
                     <local:SettingContainer x:Name="DefaultProfile"
@@ -234,7 +236,8 @@
             </local:SettingContainer>
 
             <!--  Section: System & input defaults  -->
-            <local:SettingContainer x:Uid="Launch_Section_SystemInputDefaults" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Launch_Section_SystemInputDefaults"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Default Terminal  -->
                     <local:SettingContainer x:Name="DefaultTerminalDropdown"

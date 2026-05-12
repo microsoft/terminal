@@ -81,7 +81,8 @@
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
 
             <!--  Section: Window settings  -->
-            <local:SettingContainer x:Uid="Profile_Section_Window" Style="{StaticResource SectionExpanderStyle}">
+            <local:SettingContainer x:Uid="Profile_Section_Window"
+                                    Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Opacity  -->
                     <local:SettingContainer x:Name="Opacity"
