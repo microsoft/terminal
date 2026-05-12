@@ -1862,8 +1862,56 @@
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
   <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
-    <value>Add new</value>
-    <comment>Button label that creates a new action on the actions page.</comment>
+    <value>Add new key binding</value>
+    <comment>Button label that creates a new key binding on the actions page.</comment>
+  </data>
+  <data name="Actions_ViewAllKeyChordsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>View all</value>
+    <comment>Tooltip for a button on each row of the Actions page that opens a flyout listing every key binding registered for that action. Shown only when the action has more than one key binding.</comment>
+  </data>
+  <data name="EditAction_ActionType.Header" xml:space="preserve">
+    <value>Action type</value>
+    <comment>Header for the action-type setting on the Edit Action page (lets the user pick which action runs when this command is invoked).</comment>
+  </data>
+  <data name="EditAction_ActionName.Header" xml:space="preserve">
+    <value>Action name</value>
+    <comment>Header for the action-name setting on the Edit Action page (lets the user provide a friendly name for this command).</comment>
+  </data>
+  <data name="EditAction_KeyBindings.Header" xml:space="preserve">
+    <value>Key bindings</value>
+    <comment>Header for the key bindings expander on the Edit Action page.</comment>
+  </data>
+  <data name="EditAction_KeyBindings.HelpText" xml:space="preserve">
+    <value>Customize keyboard shortcuts to speed up common actions and workflows.</value>
+    <comment>Help text shown under the "Key bindings" header on the Edit Action page.</comment>
+  </data>
+  <data name="EditAction_NewKeyBinding.Header" xml:space="preserve">
+    <value>New key binding</value>
+    <comment>Header for the "add a new key binding" row on the Edit Action page.</comment>
+  </data>
+  <data name="EditAction_AddKeyBinding.Content" xml:space="preserve">
+    <value>Add key binding</value>
+    <comment>Label for the accent button that appends a new key binding to the current action.</comment>
+  </data>
+  <data name="EditAction_AdditionalCustomizations.Header" xml:space="preserve">
+    <value>Additional customizations</value>
+    <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
+  </data>
+  <data name="EditAction_AdditionalCustomizations.HelpText" xml:space="preserve">
+    <value>Fine tune how Actions behave.</value>
+    <comment>Help text shown under the "Additional customizations" header on the Edit Action page.</comment>
+  </data>
+  <data name="EditAction_KeyBindingNumberFormat" xml:space="preserve">
+    <value>Key Binding #{}</value>
+    <comment>{Locked="#{}"} Header label for an individual key binding inside the "Key bindings" expander on the Edit Action page. {} is replaced with the 1-based index of the binding (e.g. "Key Binding #1").</comment>
+  </data>
+  <data name="EditAction_DeleteCommand.Header" xml:space="preserve">
+    <value>Delete this command</value>
+    <comment>Header for the setting container that holds the "Delete action" button at the bottom of the Edit Action page.</comment>
+  </data>
+  <data name="EditAction_DeleteCommand.HelpText" xml:space="preserve">
+    <value>This action will be removed and any key bindings associated with it will no longer work.</value>
+    <comment>Help text shown under the "Delete this command" setting container on the Edit Action page.</comment>
   </data>
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Action</value>

@@ -74,6 +74,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring DisplayNameAndKeyChordAutomationPropName();
 
         winrt::hstring FirstKeyChordText();
+        Control::KeyChord FirstKeyChord();
+        bool HasNoKeyChords();
         winrt::hstring AdditionalKeyChordCountText();
         winrt::hstring AdditionalKeyChordTooltipText();
 
@@ -115,6 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
         void _ReplaceCommandWithUserCopy(bool reinitialize);
         void _CreateAndInitializeActionArgsVMHelper();
+        void _ReindexKeyChordList();
     };
 
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
@@ -230,15 +233,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CancelChanges();
         void DeleteKeyChord();
 
+        winrt::hstring DisplayLabel();
+
         // UIA Text
         hstring CancelButtonName() const noexcept;
         hstring AcceptButtonName() const noexcept;
         hstring DeleteButtonName() const noexcept;
+        hstring EditButtonName() const noexcept;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
         VIEW_MODEL_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(int32_t, Index, 0);
 
     public:
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> AddKeyChordRequested;
