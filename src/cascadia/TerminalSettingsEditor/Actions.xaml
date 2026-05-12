@@ -8,7 +8,6 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:mtu="using:Microsoft.Terminal.UI"
       mc:Ignorable="d">
 
     <Page.Resources>
@@ -21,10 +20,14 @@
             <Style x:Key="ActionRowItemContainerStyle"
                    BasedOn="{StaticResource DefaultListViewItemStyle}"
                    TargetType="ListViewItem">
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="Margin" Value="0,4,0,0" />
+                <Setter Property="Padding" Value="{StaticResource SettingsCardPadding}" />
+                <Setter Property="MinHeight" Value="{StaticResource SettingsCardMinHeight}" />
+                <Setter Property="Margin" Value="{StaticResource SettingsCardItemMargin}" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
+                <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
+                <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
+                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
             </Style>
 
             <Style x:Key="ActionRowNameTextStyle"
@@ -47,19 +50,42 @@
                 <Setter Property="BorderBrush" Value="Transparent" />
             </Style>
 
+            <!--
+                FlyoutPresenter style with no internal padding so a full-width Border
+                separator inside the flyout can reach the flyout's left/right edges.
+            -->
+            <Style x:Key="EdgeToEdgeFlyoutPresenterStyle"
+                   BasedOn="{StaticResource DefaultFlyoutPresenterStyle}"
+                   TargetType="FlyoutPresenter">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            </Style>
+
             <!--  Templates  -->
-            <DataTemplate x:Key="AllKeyChordsFlyoutItemTemplate"
-                          x:DataType="local:KeyChordViewModel">
-                <local:KeyChordVisual Margin="0,2,0,2"
-                                      HorizontalAlignment="Right"
-                                      KeyChord="{x:Bind CurrentKeys, Mode=OneWay}" />
+            <DataTemplate x:Key="ViewAllKeyChordsFlyoutSeparatorTemplate">
+                <Border Height="1"
+                        Margin="0,4,0,4"
+                        Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="ViewAllKeyChordsFlyoutEmptyStateTemplate">
+                <TextBlock x:Uid="Actions_NoKeyBindings"
+                           Margin="12,8,12,8"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource SecondaryTextBlockStyle}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="ViewAllKeyChordsFlyoutItemTemplate">
+                <local:KeyChordVisual Margin="{ThemeResource MenuFlyoutItemThemePaddingNarrow}"
+                                      HorizontalAlignment="Right" />
             </DataTemplate>
 
             <DataTemplate x:Key="CommandTemplate"
                           x:DataType="local:CommandViewModel">
                 <Grid AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}"
-                      ColumnSpacing="8"
-                      Style="{StaticResource SettingsCardStyle}">
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <!--  command name  -->
                         <ColumnDefinition Width="*" />
@@ -94,33 +120,10 @@
                     <!--  "..." button + flyout  -->
                     <Button x:Uid="Actions_ViewAllKeyChordsButton"
                             Grid.Column="3"
+                            Click="ViewAllKeyChordsButton_Click"
                             Style="{StaticResource ActionRowSubtleButtonStyle}">
                         <FontIcon FontSize="14"
                                   Glyph="&#xE712;" />
-                        <Button.Flyout>
-                            <Flyout Placement="Bottom">
-                                <Grid MinWidth="120">
-                                    <!--  Empty state: shown only when the action has no chords  -->
-                                    <TextBlock x:Uid="Actions_NoKeyBindings"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Style="{StaticResource SecondaryTextBlockStyle}"
-                                               Visibility="{x:Bind HasNoKeyChords, Mode=OneWay}" />
-                                    
-                                    <!--  Chord list: shown only when the action has at least one chord  -->
-                                    <ItemsControl ItemTemplate="{StaticResource AllKeyChordsFlyoutItemTemplate}"
-                                                  ItemsSource="{x:Bind KeyChordList, Mode=OneWay}"
-                                                  Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(HasNoKeyChords), Mode=OneWay}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical"
-                                                            Spacing="4" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                    </ItemsControl>
-                                </Grid>
-                            </Flyout>
-                        </Button.Flyout>
                     </Button>
                 </Grid>
             </DataTemplate>
@@ -157,7 +160,37 @@
                       ItemContainerStyle="{StaticResource ActionRowItemContainerStyle}"
                       ItemTemplate="{StaticResource CommandTemplate}"
                       ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}"
-                      SelectionMode="None" />
+                      SelectionMode="None">
+                <!--
+                    The framework ListViewItemPresenter reads its per-state backgrounds
+                    from these theme resources (not from ListViewItem.Background), so we
+                    override them here to match the card chrome on ActionRowItemContainerStyle.
+                -->
+                <ListView.Resources>
+                    <ResourceDictionary>
+                        <ResourceDictionary.ThemeDictionaries>
+                            <ResourceDictionary x:Key="Default">
+                                <StaticResource x:Key="ListViewItemBackground"
+                                                ResourceKey="ExpanderHeaderBackground" />
+                                <StaticResource x:Key="ListViewItemBackgroundPointerOver"
+                                                ResourceKey="ControlFillColorSecondaryBrush" />
+                                <StaticResource x:Key="ListViewItemBackgroundPressed"
+                                                ResourceKey="ControlFillColorTertiaryBrush" />
+                                <StaticResource x:Key="ListViewItemBackgroundSelected"
+                                                ResourceKey="ExpanderHeaderBackground" />
+                                <StaticResource x:Key="ListViewItemBackgroundSelectedPointerOver"
+                                                ResourceKey="ControlFillColorSecondaryBrush" />
+                                <StaticResource x:Key="ListViewItemBackgroundSelectedPressed"
+                                                ResourceKey="ControlFillColorTertiaryBrush" />
+                            </ResourceDictionary>
+                            <ResourceDictionary x:Key="HighContrast">
+                                <StaticResource x:Key="ListViewItemBackground"
+                                                ResourceKey="SystemColorButtonFaceColorBrush" />
+                            </ResourceDictionary>
+                        </ResourceDictionary.ThemeDictionaries>
+                    </ResourceDictionary>
+                </ListView.Resources>
+            </ListView>
         </StackPanel>
     </Border>
 </Page>

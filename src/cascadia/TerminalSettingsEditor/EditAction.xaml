@@ -47,9 +47,11 @@
                 <Setter Property="MinWidth" Value="160" />
             </Style>
 
-            <!--  Item container for the per-chord ListView. We're hosting a SettingContainer
-                  inside each item, so strip the default ListViewItem visuals (padding, border,
-                  hover/selection background) so they don't double up.  -->
+            <!--
+                Item container for the per-chord ListView. We're hosting a SettingContainer
+                inside each item, so strip the default ListViewItem visuals (padding, border,
+                hover/selection background) so they don't double up.
+            -->
             <Style x:Key="KeyChordListViewItemStyle"
                    BasedOn="{StaticResource DefaultListViewItemStyle}"
                    TargetType="ListViewItem">
