@@ -107,8 +107,8 @@
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="SegoeFluentIconList.h" />
-    <ClInclude Include="Converters.h">
-      <DependentUpon>Converters.idl</DependentUpon>
+    <ClInclude Include="TerminalColorConverters.h">
+      <DependentUpon>TerminalColorConverters.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ColorSchemeViewModel.h">
@@ -309,8 +309,8 @@
       <DependentUpon>ActionsViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="Converters.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
+    <ClCompile Include="TerminalColorConverters.cpp">
+      <DependentUpon>TerminalColorConverters.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="ColorSchemeViewModel.cpp">
@@ -432,7 +432,7 @@
     </Midl>
     <Midl Include="ProfileViewModel.idl" />
     <Midl Include="ActionsViewModel.idl" />
-    <Midl Include="Converters.idl" />
+    <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />

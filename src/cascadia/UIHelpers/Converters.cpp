@@ -4,6 +4,7 @@
 #include <til/winrt.h>
 
 #include "Converters.g.cpp"
+#include "StringNotEmptyToVisibilityConverter.g.cpp"
 
 #pragma warning(disable : 26497) // We will make these functions constexpr, as they are part of an ABI boundary.
 #pragma warning(disable : 26440) // The function ... can be declared as noexcept.
@@ -79,5 +80,23 @@ namespace winrt::Microsoft::Terminal::UI::implementation
     double Converters::FontWeightToDouble(const winrt::Windows::UI::Text::FontWeight fontWeight)
     {
         return fontWeight.Weight;
+    }
+
+    winrt::Windows::Foundation::IInspectable StringNotEmptyToVisibilityConverter::Convert(winrt::Windows::Foundation::IInspectable const& value, winrt::Windows::UI::Xaml::Interop::TypeName const& /*targetType*/, winrt::Windows::Foundation::IInspectable const& /*parameter*/, winrt::hstring const& /*language*/)
+    {
+        winrt::hstring text;
+        if (value)
+        {
+            if (const auto& str{ value.try_as<winrt::hstring>() })
+            {
+                text = *str;
+            }
+        }
+        return winrt::box_value(Converters::StringNotEmptyToVisibility(text));
+    }
+
+    winrt::Windows::Foundation::IInspectable StringNotEmptyToVisibilityConverter::ConvertBack(winrt::Windows::Foundation::IInspectable const& /*value*/, winrt::Windows::UI::Xaml::Interop::TypeName const& /*targetType*/, winrt::Windows::Foundation::IInspectable const& /*parameter*/, winrt::hstring const& /*language*/)
+    {
+        throw winrt::hresult_not_implemented();
     }
 }

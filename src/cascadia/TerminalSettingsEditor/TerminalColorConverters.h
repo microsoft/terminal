@@ -5,7 +5,6 @@
 
 #include "ColorToBrushConverter.g.h"
 #include "ColorToStringConverter.g.h"
-#include "EmptyStringToVisibilityConverter.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -25,19 +24,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
         Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
     };
-
-    struct EmptyStringToVisibilityConverter : EmptyStringToVisibilityConverterT<EmptyStringToVisibilityConverter>
-    {
-        EmptyStringToVisibilityConverter() = default;
-
-        Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
-        Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value, Windows::UI::Xaml::Interop::TypeName const& targetType, Windows::Foundation::IInspectable const& parameter, hstring const& language);
-    };
 };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(ColorToBrushConverter);
     BASIC_FACTORY(ColorToStringConverter);
-    BASIC_FACTORY(EmptyStringToVisibilityConverter);
 }
