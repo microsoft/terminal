@@ -1139,7 +1139,8 @@ std::wstring_view Utils::TrimPaste(std::wstring_view textView) noexcept
 #pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
 
 // Returns true for C0 characters and C1 [single-character] CSI.
-constexpr bool isActionableFromGround(const wchar_t wch) noexcept
+#pragma warning(suppress : 26497) // You can attempt to make 'Microsoft::Console::Utils::IsActionableFromGround' constexpr unless it contains any undefined behavior(f.4).
+bool Utils::IsActionableFromGround(const wchar_t wch) noexcept
 {
     // This is equivalent to:
     //   return (wch <= 0x1f) || (wch >= 0x7f && wch <= 0x9f);
@@ -1230,7 +1231,7 @@ plainSearch:
 #endif
 
 #pragma loop(no_vector)
-    for (const auto end = beg + len; it < end && !isActionableFromGround(*it); ++it)
+    for (const auto end = beg + len; it < end && !IsActionableFromGround(*it); ++it)
     {
     }
 

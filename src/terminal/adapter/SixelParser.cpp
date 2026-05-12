@@ -42,9 +42,8 @@ size_t SixelParser::MaxColorsForLevel(const VTInt conformanceLevel) noexcept
     }
 }
 
-SixelParser::SixelParser(AdaptDispatch& dispatcher, const StateMachine& stateMachine, const VTInt conformanceLevel) noexcept :
+SixelParser::SixelParser(AdaptDispatch& dispatcher, const VTInt conformanceLevel) noexcept :
     _dispatcher{ dispatcher },
-    _stateMachine{ stateMachine },
     _conformanceLevel{ conformanceLevel },
     _cellSize{ CellSizeForLevel(conformanceLevel) },
     _maxColors{ MaxColorsForLevel(conformanceLevel) }
@@ -80,7 +79,7 @@ void SixelParser::SetDisplayMode(const bool enabled) noexcept
     }
 }
 
-std::function<bool(wchar_t)> SixelParser::DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor)
+std::function<bool(std::wstring_view)> SixelParser::DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor)
 {
     if (_initTextBufferBoundaries())
     {
@@ -89,8 +88,17 @@ std::function<bool(wchar_t)> SixelParser::DefineImage(const VTInt macroParameter
         _initImageBuffer();
         _state = States::Normal;
         _parameters.clear();
-        return [&](const auto ch) {
-            _parseCommandChar(ch);
+        return [&](const std::wstring_view str) {
+            auto it = str.begin();
+            const auto end = str.end();
+
+            while (it != end)
+            {
+                const auto ch = *it++;
+                _isProcessingLastCharacter = it == end;
+                _parseCommandChar(ch);
+            }
+
             return true;
         };
     }
@@ -554,7 +562,7 @@ void SixelParser::_defineColor(const size_t colorNumber, const COLORREF color)
         // If some image content has already been defined at this point, and
         // we're processing the last character in the packet, this is likely an
         // attempt to animate the palette, so we should flush the image.
-        if (_imageWidth > 0 && _stateMachine.IsProcessingLastCharacter())
+        if (_imageWidth > 0 && _isProcessingLastCharacter)
         {
             _maybeFlushImageBuffer();
         }
@@ -876,7 +884,7 @@ void SixelParser::_maybeFlushImageBuffer(const bool endOfSequence)
     const auto currentTime = steady_clock::now();
     const auto timeSinceLastFlush = duration_cast<milliseconds>(currentTime - _lastFlushTime);
     const auto linesSinceLastFlush = _imageLineCount - _lastFlushLine;
-    if (endOfSequence || timeSinceLastFlush > 500ms || (linesSinceLastFlush <= 1 && _stateMachine.IsProcessingLastCharacter()))
+    if (endOfSequence || timeSinceLastFlush > 500ms || (linesSinceLastFlush <= 1 && _isProcessingLastCharacter))
     {
         _lastFlushTime = currentTime;
         _lastFlushLine = _imageLineCount;
