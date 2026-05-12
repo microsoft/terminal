@@ -28,18 +28,7 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Section: Visual style  -->
-        <muxc:Expander IsExpanded="True"
-                       AutomationProperties.Name="{Binding Text, ElementName=Globals_Section_VisualStyle_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Globals_Section_VisualStyle_Title_AccTitle"
-                                   x:Uid="Globals_Section_VisualStyle_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Globals_Section_VisualStyle_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Globals_Section_VisualStyle" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Theme  -->
                 <local:SettingContainer x:Name="Theme"
@@ -78,20 +67,10 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
         <!--  Section: Tabs and layout  -->
-        <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Globals_Section_TabsLayout_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Globals_Section_TabsLayout_Title_AccTitle"
-                                   x:Uid="Globals_Section_TabsLayout_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Globals_Section_TabsLayout_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Globals_Section_TabsLayout" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Position of new tab  -->
                 <local:SettingContainer x:Name="NewTabPosition"
@@ -136,20 +115,10 @@
                                   Toggled="{x:Bind ViewModel.ShowTitlebarToggled}" />
                 </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
         <!--  Section: Window behavior  -->
-        <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Globals_Section_WindowBehavior_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Globals_Section_WindowBehavior_Title_AccTitle"
-                                   x:Uid="Globals_Section_WindowBehavior_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Globals_Section_WindowBehavior_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Globals_Section_WindowBehavior" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Always on Top  -->
                 <local:SettingContainer x:Name="AlwaysOnTop"
@@ -165,20 +134,10 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
         <!--  Section: Title bar & identity  -->
-        <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Globals_Section_TitleBarIdentity_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Globals_Section_TitleBarIdentity_Title_AccTitle"
-                                   x:Uid="Globals_Section_TitleBarIdentity_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Globals_Section_TitleBarIdentity_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Globals_Section_TitleBarIdentity" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Show Title in Titlebar (use active terminal title as application title)  -->
                 <local:SettingContainer x:Name="ShowTitleInTitlebar"
@@ -194,20 +153,10 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
         <!--  Section: System integration & notifications  -->
-        <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Globals_Section_SystemIntegration_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Globals_Section_SystemIntegration_Title_AccTitle"
-                                   x:Uid="Globals_Section_SystemIntegration_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Globals_Section_SystemIntegration_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Globals_Section_SystemIntegration" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Always Show Notification Icon  -->
                 <local:SettingContainer x:Name="AlwaysShowNotificationIcon"
@@ -223,6 +172,6 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
     </StackPanel>
 </Page>

@@ -580,4 +580,61 @@
         </Setter>
     </Style>
 
+    <!--
+        A "section" container that groups related SettingContainers under a
+        collapsible header.
+    -->
+    <Style x:Key="SectionExpanderHeaderTextStyle"
+           BasedOn="{StaticResource BodyTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="SectionExpanderHelpTextStyle"
+           BasedOn="{StaticResource CaptionTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Margin" Value="0,2,0,0" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+    </Style>
+
+    <Style x:Key="SectionExpanderStyle"
+           TargetType="local:SettingContainer">
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="Margin" Value="0,12,0,0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <muxc:Expander x:Name="Expander"
+                                   HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Stretch"
+                                   Content="{TemplateBinding Content}"
+                                   IsExpanded="{TemplateBinding StartExpanded}">
+                        <muxc:Expander.Resources>
+                            <!--  Reduce top content padding so the gap between the header and the
+                                  first SettingContainer matches the 4 px gap between adjacent rows.  -->
+                            <Thickness x:Key="ExpanderContentPadding">16,0,16,16</Thickness>
+                        </muxc:Expander.Resources>
+                        <muxc:Expander.Header>
+                            <StackPanel MinHeight="64"
+                                        Padding="0,12,0,12"
+                                        VerticalAlignment="Center">
+                                <TextBlock Style="{StaticResource SectionExpanderHeaderTextStyle}"
+                                           Text="{TemplateBinding Header}" />
+                                <TextBlock x:Name="HelpTextBlock"
+                                           Style="{StaticResource SectionExpanderHelpTextStyle}"
+                                           Text="{TemplateBinding HelpText}" />
+                            </StackPanel>
+                        </muxc:Expander.Header>
+                    </muxc:Expander>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

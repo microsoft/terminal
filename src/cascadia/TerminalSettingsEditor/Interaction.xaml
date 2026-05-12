@@ -27,18 +27,7 @@
     <StackPanel>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Section: Clipboard and paste behavior  -->
-            <muxc:Expander IsExpanded="True"
-                           AutomationProperties.Name="{Binding Text, ElementName=Interaction_Section_Clipboard_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Interaction_Section_Clipboard_Title_AccTitle"
-                                   x:Uid="Interaction_Section_Clipboard_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Interaction_Section_Clipboard_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Interaction_Section_Clipboard" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Copy On Select  -->
                     <local:SettingContainer x:Name="CopyOnSelect"
@@ -71,20 +60,10 @@
                                   Style="{StaticResource ComboBoxSettingStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <!--  Section: Text selection & editing  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Interaction_Section_TextSelection_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Interaction_Section_TextSelection_Title_AccTitle"
-                                   x:Uid="Interaction_Section_TextSelection_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Interaction_Section_TextSelection_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Interaction_Section_TextSelection" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Word Delimiters  -->
                     <local:SettingContainer x:Name="WordDelimiters"
@@ -103,20 +82,10 @@
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <!--  Section: Window and layout behavior  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Interaction_Section_WindowLayout_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Interaction_Section_WindowLayout_Title_AccTitle"
-                                   x:Uid="Interaction_Section_WindowLayout_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Interaction_Section_WindowLayout_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Interaction_Section_WindowLayout" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Snap On Resize  -->
                     <local:SettingContainer x:Name="SnapToGridOnResize"
@@ -142,20 +111,10 @@
                                   Style="{StaticResource ComboBoxSettingStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <!--  Section: Mouse & scrolling  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Interaction_Section_MouseScrolling_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Interaction_Section_MouseScrolling_Title_AccTitle"
-                                   x:Uid="Interaction_Section_MouseScrolling_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Interaction_Section_MouseScrolling_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Interaction_Section_MouseScrolling" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Enable Font Size Changes with Scrolling  -->
                     <local:SettingContainer x:Name="ScrollToZoom"
@@ -171,20 +130,10 @@
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <!--  Section: URLs & external actions  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Interaction_Section_UrlsExternal_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Interaction_Section_UrlsExternal_Title_AccTitle"
-                                   x:Uid="Interaction_Section_UrlsExternal_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Interaction_Section_UrlsExternal_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Interaction_Section_UrlsExternal" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Detect URLs  -->
                     <local:SettingContainer x:Name="DetectURLs"
@@ -203,20 +152,10 @@
                                  Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <!--  Section: Warnings  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Interaction_Section_Warnings_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Interaction_Section_Warnings_Title_AccTitle"
-                                   x:Uid="Interaction_Section_Warnings_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Interaction_Section_Warnings_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Interaction_Section_Warnings" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Confirm Close On  -->
                     <local:SettingContainer x:Name="ConfirmOnClose"
@@ -252,7 +191,7 @@
                                   Style="{StaticResource ComboBoxSettingStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
         </StackPanel>
     </StackPanel>
 </Page>

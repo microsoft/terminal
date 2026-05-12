@@ -81,15 +81,7 @@
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
 
             <!--  Section: Window settings  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Profile_Section_Window_Title_AccTitle}"
-                           Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Profile_Section_Window_Title_AccTitle"
-                                   x:Uid="Profile_Section_Window_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Profile_Section_Window" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Opacity  -->
                     <local:SettingContainer x:Name="Opacity"
@@ -204,7 +196,7 @@
                                   Style="{StaticResource ComboBoxSettingStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
             <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">

@@ -26,18 +26,7 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Section: Compatibility  -->
-        <muxc:Expander IsExpanded="True"
-                       AutomationProperties.Name="{Binding Text, ElementName=Compatibility_Section_Compatibility_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Compatibility_Section_Compatibility_Title_AccTitle"
-                                   x:Uid="Compatibility_Section_Compatibility_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Compatibility_Section_Compatibility_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Compatibility_Section_Compatibility" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Allow Headless  -->
                 <local:SettingContainer x:Name="AllowHeadless"
@@ -117,20 +106,10 @@
                     </Button>
                 </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
         <!--  Section: Rendering  -->
-        <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Compatibility_Section_Rendering_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Compatibility_Section_Rendering_Title_AccTitle"
-                                   x:Uid="Compatibility_Section_Rendering_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Compatibility_Section_Rendering_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Compatibility_Section_Rendering" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Graphics API  -->
                 <local:SettingContainer x:Name="GraphicsAPI"
@@ -156,6 +135,6 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
     </StackPanel>
 </Page>

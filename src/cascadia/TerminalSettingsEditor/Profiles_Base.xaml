@@ -35,15 +35,7 @@
                     Style="{StaticResource SettingsStackStyle}">
 
             <!--  Section: {Profile.Name} profile (or "Profile defaults")  -->
-            <muxc:Expander IsExpanded="True"
-                           AutomationProperties.Name="{x:Bind Profile.SectionHeaderText, Mode=OneWay}"
-                           Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock Style="{StaticResource SectionExpanderHeaderTextStyle}"
-                                   Text="{x:Bind Profile.SectionHeaderText, Mode=OneWay}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Profile_Section_HeaderPlaceholder" Header="{x:Bind Profile.SectionHeaderText, Mode=OneWay}" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Name  -->
                     <!--
@@ -120,18 +112,10 @@
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <!--  Section: Visual/UI Affordance  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Profile_Section_VisualUI_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Profile_Section_VisualUI_Title_AccTitle"
-                                   x:Uid="Profile_Section_VisualUI_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Profile_Section_VisualUI" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Tab Title  -->
                     <local:SettingContainer x:Name="TabTitle"
@@ -199,7 +183,7 @@
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
                        Margin="0,32,0,4"

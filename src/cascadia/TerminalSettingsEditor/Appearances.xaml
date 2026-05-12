@@ -69,18 +69,7 @@
 
     <StackPanel>
         <!--  Section: Typography settings  -->
-        <muxc:Expander IsExpanded="True"
-                       AutomationProperties.Name="{Binding Text, ElementName=Appearance_Section_Typography_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Appearance_Section_Typography_Title_AccTitle"
-                                   x:Uid="Appearance_Section_Typography_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Appearance_Section_Typography_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Appearance_Section_Typography" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
                 <!--  Color Scheme  -->
                 <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
@@ -507,20 +496,10 @@
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
         <!--  Section: Cursor settings  -->
-        <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Appearance_Section_Cursor_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Appearance_Section_Cursor_Title_AccTitle"
-                                   x:Uid="Appearance_Section_Cursor_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Appearance_Section_Cursor_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Appearance_Section_Cursor" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
 
             <!--  Cursor Shape  -->
@@ -575,20 +554,10 @@
                                            NullColorPreview="{x:Bind Appearance.CurrentColorScheme.CursorColor.Color, Mode=OneWay}" />
             </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
         <!--  Section: Background image  -->
-        <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Appearance_Section_BackgroundImage_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-            <muxc:Expander.Header>
-                <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                    <TextBlock x:Name="Appearance_Section_BackgroundImage_Title_AccTitle"
-                                   x:Uid="Appearance_Section_BackgroundImage_Title"
-                               Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                    <TextBlock x:Uid="Appearance_Section_BackgroundImage_Help"
-                               Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                </StackPanel>
-            </muxc:Expander.Header>
+        <local:SettingContainer x:Uid="Appearance_Section_BackgroundImage" Style="{StaticResource SectionExpanderStyle}">
             <StackPanel>
 
             <!--  Background Image  -->
@@ -843,7 +812,7 @@
                 </Grid>
             </local:SettingContainer>
             </StackPanel>
-        </muxc:Expander>
+        </local:SettingContainer>
 
     </StackPanel>
 </UserControl>

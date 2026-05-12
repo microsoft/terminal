@@ -23,7 +23,8 @@ $ProhibitedUids = @(
     "Profile_ProportionalFontFaces",
     "ColorScheme_InboxSchemeDuplicate",
     "ColorScheme_ColorsHeader",
-    "ColorScheme_Rename"
+    "ColorScheme_Rename",
+    "Profile_Section_HeaderPlaceholder"
 )
 
 # Prohibited XAML files (already limited to Page root elements)

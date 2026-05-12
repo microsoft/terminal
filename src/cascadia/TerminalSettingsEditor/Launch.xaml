@@ -44,18 +44,7 @@
     <StackPanel>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Section: Launch behavior  -->
-            <muxc:Expander IsExpanded="True"
-                           AutomationProperties.Name="{Binding Text, ElementName=Launch_Section_LaunchBehavior_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Launch_Section_LaunchBehavior_Title_AccTitle"
-                                   x:Uid="Launch_Section_LaunchBehavior_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Launch_Section_LaunchBehavior_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Launch_Section_LaunchBehavior" StartExpanded="True" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Default Profile  -->
                     <local:SettingContainer x:Name="DefaultProfile"
@@ -242,20 +231,10 @@
                         </Grid>
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
 
             <!--  Section: System & input defaults  -->
-            <muxc:Expander AutomationProperties.Name="{Binding Text, ElementName=Launch_Section_SystemInputDefaults_Title_AccTitle}"
-                       Style="{StaticResource SectionExpanderStyle}">
-                <muxc:Expander.Header>
-                    <StackPanel Style="{StaticResource SectionExpanderHeaderStackStyle}">
-                        <TextBlock x:Name="Launch_Section_SystemInputDefaults_Title_AccTitle"
-                                   x:Uid="Launch_Section_SystemInputDefaults_Title"
-                                   Style="{StaticResource SectionExpanderHeaderTextStyle}" />
-                        <TextBlock x:Uid="Launch_Section_SystemInputDefaults_Help"
-                                   Style="{StaticResource SectionExpanderHelpTextStyle}" />
-                    </StackPanel>
-                </muxc:Expander.Header>
+            <local:SettingContainer x:Uid="Launch_Section_SystemInputDefaults" Style="{StaticResource SectionExpanderStyle}">
                 <StackPanel>
                     <!--  Default Terminal  -->
                     <local:SettingContainer x:Name="DefaultTerminalDropdown"
@@ -346,7 +325,7 @@
                                   Style="{StaticResource ComboBoxSettingStyle}" />
                     </local:SettingContainer>
                 </StackPanel>
-            </muxc:Expander>
+            </local:SettingContainer>
         </StackPanel>
     </StackPanel>
 </Page>
