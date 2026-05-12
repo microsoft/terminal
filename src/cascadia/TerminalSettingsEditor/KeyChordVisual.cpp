@@ -34,9 +34,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void KeyChordVisual::_OnKeyChordChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*e*/)
     {
-        if (auto control{ d.try_as<Editor::KeyChordVisual>() })
+        if (const auto control{ d.try_as<Editor::KeyChordVisual>() })
         {
-            auto controlImpl{ get_self<KeyChordVisual>(control) };
+            const auto controlImpl{ get_self<KeyChordVisual>(control) };
             controlImpl->_UpdateKeyVisuals();
         }
     }
@@ -108,8 +108,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void KeyChordVisual::_AddTextKey(const winrt::hstring& text)
     {
         const auto tmpl{ Resources().Lookup(box_value(L"KeyChordVisualTextKeyTemplate")).as<DataTemplate>() };
-        auto border{ tmpl.LoadContent().as<Border>() };
-        if (auto tb{ border.Child().try_as<TextBlock>() })
+        const auto border{ tmpl.LoadContent().as<Border>() };
+        if (const auto tb{ border.Child().try_as<TextBlock>() })
         {
             tb.Text(text);
         }
@@ -119,10 +119,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void KeyChordVisual::_AddGlyphKey()
     {
         const auto tmpl{ Resources().Lookup(box_value(L"KeyChordVisualWindowsKeyTemplate")).as<DataTemplate>() };
-        auto border{ tmpl.LoadContent().as<Border>() };
+        const auto border{ tmpl.LoadContent().as<Border>() };
 
         // Provide an accessible name for the glyph since it has no text fallback.
-        if (auto path{ border.Child() })
+        if (const auto path{ border.Child() })
         {
             Automation::AutomationProperties::SetName(path, L"Win");
         }

@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // Retrieve cached flyout, if possible
-        if (auto existing = button.Flyout())
+        if (const auto existing = button.Flyout())
         {
             existing.ShowAt(button);
             return;
