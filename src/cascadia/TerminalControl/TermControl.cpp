@@ -2456,6 +2456,46 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _automationPeer.UpdateControlBounds();
         }
+
+        // Show resize overlay with columns x rows
+        _ShowResizeOverlay();
+    }
+
+    // Method Description:
+    // - Shows a centered overlay with the current terminal dimensions (columns x rows).
+    //   Used during window resize and font size changes. Skipped for disabled controls
+    //   (e.g. the Settings preview terminal) to avoid visual noise.
+    void TermControl::_ShowResizeOverlay()
+    {
+        // Don't show the overlay in the Settings preview control
+        if (!IsEnabled())
+        {
+            return;
+        }
+
+        const auto coreImpl = winrt::get_self<ControlCore>(_core);
+        const auto cols = coreImpl->ViewWidth();
+        const auto rows = coreImpl->ViewHeight();
+        if (cols > 0 && rows > 0)
+        {
+            ResizeOverlayText().Text(fmt::format(FMT_COMPILE(L"{} \u00D7 {}"), cols, rows));
+            ResizeOverlay().Visibility(Visibility::Visible);
+
+            if (!_resizeOverlayTimer)
+            {
+                _resizeOverlayTimer.emplace();
+                _resizeOverlayTimer->Interval(std::chrono::milliseconds(750));
+                _resizeOverlayTimer->Tick([weakThis = get_weak()](auto&&, auto&&) {
+                    if (auto self = weakThis.get())
+                    {
+                        self->ResizeOverlay().Visibility(Visibility::Collapsed);
+                        self->_resizeOverlayTimer->Stop();
+                    }
+                });
+            }
+
+            _resizeOverlayTimer->Start();
+        }
     }
 
     // Method Description:
