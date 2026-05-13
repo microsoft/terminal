@@ -573,6 +573,14 @@
     <value>Allow OSC 52 (Manipulate Selection Data) to write to the clipboard</value>
     <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
   </data>
+  <data name="Profile_AllowOscNotifications.Header" xml:space="preserve">
+    <value>Allow OSC 777 (Desktop Notification) to show toast notifications</value>
+    <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
+  </data>
+  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+    <value>When enabled, applications can send the OSC 777 escape sequence to trigger a desktop notification with a custom title and body.</value>
+    <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
+  </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Allow Windows Terminal to run in the background</value>
     <comment>Header for a control to toggle support for Windows Terminal to run in the background.</comment>

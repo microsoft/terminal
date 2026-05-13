@@ -3878,6 +3878,41 @@ void AdaptDispatch::DoWTAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - OSC 777 - Handles urxvt requests. Currently, the only supported request is for desktop notifications.
+//   The format is: OSC 777;notify;title;body ST
+// Arguments:
+// - string: contains the parameters that define the notification
+void AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
+{
+    if (!_optionalFeatures.test(OptionalFeature::DesktopNotification))
+    {
+        return;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return;
+    }
+
+    til::split_iterator split{ string, L';' };
+    const auto action = split.next();
+    if (action == L"notify")
+    {
+        // The body is everything after "notify;title;". We can't just use
+        // parts[2] because the body itself may contain semicolons.
+        const auto title = split.next();
+        const auto body = split.remaining();
+        _api.ShowNotification(title, body);
+    }
+    else
+    {
+        _api.UnknownSequence();
+    }
+}
+
+// Method Description:
 // - SIXEL - Defines an image transmitted in sixel format via the returned
 //   StringHandler function.
 // Arguments:

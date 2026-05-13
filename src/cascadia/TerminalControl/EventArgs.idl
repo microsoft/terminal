@@ -160,6 +160,12 @@ namespace Microsoft.Terminal.Control
         Int32 BufferRow { get; };
     }
 
+    runtimeclass ShowNotificationEventArgs
+    {
+        String Title { get; };
+        String Body { get; };
+    }
+
     runtimeclass WindowSizeChangedEventArgs
     {
         Int32 Width;
