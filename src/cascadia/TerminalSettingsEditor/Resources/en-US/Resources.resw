@@ -2685,6 +2685,14 @@
     <value>When enabled, the tab bar will be visible when the app is full screen.</value>
     <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
+  <data name="Globals_ShowPaneHeaders.Header" xml:space="preserve">
+    <value>Show pane title headers</value>
+    <comment>Header for a control to toggle if the app should show title headers above each pane when multiple panes are open.</comment>
+  </data>
+  <data name="Globals_ShowPaneHeaders.HelpText" xml:space="preserve">
+    <value>When enabled, a title header is shown above each pane when multiple panes are open.</value>
+    <comment>A description for what the "show pane headers" setting does. Presented near "Globals_ShowPaneHeaders.Header".</comment>
+  </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Path translation</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>

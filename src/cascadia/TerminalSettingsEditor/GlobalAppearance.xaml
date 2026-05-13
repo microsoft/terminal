@@ -68,6 +68,13 @@
                     <ToggleSwitch IsOn="{x:Bind ViewModel.InvertedDisableAnimations, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
+
+                <!--  Show pane headers  -->
+                <local:SettingContainer x:Name="ShowPaneHeaders"
+                                        x:Uid="Globals_ShowPaneHeaders">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.ShowPaneHeaders, Mode=TwoWay}"
+                                Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
             </StackPanel>
         </local:SettingContainer>
 
