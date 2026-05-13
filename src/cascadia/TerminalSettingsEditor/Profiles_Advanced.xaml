@@ -224,7 +224,7 @@
                                     ClearSettingValue="{x:Bind Profile.ClearNotifyOnActivityThreshold}"
                                     HasSettingValue="{x:Bind Profile.HasNotifyOnActivityThreshold, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.NotifyOnActivityThresholdOverrideSource, Mode=OneWay}">
-                <muxc:NumberBox x:Uid="Profile_NotifyOnActivityThresholdBox"
+                <muxc:NumberBox AutomationProperties.Name="{Binding ElementName=NotifyOnActivityThreshold, Path=Header}"
                                 LargeChange="10"
                                 Minimum="0"
                                 SmallChange="1"
@@ -258,7 +258,7 @@
                                     ClearSettingValue="{x:Bind Profile.ClearNotifyOnNextPromptThreshold}"
                                     HasSettingValue="{x:Bind Profile.HasNotifyOnNextPromptThreshold, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.NotifyOnNextPromptThresholdOverrideSource, Mode=OneWay}">
-                <muxc:NumberBox x:Uid="Profile_NotifyOnNextPromptThresholdBox"
+                <muxc:NumberBox AutomationProperties.Name="{Binding ElementName=NotifyOnNextPromptThreshold, Path=Header}"
                                 LargeChange="10"
                                 Minimum="0"
                                 SmallChange="1"
