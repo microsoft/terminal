@@ -1591,7 +1591,7 @@
   </data>
   <data name="Profile_NotifyOnActivityThreshold.HelpText" xml:space="preserve">
     <value>Suppress repeated activity notifications within this many seconds of the previous one. Set to 0 to always notify.</value>
-    <comment>Help text for the minimum-duration cooldown applied to "notify on activity" notifications.</comment>
+    <comment>Help text for the minimum duration threshold applied to "notify on activity" notifications.</comment>
   </data>
   <data name="Profile_NotifyOnNextPrompt.Header" xml:space="preserve">
     <value>Notify on next prompt</value>
@@ -1607,7 +1607,7 @@
   </data>
   <data name="Profile_NotifyOnNextPromptThreshold.HelpText" xml:space="preserve">
     <value>Only notify when the command ran for at least this many seconds. Requires shell integration. Set to 0 to always notify.</value>
-    <comment>Help text for the minimum-duration threshold applied to "notify on next prompt" notifications.</comment>
+    <comment>Help text for the minimum duration threshold applied to "notify on next prompt" notifications.</comment>
   </data>
   <data name="Profile_AutoDetectRunningCommand.Header" xml:space="preserve">
     <value>Auto-detect running command</value>
