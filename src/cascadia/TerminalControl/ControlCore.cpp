@@ -2338,6 +2338,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             _terminal->Write(sequence);
+
+            // Clear scroll marks so they don't remain stale in the scrollbar.
+            // The Scrollback case is already handled by the \x1b[3J path (TextBuffer::ClearScrollback).
+            if (clearType != ClearBufferType::Scrollback)
+            {
+                _terminal->ClearAllMarks();
+            }
         }
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
