@@ -10,6 +10,7 @@
 #include "../../types/inc/utils.hpp"
 
 #include "BellEventArgs.g.cpp"
+#include "NotificationEventArgs.g.cpp"
 #include "TerminalPaneContent.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -34,6 +35,7 @@ namespace winrt::TerminalApp::implementation
     {
         _controlEvents._ConnectionStateChanged = _control.ConnectionStateChanged(winrt::auto_revoke, { this, &TerminalPaneContent::_controlConnectionStateChangedHandler });
         _controlEvents._WarningBell = _control.WarningBell(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlWarningBellHandler });
+        _controlEvents._PromptStarted = _control.PromptStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlPromptStartedHandler });
         _controlEvents._CloseTerminalRequested = _control.CloseTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_closeTerminalRequestedHandler });
         _controlEvents._RestartTerminalRequested = _control.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_restartTerminalRequestedHandler });
 
@@ -43,6 +45,8 @@ namespace winrt::TerminalApp::implementation
         _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlReadOnlyChanged });
         _controlEvents._FocusFollowMouseRequested = _control.FocusFollowMouseRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlFocusFollowMouseRequested });
         _controlEvents._ShowNotification = _control.ShowNotification(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlShowNotification });
+        _controlEvents._OutputStarted = _control.OutputStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputStartedHandler });
+        _controlEvents._OutputBurstEnded = _control.OutputIdle(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputBurstEndedHandler });
     }
     void TerminalPaneContent::_removeControlEvents()
     {
@@ -174,6 +178,16 @@ namespace winrt::TerminalApp::implementation
     {
         TaskbarProgressChanged.raise(*this, nullptr);
     }
+
+    winrt::Microsoft::Terminal::Control::TaskbarState TerminalPaneContent::TaskbarState()
+    {
+        return _control.TaskbarState();
+    }
+
+    uint64_t TerminalPaneContent::TaskbarProgress()
+    {
+        return _control.TaskbarProgress();
+    }
     void TerminalPaneContent::_controlReadOnlyChanged(const IInspectable&, const IInspectable&)
     {
         ReadOnlyChanged.raise(*this, nullptr);
@@ -185,7 +199,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPaneContent::_controlShowNotification(const IInspectable& /*sender*/, const ShowNotificationEventArgs& args)
     {
-        NotificationRequested.raise(*this, winrt::make<implementation::NotificationEventArgs>(args.Title(), args.Body()));
+        NotificationRequested.raise(*this, winrt::make<implementation::NotificationEventArgs>(OutputNotificationStyle::Notification, true, args.Title(), args.Body()));
     }
 
     // Method Description:
@@ -267,6 +281,25 @@ namespace winrt::TerminalApp::implementation
     //   has the 'visual' flag set
     // Arguments:
     // - <unused>
+    void TerminalPaneContent::PlayNotificationSound()
+    {
+        if (_profile)
+        {
+            auto sounds{ _profile.BellSound() };
+            if (sounds && sounds.Size() > 0)
+            {
+                winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                winrt::Windows::Foundation::Uri uri{ soundPath };
+                _playBellSound(uri);
+            }
+            else
+            {
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+        }
+    }
+
     void TerminalPaneContent::_controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
@@ -278,18 +311,7 @@ namespace winrt::TerminalApp::implementation
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
                 {
                     // Audible is set, play the sound
-                    auto sounds{ _profile.BellSound() };
-                    if (sounds && sounds.Size() > 0)
-                    {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        winrt::Windows::Foundation::Uri uri{ soundPath };
-                        _playBellSound(uri);
-                    }
-                    else
-                    {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-                    }
+                    PlayNotificationSound();
                 }
 
                 if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
@@ -302,6 +324,68 @@ namespace winrt::TerminalApp::implementation
                                     *winrt::make_self<TerminalApp::implementation::BellEventArgs>(
                                         WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar),
                                         WI_IsFlagSet(_profile.BellStyle(), BellStyle::Notification)));
+            }
+        }
+    }
+
+    void TerminalPaneContent::_controlPromptStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            const auto notifyStyle = _profile.NotifyOnNextPrompt();
+            if (notifyStyle != OutputNotificationStyle::None)
+            {
+                if (const auto thresholdInSeconds = _profile.NotifyOnNextPromptThreshold(); thresholdInSeconds > 0)
+                {
+                    if (_lastOutputStartedAt == 0)
+                    {
+                        return;
+                    }
+                    if (const auto elapsedMs = GetTickCount64() - _lastOutputStartedAt; elapsedMs < (static_cast<uint64_t>(thresholdInSeconds) * 1000))
+                    {
+                        _lastOutputStartedAt = 0;
+                        return;
+                    }
+                }
+                _lastOutputStartedAt = 0;
+
+                NotificationRequested.raise(*this,
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, false));
+            }
+        }
+    }
+
+    void TerminalPaneContent::_controlOutputStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        _lastOutputStartedAt = GetTickCount64();
+    }
+
+    // The underlying TermControl::OutputIdle event is fired on the trailing
+    // edge of a 100ms-debounced output burst (see ControlCore::Initialize).
+    // When "notifyOnActivity" is enabled, we get one event per burst of
+    // output, which naturally coalesces a stream of output into a single notification.
+    void TerminalPaneContent::_controlOutputBurstEndedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                              const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        if (_profile)
+        {
+            const auto notifyStyle = _profile.NotifyOnActivity();
+            if (notifyStyle != OutputNotificationStyle::None)
+            {
+                const auto now = GetTickCount64();
+                const auto thresholdSeconds = _profile.NotifyOnActivityThreshold();
+                if (thresholdSeconds > 0 &&
+                    _lastActivityNotificationAt != 0 &&
+                    (now - _lastActivityNotificationAt) < (static_cast<uint64_t>(thresholdSeconds) * 1000))
+                {
+                    return;
+                }
+                _lastActivityNotificationAt = now;
+
+                NotificationRequested.raise(*this,
+                                            *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, false));
             }
         }
     }

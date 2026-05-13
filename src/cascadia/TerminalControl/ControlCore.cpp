@@ -141,6 +141,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnShowNotification = [this](auto&& PH1, auto&& PH2) { _terminalShowNotification(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
         _terminal->SetShowNotificationCallback(pfnShowNotification);
+        
+        auto pfnPromptStarted = [this] { _terminalPromptStarted(); };
+        _terminal->SetPromptStartedCallback(pfnPromptStarted);
+
+        auto pfnOutputStarted = [this] { _terminalOutputStarted(); };
+        _terminal->SetOutputStartedCallback(pfnOutputStarted);
 
         auto pfnClearQuickFix = [this] { ClearQuickFix(); };
         _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
@@ -916,6 +922,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _hasUnfocusedAppearance = static_cast<bool>(newAppearance);
         _unfocusedAppearance = _hasUnfocusedAppearance ? newAppearance : settings;
 
+        // Cache the auto-detect setting in an atomic so the off-thread output/prompt
+        // callbacks can read it without synchronizing with _settings. If the effective
+        // taskbar state changes (because a command is currently active and the setting
+        // toggled), notify listeners.
+        const auto nowEnabled = _settings.AutoDetectRunningCommand();
+        const auto wasEnabled = _autoDetectCommandActivity.exchange(nowEnabled, std::memory_order_relaxed);
+        if (wasEnabled != nowEnabled && _commandActive.load(std::memory_order_relaxed))
+        {
+            TaskbarProgressChanged.raise(*this, nullptr);
+        }
+
         const auto lock = _terminal->LockForWriting();
 
         _builtinGlyphs = _settings.EnableBuiltinGlyphs();
@@ -1550,10 +1567,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Gets the internal taskbar state value
     // Return Value:
     // - The taskbar state of this control
-    const size_t ControlCore::TaskbarState() const noexcept
+    const Control::TaskbarState ControlCore::TaskbarState() const noexcept
     {
         const auto lock = _terminal->LockForReading();
-        return _terminal->GetTaskbarState();
+        const auto vtState = static_cast<Control::TaskbarState>(_terminal->GetTaskbarState());
+        if (vtState == Control::TaskbarState::Clear &&
+            _autoDetectCommandActivity.load(std::memory_order_relaxed) &&
+            _commandActive.load(std::memory_order_relaxed))
+        {
+            return Control::TaskbarState::Indeterminate;
+        }
+        return vtState;
     }
 
     // Method Description:
@@ -1611,6 +1635,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // then the Terminal already has the write lock when calling this
         // callback.
         WarningBell.raise(*this, nullptr);
+    }
+
+    void ControlCore::_terminalPromptStarted()
+    {
+        if (_commandActive.exchange(false, std::memory_order_relaxed) &&
+            _autoDetectCommandActivity.load(std::memory_order_relaxed))
+        {
+            TaskbarProgressChanged.raise(*this, nullptr);
+        }
+        PromptStarted.raise(*this, nullptr);
+    }
+
+    void ControlCore::_terminalOutputStarted()
+    {
+        if (!_commandActive.exchange(true, std::memory_order_relaxed) &&
+            _autoDetectCommandActivity.load(std::memory_order_relaxed))
+        {
+            TaskbarProgressChanged.raise(*this, nullptr);
+        }
+        OutputStarted.raise(*this, nullptr);
     }
 
     // Method Description:

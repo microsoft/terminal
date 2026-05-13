@@ -17,6 +17,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_OBSERVABLE_PROPERTY(bool, IsProgressRingActive, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(bool, IsProgressRingIndeterminate, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(bool, BellIndicator, PropertyChanged.raise);
+        WINRT_OBSERVABLE_PROPERTY(bool, ActivityIndicator, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(bool, IsReadOnlyActive, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(uint32_t, ProgressValue, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(bool, IsInputBroadcastActive, PropertyChanged.raise);
