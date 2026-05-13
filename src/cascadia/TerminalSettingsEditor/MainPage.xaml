@@ -192,11 +192,9 @@
                                      x:Uid="Nav_Extensions"
                                      Tag="Extensions_Nav" />
 
-            <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
-
-            <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
-                                     x:Uid="Nav_ProfileDefaults"
-                                     Tag="GlobalProfile_Nav" />
+            <muxc:NavigationViewItem x:Name="ProfilesNavItem"
+                                     x:Uid="Nav_Profiles"
+                                     Tag="Profiles_Nav" />
         </muxc:NavigationView.MenuItems>
 
         <muxc:NavigationView.FooterMenuItems>
