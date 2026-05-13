@@ -2924,6 +2924,18 @@
           ],
           "description": "Controls how you are notified when a new shell prompt is detected. Requires shell integration."
         },
+        "notifyOnActivityThreshold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5,
+          "description": "Minimum number of seconds between consecutive activity notifications for this profile. Use this to suppress repeated notifications from chatty processes. The first notification after the pane has been silent always fires; subsequent notifications within this window are suppressed. Use 0 to always notify."
+        },
+        "notifyOnNextPromptThreshold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 5,
+          "description": "Suppress the next-prompt notification unless the just-finished command ran for at least this many seconds. Requires shell integration. Use 0 to always notify."
+        },
         "autoDetectRunningCommand": {
           "default": false,
           "description": "Automatically detect when a command is running and show a progress indicator in the tab and taskbar.",

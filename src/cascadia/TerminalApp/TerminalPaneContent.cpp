@@ -44,6 +44,7 @@ namespace winrt::TerminalApp::implementation
         _controlEvents._SetTaskbarProgress = _control.SetTaskbarProgress(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlSetTaskbarProgress });
         _controlEvents._ReadOnlyChanged = _control.ReadOnlyChanged(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlReadOnlyChanged });
         _controlEvents._FocusFollowMouseRequested = _control.FocusFollowMouseRequested(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlFocusFollowMouseRequested });
+        _controlEvents._OutputStarted = _control.OutputStarted(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputStartedHandler });
         _controlEvents._OutputBurstEnded = _control.OutputIdle(winrt::auto_revoke, { get_weak(), &TerminalPaneContent::_controlOutputBurstEndedHandler });
     }
     void TerminalPaneContent::_removeControlEvents()
@@ -329,10 +330,30 @@ namespace winrt::TerminalApp::implementation
             const auto notifyStyle = _profile.NotifyOnNextPrompt();
             if (notifyStyle != OutputNotificationStyle::None)
             {
+                if (const auto thresholdInSeconds = _profile.NotifyOnNextPromptThreshold(); thresholdInSeconds > 0)
+                {
+                    if (_lastOutputStartedAt == 0)
+                    {
+                        return;
+                    }
+                    if (const auto elapsedMs = GetTickCount64() - _lastOutputStartedAt; elapsedMs < (static_cast<uint64_t>(thresholdInSeconds) * 1000))
+                    {
+                        _lastOutputStartedAt = 0;
+                        return;
+                    }
+                }
+                _lastOutputStartedAt = 0;
+
                 NotificationRequested.raise(*this,
                                             *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, false));
             }
         }
+    }
+
+    void TerminalPaneContent::_controlOutputStartedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                           const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+    {
+        _lastOutputStartedAt = GetTickCount64();
     }
 
     // The underlying TermControl::OutputIdle event is fired on the trailing
@@ -347,6 +368,16 @@ namespace winrt::TerminalApp::implementation
             const auto notifyStyle = _profile.NotifyOnActivity();
             if (notifyStyle != OutputNotificationStyle::None)
             {
+                const auto now = GetTickCount64();
+                const auto thresholdSeconds = _profile.NotifyOnActivityThreshold();
+                if (thresholdSeconds > 0 &&
+                    _lastActivityNotificationAt != 0 &&
+                    (now - _lastActivityNotificationAt) < (static_cast<uint64_t>(thresholdSeconds) * 1000))
+                {
+                    return;
+                }
+                _lastActivityNotificationAt = now;
+
                 NotificationRequested.raise(*this,
                                             *winrt::make_self<TerminalApp::implementation::NotificationEventArgs>(notifyStyle, false));
             }

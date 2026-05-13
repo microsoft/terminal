@@ -1585,6 +1585,18 @@
     <value>Choose how to be notified when a background tab produces new output.</value>
     <comment>Help text for the notify on activity setting.</comment>
   </data>
+  <data name="Profile_NotifyOnActivityThreshold.Header" xml:space="preserve">
+    <value>Minimum seconds between activity notifications</value>
+    <comment>Header for a numeric control that sets the minimum number of seconds between consecutive "notify on activity" notifications. Useful for chatty programs.</comment>
+  </data>
+  <data name="Profile_NotifyOnActivityThreshold.HelpText" xml:space="preserve">
+    <value>Suppress repeated activity notifications within this many seconds of the previous one. Set to 0 to always notify.</value>
+    <comment>Help text for the minimum-duration cooldown applied to "notify on activity" notifications.</comment>
+  </data>
+  <data name="Profile_NotifyOnActivityThresholdBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Minimum seconds between activity notifications</value>
+    <comment>Accessible name for a numeric control that sets the minimum number of seconds between consecutive "notify on activity" notifications.</comment>
+  </data>
   <data name="Profile_NotifyOnNextPrompt.Header" xml:space="preserve">
     <value>Notify on next prompt</value>
     <comment>Header for a control to set the notification style when a new shell prompt is detected (requires shell integration).</comment>
@@ -1592,6 +1604,18 @@
   <data name="Profile_NotifyOnNextPrompt.HelpText" xml:space="preserve">
     <value>Choose how to be notified when a command finishes and a new prompt appears. Requires shell integration.</value>
     <comment>Help text for the notify on next prompt setting.</comment>
+  </data>
+  <data name="Profile_NotifyOnNextPromptThreshold.Header" xml:space="preserve">
+    <value>Minimum duration for the next prompt notification</value>
+    <comment>Header for a numeric control that sets the minimum number of seconds a command must run before its completion triggers a "notify on next prompt" notification.</comment>
+  </data>
+  <data name="Profile_NotifyOnNextPromptThreshold.HelpText" xml:space="preserve">
+    <value>Only notify when the command ran for at least this many seconds. Requires shell integration. Set to 0 to always notify.</value>
+    <comment>Help text for the minimum-duration threshold applied to "notify on next prompt" notifications.</comment>
+  </data>
+  <data name="Profile_NotifyOnNextPromptThresholdBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Minimum duration for next prompt notification</value>
+    <comment>Accessible name for a numeric control that sets the minimum number of seconds a command must run before its completion triggers a "notify on next prompt" notification.</comment>
   </data>
   <data name="Profile_AutoDetectRunningCommand.Header" xml:space="preserve">
     <value>Auto-detect running command</value>

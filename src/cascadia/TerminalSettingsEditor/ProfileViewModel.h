@@ -165,6 +165,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, DragDropDelimiter);
         OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnActivity);
         OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnNextPrompt);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnActivityThreshold);
+        OBSERVABLE_PROJECTED_SETTING(_profile, NotifyOnNextPromptThreshold);
         OBSERVABLE_PROJECTED_SETTING(_profile, AutoDetectRunningCommand);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);

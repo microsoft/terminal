@@ -112,6 +112,8 @@ Author(s):
     X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)   \
     X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnActivity, "notifyOnActivity", Microsoft::Terminal::Control::OutputNotificationStyle::None)     \
     X(Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnNextPrompt, "notifyOnNextPrompt", Microsoft::Terminal::Control::OutputNotificationStyle::None) \
+    X(int32_t, NotifyOnActivityThreshold, "notifyOnActivityThreshold", 5)                                                                               \
+    X(int32_t, NotifyOnNextPromptThreshold, "notifyOnNextPromptThreshold", 5)                                                                           \
     X(bool, AutoDetectRunningCommand, "autoDetectRunningCommand", false)
 
 // Intentionally omitted Profile settings:

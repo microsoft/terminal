@@ -90,5 +90,7 @@
     X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)     \
     X(winrt::Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnActivity, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::None)   \
     X(winrt::Microsoft::Terminal::Control::OutputNotificationStyle, NotifyOnNextPrompt, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::None) \
+    X(int32_t, NotifyOnActivityThreshold, 5)                                                                                                          \
+    X(int32_t, NotifyOnNextPromptThreshold, 5)                                                                                                        \
     X(bool, AutoDetectRunningCommand, false)                                                                                                                \
     X(winrt::hstring, DragDropDelimiter, L" ")

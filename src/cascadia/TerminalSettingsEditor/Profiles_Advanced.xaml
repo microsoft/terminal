@@ -218,6 +218,20 @@
                 </StackPanel>
             </local:SettingContainer>
 
+            <!--  Notify On Activity Minimum Duration  -->
+            <local:SettingContainer x:Name="NotifyOnActivityThreshold"
+                                    x:Uid="Profile_NotifyOnActivityThreshold"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnActivityThreshold}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnActivityThreshold, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnActivityThresholdOverrideSource, Mode=OneWay}">
+                <muxc:NumberBox x:Uid="Profile_NotifyOnActivityThresholdBox"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Profile.NotifyOnActivityThreshold, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Notify On Next Prompt  -->
             <local:SettingContainer x:Name="NotifyOnNextPrompt"
                                     x:Uid="Profile_NotifyOnNextPrompt"
@@ -236,6 +250,20 @@
                     <CheckBox x:Uid="Profile_OutputNotificationStyleNotification"
                               IsChecked="{x:Bind Profile.IsNotifyOnNextPromptFlagSet(8), BindBack=Profile.SetNotifyOnNextPromptNotification, Mode=TwoWay}" />
                 </StackPanel>
+            </local:SettingContainer>
+
+            <!--  Notify On Next Prompt Minimum Duration  -->
+            <local:SettingContainer x:Name="NotifyOnNextPromptThreshold"
+                                    x:Uid="Profile_NotifyOnNextPromptThreshold"
+                                    ClearSettingValue="{x:Bind Profile.ClearNotifyOnNextPromptThreshold}"
+                                    HasSettingValue="{x:Bind Profile.HasNotifyOnNextPromptThreshold, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.NotifyOnNextPromptThresholdOverrideSource, Mode=OneWay}">
+                <muxc:NumberBox x:Uid="Profile_NotifyOnNextPromptThresholdBox"
+                                LargeChange="10"
+                                Minimum="0"
+                                SmallChange="1"
+                                Style="{StaticResource NumberBoxSettingStyle}"
+                                Value="{x:Bind Profile.NotifyOnNextPromptThreshold, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Auto Detect Running Command  -->

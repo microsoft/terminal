@@ -356,6 +356,8 @@ namespace winrt::Microsoft::Terminal::Settings
         _DragDropDelimiter = profile.DragDropDelimiter();
         _NotifyOnActivity = profile.NotifyOnActivity();
         _NotifyOnNextPrompt = profile.NotifyOnNextPrompt();
+        _NotifyOnActivityThreshold = profile.NotifyOnActivityThreshold();
+        _NotifyOnNextPromptThreshold = profile.NotifyOnNextPromptThreshold();
         _AutoDetectRunningCommand = profile.AutoDetectRunningCommand();
     }
 

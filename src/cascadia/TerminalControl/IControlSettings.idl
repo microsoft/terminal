@@ -104,6 +104,8 @@ namespace Microsoft.Terminal.Control
 
         OutputNotificationStyle NotifyOnActivity { get; };
         OutputNotificationStyle NotifyOnNextPrompt { get; };
+        Int32 NotifyOnActivityThreshold { get; };
+        Int32 NotifyOnNextPromptThreshold { get; };
         Boolean AutoDetectRunningCommand { get; };
 
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
