@@ -1200,24 +1200,24 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleExportBuffer(const IInspectable& sender,
                                            const ActionEventArgs& args)
     {
+        if (args)
+        {
+            args.Handled(true);
+        }
+
         if (const auto activeTab{ _senderOrFocusedTab(sender) })
         {
+            winrt::hstring path;
+
             if (args)
             {
                 if (const auto& realArgs = args.ActionArgs().try_as<ExportBufferArgs>())
                 {
-                    _ExportTab(*activeTab, realArgs.Path());
-                    args.Handled(true);
-                    return;
+                    path = realArgs.Path();
                 }
             }
 
-            // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
-            _ExportTab(*activeTab, L"");
-            if (args)
-            {
-                args.Handled(true);
-            }
+            _ExportTab(*activeTab, path);
         }
     }
 
