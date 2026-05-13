@@ -62,6 +62,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.UI.Xaml.ElementTheme RequestedTheme { get; };
         Boolean UseMica { get; };
         Boolean RainbowFrame { get; };
+        Boolean ShowWindowsButton { get; };
         ThemeColor Frame { get; };
         ThemeColor UnfocusedFrame { get; };
     }

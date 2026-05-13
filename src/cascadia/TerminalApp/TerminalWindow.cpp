@@ -258,6 +258,15 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
+    WindowLayout TerminalWindow::GetWindowLayout()
+    {
+        if (_root)
+        {
+            return _root->GetWindowLayout();
+        }
+        return nullptr;
+    }
+
     void TerminalWindow::PersistState()
     {
         if (_root)
@@ -1103,6 +1112,11 @@ namespace winrt::TerminalApp::implementation
         _initialContentArgs = wil::to_vector(args);
     }
 
+    void TerminalWindow::SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout)
+    {
+        _cachedLayout = layout;
+    }
+
     // Method Description:
     // - Parse the provided commandline arguments into actions, and try to
     //   perform them immediately.
@@ -1223,7 +1237,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        const auto oldName = _WindowProperties->WindowName();
         _WindowProperties->WindowName(name);
+        // If this window had a persisted workspace under the old name, rename
+        // that entry too so we don't leave a stale copy behind.
+        if (!oldName.empty() && !name.empty() && oldName != name)
+        {
+            ApplicationState::SharedInstance().RenameWorkspace(oldName, name);
+        }
         if (!_root)
         {
             return;

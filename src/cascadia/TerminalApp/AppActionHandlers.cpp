@@ -938,6 +938,27 @@ namespace winrt::TerminalApp::implementation
         co_return;
     }
 
+    // Launch `wt -w <name>` so the monarch can either summon an existing
+    // window with that name or restore a persisted workspace.
+    safe_void_coroutine TerminalPage::_OpenWorkspaceWindow(const winrt::hstring name)
+    {
+        co_await winrt::resume_background();
+
+        const auto exePath{ GetWtExePath() };
+        const auto cmdline = fmt::format(FMT_COMPILE(L"-w {}"), std::wstring_view{ name });
+
+        SHELLEXECUTEINFOW seInfo{ 0 };
+        seInfo.cbSize = sizeof(seInfo);
+        seInfo.fMask = SEE_MASK_NOASYNC;
+        seInfo.lpVerb = L"open";
+        seInfo.lpFile = exePath.c_str();
+        seInfo.lpParameters = cmdline.c_str();
+        seInfo.nShow = SW_SHOWNORMAL;
+        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+        co_return;
+    }
+
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
                                         const ActionEventArgs& actionArgs)
     {
@@ -1058,6 +1079,7 @@ namespace winrt::TerminalApp::implementation
         // Fun!
         // WindowRenamerTextBox().Focus(FocusState::Programmatic);
         _renamerLayoutUpdatedRevoker.revoke();
+        _renamerLayoutCount = 0;
         _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })
             {
@@ -1633,4 +1655,35 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleOpenWorkspace(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        // Open (or summon) a named window.  We launch a new `wt -w <name>`
+        // process which the monarch will route to the correct live window or
+        // restore from a persisted workspace.
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<OpenWorkspaceArgs>())
+            {
+                const auto name = realArgs.Name();
+                if (!name.empty())
+                {
+                    _OpenWorkspaceWindow(name);
+                }
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleWorkspaces(const IInspectable& /*sender*/,
+                                         const ActionEventArgs& args)
+    {
+        if (_workspaceFlyout && _workspaceDropdown)
+        {
+            _workspaceFlyout.ShowAt(_workspaceDropdown);
+        }
+        args.Handled(true);
+    }
+
 }

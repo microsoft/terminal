@@ -479,6 +479,7 @@
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "toggleSplitOrientation",
+        "workspaces",
         "wt",
         "unbound"
       ],
@@ -2040,6 +2041,11 @@
         "unfocusedFrame": {
           "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
           "$ref": "#/$defs/ThemeColor"
+        },
+        "showWindowsButton": {
+          "description": "When set to true, the workspace/windows button will be shown in the tab row.",
+          "type": "boolean",
+          "default": true
         }
       }
     },
