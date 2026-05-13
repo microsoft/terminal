@@ -121,6 +121,11 @@
     <Thickness x:Key="SettingContainerIconMargin">0,4,8,4</Thickness>
     <x:Double x:Key="SettingContainerIconFontSize">16</x:Double>
 
+    <!--  Shared sizing for SettingContainer-style "card" rows (used by SettingsCardStyle and Actions page rows).  -->
+    <Thickness x:Key="SettingsCardPadding">16,8,8,8</Thickness>
+    <x:Double x:Key="SettingsCardMinHeight">64</x:Double>
+    <Thickness x:Key="SettingsCardItemMargin">0,4,0,0</Thickness>
+
     <Style x:Key="StackPanelInExpanderStyle"
            TargetType="StackPanel">
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -155,6 +160,21 @@
         <Setter Property="Padding" Value="16,0,8,0" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+    </Style>
+
+    <!--
+        Similar to a local:SettingContainer without actually being one.
+        Used by data-templated rows (i.e. Actions page).
+    -->
+    <Style x:Key="SettingsCardStyle"
+           TargetType="Grid">
+        <Setter Property="MinHeight" Value="{StaticResource SettingsCardMinHeight}" />
+        <Setter Property="Padding" Value="{StaticResource SettingsCardPadding}" />
+        <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
+        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
 
     <Style x:Key="SettingsPageItemHeaderStyle"
