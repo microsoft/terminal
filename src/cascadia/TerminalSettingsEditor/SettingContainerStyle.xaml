@@ -7,6 +7,7 @@
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:mtu="using:Microsoft.Terminal.UI"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
                     mc:Ignorable="d">
 
@@ -111,6 +112,8 @@
                             ResourceKey="SystemAccentColorLight2" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
+
+    <mtu:StringNotEmptyToVisibilityConverter x:Key="SectionExpanderStringNotEmptyToVisibilityConverter" />
 
     <FontWeight x:Key="SettingContainerTitleFontWeight">SemiBold</FontWeight>
 
@@ -600,6 +603,61 @@
                                        Text="{TemplateBinding HelpText}" />
                         </StackPanel>
                     </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        A "section" container that groups related SettingContainers under a
+        collapsible header.
+    -->
+    <Style x:Key="SectionExpanderHeaderTextStyle"
+           BasedOn="{StaticResource BodyTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="SectionExpanderHelpTextStyle"
+           BasedOn="{StaticResource CaptionTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Margin" Value="0,2,0,0" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+    </Style>
+
+    <Style x:Key="SectionExpanderStyle"
+           TargetType="local:SettingContainer">
+        <Setter Property="MaxWidth" Value="1000" />
+        <Setter Property="Margin" Value="0,12,0,0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:SettingContainer">
+                    <muxc:Expander x:Name="Expander"
+                                   HorizontalAlignment="Stretch"
+                                   HorizontalContentAlignment="Stretch"
+                                   IsExpanded="{TemplateBinding StartExpanded}">
+                        <muxc:Expander.Header>
+                            <Grid MinHeight="64"
+                                  Padding="0,12,0,12">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Style="{StaticResource SectionExpanderHeaderTextStyle}"
+                                               Text="{TemplateBinding Header}" />
+                                    <TextBlock x:Name="HelpTextBlock"
+                                               Style="{StaticResource SectionExpanderHelpTextStyle}"
+                                               Text="{TemplateBinding HelpText}"
+                                               Visibility="{Binding HelpText, RelativeSource={RelativeSource Mode=TemplatedParent}, Converter={StaticResource SectionExpanderStringNotEmptyToVisibilityConverter}}" />
+                                </StackPanel>
+                            </Grid>
+                        </muxc:Expander.Header>
+                        <ContentPresenter Margin="0,-4,0,0"
+                                          Content="{TemplateBinding Content}" />
+                    </muxc:Expander>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

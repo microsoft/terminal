@@ -167,10 +167,6 @@
                                      Tag="ColorSchemes_Nav" />
 
 
-            <muxc:NavigationViewItem x:Name="RenderingNavItem"
-                                     x:Uid="Nav_Rendering"
-                                     Tag="Rendering_Nav" />
-
             <muxc:NavigationViewItem x:Name="CompatibilityNavItem"
                                      x:Uid="Nav_Compatibility"
                                      Tag="Compatibility_Nav" />

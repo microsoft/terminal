@@ -23,7 +23,8 @@ $ProhibitedUids = @(
     "Profile_ProportionalFontFaces",
     "ColorScheme_InboxSchemeDuplicate",
     "ColorScheme_ColorsHeader",
-    "ColorScheme_Rename"
+    "ColorScheme_Rename",
+    "Profile_Section_HeaderPlaceholder"
 )
 
 # Prohibited XAML files (already limited to Page root elements)
@@ -54,11 +55,6 @@ $ClassMap = @{
     "Microsoft::Terminal::Settings::Editor::ColorSchemes" = @{
         ResourceName    = "Nav_ColorSchemes/Content"
         NavigationParam = "ColorSchemes_Nav"
-        SubPage         = "BreadcrumbSubPage::None"
-    }
-    "Microsoft::Terminal::Settings::Editor::Rendering" = @{
-        ResourceName    = "Nav_Rendering/Content"
-        NavigationParam = "Rendering_Nav"
         SubPage         = "BreadcrumbSubPage::None"
     }
     "Microsoft::Terminal::Settings::Editor::Compatibility" = @{
