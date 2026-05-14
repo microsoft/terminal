@@ -1619,21 +1619,21 @@ _ExportTab(*activeTab, L"");s
     }
 
     void TerminalPage::_HandleOpenAbout(const IInspectable& /*sender*/,
-                                    const ActionEventArgs& args)
-{
-    ContentDialog aboutDialog;
-    aboutDialog.Title(box_value(L"Custom Windows Terminal"));
+                                         const ActionEventArgs& args)
+    {
+        ContentDialog aboutDialog;
+        aboutDialog.Title(box_value(L"Custom Windows Terminal"));
 
-    aboutDialog.Content(box_value(
-        L"Welcome Pallavi!\n\n"
-        L"This is your modified Windows Terminal.\n"
-        L"You successfully edited the source code!"
-    ));
+        aboutDialog.Content(box_value(
+            L"Welcome Pallavi!\n\n"
+            L"This is your modified Windows Terminal.\n"
+            L"You successfully edited the source code!"
+        ));
 
-    aboutDialog.CloseButtonText(L"OK");
+        aboutDialog.CloseButtonText(L"OK");
 
-    aboutDialog.XamlRoot(this->XamlRoot());
-    aboutDialog.ShowAsync();
+        aboutDialog.XamlRoot(this->XamlRoot());
+        aboutDialog.ShowAsync();
 
-    args.Handled(true);
-}
+        args.Handled(true);
+    }
