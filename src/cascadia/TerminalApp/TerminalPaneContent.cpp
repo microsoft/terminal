@@ -266,13 +266,12 @@ namespace winrt::TerminalApp::implementation
                         // Sound paths are resolved and validated by CascadiaSettings
                         // before we reach this point.
                         auto soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        wil::zwstring_view soundPath{ sounds.GetAt(rand()
                         PlaySoundW(soundPath.c_str(), nullptr, SND_FILENAME | SND_ASYNC | SND_SENTRY | SND_NODEFAULT);
                     }
                     else
                     {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+                        const auto soundAlias = reinterpret_cast<LPCWSTR>(SND_ALIAS_SYSTEMHAND);
+                        PlaySoundW(soundAlias, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
                     }
                 }
 
