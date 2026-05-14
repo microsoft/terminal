@@ -91,8 +91,12 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     _assertLocked();
     if (!_suppressApplicationTitle)
     {
-        _title.emplace(title.empty() ? _startingTitle : title);
-        _pfnTitleChanged(_title.value());
+        _title.reset();
+        if (!title.empty())
+        {
+            _title.emplace(title);
+        }
+        _pfnTitleChanged(GetConsoleTitle());
     }
 }
 
@@ -108,6 +112,13 @@ bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType hei
     _assertLocked();
 
     if (width <= 0 || height <= 0 || width > SHRT_MAX || height > SHRT_MAX)
+    {
+        return false;
+    }
+
+    const auto currentDimensions = _GetMutableViewport().Dimensions();
+
+    if (width == currentDimensions.width && height == currentDimensions.height)
     {
         return false;
     }
