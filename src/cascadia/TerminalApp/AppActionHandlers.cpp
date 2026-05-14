@@ -1212,8 +1212,13 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            // If we didn't have args, or the args weren't ExportBufferArgs
             _ExportTab(*activeTab, L"");
-            args.Handled(true);
+
+            if (args)
+            {
+                args.Handled(true);
+            }
         }
     }
 
@@ -1617,6 +1622,7 @@ namespace winrt::TerminalApp::implementation
                                          const ActionEventArgs& args)
     {
         ContentDialog aboutDialog;
+
         aboutDialog.Title(box_value(L"Custom Windows Terminal"));
 
         aboutDialog.Content(box_value(
@@ -1628,6 +1634,7 @@ namespace winrt::TerminalApp::implementation
         aboutDialog.CloseButtonText(L"OK");
 
         aboutDialog.XamlRoot(this->XamlRoot());
+
         aboutDialog.ShowAsync();
 
         args.Handled(true);
