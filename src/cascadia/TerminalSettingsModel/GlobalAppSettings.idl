@@ -114,6 +114,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
+        INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
