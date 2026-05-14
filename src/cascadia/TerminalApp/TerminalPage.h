@@ -54,6 +54,16 @@ namespace winrt::TerminalApp::implementation
         ScrollDown = 1
     };
 
+    enum class ConfirmCloseDialogKind
+    {
+        Pane,
+        Tab,
+        MultiplePanes,
+        MultipleTabs,
+        Window,
+        CloseAll
+    };
+
     struct RenameWindowRequestedArgs : RenameWindowRequestedArgsT<RenameWindowRequestedArgs>
     {
         WINRT_PROPERTY(winrt::hstring, ProposedName);
@@ -168,6 +178,7 @@ namespace winrt::TerminalApp::implementation
 
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
+        bool FocusTab(const winrt::TerminalApp::Tab& tab);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
@@ -192,6 +203,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IInspectable, IInspectable> IdentifyWindowsRequested;
         til::typed_event<IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs> RenameWindowRequested;
         til::typed_event<IInspectable, IInspectable> SummonWindowRequested;
+        til::typed_event<IInspectable, winrt::TerminalApp::Tab> FocusTabRequested;
         til::typed_event<IInspectable, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
         til::typed_event<IInspectable, IInspectable> OpenSystemMenu;
@@ -301,8 +313,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowDialogHelper(const std::wstring_view& name);
 
         void _ShowAboutDialog();
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowQuitDialog();
-        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowConfirmCloseDialog(ConfirmCloseDialogKind kind);
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
@@ -349,7 +360,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _ExportTab(const Tab& tab, winrt::hstring filepath);
 
-        winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::Tab tab);
+        winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::Tab tab, bool skipConfirmClose = false);
         void _CloseTabAtIndex(uint32_t index);
         void _RemoveTab(const winrt::TerminalApp::Tab& tab);
         safe_void_coroutine _RemoveTabs(const std::vector<winrt::TerminalApp::Tab> tabs);
@@ -400,9 +411,12 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::Tab _GetTabByTabViewItem(const IInspectable& tabViewItem) const noexcept;
 
         void _HandleClosePaneRequested(std::shared_ptr<Pane> pane);
+        bool _ShouldWarnOnClose() const;
+        bool _ShouldWarnOnCloseTab(const winrt::com_ptr<Tab>& tab) const;
         safe_void_coroutine _SetFocusedTab(const winrt::TerminalApp::Tab tab);
         safe_void_coroutine _CloseFocusedPane();
-        void _ClosePanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds);
+        safe_void_coroutine _ClosePanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds);
+        void _CloseRemainingPanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds);
         winrt::Windows::Foundation::IAsyncOperation<bool> _PaneConfirmCloseReadOnly(std::shared_ptr<Pane> pane);
         void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
@@ -412,7 +426,7 @@ namespace winrt::TerminalApp::implementation
                         const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                         const float splitSize,
                         std::shared_ptr<Pane> newPane);
-        void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        bool _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void _ToggleSplitOrientation();
 
         void _ScrollPage(ScrollDirection scrollDirection);
@@ -422,8 +436,9 @@ namespace winrt::TerminalApp::implementation
         safe_void_coroutine _PasteFromClipboardHandler(const IInspectable sender,
                                                        const Microsoft::Terminal::Control::PasteFromClipboardEventArgs eventArgs);
 
-        void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
-        bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
+        safe_void_coroutine _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
+        static bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
+        bool _IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const;
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(bool dismissSelection, bool singleLine, bool withControlSequences, Microsoft::Terminal::Control::CopyFormat formats);
@@ -569,6 +584,8 @@ namespace winrt::TerminalApp::implementation
 
         void _activePaneChanged(winrt::TerminalApp::Tab tab, Windows::Foundation::IInspectable args);
         safe_void_coroutine _doHandleSuggestions(Microsoft::Terminal::Settings::Model::SuggestionsArgs realArgs);
+
+        void _SendDesktopNotification(const winrt::hstring& tabTitle, const winrt::hstring& body, const winrt::com_ptr<Tab>& tab, const winrt::TerminalApp::IPaneContent& content);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

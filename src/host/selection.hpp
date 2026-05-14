@@ -161,13 +161,13 @@ private:
 
         bool fLineSelection{ true }; // whether to use line selection or block selection
         bool fUseAlternateSelection{ false }; // whether the user has triggered the alternate selection method
-        bool allowMouseDragSelection{ true }; // true if the dragging the mouse should change the selection
+        bool allowMouseDragSelection{ true }; // true if dragging the mouse should change the selection
 
         // Flags for this DWORD are defined in wincon.h. Search for def:CONSOLE_SELECTION_IN_PROGRESS, etc.
         DWORD dwSelectionFlags{ 0 };
 
         // -- Current Selection Data --
-        // Anchor is the point the selection was started from (and will be one of the corners of the rectangle).
+        // Anchor is the point from which the selection was started (and will be one of the corners of the rectangle).
         til::point coordSelectionAnchor{};
         // Rectangle is the area inscribing the selection. It is extended to screen edges in a particular way for line selection.
         til::inclusive_rect srSelectionRect{};

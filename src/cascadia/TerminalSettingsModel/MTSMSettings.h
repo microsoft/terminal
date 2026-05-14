@@ -38,7 +38,7 @@ Author(s):
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
     X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
-    X(bool, ConfirmCloseAllTabs, "warning.confirmCloseAllTabs", true)                                                                                                                                 \
+    X(Model::ConfirmOnClose, ConfirmOnClose, "warning.confirmOnClose", Model::ConfirmOnClose::Automatic)                                                                                              \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
     X(hstring, Language, "language")                                                                                                                                                                  \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
@@ -63,6 +63,7 @@ Author(s):
     X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                                                                    \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, SafeUriSchemes, "safeUriSchemes", nullptr)                                                                                    \
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
@@ -108,6 +109,7 @@ Author(s):
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
+    X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
     X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
 
 // Intentionally omitted Profile settings:

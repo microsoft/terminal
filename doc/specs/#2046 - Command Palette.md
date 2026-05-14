@@ -229,7 +229,7 @@ with the default profile running `wsl` in it.
 
 We'll add another action that can be used to toggle the visibility of the
 command palette. Pressing that keybinding will bring up the command palette. We
-should make sure to add a argument to this action that specifies whether the
+should make sure to add an argument to this action that specifies whether the
 palette should be opened directly in Action Mode or Commandline Mode.
 
 When the command palette appears, we'll want it to appear as a single overlay
@@ -525,7 +525,7 @@ default. These are largely the actions that are bound by default.
 ## Addenda
 
 This spec also has a follow-up spec which introduces further changes upon this
-original draft. Please also refer to:
+original draft. Please refer to:
 
 * June 2020: Unified keybindings and commands, and synthesized action names.
 
@@ -578,7 +578,7 @@ original draft. Please also refer to:
   in commandline mode before we try to auto-parse their commandline, to check
   for errors. Might be useful to help sanity check users. We can always parse
   their `wt` commandlines safely without having to execute them.
-* It would be cool if the commands the user typed in Commandline Mode could be
+* It would be cool if commands the user typed in Commandline Mode could be
   saved to a history of some sort, so they could easily be re-entered.
   - It would be especially cool if it could do this across launches.
     - We don't really have any way of storing transient data like that in the

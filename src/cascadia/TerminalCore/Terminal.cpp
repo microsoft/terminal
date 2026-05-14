@@ -56,6 +56,18 @@ void Terminal::Create(til::size viewportSize, til::CoordType scrollbackLines, Re
 }
 
 // Method Description:
+// - Resets all VT state to defaults without clearing the buffer content.
+// Called when a connection is restarted so that any dirty modes left
+// behind by a crashed application don't affect the new connection.
+void Terminal::HardResetWithoutErase()
+{
+    _assertLocked();
+    _stateMachine->ResetState();
+    auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+    engine.Dispatch().HardReset(false);
+}
+
+// Method Description:
 // - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
@@ -86,7 +98,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     _answerbackMessage = settings.AnswerbackMessage();
     _wordDelimiters = settings.WordDelimiters();
     _suppressApplicationTitle = settings.SuppressApplicationTitle();
-    _startingTitle = settings.StartingTitle();
     _trimBlockSelection = settings.TrimBlockSelection();
     _autoMarkPrompts = settings.AutoMarkPrompts();
     _rainbowSuggestions = settings.RainbowSuggestions();
@@ -111,6 +122,11 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     // Save the changes made above and in UpdateAppearance as the new default render settings.
     GetRenderSettings().SaveDefaultSettings();
+
+    if (!_startingTitle)
+    {
+        _startingTitle = settings.StartingTitle();
+    }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
@@ -723,7 +739,7 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
         }
 
         // GH#1527: When the user has auto mark prompts enabled, we're going to try
-        // and heuristically detect if this was the line the prompt was on.
+        // and heuristically detect if this was the line with the prompt.
         // * If the key was an Enter keypress (Terminal.app also marks ^C keypresses
         //   as prompts. That's omitted for now.)
         // * AND we're not in the alt buffer

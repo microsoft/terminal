@@ -111,6 +111,8 @@
                               IsChecked="{x:Bind Profile.IsBellStyleFlagSet(2), BindBack=Profile.SetBellStyleWindow, Mode=TwoWay}" />
                     <CheckBox x:Uid="Profile_BellStyleTaskbar"
                               IsChecked="{x:Bind Profile.IsBellStyleFlagSet(4), BindBack=Profile.SetBellStyleTaskbar, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_BellStyleNotification"
+                              IsChecked="{x:Bind Profile.IsBellStyleFlagSet(8), BindBack=Profile.SetBellStyleNotification, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
 
@@ -270,6 +272,16 @@
                           ItemsSource="{x:Bind Profile.PathTranslationStyleList, Mode=OneWay}"
                           SelectedItem="{x:Bind Profile.CurrentPathTranslationStyle, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
+
+            <!--  Drag Drop Delimiter  -->
+            <local:SettingContainer x:Name="DragDropDelimiter"
+                                    x:Uid="Profile_DragDropDelimiter"
+                                    ClearSettingValue="{x:Bind Profile.ClearDragDropDelimiter}"
+                                    HasSettingValue="{x:Bind Profile.HasDragDropDelimiter, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.DragDropDelimiterOverrideSource, Mode=OneWay}">
+                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                         Text="{x:Bind Profile.DragDropDelimiter, Mode=TwoWay}" />
             </local:SettingContainer>
 
         </StackPanel>

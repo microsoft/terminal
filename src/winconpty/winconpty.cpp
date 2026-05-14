@@ -332,7 +332,7 @@ static HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL ke
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the clear message to the pty.
-HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show)
+HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const BOOL show) noexcept
 {
     if (pPty == nullptr)
     {
@@ -340,7 +340,7 @@ HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool 
     }
     unsigned short signalPacket[2];
     signalPacket[0] = PTY_SIGNAL_SHOWHIDE_WINDOW;
-    signalPacket[1] = show;
+    signalPacket[1] = show ? 1 : 0;
 
     const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
@@ -539,7 +539,7 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC, BOOL keepCurs
 //   to keep ConPTY's internal HWND state in sync with the state of whatever the
 //   hosting window is.
 // - For more information, refer to GH#12515.
-extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, bool show)
+extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, BOOL show)
 {
     // _ShowHidePseudoConsole will return E_INVALIDARG for us if the hPC is nullptr.
     return _ShowHidePseudoConsole((PseudoConsole*)hPC, show);

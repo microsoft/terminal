@@ -26,7 +26,7 @@ HostSignalInputThread::HostSignalInputThread(wil::unique_hfile&& hPipe) :
 
 HostSignalInputThread::~HostSignalInputThread()
 {
-    // Manually terminate our thread during unittesting. Otherwise, the test
+    // Manually terminate our thread during unit testing. Otherwise, the test
     //      will finish, but TAEF will not manually kill the test.
 #ifdef UNIT_TESTING
     TerminateThread(_hThread.get(), 0);

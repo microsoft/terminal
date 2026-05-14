@@ -11,7 +11,7 @@
 using namespace Microsoft::Console::Interactivity;
 
 // Routine Description:
-// - Allocates and stores in a list the process information given.
+// - Allocates and stores the given process information in a list.
 // - Will not create a new entry in the list given information matches a known process. Will instead return existing entry.
 // Arguments:
 // - dwProcessId - Process ID of connecting client
@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Interactivity;
 // - ulProcessGroupId - Process Group ID from connecting client (sometimes referred to as parent)
 // - pParentProcessData - Used to specify parent while locating appropriate scope of sending control messages
 // - ppProcessData - Filled on exit with a pointer to the process handle information. Optional.
-//                 - If not used, return code will specify whether this process is known to the list or not.
+//                 - If not used, return code will specify whether or not this process is known to the list.
 // Return Value:
 // - S_OK if the process was recorded in the list successfully or already existed.
 // - S_FALSE if we're running into an LPC port conflict by nature of the process chain.

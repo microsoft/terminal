@@ -53,6 +53,7 @@ namespace Microsoft.Terminal.Control
         void SetOverrideColorScheme(Microsoft.Terminal.Core.ICoreScheme scheme);
 
         Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
+        void HardResetWithoutErase();
 
         UInt64 ContentId{ get; };
 
