@@ -1213,11 +1213,12 @@ namespace winrt::TerminalApp::implementation
             }
 
             // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
-            _ExportTab(*activeTab, L"");
             if (args)
-            {
-                args.Handled(true);
-            }
+{
+    args.Handled(true);
+}
+
+_ExportTab(*activeTab, L"");s
         }
     }
 
