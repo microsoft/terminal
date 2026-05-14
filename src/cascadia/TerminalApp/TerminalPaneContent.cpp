@@ -90,7 +90,7 @@ namespace winrt::TerminalApp::implementation
 
         args.Profile(::Microsoft::Console::Utils::GuidToString(_profile.Guid()));
         // If we know the user's working directory use it instead of the profile.
-        if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+        if (const auto dir = _control.WorkingDirectory(); ::Microsoft::Console::Utils::IsValidDirectory(dir.c_str()))
         {
             args.StartingDirectory(dir);
         }
@@ -278,9 +278,11 @@ namespace winrt::TerminalApp::implementation
                     _control.BellLightOn();
                 }
 
-                // raise the event with the bool value corresponding to the taskbar flag
+                // raise the event with the bool values corresponding to the taskbar and notification flags
                 BellRequested.raise(*this,
-                                    *winrt::make_self<TerminalApp::implementation::BellEventArgs>(WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar)));
+                                    *winrt::make_self<TerminalApp::implementation::BellEventArgs>(
+                                        WI_IsFlagSet(_profile.BellStyle(), BellStyle::Taskbar),
+                                        WI_IsFlagSet(_profile.BellStyle(), BellStyle::Notification)));
             }
         }
     }

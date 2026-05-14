@@ -100,7 +100,7 @@ void TextBuffer::_reserve(til::size screenBufferSize, const TextAttribute& defau
     const auto rowStride = rowSize + charsBufferSize + charOffsetsBufferSize;
     assert(rowStride % alignof(ROW) == 0);
 
-    // 65535*65535 cells would result in a allocSize of 8GiB.
+    // 65535*65535 cells would result in an allocSize of 8GiB.
     // --> Use uint64_t so that we can safely do our calculations even on x86.
     // We allocate 1 additional row, which will be used for GetScratchpadRow().
     const auto rowCount = ::base::strict_cast<uint64_t>(h) + 1;
@@ -2724,7 +2724,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
     til::point newCursorPos;
 
     // BODGY: We use oldCursorPos in two critical places below:
-    // * To compute an oldHeight that includes at a minimum the cursor row
+    // * To compute an oldHeight that includes, at a minimum, the cursor row
     // * For REFLOW_JANK_CURSOR_WRAP (see comment below)
     // Both of these would break the reflow algorithm, but the latter of the two in particular
     // would cause the main copy loop below to deadlock. In other words, these two lines
@@ -2844,7 +2844,7 @@ void TextBuffer::Reflow(TextBuffer& oldBuffer, TextBuffer& newBuffer, const View
             // We don't need to be smart about this. Reset() is fast and shrinking doesn't occur often.
             if (newY >= newHeight && newX == 0)
             {
-                // We need to ensure not to overwrite the row the cursor is on.
+                // We need to ensure not to overwrite the row containing the cursor.
                 if (newY >= newYLimit)
                 {
                     break;

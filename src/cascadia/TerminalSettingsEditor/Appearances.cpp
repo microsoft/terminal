@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     };
 
     // Turns a DWRITE_MAKE_OPENTYPE_TAG into a string_view...
-    // (...buffer holder because someone needs to hold onto the data the view refers to.)
+    // (...buffer holder because someone needs to hold onto the data to which the view refers.)
     static TagToStringImpl tagToString(uint32_t tag) noexcept
     {
         return TagToStringImpl{ tag };
@@ -1425,9 +1425,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // button won't work right.
             });
 
-            // make sure to send all the property changed events once here
-            // we do this in the case an old appearance was deleted and then a new one is created,
-            // the old settings need to be updated in xaml
+            // make sure to send all the property changed events once here.
+            // we do this so that if an old appearance was deleted and then a new one created,
+            // the old settings are updated in xaml
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });

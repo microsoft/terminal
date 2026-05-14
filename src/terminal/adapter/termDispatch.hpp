@@ -69,6 +69,7 @@ public:
     void BackIndex() override {} // DECBI
     void ForwardIndex() override {} // DECFI
     void SetWindowTitle(std::wstring_view /*title*/) override {} // DECSWT, OscWindowTitle
+    void SetCurrentWorkingDirectory(std::wstring_view /*uri*/) override {} // OSC 7
     void HorizontalTabSet() override {} // HTS
     void ForwardTab(const VTInt /*numTabs*/) override {} // CHT, HT
     void BackwardsTab(const VTInt /*numTabs*/) override {} // CBT
@@ -127,7 +128,7 @@ public:
     void AnnounceCodeStructure(const VTInt /*ansiLevel*/) override {} // ACS
 
     void SoftReset() override {} // DECSTR
-    void HardReset() override {} // RIS
+    void HardReset(bool /*erase*/) override {} // RIS
     void ScreenAlignmentPattern() override {} // DECALN
 
     void SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override {} // DECSCUSR

@@ -6,7 +6,7 @@ Module Name:
 - IDynamicProfileGenerator
 
 Abstract:
-- The DynamicProfileGenerator interface. A dynamic profile generator is a object
+- The DynamicProfileGenerator interface. A dynamic profile generator is an object
   that can synthesize a list of profiles based on some arbitrary, typically
   external criteria. Profiles from dynamic sources are only available in the
   user's profiles if the generator actually ran and created the profile.

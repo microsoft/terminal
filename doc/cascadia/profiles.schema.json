@@ -60,7 +60,8 @@
             "enum": [
               "audible",
               "window",
-              "taskbar"
+              "taskbar",
+              "notification"
             ]
           }
         },
@@ -70,6 +71,7 @@
             "audible",
             "taskbar",
             "window",
+            "notification",
             "all",
             "none"
           ]
@@ -1765,7 +1767,7 @@
       ]
     },
     "ExportBufferAction": {
-      "description": "Arguments corresponding to a exportBuffer Action",
+      "description": "Arguments corresponding to an exportBuffer Action",
       "allOf": [
         {
           "$ref": "#/$defs/ShortcutAction"
@@ -2242,7 +2244,7 @@
           "$ref": "#/$defs/Icon"
         },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is an object, the key property of the object will be used to lookup a localized string resource for the command",
           "type": [
             "string",
             "object",
@@ -2470,6 +2472,13 @@
           },
           "type": "array"
         },
+        "safeUriSchemes": {
+          "description": "Specifies a list of URI schemes that are considered safe. No confirmation will be required to open URIs with these schemes.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "rendering.graphicsAPI": {
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
@@ -2654,9 +2663,20 @@
           "type": "string"
         },
         "warning.confirmCloseAllTabs": {
+          "deprecated": true,
+          "description": "[Deprecated] Use \"warning.confirmOnClose\" instead.",
           "default": true,
-          "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
+        },
+        "warning.confirmOnClose": {
+          "default": "automatic",
+          "description": "Controls when a confirmation dialog appears before closing tabs or windows.",
+          "enum": [
+            "never",
+            "automatic",
+            "always"
+          ],
+          "type": "string"
         },
         "useTabSwitcher": {
           "description": "[Deprecated] Replaced with the \"tabSwitcherMode\" setting.",
@@ -3173,6 +3193,11 @@
             "msys2",
             "mingw"
           ],
+          "type": "string"
+        },
+        "dragDropDelimiter": {
+          "default": " ",
+          "description": "The delimiter used when dropping multiple files onto the terminal.",
           "type": "string"
         }
       }

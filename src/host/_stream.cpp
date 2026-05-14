@@ -126,7 +126,7 @@ static void AdjustCursorPosition(SCREEN_INFORMATION& screenInfo, _In_ til::point
         buffer.IncrementCircularBuffer(buffer.GetCurrentAttributes());
 
         // TODO: This is very bad for performance.
-        // Track the total scroll offset as a int64 in buffer --> No need to track it here anymore.
+        // Track the total scroll offset as an int64 in buffer --> No need to track it here anymore.
         if (buffer.IsActiveBuffer())
         {
             auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;

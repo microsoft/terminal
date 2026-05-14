@@ -51,23 +51,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
-        void PointerPressed(Control::MouseButtonState buttonState,
+        void PointerPressed(const uint32_t pointerId,
+                            Control::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
-        void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
+        void TouchPressed(const Core::Point contactPoint);
 
-        bool PointerMoved(Control::MouseButtonState buttonState,
+        bool PointerMoved(const uint32_t pointerId,
+                          Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                          const bool focused,
-                          const Core::Point pixelPosition,
-                          const bool pointerPressedInBounds);
-        void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
-                        const bool focused);
+                          const Core::Point pixelPosition);
+        void TouchMoved(const Core::Point newTouchPoint);
 
-        void PointerReleased(Control::MouseButtonState buttonState,
+        void PointerReleased(const uint32_t pointerId,
+                             Control::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const Core::Point pixelPosition);
@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
-        std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+        std::optional<Core::Point> _touchAnchor;
 
         using Timestamp = uint64_t;
 
@@ -141,6 +141,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         uint64_t _id;
         static std::atomic<uint64_t> _nextId;
+
+        bool _focused{ false };
+        bool _pointerPressedInBounds{ false };
 
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;

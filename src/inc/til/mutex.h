@@ -71,7 +71,7 @@ namespace til
     {
     public:
         // An exclusive, read/write reference to a til::shared_mutex's underlying data.
-        // If you drop the guard the mutex is unlocked.
+        // If you drop the guard, the mutex is unlocked.
         using guard = details::shared_mutex_guard<T, std::unique_lock<std::shared_mutex>>;
 
         // A shared, read-only reference to a til::shared_mutex's underlying data.

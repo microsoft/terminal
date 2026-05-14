@@ -114,6 +114,7 @@ namespace Microsoft::Console::VirtualTerminal
         void BackIndex() override; // DECBI
         void ForwardIndex() override; // DECFI
         void SetWindowTitle(const std::wstring_view title) override; // DECSWT, OSCWindowTitle
+        void SetCurrentWorkingDirectory(std::wstring_view uri) override; // OSC 7
         void HorizontalTabSet() override; // HTS
         void ForwardTab(const VTInt numTabs) override; // CHT, HT
         void BackwardsTab(const VTInt numTabs) override; // CBT
@@ -129,7 +130,7 @@ namespace Microsoft::Console::VirtualTerminal
         void SendC1Controls(const bool enabled) override; // S8C1T, S7C1T
         void AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         void SoftReset() override; // DECSTR
-        void HardReset() override; // RIS
+        void HardReset(bool erase) override; // RIS
         void ScreenAlignmentPattern() override; // DECALN
         void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
 

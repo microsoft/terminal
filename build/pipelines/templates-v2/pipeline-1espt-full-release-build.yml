@@ -1,0 +1,233 @@
+parameters:
+  - name: official
+    type: boolean
+    default: false
+  - name: branding
+    type: string
+    default: Release
+    values:
+      - Release
+      - Preview
+      - Canary
+      - Dev
+  - name: buildTerminal
+    type: boolean
+    default: true
+  - name: buildConPTY
+    type: boolean
+    default: false
+  - name: buildWPF
+    type: boolean
+    default: false
+  - name: pgoBuildMode
+    type: string
+    default: Optimize
+    values:
+      - Optimize
+      - Instrument
+      - None
+  - name: buildConfigurations
+    type: object
+    default:
+      - Release
+  - name: buildPlatforms
+    type: object
+    default:
+      - x64
+      - x86
+      - arm64
+  - name: codeSign
+    type: boolean
+    default: true
+  - name: terminalInternalPackageVersion
+    type: string
+    default: '0.0.8'
+
+  - name: publishSymbolsToPublic
+    type: boolean
+    default: true
+  - name: symbolExpiryTime
+    type: string
+    default: 36530 # This is the default from PublishSymbols@2
+  - name: symbolPublishingSubscription
+    type: string
+  - name: symbolPublishingProject
+    type: string
+
+  - name: extraPublishJobs
+    type: object
+    default: []
+  - name: signingIdentity
+    type: object
+    default: {}
+
+resources:
+  repositories:
+  - repository: 1esPipelines
+    type: git
+    name: 1ESPipelineTemplates/1ESPipelineTemplates
+    ref: refs/tags/release
+
+extends:
+  ${{ if eq(parameters.official, true) }}:
+    template: v1/1ES.Official.PipelineTemplate.yml@1esPipelines
+  ${{ else }}:
+    template: v1/1ES.Unofficial.PipelineTemplate.yml@1esPipelines
+  parameters:
+    customBuildTags:
+    - 1ES.PT.ViaStartRight
+    pool:
+      name: SHINE-INT-L
+      os: windows
+    sdl:
+      tsa:
+        enabled: true
+        configFile: '$(Build.SourcesDirectory)\build\config\tsa.json'
+      binskim:
+        enabled: true
+      policheck:
+        enabled: false
+        severity: Note
+      baseline:
+        baselineFile: '$(Build.SourcesDirectory)\build\config\release.gdnbaselines'
+        suppressionSet: default
+
+    stages:
+      - stage: Build
+        displayName: Build
+        dependsOn: []
+        jobs:
+          - template: ./build/pipelines/templates-v2/job-build-project.yml@self
+            parameters:
+              outerTemplateContext:
+                outputs:
+                  - output: pipelineArtifact
+                    targetPath: $(JobOutputDirectory)
+                    artifactName: $(JobOutputArtifactName)
+              publishArtifacts: false # Handled by 1ESPT
+              branding: ${{ parameters.branding }}
+              buildTerminal: ${{ parameters.buildTerminal }}
+              buildConPTY: ${{ parameters.buildConPTY }}
+              buildWPF: ${{ parameters.buildWPF }}
+              pgoBuildMode: ${{ parameters.pgoBuildMode }}
+              buildConfigurations: ${{ parameters.buildConfigurations }}
+              buildPlatforms: ${{ parameters.buildPlatforms }}
+              generateSbom: false # this is handled by 1ESPT
+              removeAllNonSignedFiles: true # appease the overlords
+              codeSign: ${{ parameters.codeSign }}
+              signingIdentity: ${{ parameters.signingIdentity }}
+              beforeBuildSteps:
+                - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
+
+                - template: ./build/pipelines/templates-v2/steps-install-terrapin.yml@self
+
+                - task: UniversalPackages@0
+                  displayName: Download terminal-internal Universal Package
+                  inputs:
+                    feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
+                    packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
+                    versionListDownload: ${{ parameters.terminalInternalPackageVersion }}
+
+          - ${{ if eq(parameters.buildWPF, true) }}:
+            # Add an Any CPU build flavor for the WPF control bits
+            - template: ./build/pipelines/templates-v2/job-build-project.yml@self
+              parameters:
+                outerTemplateContext:
+                  outputs:
+                    - output: pipelineArtifact
+                      targetPath: $(JobOutputDirectory)
+                      artifactName: $(JobOutputArtifactName)
+                publishArtifacts: false # Handled by 1ESPT
+                jobName: BuildWPF
+                branding: ${{ parameters.branding }}
+                buildTerminal: false
+                buildWPFDotNetComponents: true
+                buildConfigurations: ${{ parameters.buildConfigurations }}
+                buildPlatforms:
+                  - Any CPU
+                generateSbom: false # this is handled by 1ESPT
+                removeAllNonSignedFiles: true # appease the overlords
+                codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
+                beforeBuildSteps:
+                  - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
+                  # WPF doesn't need the localizations or the universal package, but if it does... put them here.
+
+      - stage: Package
+        displayName: Package
+        dependsOn: [Build]
+        jobs:
+          - ${{ if eq(parameters.buildTerminal, true) }}:
+            - template: ./build/pipelines/templates-v2/job-merge-msix-into-bundle.yml@self
+              parameters:
+                pool:
+                  name: SHINE-INT-S
+                  os: windows
+                outerTemplateContext:
+                  outputs:
+                    - output: pipelineArtifact
+                      targetPath: $(JobOutputDirectory)
+                      artifactName: $(JobOutputArtifactName)
+                publishArtifacts: false # Handled by 1ESPT
+                jobName: Bundle
+                branding: ${{ parameters.branding }}
+                buildConfigurations: ${{ parameters.buildConfigurations }}
+                buildPlatforms: ${{ parameters.buildPlatforms }}
+                generateSbom: false # Handled by 1ESPT
+                codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
+
+          - ${{ if eq(parameters.buildConPTY, true) }}:
+            - template: ./build/pipelines/templates-v2/job-package-conpty.yml@self
+              parameters:
+                pool:
+                  name: SHINE-INT-S
+                  os: windows
+                outerTemplateContext:
+                  outputs:
+                    - output: pipelineArtifact
+                      targetPath: $(JobOutputDirectory)
+                      artifactName: $(JobOutputArtifactName)
+                publishArtifacts: false # Handled by 1ESPT
+                buildConfigurations: ${{ parameters.buildConfigurations }}
+                buildPlatforms: ${{ parameters.buildPlatforms }}
+                generateSbom: false # this is handled by 1ESPT
+                codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
+
+          - ${{ if eq(parameters.buildWPF, true) }}:
+            - template: ./build/pipelines/templates-v2/job-build-package-wpf.yml@self
+              parameters:
+                pool:
+                  name: SHINE-INT-S
+                  os: windows
+                outerTemplateContext:
+                  outputs:
+                    - output: pipelineArtifact
+                      targetPath: $(JobOutputDirectory)
+                      artifactName: $(JobOutputArtifactName)
+                publishArtifacts: false # Handled by 1ESPT
+                buildConfigurations: ${{ parameters.buildConfigurations }}
+                buildPlatforms: ${{ parameters.buildPlatforms }}
+                generateSbom: false # this is handled by 1ESPT
+                codeSign: ${{ parameters.codeSign }}
+                signingIdentity: ${{ parameters.signingIdentity }}
+
+      - stage: Publish
+        displayName: Publish
+        dependsOn:
+          - Build
+          - ${{ if or(parameters.buildTerminal, parameters.buildConPTY, parameters.buildWPF) }}:
+              - Package
+        jobs:
+          - template: ./build/pipelines/templates-v2/job-publish-symbols-using-symbolrequestprod-api.yml@self
+            parameters:
+              pool:
+                name: SHINE-INT-S
+                os: windows
+              includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
+              symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
+              subscription: ${{ parameters.symbolPublishingSubscription }}
+              symbolProject: ${{ parameters.symbolPublishingProject }}
+
+          - ${{ parameters.extraPublishJobs }}

@@ -11,6 +11,8 @@
 #include <wil/token_helpers.h>
 #include <winrt/TerminalApp.h>
 #include <sddl.h>
+#include <propkey.h>
+#include <propvarutil.h>
 
 #include "AppHost.h"
 #include "resource.h"
@@ -97,9 +99,8 @@ static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, w
     uint32_t len;
     it = deserializeUint32(it, end, len);
 
-    const auto bytes = static_cast<size_t>(len) * sizeof(wchar_t);
-
-    if (bytes == 0 || static_cast<size_t>(end - it) < bytes)
+    size_t bytes{};
+    if (!SUCCEEDED(SizeTMult(static_cast<size_t>(len), sizeof(wchar_t), &bytes)) || bytes == 0 || static_cast<size_t>(end - it) < bytes)
     {
         throw std::out_of_range("Not enough data for string content");
     }
@@ -313,6 +314,107 @@ AppHost* WindowEmperor::_mostRecentWindow() const noexcept
     return mostRecent;
 }
 
+// GH#20053: The shell resolves taskbar grouping identity as: per-window AUMID >
+// per-process AUMID > auto-derived from exe path. Before we started setting a
+// process AUMID, both the pinned .lnk and the process used auto-derived
+// identity, so they matched. Now that we set an explicit AUMID, a pinned .lnk
+// that predates the AUMID change has no AUMID and still uses auto-derived
+// identity, causing a mismatch and a duplicate taskbar button.
+//
+// To fix this, we check if a pinned taskbar shortcut (.lnk) points to our exe.
+// If it already carries our AUMID (or no pin exists), we set the process AUMID
+// normally. If a pin exists WITHOUT our AUMID, we skip setting the process
+// AUMID for THIS launch (both sides use auto-derived identity, so they match)
+// and defer stamping the shortcut to process exit. On the next launch, the pin
+// has our AUMID, so we set the process AUMID to match, and both agree.
+//
+// NOTE: On the first launch after pinning, the process AUMID is not set. If
+// toast notifications are needed in the future, use
+// ToastNotificationManager::CreateToastNotifier(aumid) with the AUMID string
+// directly. That API does not depend on SetCurrentProcessExplicitAppUserModelID.
+// A Start Menu shortcut with the AUMID (separate from the taskbar pin) is also
+// required for toast routing; see
+// https://learn.microsoft.com/windows/apps/develop/notifications/app-notifications/send-local-toast-other-apps
+void WindowEmperor::_setupAumid(const std::wstring& aumid)
+{
+    const auto ourExePath = wil::GetModuleFileNameW<std::wstring>(nullptr);
+
+    bool needsDeferredStamping = false;
+    std::wstring pinnedLnkPath;
+
+    const auto taskbarGlob = wil::ExpandEnvironmentStringsW<std::wstring>(
+        LR"(%APPDATA%\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\*.lnk)");
+
+    WIN32_FIND_DATAW findData{};
+    const wil::unique_hfind findHandle{ FindFirstFileExW(taskbarGlob.c_str(), FindExInfoBasic, &findData, FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH) };
+    if (findHandle)
+    {
+        const auto lastSlash = taskbarGlob.rfind(L'\\');
+        const auto taskbarDir = taskbarGlob.substr(0, lastSlash + 1);
+
+        do
+        {
+            const auto lnkPath = taskbarDir + findData.cFileName;
+
+            wil::com_ptr<IShellLinkW> shellLink;
+            if (FAILED(CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink))))
+            {
+                continue;
+            }
+
+            const auto persistFile = shellLink.try_query<IPersistFile>();
+            if (!persistFile || FAILED(persistFile->Load(lnkPath.c_str(), STGM_READ)))
+            {
+                continue;
+            }
+
+            wchar_t targetPath[MAX_PATH]{};
+            if (FAILED(shellLink->GetPath(targetPath, MAX_PATH, nullptr, SLGP_RAWPATH)))
+            {
+                continue;
+            }
+
+            if (til::compare_ordinal_insensitive(targetPath, ourExePath) != 0)
+            {
+                continue;
+            }
+
+            // Found a pin pointing to us. Assume it needs stamping unless
+            // we confirm it already has our AUMID.
+            pinnedLnkPath = lnkPath;
+            needsDeferredStamping = true;
+
+            if (const auto propertyStore = shellLink.try_query<IPropertyStore>())
+            {
+                wil::unique_prop_variant pv;
+                if (SUCCEEDED(propertyStore->GetValue(PKEY_AppUserModel_ID, &pv)) &&
+                    pv.vt == VT_LPWSTR && pv.pwszVal &&
+                    aumid == pv.pwszVal)
+                {
+                    needsDeferredStamping = false;
+                }
+            }
+
+            break;
+        } while (FindNextFileW(findHandle.get(), &findData));
+    }
+
+    if (needsDeferredStamping)
+    {
+        // The pin exists but doesn't have our AUMID yet. Don't set the process
+        // AUMID or stamp the shortcut now. Writing the shortcut causes the
+        // shell to re-read it immediately, changing the pin's cached identity
+        // mid-launch and creating a mismatch in the opposite direction. Instead,
+        // stamp it at shutdown when the taskbar association no longer matters.
+        _pendingAumidLnkPath = std::move(pinnedLnkPath);
+        _pendingAumid = aumid;
+    }
+    else
+    {
+        LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(aumid.c_str()));
+    }
+}
+
 void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 {
     // When running without package identity, set an explicit AppUserModelID so
@@ -373,7 +475,7 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
 #else
             fmt::format_to(std::back_inserter(unpackagedAumid), FMT_COMPILE(L".{:08x}"), hash);
 #endif
-            LOG_IF_FAILED(SetCurrentProcessExplicitAppUserModelID(unpackagedAumid.c_str()));
+            _setupAumid(unpackagedAumid);
         }
     }
 
@@ -551,6 +653,29 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     if (_notificationIconShown)
     {
         Shell_NotifyIconW(NIM_DELETE, &_notificationIcon);
+    }
+
+    // GH#20053: Deferred shortcut stamping. See _setupAumid() for context.
+    if (!_pendingAumidLnkPath.empty())
+    {
+        wil::com_ptr<IShellLinkW> shellLink;
+        if (SUCCEEDED(CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&shellLink))))
+        {
+            if (const auto persistFile = shellLink.try_query<IPersistFile>();
+                persistFile && SUCCEEDED(persistFile->Load(_pendingAumidLnkPath.c_str(), STGM_READWRITE)))
+            {
+                if (const auto propertyStore = shellLink.try_query<IPropertyStore>())
+                {
+                    wil::unique_prop_variant pv;
+                    if (SUCCEEDED(InitPropVariantFromString(_pendingAumid.c_str(), &pv)) &&
+                        SUCCEEDED(propertyStore->SetValue(PKEY_AppUserModel_ID, pv)) &&
+                        SUCCEEDED(propertyStore->Commit()))
+                    {
+                        persistFile->Save(_pendingAumidLnkPath.c_str(), TRUE);
+                    }
+                }
+            }
+        }
     }
 
     // There's a mysterious crash in XAML on Windows 10 if you just let _app get destroyed (GH#15410).
@@ -773,6 +898,25 @@ bool WindowEmperor::_summonWindow(const SummonWindowSelectionArgs& args) const
 
     window->HandleSummon(args.SummonBehavior);
     return true;
+}
+
+void WindowEmperor::FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const
+{
+    _assertIsMainThread();
+
+    for (const auto& w : _windows)
+    {
+        if (w->Logic().FocusTab(tab))
+        {
+            winrt::TerminalApp::SummonWindowBehavior summonArgs;
+            summonArgs.MoveToCurrentDesktop(false);
+            summonArgs.DropdownDuration(0);
+            summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+            summonArgs.ToggleVisibility(false);
+            w->HandleSummon(std::move(summonArgs));
+            return;
+        }
+    }
 }
 
 void WindowEmperor::_summonAllWindows() const
@@ -1033,7 +1177,14 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
             {
                 const auto handoff = deserializeHandoffPayload(static_cast<const uint8_t*>(cds->lpData), static_cast<const uint8_t*>(cds->lpData) + cds->cbData);
                 const auto argv = commandlineToArgArray(handoff.args.c_str());
-                _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
+                // When a toast notification is clicked, Windows launches a new
+                // wt.exe with "--from-toast". That instance hands off here via
+                // WM_COPYDATA. We already handle activation in-process via the
+                // toast's Activated event, so just ignore this handoff.
+                if (argv.size() != 2 || argv[1] != L"--from-toast")
+                {
+                    _dispatchCommandlineCommon(argv, handoff.cwd, handoff.env, handoff.show);
+                }
             }
             return 0;
         case WM_HOTKEY:

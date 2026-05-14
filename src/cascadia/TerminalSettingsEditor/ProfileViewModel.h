@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on);
 
         hstring BellSoundPreview();
         void RequestAddBellSound(hstring path);
@@ -145,6 +146,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
         OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
         OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, DragDropDelimiter);
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

@@ -350,7 +350,7 @@ void ROW::_init() noexcept
     std::iota(_charOffsets.begin(), _charOffsets.end(), uint16_t{ 0 });
 #endif
 
-#pragma warning(push)
+#pragma warning(pop)
 }
 
 void ROW::CopyFrom(const ROW& source)
@@ -1141,6 +1141,13 @@ til::CoordType ROW::GetLeadingColumnAtCharOffset(const ptrdiff_t offset) const n
 til::CoordType ROW::GetTrailingColumnAtCharOffset(const ptrdiff_t offset) const noexcept
 {
     return _createCharToColumnMapper(offset).GetTrailingColumnAt(offset);
+}
+
+uint16_t ROW::GetCharOffset(til::CoordType col) const noexcept
+{
+    const auto columns = GetReadableColumnCount();
+    const auto colBeg = clamp(col, 0, columns);
+    return _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
 }
 
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept

@@ -741,10 +741,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Helper method for retrieving the action from a command the user
-    //   selected, and dispatching that command. Also fires a tracelogging event
-    //   indicating that the user successfully found the action they were
-    //   looking for.
+    // - Helper method to run a command, switch to a tab, or retrieve the
+    //   action from a user selected command and dispatch that command.
+    //   Also fires a tracelogging event indicating that the user successfully
+    //   found the action they were looking for.
     // Arguments:
     // - command: the Command to dispatch. This might be null.
     // Return Value:
@@ -791,7 +791,7 @@ namespace winrt::TerminalApp::implementation
                     _close();
 
                     // But make an exception for the Toggle Command Palette action: we don't want the dispatch
-                    // make the command palette - that was just closed - visible again.
+                    // to make the command palette - that was just closed - visible again.
                     // All other actions can just be dispatched.
                     if (command.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
                     {
