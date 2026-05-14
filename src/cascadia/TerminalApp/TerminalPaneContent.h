@@ -93,8 +93,6 @@ namespace winrt::TerminalApp::implementation
         void _setupControlEvents();
         void _removeControlEvents();
 
-        void _playBellSound(winrt::hstring soundPath);
-
         safe_void_coroutine _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                         const winrt::Windows::Foundation::IInspectable& e);

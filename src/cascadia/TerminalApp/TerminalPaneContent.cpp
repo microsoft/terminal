@@ -263,13 +263,16 @@ namespace winrt::TerminalApp::implementation
                     auto sounds{ _profile.BellSound() };
                     if (sounds && sounds.Size() > 0)
                     {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        _playBellSound(soundPath);
+                        // Sound paths are resolved and validated by CascadiaSettings
+                        // before we reach this point.
+                        auto soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                        wil::zwstring_view soundPath{ sounds.GetAt(rand()
+                        PlaySoundW(soundPath.c_str(), nullptr, SND_FILENAME | SND_ASYNC | SND_SENTRY | SND_NODEFAULT);
                     }
                     else
                     {
                         const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+                        PlaySound(soundAlias, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
                     }
                 }
 
@@ -285,22 +288,6 @@ namespace winrt::TerminalApp::implementation
                                         WI_IsFlagSet(_profile.BellStyle(), BellStyle::Notification)));
             }
         }
-    }
-
-    void TerminalPaneContent::_playBellSound(winrt::hstring soundPath)
-    {
-        // BellSound paths are already resolved to filesystem paths by
-        // IMediaResource::Resolved() before reaching this point.
-        const std::wstring filePath{ soundPath };
-
-        if (!til::is_legal_path(filePath))
-        {
-            return;
-        }
-
-        // GH#17733: Play bell sounds with Win32 audio APIs so per-app mixer
-        // volume persists across terminal restarts.
-        PlaySoundW(filePath.c_str(), nullptr, SND_FILENAME | SND_ASYNC | SND_SENTRY | SND_NODEFAULT);
     }
 
     void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
