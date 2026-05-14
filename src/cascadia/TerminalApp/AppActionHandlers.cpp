@@ -1619,19 +1619,21 @@ _ExportTab(*activeTab, L"");s
     }
 
     void TerminalPage::_HandleOpenAbout(const IInspectable& /*sender*/,
-                                        const ActionEventArgs& args)
-    {
-        _ShowAboutDialog();
-        args.Handled(true);
-    }
+                                    const ActionEventArgs& args)
+{
+    ContentDialog aboutDialog;
+    aboutDialog.Title(box_value(L"Custom Windows Terminal"));
 
-    void TerminalPage::_HandleQuickFix(const IInspectable& /*sender*/,
-                                       const ActionEventArgs& args)
-    {
-        if (const auto& control{ _GetActiveControl() })
-        {
-            const auto handled = control.OpenQuickFixMenu();
-            args.Handled(handled);
-        }
-    }
+    aboutDialog.Content(box_value(
+        L"Welcome Pallavi!\n\n"
+        L"This is your modified Windows Terminal.\n"
+        L"You successfully edited the source code!"
+    ));
+
+    aboutDialog.CloseButtonText(L"OK");
+
+    aboutDialog.XamlRoot(this->XamlRoot());
+    aboutDialog.ShowAsync();
+
+    args.Handled(true);
 }
