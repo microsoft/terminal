@@ -159,7 +159,7 @@ public:
 
     bool IsVtInputEnabled() const noexcept override;
     void NotifyBufferRotation(const int delta) override;
-    void NotifyShellIntegrationMark() override;
+    void NotifyShellIntegrationMark(ShellIntegrationMark mark) override;
 
     void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) override;
 
@@ -235,6 +235,8 @@ public:
     void SetSearchMissingCommandCallback(std::function<void(std::wstring_view, const til::CoordType)> pfn) noexcept;
     void SetClearQuickFixCallback(std::function<void()> pfn) noexcept;
     void SetWindowSizeChangedCallback(std::function<void(int32_t, int32_t)> pfn) noexcept;
+    void SetPromptStartedCallback(std::function<void()> pfn) noexcept;
+    void SetOutputStartedCallback(std::function<void()> pfn) noexcept;
     void SetSearchHighlights(const std::vector<til::point_span>& highlights) noexcept;
     void SetSearchHighlightFocused(size_t focusedIdx) noexcept;
     void ScrollToSearchHighlight(til::CoordType searchScrollOffset);
@@ -243,7 +245,7 @@ public:
 
     const std::optional<til::color> GetTabColor() const;
 
-    const size_t GetTaskbarState() const noexcept;
+    const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
     void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
@@ -343,6 +345,8 @@ private:
     std::function<void(std::wstring_view, const til::CoordType)> _pfnSearchMissingCommand;
     std::function<void()> _pfnClearQuickFix;
     std::function<void(int32_t, int32_t)> _pfnWindowSizeChanged;
+    std::function<void()> _pfnPromptStarted;
+    std::function<void()> _pfnOutputStarted;
 
     RenderSettings _renderSettings;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
@@ -363,6 +367,9 @@ private:
 
     til::enumset<Mode> _systemMode{ Mode::AutoWrap };
 
+    ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState _taskbarState{ ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState::Clear };
+    size_t _taskbarProgress = 0;
+
     bool _focused = false;
     bool _snapOnInput = true;
     bool _altGrAliasing = true;
@@ -370,9 +377,6 @@ private:
     bool _trimBlockSelection = true;
     bool _autoMarkPrompts = false;
     bool _rainbowSuggestions = false;
-
-    size_t _taskbarState = 0;
-    size_t _taskbarProgress = 0;
 
     size_t _hyperlinkPatternId = 0;
 

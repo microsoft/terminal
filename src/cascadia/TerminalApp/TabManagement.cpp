@@ -1366,8 +1366,8 @@ namespace winrt::TerminalApp::implementation
             {
                 // The toast Activated callback runs on a background thread.
                 // Marshal to the UI thread for tab focus and window summon.
-                page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakPage{ page->get_weak() }, weakTab, weakContent]() {
-                    if (const auto p{ weakPage.get() })
+                page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakThis, weakTab, weakContent]() {
+                    if (const auto p{ weakThis.get() })
                     {
                         if (const auto t{ weakTab.get() })
                         {

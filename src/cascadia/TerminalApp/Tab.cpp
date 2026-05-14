@@ -123,6 +123,12 @@ namespace winrt::TerminalApp::implementation
         _bellIndicatorTimer.Stop();
     }
 
+    void Tab::_ActivityIndicatorTimerTick(const Windows::Foundation::IInspectable& /*sender*/, const Windows::Foundation::IInspectable& /*e*/)
+    {
+        ShowActivityIndicator(false);
+        _activityIndicatorTimer.Stop();
+    }
+
     // Method Description:
     // - Initializes a TabViewItem for this Tab instance.
     // Arguments:
@@ -329,6 +335,10 @@ namespace winrt::TerminalApp::implementation
             {
                 ShowBellIndicator(false);
             }
+            if (_tabStatus.ActivityIndicator())
+            {
+                ShowActivityIndicator(false);
+            }
         }
     }
 
@@ -457,6 +467,26 @@ namespace winrt::TerminalApp::implementation
         }
 
         _bellIndicatorTimer.Start();
+    }
+
+    void Tab::ShowActivityIndicator(const bool show)
+    {
+        ASSERT_UI_THREAD();
+
+        _tabStatus.ActivityIndicator(show);
+    }
+
+    void Tab::ActivateActivityIndicatorTimer()
+    {
+        ASSERT_UI_THREAD();
+
+        if (!_activityIndicatorTimer)
+        {
+            _activityIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+            _activityIndicatorTimer.Tick({ get_weak(), &Tab::_ActivityIndicatorTimerTick });
+        }
+
+        _activityIndicatorTimer.Start();
     }
 
     // Method Description:
@@ -1181,8 +1211,45 @@ namespace winrt::TerminalApp::implementation
                 co_await wil::resume_foreground(dispatcher);
                 if (const auto tab{ weakThisCopy.get() })
                 {
-                    const auto title = notifArgs.Title().empty() ? tab->Title() : notifArgs.Title();
-                    tab->TabToastNotificationRequested.raise(title, notifArgs.Body(), sender);
+                    const auto activeContent = tab->GetActiveContent();
+                    const auto isActivePaneContent = activeContent && activeContent == sender;
+
+                    if (!notifArgs.AlwaysNotify() && isActivePaneContent &&
+                        tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        co_return;
+                    }
+
+                    const auto style = notifArgs.Style();
+
+                    if (WI_IsFlagSet(style, OutputNotificationStyle::Taskbar))
+                    {
+                        tab->TabRaiseVisualBell.raise();
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Audible))
+                    {
+                        if (const auto termContent{ sender.try_as<TerminalApp::TerminalPaneContent>() })
+                        {
+                            termContent.PlayNotificationSound();
+                        }
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Tab))
+                    {
+                        tab->ShowActivityIndicator(true);
+
+                        if (tab->_focusState != WUX::FocusState::Unfocused)
+                        {
+                            tab->ActivateActivityIndicatorTimer();
+                        }
+                    }
+
+                    if (WI_IsFlagSet(style, winrt::Microsoft::Terminal::Control::OutputNotificationStyle::Notification))
+                    {
+                        const auto title = notifArgs.Title().empty() ? tab->Title() : notifArgs.Title();
+                        tab->TabToastNotificationRequested.raise(title, notifArgs.Body(), sender);
+                    }
                 }
             });
 
@@ -1242,11 +1309,10 @@ namespace winrt::TerminalApp::implementation
         const auto taskbarState = state.State();
         // The progress of the control changed, but not necessarily the progress of the tab.
         // Set the tab's progress ring to the active pane's progress
-        if (taskbarState > 0)
+        if (taskbarState != winrt::Microsoft::Terminal::Control::TaskbarState::Clear)
         {
-            if (taskbarState == 3)
+            if (taskbarState == winrt::Microsoft::Terminal::Control::TaskbarState::Indeterminate)
             {
-                // 3 is the indeterminate state, set the progress ring as such
                 _tabStatus.IsProgressRingIndeterminate(true);
             }
             else
@@ -1421,6 +1487,10 @@ namespace winrt::TerminalApp::implementation
                 if (tab->_tabStatus.BellIndicator())
                 {
                     tab->ShowBellIndicator(false);
+                }
+                if (tab->_tabStatus.ActivityIndicator())
+                {
+                    tab->ShowActivityIndicator(false);
                 }
             }
         });

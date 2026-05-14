@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IControlSettings.idl";
+
 namespace Microsoft.Terminal.Control
 {
     enum MarkCategory
@@ -31,7 +33,7 @@ namespace Microsoft.Terminal.Control
     interface ICoreState
     {
         String Title { get; };
-        UInt64 TaskbarState { get; };
+        Microsoft.Terminal.Control.TaskbarState TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
 
         String WorkingDirectory { get; };

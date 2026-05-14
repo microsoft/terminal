@@ -767,6 +767,11 @@ TerminalInput::OutputType Terminal::SendCharEvent(const wchar_t ch, const WORD s
                 // This changed the scrollbar marks - raise a notification to update them
                 _NotifyScrollEvent();
             }
+            // regardless, notify that we started command output
+            if (_pfnOutputStarted)
+            {
+                _pfnOutputStarted();
+            }
         }
     }
 
@@ -1252,7 +1257,7 @@ const std::optional<til::color> Terminal::GetTabColor() const
 // - Gets the internal taskbar state value
 // Return Value:
 // - The taskbar state
-const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexcept
+const Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexcept
 {
     return _taskbarState;
 }
@@ -1279,6 +1284,16 @@ void Microsoft::Terminal::Core::Terminal::SetSearchMissingCommandCallback(std::f
 void Microsoft::Terminal::Core::Terminal::SetClearQuickFixCallback(std::function<void()> pfn) noexcept
 {
     _pfnClearQuickFix.swap(pfn);
+}
+
+void Terminal::SetPromptStartedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnPromptStarted.swap(pfn);
+}
+
+void Terminal::SetOutputStartedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnOutputStarted.swap(pfn);
 }
 
 // Method Description:
