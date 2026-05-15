@@ -27,178 +27,172 @@
     <StackPanel>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Section: Clipboard and paste behavior  -->
-            <local:SettingContainer x:Uid="Interaction_Section_Clipboard"
-                                    StartExpanded="True"
-                                    Style="{StaticResource SectionExpanderStyle}">
-                <StackPanel>
-                    <!--  Copy On Select  -->
-                    <local:SettingContainer x:Name="CopyOnSelect"
-                                            x:Uid="Globals_CopyOnSelect">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+            <StackPanel Style="{StaticResource PivotStackStyle}">
+                <TextBlock x:Uid="Interaction_Section_Clipboard"
+                           Margin="0,0,0,4"
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
+                <!--  Copy On Select  -->
+                <local:SettingContainer x:Name="CopyOnSelect"
+                                        x:Uid="Globals_CopyOnSelect">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.CopyOnSelect, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Trim Paste  -->
-                    <local:SettingContainer x:Name="TrimPaste"
-                                            x:Uid="Globals_TrimPaste">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.TrimPaste, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+                <!--  Trim Paste  -->
+                <local:SettingContainer x:Name="TrimPaste"
+                                        x:Uid="Globals_TrimPaste">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.TrimPaste, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Trim Block Selection  -->
-                    <local:SettingContainer x:Name="TrimBlockSelection"
-                                            x:Uid="Globals_TrimBlockSelection">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.TrimBlockSelection, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+                <!--  Trim Block Selection  -->
+                <local:SettingContainer x:Name="TrimBlockSelection"
+                                        x:Uid="Globals_TrimBlockSelection">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.TrimBlockSelection, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Copy Format  -->
-                    <local:SettingContainer x:Name="CopyFormat"
-                                            x:Uid="Globals_CopyFormat">
-                        <ComboBox AutomationProperties.AccessibilityView="Content"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind ViewModel.CopyFormatList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind ViewModel.CurrentCopyFormat, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                    </local:SettingContainer>
-                </StackPanel>
-            </local:SettingContainer>
+                <!--  Copy Format  -->
+                <local:SettingContainer x:Name="CopyFormat"
+                                        x:Uid="Globals_CopyFormat">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind ViewModel.CopyFormatList, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.CurrentCopyFormat, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingContainer>
+            </StackPanel>
 
             <!--  Section: Text selection & editing  -->
-            <local:SettingContainer x:Uid="Interaction_Section_TextSelection"
-                                    Style="{StaticResource SectionExpanderStyle}">
-                <StackPanel>
-                    <!--  Word Delimiters  -->
-                    <local:SettingContainer x:Name="WordDelimiters"
-                                            x:Uid="Globals_WordDelimiters"
-                                            CurrentValue="{x:Bind ViewModel.WordDelimiters, Mode=OneWay}"
-                                            Style="{StaticResource ExpanderSettingContainerStyle}">
-                        <TextBox IsSpellCheckEnabled="False"
-                                 Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
-                    </local:SettingContainer>
+            <StackPanel Style="{StaticResource PivotStackStyle}">
+                <TextBlock x:Uid="Interaction_Section_TextSelection"
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
+                <!--  Word Delimiters  -->
+                <local:SettingContainer x:Name="WordDelimiters"
+                                        x:Uid="Globals_WordDelimiters"
+                                        CurrentValue="{x:Bind ViewModel.WordDelimiters, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <TextBox IsSpellCheckEnabled="False"
+                             Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
+                </local:SettingContainer>
 
-                    <!--  Enable Color Selection  -->
-                    <local:SettingContainer x:Name="EnableColorSelection"
-                                            x:Uid="Globals_EnableColorSelection">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.EnableColorSelection, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
-                </StackPanel>
-            </local:SettingContainer>
+                <!--  Enable Color Selection  -->
+                <local:SettingContainer x:Name="EnableColorSelection"
+                                        x:Uid="Globals_EnableColorSelection">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.EnableColorSelection, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+            </StackPanel>
 
             <!--  Section: Window and layout behavior  -->
-            <local:SettingContainer x:Uid="Interaction_Section_WindowLayout"
-                                    Style="{StaticResource SectionExpanderStyle}">
-                <StackPanel>
-                    <!--  Snap On Resize  -->
-                    <local:SettingContainer x:Name="SnapToGridOnResize"
-                                            x:Uid="Globals_SnapToGridOnResize">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.SnapToGridOnResize, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+            <StackPanel Style="{StaticResource PivotStackStyle}">
+                <TextBlock x:Uid="Interaction_Section_WindowLayout"
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
+                <!--  Snap On Resize  -->
+                <local:SettingContainer x:Name="SnapToGridOnResize"
+                                        x:Uid="Globals_SnapToGridOnResize">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.SnapToGridOnResize, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Focus Follow Mouse Mode  -->
-                    <local:SettingContainer x:Name="FocusFollowMouse"
-                                            x:Uid="Globals_FocusFollowMouse">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.FocusFollowMouse, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+                <!--  Focus Follow Mouse Mode  -->
+                <local:SettingContainer x:Name="FocusFollowMouse"
+                                        x:Uid="Globals_FocusFollowMouse">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.FocusFollowMouse, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Tab Switcher Mode  -->
-                    <local:SettingContainer x:Name="TabSwitcherMode"
-                                            x:Uid="Globals_TabSwitcherMode">
-                        <ComboBox AutomationProperties.AccessibilityView="Content"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind ViewModel.TabSwitcherModeList}"
-                                  SelectedItem="{x:Bind ViewModel.CurrentTabSwitcherMode, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                    </local:SettingContainer>
-                </StackPanel>
-            </local:SettingContainer>
+                <!--  Tab Switcher Mode  -->
+                <local:SettingContainer x:Name="TabSwitcherMode"
+                                        x:Uid="Globals_TabSwitcherMode">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind ViewModel.TabSwitcherModeList}"
+                              SelectedItem="{x:Bind ViewModel.CurrentTabSwitcherMode, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingContainer>
+            </StackPanel>
 
             <!--  Section: Mouse & scrolling  -->
-            <local:SettingContainer x:Uid="Interaction_Section_MouseScrolling"
-                                    Style="{StaticResource SectionExpanderStyle}">
-                <StackPanel>
-                    <!--  Enable Font Size Changes with Scrolling  -->
-                    <local:SettingContainer x:Name="ScrollToZoom"
-                                            x:Uid="Globals_ScrollToZoom">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToZoom, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+            <StackPanel Style="{StaticResource PivotStackStyle}">
+                <TextBlock x:Uid="Interaction_Section_MouseScrolling"
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
+                <!--  Enable Font Size Changes with Scrolling  -->
+                <local:SettingContainer x:Name="ScrollToZoom"
+                                        x:Uid="Globals_ScrollToZoom">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToZoom, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Enable Window Opacity Changes with Scrolling  -->
-                    <local:SettingContainer x:Name="ScrollToChangeOpacity"
-                                            x:Uid="Globals_ScrollToChangeOpacity">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToChangeOpacity, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
-                </StackPanel>
-            </local:SettingContainer>
+                <!--  Enable Window Opacity Changes with Scrolling  -->
+                <local:SettingContainer x:Name="ScrollToChangeOpacity"
+                                        x:Uid="Globals_ScrollToChangeOpacity">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.ScrollToChangeOpacity, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
+            </StackPanel>
 
             <!--  Section: URLs & external actions  -->
-            <local:SettingContainer x:Uid="Interaction_Section_UrlsExternal"
-                                    Style="{StaticResource SectionExpanderStyle}">
-                <StackPanel>
-                    <!--  Detect URLs  -->
-                    <local:SettingContainer x:Name="DetectURLs"
-                                            x:Uid="Globals_DetectURLs">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+            <StackPanel Style="{StaticResource PivotStackStyle}">
+                <TextBlock x:Uid="Interaction_Section_UrlsExternal"
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
+                <!--  Detect URLs  -->
+                <local:SettingContainer x:Name="DetectURLs"
+                                        x:Uid="Globals_DetectURLs">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Search Web Default Query URL  -->
-                    <local:SettingContainer x:Name="SearchWebDefaultQueryUrl"
-                                            x:Uid="Globals_SearchWebDefaultQueryUrl"
-                                            CurrentValue="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=OneWay}"
-                                            Style="{StaticResource ExpanderSettingContainerStyle}">
-                        <TextBox IsSpellCheckEnabled="False"
-                                 Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
-                    </local:SettingContainer>
-                </StackPanel>
-            </local:SettingContainer>
+                <!--  Search Web Default Query URL  -->
+                <local:SettingContainer x:Name="SearchWebDefaultQueryUrl"
+                                        x:Uid="Globals_SearchWebDefaultQueryUrl"
+                                        CurrentValue="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=OneWay}"
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                    <TextBox IsSpellCheckEnabled="False"
+                             Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
+                </local:SettingContainer>
+            </StackPanel>
 
             <!--  Section: Warnings  -->
-            <local:SettingContainer x:Uid="Interaction_Section_Warnings"
-                                    Style="{StaticResource SectionExpanderStyle}">
-                <StackPanel>
-                    <!--  Confirm Close On  -->
-                    <local:SettingContainer x:Name="ConfirmOnClose"
-                                            x:Uid="Globals_ConfirmOnClose">
-                        <ComboBox AutomationProperties.AccessibilityView="Content"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind ViewModel.ConfirmOnCloseList}"
-                                  SelectedItem="{x:Bind ViewModel.CurrentConfirmOnClose, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                    </local:SettingContainer>
+            <StackPanel Style="{StaticResource PivotStackStyle}">
+                <TextBlock x:Uid="Interaction_Section_Warnings"
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
+                <!--  Confirm Close On  -->
+                <local:SettingContainer x:Name="ConfirmOnClose"
+                                        x:Uid="Globals_ConfirmOnClose">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind ViewModel.ConfirmOnCloseList}"
+                              SelectedItem="{x:Bind ViewModel.CurrentConfirmOnClose, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Input Service Warning  -->
-                    <local:SettingContainer x:Name="InputServiceWarning"
-                                            x:Uid="Globals_InputServiceWarning">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+                <!--  Input Service Warning  -->
+                <local:SettingContainer x:Name="InputServiceWarning"
+                                        x:Uid="Globals_InputServiceWarning">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Large Paste Warning  -->
-                    <local:SettingContainer x:Name="WarnAboutLargePaste"
-                                            x:Uid="Globals_WarnAboutLargePaste">
-                        <ToggleSwitch IsOn="{x:Bind ViewModel.WarnAboutLargePaste, Mode=TwoWay}"
-                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                    </local:SettingContainer>
+                <!--  Large Paste Warning  -->
+                <local:SettingContainer x:Name="WarnAboutLargePaste"
+                                        x:Uid="Globals_WarnAboutLargePaste">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.WarnAboutLargePaste, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                </local:SettingContainer>
 
-                    <!--  Multi Line Paste Warning  -->
-                    <local:SettingContainer x:Name="WarnAboutMultiLinePaste"
-                                            x:Uid="Globals_WarnAboutMultiLinePaste">
-                        <ComboBox AutomationProperties.AccessibilityView="Content"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind WarnAboutMultiLinePasteList}"
-                                  SelectedItem="{x:Bind CurrentWarnAboutMultiLinePaste, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                    </local:SettingContainer>
-                </StackPanel>
-            </local:SettingContainer>
+                <!--  Multi Line Paste Warning  -->
+                <local:SettingContainer x:Name="WarnAboutMultiLinePaste"
+                                        x:Uid="Globals_WarnAboutMultiLinePaste">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind WarnAboutMultiLinePasteList}"
+                              SelectedItem="{x:Bind CurrentWarnAboutMultiLinePaste, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingContainer>
+            </StackPanel>
         </StackPanel>
     </StackPanel>
 </Page>
