@@ -3065,29 +3065,6 @@ namespace winrt::TerminalApp::implementation
         // an indefinite amount of time. Avoid freezes and deadlocks by running this on a background thread.
         assert(!dispatcher.HasThreadAccess());
         control.WriteInputString(text, WriteInputStringType::Clipboard);
-
-        // GH#18821: If broadcast input is active, paste the same text into all other
-        // panes on the tab. We do this here (rather than re-reading the
-        // clipboard per-pane) so that only one paste warning is shown.
-        co_await wil::resume_foreground(dispatcher);
-        if (const auto strongThis = weakThis.get())
-        {
-            if (const auto& tab{ strongThis->_GetFocusedTabImpl() })
-            {
-                if (tab->TabStatus().IsInputBroadcastActive())
-                {
-                    tab->GetRootPane()->WalkTree([&](auto&& pane) {
-                        if (const auto nextControl = pane->GetTerminalControl())
-                        {
-                            if (nextControl.ContentId() != control.ContentId() && !nextControl.ReadOnly())
-                            {
-                                nextControl.WriteInputString(text, WriteInputStringType::Clipboard);
-                            }
-                        }
-                    });
-                }
-            }
-        }
     }
     CATCH_LOG();
 
