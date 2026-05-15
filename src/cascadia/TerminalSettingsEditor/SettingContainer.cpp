@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "SettingContainer.h"
+#include "SettingsExpander.h"
 #include "SettingContainer.g.cpp"
 
 using namespace winrt::Windows::UI::Xaml;
@@ -139,7 +140,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         base.reserve(2);
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            if (const auto& expander{ child.try_as<Editor::SettingsExpander>() })
             {
                 base.push_back(child);
             }
@@ -229,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            if (const auto& expander{ child.try_as<Editor::SettingsExpander>() })
             {
                 expander.IsExpanded(expanded);
             }
@@ -271,7 +272,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            if (const auto& expander{ child.try_as<Editor::SettingsExpander>() })
             {
                 Automation::AutomationProperties::SetName(expander, _GenerateAccessibleName());
             }

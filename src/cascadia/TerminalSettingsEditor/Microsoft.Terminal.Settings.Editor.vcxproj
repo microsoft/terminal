@@ -173,6 +173,12 @@
     <ClInclude Include="SettingContainer.h">
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingsCard.h">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SettingsExpander.h">
+      <DependentUpon>SettingsExpander.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
     <ClInclude Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h" />
@@ -250,6 +256,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="SettingContainerStyle.xaml">
+      <Type>DefaultStyle</Type>
+    </Page>
+    <Page Include="SettingsControlsStyle.xaml">
       <Type>DefaultStyle</Type>
     </Page>
   </ItemGroup>
@@ -385,6 +394,12 @@
     <ClCompile Include="SettingContainer.cpp">
       <DependentUpon>SettingContainer.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="SettingsCard.cpp">
+      <DependentUpon>SettingsCard.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsExpander.cpp">
+      <DependentUpon>SettingsExpander.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="PreviewConnection.cpp">
       <DependentUpon>PreviewConnection.h</DependentUpon>
@@ -490,6 +505,12 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingContainer.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsCard.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsExpander.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
