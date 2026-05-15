@@ -3218,9 +3218,51 @@ namespace winrt::TerminalApp::implementation
                         CouldNotOpenUriReason().Text(RS_(L"UnsafeUrlConfirmText"));
                         UnopenedUri().Text(uriString);
 
+                        // Get the checkbox and make it visible for unsafe URL warnings only
+                        const auto stackPanel = unopenedUriDialog.Content().as<StackPanel>();
+                        const auto checkbox = stackPanel.Children().GetAt(1).as<CheckBox>();
+                        checkbox.IsChecked(false);
+                        checkbox.Visibility(Visibility::Visible);
+
                         // Show the dialog
                         auto result = co_await presenter.ShowDialog(unopenedUriDialog);
+
+                        // Hide the checkbox again after dialog closes (for other use cases)
+                        checkbox.Visibility(Visibility::Collapsed);
+
                         shouldLaunch = result == ContentDialogResult::Secondary;
+
+                        // If the user clicked "Open anyway" AND checked the box, save the scheme
+                        if (shouldLaunch && checkbox.IsChecked().Value())
+                        {
+                            const auto scheme = parsed.SchemeName();
+
+                            // Get the current list of safe schemes (or create a new one)
+                            auto safeSchemes = _settings.GlobalSettings().SafeUriSchemes();
+                            if (!safeSchemes)
+                            {
+                                safeSchemes = winrt::single_threaded_vector<winrt::hstring>();
+                            }
+
+                            // Check if the scheme is already in the list
+                            bool schemeExists = false;
+                            for (const auto& existingScheme : safeSchemes)
+                            {
+                                if (til::equals_insensitive_ascii(scheme, existingScheme))
+                                {
+                                    schemeExists = true;
+                                    break;
+                                }
+                            }
+
+                            // Add the scheme if it's not already there
+                            if (!schemeExists)
+                            {
+                                safeSchemes.Append(scheme);
+                                _settings.GlobalSettings().SafeUriSchemes(safeSchemes);
+                                _settings.WriteSettingsToDisk();
+                            }
+                        }
                     }
                 }
 
