@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Header);
         DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, Description);
         DEPENDENCY_PROPERTY(Windows::UI::Xaml::Controls::IconElement, HeaderIcon);
-        DEPENDENCY_PROPERTY(Windows::UI::Xaml::Controls::IconElement, ActionIcon);
+        DEPENDENCY_PROPERTY(Windows::Foundation::IInspectable, ActionIcon);
         DEPENDENCY_PROPERTY(hstring, ActionIconToolTip);
         DEPENDENCY_PROPERTY(bool, IsClickEnabled);
         DEPENDENCY_PROPERTY(bool, IsActionIconVisible);

@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _ActionIconProperty = DependencyProperty::Register(
                 L"ActionIcon",
-                xaml_typename<IconElement>(),
+                xaml_typename<IInspectable>(),
                 xaml_typename<Editor::SettingsCard>(),
                 PropertyMetadata{ nullptr });
         }

@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Extensions::ExtensionNavigator_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
     {
-        const auto extPkgVM = sender.as<Controls::Button>().Tag().as<Editor::ExtensionPackageViewModel>();
+        const auto extPkgVM = sender.as<FrameworkElement>().Tag().as<Editor::ExtensionPackageViewModel>();
         _ViewModel.CurrentExtensionPackage(extPkgVM);
     }
 

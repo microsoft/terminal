@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement HeaderIcon;
         static Windows.UI.Xaml.DependencyProperty HeaderIconProperty { get; };
 
-        Windows.UI.Xaml.Controls.IconElement ActionIcon;
+        Object ActionIcon;
         static Windows.UI.Xaml.DependencyProperty ActionIconProperty { get; };
 
         String ActionIconToolTip;
