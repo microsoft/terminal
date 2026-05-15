@@ -915,7 +915,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings->Opacity() < 1.0 && _settings->UseAcrylic();
 
-        const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize());
+        const auto sizeChanged = _setFontSizeUnderLock(_settings->FontSize() + _accumulatedFontSizeDelta);
 
         // Update the terminal core with its new Core settings
         _terminal->UpdateSettings(*_settings);
@@ -1105,11 +1105,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - none
     void ControlCore::ResetFontSize()
     {
-        const auto lock = _terminal->LockForWriting();
-
-        if (_setFontSizeUnderLock(_settings->FontSize()))
+        if (std::exchange(_accumulatedFontSizeDelta, 0.f) != 0.f)
         {
-            _refreshSizeUnderLock();
+            // No point in doing this if there was no delta.
+            AdjustFontSize(0);
         }
     }
 
@@ -1119,9 +1118,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - fontSizeDelta: The amount to increase or decrease the font size by.
     void ControlCore::AdjustFontSize(float fontSizeDelta)
     {
+        _accumulatedFontSizeDelta += fontSizeDelta;
+
         const auto lock = _terminal->LockForWriting();
 
-        if (_setFontSizeUnderLock(_desiredFont.GetFontSize() + fontSizeDelta))
+        if (_setFontSizeUnderLock(_settings->FontSize() + _accumulatedFontSizeDelta))
         {
             _refreshSizeUnderLock();
         }
