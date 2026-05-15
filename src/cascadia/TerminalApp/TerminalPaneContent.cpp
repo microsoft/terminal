@@ -20,6 +20,8 @@ using namespace winrt::Microsoft::Terminal::TerminalConnection;
 
 namespace winrt::TerminalApp::implementation
 {
+    til::shared_mutex<std::unordered_map<void*, winrt::weak_ref<TerminalApp::implementation::TerminalPaneContent>>> TerminalPaneContent::_controlToContentMap{};
+
     TerminalPaneContent::TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                                              const std::shared_ptr<TerminalSettingsCache>& cache,
                                              const winrt::Microsoft::Terminal::Control::TermControl& control) :
@@ -28,6 +30,9 @@ namespace winrt::TerminalApp::implementation
         _profile{ profile }
     {
         _setupControlEvents();
+
+        auto map{ _controlToContentMap.lock() };
+        map->insert_or_assign(winrt::get_abi(control), get_weak());
     }
 
     void TerminalPaneContent::_setupControlEvents()
@@ -71,6 +76,11 @@ namespace winrt::TerminalApp::implementation
         _removeControlEvents();
 
         _control.Close();
+
+        {
+            auto map{ _controlToContentMap.lock() };
+            map->erase(winrt::get_abi(_control));
+        }
 
         // Clear out our media player callbacks, and stop any playing media. This
         // will prevent the callback from being triggered after we've closed, and
@@ -370,5 +380,15 @@ namespace winrt::TerminalApp::implementation
     Windows::Foundation::Size TerminalPaneContent::GridUnitSize()
     {
         return _control.CharacterDimensions();
+    }
+
+    TerminalApp::TerminalPaneContent TerminalPaneContent::ContentFromControl(const winrt::Microsoft::Terminal::Control::TermControl& control)
+    {
+        const auto map{ _controlToContentMap.lock_shared() };
+        if (auto found{ map->find(winrt::get_abi(control)) }; found != map->end())
+        {
+            return *found->second.get();
+        }
+        return { nullptr };
     }
 }

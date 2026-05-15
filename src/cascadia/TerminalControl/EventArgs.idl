@@ -143,12 +143,6 @@ namespace Microsoft.Terminal.Control
         Microsoft.Terminal.Core.ControlKeyStates Modifiers { get; };
     }
 
-    runtimeclass StringSentEventArgs
-    {
-        String Text { get; };
-        UInt32 Type { get; }; // We cannot forward-declare WriteInputStringType, and as of GH#20164 this whole event is getting deleted anyway.
-    }
-
     runtimeclass SearchMissingCommandEventArgs
     {
         String MissingCommand { get; };

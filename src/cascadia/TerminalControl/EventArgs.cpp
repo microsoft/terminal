@@ -17,6 +17,5 @@
 #include "CompletionsChangedEventArgs.g.cpp"
 #include "KeySentEventArgs.g.cpp"
 #include "CharSentEventArgs.g.cpp"
-#include "StringSentEventArgs.g.cpp"
 #include "SearchMissingCommandEventArgs.g.cpp"
 #include "WindowSizeChangedEventArgs.g.cpp"

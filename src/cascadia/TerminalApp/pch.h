@@ -34,6 +34,7 @@
 #include <winrt/Windows.Globalization.h>
 #include <winrt/Windows.Graphics.Display.h>
 #include <winrt/Windows.System.h>
+#include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.Text.h>
@@ -88,6 +89,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+#include <til/mutex.h>
 #include <til/winrt.h>
 
 #include <SafeDispatcherTimer.h>

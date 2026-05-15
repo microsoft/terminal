@@ -137,14 +137,6 @@
     <value>Find</value>
     <comment>The placeholder text in the search box control.</comment>
   </data>
-  <data name="DragFileCaption" xml:space="preserve">
-    <value>Paste path to file</value>
-    <comment>The displayed caption for dragging a file onto a terminal.</comment>
-  </data>
-  <data name="DragTextCaption" xml:space="preserve">
-    <value>Paste text</value>
-    <comment>The displayed caption for dragging text onto a terminal.</comment>
-  </data>
   <data name="SearchBox_CaseSensitivity.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Case Sensitivity</value>
     <comment>The name of the case sensitivity button on the search box control for accessibility.</comment>

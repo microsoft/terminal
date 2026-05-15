@@ -126,7 +126,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Windows::Foundation::Size GetFontSize() const;
 
         void WriteInputString(const winrt::hstring& wstr, WriteInputStringType type);
-        void WriteInputStringWithoutBroadcast(const winrt::hstring& wstr, WriteInputStringType type);
         void ClearBuffer(Control::ClearBufferType clearType);
 
         void ToggleShaderEffects();
@@ -213,7 +212,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<> WarningBell;
         til::typed_event<IInspectable, Control::KeySentEventArgs> KeySent;
         til::typed_event<IInspectable, Control::CharSentEventArgs> CharSent;
-        til::typed_event<IInspectable, Control::StringSentEventArgs> StringSent;
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
         til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
@@ -377,9 +375,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _GotFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
         void _LostFocusHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-
-        safe_void_coroutine _DragDropHandler(Windows::Foundation::IInspectable sender, Windows::UI::Xaml::DragEventArgs e);
-        void _DragOverHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::DragEventArgs& e);
 
         safe_void_coroutine _HyperlinkHandler(Windows::Foundation::IInspectable sender, Control::OpenHyperlinkEventArgs e);
 
