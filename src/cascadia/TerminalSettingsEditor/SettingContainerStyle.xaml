@@ -230,10 +230,10 @@
                             <ContentControl MaxWidth="248"
                                             VerticalAlignment="Center"
                                             HorizontalContentAlignment="Right"
-                                            IsTabStop="False"
                                             Content="{TemplateBinding CurrentValue}"
                                             ContentTemplate="{TemplateBinding CurrentValueTemplate}"
-                                            ContentTemplateSelector="{StaticResource ExpanderPreviewTemplateSelector}" />
+                                            ContentTemplateSelector="{StaticResource ExpanderPreviewTemplateSelector}"
+                                            IsTabStop="False" />
                         </local:SettingsExpander.Content>
                         <local:SettingsExpander.ItemsHeader>
                             <ContentPresenter Padding="16,12,16,16"
