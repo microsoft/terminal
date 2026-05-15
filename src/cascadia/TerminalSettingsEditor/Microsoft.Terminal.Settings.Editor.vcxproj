@@ -179,6 +179,9 @@
     <ClInclude Include="SettingsExpander.h">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="StringDefaultTemplateSelector.h">
+      <DependentUpon>StringDefaultTemplateSelector.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
     <ClInclude Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h" />
@@ -400,6 +403,9 @@
     <ClCompile Include="SettingsExpander.cpp">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="StringDefaultTemplateSelector.cpp">
+      <DependentUpon>StringDefaultTemplateSelector.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="PreviewConnection.cpp">
       <DependentUpon>PreviewConnection.h</DependentUpon>
@@ -511,6 +517,9 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingsExpander.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="StringDefaultTemplateSelector.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

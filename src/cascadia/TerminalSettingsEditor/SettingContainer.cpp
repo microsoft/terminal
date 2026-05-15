@@ -55,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"FontIconGlyph",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ box_value(L"") });
+                    PropertyMetadata{ box_value(L""), PropertyChangedCallback{ &SettingContainer::_OnFontIconGlyphChanged } });
         }
         if (!_CurrentValueProperty)
         {
@@ -224,6 +224,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _UpdateOverrideSystem();
         _UpdateHelpText();
+        _UpdateHeaderIcon();
+    }
+
+    void SettingContainer::_UpdateHeaderIcon()
+    {
+        Controls::IconElement icon{ nullptr };
+        if (const auto glyph{ FontIconGlyph() }; !glyph.empty())
+        {
+            Controls::FontIcon fi;
+            fi.Glyph(glyph);
+            icon = fi;
+        }
+
+        if (const auto& cardChild{ GetTemplateChild(L"Card") })
+        {
+            if (const auto& card{ cardChild.try_as<Editor::SettingsCard>() })
+            {
+                card.HeaderIcon(icon);
+                return;
+            }
+        }
+        if (const auto& expanderChild{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ expanderChild.try_as<Editor::SettingsExpander>() })
+            {
+                expander.HeaderIcon(icon);
+            }
+        }
+    }
+
+    void SettingContainer::_OnFontIconGlyphChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
+    {
+        const auto& obj{ d.try_as<Editor::SettingContainer>() };
+        get_self<SettingContainer>(obj)->_UpdateHeaderIcon();
     }
 
     void SettingContainer::SetExpanded(bool expanded)

@@ -332,7 +332,7 @@
             <local:SettingContainer x:Name="CurrentFolderIcon"
                                     x:Uid="NewTabMenu_CurrentFolderIcon"
                                     CurrentValueAccessibleName="{x:Bind ViewModel.CurrentFolderLocalizedIcon, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <local:SettingContainer.CurrentValue>
                     <Grid>
                         <ContentControl Width="16"
@@ -378,8 +378,7 @@
             <!--  Add Profile  -->
             <local:SettingContainer x:Name="AddProfile"
                                     x:Uid="NewTabMenu_AddProfile"
-                                    FontIconGlyph="&#xE756;"
-                                    Style="{StaticResource SettingContainerWithIcon}">
+                                    FontIconGlyph="&#xE756;">
 
                 <StackPanel Orientation="Horizontal"
                             Spacing="4">
@@ -428,8 +427,7 @@
             <!--  Add Separator  -->
             <local:SettingContainer x:Name="AddSeparator"
                                     x:Uid="NewTabMenu_AddSeparator"
-                                    FontIconGlyph="&#xE76f;"
-                                    Style="{StaticResource SettingContainerWithIcon}">
+                                    FontIconGlyph="&#xE76f;">
                 <Button x:Name="AddSeparatorButton"
                         x:Uid="NewTabMenu_AddSeparatorButton"
                         HorizontalAlignment="Stretch"
@@ -445,8 +443,7 @@
             <!--  Add Folder  -->
             <local:SettingContainer x:Name="AddFolder"
                                     x:Uid="NewTabMenu_AddFolder"
-                                    FontIconGlyph="&#xF12B;"
-                                    Style="{StaticResource SettingContainerWithIcon}">
+                                    FontIconGlyph="&#xF12B;">
                 <StackPanel Orientation="Horizontal"
                             Spacing="5">
                     <TextBox x:Name="FolderNameTextBox"
@@ -473,7 +470,7 @@
             <local:SettingContainer x:Name="AddMatchProfiles"
                                     x:Uid="NewTabMenu_AddMatchProfiles"
                                     FontIconGlyph="&#xE748;"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Spacing="8">
                     <HyperlinkButton x:Uid="NewTabMenu_AddMatchProfiles_Help"
                                      NavigateUri="https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference" />
@@ -500,8 +497,7 @@
             <!--  Add Remaining Profiles  -->
             <local:SettingContainer x:Name="AddRemainingProfiles"
                                     x:Uid="NewTabMenu_AddRemainingProfiles"
-                                    FontIconGlyph="&#xE902;"
-                                    Style="{StaticResource SettingContainerWithIcon}">
+                                    FontIconGlyph="&#xE902;">
                 <Button x:Name="AddRemainingProfilesButton"
                         x:Uid="NewTabMenu_AddRemainingProfilesButton"
                         HorizontalAlignment="Stretch"

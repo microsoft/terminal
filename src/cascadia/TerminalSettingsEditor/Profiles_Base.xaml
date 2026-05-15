@@ -106,7 +106,7 @@
                                     CurrentValueAccessibleName="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <local:SettingContainer.CurrentValue>
                     <Grid>
                         <ContentControl Width="16"
@@ -150,7 +150,7 @@
                                     CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <local:NullableColorPicker x:Uid="Profile_TabColor_NullableColorPicker"
                                            ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"
                                            CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
