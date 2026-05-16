@@ -235,14 +235,14 @@ namespace winrt::TerminalApp::implementation
 
         auto textBlock = WUX::Controls::TextBlock{};
         textBlock.TextWrapping(WUX::TextWrapping::Wrap);
-        textBlock.TextAlignment(WUX::TextAlignment::Center);
+        textBlock.TextAlignment(WUX::TextAlignment::Left);
         textBlock.Inlines().Append(titleRun);
 
         if (!_keyChord.empty())
         {
             auto keyChordRun = WUX::Documents::Run();
             keyChordRun.Text(_keyChord);
-            keyChordRun.FontStyle(winrt::Windows::UI::Text::FontStyle::Italic);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
             textBlock.Inlines().Append(WUX::Documents::LineBreak{});
             textBlock.Inlines().Append(keyChordRun);
         }
