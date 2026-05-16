@@ -28,6 +28,8 @@
 #include <dwmapi.h>
 #include <fmt/compile.h>
 
+#include <winrt/Windows.UI.Xaml.Media.Animation.h>
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -40,6 +42,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Media::Animation;
 using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -116,14 +119,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(currentFolder), currentFolder.Name(), BreadcrumbSubPage::NewTabMenu_Folder));
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                    _navDirection = NavDirection::Forward;
                 }
                 else
                 {
                     // If we don't have a current folder, we're at the root of the NTM
                     _breadcrumbs.Clear();
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None));
+                    _navDirection = NavDirection::Back;
                 }
-                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this));
+                const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
+                contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this), _MakeTransitionInfo());
             }
         });
 
@@ -145,14 +151,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(currentExtensionPackage), currentExtensionPackage.DisplayName(), BreadcrumbSubPage::Extensions_Extension));
                     SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
+                    _navDirection = NavDirection::Forward;
                 }
                 else
                 {
                     // If we don't have a current extension package, we're at the root of the Extensions page
                     _breadcrumbs.Clear();
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None));
+                    _navDirection = NavDirection::Back;
                 }
-                contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToPageArgs>(_extensionsVM, *this));
+                const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
+                contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToPageArgs>(_extensionsVM, *this), _MakeTransitionInfo());
             }
         });
 
@@ -446,11 +455,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto currentScheme = _colorSchemesPageVM.CurrentScheme();
                 if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::EditColorScheme && currentScheme)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToPageArgs>(currentScheme, *this));
+                    _navDirection = NavDirection::Forward;
+                    const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
+                    contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToPageArgs>(currentScheme, *this), _MakeTransitionInfo());
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(boxedTag, currentScheme.Name(), BreadcrumbSubPage::ColorSchemes_Edit));
                 }
                 else if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::Base)
                 {
+                    _navDirection = NavDirection::Back;
+                    const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
                     _Navigate(boxedTag, BreadcrumbSubPage::None);
                 }
             }
@@ -471,11 +484,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto boxedTag = box_value(actionsTag);
                 if (_actionsVM.CurrentPage() == ActionsSubPage::Edit)
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this));
+                    _navDirection = NavDirection::Forward;
+                    const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this), _MakeTransitionInfo());
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(boxedTag, RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
                 }
                 else if (_actionsVM.CurrentPage() == ActionsSubPage::Base)
                 {
+                    _navDirection = NavDirection::Back;
+                    const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
                     _Navigate(boxedTag, BreadcrumbSubPage::None);
                 }
             }
@@ -486,21 +503,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (page == ProfileSubPage::Base)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus), _MakeTransitionInfo());
         }
         else if (page == ProfileSubPage::Appearance)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus), _MakeTransitionInfo());
             _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance));
         }
         else if (page == ProfileSubPage::Terminal)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Terminal>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus), _MakeTransitionInfo());
             _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Terminal/Header"), BreadcrumbSubPage::Profile_Terminal));
         }
         else if (page == ProfileSubPage::Advanced)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus), _MakeTransitionInfo());
             _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Advanced/Header"), BreadcrumbSubPage::Profile_Advanced));
         }
         SettingsMainPage_ScrollViewer().ScrollToVerticalOffset(0);
@@ -522,7 +539,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     _breadcrumbs.Clear();
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, breadcrumbText, BreadcrumbSubPage::None));
+                    _navDirection = NavDirection::Back;
                 }
+                else
+                {
+                    _navDirection = NavDirection::Forward;
+                }
+                const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
                 _NavigateToProfileSubPage(profile, currentPage, breadcrumbTag, {});
             }
         });
@@ -546,22 +569,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             selectedNavTag = *clickedItemTag;
             if (*clickedItemTag == launchTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<NavigateToPageArgs>(winrt::make<LaunchViewModel>(_settingsClone), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<NavigateToPageArgs>(winrt::make<LaunchViewModel>(_settingsClone), *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Launch/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == interactionTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == renderingTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<NavigateToPageArgs>(winrt::make<RenderingViewModel>(_settingsClone), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<NavigateToPageArgs>(winrt::make<RenderingViewModel>(_settingsClone), *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == compatibilityTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<NavigateToPageArgs>(winrt::make<CompatibilityViewModel>(_settingsClone), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Compatibility>(), winrt::make<NavigateToPageArgs>(winrt::make<CompatibilityViewModel>(_settingsClone), *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Compatibility/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == actionsTag)
@@ -575,7 +598,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // Navigate directly to EditAction instead of relying on PropertyChanged,
                     // which won't fire if CurrentPage is already Edit
                     _actionsVM.CurrentPage(ActionsSubPage::Edit);
-                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this, elementToFocus));
+                    contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(_actionsVM.CurrentCommand(), *this, elementToFocus), _MakeTransitionInfo());
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
 
                     // Re-register the handler for future user-driven changes
@@ -583,7 +606,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
+                    contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus), _MakeTransitionInfo());
                     _actionsVM.CurrentPage(ActionsSubPage::Base);
                 }
             }
@@ -598,7 +621,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 else
                 {
                     // Navigate to the NewTabMenu page
-                    contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this, elementToFocus));
+                    contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this, elementToFocus), _MakeTransitionInfo());
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None));
                 }
             }
@@ -612,7 +635,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToPageArgs>(_extensionsVM, *this, elementToFocus));
+                    contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToPageArgs>(_extensionsVM, *this, elementToFocus), _MakeTransitionInfo());
                     _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None));
                 }
             }
@@ -640,7 +663,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (*clickedItemTag == colorSchemesTag)
             {
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None));
-                contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus), _MakeTransitionInfo());
 
                 if (subPage == BreadcrumbSubPage::ColorSchemes_Edit)
                 {
@@ -649,14 +672,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == globalAppearanceTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == addProfileTag)
             {
                 auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
                 addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
-                contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), winrt::make<NavigateToPageArgs>(addProfileState, *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), winrt::make<NavigateToPageArgs>(addProfileState, *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_AddNewProfile/Content"), BreadcrumbSubPage::None));
             }
         }
@@ -664,7 +687,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (profile.Orphaned())
             {
-                contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Profiles_Base_Orphaned>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, profile.Name(), BreadcrumbSubPage::None));
                 profile.CurrentPage(ProfileSubPage::Base);
                 _SetupProfileEventHandling(profile);
@@ -699,7 +722,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (subPage == BreadcrumbSubPage::None)
             {
-                contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus), _MakeTransitionInfo());
                 _colorSchemesPageVM.CurrentScheme(nullptr);
                 _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::Base);
             }
@@ -707,7 +730,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _colorSchemesPageVM.CurrentScheme(colorSchemeVM);
                 _colorSchemesPageVM.CurrentPage(ColorSchemesSubPage::EditColorScheme);
-                contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToPageArgs>(colorSchemeVM, *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::EditColorScheme>(), winrt::make<NavigateToPageArgs>(colorSchemeVM, *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(boxedColorSchemesTag, colorSchemeVM.Name(), BreadcrumbSubPage::ColorSchemes_Edit));
             }
 
@@ -718,7 +741,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             selectedNavTag = newTabMenuTag;
 
-            contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::NewTabMenu>(), winrt::make<NavigateToPageArgs>(_newTabMenuPageVM, *this, elementToFocus), _MakeTransitionInfo());
             _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(newTabMenuTag), RS_(L"Nav_NewTabMenu/Content"), BreadcrumbSubPage::None));
 
             if (subPage == BreadcrumbSubPage::None)
@@ -749,7 +772,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             selectedNavTag = extensionsTag;
 
-            contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToPageArgs>(_extensionsVM, *this, elementToFocus));
+            contentFrame().Navigate(xaml_typename<Editor::Extensions>(), winrt::make<NavigateToPageArgs>(_extensionsVM, *this, elementToFocus), _MakeTransitionInfo());
             _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(extensionsTag), RS_(L"Nav_Extensions/Content"), BreadcrumbSubPage::None));
 
             if (subPage == BreadcrumbSubPage::None)
@@ -794,7 +817,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (subPage == BreadcrumbSubPage::None || !commandVM)
             {
-                contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<NavigateToPageArgs>(_actionsVM, *this, elementToFocus), _MakeTransitionInfo());
                 _actionsVM.CurrentCommand(nullptr);
             }
             else
@@ -804,7 +827,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
                 _actionsVM.CurrentCommand(commandVM);
                 _actionsVM.CurrentPage(ActionsSubPage::Edit);
-                contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(commandVM, *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::EditAction>(), winrt::make<NavigateToPageArgs>(commandVM, *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(boxedActionsTag, RS_(L"Nav_EditAction/Content"), BreadcrumbSubPage::Actions_Edit));
 
                 // Re-register the handler for future user-driven changes
@@ -854,8 +877,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
+            _navDirection = NavDirection::Back;
+            const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
             const auto crumb = args.Item().as<Breadcrumb>();
             _Navigate(crumb->Tag(), crumb->SubPage());
+        }
+    }
+
+    NavigationTransitionInfo MainPage::_MakeTransitionInfo() const
+    {
+        switch (_navDirection)
+        {
+        case NavDirection::Forward:
+        {
+            SlideNavigationTransitionInfo info;
+            info.Effect(SlideNavigationTransitionEffect::FromRight);
+            return info;
+        }
+        case NavDirection::Back:
+        {
+            SlideNavigationTransitionInfo info;
+            info.Effect(SlideNavigationTransitionEffect::FromLeft);
+            return info;
+        }
+        default:
+            return EntranceNavigationTransitionInfo{};
         }
     }
 
