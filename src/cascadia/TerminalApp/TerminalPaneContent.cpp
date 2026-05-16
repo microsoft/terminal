@@ -71,18 +71,6 @@ namespace winrt::TerminalApp::implementation
         _removeControlEvents();
 
         _control.Close();
-
-        // Clear out our media player callbacks, and stop any playing media. This
-        // will prevent the callback from being triggered after we've closed, and
-        // also make sure that our sound stops when we're closed.
-        if (_bellPlayer)
-        {
-            _bellPlayer.Pause();
-            _bellPlayer.Source(nullptr);
-            _bellPlayer.Close();
-            _bellPlayer = nullptr;
-            _bellPlayerCreated = false;
-        }
     }
 
     winrt::hstring TerminalPaneContent::Icon() const
@@ -275,14 +263,15 @@ namespace winrt::TerminalApp::implementation
                     auto sounds{ _profile.BellSound() };
                     if (sounds && sounds.Size() > 0)
                     {
-                        winrt::hstring soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
-                        winrt::Windows::Foundation::Uri uri{ soundPath };
-                        _playBellSound(uri);
+                        // Sound paths are resolved and validated by CascadiaSettings
+                        // before we reach this point.
+                        auto soundPath{ sounds.GetAt(rand() % sounds.Size()).Resolved() };
+                        PlaySoundW(soundPath.c_str(), nullptr, SND_FILENAME | SND_ASYNC | SND_SENTRY | SND_NODEFAULT);
                     }
                     else
                     {
-                        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+                        const auto soundAlias = reinterpret_cast<LPCWSTR>(SND_ALIAS_SYSTEMHAND);
+                        PlaySoundW(soundAlias, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
                     }
                 }
 
@@ -300,33 +289,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    safe_void_coroutine TerminalPaneContent::_playBellSound(winrt::Windows::Foundation::Uri uri)
-    {
-        auto weakThis{ get_weak() };
-        co_await wil::resume_foreground(_control.Dispatcher());
-        if (auto pane{ weakThis.get() })
-        {
-            if (!_bellPlayerCreated)
-            {
-                // The MediaPlayer might not exist on Windows N SKU.
-                try
-                {
-                    _bellPlayerCreated = true;
-                    _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-                    // GH#12258: The media keys (like play/pause) should have no effect on our bell sound.
-                    _bellPlayer.CommandManager().IsEnabled(false);
-                }
-                CATCH_LOG();
-            }
-            if (_bellPlayer)
-            {
-                const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-                const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-                _bellPlayer.Source(item);
-                _bellPlayer.Play();
-            }
-        }
-    }
     void TerminalPaneContent::_closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                              const winrt::Windows::Foundation::IInspectable& /*args*/)
     {

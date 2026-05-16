@@ -76,9 +76,6 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<TerminalSettingsCache> _cache{};
         bool _isDefTermSession{ false };
 
-        winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
-        bool _bellPlayerCreated{ false };
-
         struct ControlEventTokens
         {
             winrt::Microsoft::Terminal::Control::TermControl::ConnectionStateChanged_revoker _ConnectionStateChanged;
@@ -95,8 +92,6 @@ namespace winrt::TerminalApp::implementation
         } _controlEvents;
         void _setupControlEvents();
         void _removeControlEvents();
-
-        safe_void_coroutine _playBellSound(winrt::Windows::Foundation::Uri uri);
 
         safe_void_coroutine _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
