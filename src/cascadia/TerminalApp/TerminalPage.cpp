@@ -1295,16 +1295,14 @@ namespace winrt::TerminalApp::implementation
         newTabRun.Text(RS_(L"NewTabRun/Text"));
         auto newPaneRun = WUX::Documents::Run();
         newPaneRun.Text(RS_(L"NewPaneRun/Text"));
-        newPaneRun.FontStyle(FontStyle::Italic);
         auto newWindowRun = WUX::Documents::Run();
         newWindowRun.Text(RS_(L"NewWindowRun/Text"));
-        newWindowRun.FontStyle(FontStyle::Italic);
         auto elevatedRun = WUX::Documents::Run();
         elevatedRun.Text(RS_(L"ElevatedRun/Text"));
-        elevatedRun.FontStyle(FontStyle::Italic);
 
         auto textBlock = WUX::Controls::TextBlock{};
         textBlock.Inlines().Append(newTabRun);
+        textBlock.Inlines().Append(WUX::Documents::LineBreak{});
         textBlock.Inlines().Append(WUX::Documents::LineBreak{});
         textBlock.Inlines().Append(newPaneRun);
         textBlock.Inlines().Append(WUX::Documents::LineBreak{});

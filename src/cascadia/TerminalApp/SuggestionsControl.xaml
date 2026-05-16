@@ -228,7 +228,7 @@
                         Visibility="Collapsed">
                 <TextBlock x:Name="_descriptionTitle"
                            FontSize="14"
-                           FontWeight="Bold"
+                           FontWeight="SemiBold"
                            IsTextSelectionEnabled="True"
                            TextWrapping="WrapWholeWords">
                     <TextBlock.ContextFlyout>
