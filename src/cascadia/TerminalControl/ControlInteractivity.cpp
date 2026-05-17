@@ -635,6 +635,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // ScrollPositionChanged event to update the scrollbar
         UpdateScrollbar(newValue);
 
+        // GH#20219: Re-evaluate the hovered hyperlink after scrolling. The
+        // viewport shift may have changed which logical buffer cell sits under
+        // the stationary cursor, so we must invalidate the cached hover state
+        // and re-query at the same pixel position.
+        _core->ClearHoveredCell();
+        const auto terminalPosition = _getTerminalPosition(til::point{ pixelPosition }, false);
+        _core->SetHoveredCell(terminalPosition.to_core_point());
+
         if (isLeftButtonPressed)
         {
             // If user is mouse selecting and scrolls, they then point at new
