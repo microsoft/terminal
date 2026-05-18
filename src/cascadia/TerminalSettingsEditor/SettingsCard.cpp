@@ -32,14 +32,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     static constexpr std::wstring_view PressedState{ L"Pressed" };
     static constexpr std::wstring_view DisabledState{ L"Disabled" };
 
+    static constexpr std::wstring_view BitmapHeaderIconEnabledState{ L"BitmapHeaderIconEnabled" };
+    static constexpr std::wstring_view BitmapHeaderIconDisabledState{ L"BitmapHeaderIconDisabled" };
+
     static constexpr std::wstring_view RightState{ L"Right" };
     static constexpr std::wstring_view LeftState{ L"Left" };
     static constexpr std::wstring_view VerticalState{ L"Vertical" };
+
+    static constexpr std::wstring_view NoContentSpacingState{ L"NoContentSpacing" };
+    static constexpr std::wstring_view ContentSpacingState{ L"ContentSpacing" };
+
+    static constexpr std::wstring_view ContentAlignmentStatesGroup{ L"ContentAlignmentStates" };
 
     static constexpr std::wstring_view ActionIconPresenterHolder{ L"PART_ActionIconPresenterHolder" };
     static constexpr std::wstring_view HeaderPresenter{ L"PART_HeaderPresenter" };
     static constexpr std::wstring_view DescriptionPresenter{ L"PART_DescriptionPresenter" };
     static constexpr std::wstring_view HeaderIconPresenterHolder{ L"PART_HeaderIconPresenterHolder" };
+
+    // Returns true if the given object is null, or is a string that is empty.
+    // Non-string non-null objects (e.g. a TextBlock) are considered "non-empty".
+    static bool _isNullOrEmpty(const winrt::Windows::Foundation::IInspectable& obj)
+    {
+        if (!obj)
+        {
+            return true;
+        }
+        if (const auto pv{ obj.try_as<IPropertyValue>() }; pv && pv.Type() == PropertyType::String)
+        {
+            return unbox_value_or<hstring>(obj, hstring{}).empty();
+        }
+        return false;
+    }
 
     SettingsCard::SettingsCard()
     {
@@ -78,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 L"ActionIcon",
                 xaml_typename<IInspectable>(),
                 xaml_typename<Editor::SettingsCard>(),
-                PropertyMetadata{ nullptr });
+                PropertyMetadata{ box_value(hstring{ L"\uE974" }) });
         }
         if (!_ActionIconToolTipProperty)
         {
@@ -123,6 +146,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // Drop any handlers from a previous template.
         _isEnabledChangedRevoker.revoke();
+        _contentAlignmentStatesChangedRevoker.revoke();
         _DisableButtonInteraction();
         if (_contentChangedToken != 0)
         {
@@ -136,6 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateHeaderIconVisibility();
         // Initial visual states.
         _CheckInitialVisualState();
+        _CheckHeaderIconState();
         _SetAccessibleContentName();
 
         // Watch for Content changing later (we may need to refresh the AutomationProperties.Name on it).
@@ -156,6 +181,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto strongThis = weakThis.get())
             {
                 strongThis->_GoToCommonState(strongThis->IsEnabled() ? NormalState : DisabledState, true);
+                strongThis->_CheckHeaderIconState();
             }
         });
     }
@@ -164,6 +190,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         VisualStateManager::GoToState(*this, IsEnabled() ? hstring{ NormalState } : hstring{ DisabledState }, true);
         _UpdateContentAlignmentState();
+
+        // Subscribe to ContentAlignmentStates so we can drive ContentSpacingStates
+        // whenever the alignment shifts to a stacked layout (Vertical, RightWrapped*).
+        if (const auto child{ GetTemplateChild(hstring{ ContentAlignmentStatesGroup }) })
+        {
+            if (const auto group{ child.try_as<VisualStateGroup>() })
+            {
+                _CheckVerticalSpacingState(group.CurrentState());
+                _contentAlignmentStatesChangedRevoker = group.CurrentStateChanged(winrt::auto_revoke, [weakThis = get_weak()](auto&&, const VisualStateChangedEventArgs& args) {
+                    if (const auto strongThis = weakThis.get())
+                    {
+                        strongThis->_CheckVerticalSpacingState(args.NewState());
+                    }
+                });
+            }
+        }
+    }
+
+    void SettingsCard::_CheckHeaderIconState()
+    {
+        // The Disabled common state recolors text/glyph foregrounds via the brush, but a
+        // BitmapIcon is an image and won't pick up the disabled brush. Lower its opacity
+        // instead, via the BitmapHeaderIconStates group. Mirrors the toolkit's
+        // SettingsCard.cs::CheckHeaderIconState.
+        if (HeaderIcon().try_as<BitmapIcon>())
+        {
+            VisualStateManager::GoToState(*this,
+                                          hstring{ IsEnabled() ? BitmapHeaderIconEnabledState : BitmapHeaderIconDisabledState },
+                                          true);
+        }
+        else
+        {
+            // Reset to the enabled state when a non-bitmap icon (or none) is present so the
+            // opacity setter doesn't stick around from a previous bitmap icon.
+            VisualStateManager::GoToState(*this, hstring{ BitmapHeaderIconEnabledState }, true);
+        }
+    }
+
+    void SettingsCard::_CheckVerticalSpacingState(const VisualState& state)
+    {
+        // Add row spacing whenever the content sits below the header (Vertical or RightWrapped*)
+        // AND there's both Content and (Header or Description) to space apart.
+        const auto stateName{ state ? state.Name() : hstring{} };
+        const bool stackedLayout =
+            stateName == VerticalState ||
+            stateName == L"RightWrapped" ||
+            stateName == L"RightWrappedNoIcon";
+
+        const bool hasContent{ static_cast<bool>(Content()) };
+        const bool hasHeaderOrDescription = !_isNullOrEmpty(Header()) || !_isNullOrEmpty(Description());
+
+        VisualStateManager::GoToState(*this,
+                                      hstring{ (stackedLayout && hasContent && hasHeaderOrDescription) ? ContentSpacingState : NoContentSpacingState },
+                                      true);
     }
 
     void SettingsCard::_SetAccessibleContentName()
@@ -211,6 +291,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
         _pointerExitedRevoker = PointerExited(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
+            if (const auto strongThis = weakThis.get())
+            {
+                strongThis->_GoToCommonState(NormalState, true);
+            }
+        });
+        _pointerPressedRevoker = PointerPressed(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
+            if (const auto strongThis = weakThis.get())
+            {
+                strongThis->_GoToCommonState(PressedState, true);
+            }
+        });
+        _pointerReleasedRevoker = PointerReleased(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
             if (const auto strongThis = weakThis.get())
             {
                 strongThis->_GoToCommonState(NormalState, true);
@@ -264,6 +356,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         IsTabStop(false);
         _pointerEnteredRevoker.revoke();
         _pointerExitedRevoker.revoke();
+        _pointerPressedRevoker.revoke();
+        _pointerReleasedRevoker.revoke();
         _pointerCaptureLostRevoker.revoke();
         _pointerCanceledRevoker.revoke();
         _previewKeyDownRevoker.revoke();
@@ -293,21 +387,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 frameworkChild.Visibility((IsClickEnabled() && IsActionIconVisible()) ? Visibility::Visible : Visibility::Collapsed);
             }
         }
-    }
-
-    // Returns true if the given object is null, or is a string that is empty.
-    // Non-string non-null objects (e.g. a TextBlock) are considered "non-empty".
-    static bool _isNullOrEmpty(const winrt::Windows::Foundation::IInspectable& obj)
-    {
-        if (!obj)
-        {
-            return true;
-        }
-        if (const auto pv{ obj.try_as<IPropertyValue>() }; pv && pv.Type() == PropertyType::String)
-        {
-            return unbox_value_or<hstring>(obj, hstring{}).empty();
-        }
-        return false;
     }
 
     void SettingsCard::_UpdateHeaderVisibility()
@@ -378,7 +457,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void SettingsCard::_OnHeaderIconChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*e*/)
     {
         const auto obj{ d.try_as<Editor::SettingsCard>() };
-        get_self<SettingsCard>(obj)->_UpdateHeaderIconVisibility();
+        const auto self = get_self<SettingsCard>(obj);
+        self->_UpdateHeaderIconVisibility();
+        // HeaderIcon type may have flipped between BitmapIcon and other icon types — re-evaluate
+        // the BitmapHeaderIcon visual state so the disabled-opacity setter is applied (or cleared).
+        self->_CheckHeaderIconState();
     }
 
     void SettingsCard::_OnIsClickEnabledChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*e*/)

@@ -32,6 +32,8 @@
     <Midl Include="SettingContainer.idl" />
     <Midl Include="SettingsCard.idl" />
     <Midl Include="SettingsExpander.idl" />
+    <Midl Include="ControlSizeTrigger.idl" />
+    <Midl Include="CornerRadiusFilterConverters.idl" />
     <Midl Include="StringDefaultTemplateSelector.idl" />
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />

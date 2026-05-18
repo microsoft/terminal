@@ -5,12 +5,16 @@
 #include "SettingsExpander.h"
 #include "SettingsExpander.g.cpp"
 #include "SettingsExpanderAutomationPeer.g.cpp"
+#include "SettingsExpanderItemStyleSelector.g.cpp"
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Automation;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 using namespace winrt::Windows::UI::Xaml::Controls;
+
+namespace MUXC = winrt::Microsoft::UI::Xaml::Controls;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -21,10 +25,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingsExpander::_IsExpandedProperty{ nullptr };
     DependencyProperty SettingsExpander::_ItemsHeaderProperty{ nullptr };
     DependencyProperty SettingsExpander::_ItemsFooterProperty{ nullptr };
+    DependencyProperty SettingsExpander::_ItemsProperty{ nullptr };
+    DependencyProperty SettingsExpander::_ItemsSourceProperty{ nullptr };
+    DependencyProperty SettingsExpander::_ItemTemplateProperty{ nullptr };
+    DependencyProperty SettingsExpander::_ItemContainerStyleSelectorProperty{ nullptr };
+
+    static constexpr std::wstring_view PART_ItemsRepeater{ L"PART_ItemsRepeater" };
 
     SettingsExpander::SettingsExpander()
     {
         _InitializeProperties();
+
+        Items(single_threaded_vector<IInspectable>());
     }
 
     void SettingsExpander::_InitializeProperties()
@@ -85,6 +97,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 xaml_typename<Editor::SettingsExpander>(),
                 PropertyMetadata{ nullptr });
         }
+        if (!_ItemsProperty)
+        {
+            _ItemsProperty = DependencyProperty::Register(
+                L"Items",
+                xaml_typename<IVector<IInspectable>>(),
+                xaml_typename<Editor::SettingsExpander>(),
+                PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingsExpander::_OnItemsConnectedPropertyChanged } });
+        }
+        if (!_ItemsSourceProperty)
+        {
+            _ItemsSourceProperty = DependencyProperty::Register(
+                L"ItemsSource",
+                xaml_typename<IInspectable>(),
+                xaml_typename<Editor::SettingsExpander>(),
+                PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingsExpander::_OnItemsConnectedPropertyChanged } });
+        }
+        if (!_ItemTemplateProperty)
+        {
+            _ItemTemplateProperty = DependencyProperty::Register(
+                L"ItemTemplate",
+                xaml_typename<IInspectable>(),
+                xaml_typename<Editor::SettingsExpander>(),
+                PropertyMetadata{ nullptr });
+        }
+        if (!_ItemContainerStyleSelectorProperty)
+        {
+            _ItemContainerStyleSelectorProperty = DependencyProperty::Register(
+                L"ItemContainerStyleSelector",
+                xaml_typename<StyleSelector>(),
+                xaml_typename<Editor::SettingsExpander>(),
+                PropertyMetadata{ nullptr });
+        }
     }
 
     AutomationPeer SettingsExpander::OnCreateAutomationPeer()
@@ -94,8 +138,77 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingsExpander::OnApplyTemplate()
     {
-        // No template-part lookups required: our template uses regular bindings
-        // through TemplateBinding / x:Bind. The DPs do their own work.
+        _SetAccessibleName();
+
+        // Drop the prior template's repeater hookups before locating the new one.
+        _elementPreparedRevoker.revoke();
+        _itemsRepeater = nullptr;
+
+        if (const auto child{ GetTemplateChild(hstring{ PART_ItemsRepeater }) })
+        {
+            _itemsRepeater = child.try_as<MUXC::ItemsRepeater>();
+        }
+
+        if (_itemsRepeater)
+        {
+            _elementPreparedRevoker = _itemsRepeater.ElementPrepared(winrt::auto_revoke, { get_weak(), &SettingsExpander::_ItemsRepeater_ElementPrepared });
+
+            // Push our initial ItemsSource through to the repeater.
+            _UpdateItemsSource();
+        }
+    }
+
+    void SettingsExpander::_SetAccessibleName()
+    {
+        if (!AutomationProperties::GetName(*this).empty())
+        {
+            return;
+        }
+        if (const auto headerString{ unbox_value_or<hstring>(Header(), hstring{}) }; !headerString.empty())
+        {
+            AutomationProperties::SetName(*this, headerString);
+        }
+    }
+
+    void SettingsExpander::_UpdateItemsSource()
+    {
+        if (!_itemsRepeater)
+        {
+            return;
+        }
+        // ItemsSource wins when set; otherwise fall back to the inline Items collection.
+        if (const auto source{ ItemsSource() })
+        {
+            _itemsRepeater.ItemsSource(source);
+        }
+        else
+        {
+            _itemsRepeater.ItemsSource(Items());
+        }
+    }
+
+    void SettingsExpander::_OnItemsConnectedPropertyChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*e*/)
+    {
+        if (const auto obj{ d.try_as<Editor::SettingsExpander>() })
+        {
+            get_self<SettingsExpander>(obj)->_UpdateItemsSource();
+        }
+    }
+
+    void SettingsExpander::_ItemsRepeater_ElementPrepared(const MUXC::ItemsRepeater& /*sender*/, const MUXC::ItemsRepeaterElementPreparedEventArgs& args)
+    {
+        const auto selector{ ItemContainerStyleSelector() };
+        if (!selector)
+        {
+            return;
+        }
+        if (const auto element{ args.Element().try_as<FrameworkElement>() })
+        {
+            if (element.ReadLocalValue(FrameworkElement::StyleProperty()) == DependencyProperty::UnsetValue())
+            {
+                element.Style(selector.SelectStyle(nullptr, element));
+            }
+        }
     }
 
     void SettingsExpander::_OnIsExpandedChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& e)
@@ -107,6 +220,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         const auto self = get_self<SettingsExpander>(obj);
         const auto newValue = unbox_value_or<bool>(e.NewValue(), false);
+
+        // Notify the automation peer so screen readers see the expand/collapse state change.
+        if (const auto peer{ FrameworkElementAutomationPeer::FromElement(obj).try_as<Editor::SettingsExpanderAutomationPeer>() })
+        {
+            peer.RaiseExpandedChangedEvent(newValue);
+        }
+
         if (newValue)
         {
             self->Expanded.raise(obj, nullptr);
@@ -146,5 +266,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         return {};
+    }
+
+    void SettingsExpanderAutomationPeer::RaiseExpandedChangedEvent(bool newValue)
+    {
+        // Mirrors the toolkit's SettingsExpanderAutomationPeer.RaiseExpandedChangedEvent.
+        // Narrator doesn't actually announce this today (microsoft/microsoft-ui-xaml#3469),
+        // but other AT can subscribe and we keep parity with the toolkit.
+        const auto newState = newValue ? ExpandCollapseState::Expanded : ExpandCollapseState::Collapsed;
+        const auto oldState = newValue ? ExpandCollapseState::Collapsed : ExpandCollapseState::Expanded;
+        RaisePropertyChangedEvent(ExpandCollapsePatternIdentifiers::ExpandCollapseStateProperty(), box_value(oldState), box_value(newState));
+    }
+
+    Windows::UI::Xaml::Style SettingsExpanderItemStyleSelector::SelectStyleCore(const winrt::Windows::Foundation::IInspectable& /*item*/, const Windows::UI::Xaml::DependencyObject& container)
+    {
+        // When the prepared container is a clickable SettingsCard, give it the
+        // clickable item style (which adds the right padding for the chevron).
+        // Otherwise fall back to the default item style.
+        if (const auto card{ container.try_as<Editor::SettingsCard>() })
+        {
+            if (card.IsClickEnabled())
+            {
+                return _ClickableStyle;
+            }
+        }
+        return _DefaultStyle;
     }
 }

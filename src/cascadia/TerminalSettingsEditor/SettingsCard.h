@@ -59,6 +59,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateHeaderIconVisibility();
         void _UpdateContentAlignmentState();
         void _CheckInitialVisualState();
+        void _CheckHeaderIconState();
+        void _CheckVerticalSpacingState(const Windows::UI::Xaml::VisualState& state);
         void _SetAccessibleContentName();
         Windows::UI::Xaml::FrameworkElement _GetFocusedElement();
 
@@ -66,10 +68,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Xaml::Controls::Control::IsEnabledChanged_revoker _isEnabledChangedRevoker;
         Windows::UI::Xaml::UIElement::PointerEntered_revoker _pointerEnteredRevoker;
         Windows::UI::Xaml::UIElement::PointerExited_revoker _pointerExitedRevoker;
+        Windows::UI::Xaml::UIElement::PointerPressed_revoker _pointerPressedRevoker;
+        Windows::UI::Xaml::UIElement::PointerReleased_revoker _pointerReleasedRevoker;
         Windows::UI::Xaml::UIElement::PointerCaptureLost_revoker _pointerCaptureLostRevoker;
         Windows::UI::Xaml::UIElement::PointerCanceled_revoker _pointerCanceledRevoker;
         Windows::UI::Xaml::UIElement::PreviewKeyDown_revoker _previewKeyDownRevoker;
         Windows::UI::Xaml::UIElement::PreviewKeyUp_revoker _previewKeyUpRevoker;
+        Windows::UI::Xaml::VisualStateGroup::CurrentStateChanged_revoker _contentAlignmentStatesChangedRevoker;
         int64_t _contentChangedToken{ 0 };
     };
 
