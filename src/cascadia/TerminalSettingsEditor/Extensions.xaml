@@ -19,12 +19,6 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <Style x:Key="ItalicDisclaimerStyle"
-                   BasedOn="{StaticResource DisclaimerStyle}"
-                   TargetType="TextBlock">
-                <Setter Property="FontStyle" Value="Italic" />
-            </Style>
-
             <Style x:Key="CodeBlockStyle"
                    TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="Cascadia Mono, Consolas" />

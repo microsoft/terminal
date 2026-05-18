@@ -167,7 +167,7 @@
                 <TextBlock x:Name="_parentCommandText"
                            Padding="16,4"
                            VerticalAlignment="Center"
-                           FontStyle="Italic"
+                           FontWeight="SemiBold"
                            Text="{x:Bind ParentCommandName, Mode=OneWay}" />
             </StackPanel>
 
@@ -179,7 +179,6 @@
                     Visibility="Collapsed">
                 <TextBlock Padding="12,0"
                            VerticalAlignment="Center"
-                           FontStyle="Italic"
                            Text="{x:Bind NoMatchesText, Mode=OneWay}" />
             </Border>
 
