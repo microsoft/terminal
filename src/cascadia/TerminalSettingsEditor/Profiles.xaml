@@ -22,6 +22,7 @@
             <DataTemplate x:Key="ProfileNavigatorTemplate"
                           x:DataType="local:ProfileViewModel">
                 <Button HorizontalAlignment="Stretch"
+                        AutomationProperties.HelpText="{x:Bind AccessibleStateDescription, Mode=OneWay}"
                         AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                         Click="Profile_Click"
                         Style="{StaticResource NavigatorButtonStyle}">
@@ -69,7 +70,8 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Style="{StaticResource SettingsStackStyle}">
+    <StackPanel Style="{StaticResource SettingsStackStyle}"
+                XYFocusKeyboardNavigation="Enabled">
 
         <!--  General Profile Settings  -->
         <TextBlock x:Uid="Profiles_GeneralSettingsHeader"
@@ -123,8 +125,10 @@
 
         <!--  List of profiles. Each is a NavigatorButtonStyle button rendered by ProfileNavigatorTemplate.  -->
         <ItemsControl Margin="0,0,0,16"
+                      IsTabStop="False"
                       ItemTemplate="{StaticResource ProfileNavigatorTemplate}"
-                      ItemsSource="{x:Bind ViewModel.Profiles, Mode=OneWay}">
+                      ItemsSource="{x:Bind ViewModel.Profiles, Mode=OneWay}"
+                      XYFocusKeyboardNavigation="Enabled">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <StackPanel />
