@@ -288,10 +288,11 @@
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Author}"
+                                               FontSize="12"
                                                Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Author)}" />
 
                                     <TextBlock Grid.Row="1"
-                                               Grid.Column="2"
+                                               Grid.Column="2"  FontSize="12"
                                                AutomationProperties.AccessibilityView="Raw"
                                                Style="{ThemeResource SecondaryTextBlockStyle}"
                                                Text="{x:Bind Version}"

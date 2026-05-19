@@ -69,12 +69,10 @@
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
                 <!--  Word Delimiters  -->
                 <local:SettingContainer x:Name="WordDelimiters"
-                                        x:Uid="Globals_WordDelimiters"
-                                        CurrentValue="{x:Bind ViewModel.WordDelimiters, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        x:Uid="Globals_WordDelimiters">
                     <TextBox IsSpellCheckEnabled="False"
-                             Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
+                Style="{StaticResource TextBoxSettingStyle}"
+                Text="{x:Bind ViewModel.WordDelimiters, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Enable Color Selection  -->
@@ -146,9 +144,7 @@
 
                 <!--  Search Web Default Query URL  -->
                 <local:SettingContainer x:Name="SearchWebDefaultQueryUrl"
-                                        x:Uid="Globals_SearchWebDefaultQueryUrl"
-                                        CurrentValue="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        x:Uid="Globals_SearchWebDefaultQueryUrl">
                     <TextBox IsSpellCheckEnabled="False"
                              Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind ViewModel.SearchWebDefaultQueryUrl, Mode=TwoWay}" />
