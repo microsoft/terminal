@@ -3218,9 +3218,8 @@ namespace winrt::TerminalApp::implementation
                         CouldNotOpenUriReason().Text(RS_(L"UnsafeUrlConfirmText"));
                         UnopenedUri().Text(uriString);
 
-                        // Get the checkbox and make it visible for unsafe URL warnings only
-                        const auto stackPanel = unopenedUriDialog.Content().as<StackPanel>();
-                        const auto checkbox = stackPanel.Children().GetAt(1).as<CheckBox>();
+                        // Get the checkbox directly by its x:Name and make it visible for unsafe URL warnings only
+                        const auto checkbox = RememberUriSchemeCheckBox();
                         checkbox.IsChecked(false);
                         checkbox.Visibility(Visibility::Visible);
 
