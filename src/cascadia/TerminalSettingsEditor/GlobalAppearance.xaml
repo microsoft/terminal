@@ -62,9 +62,9 @@
 
         <!--  Always show tabs  -->
         <local:SettingContainer x:Name="AlwaysShowTabs"
-                                x:Uid="Globals_AlwaysShowTabs">
-            <ToggleSwitch IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}"
-                          IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
+                                x:Uid="Globals_AlwaysShowTabs"
+                                IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.ShowTabsInTitlebar), Mode=OneWay}">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.AlwaysShowTabs, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingContainer>
 
