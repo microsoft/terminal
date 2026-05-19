@@ -64,6 +64,7 @@
 
     <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
     <local:ColorToStringConverter x:Key="ColorToStringConverter" />
+    <mtu:StringNotEmptyToVisibilityConverter x:Key="StringNotEmptyToVisibilityConverter" />
 
     <Color x:Key="DeleteButtonColor">Firebrick</Color>
 
@@ -1228,13 +1229,19 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <ContentPresenter x:Name="ContentPresenter"
-                                          Grid.Column="0"
-                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          Content="{TemplateBinding Content}"
-                                          ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          ContentTransitions="{TemplateBinding ContentTransitions}" />
+                        <StackPanel Grid.Column="0"
+                                    Padding="0,12,0,12"
+                                    VerticalAlignment="Center">
+                            <ContentPresenter x:Name="ContentPresenter"
+                                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              ContentTransitions="{TemplateBinding ContentTransitions}" />
+                            <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{Binding Tag, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                       Visibility="{Binding Tag, RelativeSource={RelativeSource Mode=TemplatedParent}, Converter={StaticResource StringNotEmptyToVisibilityConverter}}" />
+                        </StackPanel>
                         <FontIcon Grid.Column="1"
                                   Margin="20,0,8,0"
                                   HorizontalAlignment="Right"

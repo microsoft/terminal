@@ -650,8 +650,8 @@
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
-    <value>Appearance</value>
-    <comment>Header for the "appearance" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
+    <value>Personalization</value>
+    <comment>Header for the "personalization" menu item. This navigates to a page that lets you see and modify settings related to the app's appearance.</comment>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
@@ -676,10 +676,6 @@
   <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
     <value>Defaults</value>
     <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
-  </data>
-  <data name="Nav_Rendering.Content" xml:space="preserve">
-    <value>Rendering</value>
-    <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>Actions</value>
@@ -1621,10 +1617,6 @@
     <value>Name</value>
     <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
   </data>
-  <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
-    <value>Transparency</value>
-    <comment>Header for a group of settings related to transparency, including the acrylic material background of the app.</comment>
-  </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
     <comment>Header for a group of settings that control the image presented on the background of the app. Presented near "Profile_BackgroundImage" and other keys starting with "Profile_BackgroundImage".</comment>
@@ -1644,10 +1636,6 @@
   <data name="Globals_WarningsHeader.Text" xml:space="preserve">
     <value>Warnings</value>
     <comment>Header for a group of settings that control the warnings in the app.</comment>
-  </data>
-  <data name="Profile_WindowHeader.Text" xml:space="preserve">
-    <value>Window</value>
-    <comment>Header for a group of settings that control the appearance of the window frame of the app.</comment>
   </data>
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Open your settings.json file. Alt+Click to open your defaults.json file.</value>
@@ -2811,5 +2799,101 @@
   <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
     <value>This text will be inserted between the paths of multiple files dropped into the terminal.</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
+  </data>
+  <data name="Launch_Section_LaunchBehavior.Text" xml:space="preserve">
+    <value>Launch behavior</value>
+    <comment>Title of a section that groups settings that control how the terminal opens and behaves when launched.</comment>
+  </data>
+  <data name="Launch_Section_SystemInputDefaults.Text" xml:space="preserve">
+    <value>System &amp; input defaults</value>
+    <comment>Title of a section that groups settings for default system and input behaviors.</comment>
+  </data>
+  <data name="Interaction_Section_Clipboard.Text" xml:space="preserve">
+    <value>Clipboard and paste behavior</value>
+    <comment>Title of a section that groups settings related to selection, copying, and pasting.</comment>
+  </data>
+  <data name="Interaction_Section_TextSelection.Text" xml:space="preserve">
+    <value>Text selection &amp; editing</value>
+    <comment>Title of a section that groups settings related to text selection and editing.</comment>
+  </data>
+  <data name="Interaction_Section_WindowLayout.Text" xml:space="preserve">
+    <value>Window and layout behavior</value>
+    <comment>Title of a section that groups settings related to window sizing, arrangement, and grouping.</comment>
+  </data>
+  <data name="Interaction_Section_MouseScrolling.Text" xml:space="preserve">
+    <value>Mouse &amp; scrolling</value>
+    <comment>Title of a section that groups settings related to mouse and scroll wheel input.</comment>
+  </data>
+  <data name="Interaction_Section_UrlsExternal.Text" xml:space="preserve">
+    <value>URLs &amp; external actions</value>
+    <comment>Title of a section that groups settings related to URLs and external app actions.</comment>
+  </data>
+  <data name="Interaction_Section_Warnings.Text" xml:space="preserve">
+    <value>Warnings</value>
+    <comment>Title of a section that groups warning-related settings.</comment>
+  </data>
+  <data name="Globals_Section_VisualStyle.Text" xml:space="preserve">
+    <value>Visual style</value>
+    <comment>Title of a section that groups settings related to the terminal's visual appearance.</comment>
+  </data>
+  <data name="Globals_Section_TabsLayout.Text" xml:space="preserve">
+    <value>Tabs and layout</value>
+    <comment>Title of a section that groups settings related to tabs and pane layout.</comment>
+  </data>
+  <data name="Globals_Section_WindowBehavior.Text" xml:space="preserve">
+    <value>Window behavior</value>
+    <comment>Title of a section that groups settings related to terminal window behavior.</comment>
+  </data>
+  <data name="Globals_Section_TitleBarIdentity.Text" xml:space="preserve">
+    <value>Title bar &amp; identity</value>
+    <comment>Title of a section that groups settings related to title bar identity and indicators.</comment>
+  </data>
+  <data name="Globals_Section_SystemIntegration.Text" xml:space="preserve">
+    <value>System integration &amp; notifications</value>
+    <comment>Title of a section that groups settings related to system integration and notifications.</comment>
+  </data>
+  <data name="Compatibility_Section_Compatibility.Text" xml:space="preserve">
+    <value>Compatibility</value>
+    <comment>Title of a section that groups compatibility-related settings.</comment>
+  </data>
+  <data name="Compatibility_Section_Rendering.Text" xml:space="preserve">
+    <value>Rendering</value>
+    <comment>Title of a section that groups rendering-related settings.</comment>
+  </data>
+  <data name="Profile_Section_VisualUI.Text" xml:space="preserve">
+    <value>Visual/UI Affordance</value>
+    <comment>Title of a section in a profile page that groups visual and UI settings (tab title, icon, tab color, etc.).</comment>
+  </data>
+  <data name="Profile_Section_Window.Text" xml:space="preserve">
+    <value>Window settings</value>
+    <comment>Title of a section expander on the Profile Appearance page that groups window-level appearance settings (background opacity, acrylic, padding, scrollbar visibility).</comment>
+  </data>
+  <data name="Profile_NameSectionHeaderFormat" xml:space="preserve">
+    <value>{0} profile</value>
+    <comment>Localizable format string used as the section header for a profile (e.g. "PowerShell profile"). {0} is replaced by the profile's name. Reorder the placeholder if your language requires a different word order.</comment>
+  </data>
+  <data name="Profile_DefaultsSectionHeader" xml:space="preserve">
+    <value>Profile defaults</value>
+    <comment>Header used in place of the "{name} profile" header when the page is showing the profile-defaults layer (which has no profile name).</comment>
+  </data>
+  <data name="Appearance_Section_Typography.Text" xml:space="preserve">
+    <value>Typography settings</value>
+    <comment>Title of a section that groups settings controlling how text looks in a profile.</comment>
+  </data>
+  <data name="Appearance_Section_Cursor.Text" xml:space="preserve">
+    <value>Cursor settings</value>
+    <comment>Title of a section that groups settings controlling the cursor.</comment>
+  </data>
+  <data name="Appearance_Section_BackgroundImage.Text" xml:space="preserve">
+    <value>Background image</value>
+    <comment>Title of a section that groups settings controlling the background image.</comment>
+  </data>
+  <data name="Profile_AppearanceNavigator.HelpText" xml:space="preserve">
+    <value>Customize the visual appearance of the profile, including colors, fonts, and text styling.</value>
+    <comment>Help text shown below the "Appearance" navigator button on the profile page.</comment>
+  </data>
+  <data name="Profile_TerminalNavigator.HelpText" xml:space="preserve">
+    <value>Terminal emulation is how a terminal app interprets text and control sequences to behave like a traditional command-line terminal.</value>
+    <comment>Help text shown below the "Terminal" navigator button on the profile page.</comment>
   </data>
 </root>
