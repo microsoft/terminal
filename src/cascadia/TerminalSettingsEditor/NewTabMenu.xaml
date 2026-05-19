@@ -121,7 +121,7 @@
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <TextBlock x:Uid="NewTabMenuEntry_Separator"
                                VerticalAlignment="Center"
-                               FontStyle="Italic" />
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </ContentControl>
             </DataTemplate>
 
@@ -201,7 +201,7 @@
                                 DataContext="{Binding Mode=OneWay}"
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <TextBlock VerticalAlignment="Center"
-                               FontStyle="Italic"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                Text="{x:Bind DisplayText, Mode=OneWay}" />
                 </ContentControl>
             </DataTemplate>
@@ -213,7 +213,7 @@
                                 Style="{StaticResource NewTabMenuEntryControlsWrapper}">
                     <TextBlock x:Uid="NewTabMenuEntry_RemainingProfiles"
                                VerticalAlignment="Center"
-                               FontStyle="Italic" />
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </ContentControl>
             </DataTemplate>
 
