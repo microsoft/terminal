@@ -28,6 +28,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsCard();
 
         void OnApplyTemplate();
+        void OnPointerPressed(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void OnPointerReleased(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
 
         // Automation peer override.
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
@@ -68,8 +70,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Xaml::Controls::Control::IsEnabledChanged_revoker _isEnabledChangedRevoker;
         Windows::UI::Xaml::UIElement::PointerEntered_revoker _pointerEnteredRevoker;
         Windows::UI::Xaml::UIElement::PointerExited_revoker _pointerExitedRevoker;
-        Windows::UI::Xaml::UIElement::PointerPressed_revoker _pointerPressedRevoker;
-        Windows::UI::Xaml::UIElement::PointerReleased_revoker _pointerReleasedRevoker;
         Windows::UI::Xaml::UIElement::PointerCaptureLost_revoker _pointerCaptureLostRevoker;
         Windows::UI::Xaml::UIElement::PointerCanceled_revoker _pointerCanceledRevoker;
         Windows::UI::Xaml::UIElement::PreviewKeyDown_revoker _previewKeyDownRevoker;

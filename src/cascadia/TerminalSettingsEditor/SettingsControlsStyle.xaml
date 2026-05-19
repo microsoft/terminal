@@ -700,8 +700,9 @@
     <!--
         Header ToggleButton style for the custom Expander template above.
         Drives header coloring to match a sibling SettingsCard, and animates
-        the chevron's AnimatedIcon between NormalOn/Off, PointerOverOn/Off,
-        and PressedOn/Off states.
+        the chevron's rotation between 0° (collapsed) and 180° (expanded) via
+        a DoubleAnimation on a RotateTransform. (The toolkit uses a Lottie
+        AnimatedIcon morph; see comment on ExpandCollapseChevron below.)
     -->
     <Style x:Key="SettingsExpanderHeaderDownStyle"
            TargetType="ToggleButton">
@@ -756,9 +757,10 @@
                             <!--
                                 Toolkit uses a muxc:AnimatedIcon wrapping AnimatedChevronUpDownSmallVisualSource.
                                 That visual source isn't available in the WinUI 2 build the editor targets, so
-                                we fall back to a static FontIcon. We rotate it 180° in the Checked* states to
-                                indicate the expanded state (mirrors the visual outcome of the animated icon,
-                                without the morph animation).
+                                we fall back to a static FontIcon and drive a RotateTransform via the
+                                Checked*/unchecked CommonStates Storyboards (DoubleAnimation between 0° and 180°).
+                                This reproduces the smooth expand/collapse chevron animation visually, even
+                                without the toolkit's Lottie morph.
                             -->
                             <FontIcon x:Name="ExpandCollapseChevron"
                                       Width="16"
@@ -802,6 +804,14 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource SettingsCardBackground}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="0"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="PointerOver">
@@ -826,6 +836,14 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource SettingsCardBackgroundPointerOver}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="0"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
@@ -850,6 +868,14 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource SettingsCardBackgroundPressed}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="0"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="Disabled">
@@ -869,6 +895,14 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource ExpanderHeaderDisabledForeground}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="0"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="Checked">
@@ -893,10 +927,15 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource ExpanderChevronBackground}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="180"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
-                                    <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronRotation.Angle" Value="180" />
-                                    </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="CheckedPointerOver">
                                     <Storyboard>
@@ -920,10 +959,15 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource SettingsCardBackgroundPointerOver}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="180"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
-                                    <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronRotation.Angle" Value="180" />
-                                    </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="CheckedPressed">
                                     <Storyboard>
@@ -947,10 +991,15 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource SettingsCardBackgroundPressed}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="180"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
-                                    <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronRotation.Angle" Value="180" />
-                                    </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="CheckedDisabled">
                                     <Storyboard>
@@ -969,10 +1018,15 @@
                                             <DiscreteObjectKeyFrame KeyTime="0"
                                                                     Value="{ThemeResource SettingsCardBorderBrushDisabled}" />
                                         </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="ExpandCollapseChevronRotation"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         To="180"
+                                                         Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
-                                    <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronRotation.Angle" Value="180" />
-                                    </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Indeterminate" />
                                 <VisualState x:Name="IndeterminatePointerOver" />

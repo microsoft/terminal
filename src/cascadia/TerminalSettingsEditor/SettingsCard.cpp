@@ -142,6 +142,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::make<implementation::SettingsCardAutomationPeer>(*this);
     }
 
+    // Pointer overrides: gate the ButtonBase click pipeline on IsClickEnabled.
+    // When IsClickEnabled=false, we do NOT call the base method, so the event
+    // is left unhandled and bubbles up the visual tree. This is what lets the
+    // SettingsExpander header (a ToggleButton hosting a SettingsCard with
+    // IsClickEnabled=false) toggle on a click anywhere across the header row,
+    // not just on the chevron. Mirrors the Community Toolkit's SettingsCard.cs.
+    void SettingsCard::OnPointerPressed(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerPressed(e);
+            _GoToCommonState(PressedState, true);
+        }
+    }
+
+    void SettingsCard::OnPointerReleased(const winrt::Windows::UI::Xaml::Input::PointerRoutedEventArgs& e)
+    {
+        if (IsClickEnabled())
+        {
+            base_type::OnPointerReleased(e);
+            _GoToCommonState(NormalState, true);
+        }
+    }
+
     void SettingsCard::OnApplyTemplate()
     {
         // Drop any handlers from a previous template.
@@ -296,18 +320,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 strongThis->_GoToCommonState(NormalState, true);
             }
         });
-        _pointerPressedRevoker = PointerPressed(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
-            if (const auto strongThis = weakThis.get())
-            {
-                strongThis->_GoToCommonState(PressedState, true);
-            }
-        });
-        _pointerReleasedRevoker = PointerReleased(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
-            if (const auto strongThis = weakThis.get())
-            {
-                strongThis->_GoToCommonState(NormalState, true);
-            }
-        });
         _pointerCaptureLostRevoker = PointerCaptureLost(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
             if (const auto strongThis = weakThis.get())
             {
@@ -356,8 +368,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         IsTabStop(false);
         _pointerEnteredRevoker.revoke();
         _pointerExitedRevoker.revoke();
-        _pointerPressedRevoker.revoke();
-        _pointerReleasedRevoker.revoke();
         _pointerCaptureLostRevoker.revoke();
         _pointerCanceledRevoker.revoke();
         _previewKeyDownRevoker.revoke();

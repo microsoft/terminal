@@ -135,13 +135,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingContainer::_UpdateHelpText()
     {
+        const auto helpText{ HelpText() };
+
+        // Forward HelpText into the SettingsCard / SettingsExpander Description
+        // slot so it renders through the WCT-ported PART_DescriptionPresenter.
+        // Setting it to nullptr when empty collapses the description visually so we don't
+        // reserve vertical space for a blank line.
+        const auto description{ helpText.empty() ? Windows::Foundation::IInspectable{ nullptr } : box_value(helpText) };
+
         // Get the correct base to apply automation properties to
         std::vector<DependencyObject> base;
-        base.reserve(2);
+        base.reserve(3);
+        if (const auto& child{ GetTemplateChild(L"Card") })
+        {
+            if (const auto& card{ child.try_as<Editor::SettingsCard>() })
+            {
+                card.Description(description);
+                base.push_back(child);
+            }
+        }
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
             if (const auto& expander{ child.try_as<Editor::SettingsExpander>() })
             {
+                expander.Description(description);
                 base.push_back(child);
             }
         }
@@ -161,7 +178,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             Automation::AutomationProperties::SetName(obj, _GenerateAccessibleName());
 
             // apply help text as tooltip and full description (automation property)
-            if (const auto& helpText{ HelpText() }; !helpText.empty())
+            if (!helpText.empty())
             {
                 Automation::AutomationProperties::SetFullDescription(obj, helpText);
             }
@@ -169,15 +186,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 Controls::ToolTipService::SetToolTip(obj, nullptr);
                 Automation::AutomationProperties::SetFullDescription(obj, L"");
-            }
-        }
-
-        const auto textBlockHidden = HelpText().empty();
-        if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
-        {
-            if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
-            {
-                textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
             }
         }
     }
@@ -229,13 +237,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingContainer::_UpdateHeaderIcon()
     {
-        Controls::IconElement icon{ nullptr };
-        if (const auto glyph{ FontIconGlyph() }; !glyph.empty())
+        // Only forward FontIconGlyph into HeaderIcon when the caller actually
+        // supplied a glyph. Some templates (Warning/Error) already set
+        // SettingsCard.HeaderIcon in XAML to a stacked severity glyph; if we
+        // unconditionally wrote nullptr here we'd clobber that XAML default for
+        // every callsite that doesn't set FontIconGlyph.
+        const auto glyph{ FontIconGlyph() };
+        if (glyph.empty())
         {
-            Controls::FontIcon fi;
-            fi.Glyph(glyph);
-            icon = fi;
+            return;
         }
+
+        Controls::FontIcon fi;
+        fi.Glyph(glyph);
+        const Controls::IconElement icon{ fi };
 
         if (const auto& cardChild{ GetTemplateChild(L"Card") })
         {
