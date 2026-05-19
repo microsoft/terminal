@@ -212,18 +212,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // place after we rebuild all the settings.
         IInspectable destination{ nullptr };
         auto subPage = BreadcrumbSubPage::None;
-        hstring parentNavTag{};
         if (const auto size = _breadcrumbs.Size(); size > 0)
         {
             const auto& crumb = _breadcrumbs.GetAt(size - 1).as<Breadcrumb>();
             destination = crumb->Tag();
             subPage = crumb->SubPage();
-            // If we were inside the Profiles section, remember that so we can restore
-            // the "Profiles ›" prefix on the rebuilt navigation.
-            if (_RootCrumbIsProfilesBreadcrumb())
-            {
-                parentNavTag = hstring{ profilesTag };
-            }
         }
 
         _InitializeProfilesList();
@@ -247,7 +240,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // Fall back to the Profiles landing page
                 destination = box_value(profilesTag);
                 subPage = BreadcrumbSubPage::None;
-                parentNavTag = {};
             }
         }
         else if (destination.try_as<Editor::FolderEntryViewModel>())
@@ -267,11 +259,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 destination = _menuItemSource.GetAt(0).as<MUX::Controls::NavigationViewItem>().Tag();
                 subPage = BreadcrumbSubPage::None;
-                parentNavTag = {};
             }
         }
 
-        _Navigate(destination, subPage, {}, parentNavTag);
+        _Navigate(destination, subPage);
 
         _UpdateSearchIndex();
     }
@@ -423,9 +414,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else if (_colorSchemesPageVM.CurrentPage() == ColorSchemesSubPage::Base)
                 {
-                    // Preserve the current root context so that "Profiles > Color schemes" still shows the Profiles prefix.
-                    const hstring inheritedParentNavTag = _RootCrumbIsProfilesBreadcrumb() ? hstring{ profilesTag } : hstring{};
-                    _Navigate(boxedTag, BreadcrumbSubPage::None, {}, inheritedParentNavTag);
+                    _Navigate(boxedTag, BreadcrumbSubPage::None);
                 }
             }
             else if (settingName == L"CurrentSchemeName")
@@ -510,10 +499,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     //         a view model object (i.e. ProfileViewModel, ColorSchemeViewModel, etc.) for dynamic pages
     // - subPage: the sub page to navigate to, used for pages that have multiple sub pages (i.e. Profile > Appearance/Terminal/Advanced)
     // - elementToFocus: the name of the element to focus on the target page
-    // - parentNavTag: optional nav tag of the parent page when this navigation is invoked from inside another
-    //         landing page. Used by the Profiles landing page to keep itself selected and to prepend a
-    //         "Profiles" breadcrumb when entering Color schemes / a profile / Defaults / Add Profile from there.
-    void MainPage::_Navigate(const IInspectable& vm, BreadcrumbSubPage subPage, hstring elementToFocus, const hstring& parentNavTag)
+    void MainPage::_Navigate(const IInspectable& vm, BreadcrumbSubPage subPage, hstring elementToFocus)
     {
         _PreNavigateHelper();
 
@@ -627,13 +613,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == colorSchemesTag)
             {
-                // Color Schemes page is accessible from root level and within Profiles,
-                // so we need to prepend the root crumb in the second case.
-                if (parentNavTag == profilesTag)
-                {
-                    _AppendProfilesRootCrumb();
-                    selectedNavTag = profilesTag;
-                }
+                _AppendProfilesRootCrumb();
+                selectedNavTag = profilesTag;
 
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None));
                 contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<NavigateToPageArgs>(_colorSchemesPageVM, *this, elementToFocus));
@@ -694,17 +675,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // Suppress the handler to avoid double-navigation
             _colorSchemesPageViewModelChangedRevoker.revoke();
 
-            // Color Schemes page is accessible from within Profiles and root level,
-            // so we need to prepend the root crumb in the first case.
-            if (parentNavTag == profilesTag)
-            {
-                _AppendProfilesRootCrumb();
-                selectedNavTag = profilesTag;
-            }
-            else
-            {
-                selectedNavTag = colorSchemesTag;
-            }
+            _AppendProfilesRootCrumb();
+            selectedNavTag = profilesTag;
 
             _breadcrumbs.Append(winrt::make<Breadcrumb>(boxedColorSchemesTag, RS_(L"Nav_ColorSchemes/Content"), BreadcrumbSubPage::None));
 
@@ -849,11 +821,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (gsl::narrow_cast<uint32_t>(args.Index()) < (_breadcrumbs.Size() - 1))
         {
             const auto crumb = args.Item().as<Breadcrumb>();
-            // If the breadcrumb chain is rooted at the Profiles landing page, preserve
-            // that context so navigating to sub pages (i.e. Color schemes) via a back-breadcrumb
-            // keeps the "Profiles ›" prefix.
-            const hstring parentNavTag = _RootCrumbIsProfilesBreadcrumb() ? hstring{ profilesTag } : hstring{};
-            _Navigate(crumb->Tag(), crumb->SubPage(), {}, parentNavTag);
+            _Navigate(crumb->Tag(), crumb->SubPage());
         }
     }
 
@@ -998,16 +966,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _breadcrumbs.Append(winrt::make<Breadcrumb>(box_value(profilesTag), RS_(L"Nav_Profiles/Content"), BreadcrumbSubPage::None));
     }
 
-    bool MainPage::_RootCrumbIsProfilesBreadcrumb() const
-    {
-        if (_breadcrumbs.Size() == 0)
-        {
-            return false;
-        }
-        const auto rootTag = _breadcrumbs.GetAt(0).as<Breadcrumb>()->Tag().try_as<hstring>();
-        return rootTag && *rootTag == profilesTag;
-    }
-
     void MainPage::_SelectNavItemByTag(std::wstring_view tag)
     {
         if (!_menuItemSource)
@@ -1039,7 +997,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _Navigate(box_value(globalProfileTag));
         });
         _profilesPageVM.OpenColorSchemesRequested([this](const auto&, const auto&) {
-            _Navigate(box_value(colorSchemesTag), {}, {}, hstring{ profilesTag });
+            _Navigate(box_value(colorSchemesTag));
         });
         _profilesPageVM.AddProfileRequested([this](const auto&, const auto&) {
             _Navigate(box_value(addProfileTag));

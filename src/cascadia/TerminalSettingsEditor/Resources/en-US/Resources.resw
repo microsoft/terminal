@@ -1101,6 +1101,10 @@
     <value>If enabled, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
+  <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Hidden from the dropdown menu</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
+  </data>
   <data name="Profile_Elevate.Header" xml:space="preserve">
     <value>Run this profile as Administrator</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
@@ -2686,6 +2690,10 @@
   </data>
   <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
     <value>This automatically-detected profile appears to have been uninstalled. Changes you have made to it are preserved, but it cannot be used until it has been reinstalled.</value>
+  </data>
+  <data name="Profile_OrphanedBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Profile is no longer detected</value>
+    <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile's source software is no longer installed.</comment>
   </data>
   <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
     <value>Original Source</value>

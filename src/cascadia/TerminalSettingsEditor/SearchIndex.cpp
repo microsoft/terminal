@@ -71,8 +71,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (const auto colorSchemeVM = runtimeObj.try_as<Editor::ColorSchemeViewModel>())
         {
-            // No runtimeObjContext: scheme name and generic icon should be enough
             runtimeObjLabel = colorSchemeVM.Name();
+            runtimeObjContext = RS_(L"Nav_ColorSchemes/Content");
         }
         else if (const auto ntmFolderEntryVM = runtimeObj.try_as<Editor::FolderEntryViewModel>())
         {

@@ -39,10 +39,10 @@
                                         IsTabStop="False" />
                         <TextBlock Grid.Column="1"
                                    VerticalAlignment="Center"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}"
                                    Text="{x:Bind Name, Mode=OneWay}"
                                    TextTrimming="CharacterEllipsis" />
-                        <muxc:InfoBadge Grid.Column="2"
+                        <muxc:InfoBadge x:Uid="Profile_HiddenBadge"
+                                        Grid.Column="2"
                                         Margin="0,0,8,0"
                                         VerticalAlignment="Center"
                                         Visibility="{x:Bind Hidden, Mode=OneWay}">
@@ -52,7 +52,8 @@
                                                      Glyph="&#xED1A;" />
                             </muxc:InfoBadge.IconSource>
                         </muxc:InfoBadge>
-                        <muxc:InfoBadge Grid.Column="2"
+                        <muxc:InfoBadge x:Uid="Profile_OrphanedBadge"
+                                        Grid.Column="2"
                                         Margin="0,0,8,0"
                                         VerticalAlignment="Center"
                                         Visibility="{x:Bind Orphaned, Mode=OneWay}">
@@ -80,8 +81,7 @@
                 Click="Defaults_Click"
                 Style="{StaticResource NavigatorButtonStyle}">
             <StackPanel Orientation="Vertical">
-                <TextBlock x:Uid="Profiles_DefaultsNavigator_Title"
-                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <TextBlock x:Uid="Profiles_DefaultsNavigator_Title" />
                 <TextBlock x:Uid="Profiles_DefaultsNavigator_Description"
                            Margin="0,2,0,0"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -95,8 +95,7 @@
                 Click="ColorSchemes_Click"
                 Style="{StaticResource NavigatorButtonStyle}">
             <StackPanel Orientation="Vertical">
-                <TextBlock x:Uid="Profiles_ColorSchemesNavigator_Title"
-                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <TextBlock x:Uid="Profiles_ColorSchemesNavigator_Title" />
                 <TextBlock x:Uid="Profiles_ColorSchemesNavigator_Description"
                            Margin="0,2,0,0"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -128,7 +127,7 @@
                       ItemsSource="{x:Bind ViewModel.Profiles, Mode=OneWay}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <StackPanel Orientation="Vertical" />
+                    <StackPanel />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>
