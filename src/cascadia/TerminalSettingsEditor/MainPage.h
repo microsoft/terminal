@@ -96,6 +96,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _PreNavigateHelper();
         void _Navigate(const IInspectable& vm, BreadcrumbSubPage subPage = BreadcrumbSubPage::None, hstring elementToFocus = {}, const hstring& parentNavTag = {});
+        Windows::UI::Xaml::Media::Animation::NavigationTransitionInfo _MakeTransitionInfo() const;
+
+        enum class NavDirection
+        {
+            Default,
+            Forward,
+            Back
+        };
+        NavDirection _navDirection{ NavDirection::Default };
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
         Editor::ProfileViewModel _FindProfileViewModelByGuid(winrt::guid profileGuid) const;
