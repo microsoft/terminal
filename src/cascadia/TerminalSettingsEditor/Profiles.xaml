@@ -1,0 +1,136 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Profiles"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:Key="ProfileNavigatorTemplate"
+                          x:DataType="local:ProfileViewModel">
+                <Button HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                        Click="Profile_Click"
+                        Style="{StaticResource NavigatorButtonStyle}">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ContentControl Grid.Column="0"
+                                        Width="16"
+                                        Height="16"
+                                        VerticalAlignment="Center"
+                                        Content="{x:Bind IconPreview, Mode=OneWay}"
+                                        IsTabStop="False" />
+                        <TextBlock Grid.Column="1"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   Text="{x:Bind Name, Mode=OneWay}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <muxc:InfoBadge Grid.Column="2"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{x:Bind Hidden, Mode=OneWay}">
+                            <muxc:InfoBadge.IconSource>
+                                <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                     FontSize="12"
+                                                     Glyph="&#xED1A;" />
+                            </muxc:InfoBadge.IconSource>
+                        </muxc:InfoBadge>
+                        <muxc:InfoBadge Grid.Column="2"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{x:Bind Orphaned, Mode=OneWay}">
+                            <muxc:InfoBadge.IconSource>
+                                <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                     FontSize="12"
+                                                     Glyph="&#xE7BA;" />
+                            </muxc:InfoBadge.IconSource>
+                        </muxc:InfoBadge>
+                    </Grid>
+                </Button>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
+
+        <!--  General Profile Settings  -->
+        <TextBlock x:Uid="Profiles_GeneralSettingsHeader"
+                   Margin="0,0,0,4"
+                   Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+        <!--  Defaults navigator  -->
+        <Button x:Name="DefaultsNavigator"
+                Click="Defaults_Click"
+                Style="{StaticResource NavigatorButtonStyle}">
+            <StackPanel Orientation="Vertical">
+                <TextBlock x:Uid="Profiles_DefaultsNavigator_Title"
+                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <TextBlock x:Uid="Profiles_DefaultsNavigator_Description"
+                           Margin="0,2,0,0"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Button>
+
+        <!--  Color schemes navigator  -->
+        <Button x:Name="ColorSchemesNavigator"
+                Click="ColorSchemes_Click"
+                Style="{StaticResource NavigatorButtonStyle}">
+            <StackPanel Orientation="Vertical">
+                <TextBlock x:Uid="Profiles_ColorSchemesNavigator_Title"
+                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <TextBlock x:Uid="Profiles_ColorSchemesNavigator_Description"
+                           Margin="0,2,0,0"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Button>
+
+        <!--  Terminal profiles section  -->
+        <TextBlock x:Uid="Profiles_TerminalProfilesHeader"
+                   Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+        <!--  Add Profile accent button  -->
+        <Button x:Name="AddProfileButton"
+                Margin="0,4,0,0"
+                Click="AddProfile_Click"
+                Style="{StaticResource AccentButtonStyle}">
+            <StackPanel Orientation="Horizontal">
+                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                          Glyph="&#xE710;" />
+                <TextBlock x:Uid="Profiles_AddProfileButton"
+                           Style="{StaticResource IconButtonTextBlockStyle}" />
+            </StackPanel>
+        </Button>
+
+        <!--  List of profiles. Each is a NavigatorButtonStyle button rendered by ProfileNavigatorTemplate.  -->
+        <ItemsControl Margin="0,0,0,16"
+                      ItemTemplate="{StaticResource ProfileNavigatorTemplate}"
+                      ItemsSource="{x:Bind ViewModel.Profiles, Mode=OneWay}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+    </StackPanel>
+</Page>

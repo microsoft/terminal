@@ -1291,7 +1291,39 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
-    <comment>Header for the "profiles" menu items. This acts as a divider to introduce profile-related menu items.</comment>
+    <comment>Header for the "profiles" menu item. Navigates to a landing page that lists profile-related settings (defaults, color schemes, the list of terminal profiles, and the add-profile button).</comment>
+  </data>
+  <data name="Nav_Profiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Profiles</value>
+    <comment>Tooltip for the "profiles" menu item. Navigates to a landing page that lists profile-related settings.</comment>
+  </data>
+  <data name="Profiles_GeneralSettingsHeader.Text" xml:space="preserve">
+    <value>General Profile Settings</value>
+    <comment>Section header on the Profiles landing page. Introduces general-purpose profile settings such as the defaults shared by all profiles and the color schemes that profiles can use.</comment>
+  </data>
+  <data name="Profiles_TerminalProfilesHeader.Text" xml:space="preserve">
+    <value>Terminal profiles</value>
+    <comment>Section header on the Profiles landing page. Introduces the list of individual terminal profiles configured by the user.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator_Title.Text" xml:space="preserve">
+    <value>Defaults</value>
+    <comment>Title for the "Defaults" navigator on the Profiles landing page. Clicking this opens the page where defaults shared by all profiles can be edited.</comment>
+  </data>
+  <data name="Profiles_DefaultsNavigator_Description.Text" xml:space="preserve">
+    <value>Changes made here apply to all profiles unless overridden by a specific profile. These settings do not affect the Windows Terminal appearance.</value>
+    <comment>Help text describing the "Defaults" navigator on the Profiles landing page. Clarifies that the defaults apply to every profile but are not the same as the global Windows Terminal appearance settings.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator_Title.Text" xml:space="preserve">
+    <value>Color schemes</value>
+    <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the same page reachable from the top-level Color schemes nav item.</comment>
+  </data>
+  <data name="Profiles_ColorSchemesNavigator_Description.Text" xml:space="preserve">
+    <value>Add, edit, or remove the color schemes that your profiles can use.</value>
+    <comment>Help text describing the "Color schemes" navigator on the Profiles landing page.</comment>
+  </data>
+  <data name="Profiles_AddProfileButton.Text" xml:space="preserve">
+    <value>Add a new profile</value>
+    <comment>Text on the accent-colored button on the Profiles landing page. Clicking this opens the page where users can add a new profile.</comment>
   </data>
   <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>Focus</value>
