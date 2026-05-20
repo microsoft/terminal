@@ -71,11 +71,9 @@
                     <ToolTipService.ToolTip>
                         <ToolTip Placement="Mouse">
                             <TextBlock TextWrapping="Wrap">
-                                <Run x:Uid="NewTabRun" /> <LineBreak />
-                                <Run x:Uid="NewPaneRun"
-                                     FontStyle="Italic" /> <LineBreak />
-                                <Run x:Uid="NewWindowRun"
-                                     FontStyle="Italic" />
+                                <Run x:Uid="NewTabRun" /> <LineBreak /><LineBreak />
+                                <Run x:Uid="NewPaneRun" /> <LineBreak />
+                                <Run x:Uid="NewWindowRun" />
                             </TextBlock>
                         </ToolTip>
                     </ToolTipService.ToolTip>
