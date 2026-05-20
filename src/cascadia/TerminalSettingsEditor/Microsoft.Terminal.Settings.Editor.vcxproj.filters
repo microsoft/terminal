@@ -24,7 +24,6 @@
     <Midl Include="ActionsViewModel.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
-    <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
@@ -48,7 +47,6 @@
     <Page Include="Profiles_Advanced.xaml" />
     <Page Include="Profiles_Appearance.xaml" />
     <Page Include="Appearances.xaml" />
-    <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
     <Page Include="EditAction.xaml" />
     <Page Include="SettingContainerStyle.xaml" />

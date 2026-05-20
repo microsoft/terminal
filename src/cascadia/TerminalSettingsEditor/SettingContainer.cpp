@@ -159,7 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // apply header and current value as name (automation property)
             Automation::AutomationProperties::SetName(obj, _GenerateAccessibleName());
 
-            // apply help text as tooltip and full description (automation property)
+            // apply help text as full description (automation property)
             if (const auto& helpText{ HelpText() }; !helpText.empty())
             {
                 Automation::AutomationProperties::SetFullDescription(obj, helpText);

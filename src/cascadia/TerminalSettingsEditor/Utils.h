@@ -133,11 +133,38 @@ struct HasScrollViewer
             {
                 if (const auto& controlToFocus{ page->FindName(elementName).try_as<winrt::Windows::UI::Xaml::Controls::Control>() })
                 {
-                    // We need to wait for the page to be loaded
-                    // or else the call to StartBringIntoView()
-                    // will end up doing nothing
-                    controlToFocus.StartBringIntoView();
-                    controlToFocus.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+                    // Walk up the visual tree from the deep-link target and
+                    // expand any ancestor expanders so the target is actually
+                    // visible. This handles both:
+                    // - Plain muxc:Expander instances used as section groupings
+                    // - SettingContainer instances using an expander style
+                    //   (i.e. ExpanderSettingContainerStyleWithComplexPreview).
+                    winrt::Windows::UI::Xaml::DependencyObject ancestor{ controlToFocus };
+                    while (ancestor)
+                    {
+                        if (const auto& expander{ ancestor.try_as<winrt::Microsoft::UI::Xaml::Controls::Expander>() })
+                        {
+                            expander.IsExpanded(true);
+                        }
+                        else if (const auto& settingContainer{ ancestor.try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingContainer>() })
+                        {
+                            settingContainer.SetExpanded(true);
+                        }
+                        ancestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(ancestor);
+                    }
+
+                    // Expanding ancestor expanders triggers asynchronous
+                    // layout updates. Defer the bring-into-view + focus to
+                    // the next dispatcher tick so the target's final layout
+                    // position is known before we scroll/focus.
+                    page->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakControl{ winrt::weak_ref{ controlToFocus } }]() {
+                        if (const auto control = weakControl.get())
+                        {
+                            control.UpdateLayout();
+                            control.StartBringIntoView();
+                            control.Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
+                        }
+                    });
                 }
                 page->_loadedRevoker.revoke();
             }
