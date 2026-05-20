@@ -61,6 +61,8 @@ namespace
 
         // build type (choose one)
         Preview = 1 << 6, // preview version
+
+        ScoopGlobal = 1 << 7, // installed via Scoop in the global (system-wide) scope
     };
     DEFINE_ENUM_FLAG_OPERATORS(PowerShellFlags);
 
@@ -103,6 +105,10 @@ namespace
             else if (WI_IsFlagSet(flags, PowerShellFlags::Dotnet))
             {
                 namestream << L" (dotnet global)";
+            }
+            else if (WI_IsFlagSet(flags, PowerShellFlags::ScoopGlobal))
+            {
+                namestream << L" (scoop global)";
             }
             else if (WI_IsFlagSet(flags, PowerShellFlags::Scoop))
             {
@@ -259,6 +265,29 @@ static void _accumulatePwshExeInDirectory(const std::wstring_view directory, con
 }
 
 // Function Description:
+// - Reads an environment variable into a std::wstring.
+// Arguments:
+// - name: the name of the environment variable to read.
+// Return Value:
+// - the value of the environment variable, or an empty string if it is unset or empty.
+static std::wstring _getEnvironmentVariable(const wchar_t* name) noexcept
+{
+    const auto size = GetEnvironmentVariableW(name, nullptr, 0);
+    if (size == 0)
+    {
+        return {};
+    }
+    std::wstring value(size, L'\0');
+    const auto written = GetEnvironmentVariableW(name, value.data(), size);
+    if (written == 0 || written >= size)
+    {
+        return {};
+    }
+    value.resize(written);
+    return value;
+}
+
+// Function Description:
 // - Builds a comprehensive priority-ordered list of powershell instances.
 // Return value:
 // - a comprehensive priority-ordered list of powershell instances.
@@ -279,7 +308,26 @@ static std::vector<PowerShellInstance> _collectPowerShellInstances()
     _accumulateStorePowerShellInstances(versions);
 
     _accumulatePwshExeInDirectory(L"%USERPROFILE%\\.dotnet\\tools", PowerShellFlags::Dotnet, versions);
-    _accumulatePwshExeInDirectory(L"%USERPROFILE%\\scoop\\shims", PowerShellFlags::Scoop, versions);
+
+    // User-scope Scoop: honor %SCOOP% if set; otherwise fall back to the default location.
+    // This matches Scoop's own semantics where %SCOOP% overrides the default install location.
+    // See https://github.com/microsoft/terminal/issues/8264.
+    if (const auto scoopRoot = _getEnvironmentVariable(L"SCOOP"); !scoopRoot.empty())
+    {
+        _accumulatePwshExeInDirectory(scoopRoot + L"\\shims", PowerShellFlags::Scoop, versions);
+    }
+    else
+    {
+        _accumulatePwshExeInDirectory(L"%USERPROFILE%\\scoop\\shims", PowerShellFlags::Scoop, versions);
+    }
+
+    // Global-scope Scoop: independent of the user scope. A distinct flag is used so the
+    // generated profile name ("PowerShell (scoop global)") differs from the user-scope
+    // profile, ensuring a distinct GUID and avoiding settings collisions.
+    if (const auto scoopGlobal = _getEnvironmentVariable(L"SCOOP_GLOBAL"); !scoopGlobal.empty())
+    {
+        _accumulatePwshExeInDirectory(scoopGlobal + L"\\shims", PowerShellFlags::ScoopGlobal, versions);
+    }
 
     std::sort(versions.rbegin(), versions.rend()); // sort in reverse (best first)
 
