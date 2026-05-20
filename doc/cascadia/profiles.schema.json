@@ -475,6 +475,7 @@
         "toggleBlockSelection",
         "toggleFocusMode",
         "toggleFullscreen",
+        "toggleOverview",
         "togglePaneZoom",
         "toggleReadOnlyMode",
         "toggleShaderEffects",

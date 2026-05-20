@@ -61,6 +61,7 @@ namespace TerminalApp
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
+        Boolean OverviewMode { get; };
 
         WindowProperties WindowProperties { get; };
         void IdentifyWindow();

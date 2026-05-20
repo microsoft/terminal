@@ -2906,6 +2906,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
+            // Yes, this is reachable: when a pane is split, the new TermControl
+            // is added to the XAML tree before its Loaded event fires, so
+            // _initializedTerminal is still false when layout queries MinimumSize().
+            // Return a small fallback — the real size will be used once initialized.
             return { 10, 10 };
         }
     }
