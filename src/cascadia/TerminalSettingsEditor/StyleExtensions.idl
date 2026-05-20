@@ -15,5 +15,14 @@ namespace Microsoft.Terminal.Settings.Editor
 
         static Windows.UI.Xaml.ResourceDictionary GetResources(Windows.UI.Xaml.DependencyObject target);
         static void SetResources(Windows.UI.Xaml.DependencyObject target, Windows.UI.Xaml.ResourceDictionary value);
+
+        // Idempotently merges the project's SettingsControlsImplicitStyles.xaml
+        // dictionary into the target's Resources.MergedDictionaries. Called from
+        // SettingsCard / SettingsExpander OnApplyTemplate to give children
+        // (ToggleSwitch / Slider / ComboBox / TextBox) sensible Windows 11
+        // defaults without each call site setting Style explicitly. Loaded from
+        // C++ rather than via the attached DP because the WCT Setter.Value
+        // pattern crashes WinUI 2 in this codebase.
+        static void EnsureImplicitStylesMergedInto(Windows.UI.Xaml.FrameworkElement target);
     }
 }

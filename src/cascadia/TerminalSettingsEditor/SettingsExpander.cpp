@@ -6,6 +6,7 @@
 #include "SettingsExpander.g.cpp"
 #include "SettingsExpanderAutomationPeer.g.cpp"
 #include "SettingsExpanderItemStyleSelector.g.cpp"
+#include "StyleExtensions.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -141,6 +142,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingsExpander::OnApplyTemplate()
     {
+        // Same implicit-styles injection as SettingsCard so a ToggleSwitch /
+        // Slider / ComboBox / TextBox placed directly as SettingsExpander.Content
+        // gets the same Windows 11 defaults.
+        StyleExtensions::EnsureImplicitStylesMergedInto(*this);
+
         _SetAccessibleName();
 
         // Drop the prior template's host before locating the new one.

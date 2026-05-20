@@ -24,6 +24,14 @@
     - The chevron rotation is a RotateTransform driven by a DoubleAnimation
     (instead of the toolkit's Lottie AnimatedChevronUpDownSmallVisualSource,
     which is again WinUI 3 only).
+    - The WCT StyleExtensions.Resources injection pattern (auto-aligning
+    ToggleSwitch / Slider / ComboBox / TextBox children of cards) could not
+    be made to work in WinUI 2 in this codebase as an XAML Setter — see
+    StyleExtensions.cpp::EnsureImplicitStylesMergedInto, which injects
+    SettingsControlsImplicitStyles.xaml from C++ in OnApplyTemplate
+    instead. The inline-Style approach in that file is intentionally
+    looser than the toolkit's BasedOn pattern because a standalone-loaded
+    ResourceDictionary can't resolve {StaticResource} across files.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -208,6 +216,15 @@
         <Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}" />
         <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
         <Setter Property="FocusVisualMargin" Value="-3" />
+        <!--
+            Implicit ToggleSwitch / Slider / ComboBox / TextBox defaults are
+            injected from C++ (StyleExtensions::EnsureImplicitStylesMergedInto,
+            called from SettingsCard::OnApplyTemplate), pulling from
+            SettingsControlsImplicitStyles.xaml. We can't use WCT's
+            local:StyleExtensions.Resources Setter pattern — an inline
+            ResourceDictionary as a Setter.Value crashes WinUI 2 in this
+            codebase with "CommonResources.xaml is not a valid absolute URI".
+        -->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingsCard">
@@ -232,7 +249,7 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"
-                                              MinWidth="{StaticResource SettingsCardLeftIndention}" />
+                                              MinWidth="{ThemeResource SettingsCardLeftIndention}" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
@@ -240,9 +257,9 @@
 
                         <Viewbox x:Name="PART_HeaderIconPresenterHolder"
                                  Grid.RowSpan="1"
-                                 MaxWidth="{StaticResource SettingsCardHeaderIconMaxSize}"
-                                 MaxHeight="{StaticResource SettingsCardHeaderIconMaxSize}"
-                                 Margin="{StaticResource SettingsCardHeaderIconMargin}">
+                                 MaxWidth="{ThemeResource SettingsCardHeaderIconMaxSize}"
+                                 MaxHeight="{ThemeResource SettingsCardHeaderIconMaxSize}"
+                                 Margin="{ThemeResource SettingsCardHeaderIconMargin}">
                             <ContentPresenter x:Name="PART_HeaderIconPresenter"
                                               AutomationProperties.AccessibilityView="Raw"
                                               Content="{TemplateBinding HeaderIcon}" />
@@ -260,7 +277,7 @@
 
                             <ContentPresenter x:Name="PART_DescriptionPresenter"
                                               Content="{TemplateBinding Description}"
-                                              FontSize="{StaticResource SettingsCardDescriptionFontSize}"
+                                              FontSize="{ThemeResource SettingsCardDescriptionFontSize}"
                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                               TextWrapping="Wrap">
                                 <ContentPresenter.Resources>
@@ -279,21 +296,43 @@
                                           HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           Content="{TemplateBinding Content}" />
 
-                        <Viewbox x:Name="PART_ActionIconPresenterHolder"
-                                 Grid.RowSpan="2"
-                                 Grid.Column="3"
-                                 MaxWidth="{StaticResource SettingsCardActionIconMaxSize}"
-                                 MaxHeight="{StaticResource SettingsCardActionIconMaxSize}"
-                                 Margin="{StaticResource SettingsCardActionIconMargin}"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center"
-                                 Visibility="Collapsed">
-                            <ContentPresenter x:Name="PART_ActionIconPresenter"
-                                              AutomationProperties.AccessibilityView="Raw"
-                                              Content="{TemplateBinding ActionIcon}"
-                                              FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                              ToolTipService.ToolTip="{TemplateBinding ActionIconToolTip}" />
-                        </Viewbox>
+                        <!--
+                            Action-icon rendering:
+                            Instead of a Viewbox + ContentPresenter (which in WinUI 2 scales the
+                            icon's *em-box* via TextBlock-style measure, scaling the small glyph
+                            inside proportionally smaller than the visible 13x13 box), we render
+                            a fixed-size FontIcon directly. The icon's FontSize controls visible
+                            size; the FontFamily fallback list prefers Segoe Fluent Icons (Windows
+                            11, heavier strokes) before Segoe MDL2 Assets (Windows 10 fallback).
+                            
+                            Preserves the existing template-part names:
+                            * PART_ActionIconPresenterHolder — C++ flips Visibility on this for
+                            IsClickEnabled/IsActionIconVisible gating.
+                            * PART_ActionIconPresenter — the Disabled visual state animates
+                            Foreground here.
+                            
+                            ActionIcon / ActionIconToolTip / ActionIcon-as-IconElement DP usage is
+                            *not* honored by this layout; the IDL properties stay for backward
+                            API compatibility but no existing call site sets them. ActionIconToolTip
+                            is still wired through to the FontIcon's tooltip.
+                        -->
+                        <Border x:Name="PART_ActionIconPresenterHolder"
+                                Grid.RowSpan="2"
+                                Grid.Column="3"
+                                Margin="{ThemeResource SettingsCardActionIconMargin}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                ToolTipService.ToolTip="{TemplateBinding ActionIconToolTip}"
+                                Visibility="Collapsed">
+                            <FontIcon x:Name="PART_ActionIconPresenter"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.AccessibilityView="Raw"
+                                      FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                      FontSize="16"
+                                      Glyph="&#xE974;"
+                                      IsTextScaleFactorEnabled="False" />
+                        </Border>
 
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
@@ -411,23 +450,20 @@
                                     </VisualState.Setters>
                                 </VisualState>
 
-                                <VisualState x:Name="Left">
-                                    <VisualState.Setters>
-                                        <Setter Target="PART_HeaderIconPresenterHolder.Visibility" Value="Collapsed" />
-                                        <Setter Target="PART_HeaderPresenter.Visibility" Value="Collapsed" />
-                                        <Setter Target="PART_DescriptionPresenter.Visibility" Value="Collapsed" />
-                                        <Setter Target="PART_ContentPresenter.(Grid.Row)" Value="1" />
-                                        <Setter Target="PART_ContentPresenter.(Grid.Column)" Value="1" />
-                                        <Setter Target="PART_ContentPresenter.HorizontalAlignment" Value="Left" />
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState x:Name="Vertical">
-                                    <VisualState.Setters>
-                                        <Setter Target="PART_ContentPresenter.(Grid.Row)" Value="1" />
-                                        <Setter Target="PART_ContentPresenter.(Grid.Column)" Value="1" />
-                                        <Setter Target="PART_ContentPresenter.HorizontalAlignment" Value="Stretch" />
-                                    </VisualState.Setters>
-                                </VisualState>
+                                <!--
+                                    Left / Vertical states are present so the visual state group
+                                    exists (so SettingsCard::_CheckVerticalSpacingState can see the
+                                    right CurrentState when the alignment changes). The actual
+                                    layout work happens in SettingsCard::_UpdateContentAlignmentState
+                                    via direct property writes on PART_ContentPresenter — in WinUI 2,
+                                    attached-property changes ((Grid.Row)/(Grid.Column)) inside
+                                    VisualState.Setters or Storyboards don't reliably engage when
+                                    activated by programmatic VisualStateManager::GoToState (they
+                                    work when activated by a XAML StateTrigger, which is how WCT
+                                    drives these via tk:IsEqualStateTrigger).
+                                -->
+                                <VisualState x:Name="Left" />
+                                <VisualState x:Name="Vertical" />
                             </VisualStateGroup>
 
                             <!--  Drives the row spacing between the header/description and the content when they share a column (Vertical or RightWrapped layouts).  -->
@@ -469,6 +505,7 @@
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}" />
         <Setter Property="ItemContainerStyleSelector" Value="{StaticResource SettingsExpanderItemStyleSelector}" />
+        <!--  Same C++-side implicit-styles injection as SettingsCard — see comment on that style.  -->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingsExpander">
@@ -513,7 +550,7 @@
                                     losing virtualization is a non-issue.
                                 -->
                                 <ItemsControl x:Name="PART_ItemsHost"
-                                                    Grid.Row="1"
+                                              Grid.Row="1"
                                               IsTabStop="False"
                                               ItemTemplate="{Binding ItemTemplate, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}">
                                     <ItemsControl.ItemsPanel>
@@ -625,11 +662,6 @@
                                     </VisualState.Setters>
                                     <VisualState.Storyboard>
                                         <Storyboard>
-                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
-                                                                           Storyboard.TargetProperty="Visibility">
-                                                <DiscreteObjectKeyFrame KeyTime="0"
-                                                                        Value="Visible" />
-                                            </ObjectAnimationUsingKeyFrames>
                                             <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ExpanderContent"
                                                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(CompositeTransform.TranslateY)">
                                                 <DiscreteDoubleKeyFrame KeyTime="0"

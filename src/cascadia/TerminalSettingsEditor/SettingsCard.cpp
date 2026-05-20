@@ -5,6 +5,7 @@
 #include "SettingsCard.h"
 #include "SettingsCard.g.cpp"
 #include "SettingsCardAutomationPeer.g.cpp"
+#include "StyleExtensions.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System;
@@ -48,6 +49,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     static constexpr std::wstring_view HeaderPresenter{ L"PART_HeaderPresenter" };
     static constexpr std::wstring_view DescriptionPresenter{ L"PART_DescriptionPresenter" };
     static constexpr std::wstring_view HeaderIconPresenterHolder{ L"PART_HeaderIconPresenterHolder" };
+    static constexpr std::wstring_view ContentPresenterPart{ L"PART_ContentPresenter" };
+    static constexpr std::wstring_view RootGridPart{ L"PART_RootGrid" };
+
+    static constexpr double SettingsCardVerticalHeaderContentSpacing{ 8.0 };
 
     // Returns true if the given object is null, or is a string that is empty.
     // Non-string non-null objects (e.g. a TextBlock) are considered "non-empty".
@@ -97,11 +102,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         if (!_ActionIconProperty)
         {
+            // No metadata default value — a fresh FontIcon is allocated per
+            // card in OnApplyTemplate when the user hasn't set ActionIcon
+            // explicitly. We cannot use a default FontIcon here because
+            // UIElements have a single-parent constraint (one instance can't
+            // be shared across cards) and a default string was rendering
+            // through ContentPresenter -> TextBlock, whose line-height
+            // padding made the Viewbox-scaled glyph visibly smaller than
+            // WCT's SymbolIcon default.
             _ActionIconProperty = DependencyProperty::Register(
                 L"ActionIcon",
                 xaml_typename<IInspectable>(),
                 xaml_typename<Editor::SettingsCard>(),
-                PropertyMetadata{ box_value(hstring{ L"\uE974" }) });
+                PropertyMetadata{ nullptr });
         }
         if (!_ActionIconToolTipProperty)
         {
@@ -168,6 +181,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingsCard::OnApplyTemplate()
     {
+        // Match WCT's SettingsCard.OnApplyTemplate() which calls base first so the
+        // template parts are fully wired up before any of our post-template setup
+        // (visibility, visual states, click interaction) runs.
+        base_type::OnApplyTemplate();
+
+        // Inject the shared implicit ToggleSwitch / Slider / ComboBox / TextBox
+        // dictionary so child controls in our Content slot get the Windows 11
+        // settings-page defaults without an explicit Style attribute. Bypasses
+        // the WCT Setter.Value-with-inline-ResourceDictionary pattern, which
+        // crashes WinUI 2 XAML load in this codebase.
+        StyleExtensions::EnsureImplicitStylesMergedInto(*this);
+
         // Drop any handlers from a previous template.
         _isEnabledChangedRevoker.revoke();
         _contentAlignmentStatesChangedRevoker.revoke();
@@ -256,18 +281,42 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // Add row spacing whenever the content sits below the header (Vertical or RightWrapped*)
         // AND there's both Content and (Header or Description) to space apart.
+        //
+        // For the Vertical case we read ContentAlignment() directly rather than
+        // state.Name(): our Left/Vertical visual states are empty placeholders
+        // (the actual layout work happens in _UpdateContentAlignmentState via
+        // direct C++ property writes) and an empty <VisualState> may not have
+        // its name register as CurrentState when GoToState fires in WinUI 2 —
+        // leaving stackedLayout incorrectly false. RightWrapped*, in contrast,
+        // are size-triggered visual states with real setters and ControlSizeTrigger,
+        // so their CurrentState is reliably observed.
         const auto stateName{ state ? state.Name() : hstring{} };
         const bool stackedLayout =
-            stateName == VerticalState ||
+            ContentAlignment() == Editor::SettingsCardContentAlignment::Vertical ||
             stateName == L"RightWrapped" ||
             stateName == L"RightWrappedNoIcon";
 
         const bool hasContent{ static_cast<bool>(Content()) };
         const bool hasHeaderOrDescription = !_isNullOrEmpty(Header()) || !_isNullOrEmpty(Description());
 
+        const bool shouldSpace = stackedLayout && hasContent && hasHeaderOrDescription;
+
         VisualStateManager::GoToState(*this,
-                                      hstring{ (stackedLayout && hasContent && hasHeaderOrDescription) ? ContentSpacingState : NoContentSpacingState },
+                                      hstring{ shouldSpace ? ContentSpacingState : NoContentSpacingState },
                                       true);
+
+        // Belt-and-suspenders for the WinUI 2 quirk: VisualState.Setters activated
+        // by C++ GoToState don't reliably engage. The ContentSpacing setter
+        // targets PART_RootGrid.RowSpacing; set it directly here as well so the
+        // Vertical / RightWrapped stacked-layout cards actually get the breathing
+        // room between header and content that WCT shows.
+        if (const auto child{ GetTemplateChild(hstring{ RootGridPart }) })
+        {
+            if (const auto rootGrid{ child.try_as<Grid>() })
+            {
+                rootGrid.RowSpacing(shouldSpace ? SettingsCardVerticalHeaderContentSpacing : 0.0);
+            }
+        }
     }
 
     void SettingsCard::_SetAccessibleContentName()
@@ -434,20 +483,76 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingsCard::_UpdateContentAlignmentState()
     {
+        // Map ContentAlignment to the visual state name *and* the corresponding
+        // direct layout values. We drive both: GoToState keeps the visual state
+        // machine in sync (so _CheckVerticalSpacingState sees the right CurrentState),
+        // but we *also* apply the layout properties directly to PART_ContentPresenter
+        // because in WinUI 2, attached-property changes (Grid.Row/Grid.Column) and
+        // HorizontalAlignment changes inside VisualState.Setters or Storyboards
+        // don't reliably engage when activated by programmatic VisualStateManager::GoToState
+        // — only by XAML StateTriggers (which is what WCT uses via tk:IsEqualStateTrigger).
+        // Until/unless an equivalent state trigger gets ported, the direct C++ set is
+        // the load-bearing path for Left/Vertical.
         std::wstring_view state{ RightState };
-        switch (ContentAlignment())
+        int contentRow{ 0 };
+        int contentColumn{ 2 };
+        auto contentHA{ HorizontalAlignment::Right };
+
+        const auto alignment = ContentAlignment();
+        switch (alignment)
         {
         case Editor::SettingsCardContentAlignment::Left:
             state = LeftState;
+            contentRow = 1;
+            contentColumn = 1;
+            contentHA = HorizontalAlignment::Left;
             break;
         case Editor::SettingsCardContentAlignment::Vertical:
             state = VerticalState;
+            contentRow = 1;
+            contentColumn = 1;
+            contentHA = HorizontalAlignment::Stretch;
             break;
         default:
-            state = RightState;
             break;
         }
+
         VisualStateManager::GoToState(*this, hstring{ state }, true);
+
+        if (const auto child{ GetTemplateChild(hstring{ ContentPresenterPart }) })
+        {
+            if (const auto contentPresenter{ child.try_as<FrameworkElement>() })
+            {
+                Grid::SetRow(contentPresenter, contentRow);
+                Grid::SetColumn(contentPresenter, contentColumn);
+                contentPresenter.HorizontalAlignment(contentHA);
+
+                // Vertical mirrors WCT's TemplatedParent Binding setter: propagate
+                // the card's own HorizontalContentAlignment to the inner ContentPresenter
+                // so e.g. HorizontalContentAlignment="Left" + ContentAlignment="Vertical"
+                // actually left-aligns the inner content.
+                if (const auto cp{ contentPresenter.try_as<ContentPresenter>() })
+                {
+                    cp.HorizontalContentAlignment(HorizontalContentAlignment());
+                }
+            }
+        }
+
+        // Left collapses the HeaderIcon column regardless of HeaderIcon content.
+        if (const auto child{ GetTemplateChild(hstring{ HeaderIconPresenterHolder }) })
+        {
+            if (const auto headerIconHolder{ child.try_as<FrameworkElement>() })
+            {
+                if (alignment == Editor::SettingsCardContentAlignment::Left)
+                {
+                    headerIconHolder.Visibility(Visibility::Collapsed);
+                }
+                else
+                {
+                    headerIconHolder.Visibility(HeaderIcon() ? Visibility::Visible : Visibility::Collapsed);
+                }
+            }
+        }
     }
 
     void SettingsCard::_OnHeaderChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*e*/)

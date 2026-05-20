@@ -59,6 +59,7 @@
     <Page Include="EditAction.xaml" />
     <Page Include="SettingContainerStyle.xaml" />
     <Page Include="SettingsControlsStyle.xaml" />
+    <Page Include="SettingsControlsImplicitStyles.xaml" />
     <Page Include="AddProfile.xaml" />
     <Page Include="KeyChordListener.xaml" />
     <Page Include="NullableColorPicker.xaml" />

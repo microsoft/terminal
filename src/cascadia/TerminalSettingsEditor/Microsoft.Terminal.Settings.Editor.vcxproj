@@ -273,6 +273,9 @@
     <Page Include="SettingsControlsStyle.xaml">
       <Type>DefaultStyle</Type>
     </Page>
+    <Page Include="SettingsControlsImplicitStyles.xaml">
+      <Type>DefaultStyle</Type>
+    </Page>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>

@@ -12,6 +12,7 @@ using namespace winrt::Windows::UI::Xaml;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty StyleExtensions::_resourcesProperty{ nullptr };
+    ResourceDictionary StyleExtensions::_sharedImplicitStylesDictionary{ nullptr };
 
     DependencyProperty StyleExtensions::ResourcesProperty()
     {
@@ -101,5 +102,78 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto currentTheme{ element.RequestedTheme() };
         element.RequestedTheme(currentTheme == ElementTheme::Dark ? ElementTheme::Light : ElementTheme::Dark);
         element.RequestedTheme(currentTheme);
+    }
+
+    // Lazy singleton: loads SettingsControlsImplicitStyles.xaml exactly once
+    // for the process lifetime. We do NOT append this dictionary itself to any
+    // element's MergedDictionaries — that triggers "Element is already the
+    // child of another element" once a second element tries to merge it.
+    // Instead, EnsureImplicitStylesMergedInto copies the dictionary's entries
+    // (Style references) into the target's own Resources. Style instances are
+    // reference types but not UIElements, so sharing them across multiple
+    // elements' Resources collections is safe.
+    ResourceDictionary StyleExtensions::_SharedImplicitStylesDictionary()
+    {
+        if (!_sharedImplicitStylesDictionary)
+        {
+            try
+            {
+                auto dict{ ResourceDictionary{} };
+                dict.Source(winrt::Windows::Foundation::Uri{ L"ms-appx:///Microsoft.Terminal.Settings.Editor/SettingsControlsImplicitStyles.xaml" });
+                _sharedImplicitStylesDictionary = dict;
+            }
+            CATCH_LOG();
+        }
+        return _sharedImplicitStylesDictionary;
+    }
+
+    void StyleExtensions::EnsureImplicitStylesMergedInto(const FrameworkElement& target)
+    {
+        if (!target)
+        {
+            return;
+        }
+
+        try
+        {
+            const auto resources{ target.Resources() };
+            if (!resources)
+            {
+                return;
+            }
+
+            // Idempotency marker: if we've already populated this element's
+            // Resources with the implicit styles, skip. Cheap to check
+            // (one hash lookup), independent of MergedDictionaries.
+            const auto markerKey{ box_value(hstring{ L"__SettingsControls_ImplicitStyles" }) };
+            if (resources.HasKey(markerKey))
+            {
+                return;
+            }
+
+            const auto sharedDict{ _SharedImplicitStylesDictionary() };
+            if (!sharedDict)
+            {
+                return;
+            }
+
+            // Copy each entry (Style or other resource) from the shared loaded
+            // dictionary into the target's Resources. Style instances are
+            // reference types that can safely be shared across multiple
+            // element Resources collections (unlike UIElements, which have a
+            // single-parent constraint). We deliberately do NOT
+            // MergedDictionaries.Append(sharedDict) — that path throws
+            // "Element is already the child of another element" once a second
+            // element tries to merge the same shared dict.
+            for (const auto& kv : sharedDict)
+            {
+                if (!resources.HasKey(kv.Key()))
+                {
+                    resources.Insert(kv.Key(), kv.Value());
+                }
+            }
+            resources.Insert(markerKey, box_value(true));
+        }
+        CATCH_LOG();
     }
 }

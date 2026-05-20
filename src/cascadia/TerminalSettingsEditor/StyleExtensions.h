@@ -16,12 +16,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::UI::Xaml::ResourceDictionary GetResources(const Windows::UI::Xaml::DependencyObject& target);
         static void SetResources(const Windows::UI::Xaml::DependencyObject& target, const Windows::UI::Xaml::ResourceDictionary& value);
 
+        static void EnsureImplicitStylesMergedInto(const Windows::UI::Xaml::FrameworkElement& target);
+
     private:
         static void _InitializeProperties();
         static void _OnResourcesChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static void _ForceControlToReloadThemeResources(const Windows::UI::Xaml::FrameworkElement& element);
+        static Windows::UI::Xaml::ResourceDictionary _SharedImplicitStylesDictionary();
 
         static Windows::UI::Xaml::DependencyProperty _resourcesProperty;
+        static Windows::UI::Xaml::ResourceDictionary _sharedImplicitStylesDictionary;
     };
 }
 
