@@ -14,8 +14,6 @@ using namespace winrt::Windows::UI::Xaml::Automation;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 using namespace winrt::Windows::UI::Xaml::Controls;
 
-namespace MUXC = winrt::Microsoft::UI::Xaml::Controls;
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingsExpander::_HeaderProperty{ nullptr };
@@ -30,13 +28,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     DependencyProperty SettingsExpander::_ItemTemplateProperty{ nullptr };
     DependencyProperty SettingsExpander::_ItemContainerStyleSelectorProperty{ nullptr };
 
-    static constexpr std::wstring_view PART_ItemsRepeater{ L"PART_ItemsRepeater" };
+    static constexpr std::wstring_view PART_ItemsHost{ L"PART_ItemsHost" };
 
     SettingsExpander::SettingsExpander()
     {
         _InitializeProperties();
 
-        Items(single_threaded_vector<IInspectable>());
+        // Items is backed by an observable vector so post-construction mutations
+        // (e.g. user code that adds cards after the expander is on screen) also
+        // refresh the inner ItemsControl. The XAML parser populates Items via
+        // Append before OnApplyTemplate runs, so the eager population path also
+        // works.
+        Items(single_threaded_observable_vector<IInspectable>());
     }
 
     void SettingsExpander::_InitializeProperties()
@@ -140,20 +143,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _SetAccessibleName();
 
-        // Drop the prior template's repeater hookups before locating the new one.
-        _elementPreparedRevoker.revoke();
-        _itemsRepeater = nullptr;
+        // Drop the prior template's host before locating the new one.
+        _itemsHost = nullptr;
 
-        if (const auto child{ GetTemplateChild(hstring{ PART_ItemsRepeater }) })
+        if (const auto child{ GetTemplateChild(hstring{ PART_ItemsHost }) })
         {
-            _itemsRepeater = child.try_as<MUXC::ItemsRepeater>();
+            _itemsHost = child.try_as<Controls::ItemsControl>();
         }
 
-        if (_itemsRepeater)
+        if (_itemsHost)
         {
-            _elementPreparedRevoker = _itemsRepeater.ElementPrepared(winrt::auto_revoke, { get_weak(), &SettingsExpander::_ItemsRepeater_ElementPrepared });
-
-            // Push our initial ItemsSource through to the repeater.
+            // Push our initial ItemsSource through to the host and stamp item-container styles.
             _UpdateItemsSource();
         }
     }
@@ -172,18 +172,75 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingsExpander::_UpdateItemsSource()
     {
-        if (!_itemsRepeater)
+        if (!_itemsHost)
         {
             return;
         }
         // ItemsSource wins when set; otherwise fall back to the inline Items collection.
         if (const auto source{ ItemsSource() })
         {
-            _itemsRepeater.ItemsSource(source);
+            _itemsHost.ItemsSource(source);
         }
         else
         {
-            _itemsRepeater.ItemsSource(Items());
+            _itemsHost.ItemsSource(Items());
+        }
+
+        _ApplyItemContainerStyles();
+        _SubscribeToItemsVectorChanged();
+    }
+
+    // Watch our inline Items vector for changes so containers added after
+    // OnApplyTemplate also get the proper SettingsCard item style. (When
+    // ItemsSource is set, this is a no-op since the parser only touches Items.)
+    void SettingsExpander::_SubscribeToItemsVectorChanged()
+    {
+        _itemsVectorChangedRevoker.revoke();
+
+        if (ItemsSource())
+        {
+            return;
+        }
+
+        if (const auto observable{ Items().try_as<IObservableVector<IInspectable>>() })
+        {
+            _itemsVectorChangedRevoker = observable.VectorChanged(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
+                if (const auto strongThis{ weakThis.get() })
+                {
+                    strongThis->_ApplyItemContainerStyles();
+                }
+            });
+        }
+    }
+
+    // Apply the per-item style produced by ItemContainerStyleSelector. ItemsControl
+    // only generates ContentPresenter containers for non-UIElement items, so when
+    // SettingsCards are added directly the cards themselves are the "containers"
+    // and we have to set Style on them ourselves. Mirrors the ElementPrepared path
+    // we used when this was an ItemsRepeater.
+    void SettingsExpander::_ApplyItemContainerStyles()
+    {
+        const auto selector{ ItemContainerStyleSelector() };
+        if (!selector)
+        {
+            return;
+        }
+
+        const auto items{ Items() };
+        if (!items)
+        {
+            return;
+        }
+
+        for (uint32_t i = 0; i < items.Size(); ++i)
+        {
+            if (const auto element{ items.GetAt(i).try_as<FrameworkElement>() })
+            {
+                if (element.ReadLocalValue(FrameworkElement::StyleProperty()) == DependencyProperty::UnsetValue())
+                {
+                    element.Style(selector.SelectStyle(items.GetAt(i), element));
+                }
+            }
         }
     }
 
@@ -192,22 +249,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto obj{ d.try_as<Editor::SettingsExpander>() })
         {
             get_self<SettingsExpander>(obj)->_UpdateItemsSource();
-        }
-    }
-
-    void SettingsExpander::_ItemsRepeater_ElementPrepared(const MUXC::ItemsRepeater& /*sender*/, const MUXC::ItemsRepeaterElementPreparedEventArgs& args)
-    {
-        const auto selector{ ItemContainerStyleSelector() };
-        if (!selector)
-        {
-            return;
-        }
-        if (const auto element{ args.Element().try_as<FrameworkElement>() })
-        {
-            if (element.ReadLocalValue(FrameworkElement::StyleProperty()) == DependencyProperty::UnsetValue())
-            {
-                element.Style(selector.SelectStyle(nullptr, element));
-            }
         }
     }
 

@@ -3,6 +3,7 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    [contentproperty("Content")]
     [default_interface] runtimeclass SettingsExpander : Windows.UI.Xaml.Controls.Control
     {
         SettingsExpander();

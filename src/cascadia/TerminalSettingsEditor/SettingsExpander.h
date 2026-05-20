@@ -54,10 +54,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _SetAccessibleName();
         void _UpdateItemsSource();
-        void _ItemsRepeater_ElementPrepared(const Microsoft::UI::Xaml::Controls::ItemsRepeater& sender, const Microsoft::UI::Xaml::Controls::ItemsRepeaterElementPreparedEventArgs& args);
+        void _SubscribeToItemsVectorChanged();
+        void _ApplyItemContainerStyles();
 
-        Microsoft::UI::Xaml::Controls::ItemsRepeater _itemsRepeater{ nullptr };
-        Microsoft::UI::Xaml::Controls::ItemsRepeater::ElementPrepared_revoker _elementPreparedRevoker;
+        Windows::UI::Xaml::Controls::ItemsControl _itemsHost{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Windows::Foundation::IInspectable>::VectorChanged_revoker _itemsVectorChangedRevoker;
     };
 
     // AutomationPeer for SettingsExpander. Reports class name and falls back to
@@ -75,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     };
 
     // StyleSelector used by SettingsExpander to choose between a clickable vs.
-    // non-clickable SettingsCard container style for items in its ItemsRepeater.
+    // non-clickable SettingsCard container style for items in its ItemsControl.
     // Ported from the Windows Community Toolkit's SettingsExpanderItemStyleSelector.
     struct SettingsExpanderItemStyleSelector : SettingsExpanderItemStyleSelectorT<SettingsExpanderItemStyleSelector>
     {

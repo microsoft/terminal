@@ -179,6 +179,9 @@
     <ClInclude Include="SettingsExpander.h">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="StyleExtensions.h">
+      <DependentUpon>StyleExtensions.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ControlSizeTrigger.h">
       <DependentUpon>ControlSizeTrigger.idl</DependentUpon>
     </ClInclude>
@@ -409,6 +412,9 @@
     <ClCompile Include="SettingsExpander.cpp">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="StyleExtensions.cpp">
+      <DependentUpon>StyleExtensions.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="ControlSizeTrigger.cpp">
       <DependentUpon>ControlSizeTrigger.idl</DependentUpon>
     </ClCompile>
@@ -529,6 +535,9 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingsExpander.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="StyleExtensions.idl">
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ControlSizeTrigger.idl">

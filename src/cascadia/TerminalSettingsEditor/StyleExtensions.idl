@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    // Attached property that lets a Style merge an extra ResourceDictionary into
+    // the target FrameworkElement's Resources.MergedDictionaries. Used by
+    // SettingsCard / SettingsExpander to inject right-aligned ToggleSwitch and
+    // sized Slider / ComboBox / TextBox defaults so children laid out inside a
+    // card look right out of the box. Mirrors the Windows Community Toolkit's
+    // CommunityToolkit.WinUI.Controls.StyleExtensions.
+    static runtimeclass StyleExtensions
+    {
+        static Windows.UI.Xaml.DependencyProperty ResourcesProperty { get; };
+
+        static Windows.UI.Xaml.ResourceDictionary GetResources(Windows.UI.Xaml.DependencyObject target);
+        static void SetResources(Windows.UI.Xaml.DependencyObject target, Windows.UI.Xaml.ResourceDictionary value);
+    }
+}
