@@ -48,11 +48,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static void _OnCurrentValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static void _OnHasSettingValueChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static void _OnHelpTextChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+        static void _OnFontIconGlyphChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static hstring _GenerateOverrideMessage(const IInspectable& settingOrigin);
         hstring _GenerateAccessibleName();
         void _UpdateOverrideSystem();
         void _UpdateHelpText();
         void _UpdateCurrentValueAutoProp();
+        void _UpdateHeaderIcon();
     };
 }
 

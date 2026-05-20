@@ -8,8 +8,9 @@
                     xmlns:mtu="using:Microsoft.Terminal.UI"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
 
-    <!--  Merge SettingContainerStyle here to give every page access to the SettingContainer  -->
+    <!--  Merge SettingsControls and SettingContainer styles here to give every page access to them  -->
     <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="SettingsControlsStyle.xaml" />
         <ResourceDictionary Source="SettingContainerStyle.xaml" />
     </ResourceDictionary.MergedDictionaries>
 

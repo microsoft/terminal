@@ -18,8 +18,6 @@
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{StaticResource TextFillColorSecondary}" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush"
-                            ResourceKey="CardStrokeColorDefaultBrush" />
 
             <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
                             ResourceKey="SystemFillColorCriticalBackgroundBrush" />
@@ -31,28 +29,14 @@
             <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
                             ResourceKey="SystemFillColorCautionBrush" />
 
-            <StaticResource x:Key="SettingContainerErrorSeverityIconForeground"
-                            ResourceKey="TextFillColorInverseBrush" />
-            <StaticResource x:Key="SettingContainerWarningSeverityIconForeground"
-                            ResourceKey="TextFillColorInverseBrush" />
-
-            <StaticResource x:Key="SettingContainerTitleForeground"
-                            ResourceKey="TextFillColorPrimaryBrush" />
-            <StaticResource x:Key="SettingContainerMessageForeground"
-                            ResourceKey="TextFillColorPrimaryBrush" />
-
             <StaticResource x:Key="SettingContainerResetButtonIconForeground"
                             ResourceKey="SystemAccentColorDark2" />
-
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock" />
-            <!--  Do not mess with the foreground color for High Contrast. Let it ride as is.  -->
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{ThemeResource SystemColorWindowTextColor}" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush"
-                            ResourceKey="SystemColorButtonTextColorBrush" />
 
             <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
                             ResourceKey="SystemColorWindowColorBrush" />
@@ -63,16 +47,6 @@
                             ResourceKey="SystemColorHighlightColorBrush" />
             <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
                             ResourceKey="SystemColorHighlightColorBrush" />
-
-            <StaticResource x:Key="SettingContainerErrorSeverityIconForeground"
-                            ResourceKey="SystemColorHighlightTextColorBrush" />
-            <StaticResource x:Key="SettingContainerWarningSeverityIconForeground"
-                            ResourceKey="SystemColorHighlightTextColorBrush" />
-
-            <StaticResource x:Key="SettingContainerTitleForeground"
-                            ResourceKey="SystemColorWindowTextColorBrush" />
-            <StaticResource x:Key="SettingContainerMessageForeground"
-                            ResourceKey="SystemColorWindowTextColorBrush" />
 
             <StaticResource x:Key="SettingContainerResetButtonIconForeground"
                             ResourceKey="SystemAccentColorLight1" />
@@ -84,8 +58,6 @@
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{StaticResource TextFillColorSecondary}" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush"
-                            ResourceKey="CardStrokeColorDefaultBrush" />
 
             <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
                             ResourceKey="SystemFillColorCriticalBackgroundBrush" />
@@ -97,28 +69,14 @@
             <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
                             ResourceKey="SystemFillColorCautionBrush" />
 
-            <StaticResource x:Key="SettingContainerErrorSeverityIconForeground"
-                            ResourceKey="TextFillColorInverseBrush" />
-            <StaticResource x:Key="SettingContainerWarningSeverityIconForeground"
-                            ResourceKey="TextFillColorInverseBrush" />
-
-            <StaticResource x:Key="SettingContainerTitleForeground"
-                            ResourceKey="TextFillColorPrimaryBrush" />
-            <StaticResource x:Key="SettingContainerMessageForeground"
-                            ResourceKey="TextFillColorPrimaryBrush" />
-
             <StaticResource x:Key="SettingContainerResetButtonIconForeground"
                             ResourceKey="SystemAccentColorLight2" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
-    <FontWeight x:Key="SettingContainerTitleFontWeight">SemiBold</FontWeight>
-
-    <x:String x:Key="SettingContainerIconBackgroundGlyph">&#xF136;</x:String>
     <x:String x:Key="SettingContainerErrorIconGlyph">&#xF13D;</x:String>
     <x:String x:Key="SettingContainerWarningIconGlyph">&#xF13C;</x:String>
 
-    <Thickness x:Key="SettingContainerIconMargin">0,4,8,4</Thickness>
     <x:Double x:Key="SettingContainerIconFontSize">16</x:Double>
 
     <!--  Shared sizing for SettingContainer-style "card" rows (used by SettingsCardStyle and Actions page rows).  -->
@@ -177,6 +135,8 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
 
+=======
+>>>>>>> 6383fff42b15471595941bcc784fbcfaefe9e76a
     <Style x:Key="SettingsPageItemHeaderStyle"
            BasedOn="{StaticResource BodyTextBlockStyle}"
            TargetType="TextBlock">
@@ -198,7 +158,7 @@
            BasedOn="{StaticResource SettingsPageItemDescriptionStyle}"
            TargetType="TextBlock">
         <Setter Property="MaxWidth" Value="248" />
-        <Setter Property="Margin" Value="0,0,-16,0" />
+        <Setter Property="Margin" Value="0" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
@@ -209,6 +169,9 @@
                    Text="{Binding}" />
     </DataTemplate>
 
+    <local:StringDefaultTemplateSelector x:Key="ExpanderPreviewTemplateSelector"
+                                         StringTemplate="{StaticResource ExpanderSettingContainerStringPreviewTemplate}" />
+
     <!--  A setting container for a setting that has no additional options  -->
     <Style x:Key="DefaultSettingContainer"
            TargetType="local:SettingContainer">
@@ -218,32 +181,21 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
-                          Style="{StaticResource NonExpanderGrid}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0"
-                                    Style="{StaticResource StackPanelInExpanderStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                           Text="{TemplateBinding Header}" />
+                    <local:SettingsCard x:Name="Card"
+                                        Content="{TemplateBinding Content}">
+                        <local:SettingsCard.Header>
+                            <StackPanel VerticalAlignment="Center"
+                                        Orientation="Horizontal">
+                                <ContentControl Content="{TemplateBinding Header}"
+                                                IsTabStop="False" />
                                 <Button x:Name="ResetButton"
                                         Style="{StaticResource SettingContainerResetButtonStyle}">
                                     <FontIcon Glyph="&#xE845;"
                                               Style="{StaticResource SettingContainerFontIconStyle}" />
                                 </Button>
                             </StackPanel>
-                            <TextBlock x:Name="HelpTextBlock"
-                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                       Text="{TemplateBinding HelpText}" />
-                        </StackPanel>
-                        <ContentPresenter Grid.Column="1"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Center"
-                                          Content="{TemplateBinding Content}" />
-                    </Grid>
+                        </local:SettingsCard.Header>
+                    </local:SettingsCard>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -345,151 +297,42 @@
     <!--  A setting container which can expand  -->
     <Style x:Key="ExpanderSettingContainerStyle"
            TargetType="local:SettingContainer">
+        <Setter Property="Margin" Value="0,4,0,0" />
         <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <muxc:Expander x:Name="Expander"
-                                   Margin="0,4,0,0"
-                                   HorizontalAlignment="Stretch"
-                                   HorizontalContentAlignment="Stretch"
-                                   Content="{TemplateBinding Content}"
-                                   IsExpanded="{TemplateBinding StartExpanded}">
-                        <muxc:Expander.Header>
-                            <Grid MinHeight="64">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0"
-                                            Style="{StaticResource StackPanelInExpanderStyle}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <ContentPresenter Content="{TemplateBinding Header}" />
-                                        <Button x:Name="ResetButton"
-                                                Style="{StaticResource SettingContainerResetButtonStyle}">
-                                            <FontIcon Glyph="&#xE845;"
-                                                      Style="{StaticResource SettingContainerFontIconStyle}" />
-                                        </Button>
-                                    </StackPanel>
-                                    <TextBlock x:Name="HelpTextBlock"
-                                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                               Text="{TemplateBinding HelpText}" />
-                                </StackPanel>
-                                <ContentPresenter Grid.Column="1"
-                                                  Content="{TemplateBinding CurrentValue}"
-                                                  ContentTemplate="{StaticResource ExpanderSettingContainerStringPreviewTemplate}" />
-                            </Grid>
-                        </muxc:Expander.Header>
-                    </muxc:Expander>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!--
-        A setting container which can expand. Includes space for an icon on the left side of the header.
-        XAML applies the margin/padding of the icon regardless of its
-        existence (which caused inconsistent padding). It's easier to just create
-        another style and move on.
-    -->
-    <Style x:Key="ExpanderSettingContainerStyleWithIcon"
-           TargetType="local:SettingContainer">
-        <Setter Property="MaxWidth" Value="1000" />
-        <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="local:SettingContainer">
-                    <muxc:Expander x:Name="Expander"
-                                   Margin="0,4,0,0"
-                                   HorizontalAlignment="Stretch"
-                                   HorizontalContentAlignment="Stretch"
-                                   Content="{TemplateBinding Content}"
-                                   IsExpanded="{TemplateBinding StartExpanded}">
-                        <muxc:Expander.Header>
-                            <Grid MinHeight="64">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <FontIcon Grid.Column="0"
-                                          Glyph="{TemplateBinding FontIconGlyph}" />
-                                <StackPanel Grid.Column="1"
-                                            Padding="14,12,0,12"
-                                            Style="{StaticResource StackPanelInExpanderStyle}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                                   Text="{TemplateBinding Header}" />
-                                        <Button x:Name="ResetButton"
-                                                Style="{StaticResource SettingContainerResetButtonStyle}">
-                                            <FontIcon Glyph="&#xE845;"
-                                                      Style="{StaticResource SettingContainerFontIconStyle}" />
-                                        </Button>
-                                    </StackPanel>
-                                    <TextBlock x:Name="HelpTextBlock"
-                                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                               Text="{TemplateBinding HelpText}" />
-                                </StackPanel>
-                                <ContentPresenter Grid.Column="2"
-                                                  Content="{TemplateBinding CurrentValue}"
-                                                  ContentTemplate="{StaticResource ExpanderSettingContainerStringPreviewTemplate}" />
-                            </Grid>
-                        </muxc:Expander.Header>
-                    </muxc:Expander>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!--  A setting container which can expand. Supports data template override for preview  -->
-    <Style x:Key="ExpanderSettingContainerStyleWithComplexPreview"
-           TargetType="local:SettingContainer">
-        <Setter Property="MaxWidth" Value="1000" />
-        <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="local:SettingContainer">
-                    <muxc:Expander x:Name="Expander"
-                                   Margin="0,4,0,0"
-                                   HorizontalAlignment="Stretch"
-                                   HorizontalContentAlignment="Stretch"
-                                   Content="{TemplateBinding Content}"
-                                   IsExpanded="{TemplateBinding StartExpanded}">
-                        <muxc:Expander.Header>
-                            <Grid MinHeight="64">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0"
-                                            Style="{StaticResource StackPanelInExpanderStyle}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                                   Text="{TemplateBinding Header}" />
-                                        <Button x:Name="ResetButton"
-                                                Style="{StaticResource SettingContainerResetButtonStyle}">
-                                            <FontIcon Glyph="&#xE845;"
-                                                      Style="{StaticResource SettingContainerFontIconStyle}" />
-                                        </Button>
-                                    </StackPanel>
-                                    <TextBlock x:Name="HelpTextBlock"
-                                               Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                               Text="{TemplateBinding HelpText}" />
-                                </StackPanel>
-                                <ContentPresenter Grid.Column="1"
-                                                  MaxWidth="248"
-                                                  Margin="0,0,-16,0"
-                                                  HorizontalAlignment="Right"
-                                                  VerticalAlignment="Center"
-                                                  Content="{TemplateBinding CurrentValue}"
-                                                  ContentTemplate="{TemplateBinding CurrentValueTemplate}" />
-                            </Grid>
-                        </muxc:Expander.Header>
-                    </muxc:Expander>
+                    <local:SettingsExpander x:Name="Expander"
+                                            IsExpanded="{TemplateBinding StartExpanded}">
+                        <local:SettingsExpander.Header>
+                            <StackPanel VerticalAlignment="Center"
+                                        Orientation="Horizontal">
+                                <ContentControl Content="{TemplateBinding Header}"
+                                                IsTabStop="False" />
+                                <Button x:Name="ResetButton"
+                                        Style="{StaticResource SettingContainerResetButtonStyle}">
+                                    <FontIcon Glyph="&#xE845;"
+                                              Style="{StaticResource SettingContainerFontIconStyle}" />
+                                </Button>
+                            </StackPanel>
+                        </local:SettingsExpander.Header>
+                        <local:SettingsExpander.Content>
+                            <ContentControl MaxWidth="248"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            HorizontalContentAlignment="Right"
+                                            Content="{TemplateBinding CurrentValue}"
+                                            ContentTemplate="{TemplateBinding CurrentValueTemplate}"
+                                            ContentTemplateSelector="{StaticResource ExpanderPreviewTemplateSelector}"
+                                            IsTabStop="False" />
+                        </local:SettingsExpander.Content>
+                        <local:SettingsExpander.ItemsHeader>
+                            <ContentPresenter Padding="16,12,16,16"
+                                              Content="{TemplateBinding Content}" />
+                        </local:SettingsExpander.ItemsHeader>
+                    </local:SettingsExpander>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -504,47 +347,19 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
-                          Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
-                          Style="{StaticResource NonExpanderGrid}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <Grid>
-                                    <TextBlock x:Name="IconBackground"
-                                               Grid.Column="0"
-                                               Margin="{StaticResource SettingContainerIconMargin}"
-                                               VerticalAlignment="Center"
-                                               AutomationProperties.AccessibilityView="Raw"
-                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                               FontSize="{StaticResource SettingContainerIconFontSize}"
-                                               Foreground="{ThemeResource SettingContainerWarningSeverityIconBackground}"
-                                               Text="{StaticResource SettingContainerIconBackgroundGlyph}" />
-
-                                    <TextBlock x:Name="StandardIcon"
-                                               Grid.Column="0"
-                                               Margin="{StaticResource SettingContainerIconMargin}"
-                                               VerticalAlignment="Center"
-                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                               FontSize="{StaticResource SettingContainerIconFontSize}"
-                                               Foreground="{ThemeResource SettingContainerWarningSeverityIconForeground}"
-                                               Text="{StaticResource SettingContainerWarningIconGlyph}" />
-                                </Grid>
-                                <TextBlock VerticalAlignment="Center"
-                                           FontWeight="{StaticResource SettingContainerTitleFontWeight}"
-                                           Foreground="{ThemeResource SettingContainerTitleForeground}"
-                                           Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                           Text="{TemplateBinding Header}" />
-                            </StackPanel>
-                            <TextBlock x:Name="HelpTextBlock"
-                                       Foreground="{ThemeResource SettingContainerMessageForeground}"
-                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                       Text="{TemplateBinding HelpText}" />
-                        </StackPanel>
-                    </Grid>
+                    <local:SettingsCard x:Name="Card"
+                                        Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}">
+                        <local:SettingsCard.Header>
+                            <ContentControl Content="{TemplateBinding Header}"
+                                            IsTabStop="False" />
+                        </local:SettingsCard.Header>
+                        <local:SettingsCard.HeaderIcon>
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                      FontSize="{StaticResource SettingContainerIconFontSize}"
+                                      Foreground="{ThemeResource SettingContainerWarningSeverityIconBackground}"
+                                      Glyph="{StaticResource SettingContainerWarningIconGlyph}" />
+                        </local:SettingsCard.HeaderIcon>
+                    </local:SettingsCard>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -559,47 +374,19 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <Grid AutomationProperties.Name="{TemplateBinding Header}"
-                          Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
-                          Style="{StaticResource NonExpanderGrid}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Style="{StaticResource StackPanelInExpanderStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <Grid>
-                                    <TextBlock x:Name="IconBackground"
-                                               Grid.Column="0"
-                                               Margin="{StaticResource SettingContainerIconMargin}"
-                                               VerticalAlignment="Center"
-                                               AutomationProperties.AccessibilityView="Raw"
-                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                               FontSize="{StaticResource SettingContainerIconFontSize}"
-                                               Foreground="{ThemeResource SettingContainerErrorSeverityIconBackground}"
-                                               Text="{StaticResource SettingContainerIconBackgroundGlyph}" />
-
-                                    <TextBlock x:Name="StandardIcon"
-                                               Grid.Column="0"
-                                               Margin="{StaticResource SettingContainerIconMargin}"
-                                               VerticalAlignment="Center"
-                                               FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                               FontSize="{StaticResource SettingContainerIconFontSize}"
-                                               Foreground="{ThemeResource SettingContainerErrorSeverityIconForeground}"
-                                               Text="{StaticResource SettingContainerErrorIconGlyph}" />
-                                </Grid>
-                                <TextBlock VerticalAlignment="Center"
-                                           FontWeight="{StaticResource SettingContainerTitleFontWeight}"
-                                           Foreground="{ThemeResource SettingContainerTitleForeground}"
-                                           Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                           Text="{TemplateBinding Header}" />
-                            </StackPanel>
-                            <TextBlock x:Name="HelpTextBlock"
-                                       Foreground="{ThemeResource SettingContainerMessageForeground}"
-                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                       Text="{TemplateBinding HelpText}" />
-                        </StackPanel>
-                    </Grid>
+                    <local:SettingsCard x:Name="Card"
+                                        Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}">
+                        <local:SettingsCard.Header>
+                            <ContentControl Content="{TemplateBinding Header}"
+                                            IsTabStop="False" />
+                        </local:SettingsCard.Header>
+                        <local:SettingsCard.HeaderIcon>
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                      FontSize="{StaticResource SettingContainerIconFontSize}"
+                                      Foreground="{ThemeResource SettingContainerErrorSeverityIconBackground}"
+                                      Glyph="{StaticResource SettingContainerErrorIconGlyph}" />
+                        </local:SettingsCard.HeaderIcon>
+                    </local:SettingsCard>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

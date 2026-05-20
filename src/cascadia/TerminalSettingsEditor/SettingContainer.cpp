@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "SettingContainer.h"
+#include "SettingsExpander.h"
 #include "SettingContainer.g.cpp"
 
 using namespace winrt::Windows::UI::Xaml;
@@ -54,7 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     L"FontIconGlyph",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::SettingContainer>(),
-                    PropertyMetadata{ box_value(L"") });
+                    PropertyMetadata{ box_value(L""), PropertyChangedCallback{ &SettingContainer::_OnFontIconGlyphChanged } });
         }
         if (!_CurrentValueProperty)
         {
@@ -134,13 +135,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingContainer::_UpdateHelpText()
     {
+        const auto helpText{ HelpText() };
+
+        // Forward HelpText into the SettingsCard / SettingsExpander Description
+        // slot so it renders through the WCT-ported PART_DescriptionPresenter.
+        // Setting it to nullptr when empty collapses the description visually so we don't
+        // reserve vertical space for a blank line.
+        const auto description{ helpText.empty() ? Windows::Foundation::IInspectable{ nullptr } : box_value(helpText) };
+
         // Get the correct base to apply automation properties to
         std::vector<DependencyObject> base;
-        base.reserve(2);
+        base.reserve(3);
+        if (const auto& child{ GetTemplateChild(L"Card") })
+        {
+            if (const auto& card{ child.try_as<Editor::SettingsCard>() })
+            {
+                card.Description(description);
+                base.push_back(child);
+            }
+        }
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            if (const auto& expander{ child.try_as<Editor::SettingsExpander>() })
             {
+                expander.Description(description);
                 base.push_back(child);
             }
         }
@@ -159,8 +177,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // apply header and current value as name (automation property)
             Automation::AutomationProperties::SetName(obj, _GenerateAccessibleName());
 
-            // apply help text as full description (automation property)
-            if (const auto& helpText{ HelpText() }; !helpText.empty())
+            // apply help text as tooltip and full description (automation property)
+            if (!helpText.empty())
             {
                 Automation::AutomationProperties::SetFullDescription(obj, helpText);
             }
@@ -168,15 +186,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 Controls::ToolTipService::SetToolTip(obj, nullptr);
                 Automation::AutomationProperties::SetFullDescription(obj, L"");
-            }
-        }
-
-        const auto textBlockHidden = HelpText().empty();
-        if (const auto& child{ GetTemplateChild(L"HelpTextBlock") })
-        {
-            if (const auto& textBlock{ child.try_as<Controls::TextBlock>() })
-            {
-                textBlock.Visibility(textBlockHidden ? Visibility::Collapsed : Visibility::Visible);
             }
         }
     }
@@ -223,13 +232,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _UpdateOverrideSystem();
         _UpdateHelpText();
+        _UpdateHeaderIcon();
+    }
+
+    void SettingContainer::_UpdateHeaderIcon()
+    {
+        // Only forward FontIconGlyph into HeaderIcon when the caller actually
+        // supplied a glyph. Some templates (Warning/Error) already set
+        // SettingsCard.HeaderIcon in XAML to a stacked severity glyph; if we
+        // unconditionally wrote nullptr here we'd clobber that XAML default for
+        // every callsite that doesn't set FontIconGlyph.
+        const auto glyph{ FontIconGlyph() };
+        if (glyph.empty())
+        {
+            return;
+        }
+
+        Controls::FontIcon fi;
+        fi.Glyph(glyph);
+        const Controls::IconElement icon{ fi };
+
+        if (const auto& cardChild{ GetTemplateChild(L"Card") })
+        {
+            if (const auto& card{ cardChild.try_as<Editor::SettingsCard>() })
+            {
+                card.HeaderIcon(icon);
+                return;
+            }
+        }
+        if (const auto& expanderChild{ GetTemplateChild(L"Expander") })
+        {
+            if (const auto& expander{ expanderChild.try_as<Editor::SettingsExpander>() })
+            {
+                expander.HeaderIcon(icon);
+            }
+        }
+    }
+
+    void SettingContainer::_OnFontIconGlyphChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*args*/)
+    {
+        const auto& obj{ d.try_as<Editor::SettingContainer>() };
+        get_self<SettingContainer>(obj)->_UpdateHeaderIcon();
     }
 
     void SettingContainer::SetExpanded(bool expanded)
     {
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            if (const auto& expander{ child.try_as<Editor::SettingsExpander>() })
             {
                 expander.IsExpanded(expanded);
             }
@@ -271,7 +321,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto& child{ GetTemplateChild(L"Expander") })
         {
-            if (const auto& expander{ child.try_as<Microsoft::UI::Xaml::Controls::Expander>() })
+            if (const auto& expander{ child.try_as<Editor::SettingsExpander>() })
             {
                 Automation::AutomationProperties::SetName(expander, _GenerateAccessibleName());
             }
