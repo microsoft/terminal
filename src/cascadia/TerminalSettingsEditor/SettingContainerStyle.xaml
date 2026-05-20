@@ -135,8 +135,6 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
 
-=======
->>>>>>> 6383fff42b15471595941bcc784fbcfaefe9e76a
     <Style x:Key="SettingsPageItemHeaderStyle"
            BasedOn="{StaticResource BodyTextBlockStyle}"
            TargetType="TextBlock">
