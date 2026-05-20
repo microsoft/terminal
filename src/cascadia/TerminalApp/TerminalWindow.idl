@@ -72,6 +72,8 @@ namespace TerminalApp
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
         Boolean ShowTabsFullscreen { get; };
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
+        Microsoft.Terminal.Settings.Model.Docking Docking { get; };
 
         void IdentifyWindow();
         void SetPersistedLayoutIdx(UInt32 idx);
@@ -105,7 +107,6 @@ namespace TerminalApp
         WindowProperties WindowProperties { get; };
         void WindowName(String name);
         void WindowId(UInt64 id);
-        Boolean IsQuakeWindow();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.

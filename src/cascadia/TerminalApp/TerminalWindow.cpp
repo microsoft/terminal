@@ -232,7 +232,7 @@ namespace winrt::TerminalApp::implementation
         // that the window size is _first_ set up as something sensible, so
         // leaving fullscreen returns to a reasonable size.
         const auto launchMode = this->GetLaunchMode();
-        if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+        if (WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
         {
             _root->SetFocusMode(true);
         }
@@ -244,7 +244,7 @@ namespace winrt::TerminalApp::implementation
             _root->Maximized(true);
         }
 
-        if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
+        if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode))
         {
             _root->SetFullscreen(true);
         }
@@ -267,22 +267,22 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::GetShowTabsInTitlebar()
     {
-        return _settings.WindowSettingsDefaults().ShowTabsInTitlebar();
+        return _currentWindowSettings().ShowTabsInTitlebar();
     }
 
     bool TerminalWindow::GetInitialAlwaysOnTop()
     {
-        return _settings.WindowSettingsDefaults().AlwaysOnTop();
+        return _currentWindowSettings().AlwaysOnTop();
     }
 
     bool TerminalWindow::GetInitialShowTabsFullscreen()
     {
-        return _settings.WindowSettingsDefaults().ShowTabsFullscreen();
+        return _currentWindowSettings().ShowTabsFullscreen();
     }
 
     bool TerminalWindow::GetMinimizeToNotificationArea()
     {
-        return _settings.WindowSettingsDefaults().MinimizeToNotificationArea();
+        return _currentWindowSettings().MinimizeToNotificationArea();
     }
 
     bool TerminalWindow::GetAlwaysShowNotificationIcon()
@@ -292,12 +292,12 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::GetShowTitleInTitlebar()
     {
-        return _settings.WindowSettingsDefaults().ShowTitleInTitlebar();
+        return _currentWindowSettings().ShowTitleInTitlebar();
     }
 
     Microsoft::Terminal::Settings::Model::Theme TerminalWindow::Theme()
     {
-        return _settings.GlobalSettings().CurrentTheme(_settings.WindowSettingsDefaults());
+        return _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
     }
 
     // WinUI can't show 2 dialogs simultaneously. Yes, really. If you do, you get an exception.
@@ -374,7 +374,7 @@ namespace winrt::TerminalApp::implementation
         auto themingLambda{ [weak](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
             if (const auto strong = weak.get())
             {
-                auto theme{ strong->_settings.GlobalSettings().CurrentTheme(strong->_settings.WindowSettingsDefaults()) };
+                auto theme{ strong->_settings.GlobalSettings().CurrentTheme(strong->_currentWindowSettings()) };
                 auto requestedTheme{ theme.RequestedTheme() };
                 auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
                 while (element)
@@ -598,7 +598,7 @@ namespace winrt::TerminalApp::implementation
         // --focusMode on the commandline here, and the mode in the settings.
         // Below, we'll also account for if focus mode was persisted into the
         // session for restoration.
-        bool focusMode = _appArgs && _appArgs->ParsedArgs().GetLaunchMode().value_or(_settings.WindowSettingsDefaults().LaunchMode()) == LaunchMode::FocusMode;
+        bool focusMode = _appArgs && _appArgs->ParsedArgs().GetLaunchMode().value_or(_currentWindowSettings().LaunchMode()) == LaunchMode::FocusMode;
 
         const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (const auto layout = LoadPersistedLayout())
@@ -621,7 +621,7 @@ namespace winrt::TerminalApp::implementation
         if ((_appArgs && _appArgs->ParsedArgs().GetSize().has_value()) || (proposedSize.Width == 0 && proposedSize.Height == 0))
         {
             // Use the default profile to determine how big of a window we need.
-            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, _settings.WindowSettingsDefaults()) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, _currentWindowSettings()) };
 
             const til::size emptySize{};
             const auto commandlineSize = _appArgs ? _appArgs->ParsedArgs().GetSize().value_or(emptySize) : til::size{};
@@ -645,7 +645,7 @@ namespace winrt::TerminalApp::implementation
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
         // the height of the tab bar here.
-        if (_settings.WindowSettingsDefaults().ShowTabsInTitlebar() && !focusMode)
+        if (_currentWindowSettings().ShowTabsInTitlebar() && !focusMode)
         {
             // In the past, we used to actually instantiate a TitlebarControl
             // and use Measure() to determine the DesiredSize of the control, to
@@ -663,7 +663,7 @@ namespace winrt::TerminalApp::implementation
             static constexpr auto titlebarHeight = 40;
             proposedSize.Height += (titlebarHeight)*scale;
         }
-        else if (_settings.WindowSettingsDefaults().AlwaysShowTabs() && !focusMode)
+        else if (_currentWindowSettings().AlwaysShowTabs() && !focusMode)
         {
             // Same comment as above, but with a TabRowControl.
             //
@@ -696,7 +696,7 @@ namespace winrt::TerminalApp::implementation
 
         // GH#4620/#5801 - If the user passed --maximized or --fullscreen on the
         // commandline, then use that to override the value from the settings.
-        const auto valueFromSettings = _settings.WindowSettingsDefaults().LaunchMode();
+        const auto valueFromSettings = _currentWindowSettings().LaunchMode();
         const auto valueFromCommandlineArgs = _appArgs ? _appArgs->ParsedArgs().GetLaunchMode() : std::nullopt;
         if (const auto layout = LoadPersistedLayout())
         {
@@ -722,7 +722,7 @@ namespace winrt::TerminalApp::implementation
     // - a point containing the requested initial position in pixels.
     TerminalApp::InitialPosition TerminalWindow::GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY)
     {
-        auto initialPosition{ _settings.WindowSettingsDefaults().InitialPosition() };
+        auto initialPosition{ _currentWindowSettings().InitialPosition() };
 
         if (const auto layout = LoadPersistedLayout())
         {
@@ -770,7 +770,7 @@ namespace winrt::TerminalApp::implementation
 
         return !_contentBounds &&
                !hadPersistedPosition &&
-               _settings.WindowSettingsDefaults().CenterOnLaunch() &&
+               _currentWindowSettings().CenterOnLaunch() &&
                (_appArgs && !_appArgs->ParsedArgs().GetPosition().has_value());
     }
 
@@ -1188,7 +1188,7 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalWindow::AutoHideWindow()
     {
-        return _settings.WindowSettingsDefaults().AutoHideWindow();
+        return _currentWindowSettings().AutoHideWindow();
     }
 
     void TerminalWindow::UpdateSettingsHandler(const winrt::IInspectable& /*sender*/,
@@ -1207,21 +1207,13 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
-        const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
         _WindowProperties->WindowName(name);
         if (!_root)
         {
             return;
         }
-        const auto newIsQuakeMode = _WindowProperties->IsQuakeWindow();
-        if (newIsQuakeMode != oldIsQuakeMode)
-        {
-            // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-            // If we're entering Quake Mode from Focus Mode, then this will do nothing
-            // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-            _root->SetFocusMode(true);
-            IsQuakeWindowChanged.raise(*this, nullptr);
-        }
+        _root->SetSettings(_settings, true);
+        IsQuakeWindowChanged.raise(*this, nullptr);
     }
     void TerminalWindow::WindowId(const uint64_t& id)
     {
@@ -1332,13 +1324,13 @@ namespace winrt::TerminalApp::implementation
 
         if (!FocusMode())
         {
-            if (!_settings.WindowSettingsDefaults().AlwaysShowTabs())
+            if (!_currentWindowSettings().AlwaysShowTabs())
             {
                 // Hide the title bar = off, Always show tabs = off.
                 static constexpr auto titlebarHeight = 10;
                 pixelSize.Height += (titlebarHeight)*scale;
             }
-            else if (!_settings.WindowSettingsDefaults().ShowTabsInTitlebar())
+            else if (!_currentWindowSettings().ShowTabsInTitlebar())
             {
                 // Hide the title bar = off, Always show tabs = on.
                 static constexpr auto titlebarAndTabBarHeight = 40;
@@ -1363,6 +1355,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::_RenameWindowRequested(const IInspectable&, const winrt::TerminalApp::RenameWindowRequestedArgs args)
     {
         WindowName(args.ProposedName());
+    }
+
+    Microsoft::Terminal::Settings::Model::WindowSettings TerminalWindow::_currentWindowSettings() const
+    {
+        return _settings.WindowSettings(_WindowProperties->WindowName());
+    }
+
+    Microsoft::Terminal::Settings::Model::Docking TerminalWindow::Docking()
+    {
+        return _currentWindowSettings().DockWindow();
     }
 
     winrt::hstring WindowProperties::WindowName() const noexcept
@@ -1417,11 +1419,6 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring WindowProperties::WindowNameForDisplay() const noexcept
     {
         return _WindowName.empty() ? til::hstring_format(FMT_COMPILE(L"<{}>"), RS_(L"UnnamedWindowName")) : _WindowName;
-    }
-
-    bool WindowProperties::IsQuakeWindow() const noexcept
-    {
-        return _WindowName == L"_quake";
     }
 
 };

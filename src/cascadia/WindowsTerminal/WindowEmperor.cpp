@@ -1449,7 +1449,8 @@ void WindowEmperor::_checkWindowsForNotificationIcon()
     {
         for (const auto& host : _windows)
         {
-            needsIcon |= host->Logic().IsQuakeWindow();
+            const auto logic = host->Logic();
+            needsIcon |= logic.GetMinimizeToNotificationArea();
         }
     }
 

@@ -556,20 +556,61 @@ void AppHost::_initialResizeAndRepositionWindow(const HWND hwnd, til::rect propo
     til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
-    if (_windowLogic.IsQuakeWindow())
+    if (const auto dockingSettings{ _windowLogic.Docking() })
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
         const auto availableSpace = desktopDimensions + nonClientSize;
 
-        origin = {
-            (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
-            (nearestMonitorInfo.rcWork.top)
-        };
-        dimensions = {
-            availableSpace.width,
-            availableSpace.height / 2
-        };
+        const auto dockWidth = lrintf(static_cast<float>(dockingSettings.Width() * availableSpace.width));
+        const auto dockHeight = lrintf(static_cast<float>(dockingSettings.Height() * availableSpace.height));
+        const auto side = dockingSettings.Side();
+
+        switch (side)
+        {
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Top:
+            origin = {
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.left + ((availableSpace.width - dockWidth) / 2) - (nonClientSize.width / 2)) : (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
+                (nearestMonitorInfo.rcWork.top)
+            };
+            dimensions = {
+                centerOnLaunch ? dockWidth : availableSpace.width,
+                dockHeight
+            };
+            break;
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Bottom:
+            origin = {
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.left + ((availableSpace.width - dockWidth) / 2) - (nonClientSize.width / 2)) : (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
+                (nearestMonitorInfo.rcWork.bottom - dockHeight + nonClientSize.height)
+            };
+            dimensions = {
+                centerOnLaunch ? dockWidth : availableSpace.width,
+                dockHeight
+            };
+            break;
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Left:
+            origin = {
+                (nearestMonitorInfo.rcWork.left - (nonClientSize.width / 2)),
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.top + ((availableSpace.height - dockHeight) / 2)) : (nearestMonitorInfo.rcWork.top)
+            };
+            dimensions = {
+                dockWidth,
+                centerOnLaunch ? dockHeight : availableSpace.height
+            };
+            break;
+        case winrt::Microsoft::Terminal::Settings::Model::DockPosition::Right:
+            origin = {
+                (nearestMonitorInfo.rcWork.right - dockWidth + (nonClientSize.width / 2)),
+                centerOnLaunch ? (nearestMonitorInfo.rcWork.top + ((availableSpace.height - dockHeight) / 2)) : (nearestMonitorInfo.rcWork.top)
+            };
+            dimensions = {
+                dockWidth,
+                centerOnLaunch ? dockHeight : availableSpace.height
+            };
+            break;
+        default:
+            break;
+        }
         launchMode = LaunchMode::FocusMode;
     }
     else if (centerOnLaunch)
@@ -930,7 +971,7 @@ void _frameColorHelper(const HWND h, const COLORREF color)
 
 void AppHost::_updateTheme()
 {
-    auto theme = _appLogic.Settings().GlobalSettings().CurrentTheme(_appLogic.Settings().WindowSettingsDefaults());
+    auto theme = _windowLogic.Theme();
 
     _window->OnApplicationThemeChanged(theme.RequestedTheme());
 
@@ -1027,7 +1068,10 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->IsQuakeWindow(_windowLogic.IsQuakeWindow());
+    _window->DockSettings(_windowLogic.Docking(), _windowLogic.CenterOnLaunch());
+    _window->SetMinimizeToNotificationAreaBehavior(_windowLogic.GetMinimizeToNotificationArea());
+    _window->SetAutoHideWindow(_windowLogic.AutoHideWindow());
+    _window->SetShowTabsFullscreen(_windowLogic.ShowTabsFullscreen());
 }
 
 // Raised from TerminalWindow. We handle by bubbling the request to the window manager.
