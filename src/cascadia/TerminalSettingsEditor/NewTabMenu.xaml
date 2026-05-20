@@ -416,7 +416,7 @@
                     <local:SettingContainer x:Name="CurrentFolderIcon"
                                             x:Uid="NewTabMenu_CurrentFolderIcon"
                                             CurrentValueAccessibleName="{x:Bind ViewModel.CurrentFolderLocalizedIcon, Mode=OneWay}"
-                                            Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                            Style="{StaticResource ExpanderSettingContainerStyle}">
                         <local:SettingContainer.CurrentValue>
                             <Grid>
                                 <ContentControl Width="16"
@@ -558,7 +558,7 @@
                     <local:SettingContainer x:Name="AddMatchProfiles"
                                             x:Uid="NewTabMenu_AddMatchProfiles"
                                             FontIconGlyph="&#xE748;"
-                                            Style="{StaticResource ExpanderSettingContainerStyleWithIcon}">
+                                            Style="{StaticResource ExpanderSettingContainerStyle}">
                         <StackPanel Spacing="8">
                             <HyperlinkButton x:Uid="NewTabMenu_AddMatchProfiles_Help"
                                              NavigateUri="https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-language-quick-reference" />
@@ -614,7 +614,7 @@
                         <Setter Target="AddProfile.Style" Value="{StaticResource SettingContainerWithIcon}" />
                         <Setter Target="AddSeparator.Style" Value="{StaticResource SettingContainerWithIcon}" />
                         <Setter Target="AddFolder.Style" Value="{StaticResource SettingContainerWithIcon}" />
-                        <Setter Target="AddMatchProfiles.Style" Value="{StaticResource ExpanderSettingContainerStyleWithIcon}" />
+                        <Setter Target="AddMatchProfiles.Style" Value="{StaticResource ExpanderSettingContainerStyle}" />
                         <Setter Target="AddRemainingProfiles.Style" Value="{StaticResource SettingContainerWithIcon}" />
                     </VisualState.Setters>
                 </VisualState>
