@@ -81,7 +81,7 @@
                                     CurrentValueAccessibleName="{x:Bind Appearance.CurrentColorScheme.Name, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasDarkColorSchemeName, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.DarkColorSchemeNameOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <local:SettingContainer.CurrentValue>
                     <ComboBox Padding="4"
                               ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
@@ -220,7 +220,7 @@
                                                 CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                                 HasSettingValue="{x:Bind Appearance.HasForeground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.ForegroundOverrideSource, Mode=OneWay}"
-                                                Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <local:NullableColorPicker x:Uid="Profile_Foreground_NullableColorPicker"
                                                        ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                                        CurrentColor="{x:Bind Appearance.Foreground, Mode=TwoWay}"
@@ -236,7 +236,7 @@
                                                 CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                                 HasSettingValue="{x:Bind Appearance.HasBackground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.BackgroundOverrideSource, Mode=OneWay}"
-                                                Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <local:NullableColorPicker x:Uid="Profile_Background_NullableColorPicker"
                                                        ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                                        CurrentColor="{x:Bind Appearance.Background, Mode=TwoWay}"
@@ -252,7 +252,7 @@
                                                 CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                                 HasSettingValue="{x:Bind Appearance.HasSelectionBackground, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind Appearance.SelectionBackgroundOverrideSource, Mode=OneWay}"
-                                                Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <local:NullableColorPicker x:Uid="Profile_SelectionBackground_NullableColorPicker"
                                                        ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                                        CurrentColor="{x:Bind Appearance.SelectionBackground, Mode=TwoWay}"
@@ -548,7 +548,7 @@
                                     CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorColor, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorColorOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyleWithComplexPreview}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <local:NullableColorPicker x:Uid="Profile_CursorColor_NullableColorPicker"
                                            ColorSchemeVM="{x:Bind Appearance.CurrentColorScheme, Mode=OneWay}"
                                            CurrentColor="{x:Bind Appearance.CursorColor, Mode=TwoWay}"

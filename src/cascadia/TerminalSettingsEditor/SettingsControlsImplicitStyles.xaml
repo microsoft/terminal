@@ -1,0 +1,57 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+    
+    Implicit Styles that get copied into every SettingsCard / SettingsExpander's
+    own Resources collection at runtime via StyleExtensions::EnsureImplicitStylesMergedInto
+    (called from each control's OnApplyTemplate). This is the WinUI 2 port of WCT's
+    local:StyleExtensions.Resources Setter pattern.
+    
+    Why not the WCT Setter.Value-with-inline-ResourceDictionary approach? It
+    crashes WinUI 2 in this codebase with "CommonResources.xaml is not a valid
+    absolute URI" during XAML load. The C++ copy-into-Resources bypasses the
+    broken Setter pipeline entirely.
+    
+    Why not Append this dictionary to MergedDictionaries directly? WinUI 2
+    enforces a single-parent constraint on ResourceDictionaries in
+    MergedDictionaries: the second element to merge the same shared dict
+    throws "Element is already the child of another element". The C++ helper
+    instead iterates this dict's entries once (Style references) and copies
+    them into each target's own Resources collection. Style instances are
+    not UIElements and can safely be shared across multiple element Resources.
+    
+    Why no BasedOn references? When a ResourceDictionary is loaded via Source=
+    (standalone), it has no parent resource scope at parse time, so
+    {StaticResource SomeKeyInAnotherFile} would fail to resolve. WCT's pattern
+    works because the dict is parsed inline within the owner's resource scope.
+    
+    Practical consequence: any implicit style here MUST set every property the
+    final-rendered control needs, because an implicit style without BasedOn
+    fully replaces the framework default style — including the default
+    ControlTemplate. The ToggleSwitch entry below sets a complete custom
+    template suitable for cards. We intentionally do NOT define implicit
+    Slider / ComboBox / TextBox styles here: stripping their default template
+    by way of a minimal implicit style would lose theme-driven CornerRadius,
+    PointerOver/Pressed brushes, the drop-shadow popup, etc. Call sites that
+    need a card-specific MinWidth set it explicitly on the instance.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Right-aligned, compact ToggleSwitch. Replaces the WCT
+        RightAlignedCompactToggleSwitchStyle the toolkit uses as BasedOn.
+        OffContent / OnContent are blanked so the default "Off" / "On" labels
+        don't steal horizontal space next to the switch.
+    -->
+    <Style TargetType="ToggleSwitch">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Right" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="OffContent" Value="" />
+        <Setter Property="OnContent" Value="" />
+    </Style>
+
+</ResourceDictionary>
