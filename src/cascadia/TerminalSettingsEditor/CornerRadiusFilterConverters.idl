@@ -1,0 +1,20 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass CornerRadiusConverter : Windows.UI.Xaml.Data.IValueConverter
+    {
+        CornerRadiusConverter();
+    }
+
+    [default_interface] runtimeclass TopCornerRadiusFilterConverter : Windows.UI.Xaml.Data.IValueConverter
+    {
+        TopCornerRadiusFilterConverter();
+    }
+
+    [default_interface] runtimeclass BottomCornerRadiusFilterConverter : Windows.UI.Xaml.Data.IValueConverter
+    {
+        BottomCornerRadiusFilterConverter();
+    }
+}

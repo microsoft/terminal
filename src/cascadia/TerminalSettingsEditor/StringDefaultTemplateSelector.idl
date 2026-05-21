@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass StringDefaultTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        StringDefaultTemplateSelector();
+
+        Windows.UI.Xaml.DataTemplate StringTemplate;
+    }
+}

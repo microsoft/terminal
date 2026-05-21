@@ -1,0 +1,30 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass ControlSizeTrigger : Windows.UI.Xaml.StateTriggerBase
+    {
+        ControlSizeTrigger();
+
+        Boolean CanTrigger;
+        static Windows.UI.Xaml.DependencyProperty CanTriggerProperty { get; };
+
+        Double MinWidth;
+        static Windows.UI.Xaml.DependencyProperty MinWidthProperty { get; };
+
+        Double MaxWidth;
+        static Windows.UI.Xaml.DependencyProperty MaxWidthProperty { get; };
+
+        Double MinHeight;
+        static Windows.UI.Xaml.DependencyProperty MinHeightProperty { get; };
+
+        Double MaxHeight;
+        static Windows.UI.Xaml.DependencyProperty MaxHeightProperty { get; };
+
+        Windows.UI.Xaml.FrameworkElement TargetElement;
+        static Windows.UI.Xaml.DependencyProperty TargetElementProperty { get; };
+
+        Boolean IsActive { get; };
+    }
+}

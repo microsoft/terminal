@@ -23,9 +23,9 @@
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
         <!--  Delete Button  -->
-        <local:SettingContainer x:Name="DeleteOrphaned"
-                                x:Uid="Profile_Delete_Orphaned">
-            <local:SettingContainer.Content>
+        <local:SettingsCard x:Name="DeleteOrphaned"
+                            x:Uid="Profile_Delete_Orphaned">
+            <local:SettingsCard.Content>
                 <Button x:Name="DeleteButton"
                         Click="DeleteConfirmation_Click"
                         Style="{StaticResource DeleteButtonStyle}">
@@ -38,25 +38,25 @@
                         </StackPanel>
                     </Button.Content>
                 </Button>
-            </local:SettingContainer.Content>
-        </local:SettingContainer>
+            </local:SettingsCard.Content>
+        </local:SettingsCard>
 
-        <local:SettingContainer x:Name="Name"
-                                x:Uid="Profile_Name">
-            <local:SettingContainer.Content>
+        <local:SettingsCard x:Name="Name"
+                            x:Uid="Profile_Name">
+            <local:SettingsCard.Content>
                 <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
                            Text="{x:Bind Profile.Name, Mode=OneTime}" />
-            </local:SettingContainer.Content>
-        </local:SettingContainer>
+            </local:SettingsCard.Content>
+        </local:SettingsCard>
 
-        <local:SettingContainer x:Name="Source"
-                                x:Uid="Profile_Source_Orphaned">
-            <local:SettingContainer.Content>
+        <local:SettingsCard x:Name="Source"
+                            x:Uid="Profile_Source_Orphaned">
+            <local:SettingsCard.Content>
                 <TextBlock FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
                            Text="{x:Bind Profile.Source, Mode=OneTime}" />
-            </local:SettingContainer.Content>
-        </local:SettingContainer>
+            </local:SettingsCard.Content>
+        </local:SettingsCard>
     </StackPanel>
 </Page>

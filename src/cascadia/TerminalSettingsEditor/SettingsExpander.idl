@@ -1,0 +1,62 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [contentproperty("Content")]
+    [default_interface] runtimeclass SettingsExpander : Windows.UI.Xaml.Controls.Control
+    {
+        SettingsExpander();
+
+        Object Header;
+        static Windows.UI.Xaml.DependencyProperty HeaderProperty { get; };
+
+        Object Description;
+        static Windows.UI.Xaml.DependencyProperty DescriptionProperty { get; };
+
+        Windows.UI.Xaml.Controls.IconElement HeaderIcon;
+        static Windows.UI.Xaml.DependencyProperty HeaderIconProperty { get; };
+
+        Object Content;
+        static Windows.UI.Xaml.DependencyProperty ContentProperty { get; };
+
+        Boolean IsExpanded;
+        static Windows.UI.Xaml.DependencyProperty IsExpandedProperty { get; };
+
+        Windows.UI.Xaml.UIElement ItemsHeader;
+        static Windows.UI.Xaml.DependencyProperty ItemsHeaderProperty { get; };
+
+        Windows.UI.Xaml.UIElement ItemsFooter;
+        static Windows.UI.Xaml.DependencyProperty ItemsFooterProperty { get; };
+
+        Windows.Foundation.Collections.IVector<Object> Items;
+        static Windows.UI.Xaml.DependencyProperty ItemsProperty { get; };
+
+        Object ItemsSource;
+        static Windows.UI.Xaml.DependencyProperty ItemsSourceProperty { get; };
+
+        Object ItemTemplate;
+        static Windows.UI.Xaml.DependencyProperty ItemTemplateProperty { get; };
+
+        Windows.UI.Xaml.Controls.StyleSelector ItemContainerStyleSelector;
+        static Windows.UI.Xaml.DependencyProperty ItemContainerStyleSelectorProperty { get; };
+
+        event Windows.Foundation.TypedEventHandler<SettingsExpander, Object> Expanded;
+        event Windows.Foundation.TypedEventHandler<SettingsExpander, Object> Collapsed;
+    };
+
+    [default_interface] runtimeclass SettingsExpanderAutomationPeer : Windows.UI.Xaml.Automation.Peers.FrameworkElementAutomationPeer
+    {
+        SettingsExpanderAutomationPeer(SettingsExpander owner);
+
+        void RaiseExpandedChangedEvent(Boolean newValue);
+    };
+
+    [default_interface] runtimeclass SettingsExpanderItemStyleSelector : Windows.UI.Xaml.Controls.StyleSelector
+    {
+        SettingsExpanderItemStyleSelector();
+
+        Windows.UI.Xaml.Style DefaultStyle;
+        Windows.UI.Xaml.Style ClickableStyle;
+    };
+}

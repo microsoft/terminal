@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
-        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
+        _defaultAppearanceViewModel{ nullptr },
         _originalProfileGuid{ profile.Guid() },
         _appSettings{ appSettings },
         _unfocusedAppearanceViewModel{ nullptr },
@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle, L"Profile_PathTranslationStyle", L"Content");
 
+        _RefreshDefaultAppearanceViewModel();
         _InitializeCurrentBellSounds();
 
         // Add a property changed handler to our own property changed event.
@@ -51,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"IsBaseLayer")
             {
                 // we _always_ want to show the background image settings in base layer
-                _NotifyChanges(L"BackgroundImageSettingsVisible");
+                _NotifyChanges(L"BackgroundImageSettingsEnabled");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
@@ -137,14 +138,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         });
 
-        _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
-            const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
-            {
-                _NotifyChanges(L"TabThemeColorPreview");
-            }
-        });
-
         // Do the same for the starting directory
         if (!StartingDirectory().empty())
         {
@@ -163,7 +156,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         _parsedPadding = StringToXamlThickness(_profile.Padding());
-        _defaultAppearanceViewModel.IsDefault(true);
     }
 
     void ProfileViewModel::LeftPadding(double value) noexcept
@@ -827,10 +819,113 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ProfileViewModel::_RefreshDefaultAppearanceViewModel()
+    {
+        Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList{ nullptr };
+        if (_defaultAppearanceViewModel)
+        {
+            schemesList = _defaultAppearanceViewModel.SchemesList();
+        }
+
+        _defaultAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.DefaultAppearance().try_as<AppearanceConfig>());
+        _defaultAppearanceViewModel.IsDefault(true);
+        if (schemesList)
+        {
+            _defaultAppearanceViewModel.SchemesList(schemesList);
+        }
+
+        _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
+            const auto viewModelProperty{ args.PropertyName() };
+            if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
+            {
+                _NotifyChanges(L"TabThemeColorPreview");
+            }
+        });
+    }
+
     void ProfileViewModel::DeleteProfile()
     {
         const auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(Guid()) };
         DeleteProfileRequested.raise(*this, *deleteProfileArgs);
+    }
+
+    void ProfileViewModel::ResetSettings()
+    {
+        // Clear all profile-level settings (not Guid/ConnectionType which are permanent)
+        // NOTE: When adding a new OBSERVABLE_PROJECTED_SETTING to ProfileViewModel,
+        //       also add the corresponding ClearX() call here.
+        ClearName();
+        ClearSource();
+        ClearHidden();
+        ClearIcon();
+        ClearCloseOnExit();
+        ClearTabTitle();
+        ClearTabColor();
+        ClearSuppressApplicationTitle();
+        ClearScrollState();
+        ClearPadding();
+        ClearCommandline();
+        ClearStartingDirectory();
+        _lastStartingDirectoryPath.clear();
+        ClearAntialiasingMode();
+        ClearOpacity();
+        ClearUseAcrylic();
+        ClearHistorySize();
+        ClearSnapOnInput();
+        ClearAltGrAliasing();
+        ClearBellStyle();
+        ClearBellSound();
+        ClearElevate();
+        ClearReloadEnvironmentVariables();
+        ClearRightClickContextMenu();
+        ClearShowMarks();
+        ClearAutoMarkPrompts();
+        ClearRepositionCursorWithMouse();
+        ClearForceVTInput();
+        ClearAllowKittyKeyboardMode();
+        ClearAllowVtChecksumReport();
+        ClearAllowVtClipboardWrite();
+        ClearAnswerbackMessage();
+        ClearRainbowSuggestions();
+        ClearPathTranslationStyle();
+        ClearDragDropDelimiter();
+
+        // Clear appearance settings on the underlying models.
+        const auto defaultAppearance = _profile.DefaultAppearance();
+        defaultAppearance.ClearDarkColorSchemeName();
+        defaultAppearance.ClearLightColorSchemeName();
+        defaultAppearance.ClearRetroTerminalEffect();
+        defaultAppearance.ClearCursorShape();
+        defaultAppearance.ClearCursorHeight();
+        defaultAppearance.ClearBackgroundImagePath();
+        defaultAppearance.ClearBackgroundImageOpacity();
+        defaultAppearance.ClearBackgroundImageStretchMode();
+        defaultAppearance.ClearBackgroundImageAlignment();
+        defaultAppearance.ClearIntenseTextStyle();
+        defaultAppearance.ClearAdjustIndistinguishableColors();
+        defaultAppearance.ClearForeground();
+        defaultAppearance.ClearBackground();
+        defaultAppearance.ClearSelectionBackground();
+        defaultAppearance.ClearCursorColor();
+
+        const auto fontConfig = _profile.FontInfo();
+        fontConfig.ClearFontFace();
+        fontConfig.ClearFontSize();
+        fontConfig.ClearCellHeight();
+        fontConfig.ClearCellWidth();
+        fontConfig.ClearFontWeight();
+        fontConfig.ClearEnableBuiltinGlyphs();
+        fontConfig.ClearEnableColorGlyphs();
+        fontConfig.ClearFontAxes();
+        fontConfig.ClearFontFeatures();
+
+        if (HasUnfocusedAppearance())
+        {
+            DeleteUnfocusedAppearance();
+        }
+
+        _RefreshDefaultAppearanceViewModel();
+        _NotifyChanges(L"DefaultAppearance", L"TabThemeColorPreview", L"TabColorPreview");
     }
 
     void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList)

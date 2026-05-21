@@ -406,7 +406,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 break; // fall through to the common case (no task, not configured, etc.)
             }
         }
-        return RS_(L"Globals_StartOnUserLogin/HelpText");
+        return RS_(L"Globals_StartOnUserLogin/Description");
     }
 
     bool LaunchViewModel::StartOnUserLogin()
