@@ -52,7 +52,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"IsBaseLayer")
             {
                 // we _always_ want to show the background image settings in base layer
-                _NotifyChanges(L"BackgroundImageSettingsEnabled");
+                _NotifyChanges(L"BackgroundImageSettingsEnabled", L"SectionHeaderText");
+            }
+            else if (viewModelProperty == L"Name")
+            {
+                _NotifyChanges(L"SectionHeaderText");
+            }
+            else if (viewModelProperty == L"Hidden")
+            {
+                _NotifyChanges(L"AccessibleStateDescription");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
@@ -338,6 +346,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::Orphaned() const
     {
         return _profile.Orphaned();
+    }
+
+    hstring ProfileViewModel::SectionHeaderText() const
+    {
+        if (IsBaseLayer())
+        {
+            return RS_(L"Profile_DefaultsSectionHeader");
+        }
+        return hstring{ RS_fmt(L"Profile_NameSectionHeaderFormat", Name()) };
+    }
+
+    hstring ProfileViewModel::AccessibleStateDescription() const
+    {
+        const auto hidden = Hidden();
+        const auto orphaned = Orphaned();
+        if (hidden && orphaned)
+        {
+            return til::hstring_format(FMT_COMPILE(L"{}, {}"),
+                                       RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"),
+                                       RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        }
+        if (hidden)
+        {
+            return RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        if (orphaned)
+        {
+            return RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        return {};
     }
 
     hstring ProfileViewModel::TabTitlePreview() const

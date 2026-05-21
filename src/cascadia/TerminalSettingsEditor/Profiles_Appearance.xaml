@@ -12,24 +12,20 @@
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
-
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
             <DataTemplate x:Key="EnumComboBoxTemplate"
                           x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
-
             <DataTemplate x:Key="FontFaceComboBoxItemTemplate"
                           x:DataType="local:Font">
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
-
             <Style x:Key="PaddingNumberBoxStyle"
                    TargetType="muxc:NumberBox">
                 <Setter Property="Template">
@@ -49,7 +45,6 @@
             </Style>
         </ResourceDictionary>
     </Page.Resources>
-
     <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -74,12 +69,10 @@
                         BorderThickness="1"
                         CornerRadius="{StaticResource ControlCornerRadius}" />
             </Border>
-
             <local:Appearances x:Name="DefaultAppearanceView"
                                Appearance="{x:Bind Profile.DefaultAppearance, Mode=OneWay}"
                                SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
-
             <!--  Section: Window settings  -->
             <StackPanel Style="{StaticResource PivotStackStyle}">
                 <TextBlock x:Uid="Profile_Section_Window"
@@ -87,9 +80,7 @@
                 <!--  Opacity  -->
                 <local:SettingsCard x:Name="Opacity"
                                         x:Uid="Profile_Opacity"
-                                        ClearSettingValue="{x:Bind Profile.ClearOpacity}"
-                                        HasSettingValue="{x:Bind Profile.HasOpacity, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.OpacityOverrideSource, Mode=OneWay}">
+                                        >
                     <StackPanel>
                         <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                             <Grid.ColumnDefinitions>
@@ -105,24 +96,17 @@
                         </Grid>
                     </StackPanel>
                 </local:SettingsCard>
-
                 <!--  Use Acrylic  -->
                 <local:SettingsCard x:Name="UseAcrylic"
                                         x:Uid="Profile_UseAcrylic"
-                                        ClearSettingValue="{x:Bind Profile.ClearUseAcrylic}"
-                                        HasSettingValue="{x:Bind Profile.HasUseAcrylic, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.UseAcrylicOverrideSource, Mode=OneWay}">
+                                        >
                     <ToggleSwitch IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingsCard>
-
                 <!--  Padding  -->
                 <local:SettingsExpander x:Name="Padding"
                                         x:Uid="Profile_Padding"
-                                        ClearSettingValue="{x:Bind Profile.ClearPadding}"
                                         Description="{x:Bind Profile.Padding, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}"
 >
                     <Border Margin="0,12,0,12"
                             Padding="2,0,2,0"
@@ -131,19 +115,16 @@
                             BorderThickness="1"
                             CornerRadius="{StaticResource OverlayCornerRadius}">
                         <Grid>
-
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="48" />
                                 <RowDefinition Height="48" />
                                 <RowDefinition Height="48" />
                             </Grid.RowDefinitions>
-
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="72" />
                                 <ColumnDefinition Width="72" />
                                 <ColumnDefinition Width="72" />
                             </Grid.ColumnDefinitions>
-
                             <muxc:NumberBox Grid.Row="1"
                                             Grid.Column="0"
                                             LargeChange="10"
@@ -152,7 +133,6 @@
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.LeftPadding, Mode=TwoWay}" />
-
                             <muxc:NumberBox Grid.Row="0"
                                             Grid.Column="1"
                                             LargeChange="10"
@@ -161,7 +141,6 @@
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.TopPadding, Mode=TwoWay}" />
-
                             <muxc:NumberBox Grid.Row="1"
                                             Grid.Column="2"
                                             LargeChange="10"
@@ -170,7 +149,6 @@
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.RightPadding, Mode=TwoWay}" />
-
                             <muxc:NumberBox Grid.Row="2"
                                             Grid.Column="1"
                                             LargeChange="10"
@@ -179,17 +157,13 @@
                                             SmallChange="1"
                                             Style="{StaticResource PaddingNumberBoxStyle}"
                                             Value="{x:Bind Profile.BottomPadding, Mode=TwoWay}" />
-
                         </Grid>
                     </Border>
                 </local:SettingsExpander>
-
                 <!--  Scrollbar Visibility  -->
                 <local:SettingsCard x:Name="ScrollbarVisibility"
                                         x:Uid="Profile_ScrollbarVisibility"
-                                        ClearSettingValue="{x:Bind Profile.ClearScrollState}"
-                                        HasSettingValue="{x:Bind Profile.HasScrollState, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.ScrollStateOverrideSource, Mode=OneWay}">
+                                        >
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind Profile.ScrollStateList, Mode=OneWay}"
@@ -202,7 +176,6 @@
                             Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                     <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
                                Style="{StaticResource TextBlockSubtitleStyle}" />
-
                     <!--  Create Unfocused Appearance  -->
                     <Button x:Name="CreateUnfocusedAppearance"
                             x:Uid="Profile_CreateUnfocusedAppearanceButton"
@@ -222,7 +195,6 @@
                             </StackPanel>
                         </Button.Content>
                     </Button>
-
                     <!--  Delete Unfocused Appearance  -->
                     <Button x:Name="DeleteUnfocusedAppearance"
                             x:Uid="Profile_DeleteUnfocusedAppearanceButton"
@@ -242,7 +214,6 @@
                         </Button.Content>
                     </Button>
                 </StackPanel>
-
                 <!--  Unfocused Appearance  -->
                 <local:Appearances x:Name="UnfocusedAppearanceView"
                                    Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"

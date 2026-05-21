@@ -1673,6 +1673,14 @@
     <value>Delete</value>
     <comment>Button label to delete a profile.</comment>
   </data>
+  <data name="Profile_NameSectionHeaderFormat" xml:space="preserve">
+    <value>{0} profile</value>
+    <comment>Localizable format string used as the section header for a profile (e.g. "PowerShell profile"). {0} is replaced by the profile's name. Reorder the placeholder if your language requires a different word order.</comment>
+  </data>
+  <data name="Profile_DefaultsSectionHeader" xml:space="preserve">
+    <value>Profile defaults</value>
+    <comment>Header used in place of the "{name} profile" header when the page is showing the profile-defaults layer (which has no profile name).</comment>
+  </data>
   <data name="Settings_SaveSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Save all unsaved settings.</value>
     <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>

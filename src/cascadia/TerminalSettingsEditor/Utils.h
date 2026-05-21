@@ -98,6 +98,13 @@ inline void DismissAllPopups(const winrt::Windows::UI::Xaml::XamlRoot& xamlRoot)
     }
 }
 
+namespace winrt::Microsoft::Terminal::Settings
+{
+    // Walks the visual tree starting at controlToFocus and expands any ancestor
+    // muxc:Expander or local:SettingsExpander so the target element is visible.
+    void ExpandAncestorExpanders(const winrt::Windows::UI::Xaml::DependencyObject& controlToFocus);
+}
+
 template<typename T>
 struct HasScrollViewer
 {
@@ -136,19 +143,7 @@ struct HasScrollViewer
                     // visible. This handles both:
                     // - Plain muxc:Expander instances used as section groupings
                     // - local:SettingsExpander instances
-                    winrt::Windows::UI::Xaml::DependencyObject ancestor{ controlToFocus };
-                    while (ancestor)
-                    {
-                        if (const auto& expander{ ancestor.try_as<winrt::Microsoft::UI::Xaml::Controls::Expander>() })
-                        {
-                            expander.IsExpanded(true);
-                        }
-                        else if (const auto& settingsExpander{ ancestor.try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingsExpander>() })
-                        {
-                            settingsExpander.IsExpanded(true);
-                        }
-                        ancestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(ancestor);
-                    }
+                    winrt::Microsoft::Terminal::Settings::ExpandAncestorExpanders(controlToFocus);
 
                     // Expanding ancestor expanders triggers asynchronous
                     // layout updates. Defer the bring-into-view + focus to

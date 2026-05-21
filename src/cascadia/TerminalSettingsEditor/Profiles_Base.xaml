@@ -12,7 +12,6 @@
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
-
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -20,7 +19,6 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Page.Resources>
-
     <!--  Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.  -->
     <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
         <Grid.RowDefinitions>
@@ -33,7 +31,6 @@
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
                     Style="{StaticResource SettingsStackStyle}">
-
             <!--  Section: {Profile.Name} profile (or "Profile defaults")  -->
             <StackPanel Style="{StaticResource PivotStackStyle}">
                 <TextBlock Margin="0,0,0,4"
@@ -48,20 +45,14 @@
                 <local:SettingsExpander x:Name="Name"
                                         x:Uid="Profile_Name"
                                         Description="{x:Bind Profile.Name, Mode=OneWay}"
-
                                         Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                     <TextBox Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.Name, Mode=TwoWay}" />
                 </local:SettingsExpander>
-
                 <!--  Commandline  -->
                 <local:SettingsExpander x:Name="Commandline"
                                         x:Uid="Profile_Commandline"
-                                        ClearSettingValue="{x:Bind Profile.ClearCommandline}"
                                         Description="{x:Bind Profile.Commandline, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind Profile.HasCommandline, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.CommandlineOverrideSource, Mode=OneWay}"
-
                                         Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                     <StackPanel>
                         <TextBox x:Uid="Profile_CommandlineBox"
@@ -74,14 +65,10 @@
                                 Style="{StaticResource BrowseButtonStyle}" />
                     </StackPanel>
                 </local:SettingsExpander>
-
                 <!--  Starting Directory  -->
                 <local:SettingsExpander x:Name="StartingDirectory"
                                         x:Uid="Profile_StartingDirectory"
-                                        ClearSettingValue="{x:Bind Profile.ClearStartingDirectory}"
                                         Description="{x:Bind Profile.CurrentStartingDirectoryPreview, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind Profile.HasStartingDirectory, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
 >
                     <StackPanel Orientation="Vertical">
                         <TextBox x:Uid="Profile_StartingDirectoryBox"
@@ -103,18 +90,14 @@
                         </StackPanel>
                     </StackPanel>
                 </local:SettingsExpander>
-
                 <!--  Elevate  -->
                 <local:SettingsCard x:Name="Elevate"
                                         x:Uid="Profile_Elevate"
-                                        ClearSettingValue="{x:Bind Profile.ClearElevate}"
-                                        HasSettingValue="{x:Bind Profile.HasElevate, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.ElevateOverrideSource, Mode=OneWay}">
+                                        >
                     <ToggleSwitch IsOn="{x:Bind Profile.Elevate, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingsCard>
             </StackPanel>
-
             <!--  Section: Visual/UI Affordance  -->
             <StackPanel Style="{StaticResource PivotStackStyle}">
                 <TextBlock x:Uid="Profile_Section_VisualUI"
@@ -122,38 +105,24 @@
                 <!--  Tab Title  -->
                 <local:SettingsExpander x:Name="TabTitle"
                                         x:Uid="Profile_TabTitle"
-                                        ClearSettingValue="{x:Bind Profile.ClearTabTitle}"
                                         Description="{x:Bind Profile.TabTitlePreview, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind Profile.HasTabTitle, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.TabTitleOverrideSource, Mode=OneWay}"
 >
                     <TextBox Style="{StaticResource TextBoxSettingStyle}"
                              Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
                 </local:SettingsExpander>
-
                 <!--  Tab Color  -->
                 <local:SettingsExpander x:Name="TabColor"
                                         x:Uid="Profile_TabColor"
-                                        ClearSettingValue="{x:Bind Profile.ClearTabColor}"
                                         Description="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
-                                        CurrentValueAccessibleName="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}"
-                                        CurrentValueTemplate="{StaticResource ColorPreviewTemplate}"
-                                        HasSettingValue="{x:Bind Profile.HasTabColor, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.TabColorOverrideSource, Mode=OneWay}"
 >
                     <local:NullableColorPicker x:Uid="Profile_TabColor_NullableColorPicker"
                                                ColorSchemeVM="{x:Bind Profile.DefaultAppearance.CurrentColorScheme, Mode=OneWay}"
                                                CurrentColor="{x:Bind Profile.TabColor, Mode=TwoWay}"
                                                NullColorPreview="{x:Bind Profile.TabThemeColorPreview, Mode=OneWay}" />
                 </local:SettingsExpander>
-
                 <!--  Icon  -->
                 <local:SettingsExpander x:Name="Icon"
                                         x:Uid="Profile_Icon"
-                                        ClearSettingValue="{x:Bind Profile.ClearIcon}"
-                                        CurrentValueAccessibleName="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
 >
                     <local:SettingsExpander.Description>
                         <Grid>
@@ -176,7 +145,6 @@
                                           WindowRoot="{x:Bind WindowRoot, Mode=OneWay}" />
                     </local:SettingsExpander.Content>
                 </local:SettingsExpander>
-
                 <!--  Hidden  -->
                 <local:SettingsCard x:Name="Hidden"
                                         x:Uid="Profile_Hidden"
@@ -185,11 +153,9 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingsCard>
             </StackPanel>
-
             <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
                        Margin="0,32,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-
             <local:SettingsCard x:Name="AppearanceNavigator"
                                 Click="Appearance_Click"
                                 IsClickEnabled="True" />
@@ -199,20 +165,13 @@
             <local:SettingsCard x:Name="AdvancedNavigator"
                                 Click="Advanced_Click"
                                 IsClickEnabled="True" />
-            <!--  Delete Button  -->
-            <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-                <Button x:Name="DeleteButton"
-                        Margin="{StaticResource StandardControlMargin}"
-                        Style="{StaticResource DeleteButtonStyle}"
-                        Visibility="{x:Bind Profile.CanDeleteProfile}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE74D;" />
-                            <TextBlock x:Uid="Profile_DeleteButton"
-                                       Margin="8,0,0,0" />
-                        </StackPanel>
-                    </Button.Content>
+            <!--  Delete Profile  -->
+            <local:SettingsCard x:Name="DeleteProfile"
+                                x:Uid="Profile_DeleteProfile"
+                                Visibility="{x:Bind Profile.CanDeleteProfile}">
+                <Button x:Name="DeleteProfileButton"
+                        x:Uid="Profile_DeleteProfileButton"
+                        Style="{StaticResource DeleteButtonStyle}">
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel>
@@ -224,7 +183,7 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-            </Border>
+            </local:SettingsCard>
         </StackPanel>
     </Grid>
 </Page>

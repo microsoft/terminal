@@ -446,7 +446,7 @@
             <!--  Key bindings expander  -->
             <local:SettingsExpander x:Name="KeyBindingsContainer"
                                     x:Uid="EditAction_KeyBindings"
-                                    StartExpanded="{x:Bind mtu:Converters.InvertBoolean(ViewModel.HasNoKeyChords), Mode=OneWay}"
+                                    IsExpanded="{x:Bind mtu:Converters.InvertBoolean(ViewModel.HasNoKeyChords), Mode=OneWay}"
 >
                 <StackPanel>
                     <!--  "New key binding" button  -->

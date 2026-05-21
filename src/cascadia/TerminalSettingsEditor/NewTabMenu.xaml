@@ -12,13 +12,11 @@
       xmlns:mtu="using:Microsoft.Terminal.UI"
       xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
       mc:Ignorable="d">
-
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
             <!--  Wrapper for NewTabMenuEntry that adds buttons to the ListView entries  -->
             <Style x:Key="NewTabMenuEntryControlsWrapper"
                    TargetType="ContentControl">
@@ -78,7 +76,6 @@
                     </Setter.Value>
                 </Setter>
             </Style>
-
             <DataTemplate x:Key="ProfileEntryTemplate"
                           x:DataType="local:ProfileEntryViewModel">
                 <ContentControl AutomationProperties.Name="{x:Bind ProfileEntry.Profile.Name, Mode=OneWay}"
@@ -95,7 +92,6 @@
                     </StackPanel>
                 </ContentControl>
             </DataTemplate>
-
             <DataTemplate x:Key="ActionEntryTemplate"
                           x:DataType="local:ActionEntryViewModel">
                 <ContentControl AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
@@ -113,7 +109,6 @@
                     </StackPanel>
                 </ContentControl>
             </DataTemplate>
-
             <DataTemplate x:Key="SeparatorEntryTemplate"
                           x:DataType="local:SeparatorEntryViewModel">
                 <ContentControl x:Uid="NewTabMenuEntry_SeparatorItem"
@@ -124,7 +119,6 @@
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </ContentControl>
             </DataTemplate>
-
             <DataTemplate x:Key="FolderEntryTemplate"
                           x:DataType="local:FolderEntryViewModel">
                 <!--
@@ -194,7 +188,6 @@
                     </StackPanel>
                 </Grid>
             </DataTemplate>
-
             <DataTemplate x:Key="MatchProfilesEntryTemplate"
                           x:DataType="local:MatchProfilesEntryViewModel">
                 <ContentControl AutomationProperties.Name="{x:Bind DisplayText, Mode=OneWay}"
@@ -205,7 +198,6 @@
                                Text="{x:Bind DisplayText, Mode=OneWay}" />
                 </ContentControl>
             </DataTemplate>
-
             <DataTemplate x:Key="RemainingProfilesEntryTemplate"
                           x:DataType="local:RemainingProfilesEntryViewModel">
                 <ContentControl x:Uid="NewTabMenuEntry_RemainingProfilesItem"
@@ -216,7 +208,6 @@
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </ContentControl>
             </DataTemplate>
-
             <local:NewTabMenuEntryTemplateSelector x:Key="NewTabMenuEntryTemplateSelector"
                                                    ActionEntryTemplate="{StaticResource ActionEntryTemplate}"
                                                    FolderEntryTemplate="{StaticResource FolderEntryTemplate}"
@@ -226,7 +217,6 @@
                                                    SeparatorEntryTemplate="{StaticResource SeparatorEntryTemplate}" />
         </ResourceDictionary>
     </Page.Resources>
-
     <Grid x:Name="RootGrid"
           MaxWidth="{StaticResource StandardControlMaxWidth}"
           ColumnSpacing="16"
@@ -249,7 +239,6 @@
             <RowDefinition x:Name="ControlsRow"
                            Height="*" />
         </Grid.RowDefinitions>
-
         <!--  Folder Picker Dialog: used to select a folder to move entries to  -->
         <ContentDialog x:Name="FolderPickerDialog"
                        x:Uid="NewTabMenu_FolderPickerDialog"
@@ -282,7 +271,6 @@
                 </muxc:TreeView.ItemTemplate>
             </muxc:TreeView>
         </ContentDialog>
-
         <Grid x:Name="PreviewArea"
               Grid.Row="0"
               Grid.RowSpan="2"
@@ -292,7 +280,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-
             <!--
                 Invisible header placeholder so the preview's top edge aligns with the first
                 SettingsCard in the controls column
@@ -305,7 +292,6 @@
                        Opacity="0"
                        Style="{StaticResource TextBlockSubHeaderStyle}"
                        Text="Preview" />
-
             <!--  Preview Border: contains the ListView and the multi-select footer.  -->
             <Border Grid.Row="1"
                     MinHeight="300"
@@ -319,7 +305,6 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-
                     <ListView x:Name="NewTabMenuListView"
                               Grid.Row="0"
                               AllowDrop="True"
@@ -328,7 +313,6 @@
                               ItemTemplateSelector="{StaticResource NewTabMenuEntryTemplateSelector}"
                               ItemsSource="{x:Bind ViewModel.CurrentView, Mode=OneWay}"
                               SelectionMode="Multiple" />
-
                     <!--  Preview Controls  -->
                     <Border Grid.Row="1"
                             Padding="8"
@@ -388,7 +372,6 @@
                 </Grid>
             </Border>
         </Grid>
-
         <ScrollViewer x:Name="ControlsArea"
                       Grid.Row="0"
                       Grid.RowSpan="2"
@@ -411,11 +394,9 @@
                         <TextBox Style="{StaticResource TextBoxSettingStyle}"
                                  Text="{x:Bind ViewModel.CurrentFolderName, Mode=TwoWay}" />
                     </local:SettingsExpander>
-
                     <!--  Icon  -->
                     <local:SettingsExpander x:Name="CurrentFolderIcon"
                                             x:Uid="NewTabMenu_CurrentFolderIcon"
-                                            CurrentValueAccessibleName="{x:Bind ViewModel.CurrentFolderLocalizedIcon, Mode=OneWay}"
 >
                         <local:SettingsExpander.Description>
                             <Grid>
@@ -438,14 +419,12 @@
                                               WindowRoot="{x:Bind WindowRoot, Mode=OneWay}" />
                         </local:SettingsExpander.Content>
                     </local:SettingsExpander>
-
                     <!--  Inlining  -->
                     <local:SettingsCard x:Name="CurrentFolderInlining"
                                             x:Uid="NewTabMenu_CurrentFolderInlining">
                         <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderInlining, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingsCard>
-
                     <!--  Allow Empty  -->
                     <local:SettingsCard x:Name="CurrentFolderAllowEmpty"
                                             x:Uid="NewTabMenu_CurrentFolderAllowEmpty">
@@ -453,13 +432,11 @@
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingsCard>
                 </StackPanel>
-
                 <!--  Add Entries  -->
                 <StackPanel>
                     <TextBlock x:Uid="NewTabMenu_AddEntriesTextBlock"
                                Margin="0,4,0,4"
                                Style="{StaticResource TextBlockSubHeaderStyle}" />
-
                     <!--  Add Profile  -->
                     <local:SettingsCard x:Name="AddProfile"
                                             x:Uid="NewTabMenu_AddProfile">
@@ -467,7 +444,6 @@
                             <FontIcon x:Name="AddProfileIcon"
                                       Glyph="&#xE756;" />
                         </local:SettingsCard.HeaderIcon>
-
                         <StackPanel Orientation="Horizontal"
                                     Spacing="4">
                             <!--  Select profile to add  -->
@@ -479,26 +455,22 @@
                                     <DataTemplate x:DataType="model:Profile">
                                         <Grid HorizontalAlignment="Stretch"
                                               ColumnSpacing="8">
-
                                             <Grid.ColumnDefinitions>
                                                 <!--  icon  -->
                                                 <ColumnDefinition Width="16" />
                                                 <!--  profile name  -->
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-
                                             <IconSourceElement Grid.Column="0"
                                                                Width="16"
                                                                Height="16"
                                                                IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon.Resolved), Mode=OneTime}" />
-
                                             <TextBlock Grid.Column="1"
                                                        Text="{x:Bind Name}" />
                                         </Grid>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-
                             <Button x:Name="AddProfileButton"
                                     x:Uid="NewTabMenu_AddProfileButton"
                                     HorizontalAlignment="Stretch"
@@ -511,7 +483,6 @@
                             </Button>
                         </StackPanel>
                     </local:SettingsCard>
-
                     <!--  Add Separator  -->
                     <local:SettingsCard x:Name="AddSeparator"
                                             x:Uid="NewTabMenu_AddSeparator">
@@ -530,7 +501,6 @@
                             </Button.Content>
                         </Button>
                     </local:SettingsCard>
-
                     <!--  Add Folder  -->
                     <local:SettingsCard x:Name="AddFolder"
                                             x:Uid="NewTabMenu_AddFolder">
@@ -559,7 +529,6 @@
                             </Button>
                         </StackPanel>
                     </local:SettingsCard>
-
                     <!--  Add Match Profiles  -->
                     <local:SettingsExpander x:Name="AddMatchProfiles"
                                             x:Uid="NewTabMenu_AddMatchProfiles">
@@ -589,7 +558,6 @@
                             </Button>
                         </StackPanel>
                     </local:SettingsExpander>
-
                     <!--  Add Remaining Profiles  -->
                     <local:SettingsCard x:Name="AddRemainingProfiles"
                                             x:Uid="NewTabMenu_AddRemainingProfiles">
@@ -612,7 +580,6 @@
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
-
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup>
                 <!--  Wide: 2 columns, controls on left with leading icons, preview on right.  -->
@@ -628,7 +595,6 @@
                         <Setter Target="AddRemainingProfilesIcon.Visibility" Value="Visible" />
                     </VisualState.Setters>
                 </VisualState>
-
                 <!--  Medium: 2 columns, controls on left WITHOUT leading icons, preview on right.  -->
                 <VisualState x:Name="Medium">
                     <VisualState.StateTriggers>
@@ -642,7 +608,6 @@
                         <Setter Target="AddRemainingProfilesIcon.Visibility" Value="Collapsed" />
                     </VisualState.Setters>
                 </VisualState>
-
                 <!--  Narrow: single column, preview stacked on top, controls below, no icons.  -->
                 <VisualState x:Name="Narrow">
                     <VisualState.StateTriggers>
@@ -652,26 +617,22 @@
                         <!--  Collapse the preview column and give the preview row real height so the rows are used instead of the columns.  -->
                         <Setter Target="PreviewColumn.Width" Value="0" />
                         <Setter Target="PreviewRow.Height" Value="Auto" />
-
                         <!--  Move PreviewArea to row 0, spanning both columns.  -->
                         <Setter Target="PreviewArea.(Grid.Row)" Value="0" />
                         <Setter Target="PreviewArea.(Grid.RowSpan)" Value="1" />
                         <Setter Target="PreviewArea.(Grid.Column)" Value="0" />
                         <Setter Target="PreviewArea.(Grid.ColumnSpan)" Value="2" />
-
                         <!--  Move ControlsArea to row 1, spanning both columns.  -->
                         <Setter Target="ControlsArea.(Grid.Row)" Value="1" />
                         <Setter Target="ControlsArea.(Grid.RowSpan)" Value="1" />
                         <Setter Target="ControlsArea.(Grid.Column)" Value="0" />
                         <Setter Target="ControlsArea.(Grid.ColumnSpan)" Value="2" />
-
                         <!--  No icons in the narrow state either (progressive simplification).  -->
                         <Setter Target="AddProfileIcon.Visibility" Value="Collapsed" />
                         <Setter Target="AddSeparatorIcon.Visibility" Value="Collapsed" />
                         <Setter Target="AddFolderIcon.Visibility" Value="Collapsed" />
                         <Setter Target="AddMatchProfilesIcon.Visibility" Value="Collapsed" />
                         <Setter Target="AddRemainingProfilesIcon.Visibility" Value="Collapsed" />
-
                         <!--  Hide the preview header placeholder in stacked mode (no controls beside the preview to align with).  -->
                         <Setter Target="PreviewHeaderPlaceholder.Visibility" Value="Collapsed" />
                     </VisualState.Setters>
