@@ -2900,6 +2900,10 @@
     <value>Mouse &amp; scrolling</value>
     <comment>Title of a section that groups settings related to mouse and scroll wheel input.</comment>
   </data>
+  <data name="Interaction_PasteBehavior.Header" xml:space="preserve">
+    <value>Paste behavior</value>
+    <comment>Header for a group of settings related to cleanup and confirmation behavior for incoming pastes.</comment>
+  </data>
   <data name="Interaction_Section_MouseScrolling.Description" xml:space="preserve">
     <value>Configure how scroll wheel input affects zoom and window opacity.</value>
     <comment>Description for the "Mouse &amp; scrolling" section, shown under the section header.</comment>

@@ -58,8 +58,7 @@
         </local:SettingsExpander>
 
         <local:SettingsExpander
-            Description="Cleanup and confirmation behavior for incoming pastes"
-            Header="Paste behavior"
+            x:Uid="Interaction_PasteBehavior"
             IsExpanded="True">
             <local:SettingsExpander.HeaderIcon>
                 <FontIcon Glyph="&#xE77F;" />
@@ -177,7 +176,7 @@
             IsExpanded="True">
             <ToggleSwitch IsOn="{x:Bind ViewModel.DetectURLs, Mode=TwoWay}" Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             <local:SettingsExpander.HeaderIcon>
-                <FontIcon Glyph="&#xE962;" />
+                <FontIcon Glyph="&#xE71B;" />
             </local:SettingsExpander.HeaderIcon>
             <local:SettingsExpander.Items>
                 <local:SettingsCard x:Name="SearchWebDefaultQueryUrl" x:Uid="Globals_SearchWebDefaultQueryUrl">
