@@ -256,13 +256,9 @@
   <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
     <value>Mezza larghezza alfanumerica (inglese)</value>
   </data>
-  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.Content" xml:space="preserve">
     <value>Mostra sempre le schede</value>
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
-    <value>Quando disabilitata, la barra delle schede verrà visualizzata quando verrà creata una nuova scheda. Non può essere disabilitata quando l’opzione "Nascondi barra del titolo" è attivata.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Posizione delle schede appena create</value>
@@ -509,17 +505,13 @@
     <value>Se disabilitata, la barra del titolo verrà visualizzata sopra le schede.</value>
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
-  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
+  <data name="Globals_AcrylicTabRow.Content" xml:space="preserve">
     <value>Usa il materiale acrilico nella riga di tabulazione</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.Content" xml:space="preserve">
     <value>Usa il titolo del terminale attivo come titolo dell'applicazione</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
-    <value>Se disabilitata, la barra del titolo sarà “Terminale”.</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Ancora ridimensionamento della finestra alla griglia caratteri</value>
@@ -1693,7 +1685,7 @@
     <value>Regola l'opacità del terminale scorrendo mentre tieni premuti i tasti CTRL e MAIUSC</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
-  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
+  <data name="Globals_DisableAnimationsReversed.Content" xml:space="preserve">
     <value>Riquadro animazioni</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
@@ -1701,7 +1693,7 @@
     <value>Mostra sempre un'icona nell'area di notifica</value>
     <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
   </data>
-  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
+  <data name="Globals_MinimizeToNotificationArea.Content" xml:space="preserve">
     <value>Nascondi terminale nell'area di notifica quando viene ridotto a icona</value>
     <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
@@ -2573,21 +2565,17 @@
     <value>Questi tasti di scelta rapida possono evidenziare il testo selezionato o tutte le istanze del testo selezionato con un colore specificato.</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
-  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+  <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
     <value>Consenti materiale acrilico in finestre non sfocate</value>
     <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
   </data>
-  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+  <data name="Globals_ShowAdminShield.Content" xml:space="preserve">
     <value>Visualizza uno scudo nella barra del titolo quando Terminale Windows viene eseguito come amministratore</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
-  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+  <data name="Globals_ShowTabsFullscreen.Content" xml:space="preserve">
     <value>Mostra le schede a schermo intero</value>
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>Se questa opzione è abilitata, la barra delle schede sarà visibile quando l'app è a schermo intero.</value>
-    <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Traduzione percorso</value>

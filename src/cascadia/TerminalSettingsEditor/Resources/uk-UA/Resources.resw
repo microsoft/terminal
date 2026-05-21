@@ -262,13 +262,9 @@
   <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
     <value>Буквено-цифрова половина ширини (англійська)</value>
   </data>
-  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.Content" xml:space="preserve">
     <value>Завжди показувати вкладки</value>
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
-    <value>Якщо вимкнено, панель вкладок з'являтиметься під час створення нової вкладки. Неможливо вимкнути, якщо параметр "Приховати заголовок вікна" увімкнено.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Розташування новостворених вкладок</value>
@@ -520,17 +516,13 @@
     <value>Якщо вимкнено, рядок заголовка з'являтиметься над вкладками.</value>
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
-  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
+  <data name="Globals_AcrylicTabRow.Content" xml:space="preserve">
     <value>Використовувати акриловий матеріал у рядку вкладок</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.Content" xml:space="preserve">
     <value>Використовувати назву активного терміналу як назву програми</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
-    <value>Якщо вимкнено, рядок заголовка матиме вигляд "Термінал".</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Зміна розміру вікна прив'язана до сітки символів</value>
@@ -1728,7 +1720,7 @@
     <value>Налаштуйте прозорість терміналу, прокручуючи колесо миші, утримуючи клавіші Ctrl і Shift</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
-  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
+  <data name="Globals_DisableAnimationsReversed.Content" xml:space="preserve">
     <value>Анімації панелі</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
@@ -1736,7 +1728,7 @@
     <value>Завжди відображати значок в області сповіщень</value>
     <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
   </data>
-  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
+  <data name="Globals_MinimizeToNotificationArea.Content" xml:space="preserve">
     <value>Сховати термінал в області сповіщень, коли він згорнутий</value>
     <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
@@ -2292,21 +2284,17 @@
     <value>Ці прив'язки клавіш можуть підсвічувати виділений текст або всі екземпляри виділеного тексту вказаним кольором.</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
-  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+  <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
     <value>Дозволити використання акрилового матеріалу в неактивних вікнах</value>
     <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
   </data>
-  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
+  <data name="Globals_ShowAdminShield.Content" xml:space="preserve">
     <value>Відображати щит у рядку заголовка, коли термінал Windows запущено від імені Адміністратора</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
-  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+  <data name="Globals_ShowTabsFullscreen.Content" xml:space="preserve">
     <value>Показувати вкладки на весь екран</value>
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>Якщо ввімкнено, панель вкладок буде видно, коли програма розгорнута на весь екран.</value>
-    <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Трансформування шляху</value>

@@ -256,13 +256,9 @@
   <data name="Globals_DefaultInputScopeAlphanumericHalfWidth.Content" xml:space="preserve">
     <value>Alphanumeric Half-Width (English)</value>
   </data>
-  <data name="Globals_AlwaysShowTabs.Header" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.Content" xml:space="preserve">
     <value>Always show tabs</value>
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
-  </data>
-  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
-    <value>When disabled, the tab bar will appear when a new tab is created. Cannot be disabled while "Hide the title bar" is On.</value>
-    <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
   <data name="Globals_NewTabPosition.Header" xml:space="preserve">
     <value>Position of newly created tabs</value>
@@ -509,17 +505,13 @@
     <value>When disabled, the title bar will appear above the tabs.</value>
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
-  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
+  <data name="Globals_AcrylicTabRow.Content" xml:space="preserve">
     <value>Use acrylic material in the tab row</value>
     <comment>Header for a control to toggle whether "acrylic material" is used. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.Content" xml:space="preserve">
     <value>Use active terminal title as application title</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
-  </data>
-  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
-    <value>When disabled, the title bar will be 'Terminal'.</value>
-    <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
     <value>Snap window resizing to character grid</value>
@@ -606,7 +598,7 @@
     <comment>An option to choose from for the "tab width mode" setting. When selected, each tab adjusts its width to the content within the tab.</comment>
   </data>
   <data name="Globals_Theme.Header" xml:space="preserve">
-    <value>Application Theme</value>
+    <value>Application theme</value>
     <comment>Header for a control to choose the theme colors used in the app.</comment>
   </data>
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
@@ -1753,7 +1745,7 @@
     <value>Adjust terminal opacity by scrolling while holding the Ctrl and Shift keys</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
-  <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
+  <data name="Globals_DisableAnimationsReversed.Content" xml:space="preserve">
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
@@ -1761,7 +1753,7 @@
     <value>Always display an icon in the notification area</value>
     <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
   </data>
-  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
+  <data name="Globals_MinimizeToNotificationArea.Content" xml:space="preserve">
     <value>Hide Terminal in the notification area when it is minimized</value>
     <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
@@ -2669,21 +2661,17 @@
     <value>Experimental. Highlight selected text or matching text with custom colors using key bindings</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
-  <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
+  <data name="Globals_EnableUnfocusedAcrylic.Content" xml:space="preserve">
     <value>Allow acrylic material in unfocused windows</value>
     <comment>Header for a control to toggle allowing unfocused windows to have an acrylic background.</comment>
   </data>
-  <data name="Globals_ShowAdminShield.Header" xml:space="preserve">
-    <value>Display a shield in the title bar when Windows Terminal is running as Administrator</value>
+  <data name="Globals_ShowAdminShield.Content" xml:space="preserve">
+    <value>Display a shield in the title bar when running as Administrator</value>
     <comment>Header for a control to toggle displaying a shield in the title bar of the app. "Admin" refers to elevated sessions like "run as Admin"</comment>
   </data>
-  <data name="Globals_ShowTabsFullscreen.Header" xml:space="preserve">
+  <data name="Globals_ShowTabsFullscreen.Content" xml:space="preserve">
     <value>Show tabs in full screen</value>
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
-  </data>
-  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
-    <value>When enabled, the tab bar will be visible when the app is full screen.</value>
-    <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
   <data name="Profile_PathTranslationStyle.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Path translation</value>
@@ -2893,19 +2881,15 @@
     <comment>Title of a section that groups settings related to the terminal's visual appearance.</comment>
   </data>
   <data name="Globals_Section_TabsLayout.Text" xml:space="preserve">
-    <value>Tabs and layout</value>
+    <value>Tabs and titlebar</value>
     <comment>Title of a section that groups settings related to tabs and pane layout.</comment>
   </data>
   <data name="Globals_Section_WindowBehavior.Text" xml:space="preserve">
     <value>Window behavior</value>
     <comment>Title of a section that groups settings related to terminal window behavior.</comment>
   </data>
-  <data name="Globals_Section_TitleBarIdentity.Text" xml:space="preserve">
-    <value>Title bar &amp; identity</value>
-    <comment>Title of a section that groups settings related to title bar identity and indicators.</comment>
-  </data>
   <data name="Globals_Section_SystemIntegration.Text" xml:space="preserve">
-    <value>System integration &amp; notifications</value>
+    <value>System integration and notifications</value>
     <comment>Title of a section that groups settings related to system integration and notifications.</comment>
   </data>
   <data name="Compatibility_Section_Compatibility.Text" xml:space="preserve">
