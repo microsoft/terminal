@@ -2770,16 +2770,16 @@
     <comment>This is displayed in concordance with Globals_StartOnUserLogin if the enterprise administrator has taken control of this setting.</comment>
   </data>
   <data name="Extensions_ActiveExtensionsHeader.Text" xml:space="preserve">
-    <value>Active Extensions</value>
+    <value>Active extensions</value>
   </data>
   <data name="Extensions_ModifiedProfilesHeader.Text" xml:space="preserve">
-    <value>Modified Profiles</value>
+    <value>Modified profiles</value>
   </data>
   <data name="Extensions_AddedProfilesHeader.Text" xml:space="preserve">
-    <value>Added Profiles</value>
+    <value>Added profiles</value>
   </data>
   <data name="Extensions_AddedColorSchemesHeader.Text" xml:space="preserve">
-    <value>Added Color Schemes</value>
+    <value>Added color schemes</value>
   </data>
   <data name="Extensions_DisclaimerHyperlink.Content" xml:space="preserve">
     <value>Learn more about extensions</value>
