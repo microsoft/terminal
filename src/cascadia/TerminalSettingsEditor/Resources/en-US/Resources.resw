@@ -1929,7 +1929,7 @@
     <value>Shortcuts</value>
     <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>
   </data>
-  <data name="EditAction_KeyBindings.HelpText" xml:space="preserve">
+  <data name="EditAction_KeyBindings.Description" xml:space="preserve">
     <value>Customize keyboard shortcuts to speed up common actions and workflows.</value>
     <comment>Help text shown under the "Shortcuts" header on the Edit Shortcut page.</comment>
   </data>
@@ -1945,7 +1945,7 @@
     <value>Additional customizations</value>
     <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
   </data>
-  <data name="EditAction_AdditionalCustomizations.HelpText" xml:space="preserve">
+  <data name="EditAction_AdditionalCustomizations.Description" xml:space="preserve">
     <value>Fine tune how shortcuts behave.</value>
     <comment>Help text shown under the "Additional customizations" header on the Edit Shortcut page.</comment>
   </data>
@@ -1957,7 +1957,7 @@
     <value>Delete this shortcut</value>
     <comment>Header for the setting container that holds the "Delete shortcut" button at the bottom of the Edit Shortcut page.</comment>
   </data>
-  <data name="EditAction_DeleteCommand.HelpText" xml:space="preserve">
+  <data name="EditAction_DeleteCommand.Description" xml:space="preserve">
     <value>This shortcut will be removed and any shortcuts associated with it will no longer work.</value>
     <comment>Help text shown under the "Delete this shortcut" setting container on the Edit Shortcut page.</comment>
   </data>
