@@ -85,13 +85,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Extensions::NavigateToProfile_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
     {
-        const auto& profileGuid = sender.as<Controls::Button>().Tag().as<guid>();
+        const auto element = sender.as<FrameworkElement>();
+        const auto profileGuid = winrt::unbox_value<winrt::guid>(element.Tag());
         get_self<ExtensionsViewModel>(_ViewModel)->NavigateToProfile(profileGuid);
     }
 
     void Extensions::NavigateToColorScheme_Click(const IInspectable& sender, const RoutedEventArgs& /*args*/)
     {
-        const auto& schemeVM = sender.as<Controls::Button>().Tag().as<Editor::ColorSchemeViewModel>();
+        const auto element = sender.as<FrameworkElement>();
+        const auto schemeVM = element.Tag().as<Editor::ColorSchemeViewModel>();
         get_self<ExtensionsViewModel>(_ViewModel)->NavigateToColorScheme(schemeVM);
     }
 

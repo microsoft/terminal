@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 .SYNOPSIS
-Scans XAML files for local:SettingContainer entries and generates GeneratedSettingsIndex.g.h / .g.cpp.
+Scans XAML files for local:SettingsCard and local:SettingsExpander entries and generates GeneratedSettingsIndex.g.h / .g.cpp.
 
 .PARAMETER SourceDir
 Directory to scan recursively for .xaml files.
@@ -23,7 +23,9 @@ $ProhibitedUids = @(
     "Profile_ProportionalFontFaces",
     "ColorScheme_InboxSchemeDuplicate",
     "ColorScheme_ColorsHeader",
-    "ColorScheme_Rename"
+    "ColorScheme_Rename",
+    "Profile_ResetProfile",
+    "Profile_DeleteProfile"
 )
 
 # Prohibited XAML files (already limited to Page root elements)
@@ -193,13 +195,13 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         }
     }
 
-    # Iterate over all local:SettingContainer nodes
-    foreach ($settingContainer in $xml.SelectNodes("//local:SettingContainer", $xm))
+    # Iterate over all local:SettingsCard and local:SettingsExpander nodes
+    foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
     {
         # Extract Uid
         if ($null -eq $settingContainer.Uid)
         {
-            Write-Warning "No x:Uid found for a SettingContainer in file $filename. Skipping entry."
+            # SettingsCard/SettingsExpander without x:Uid are not indexable — skip silently
             continue
         }
         elseif ($ProhibitedUids -contains $settingContainer.Uid)

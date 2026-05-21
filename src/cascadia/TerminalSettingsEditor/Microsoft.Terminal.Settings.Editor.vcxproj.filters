@@ -29,7 +29,6 @@
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
-    <Midl Include="SettingContainer.idl" />
     <Midl Include="SettingsCard.idl" />
     <Midl Include="SettingsExpander.idl" />
     <Midl Include="StyleExtensions.idl" />

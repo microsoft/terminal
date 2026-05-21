@@ -140,7 +140,11 @@
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
         <Setter Property="MaxWidth" Value="400" />
         <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <!--  Value is set below to appease the compiler. The localized resource is used instead.  -->
+        <Setter x:Uid="TextBoxSettingStyle_PlaceholderText"
+                Property="PlaceholderText"
+                Value="None" />
     </Style>
 
     <!--  Text Block  -->
@@ -210,7 +214,6 @@
     <Style x:Key="BrowseButtonStyle"
            BasedOn="{StaticResource BaseButtonStyle}"
            TargetType="Button">
-        <Setter Property="Margin" Value="8,0,0,0" />
         <Setter Property="MinHeight" Value="32" />
     </Style>
 

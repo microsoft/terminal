@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
+        void ResetSettings();
 
         // bell style bits
         hstring BellStylePreview() const;
@@ -168,6 +169,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();
         void _MarkDuplicateBellSoundDirectories();
+        void _RefreshDefaultAppearanceViewModel();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 

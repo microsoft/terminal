@@ -223,7 +223,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // into the path TextBox, we properly update the checkbox and stored
                 // _lastBgImagePath. Without this, then we'll permanently hide the text
                 // box, prevent it from ever being changed again.
-                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible", L"CurrentBackgroundImagePath");
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsEnabled", L"CurrentBackgroundImagePath");
             }
             else if (viewModelProperty == L"BackgroundImageAlignment")
             {
@@ -1002,7 +1002,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool AppearanceViewModel::BackgroundImageSettingsVisible() const
+    bool AppearanceViewModel::BackgroundImageSettingsEnabled() const
     {
         return !BackgroundImagePath().Path().empty();
     }

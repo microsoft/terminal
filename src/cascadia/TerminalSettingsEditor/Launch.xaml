@@ -42,10 +42,11 @@
     </Page.Resources>
 
     <StackPanel>
-        <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <StackPanel Spacing="2"
+                    Style="{StaticResource SettingsStackStyle}">
             <!--  Default Profile  -->
-            <local:SettingContainer x:Name="DefaultProfile"
-                                    x:Uid="Globals_DefaultProfile">
+            <local:SettingsCard x:Name="DefaultProfile"
+                                x:Uid="Globals_DefaultProfile">
                 <ComboBox ItemsSource="{x:Bind ViewModel.DefaultProfiles}"
                           SelectedItem="{x:Bind ViewModel.CurrentDefaultProfile, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
@@ -73,12 +74,12 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Default Terminal  -->
-            <local:SettingContainer x:Name="DefaultTerminalDropdown"
-                                    x:Uid="Globals_DefaultTerminal"
-                                    x:Load="false">
+            <local:SettingsCard x:Name="DefaultTerminalDropdown"
+                                x:Uid="Globals_DefaultTerminal"
+                                x:Load="false">
                 <ComboBox x:Name="DefaultTerminal"
                           ItemsSource="{x:Bind ViewModel.DefaultTerminals}"
                           SelectedItem="{x:Bind ViewModel.CurrentDefaultTerminal, Mode=TwoWay}"
@@ -138,11 +139,11 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Language  -->
-            <local:SettingContainer x:Name="Language"
-                                    x:Uid="Globals_Language">
+            <local:SettingsCard x:Name="Language"
+                                x:Uid="Globals_Language">
                 <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
                           SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
@@ -152,170 +153,119 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Language  -->
-            <local:SettingContainer x:Name="DefaultInputScope"
-                                    x:Uid="Globals_DefaultInputScope">
+            <local:SettingsCard x:Name="DefaultInputScope"
+                                x:Uid="Globals_DefaultInputScope">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.DefaultInputScopeList}"
                           SelectedItem="{x:Bind ViewModel.CurrentDefaultInputScope, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Start on User Login  -->
-            <local:SettingContainer x:Name="StartOnUserLogin"
-                                    x:Uid="Globals_StartOnUserLogin"
-                                    HelpText="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
-                                    Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
+            <local:SettingsCard x:Name="StartOnUserLogin"
+                                x:Uid="Globals_StartOnUserLogin"
+                                Description="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
                 <ToggleSwitch IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}"
                               IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  First Window Behavior  -->
-            <local:SettingContainer x:Name="FirstWindowPreference"
-                                    x:Uid="Globals_FirstWindowPreference">
+            <local:SettingsCard x:Name="FirstWindowPreference"
+                                x:Uid="Globals_FirstWindowPreference">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.FirstWindowPreferenceList}"
                           SelectedItem="{x:Bind ViewModel.CurrentFirstWindowPreference, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Windowing Behavior  -->
-            <local:SettingContainer x:Name="WindowingBehavior"
-                                    x:Uid="Globals_WindowingBehavior">
+            <local:SettingsCard x:Name="WindowingBehavior"
+                                x:Uid="Globals_WindowingBehavior">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.WindowingBehaviorList}"
                           SelectedItem="{x:Bind ViewModel.CurrentWindowingBehavior, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Launch Size  -->
-            <local:SettingContainer x:Name="LaunchSize"
-                                    x:Uid="Globals_LaunchSize"
-                                    CurrentValue="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <Grid ColumnSpacing="12"
-                      RowSpacing="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock x:Uid="Globals_InitialCols"
-                               Grid.Row="0"
-                               Grid.Column="0"
-                               VerticalAlignment="Center"
-                               Style="{StaticResource SettingsPageItemHeaderStyle}" />
-                    <muxc:NumberBox x:Uid="Globals_InitialColsBox"
-                                    Grid.Row="0"
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    Maximum="999"
-                                    Minimum="1"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
-                    <TextBlock x:Uid="Globals_InitialRows"
-                               Grid.Row="1"
-                               Grid.Column="0"
-                               VerticalAlignment="Center"
-                               Style="{StaticResource SettingsPageItemHeaderStyle}" />
-                    <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
-                                    Grid.Row="1"
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    Maximum="999"
-                                    Minimum="1"
-                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
-                </Grid>
-            </local:SettingContainer>
+            <local:SettingsExpander x:Name="LaunchSize"
+                                    x:Uid="Globals_LaunchSize">
+                <local:SettingsExpander.Content>
+                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                               Text="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}" />
+                </local:SettingsExpander.Content>
+                <local:SettingsExpander.Items>
+                    <local:SettingsCard x:Uid="Globals_InitialCols">
+                        <muxc:NumberBox x:Uid="Globals_InitialColsBox"
+                                        Maximum="999"
+                                        Minimum="1"
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Uid="Globals_InitialRows">
+                        <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
+                                        Maximum="999"
+                                        Minimum="1"
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                                        Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
+                    </local:SettingsCard>
+                </local:SettingsExpander.Items>
+            </local:SettingsExpander>
 
             <!--  Launch Parameters  -->
-            <local:SettingContainer x:Name="LaunchParameters"
-                                    x:Uid="Globals_LaunchParameters"
-                                    CurrentValue="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <Grid RowSpacing="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock x:Uid="Globals_LaunchModeSetting"
-                               Grid.Row="0"
-                               Grid.Column="0"
-                               VerticalAlignment="Center" />
-                    <ComboBox x:Name="LaunchModeComboBox"
-                              Grid.Row="0"
-                              Grid.Column="1"
-                              MinWidth="240"
-                              AutomationProperties.AccessibilityView="Content"
-                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                              ItemsSource="{x:Bind ViewModel.LaunchModeList}"
-                              SelectedItem="{x:Bind ViewModel.CurrentLaunchMode, Mode=TwoWay}"
-                              Style="{StaticResource ComboBoxSettingStyle}" />
-                    <TextBlock x:Uid="Globals_LaunchPosition"
-                               Grid.Row="1"
-                               Grid.Column="0"
-                               VerticalAlignment="Center" />
-                    <Grid Grid.Row="1"
-                          Grid.Column="1"
-                          ColumnSpacing="4">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <!--  Match the width of these NumberBoxes to the Width of the LaunchModeComboBox above minus the Grid's ColumnSpacing  -->
-                        <muxc:NumberBox x:Name="PosXBox"
-                                        x:Uid="Globals_InitialPosXBox"
-                                        Grid.Row="0"
-                                        Grid.Column="0"
-                                        Width="118"
-                                        IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                        Style="{StaticResource LaunchPositionNumberBoxStyle}"
-                                        Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
-                        <muxc:NumberBox x:Name="PosYBox"
-                                        x:Uid="Globals_InitialPosYBox"
-                                        Grid.Row="0"
-                                        Grid.Column="1"
-                                        Width="118"
-                                        IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
-                                        Style="{StaticResource LaunchPositionNumberBoxStyle}"
-                                        Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
-                        <CheckBox x:Name="UseDefaultLaunchPositionCheckbox"
-                                  x:Uid="Globals_DefaultLaunchPositionCheckbox"
-                                  Grid.Row="1"
-                                  Grid.Column="0"
-                                  Grid.ColumnSpan="2"
-                                  IsChecked="{x:Bind ViewModel.UseDefaultLaunchPosition, Mode=TwoWay}" />
-                    </Grid>
-                    <TextBlock x:Uid="Globals_CenterOnLaunch"
-                               Grid.Row="2"
-                               Grid.Column="0"
-                               VerticalAlignment="Center" />
-                    <ToggleSwitch x:Name="CenterOnLaunchToggle"
-                                  Grid.Row="2"
-                                  Grid.Column="1"
-                                  IsOn="{x:Bind ViewModel.CenterOnLaunch, Mode=TwoWay}"
-                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                </Grid>
-            </local:SettingContainer>
+            <local:SettingsExpander x:Name="LaunchParameters"
+                                    x:Uid="Globals_LaunchParameters">
+                <local:SettingsExpander.Content>
+                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                               Text="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}" />
+                </local:SettingsExpander.Content>
+                <local:SettingsExpander.Items>
+                    <local:SettingsCard x:Uid="Globals_LaunchModeSetting">
+                        <ComboBox x:Name="LaunchModeComboBox"
+                                  AutomationProperties.AccessibilityView="Content"
+                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                  ItemsSource="{x:Bind ViewModel.LaunchModeList}"
+                                  SelectedItem="{x:Bind ViewModel.CurrentLaunchMode, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}" />
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Uid="Globals_LaunchPosition">
+                        <StackPanel Orientation="Vertical"
+                                    Spacing="4">
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="4">
+                                <muxc:NumberBox x:Name="PosXBox"
+                                                x:Uid="Globals_InitialPosXBox"
+                                                Width="118"
+                                                IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                                Style="{StaticResource LaunchPositionNumberBoxStyle}"
+                                                Value="{x:Bind ViewModel.InitialPosX, Mode=TwoWay}" />
+                                <muxc:NumberBox x:Name="PosYBox"
+                                                x:Uid="Globals_InitialPosYBox"
+                                                Width="118"
+                                                IsEnabled="{x:Bind mtu:Converters.InvertBoolean(ViewModel.UseDefaultLaunchPosition), Mode=OneWay}"
+                                                Style="{StaticResource LaunchPositionNumberBoxStyle}"
+                                                Value="{x:Bind ViewModel.InitialPosY, Mode=TwoWay}" />
+                            </StackPanel>
+                            <CheckBox x:Name="UseDefaultLaunchPositionCheckbox"
+                                      x:Uid="Globals_DefaultLaunchPositionCheckbox"
+                                      IsChecked="{x:Bind ViewModel.UseDefaultLaunchPosition, Mode=TwoWay}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Uid="Globals_CenterOnLaunch">
+                        <ToggleSwitch x:Name="CenterOnLaunchToggle"
+                                      IsOn="{x:Bind ViewModel.CenterOnLaunch, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    </local:SettingsCard>
+                </local:SettingsExpander.Items>
+            </local:SettingsExpander>
         </StackPanel>
     </StackPanel>
 </Page>

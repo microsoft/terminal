@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -132,7 +132,7 @@
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>此色彩配置是內建設定或已安裝擴充功能的一部分</value>
   </data>
-  <data name="ColorScheme_InboxSchemeDuplicate.HelpText" xml:space="preserve">
+  <data name="ColorScheme_InboxSchemeDuplicate.Description" xml:space="preserve">
     <value>若要變更此色彩配置，您必須製作色彩配置的複本。</value>
   </data>
   <data name="ColorScheme_DuplicateButton.Content" xml:space="preserve">
@@ -143,7 +143,7 @@
     <value>將色彩配置設為預設</value>
     <comment>This is the header for a control that allows the user to set the currently selected color scheme as their default.</comment>
   </data>
-  <data name="ColorScheme_SetAsDefault.HelpText" xml:space="preserve">
+  <data name="ColorScheme_SetAsDefault.Description" xml:space="preserve">
     <value>根據預設，將此色彩配置套用至您的所有設定檔。個別設定檔仍然可以選取各自的色彩配置。</value>
     <comment>A description explaining how this control changes the user's default color scheme.</comment>
   </data>
@@ -235,7 +235,7 @@
     <value>語言 (需要重新啟動)</value>
     <comment>The header for a control allowing users to choose the app's language.</comment>
   </data>
-  <data name="Globals_Language.HelpText" xml:space="preserve">
+  <data name="Globals_Language.Description" xml:space="preserve">
     <value>選取應用程式的顯示語言。這將會覆寫您的預設 Windows 介面語言。</value>
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
@@ -247,7 +247,7 @@
     <value>預設 IME 輸入模式</value>
     <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
   </data>
-  <data name="Globals_DefaultInputScope.HelpText" xml:space="preserve">
+  <data name="Globals_DefaultInputScope.Description" xml:space="preserve">
     <value>通知 IME 預設使用的語言。對於依賴 IME 且預設不使用拉丁字元的語言，此設定可用來強制啟動英文輸入。</value>
   </data>
   <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
@@ -260,7 +260,7 @@
     <value>永遠顯示索引標籤</value>
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
-  <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
+  <data name="Globals_AlwaysShowTabs.Description" xml:space="preserve">
     <value>若停用，建立新索引標籤時，將會顯示索引標籤列。當 [隱藏標題列] 開啟時，無法停用。</value>
     <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header". This setting cannot be disabled while "Globals_ShowTitlebar.Header" is enabled.</comment>
   </data>
@@ -268,7 +268,7 @@
     <value>新建立索引標籤的位置</value>
     <comment>Header for a control to select position of newly created tabs.</comment>
   </data>
-  <data name="Globals_NewTabPosition.HelpText" xml:space="preserve">
+  <data name="Globals_NewTabPosition.Description" xml:space="preserve">
     <value>指定新索引標籤在索引標籤列中出現的位置。</value>
     <comment>A description for what the "Position of newly created tabs" setting does.</comment>
   </data>
@@ -292,7 +292,7 @@
     <value>用於「搜尋 Web」動作的預設 URL</value>
     <comment>Header for a control to set the query URL when using the "search web" action.</comment>
   </data>
-  <data name="Globals_SearchWebDefaultQueryUrl.HelpText" xml:space="preserve">
+  <data name="Globals_SearchWebDefaultQueryUrl.Description" xml:space="preserve">
     <value>預留位置 "%s" 將以搜尋查詢取代。</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
@@ -308,7 +308,7 @@
     <value>預設設定檔</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
-  <data name="Globals_DefaultProfile.HelpText" xml:space="preserve">
+  <data name="Globals_DefaultProfile.Description" xml:space="preserve">
     <value>按一下 '+' 圖示或輸入新索引標籤的按鍵繫結時所開啟的設定檔。</value>
     <comment>A description for what the default profile is and when it's used.</comment>
   </data>
@@ -316,7 +316,7 @@
     <value>預設終端應用程式</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
   </data>
-  <data name="Globals_DefaultTerminal.HelpText" xml:space="preserve">
+  <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
     <value>當執行命令列應用程式且不使用現有工作模式而啟動的終端機應用程式 (例如從 [開始] 功能表或 [執行] 對話方塊)。</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
@@ -324,7 +324,7 @@
     <value>圖形 API</value>
     <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_GraphicsAPI.HelpText" xml:space="preserve">
+  <data name="Globals_GraphicsAPI.Description" xml:space="preserve">
     <value>Direct3D 11 提供更具效能且功能更豐富的體驗，而 Direct2D 則較穩定。預設選項 [自動] 會挑選最適合您圖形硬體的 API。如果您遇到重大問題，請考慮使用 Direct2D。</value>
   </data>
   <data name="Globals_GraphicsAPI_Automatic.Text" xml:space="preserve">
@@ -341,7 +341,7 @@
     <value>停用部分 [交換鏈結] 失效</value>
     <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
   </data>
-  <data name="Globals_DisablePartialInvalidation.HelpText" xml:space="preserve">
+  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
     <value>根據預設，文字轉譯器會使用 FLIP_SEQUENTIAL 交換鏈結，並透過 Present1 API 宣告變更的矩形。啟用此設定時，將改為使用 FLIP_DISCARD 交換鏈結，而且不會宣告任何已變更的矩形。一個或另一個比較好取決於您的硬體和各種其他因素。</value>
     <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
   </data>
@@ -349,7 +349,7 @@
     <value>使用軟體呈現 (WARP)</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
   </data>
-  <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
+  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
     <value>啟用時，終端機將使用軟體點陣器 (WARP)。在幾乎所有情況下，此設定都應該保留停用。</value>
     <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
   </data>
@@ -357,7 +357,7 @@
     <value>文字測量模式</value>
     <comment>This text is shown next to a list of choices.</comment>
   </data>
-  <data name="Globals_TextMeasurement.HelpText" xml:space="preserve">
+  <data name="Globals_TextMeasurement.Description" xml:space="preserve">
     <value>這會變更內送文字群組到儲存格的方式。[Grapheme 叢集] 選項是最新式且更正確的 Unicode 方法，而 “wcswidth” 是 UNIX 的常見方法，而 [Windows 控制台] 則會復寫它在 Windows 上運作的方式。變更此設定需要重新啟動Windows 終端機，且只適用於從其中啟動的應用程式。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
@@ -375,7 +375,7 @@
     <value>模糊字元寬度</value>
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+  <data name="Globals_AmbiguousWidth.Description" xml:space="preserve">
     <value>設定東亞模糊字元的寬度。「窄」(預設) 以相容性為優先，而「寬」則以多數中日韓字型的可讀性為優先。在「寬」模式下，部分應用程式可能無法正常運作，導致游標移動異常。變更此設定後，需重新啟動 Windows 終端機，且僅適用於從 Windows 終端機內啟動的應用程式。</value>
   </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
@@ -386,11 +386,11 @@
     <value>寬</value>
     <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
-  <data name="Globals_InitialCols.Text" xml:space="preserve">
+  <data name="Globals_InitialCols.Header" xml:space="preserve">
     <value>欄</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
   </data>
-  <data name="Globals_InitialRows.Text" xml:space="preserve">
+  <data name="Globals_InitialRows.Header" xml:space="preserve">
     <value>列</value>
     <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
   </data>
@@ -438,7 +438,7 @@
     <value>終端機啟動時</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
   </data>
-  <data name="Globals_FirstWindowPreference.HelpText" xml:space="preserve">
+  <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
     <value>建立第一個終端機時應顯示的內容。</value>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
@@ -461,17 +461,13 @@
     <value>啟動參數</value>
     <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
-  <data name="Globals_LaunchParameters.HelpText" xml:space="preserve">
+  <data name="Globals_LaunchParameters.Description" xml:space="preserve">
     <value>控制終端機啟動方式的設定</value>
     <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
   </data>
-  <data name="Globals_LaunchModeSetting.Text" xml:space="preserve">
+  <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>啟動模式</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
-  </data>
-  <data name="Globals_LaunchModeSetting.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>啟動時終端機的顯示方式。焦點將會隱藏索引標籤和標題列。</value>
-    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
   </data>
   <data name="Globals_LaunchModeDefault.Content" xml:space="preserve">
     <value>預設</value>
@@ -489,7 +485,7 @@
     <value>新執行個體行為</value>
     <comment>Header for a control to select how new app instances are handled.</comment>
   </data>
-  <data name="Globals_WindowingBehavior.HelpText" xml:space="preserve">
+  <data name="Globals_WindowingBehavior.Description" xml:space="preserve">
     <value>控制新的終端機執行個體附加到現有視窗的方式。</value>
     <comment>A description for what the "windowing behavior" setting does. Presented near "Globals_WindowingBehavior.Header".</comment>
   </data>
@@ -509,7 +505,7 @@
     <value>隱藏標題列 (需要重新啟動)</value>
     <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
-  <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
+  <data name="Globals_ShowTitlebar.Description" xml:space="preserve">
     <value>停用時，標題列會出現在索引標籤上方。</value>
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
@@ -521,7 +517,7 @@
     <value>使用作用中的終端機標題做為應用程式標題</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
-  <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
+  <data name="Globals_ShowTitleInTitlebar.Description" xml:space="preserve">
     <value>停用時，標題列會是 [Windows 終端機]。</value>
     <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
@@ -529,7 +525,7 @@
     <value>將視窗大小調整為字元格線</value>
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
   </data>
-  <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
+  <data name="Globals_SnapToGridOnResize.Description" xml:space="preserve">
     <value>停用時，視窗將會順暢地調整大小。</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
@@ -537,21 +533,17 @@
     <value>在電腦啟動時啟動</value>
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
-  <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
+  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
     <value>當您登入Windows時，會自動啟動終端機。</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
   </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>置中對齊</value>
-    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Text".</comment>
+    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
   </data>
-  <data name="Globals_CenterOnLaunch.Text" xml:space="preserve">
+  <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
     <value>啟動時置中</value>
     <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
-  </data>
-  <data name="Globals_CenterOnLaunch.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>啟用後，啟動時視窗將位於螢幕中央。</value>
-    <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>最上層顯示</value>
@@ -581,15 +573,15 @@
     <value>啟用偵錯功能</value>
     <comment>Header for a control to toggle debug features.</comment>
   </data>
-  <data name="Globals_AlwaysOnTop.HelpText" xml:space="preserve">
+  <data name="Globals_AlwaysOnTop.Description" xml:space="preserve">
     <value>終端機永遠是桌面最上方的視窗。</value>
     <comment>A description for what the "always on top" setting does. Presented near "Globals_AlwaysOnTop.Header".</comment>
   </data>
-  <data name="Profile_ForceVTInput.HelpText" xml:space="preserve">
+  <data name="Profile_ForceVTInput.Description" xml:space="preserve">
     <value>啟用此設定時，某些應用程式中的某些鍵盤輸入可能會停止正常運作。</value>
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
   </data>
-  <data name="Globals_AllowHeadless.HelpText" xml:space="preserve">
+  <data name="Globals_AllowHeadless.Description" xml:space="preserve">
     <value>這可允許全域傳送與「受擷取模式」等動作運作，即使沒有開啟視窗也可運作。</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
@@ -597,7 +589,7 @@
     <value>索引標籤寬度模式</value>
     <comment>Header for a control to choose how wide the tabs are.</comment>
   </data>
-  <data name="Globals_TabWidthMode.HelpText" xml:space="preserve">
+  <data name="Globals_TabWidthMode.Description" xml:space="preserve">
     <value>精簡會將非使用中索引標籤縮小成圖示的大小。</value>
     <comment>A description for what the "tab width mode" setting does. Presented near "Globals_TabWidthMode.Header". 'Compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
   </data>
@@ -645,7 +637,7 @@
     <value>文字分隔符號</value>
     <comment>Header for a control to determine what delimiters to use to identify separate words during word selection.</comment>
   </data>
-  <data name="Globals_WordDelimiters.HelpText" xml:space="preserve">
+  <data name="Globals_WordDelimiters.Description" xml:space="preserve">
     <value>當您按兩下終端機中的文字或啟用「標記模式」時，將會使用到這些符號。</value>
     <comment>A description for what the "word delimiters" setting does. Presented near "Globals_WordDelimiters.Header". "Mark" is used in the sense of "choosing something to interact with."</comment>
   </data>
@@ -701,7 +693,7 @@
     <value>背景不透明度</value>
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
   </data>
-  <data name="Profile_Opacity.HelpText" xml:space="preserve">
+  <data name="Profile_Opacity.Description" xml:space="preserve">
     <value>設定視窗的不透明度。</value>
     <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
   </data>
@@ -717,7 +709,7 @@
     <value>AltGr 別名</value>
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
-  <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
+  <data name="Profile_AltGrAliasing.Description" xml:space="preserve">
     <value>根據預設，Windows會將Ctrl+Alt視為 AltGr 的別名。此設定將會覆寫Windows的預設行為。</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header". {Locked="Windows"}</comment>
   </data>
@@ -729,7 +721,7 @@
     <value>文字消除鋸齒</value>
     <comment>Header for a control to select the graphical anti-aliasing format of text.</comment>
   </data>
-  <data name="Profile_AntialiasingMode.HelpText" xml:space="preserve">
+  <data name="Profile_AntialiasingMode.Description" xml:space="preserve">
     <value>控制轉譯器中文字的鋸齒消除方式。</value>
     <comment>A description for what the "antialiasing mode" setting does. Presented near "Profile_AntialiasingMode.Header".</comment>
   </data>
@@ -761,7 +753,7 @@
     <value>背景影像路徑</value>
     <comment>Header for a control to determine the image presented on the background of the app.</comment>
   </data>
-  <data name="Profile_BackgroundImage.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImage.Description" xml:space="preserve">
     <value>視窗背景中所使用之圖像的檔案位置。</value>
     <comment>A description for what the "background image path" setting does. Presented near "Profile_BackgroundImage".</comment>
   </data>
@@ -773,7 +765,7 @@
     <value>背景影像對齊</value>
     <comment>Header for a control to choose the visual alignment of the image presented on the background of the app.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignment.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignment.Description" xml:space="preserve">
     <value>設定背景影像與視窗邊界對齊的程度。</value>
     <comment>A description for what the "background image alignment" setting does. Presented near "Profile_BackgroundImageAlignment".</comment>
   </data>
@@ -842,7 +834,7 @@
     <value>背景影像不透明度</value>
     <comment>Header for a control to choose the opacity of the image presented on the background of the app.</comment>
   </data>
-  <data name="Profile_BackgroundImageOpacity.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImageOpacity.Description" xml:space="preserve">
     <value>設定背景影像的不透明度。</value>
     <comment>A description for what the "background image opacity" setting does. Presented near "Profile_BackgroundImageOpacity".</comment>
   </data>
@@ -854,7 +846,7 @@
     <value>背景影像延伸模式</value>
     <comment>Header for a control to choose the stretch mode of the image presented on the background of the app. Stretch mode is how the image is resized to fill its allocated space.</comment>
   </data>
-  <data name="Profile_BackgroundImageStretchMode.HelpText" xml:space="preserve">
+  <data name="Profile_BackgroundImageStretchMode.Description" xml:space="preserve">
     <value>設定背景圖像調整大小以填滿視窗。</value>
     <comment>A description for what the "background image stretch mode" setting does. Presented near "Profile_BackgroundImageStretchMode".</comment>
   </data>
@@ -902,7 +894,7 @@
     <value>色彩配置</value>
     <comment>Header for a control to select the scheme (or set) of colors used in the session. This is selected from a list of options managed by the user.</comment>
   </data>
-  <data name="Profile_ColorScheme.HelpText" xml:space="preserve">
+  <data name="Profile_ColorScheme.Description" xml:space="preserve">
     <value>展開以覆寫前景、背景和選取範圍背景。</value>
     <comment>Help text for a control to select the scheme (or set) of colors used in the session. Directs the user to expand the control to access overrides for certain values in the color scheme.</comment>
   </data>
@@ -918,7 +910,7 @@
     <value>命令列</value>
     <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
   </data>
-  <data name="Profile_Commandline.HelpText" xml:space="preserve">
+  <data name="Profile_Commandline.Description" xml:space="preserve">
     <value>用於設定檔中的可執行檔。</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
@@ -930,7 +922,7 @@
     <value>游標高度</value>
     <comment>Header for a control to determine the height of the text cursor.</comment>
   </data>
-  <data name="Profile_CursorHeight.HelpText" xml:space="preserve">
+  <data name="Profile_CursorHeight.Description" xml:space="preserve">
     <value>從底部開始設定游標的百分比高度。僅適用于復古游標形狀。</value>
     <comment>A description for what the "cursor height" setting does. Presented near "Profile_CursorHeight".</comment>
   </data>
@@ -990,7 +982,7 @@
     <value>字體</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
-  <data name="Profile_FontFace.HelpText" xml:space="preserve">
+  <data name="Profile_FontFace.Description" xml:space="preserve">
     <value>您可以使用 ASCII 逗號分隔多個字型。</value>
   </data>
   <data name="Profile_FontSize.Header" xml:space="preserve">
@@ -1001,7 +993,7 @@
     <value>字型大小</value>
     <comment>Name for a control to determine the size of the text in the app.</comment>
   </data>
-  <data name="Profile_FontSize.HelpText" xml:space="preserve">
+  <data name="Profile_FontSize.Description" xml:space="preserve">
     <value>字體大小以點為單位。</value>
     <comment>A description for what the "font size" setting does. Presented near "Profile_FontSize".</comment>
   </data>
@@ -1021,11 +1013,11 @@
     <value>儲存格寬度</value>
     <comment>Header for a control that sets the text character width.</comment>
   </data>
-  <data name="Profile_LineHeight.HelpText" xml:space="preserve">
+  <data name="Profile_LineHeight.Description" xml:space="preserve">
     <value>覆寫終端機的行高。以字型大小的倍數表示。預設值取決於您的字型，通常大約是 1.2。</value>
     <comment>A description for what the "line height" setting does. Presented near "Profile_LineHeight".</comment>
   </data>
-  <data name="Profile_CellWidth.HelpText" xml:space="preserve">
+  <data name="Profile_CellWidth.Description" xml:space="preserve">
     <value>覆寫終端機的單元格寬度。以字型大小的倍數表示。預設值取決於您的字型，通常大約是0.6。</value>
     <comment>A description for what the "cell width" setting does. Presented near "Profile_CellWidth".</comment>
   </data>
@@ -1041,7 +1033,7 @@
     <value>內建自符</value>
     <comment>The main label of a toggle. When enabled, certain characters (glyphs) are replaced with better looking ones.</comment>
   </data>
-  <data name="Profile_EnableBuiltinGlyphs.HelpText" xml:space="preserve">
+  <data name="Profile_EnableBuiltinGlyphs.Description" xml:space="preserve">
     <value>啟用時，終端機會為區塊元素和方塊繪圖字元繪製自訂字符，而非使用字型。</value>
     <comment>A longer description of the "Profile_EnableBuiltinGlyphs" toggle. "glyphs", "block element" and "box drawing characters" are technical terms from the Unicode specification.</comment>
   </data>
@@ -1049,7 +1041,7 @@
     <value>全彩表情圖示</value>
     <comment>The main label of a toggle. When enabled, certain characters (emoji in this case) are displayed with multiple colors.</comment>
   </data>
-  <data name="Profile_EnableColorGlyphs.HelpText" xml:space="preserve">
+  <data name="Profile_EnableColorGlyphs.Description" xml:space="preserve">
     <value>啟用時，表情圖示會以全彩顯示。</value>
     <comment>A longer description of the "Profile_EnableColorGlyphs" toggle.</comment>
   </data>
@@ -1065,7 +1057,7 @@
     <value>字型粗細</value>
     <comment>Header for a control to select the weight (i.e. bold, thin, etc.) of the text in the app.</comment>
   </data>
-  <data name="Profile_FontWeight.HelpText" xml:space="preserve">
+  <data name="Profile_FontWeight.Description" xml:space="preserve">
     <value>為指定的字型設定權數 (筆觸的亮度或重度)。</value>
     <comment>A description for what the "font weight" setting does. Presented near "Profile_FontWeight".</comment>
   </data>
@@ -1097,7 +1089,7 @@
     <value>在下拉式清單中隱藏設定檔</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.HelpText" xml:space="preserve">
+  <data name="Profile_Hidden.Description" xml:space="preserve">
     <value>如果啟用，設定檔將不會顯示在設定檔清單中。這可用來隱藏預設設定檔和動態產生的設定檔，同時將它們留在您的設定檔案中。</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
@@ -1105,7 +1097,7 @@
     <value>以系統管理員身分執行此設定檔</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
   </data>
-  <data name="Profile_Elevate.HelpText" xml:space="preserve">
+  <data name="Profile_Elevate.Description" xml:space="preserve">
     <value>如果啟用，配置檔將會自動在 管理員 終端機視窗中開啟。如果目前的視窗已以系統管理員身分執行，則會在此視窗中開啟。</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
@@ -1117,7 +1109,7 @@
     <value>記錄大小</value>
     <comment>Name for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
   </data>
-  <data name="Profile_HistorySize.HelpText" xml:space="preserve">
+  <data name="Profile_HistorySize.Description" xml:space="preserve">
     <value>視窗中顯示的行數，您可以在視窗中顯示。</value>
     <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
   </data>
@@ -1137,7 +1129,7 @@
     <value>圖示</value>
     <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
   </data>
-  <data name="Profile_Icon.HelpText" xml:space="preserve">
+  <data name="Profile_Icon.Description" xml:space="preserve">
     <value>設定檔中所用圖示的表情圖示或影像檔案位置。</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
@@ -1149,7 +1141,7 @@
     <value>邊框間距</value>
     <comment>Header for a control to determine the amount of space between text in a terminal and the edge of the window. The space can be any combination of the top, bottom, left, and right side of the window.</comment>
   </data>
-  <data name="Profile_Padding.HelpText" xml:space="preserve">
+  <data name="Profile_Padding.Description" xml:space="preserve">
     <value>設定視窗內文字的邊框間距。</value>
     <comment>A description for what the "padding" setting does. Presented near "Profile_Padding".</comment>
   </data>
@@ -1157,7 +1149,7 @@
     <value>懷舊的終端機效果</value>
     <comment>Header for a control to toggle classic CRT display effects, which gives the terminal a retro look.</comment>
   </data>
-  <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
+  <data name="Profile_RetroTerminalEffect.Description" xml:space="preserve">
     <value>顯示懷舊風格的終端效果 (例如發光文字和掃描線)。</value>
     <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect". "Retro" is a common English prefix that suggests a nostalgic, dated appearance.</comment>
   </data>
@@ -1165,7 +1157,7 @@
     <value>自動調整無法分辨的文字亮度</value>
     <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
   </data>
-  <data name="Profile_AdjustIndistinguishableColors.HelpText" xml:space="preserve">
+  <data name="Profile_AdjustIndistinguishableColors.Description" xml:space="preserve">
     <value>自動讓文字變亮或變暗，使其更加清楚可見。即使已啟用，只有在前景和背景色彩的組合會導致不良對比時，才能進行此調整。</value>
     <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
@@ -1205,7 +1197,7 @@
     <value>起始目錄</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
+  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
     <value>載入時，設定檔起始的目錄。</value>
     <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
   </data>
@@ -1225,7 +1217,7 @@
     <value>禁止標題變更</value>
     <comment>Header for a control to toggle changes in the app title.</comment>
   </data>
-  <data name="Profile_SuppressApplicationTitle.HelpText" xml:space="preserve">
+  <data name="Profile_SuppressApplicationTitle.Description" xml:space="preserve">
     <value>忽略應用程式要求以變更標題 (OSC 2)。</value>
     <comment>A description for what the "suppress application title" setting does. Presented near "Profile_SuppressApplicationTitle". "OSC 2" is a technical term that is understood in the industry. {Locked="OSC 2"}</comment>
   </data>
@@ -1237,7 +1229,7 @@
     <value>索引標籤標題</value>
     <comment>Header for a control to determine the title of the tab. This is represented using a text box.</comment>
   </data>
-  <data name="Profile_TabTitle.HelpText" xml:space="preserve">
+  <data name="Profile_TabTitle.Description" xml:space="preserve">
     <value>在啟動時將設定檔名稱取代為要傳遞到殼層的標題。</value>
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
@@ -1257,7 +1249,7 @@
     <value>啟用壓克力材料</value>
     <comment>Header for a control to toggle the use of acrylic material for the background. "Acrylic material" is a Microsoft-specific term: https://docs.microsoft.com/en-us/windows/apps/design/style/acrylic</comment>
   </data>
-  <data name="Profile_UseAcrylic.HelpText" xml:space="preserve">
+  <data name="Profile_UseAcrylic.Description" xml:space="preserve">
     <value>在視窗的背景套用半透明的紋理。</value>
     <comment>A description for what the "Profile_UseAcrylic" setting does.</comment>
   </data>
@@ -1321,7 +1313,7 @@
     <value>鈴聲通知樣式</value>
     <comment>Header for a control to select the how the app notifies the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
-  <data name="Profile_BellStyle.HelpText" xml:space="preserve">
+  <data name="Profile_BellStyle.Description" xml:space="preserve">
     <value>控制應用程式發出 BEL 字元時要採取的動作。</value>
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
@@ -1329,7 +1321,7 @@
     <value>使用新的環境區塊啟動此應用程式</value>
     <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
   </data>
-  <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
+  <data name="Profile_ReloadEnvVars.Description" xml:space="preserve">
     <value>啟用時，終端機將在使用此設定檔建立新索引標籤或窗格時產生新的環境區塊。停用時，索引標籤/窗格將改為繼承終端機啟動時的變數。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
   </data>
@@ -1337,7 +1329,7 @@
     <value>在以滑鼠右鍵按一下時顯示選單</value>
     <comment>This controls how a right-click behaves in the terminal</comment>
   </data>
-  <data name="Profile_RightClickContextMenu.HelpText" xml:space="preserve">
+  <data name="Profile_RightClickContextMenu.Description" xml:space="preserve">
     <value>啟用時，終端機會在單擊滑鼠右鍵時顯示功能表。停用時，若沒有選取專案)，按鼠右鍵將會複製選取的文字 (或貼上。</value>
     <comment>A description for what the "Display a menu on right-click" setting does. Presented near "Profile_RightClickContextMenu".</comment>
   </data>
@@ -1345,7 +1337,7 @@
     <value>在捲軸上顯示標記</value>
     <comment>"Marks" are small visual indicators that can help the user identify the position of useful info in the scrollbar</comment>
   </data>
-  <data name="Profile_ShowMarks.HelpText" xml:space="preserve">
+  <data name="Profile_ShowMarks.Description" xml:space="preserve">
     <value>啟用時，當搜尋文字或啟用殼層整合時，終端機會在滾動條中顯示標記。</value>
     <comment>A description for what the "Display marks on the scrollbar" setting does. Presented near "Profile_ShowMarks".</comment>
   </data>
@@ -1353,7 +1345,7 @@
     <value>按下 Enter 鍵時自動標記提示</value>
     <comment>"Enter" is the enter/return key on the keyboard. This will add a mark indicating the position of a shell prompt when the user presses enter.</comment>
   </data>
-  <data name="Profile_AutoMarkPrompts.HelpText" xml:space="preserve">
+  <data name="Profile_AutoMarkPrompts.Description" xml:space="preserve">
     <value>啟用時，當您按下 Enter 時，終端機會自動新增指示命令結尾位置的標記。</value>
     <comment>A description for what the "Automatically mark prompts on pressing Enter" setting does. Presented near "Profile_AutoMarkPrompts".</comment>
   </data>
@@ -1361,7 +1353,7 @@
     <value>實驗性: 使用滑鼠點擊來調整游標位置</value>
     <comment>This allows the user to move the text cursor just by clicking with the mouse.</comment>
   </data>
-  <data name="Profile_RepositionCursorWithMouse.HelpText" xml:space="preserve">
+  <data name="Profile_RepositionCursorWithMouse.Description" xml:space="preserve">
     <value>啟用時，按一下提示內部就會將游標移到該位置。這需要啟用您殼層中的殼層整合，才能如預期地運作。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_RepositionCursorWithMouse".</comment>
   </data>
@@ -1529,17 +1521,13 @@
     <value>啟動大小</value>
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
-  <data name="Globals_LaunchSize.HelpText" xml:space="preserve">
+  <data name="Globals_LaunchSize.Description" xml:space="preserve">
     <value>第一次載入時顯示在視窗中的列和欄數目。以字元數測量。</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
   </data>
-  <data name="Globals_LaunchPosition.Text" xml:space="preserve">
+  <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>啟動位置</value>
     <comment>Header for a group of settings that control the launch position of the app. Presented near "Globals_InitialPosX" and "Globals_InitialPosY".</comment>
-  </data>
-  <data name="Globals_LaunchPosition.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>啟動時終端機視窗的初始位置。當以最大化、全螢幕或啟用「啟動時置中」啟動時，這將用於定位感興趣的監視器。</value>
-    <comment>A description for what the "X position" and "Y position" settings do. Presented near "Globals_LaunchPosition.Header".</comment>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">
     <value>全部</value>
@@ -1577,7 +1565,7 @@
     <value>刪除設定檔</value>
     <comment>Button label that deletes the current profile that is being viewed.</comment>
   </data>
-  <data name="Profile_Name.HelpText" xml:space="preserve">
+  <data name="Profile_Name.Description" xml:space="preserve">
     <value>出現在下拉式清單中的設定檔名稱。</value>
     <comment>A description for what the "name" setting does. Presented near "Profile_Name".</comment>
   </data>
@@ -1661,7 +1649,7 @@
     <value>索引標籤切換器介面樣式</value>
     <comment>Header for a control to choose how the tab switcher operates.</comment>
   </data>
-  <data name="Globals_TabSwitcherMode.HelpText" xml:space="preserve">
+  <data name="Globals_TabSwitcherMode.Description" xml:space="preserve">
     <value>選取當您使用鍵盤切換索引標籤時要使用的介面。</value>
     <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
   </data>
@@ -2185,7 +2173,7 @@
     <value>自動隱藏視窗</value>
     <comment>Header for a control to toggle the "Automatically hide window" setting. If enabled, the terminal will be hidden as soon as you switch to another window.</comment>
   </data>
-  <data name="Globals_AutoHideWindow.HelpText" xml:space="preserve">
+  <data name="Globals_AutoHideWindow.Description" xml:space="preserve">
     <value>如果啟用，當您切換到其他視窗時，就會立即隱藏終端機。</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
@@ -2205,7 +2193,7 @@
     <value>關閉時警告</value>
     <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
   </data>
-  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+  <data name="Globals_ConfirmOnClose.Description" xml:space="preserve">
     <value>控制在關閉索引標籤或視窗之前出現確認對話方塊的時間。[永遠] 會在關閉任何窗格時顯示對話方塊。</value>
     <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
   </data>
@@ -2230,7 +2218,7 @@
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
     <value>在貼上新行列時警告</value>
   </data>
-  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+  <data name="Globals_WarnAboutMultiLinePaste.Description" xml:space="preserve">
     <value>如果您的殼層不支援「括號貼上」模式，基於安全性考量，我們建議您將此設定為「一律」。</value>
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
   </data>
@@ -2274,7 +2262,7 @@
     <value>鈴鐺音效</value>
     <comment>Header for a control to determine what sound the app uses to notify the user. "Bell" is the common term in terminals for the BEL character (like the metal device used to chime).</comment>
   </data>
-  <data name="Profile_BellSound.HelpText" xml:space="preserve">
+  <data name="Profile_BellSound.Description" xml:space="preserve">
     <value>控制應用程式發出 BEL 字元時播放的音效。「鈴聲通知樣式」必須包含「可聽」。</value>
     <comment>A description for what the "bell sound" setting does. Presented near "Profile_BellSound". "Bell notification style" and "audible" come from "Profile_BellStyle" and "Profile_BellStyleAudible.Content" respectively.{Locked="BEL"}</comment>
   </data>
@@ -2325,19 +2313,19 @@
     <value>游標色彩</value>
     <comment>Header for a control to determine the color of the cursor.</comment>
   </data>
-  <data name="Profile_Foreground.HelpText" xml:space="preserve">
+  <data name="Profile_Foreground.Description" xml:space="preserve">
     <value>覆寫色彩配置中的前景色彩。</value>
     <comment>A description for what the "foreground" setting does. Presented near "Profile_Foreground".</comment>
   </data>
-  <data name="Profile_CursorColor.HelpText" xml:space="preserve">
+  <data name="Profile_CursorColor.Description" xml:space="preserve">
     <value>覆寫色彩配置中的游標色彩。</value>
     <comment>A description for what the "cursor color" setting does. Presented near "Profile_CursorColor".</comment>
   </data>
-  <data name="Profile_Background.HelpText" xml:space="preserve">
+  <data name="Profile_Background.Description" xml:space="preserve">
     <value>覆寫色彩配置的背景色彩。</value>
     <comment>A description for what the "background" setting does. Presented near "Profile_Background".</comment>
   </data>
-  <data name="Profile_SelectionBackground.HelpText" xml:space="preserve">
+  <data name="Profile_SelectionBackground.Description" xml:space="preserve">
     <value>覆寫色彩配置中選取的背景色彩。</value>
     <comment>A description for what the "selection background" setting does. Presented near "Profile_SelectionBackground".</comment>
   </data>
@@ -2421,11 +2409,11 @@
     <value>剩餘的設定檔</value>
     <comment>Header for a control that adds any remaining profiles to the new tab menu.</comment>
   </data>
-  <data name="NewTabMenu_AddMatchProfiles.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_AddMatchProfiles.Description" xml:space="preserve">
     <value>新增至少符合其中一個已定義正則表達式屬性的配置檔群組</value>
     <comment>Additional information for a control that adds a terminal profile matcher to the new tab menu. Presented near "NewTabMenu_AddMatchProfiles".</comment>
   </data>
-  <data name="NewTabMenu_AddRemainingProfiles.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_AddRemainingProfiles.Description" xml:space="preserve">
     <value>只能有一個「剩餘配置檔」專案</value>
     <comment>Additional information for a control that adds any remaining profiles to the new tab menu. Presented near "NewTabMenu_AddRemainingProfiles".</comment>
   </data>
@@ -2505,7 +2493,7 @@
     <value>允許內嵌</value>
     <comment>Header for a control that allows the nested entries to be presented inline rather than with a folder.</comment>
   </data>
-  <data name="NewTabMenu_CurrentFolderInlining.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_CurrentFolderInlining.Description" xml:space="preserve">
     <value>啟用時，如果資料夾只有一個專案，則專案會直接顯示，而且不會轉譯資料夾。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderInlining.Header".</comment>
   </data>
@@ -2513,7 +2501,7 @@
     <value>允許空白</value>
     <comment>Header for a control that allows the current folder entry to be empty.</comment>
   </data>
-  <data name="NewTabMenu_CurrentFolderAllowEmpty.HelpText" xml:space="preserve">
+  <data name="NewTabMenu_CurrentFolderAllowEmpty.Description" xml:space="preserve">
     <value>啟用時，如果資料夾沒有專案，它仍會顯示。否則，將不會轉譯資料夾。</value>
     <comment>Additional text displayed near "NewTabMenu_CurrentFolderAllowEmpty.Header".</comment>
   </data>
@@ -2577,11 +2565,11 @@
     <value>ENQ (Request Terminal Status) 回應</value>
     <comment>{Locked=ENQ}{Locked="Request Terminal Status"} Header for a control to determine the response to the ENQ escape sequence. This is represented using a text box.</comment>
   </data>
-  <data name="Profile_AnswerbackMessage.HelpText" xml:space="preserve">
+  <data name="Profile_AnswerbackMessage.Description" xml:space="preserve">
     <value>接收到 ENQ 控制順序時所傳送的回應。</value>
     <comment>{Locked=ENQ} A description for what the "ENQ response" setting does. Presented near "Profile_AnswerbackMessage".</comment>
   </data>
-  <data name="Globals_DebugFeaturesEnabled.HelpText" xml:space="preserve">
+  <data name="Globals_DebugFeaturesEnabled.Description" xml:space="preserve">
     <value>適用於疑難排解或開發終端機。</value>
     <comment>Additional description for what the "debug features enabled" setting does. Presented near "Globals_DebugFeaturesEnabled.Header".</comment>
   </data>
@@ -2593,7 +2581,7 @@
     <value>實驗性： 將按鍵系結新增到選取文字的色彩</value>
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
-  <data name="Globals_EnableColorSelection.HelpText" xml:space="preserve">
+  <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
     <value>這些索引鍵系結可以醒目提示選取文字或具有指定色彩之選取文字的所有實例。</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
@@ -2609,7 +2597,7 @@
     <value>以全螢幕顯示索引標籤</value>
     <comment>Header for a control to toggle if the app should show the tabs when in full screen state.</comment>
   </data>
-  <data name="Globals_ShowTabsFullscreen.HelpText" xml:space="preserve">
+  <data name="Globals_ShowTabsFullscreen.Description" xml:space="preserve">
     <value>啟用時，當應用程式使用全螢幕時，將會顯示索引標籤。</value>
     <comment>A description for what the "show tabs in full screen" setting does.</comment>
   </data>
@@ -2621,7 +2609,7 @@
     <value>路徑翻譯</value>
     <comment>Name for a control to select how file and directory paths are translated.</comment>
   </data>
-  <data name="Profile_PathTranslationStyle.HelpText" xml:space="preserve">
+  <data name="Profile_PathTranslationStyle.Description" xml:space="preserve">
     <value>控制在拖放操作期間如何翻譯檔案和目錄路徑。</value>
     <comment>A description for what the "path translation" setting does. Presented near "Profile_PathTranslationStyle.Header".</comment>
   </data>
@@ -2648,13 +2636,13 @@
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
     <value>已不再偵測到設定檔</value>
   </data>
-  <data name="Profile_Delete_Orphaned.HelpText" xml:space="preserve">
+  <data name="Profile_Delete_Orphaned.Description" xml:space="preserve">
     <value>這個自動偵測到的配置檔似乎已卸載。您對它的變更會被保留，但是在重新安裝之前無法使用。</value>
   </data>
   <data name="Profile_Source_Orphaned.Header" xml:space="preserve">
     <value>原始來源</value>
   </data>
-  <data name="Profile_Source_Orphaned.HelpText" xml:space="preserve">
+  <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>指示原始建立此配置檔的軟體。</value>
   </data>
   <data name="Profile_TabTitleNone" xml:space="preserve">
@@ -2729,7 +2717,7 @@
   <data name="Settings_ResetApplicationState.Header" xml:space="preserve">
     <value>清除快取</value>
   </data>
-  <data name="Settings_ResetApplicationState.HelpText" xml:space="preserve">
+  <data name="Settings_ResetApplicationState.Description" xml:space="preserve">
     <value>快取會儲存與已儲存之工作階段和自動產生設定檔相關的資料。</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
@@ -2772,7 +2760,7 @@
     <value>拖放分隔符號</value>
     <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
   </data>
-  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+  <data name="Profile_DragDropDelimiter.Description" xml:space="preserve">
     <value>這些文字會插入多個丟入終端機的檔案路徑之間。</value>
     <comment>A description for what the "drag drop delimiter" setting does.</comment>
   </data>

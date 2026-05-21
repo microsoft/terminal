@@ -183,46 +183,22 @@
 
             <DataTemplate x:Key="FragmentProfileViewModelTemplate"
                           x:DataType="local:FragmentProfileViewModel">
-                <muxc:Expander AutomationProperties.Name="{x:Bind AccessibleName}"
-                               Style="{StaticResource ExpanderStyle}">
-                    <muxc:Expander.Header>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0"
-                                        Orientation="Horizontal">
-                                <IconSourceElement Width="16"
-                                                   Height="16"
-                                                   Margin="0,0,12,0"
-                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.Icon.Resolved), Mode=OneWay}" />
-
-                                <TextBlock Text="{x:Bind Profile.Name, Mode=OneWay}" />
-
-                                <Button x:Name="NavigateToProfileButton"
-                                        x:Uid="Extensions_NavigateToProfileButton"
-                                        Click="NavigateToProfile_Click"
-                                        Style="{StaticResource SettingContainerResetButtonStyle}"
-                                        Tag="{x:Bind Profile.Guid}">
-                                    <FontIcon Glyph="&#xE8A7;"
-                                              Style="{StaticResource SettingContainerFontIconStyle}" />
-                                </Button>
-                            </StackPanel>
-
-                            <TextBlock Grid.Column="1"
-                                       Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
-                                       Text="{x:Bind SourceName}" />
-                        </Grid>
-                    </muxc:Expander.Header>
-                    <muxc:Expander.Content>
-                        <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
-                            <TextBlock Style="{StaticResource CodeBlockStyle}"
-                                       Text="{x:Bind Json, Mode=OneWay}" />
-                        </ScrollViewer>
-                    </muxc:Expander.Content>
-                </muxc:Expander>
+                <local:SettingsCard AutomationProperties.Name="{x:Bind AccessibleName}"
+                                    Click="NavigateToProfile_Click"
+                                    IsClickEnabled="True"
+                                    Tag="{x:Bind Profile.Guid}">
+                    <local:SettingsCard.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <IconSourceElement Width="16"
+                                               Height="16"
+                                               Margin="0,0,12,0"
+                                               IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Profile.Icon.Resolved), Mode=OneWay}" />
+                            <TextBlock Text="{x:Bind Profile.Name, Mode=OneWay}" />
+                        </StackPanel>
+                    </local:SettingsCard.Header>
+                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                               Text="{x:Bind SourceName}" />
+                </local:SettingsCard>
             </DataTemplate>
 
             <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
@@ -383,41 +359,17 @@
 
             <DataTemplate x:Key="FragmentColorSchemeViewModelTemplate"
                           x:DataType="local:FragmentColorSchemeViewModel">
-                <muxc:Expander AutomationProperties.Name="{x:Bind AccessibleName}"
-                               Style="{StaticResource ExpanderStyle}">
-                    <muxc:Expander.Header>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0"
-                                        Orientation="Horizontal">
-                                <ContentPresenter Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
-                                                  ContentTemplate="{StaticResource ColorSchemeVMTemplate}" />
-                                <Button x:Name="NavigateToColorSchemeButton"
-                                        x:Uid="Extensions_NavigateToColorSchemeButton"
-                                        Click="NavigateToColorScheme_Click"
-                                        Style="{StaticResource SettingContainerResetButtonStyle}"
-                                        Tag="{x:Bind ColorSchemeVM}">
-                                    <FontIcon Glyph="&#xE8A7;"
-                                              Style="{StaticResource SettingContainerFontIconStyle}" />
-                                </Button>
-                            </StackPanel>
-
-                            <TextBlock Grid.Column="1"
-                                       Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
-                                       Text="{x:Bind SourceName}" />
-                        </Grid>
-                    </muxc:Expander.Header>
-                    <muxc:Expander.Content>
-                        <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
-                            <TextBlock Style="{StaticResource CodeBlockStyle}"
-                                       Text="{x:Bind Json, Mode=OneWay}" />
-                        </ScrollViewer>
-                    </muxc:Expander.Content>
-                </muxc:Expander>
+                <local:SettingsCard AutomationProperties.Name="{x:Bind AccessibleName}"
+                                    Click="NavigateToColorScheme_Click"
+                                    IsClickEnabled="True"
+                                    Tag="{x:Bind ColorSchemeVM}">
+                    <local:SettingsCard.Header>
+                        <ContentPresenter Content="{x:Bind ColorSchemeVM, Mode=OneWay}"
+                                          ContentTemplate="{StaticResource ColorSchemeVMTemplate}" />
+                    </local:SettingsCard.Header>
+                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                               Text="{x:Bind SourceName}" />
+                </local:SettingsCard>
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -480,13 +432,13 @@
                 <muxc:Expander.Content>
                     <StackPanel>
                         <!--  Scope  -->
-                        <local:SettingContainer x:Name="Scope"
-                                                x:Uid="Extensions_Scope"
-                                                IsTabStop="False">
+                        <local:SettingsCard x:Name="Scope"
+                                            x:Uid="Extensions_Scope"
+                                            IsTabStop="False">
                             <TextBlock VerticalAlignment="Center"
                                        Style="{ThemeResource SecondaryTextBlockStyle}"
                                        Text="{x:Bind ViewModel.CurrentExtensionPackage.Scope, Mode=OneWay}" />
-                        </local:SettingContainer>
+                        </local:SettingsCard>
                         <!--  JSON  -->
                         <ItemsControl IsTabStop="False"
                                       ItemTemplate="{StaticResource JsonTemplate}"
