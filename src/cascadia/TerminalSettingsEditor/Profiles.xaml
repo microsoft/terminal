@@ -18,55 +18,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
-            <DataTemplate x:Key="ProfileNavigatorTemplate"
-                          x:DataType="local:ProfileViewModel">
-                <Button HorizontalAlignment="Stretch"
-                        AutomationProperties.HelpText="{x:Bind AccessibleStateDescription, Mode=OneWay}"
-                        AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                        Click="Profile_Click"
-                        Style="{StaticResource NavigatorButtonStyle}">
-                    <Grid ColumnSpacing="12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ContentControl Grid.Column="0"
-                                        Width="16"
-                                        Height="16"
-                                        VerticalAlignment="Center"
-                                        Content="{x:Bind IconPreview, Mode=OneWay}"
-                                        IsTabStop="False" />
-                        <TextBlock Grid.Column="1"
-                                   VerticalAlignment="Center"
-                                   Text="{x:Bind Name, Mode=OneWay}"
-                                   TextTrimming="CharacterEllipsis" />
-                        <muxc:InfoBadge x:Uid="Profile_HiddenBadge"
-                                        Grid.Column="2"
-                                        Margin="0,0,8,0"
-                                        VerticalAlignment="Center"
-                                        Visibility="{x:Bind Hidden, Mode=OneWay}">
-                            <muxc:InfoBadge.IconSource>
-                                <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                     FontSize="12"
-                                                     Glyph="&#xED1A;" />
-                            </muxc:InfoBadge.IconSource>
-                        </muxc:InfoBadge>
-                        <muxc:InfoBadge x:Uid="Profile_OrphanedBadge"
-                                        Grid.Column="2"
-                                        Margin="0,0,8,0"
-                                        VerticalAlignment="Center"
-                                        Visibility="{x:Bind Orphaned, Mode=OneWay}">
-                            <muxc:InfoBadge.IconSource>
-                                <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                     FontSize="12"
-                                                     Glyph="&#xE7BA;" />
-                            </muxc:InfoBadge.IconSource>
-                        </muxc:InfoBadge>
-                    </Grid>
-                </Button>
-            </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -79,32 +30,16 @@
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
 
         <!--  Defaults navigator  -->
-        <Button x:Name="DefaultsNavigator"
-                Click="Defaults_Click"
-                Style="{StaticResource NavigatorButtonStyle}">
-            <StackPanel Orientation="Vertical">
-                <TextBlock x:Uid="Profiles_DefaultsNavigator_Title" />
-                <TextBlock x:Uid="Profiles_DefaultsNavigator_Description"
-                           Margin="0,2,0,0"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           TextWrapping="Wrap" />
-            </StackPanel>
-        </Button>
+        <local:SettingsCard x:Name="DefaultsNavigator"
+                            x:Uid="Profiles_DefaultsNavigator"
+                            Click="Defaults_Click"
+                            IsClickEnabled="True" />
 
         <!--  Color schemes navigator  -->
-        <Button x:Name="ColorSchemesNavigator"
-                Click="ColorSchemes_Click"
-                Style="{StaticResource NavigatorButtonStyle}">
-            <StackPanel Orientation="Vertical">
-                <TextBlock x:Uid="Profiles_ColorSchemesNavigator_Title" />
-                <TextBlock x:Uid="Profiles_ColorSchemesNavigator_Description"
-                           Margin="0,2,0,0"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           TextWrapping="Wrap" />
-            </StackPanel>
-        </Button>
+        <local:SettingsCard x:Name="ColorSchemesNavigator"
+                            x:Uid="Profiles_ColorSchemesNavigator"
+                            Click="ColorSchemes_Click"
+                            IsClickEnabled="True" />
 
         <!--  Terminal profiles section  -->
         <TextBlock x:Uid="Profiles_TerminalProfilesHeader"
@@ -112,7 +47,6 @@
 
         <!--  Add Profile accent button  -->
         <Button x:Name="AddProfileButton"
-                Margin="0,4,0,0"
                 Click="AddProfile_Click"
                 Style="{StaticResource AccentButtonStyle}">
             <StackPanel Orientation="Horizontal">
@@ -123,17 +57,48 @@
             </StackPanel>
         </Button>
 
-        <!--  List of profiles. Each is a NavigatorButtonStyle button rendered by ProfileNavigatorTemplate.  -->
+        <!--  List of profiles  -->
         <ItemsControl Margin="0,0,0,16"
                       IsTabStop="False"
-                      ItemTemplate="{StaticResource ProfileNavigatorTemplate}"
                       ItemsSource="{x:Bind ViewModel.Profiles, Mode=OneWay}"
                       XYFocusKeyboardNavigation="Enabled">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <StackPanel />
+                    <StackPanel Spacing="2"/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:ProfileViewModel">
+                    <local:SettingsCard AutomationProperties.HelpText="{x:Bind AccessibleStateDescription, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                                        Click="Profile_Click"
+                                        Header="{x:Bind Name, Mode=OneWay}"
+                                        HeaderIcon="{x:Bind IconPreview, Mode=OneWay}"
+                                        IsClickEnabled="True">
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8">
+                            <muxc:InfoBadge x:Uid="Profile_HiddenBadge"
+                                            VerticalAlignment="Center"
+                                            Visibility="{x:Bind Hidden, Mode=OneWay}">
+                                <muxc:InfoBadge.IconSource>
+                                    <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                         FontSize="12"
+                                                         Glyph="&#xED1A;" />
+                                </muxc:InfoBadge.IconSource>
+                            </muxc:InfoBadge>
+                            <muxc:InfoBadge x:Uid="Profile_OrphanedBadge"
+                                            VerticalAlignment="Center"
+                                            Visibility="{x:Bind Orphaned, Mode=OneWay}">
+                                <muxc:InfoBadge.IconSource>
+                                    <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                         FontSize="12"
+                                                         Glyph="&#xE7BA;" />
+                                </muxc:InfoBadge.IconSource>
+                            </muxc:InfoBadge>
+                        </StackPanel>
+                    </local:SettingsCard>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
         </ItemsControl>
     </StackPanel>
 </Page>

@@ -1277,19 +1277,19 @@
     <value>Terminal profiles</value>
     <comment>Section header on the Profiles landing page. Introduces the list of individual terminal profiles configured by the user.</comment>
   </data>
-  <data name="Profiles_DefaultsNavigator_Title.Text" xml:space="preserve">
+  <data name="Profiles_DefaultsNavigator.Header" xml:space="preserve">
     <value>Defaults</value>
     <comment>Title for the "Defaults" navigator on the Profiles landing page. Clicking this opens the page where defaults shared by all profiles can be edited.</comment>
   </data>
-  <data name="Profiles_DefaultsNavigator_Description.Text" xml:space="preserve">
+  <data name="Profiles_DefaultsNavigator.Description" xml:space="preserve">
     <value>Changes made here apply to all profiles unless overridden by a specific profile. These settings do not affect the Windows Terminal appearance.</value>
     <comment>Help text describing the "Defaults" navigator on the Profiles landing page. Clarifies that the defaults apply to every profile but are not the same as the global Windows Terminal appearance settings.</comment>
   </data>
-  <data name="Profiles_ColorSchemesNavigator_Title.Text" xml:space="preserve">
+  <data name="Profiles_ColorSchemesNavigator.Header" xml:space="preserve">
     <value>Color schemes</value>
     <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the same page reachable from the top-level Color schemes nav item.</comment>
   </data>
-  <data name="Profiles_ColorSchemesNavigator_Description.Text" xml:space="preserve">
+  <data name="Profiles_ColorSchemesNavigator.Description" xml:space="preserve">
     <value>Add, edit, or remove the color schemes that your profiles can use.</value>
     <comment>Help text describing the "Color schemes" navigator on the Profiles landing page.</comment>
   </data>

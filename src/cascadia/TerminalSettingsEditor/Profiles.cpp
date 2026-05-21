@@ -19,10 +19,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        Automation::AutomationProperties::SetName(DefaultsNavigator(), RS_(L"Profiles_DefaultsNavigator_Title/Text"));
-        Automation::AutomationProperties::SetHelpText(DefaultsNavigator(), RS_(L"Profiles_DefaultsNavigator_Description/Text"));
-        Automation::AutomationProperties::SetName(ColorSchemesNavigator(), RS_(L"Profiles_ColorSchemesNavigator_Title/Text"));
-        Automation::AutomationProperties::SetHelpText(ColorSchemesNavigator(), RS_(L"Profiles_ColorSchemesNavigator_Description/Text"));
+        Automation::AutomationProperties::SetHelpText(DefaultsNavigator(), RS_(L"Profiles_DefaultsNavigator/Description"));
+        Automation::AutomationProperties::SetHelpText(ColorSchemesNavigator(), RS_(L"Profiles_ColorSchemesNavigator/Description"));
         Automation::AutomationProperties::SetName(AddProfileButton(), RS_(L"Profiles_AddProfileButton/Text"));
     }
 
