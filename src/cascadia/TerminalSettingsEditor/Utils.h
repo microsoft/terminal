@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "SettingsExpander.h"
+
 // This macro must be used alongside GETSET_BINDABLE_ENUM_SETTING.
 // Use this in your class's constructor after Initialize_Component().
 // It sorts and initializes the observable list of enum entries with the enum name
@@ -135,8 +137,7 @@ struct HasScrollViewer
                     // expand any ancestor expanders so the target is actually
                     // visible. This handles both:
                     // - Plain muxc:Expander instances used as section groupings
-                    // - SettingContainer instances using an expander style
-                    //   (i.e. ExpanderSettingContainerStyleWithComplexPreview).
+                    // - SettingsExpander instances (the WCT-derived control)
                     winrt::Windows::UI::Xaml::DependencyObject ancestor{ controlToFocus };
                     while (ancestor)
                     {
@@ -144,9 +145,9 @@ struct HasScrollViewer
                         {
                             expander.IsExpanded(true);
                         }
-                        else if (const auto& settingContainer{ ancestor.try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingContainer>() })
+                        else if (const auto& settingsExpander{ ancestor.try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingsExpander>() })
                         {
-                            settingContainer.SetExpanded(true);
+                            settingsExpander.IsExpanded(true);
                         }
                         ancestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(ancestor);
                     }
