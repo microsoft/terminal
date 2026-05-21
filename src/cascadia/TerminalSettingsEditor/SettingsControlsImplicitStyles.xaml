@@ -35,8 +35,7 @@
     PointerOver/Pressed brushes, the drop-shadow popup, etc. Call sites that
     need a card-specific MinWidth set it explicitly on the instance.
 -->
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
         Right-aligned, compact ToggleSwitch. Replaces the WCT
@@ -44,11 +43,13 @@
         OffContent / OnContent are blanked so the default "Off" / "On" labels
         don't steal horizontal space next to the switch.
     -->
+
+    <!--  TO DO: We should move the ToggleSwitchInExpanderStyle (CommonResources.xaml to here as that's a direct copy from WCT)  -->
     <Style TargetType="ToggleSwitch">
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Right" />
-        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="Margin" Value="0,0,0,0" />
         <Setter Property="MinWidth" Value="0" />
         <Setter Property="OffContent" Value="" />
         <Setter Property="OnContent" Value="" />
