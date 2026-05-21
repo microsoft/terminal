@@ -1893,13 +1893,9 @@
     <value>Add new shortcut</value>
     <comment>Button label that creates a new keyboard shortcut on the shortcuts page.</comment>
   </data>
-  <data name="Actions_ViewAllKeyChordsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>View all shortcuts</value>
-    <comment>Tooltip for a button on each row of the Shortcuts page that opens a flyout listing every keyboard shortcut registered for that action.</comment>
-  </data>
-  <data name="Actions_NoKeyBindings.Text" xml:space="preserve">
-    <value>No shortcuts</value>
-    <comment>Empty-state message shown inside the "view all shortcuts" flyout (opened from each row's "..." button on the Shortcuts page) when the action has no keyboard shortcuts registered.</comment>
+  <data name="Actions_AdditionalKeyChordsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>View additional key bindings</value>
+    <comment>Tooltip for a "+N" badge button on each row of the Shortcuts page that opens a flyout listing every additional keyboard shortcut registered for that action (beyond the one already displayed inline on the row).</comment>
   </data>
   <data name="EditAction_ActionType.Header" xml:space="preserve">
     <value>Shortcut type</value>

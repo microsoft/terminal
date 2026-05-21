@@ -45,10 +45,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    // Builds the "view all" flyout lazily on the first click of a
-    // row's "..." button, then caches it on the button so subsequent clicks
+    // Builds the "additional key chords" flyout lazily on the first click of a
+    // row's "+N" button, then caches it on the button so subsequent clicks
     // just re-show it.
-    void Actions::ViewAllKeyChordsButton_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
+    void Actions::AdditionalKeyChordsButton_Click(const IInspectable& sender, const RoutedEventArgs& /*e*/)
     {
         const auto button = sender.try_as<Button>();
         if (!button)
@@ -77,28 +77,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         content.Orientation(Orientation::Vertical);
         content.MinWidth(120.0);
 
-        if (cmdVM.HasNoKeyChords())
+        const auto separatorTemplate = Resources().Lookup(box_value(L"ViewAllKeyChordsFlyoutSeparatorTemplate")).as<DataTemplate>();
+        const auto itemTemplate = Resources().Lookup(box_value(L"ViewAllKeyChordsFlyoutItemTemplate")).as<DataTemplate>();
+        const auto chords = cmdVM.KeyChordList();
+        const auto count = chords.Size();
+        // Skip index 0 — the first chord is shown inline on the row, not in the flyout.
+        for (uint32_t i = 1; i < count; ++i)
         {
-            const auto emptyTemplate = Resources().Lookup(box_value(L"ViewAllKeyChordsFlyoutEmptyStateTemplate")).as<DataTemplate>();
-            content.Children().Append(emptyTemplate.LoadContent().as<UIElement>());
-        }
-        else
-        {
-            const auto separatorTemplate = Resources().Lookup(box_value(L"ViewAllKeyChordsFlyoutSeparatorTemplate")).as<DataTemplate>();
-            const auto itemTemplate = Resources().Lookup(box_value(L"ViewAllKeyChordsFlyoutItemTemplate")).as<DataTemplate>();
-            const auto chords = cmdVM.KeyChordList();
-            const auto count = chords.Size();
-            for (uint32_t i = 0; i < count; ++i)
+            if (i > 1)
             {
-                if (i > 0)
-                {
-                    content.Children().Append(separatorTemplate.LoadContent().as<UIElement>());
-                }
-
-                auto chordVisual = itemTemplate.LoadContent().as<Editor::KeyChordVisual>();
-                chordVisual.KeyChord(chords.GetAt(i).CurrentKeys());
-                content.Children().Append(chordVisual);
+                content.Children().Append(separatorTemplate.LoadContent().as<UIElement>());
             }
+
+            auto chordVisual = itemTemplate.LoadContent().as<Editor::KeyChordVisual>();
+            chordVisual.KeyChord(chords.GetAt(i).CurrentKeys());
+            content.Children().Append(chordVisual);
         }
 
         flyout.Content(content);

@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring FirstKeyChordText() const;
         Control::KeyChord FirstKeyChord() const noexcept;
         bool HasNoKeyChords() const noexcept;
+        bool HasAdditionalKeyChords() const noexcept;
         winrt::hstring AdditionalKeyChordCountText() const;
         winrt::hstring AdditionalKeyChordTooltipText() const;
 

@@ -8,6 +8,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="using:Microsoft.Terminal.Settings.Editor"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
       mc:Ignorable="d">
 
     <Page.Resources>
@@ -69,14 +70,6 @@
                         Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
             </DataTemplate>
 
-            <DataTemplate x:Key="ViewAllKeyChordsFlyoutEmptyStateTemplate">
-                <TextBlock x:Uid="Actions_NoKeyBindings"
-                           Margin="12,8,12,8"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Style="{StaticResource SecondaryTextBlockStyle}" />
-            </DataTemplate>
-
             <DataTemplate x:Key="ViewAllKeyChordsFlyoutItemTemplate">
                 <local:KeyChordVisual Margin="{ThemeResource MenuFlyoutItemThemePaddingNarrow}"
                                       HorizontalAlignment="Right" />
@@ -91,9 +84,7 @@
                         <ColumnDefinition Width="*" />
                         <!--  key chord  -->
                         <ColumnDefinition Width="Auto" />
-                        <!--  edit button  -->
-                        <ColumnDefinition Width="Auto" />
-                        <!--  "..." button  -->
+                        <!--  "+N" / "..." button  -->
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
@@ -107,21 +98,22 @@
                                           HorizontalAlignment="Right"
                                           KeyChord="{x:Bind FirstKeyChord, Mode=OneWay}" />
 
-                    <!--  Edit button  -->
-                    <Button x:Uid="Actions_EditButton"
+                    <!--  "+N" button + flyout listing the additional key chords  -->
+                    <Button x:Uid="Actions_AdditionalKeyChordsButton"
                             Grid.Column="2"
-                            AutomationProperties.Name="{x:Bind DisplayName, Mode=OneWay}"
-                            Click="{x:Bind Edit_Click}"
-                            Style="{StaticResource ActionRowSubtleButtonStyle}">
-                        <FontIcon FontSize="14"
-                                  Glyph="&#xE70F;" />
+                            AutomationProperties.Name="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
+                            Click="AdditionalKeyChordsButton_Click"
+                            Style="{StaticResource ActionRowSubtleButtonStyle}"
+                            Visibility="{x:Bind HasAdditionalKeyChords, Mode=OneWay}">
+                        <TextBlock FontSize="12"
+                                   Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
                     </Button>
 
-                    <!--  "..." button + flyout  -->
-                    <Button x:Uid="Actions_ViewAllKeyChordsButton"
-                            Grid.Column="3"
-                            Click="ViewAllKeyChordsButton_Click"
-                            Style="{StaticResource ActionRowSubtleButtonStyle}">
+                    <!--  Disabled "..." button shown when there are no additional key chords  -->
+                    <Button Grid.Column="2"
+                            IsEnabled="False"
+                            Style="{StaticResource ActionRowSubtleButtonStyle}"
+                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(HasAdditionalKeyChords), Mode=OneWay}">
                         <FontIcon FontSize="14"
                                   Glyph="&#xE712;" />
                     </Button>

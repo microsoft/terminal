@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto self{ weakThis.get() })
             {
                 self->_ReindexKeyChordList();
-                self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"AdditionalKeyChordCountText", L"AdditionalKeyChordTooltipText", L"DisplayNameAndKeyChordAutomationPropName");
+                self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"HasAdditionalKeyChords", L"AdditionalKeyChordCountText", L"AdditionalKeyChordTooltipText", L"DisplayNameAndKeyChordAutomationPropName");
             }
         });
 
@@ -175,6 +175,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool CommandViewModel::HasNoKeyChords() const noexcept
     {
         return _KeyChordList.Size() == 0;
+    }
+
+    bool CommandViewModel::HasAdditionalKeyChords() const noexcept
+    {
+        return _KeyChordList.Size() > 1;
     }
 
     winrt::hstring CommandViewModel::AdditionalKeyChordCountText() const

@@ -57,6 +57,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String FirstKeyChordText { get; };
         Microsoft.Terminal.Control.KeyChord FirstKeyChord { get; };
         Boolean HasNoKeyChords { get; };
+        Boolean HasAdditionalKeyChords { get; };
         String AdditionalKeyChordCountText { get; };
         String AdditionalKeyChordTooltipText { get; };
         String DisplayNameAndKeyChordAutomationPropName { get; };
