@@ -66,13 +66,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring runtimeObjContext{};
         if (const auto profileVM = runtimeObj.try_as<Editor::ProfileViewModel>())
         {
-            // No runtimeObjContext: profile name and icon should be enough
             runtimeObjLabel = profileVM.Name();
+            runtimeObjContext = RS_(L"Nav_Profiles/Content");
         }
         else if (const auto colorSchemeVM = runtimeObj.try_as<Editor::ColorSchemeViewModel>())
         {
-            // No runtimeObjContext: scheme name and generic icon should be enough
             runtimeObjLabel = colorSchemeVM.Name();
+            runtimeObjContext = RS_(L"Nav_ColorSchemes/Content");
         }
         else if (const auto ntmFolderEntryVM = runtimeObj.try_as<Editor::FolderEntryViewModel>())
         {
@@ -258,6 +258,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.ResourceName);
                 }
+                if (!entry.SecondaryLabelResourceName.empty())
+                {
+                    localizedEntry.SecondaryLabelLocalized = GetLibraryResourceString(entry.SecondaryLabelResourceName);
+                }
                 localizedIndex.emplace_back(std::move(localizedEntry));
             }
             return localizedIndex;
@@ -342,7 +346,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (bestScore >= MinimumMatchScore)
             {
-                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(index, &entry));
+                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(index, &entry, nullptr, std::nullopt, entry.SecondaryLabelLocalized));
             }
         }
 
