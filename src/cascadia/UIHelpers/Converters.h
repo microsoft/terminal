@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Converters.g.h"
+#include "StringNotEmptyToVisibilityConverter.g.h"
 
 namespace winrt::Microsoft::Terminal::UI::implementation
 {
@@ -29,11 +30,18 @@ namespace winrt::Microsoft::Terminal::UI::implementation
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush ColorToBrush(winrt::Windows::UI::Color color);
         static double FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight);
     };
+
+    struct StringNotEmptyToVisibilityConverter : StringNotEmptyToVisibilityConverterT<StringNotEmptyToVisibilityConverter>
+    {
+        StringNotEmptyToVisibilityConverter() = default;
+
+        winrt::Windows::Foundation::IInspectable Convert(winrt::Windows::Foundation::IInspectable const& value, winrt::Windows::UI::Xaml::Interop::TypeName const& targetType, winrt::Windows::Foundation::IInspectable const& parameter, winrt::hstring const& language);
+        winrt::Windows::Foundation::IInspectable ConvertBack(winrt::Windows::Foundation::IInspectable const& value, winrt::Windows::UI::Xaml::Interop::TypeName const& targetType, winrt::Windows::Foundation::IInspectable const& parameter, winrt::hstring const& language);
+    };
 }
 
 namespace winrt::Microsoft::Terminal::UI::factory_implementation
 {
-    struct Converters : ConvertersT<Converters, implementation::Converters>
-    {
-    };
+    BASIC_FACTORY(Converters);
+    BASIC_FACTORY(StringNotEmptyToVisibilityConverter);
 }

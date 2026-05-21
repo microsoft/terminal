@@ -17,6 +17,7 @@ ADDSTRING
 ADDTOOL
 adml
 admx
+Affordance
 AFill
 AFX
 AHelper

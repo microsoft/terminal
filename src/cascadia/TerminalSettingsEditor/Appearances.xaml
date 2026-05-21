@@ -68,9 +68,9 @@
     </UserControl.Resources>
 
     <StackPanel>
+        <!--  Section: Typography settings  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
-            <!--  Grouping: Text  -->
-            <TextBlock x:Uid="Profile_TextHeader"
+            <TextBlock x:Uid="Appearance_Section_Typography"
                        Margin="0,0,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <!--  Color Scheme  -->
@@ -484,13 +484,25 @@
                           SelectedItem="{x:Bind CurrentAdjustIndistinguishableColors, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
+
+            <!--  Intense is bold, bright  -->
+            <local:SettingContainer x:Name="IntenseTextStyle"
+                                    x:Uid="Appearance_IntenseTextStyle"
+                                    ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
+                                    HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                <ComboBox AutomationProperties.AccessibilityView="Content"
+                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                          ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
+                          SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
+                          Style="{StaticResource ComboBoxSettingStyle}" />
+            </local:SettingContainer>
         </StackPanel>
 
-        <!--  Grouping: Cursor  -->
+        <!--  Section: Cursor settings  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
-            <TextBlock x:Uid="Profile_CursorHeader"
+            <TextBlock x:Uid="Appearance_Section_Cursor"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-
             <!--  Cursor Shape  -->
             <local:SettingContainer x:Name="CursorShape"
                                     x:Uid="Profile_CursorShape"
@@ -544,11 +556,10 @@
             </local:SettingContainer>
         </StackPanel>
 
-        <!--  Grouping: Background  -->
+        <!--  Section: Background image  -->
         <StackPanel Style="{StaticResource PivotStackStyle}">
-            <TextBlock x:Uid="Profile_BackgroundHeader"
+            <TextBlock x:Uid="Appearance_Section_BackgroundImage"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-
             <!--  Background Image  -->
             <local:SettingContainer x:Name="BackgroundImageContainer"
                                     x:Uid="Profile_BackgroundImage"
@@ -799,25 +810,6 @@
                                Style="{StaticResource SliderValueLabelStyle}"
                                Text="{x:Bind mtu:Converters.PercentageToPercentageString(Appearance.BackgroundImageOpacity), Mode=OneWay}" />
                 </Grid>
-            </local:SettingContainer>
-        </StackPanel>
-
-        <!--  Grouping: Text Formatting  -->
-        <StackPanel Style="{StaticResource PivotStackStyle}">
-            <TextBlock x:Uid="Appearance_TextFormattingHeader"
-                       Style="{StaticResource TextBlockSubHeaderStyle}" />
-
-            <!--  Intense is bold, bright  -->
-            <local:SettingContainer x:Name="IntenseTextStyle"
-                                    x:Uid="Appearance_IntenseTextStyle"
-                                    ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
-                                    HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
         </StackPanel>
 

@@ -131,6 +131,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"AccessibleStateDescription");
             }
+            else if (viewModelProperty == L"Name" || viewModelProperty == L"IsBaseLayer")
+            {
+                _NotifyChanges(L"SectionHeaderText");
+            }
         });
 
         _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
@@ -380,6 +384,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return tabTitle;
         }
         return RS_(L"Profile_TabTitleNone");
+    }
+
+    hstring ProfileViewModel::SectionHeaderText() const
+    {
+        if (IsBaseLayer())
+        {
+            return RS_(L"Profile_DefaultsSectionHeader");
+        }
+        return hstring{ RS_fmt(L"Profile_NameSectionHeaderFormat", Name()) };
     }
 
     hstring ProfileViewModel::AnswerbackMessagePreview() const
