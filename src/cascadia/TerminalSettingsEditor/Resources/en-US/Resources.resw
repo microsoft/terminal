@@ -1702,11 +1702,11 @@
     <comment>A description for what the "save" button does. Presented near "Settings_SaveSettingsButton".</comment>
   </data>
   <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
-    <value>Tab switcher interface style</value>
+    <value>Tab switcher style</value>
     <comment>Header for a control to choose how the tab switcher operates.</comment>
   </data>
   <data name="Globals_TabSwitcherMode.Description" xml:space="preserve">
-    <value>Selects which interface will be used when you switch tabs using the keyboard.</value>
+    <value>Choose the interface shown when switching tabs with the keyboard</value>
     <comment>A description for what the "tab switcher mode" setting does. Presented near "Globals_TabSwitcherMode.Header".</comment>
   </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
@@ -2294,11 +2294,11 @@
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
   <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
-    <value>Warn when closing</value>
+    <value>Show a confirmation dialog before closing tabs or windows</value>
     <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
   </data>
   <data name="Globals_ConfirmOnClose.Description" xml:space="preserve">
-    <value>Controls when a confirmation dialog appears before closing tabs or windows. "Always" presents the dialog when closing any pane.</value>
+    <value>"Always" presents the dialog when closing any pane.</value>
     <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
   </data>
   <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
@@ -2686,11 +2686,11 @@
     <comment>This is a label for a setting that, when enabled, applies a rainbow coloring to the preview text from the suggestions UI.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Header" xml:space="preserve">
-    <value>Experimental: Add key bindings to color selected text</value>
+    <value>Add key bindings for colored text selection</value>
     <comment>Header for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session.</comment>
   </data>
   <data name="Globals_EnableColorSelection.Description" xml:space="preserve">
-    <value>These key bindings can highlight the selected text or all instances of the selected text with a specified color.</value>
+    <value>Experimental. Highlight selected text or matching text with custom colors using key bindings</value>
     <comment>Additional text for a control to toggle adding a set of key bindings that can be used to apply coloring to selected text in a terminal session. Presented near "Globals_EnableColorSelection.Header".</comment>
   </data>
   <data name="Globals_EnableUnfocusedAcrylic.Header" xml:space="preserve">
@@ -2885,7 +2885,7 @@
     <comment>Title of a section that groups settings for default system and input behaviors.</comment>
   </data>
   <data name="Interaction_Section_Clipboard.Text" xml:space="preserve">
-    <value>Clipboard and paste behavior</value>
+    <value>Clipboard behavior</value>
     <comment>Title of a section that groups settings related to selection, copying, and pasting.</comment>
   </data>
   <data name="Interaction_Section_TextSelection.Text" xml:space="preserve">
@@ -2897,16 +2897,12 @@
     <comment>Title of a section that groups settings related to window sizing, arrangement, and grouping.</comment>
   </data>
   <data name="Interaction_Section_MouseScrolling.Header" xml:space="preserve">
-    <value>Mouse &amp; scrolling</value>
+    <value>Mouse and scrolling</value>
     <comment>Title of a section that groups settings related to mouse and scroll wheel input.</comment>
   </data>
   <data name="Interaction_PasteBehavior.Header" xml:space="preserve">
     <value>Paste behavior</value>
     <comment>Header for a group of settings related to cleanup and confirmation behavior for incoming pastes.</comment>
-  </data>
-  <data name="Interaction_Section_MouseScrolling.Description" xml:space="preserve">
-    <value>Configure how scroll wheel input affects zoom and window opacity.</value>
-    <comment>Description for the "Mouse &amp; scrolling" section, shown under the section header.</comment>
   </data>
   <data name="Interaction_Section_UrlsExternal.Text" xml:space="preserve">
     <value>URLs &amp; external actions</value>
