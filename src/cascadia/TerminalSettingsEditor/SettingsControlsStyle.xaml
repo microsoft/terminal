@@ -129,6 +129,7 @@
 
     <Thickness x:Key="SettingsCardBorderThickness">1</Thickness>
     <Thickness x:Key="SettingsCardPadding">16,16,16,16</Thickness>
+    <Thickness x:Key="SettingsCardItemMargin">0,0,0,2</Thickness>
     <x:Double x:Key="SettingsCardMinWidth">148</x:Double>
     <x:Double x:Key="SettingsCardMinHeight">68</x:Double>
     <x:Double x:Key="SettingsCardDescriptionFontSize">12</x:Double>
