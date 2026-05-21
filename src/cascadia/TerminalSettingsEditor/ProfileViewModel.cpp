@@ -127,6 +127,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"TabColorPreview");
             }
+            else if (viewModelProperty == L"Hidden")
+            {
+                _NotifyChanges(L"AccessibleStateDescription");
+            }
         });
 
         _defaultAppearanceViewModel.PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
@@ -346,6 +350,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::Orphaned() const
     {
         return _profile.Orphaned();
+    }
+
+    hstring ProfileViewModel::AccessibleStateDescription() const
+    {
+        const auto hidden = Hidden();
+        const auto orphaned = Orphaned();
+        if (hidden && orphaned)
+        {
+            return til::hstring_format(FMT_COMPILE(L"{}, {}"),
+                                       RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"),
+                                       RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        }
+        if (hidden)
+        {
+            return RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        if (orphaned)
+        {
+            return RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        return {};
     }
 
     hstring ProfileViewModel::TabTitlePreview() const
