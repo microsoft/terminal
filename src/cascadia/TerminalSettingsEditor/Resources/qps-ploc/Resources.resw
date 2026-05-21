@@ -296,11 +296,11 @@
     <value>Ţђě рłд¢èнøĺđĕг "%s" щіłĺ ьē ŕěρļąč℮ď ẁїτђ τђέ śеªřсħ qцегỳ. !!! !!! !!! !!! !!! !!!</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
-  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
+  <data name="Globals_TrimBlockSelection.Content" xml:space="preserve">
     <value>Ѓëmονĕ тŕáìĺїŉġ ẃђϊτë-ѕρá¢ę ĭл ѓеċτåηğцĺăŗ ş℮ŀěčŧĭõň !!! !!! !!! !!! !!! </value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
   </data>
-  <data name="Globals_TrimPaste.Header" xml:space="preserve">
+  <data name="Globals_TrimPaste.Content" xml:space="preserve">
     <value>Ґεmθνе ťѓªįŀíŉĝ шĥіťе-šрäčė ẃнзň φâśťίņġ !!! !!! !!! !!!</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
@@ -1693,15 +1693,15 @@
     <value>Τħīѕ çôŀóř ѕčћємє ŋдmë ĩѕ άĺŕėãďý ĭп ύšє. !!! !!! !!! !!!</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
-  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
+  <data name="Globals_FocusFollowMouse.Content" xml:space="preserve">
     <value>Áϋτомàţīćąłłý ƒόćŭś рåπę öń мõùšě ђöνëŗ !!! !!! !!! !!!</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
-  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+  <data name="Globals_ScrollToZoom.Content" xml:space="preserve">
     <value>Аδĵŭŝт ţєŗмιņăℓ ƒøпť ѕįżε вỳ şċѓοℓℓíńğ ẃħïĺє ĥöľδīйģ τђе €ŧřŀ ќëÿ !!! !!! !!! !!! !!! !!! !</value>
     <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
   </data>
-  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+  <data name="Globals_ScrollToChangeOpacity.Content" xml:space="preserve">
     <value>Ąδĵüšţ ŧęřмìńąĺ ôрǻčĩτў ьγ šćřοļĺįήĝ ẅђϊłę ħōļδîŉğ ťђз Çťгł àиδ Śђĭƒт ķęÿŝ !!! !!! !!! !!! !!! !!! !!! !</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
@@ -2212,7 +2212,7 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Ẃǻґņ ώћĕπ "Ŧõũčђ Κзγьοдгď ąŉð Нáлđẅŕīťίńģ Ρàňεℓ Śεŕνîçé" íš đìşāъŀêδ !!! !!! !!! !!! !!! !!! !!</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+  <data name="Globals_WarnAboutLargePaste.Content" xml:space="preserve">
     <value>Ẃăґи ẅнěπ рǻѕтĭиġ mσŗë ťћåń 5 Κìß !!! !!! !!! </value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">

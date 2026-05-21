@@ -296,11 +296,11 @@
     <value>L’espace réservé "%s" sera remplacé par la requête de recherche.</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
-  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
+  <data name="Globals_TrimBlockSelection.Content" xml:space="preserve">
     <value>Supprimer l’espace blanc de fin dans la sélection rectangulaire</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
   </data>
-  <data name="Globals_TrimPaste.Header" xml:space="preserve">
+  <data name="Globals_TrimPaste.Content" xml:space="preserve">
     <value>Supprimer les espaces blancs de fin lors du collage</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
@@ -1693,15 +1693,15 @@
     <value>Ce nom de modèle de couleurs est déjà utilisé.</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
-  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
+  <data name="Globals_FocusFollowMouse.Content" xml:space="preserve">
     <value>Mise au point automatique du volet au survol de la souris</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
-  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+  <data name="Globals_ScrollToZoom.Content" xml:space="preserve">
     <value>Ajustez la taille de police du terminal en faisant défiler tout en maintenant la touche Ctrl enfoncée</value>
     <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
   </data>
-  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+  <data name="Globals_ScrollToChangeOpacity.Content" xml:space="preserve">
     <value>Ajustez l’opacité du terminal en faisant défiler tout en maintenant les touches Ctrl et Maj enfoncées</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
@@ -2212,7 +2212,7 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Avertir lorsque le « service clavier tactile et volet d’écriture manuscrite » est désactivé</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+  <data name="Globals_WarnAboutLargePaste.Content" xml:space="preserve">
     <value>Avertir lors du collage de plus de 5 KiO</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">

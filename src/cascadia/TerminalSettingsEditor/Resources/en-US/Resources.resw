@@ -296,11 +296,11 @@
     <value>The placeholder "%s" will be replaced with the search query.</value>
     <comment>{Locked="%s"} Additional text presented near "Globals_SearchWebDefaultQueryUrl.Header".</comment>
   </data>
-  <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
+  <data name="Globals_TrimBlockSelection.Content" xml:space="preserve">
     <value>Remove trailing white-space in rectangular selection</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
   </data>
-  <data name="Globals_TrimPaste.Header" xml:space="preserve">
+  <data name="Globals_TrimPaste.Content" xml:space="preserve">
     <value>Remove trailing white-space when pasting</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
@@ -1749,15 +1749,15 @@
     <value>This color scheme name is already in use.</value>
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
-  <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
+  <data name="Globals_FocusFollowMouse.Content" xml:space="preserve">
     <value>Automatically focus pane on mouse hover</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
-  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+  <data name="Globals_ScrollToZoom.Content" xml:space="preserve">
     <value>Adjust terminal font size by scrolling while holding the Ctrl key</value>
     <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
   </data>
-  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+  <data name="Globals_ScrollToChangeOpacity.Content" xml:space="preserve">
     <value>Adjust terminal opacity by scrolling while holding the Ctrl and Shift keys</value>
     <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
   </data>
@@ -2316,7 +2316,7 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
   </data>
-  <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
+  <data name="Globals_WarnAboutLargePaste.Content" xml:space="preserve">
     <value>Warn when pasting more than 5 KiB</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
@@ -2896,9 +2896,13 @@
     <value>Window and layout behavior</value>
     <comment>Title of a section that groups settings related to window sizing, arrangement, and grouping.</comment>
   </data>
-  <data name="Interaction_Section_MouseScrolling.Text" xml:space="preserve">
+  <data name="Interaction_Section_MouseScrolling.Header" xml:space="preserve">
     <value>Mouse &amp; scrolling</value>
     <comment>Title of a section that groups settings related to mouse and scroll wheel input.</comment>
+  </data>
+  <data name="Interaction_Section_MouseScrolling.Description" xml:space="preserve">
+    <value>Configure how scroll wheel input affects zoom and window opacity.</value>
+    <comment>Description for the "Mouse &amp; scrolling" section, shown under the section header.</comment>
   </data>
   <data name="Interaction_Section_UrlsExternal.Text" xml:space="preserve">
     <value>URLs &amp; external actions</value>
