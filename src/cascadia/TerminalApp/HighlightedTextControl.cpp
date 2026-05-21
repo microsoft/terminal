@@ -152,8 +152,8 @@ namespace winrt::TerminalApp::implementation
                     }
                     else
                     {
-                        // Default style: bold
-                        run.FontWeight(FontWeights::Bold());
+                        // Default style: semibold
+                        run.FontWeight(FontWeights::SemiBold());
                     }
                     inlinesCollection.Append(run);
 
