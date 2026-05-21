@@ -210,6 +210,7 @@
         BasedOn="{StaticResource BaseButtonStyle}"
         TargetType="Button">
         <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Background" Value="Transparent" />
     </Style>
 
     <!--  Delete button based on Accent button template  -->

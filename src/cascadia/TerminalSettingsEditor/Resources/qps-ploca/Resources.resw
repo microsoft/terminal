@@ -914,7 +914,7 @@
     <value>Эхĕçΰтдьłё ūśëď įñ ţħè рŕòƒĭŀз. !!! !!! !!!</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>ßгθшşє... !!!</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1085,21 +1085,13 @@
     <value>Τћē ŝэŀëсŧзð ƒőйť нâŝ иο ƒòиŧ ƒėäţцŕэś. !!! !!! !!! !!!</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>Ήîď℮ φябƒίļĕ ƒѓòm ďřóφδόшπ !!! !!! !</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>Їƒ ĕηάъℓěđ, ťĥэ φѓóƒїłę щíĺŀ иǿτ āφрĕдґ ΐŋ ŧћ℮ ŀīѕţ ǿƒ ρřŏƒīłėѕ. Ţђіş ςǻⁿ ъê ūšέð ťŏ ђĩðė δëƒǻūļт φґøƒíļέş аņð ďγñăмïĉâļℓÿ ģěиēяāŧεð ρřòƒίļзŝ, ẁĥιľє łэăνīⁿĝ ťĥèм ϊŉ ỳôцг śэťŧιйğŝ ƒιľë. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
-  </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
+  <data name="Profile_Elevate.Content" xml:space="preserve">
     <value>Гµл тђįş φѓöƒιļэ åş Λđmįňίšтŕàтоя !!! !!! !!! </value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>Ìƒ éņãвļзδ, ŧĥĕ рŗоƒīľё ẅιľł óрėŋ ΐή åň Ąďmįŋ теѓmίидŀ шïпδσώ аůţòмăтìсаļļγ. Ĭƒ ŧĥе čцѓґ℮ⁿť ẁįлđόŵ їŝ áŀřėãďу ŕύŋņïπġ āš αðмīŉ, ϊţ ẁїłℓ òρĕй іп тħΐş ωϊⁿđоẁ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Нíşŧôŗỳ ѕιźë !!! </value>
@@ -1197,11 +1189,7 @@
     <value>Šтдřтíⁿģ đϊŕёςŧôŗў !!! !!</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>Ţћé đĭŗéçťòŕу τħе рѓøƒĩŀе śťªřťş ïή ẅћĕл îţ ίѕ ŀбдδėď. !!! !!! !!! !!! !!! !</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Ьŕōωŝē... !!!</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>

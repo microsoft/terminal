@@ -22,11 +22,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
 
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
-        AppearanceNavigator().Content(box_value(RS_(L"Profile_Appearance/Header")));
-        AppearanceNavigator().Tag(box_value(RS_(L"Profile_AppearanceNavigator/HelpText")));
-        TerminalNavigator().Content(box_value(RS_(L"Profile_Terminal/Header")));
-        TerminalNavigator().Tag(box_value(RS_(L"Profile_TerminalNavigator/HelpText")));
-        AdvancedNavigator().Content(box_value(RS_(L"Profile_Advanced/Header")));
     }
 
     void Profiles_Base::OnNavigatedTo(const NavigationEventArgs& e)

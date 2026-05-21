@@ -910,7 +910,7 @@
     <value>Executable used in the profile.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1081,25 +1081,17 @@
     <value>The selected font has no font features.</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>Hide profile from dropdown</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
-  </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>If enabled, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
   <data name="Profile_HiddenBadge.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Hidden from the dropdown menu</value>
     <comment>Tooltip shown when hovering the InfoBadge next to a profile name on the Profiles landing page when that profile is hidden from the dropdown menu.</comment>
   </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
-    <value>Run this profile as Administrator</value>
+  <data name="Profile_Elevate.Content" xml:space="preserve">
+    <value>Run as administrator (uses current window if already elevated)</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>If enabled, the profile will open in an Admin terminal window automatically. If the current window is already running as admin, it will open in this window.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>History size</value>
@@ -1190,18 +1182,14 @@
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
-    <value>Starting directory</value>
+    <value>Default starting directory</value>
     <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Starting directory</value>
+    <value>Default starting directory</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>The directory the profile starts in when it is loaded.</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Browse...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1606,8 +1594,12 @@
     <comment>Name for a control to determine the name of the profile. This is a text box.</comment>
   </data>
   <data name="Profile_Name.Header" xml:space="preserve">
+    <value>Profile</value>
+    <comment>Header for the profile section of the profile settings page. Shown above a text box that lets the user edit the profile name.</comment>
+  </data>
+  <data name="Profile_NameBox.PlaceholderText" xml:space="preserve">
     <value>Name</value>
-    <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
+    <comment>Placeholder text shown inside the empty profile name text box, hinting that the user should enter the profile's name here.</comment>
   </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
@@ -2968,13 +2960,25 @@
     <value>Background image</value>
     <comment>Title of a section that groups settings controlling the background image.</comment>
   </data>
-  <data name="Profile_AppearanceNavigator.HelpText" xml:space="preserve">
-    <value>Customize the visual appearance of the profile, including colors, fonts, and text styling.</value>
-    <comment>Help text shown below the "Appearance" navigator button on the profile page.</comment>
+  <data name="Profile_AppearanceNavigator.Header" xml:space="preserve">
+    <value>Appearance</value>
+    <comment>Header for the "Appearance" navigator card on the profile page. Navigates to the appearance sub-page.</comment>
   </data>
-  <data name="Profile_TerminalNavigator.HelpText" xml:space="preserve">
-    <value>Terminal emulation is how a terminal app interprets text and control sequences to behave like a traditional command-line terminal.</value>
-    <comment>Help text shown below the "Terminal" navigator button on the profile page.</comment>
+  <data name="Profile_AppearanceNavigator.Description" xml:space="preserve">
+    <value>Customize the visual appearance of the profile, including colors, fonts, and text styling.</value>
+    <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_TerminalNavigator.Header" xml:space="preserve">
+    <value>Terminal emulation</value>
+    <comment>Header for the "Terminal Emulation" navigator card on the profile page. Navigates to the terminal emulation sub-page.</comment>
+  </data>
+  <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
+    <value>Configure how the terminal interprets text and control sequences to behave like a traditional command-line terminal</value>
+    <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
+  </data>
+  <data name="Profile_AdvancedNavigator.Header" xml:space="preserve">
+    <value>Advanced</value>
+    <comment>Header for the "Advanced" navigator card on the profile page. Navigates to the advanced settings sub-page.</comment>
   </data>
   <data name="TextBoxSettingStyle_PlaceholderText.Value" xml:space="preserve">
     <value>None</value>
