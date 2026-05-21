@@ -56,11 +56,6 @@ $ClassMap = @{
         NavigationParam = "ColorSchemes_Nav"
         SubPage         = "BreadcrumbSubPage::None"
     }
-    "Microsoft::Terminal::Settings::Editor::Rendering" = @{
-        ResourceName    = "Nav_Rendering/Content"
-        NavigationParam = "Rendering_Nav"
-        SubPage         = "BreadcrumbSubPage::None"
-    }
     "Microsoft::Terminal::Settings::Editor::Compatibility" = @{
         ResourceName    = "Nav_Compatibility/Content"
         NavigationParam = "Compatibility_Nav"

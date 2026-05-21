@@ -27,4 +27,12 @@ namespace Microsoft.Terminal.UI
         static Windows.UI.Xaml.Media.SolidColorBrush ColorToBrush(Windows.UI.Color color);
         static Double FontWeightToDouble(Windows.UI.Text.FontWeight fontWeight);
     }
+
+    // IValueConverter wrapper around Converters.StringNotEmptyToVisibility, for use
+    // in classic {Binding} scenarios (e.g. ControlTemplates) where x:Bind function
+    // syntax against the static Converters helpers isn't available.
+    runtimeclass StringNotEmptyToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        StringNotEmptyToVisibilityConverter();
+    }
 }
