@@ -49,7 +49,7 @@
                            Margin="0,0,0,4"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
                 <!--  Default Profile  -->
-                <local:SettingContainer x:Name="DefaultProfile"
+                <local:SettingsCard x:Name="DefaultProfile"
                                         x:Uid="Globals_DefaultProfile">
                     <ComboBox ItemsSource="{x:Bind ViewModel.DefaultProfiles}"
                               SelectedItem="{x:Bind ViewModel.CurrentDefaultProfile, Mode=TwoWay}"
@@ -78,43 +78,43 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  First Window Behavior  -->
-                <local:SettingContainer x:Name="FirstWindowPreference"
+                <local:SettingsCard x:Name="FirstWindowPreference"
                                         x:Uid="Globals_FirstWindowPreference">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind ViewModel.FirstWindowPreferenceList}"
                               SelectedItem="{x:Bind ViewModel.CurrentFirstWindowPreference, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  Windowing Behavior  -->
-                <local:SettingContainer x:Name="WindowingBehavior"
+                <local:SettingsCard x:Name="WindowingBehavior"
                                         x:Uid="Globals_WindowingBehavior">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind ViewModel.WindowingBehaviorList}"
                               SelectedItem="{x:Bind ViewModel.CurrentWindowingBehavior, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  Start on User Login  -->
-                <local:SettingContainer x:Name="StartOnUserLogin"
+                <local:SettingsCard x:Name="StartOnUserLogin"
                                         x:Uid="Globals_StartOnUserLogin"
-                                        HelpText="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
+                                        Description="{x:Bind ViewModel.StartOnUserLoginStatefulHelpText, Mode=OneWay}"
                                         Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
                     <ToggleSwitch IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}"
                                   IsOn="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  Launch Parameters  -->
-                <local:SettingContainer x:Name="LaunchParameters"
+                <local:SettingsExpander x:Name="LaunchParameters"
                                         x:Uid="Globals_LaunchParameters"
-                                        CurrentValue="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        Description="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}"
+>
                     <Grid RowSpacing="8">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -187,13 +187,13 @@
                                       IsOn="{x:Bind ViewModel.CenterOnLaunch, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </Grid>
-                </local:SettingContainer>
+                </local:SettingsExpander>
 
                 <!--  Launch Size  -->
-                <local:SettingContainer x:Name="LaunchSize"
+                <local:SettingsExpander x:Name="LaunchSize"
                                         x:Uid="Globals_LaunchSize"
-                                        CurrentValue="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        Description="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}"
+>
                     <Grid ColumnSpacing="12"
                           RowSpacing="8">
                         <Grid.RowDefinitions>
@@ -231,7 +231,7 @@
                                         Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                         Value="{x:Bind ViewModel.InitialRows, Mode=TwoWay}" />
                     </Grid>
-                </local:SettingContainer>
+                </local:SettingsExpander>
             </StackPanel>
 
             <!--  Section: System & input defaults  -->
@@ -239,7 +239,7 @@
                 <TextBlock x:Uid="Launch_Section_SystemInputDefaults"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
                 <!--  Default Terminal  -->
-                <local:SettingContainer x:Name="DefaultTerminalDropdown"
+                <local:SettingsCard x:Name="DefaultTerminalDropdown"
                                         x:Uid="Globals_DefaultTerminal"
                                         x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
@@ -301,10 +301,10 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  Language  -->
-                <local:SettingContainer x:Name="Language"
+                <local:SettingsCard x:Name="Language"
                                         x:Uid="Globals_Language">
                     <ComboBox ItemsSource="{x:Bind ViewModel.LanguageList}"
                               SelectedItem="{x:Bind ViewModel.CurrentLanguage, Mode=TwoWay}"
@@ -315,17 +315,17 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  Default IME Input Mode  -->
-                <local:SettingContainer x:Name="DefaultInputScope"
+                <local:SettingsCard x:Name="DefaultInputScope"
                                         x:Uid="Globals_DefaultInputScope">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind ViewModel.DefaultInputScopeList}"
                               SelectedItem="{x:Bind ViewModel.CurrentDefaultInputScope, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
-                </local:SettingContainer>
+                </local:SettingsCard>
             </StackPanel>
         </StackPanel>
     </StackPanel>

@@ -31,42 +31,42 @@
                        Margin="0,0,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <!--  Allow Headless  -->
-            <local:SettingContainer x:Name="AllowHeadless"
+            <local:SettingsCard x:Name="AllowHeadless"
                                     x:Uid="Globals_AllowHeadless">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Text Measurement  -->
-            <local:SettingContainer x:Name="TextMeasurement"
+            <local:SettingsCard x:Name="TextMeasurement"
                                     x:Uid="Globals_TextMeasurement">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
                           SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Ambiguous Width  -->
-            <local:SettingContainer x:Name="AmbiguousWidth"
+            <local:SettingsCard x:Name="AmbiguousWidth"
                                     x:Uid="Globals_AmbiguousWidth">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.AmbiguousWidthList}"
                           SelectedItem="{x:Bind ViewModel.CurrentAmbiguousWidth, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Debug Features  -->
-            <local:SettingContainer x:Name="DebugFeaturesEnabled"
+            <local:SettingsCard x:Name="DebugFeaturesEnabled"
                                     x:Uid="Globals_DebugFeaturesEnabled"
                                     Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Reset Application State  -->
-            <local:SettingContainer x:Name="ResetApplicationState"
+            <local:SettingsCard x:Name="ResetApplicationState"
                                     x:Uid="Settings_ResetApplicationState">
                 <Button x:Uid="Settings_ResetApplicationStateButton"
                         Style="{StaticResource DeleteButtonStyle}">
@@ -85,10 +85,10 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Reset to Default Settings  -->
-            <local:SettingContainer x:Name="ResetToDefaultSettings"
+            <local:SettingsCard x:Name="ResetToDefaultSettings"
                                     x:Uid="Settings_ResetToDefaultSettings">
                 <Button x:Uid="Settings_ResetToDefaultSettingsButton"
                         Style="{StaticResource DeleteButtonStyle}">
@@ -106,7 +106,7 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-            </local:SettingContainer>
+            </local:SettingsCard>
         </StackPanel>
 
         <!--  Section: Rendering  -->
@@ -114,28 +114,28 @@
             <TextBlock x:Uid="Compatibility_Section_Rendering"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
             <!--  Graphics API  -->
-            <local:SettingContainer x:Name="GraphicsAPI"
+            <local:SettingsCard x:Name="GraphicsAPI"
                                     x:Uid="Globals_GraphicsAPI">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind ViewModel.GraphicsAPIList}"
                           SelectedItem="{x:Bind ViewModel.CurrentGraphicsAPI, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Disable Partial Invalidation  -->
-            <local:SettingContainer x:Name="DisablePartialInvalidation"
+            <local:SettingsCard x:Name="DisablePartialInvalidation"
                                     x:Uid="Globals_DisablePartialInvalidation">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DisablePartialInvalidation, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Software Rendering  -->
-            <local:SettingContainer x:Name="SoftwareRendering"
+            <local:SettingsCard x:Name="SoftwareRendering"
                                     x:Uid="Globals_SoftwareRendering">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
         </StackPanel>
     </StackPanel>
 </Page>

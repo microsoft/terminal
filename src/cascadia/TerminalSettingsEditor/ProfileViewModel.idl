@@ -41,6 +41,7 @@ namespace Microsoft.Terminal.Settings.Editor
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
+        void ResetSettings();
 
         void SetAcrylicOpacityPercentageValue(Double value);
 
@@ -105,9 +106,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
-        String SectionHeaderText { get; };
         Boolean Orphaned { get; };
-        String AccessibleStateDescription { get; };
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);

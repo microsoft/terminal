@@ -135,8 +135,7 @@ struct HasScrollViewer
                     // expand any ancestor expanders so the target is actually
                     // visible. This handles both:
                     // - Plain muxc:Expander instances used as section groupings
-                    // - SettingContainer instances using an expander style
-                    //   (i.e. ExpanderSettingContainerStyleWithComplexPreview).
+                    // - local:SettingsExpander instances
                     winrt::Windows::UI::Xaml::DependencyObject ancestor{ controlToFocus };
                     while (ancestor)
                     {
@@ -144,9 +143,9 @@ struct HasScrollViewer
                         {
                             expander.IsExpanded(true);
                         }
-                        else if (const auto& settingContainer{ ancestor.try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingContainer>() })
+                        else if (const auto& settingsExpander{ ancestor.try_as<winrt::Microsoft::Terminal::Settings::Editor::SettingsExpander>() })
                         {
-                            settingContainer.SetExpanded(true);
+                            settingsExpander.IsExpanded(true);
                         }
                         ancestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(ancestor);
                     }

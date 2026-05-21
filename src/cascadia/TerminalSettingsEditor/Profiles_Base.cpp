@@ -21,11 +21,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto startingDirCheckboxTooltip{ ToolTipService::GetToolTip(StartingDirectoryUseParentCheckbox()) };
         Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
 
-        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
         AppearanceNavigator().Header(box_value(RS_(L"Profile_Appearance/Header")));
-        AppearanceNavigator().Description(box_value(RS_(L"Profile_AppearanceNavigator/HelpText")));
         TerminalNavigator().Header(box_value(RS_(L"Profile_Terminal/Header")));
-        TerminalNavigator().Description(box_value(RS_(L"Profile_TerminalNavigator/HelpText")));
         AdvancedNavigator().Header(box_value(RS_(L"Profile_Advanced/Header")));
     }
 
@@ -53,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (_Profile.FocusDeleteButton())
             {
-                DeleteButton().Focus(FocusState::Programmatic);
+                DeleteProfileButton().Focus(FocusState::Programmatic);
                 _Profile.FocusDeleteButton(false);
             }
         });
@@ -88,6 +85,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles_Base::Advanced_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _Profile.CurrentPage(ProfileSubPage::Advanced);
+    }
+
+    void Profiles_Base::ResetProfileConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
+    {
+        Profile().ResetSettings();
     }
 
     void Profiles_Base::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)

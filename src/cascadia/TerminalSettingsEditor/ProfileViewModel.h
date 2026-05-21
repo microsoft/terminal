@@ -39,6 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
+        void ResetSettings();
 
         // bell style bits
         hstring BellStylePreview() const;
@@ -100,9 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool AutoMarkPromptsAvailable() const noexcept;
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
-        hstring SectionHeaderText() const;
         bool Orphaned() const;
-        hstring AccessibleStateDescription() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
         Windows::UI::Color TabColorPreview() const;
@@ -170,6 +169,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _InitializeCurrentBellSounds();
         void _PrepareModelForBellSoundModification();
         void _MarkDuplicateBellSoundDirectories();
+        void _RefreshDefaultAppearanceViewModel();
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _MonospaceFontList;
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 

@@ -85,7 +85,7 @@
                 <TextBlock x:Uid="Profile_Section_Window"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
                 <!--  Opacity  -->
-                <local:SettingContainer x:Name="Opacity"
+                <local:SettingsCard x:Name="Opacity"
                                         x:Uid="Profile_Opacity"
                                         ClearSettingValue="{x:Bind Profile.ClearOpacity}"
                                         HasSettingValue="{x:Bind Profile.HasOpacity, Mode=OneWay}"
@@ -104,26 +104,26 @@
                                        Text="{x:Bind mtu:Converters.PercentageToPercentageString(Profile.Opacity), Mode=OneWay}" />
                         </Grid>
                     </StackPanel>
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  Use Acrylic  -->
-                <local:SettingContainer x:Name="UseAcrylic"
+                <local:SettingsCard x:Name="UseAcrylic"
                                         x:Uid="Profile_UseAcrylic"
                                         ClearSettingValue="{x:Bind Profile.ClearUseAcrylic}"
                                         HasSettingValue="{x:Bind Profile.HasUseAcrylic, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.UseAcrylicOverrideSource, Mode=OneWay}">
                     <ToggleSwitch IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                </local:SettingContainer>
+                </local:SettingsCard>
 
                 <!--  Padding  -->
-                <local:SettingContainer x:Name="Padding"
+                <local:SettingsExpander x:Name="Padding"
                                         x:Uid="Profile_Padding"
                                         ClearSettingValue="{x:Bind Profile.ClearPadding}"
-                                        CurrentValue="{x:Bind Profile.Padding, Mode=OneWay}"
+                                        Description="{x:Bind Profile.Padding, Mode=OneWay}"
                                         HasSettingValue="{x:Bind Profile.HasPadding, Mode=OneWay}"
                                         SettingOverrideSource="{x:Bind Profile.PaddingOverrideSource, Mode=OneWay}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+>
                     <Border Margin="0,12,0,12"
                             Padding="2,0,2,0"
                             HorizontalAlignment="Left"
@@ -182,10 +182,10 @@
 
                         </Grid>
                     </Border>
-                </local:SettingContainer>
+                </local:SettingsExpander>
 
                 <!--  Scrollbar Visibility  -->
-                <local:SettingContainer x:Name="ScrollbarVisibility"
+                <local:SettingsCard x:Name="ScrollbarVisibility"
                                         x:Uid="Profile_ScrollbarVisibility"
                                         ClearSettingValue="{x:Bind Profile.ClearScrollState}"
                                         HasSettingValue="{x:Bind Profile.HasScrollState, Mode=OneWay}"
@@ -195,7 +195,7 @@
                               ItemsSource="{x:Bind Profile.ScrollStateList, Mode=OneWay}"
                               SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
-                </local:SettingContainer>
+                </local:SettingsCard>
             </StackPanel>
             <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">
                 <StackPanel Orientation="Horizontal"
