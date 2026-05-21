@@ -113,6 +113,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void UInt32BindBack(Double newValue);
         void UInt32OptionalBindBack(Double newValue);
         void FloatBindBack(Double newValue);
+        void BoolBindBack(Boolean newValue);
         void BoolOptionalBindBack(Windows.Foundation.IReference<Boolean> newValue);
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
         void WindowsUIColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);

@@ -158,6 +158,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UInt32BindBack(const double newValue);
         void UInt32OptionalBindBack(const double newValue);
         void FloatBindBack(const double newValue);
+        void BoolBindBack(bool newValue);
         void BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue);
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
         void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);

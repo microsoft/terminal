@@ -1917,41 +1917,25 @@
     <value>Shortcut name</value>
     <comment>Header for the shortcut-name setting on the Edit Shortcut page (lets the user provide a friendly name for this shortcut).</comment>
   </data>
-  <data name="EditAction_KeyBindings.Header" xml:space="preserve">
-    <value>Shortcuts</value>
+  <data name="EditAction_KeyBindings.Text" xml:space="preserve">
+    <value>Key bindings</value>
     <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>
   </data>
-  <data name="EditAction_KeyBindings.Description" xml:space="preserve">
-    <value>Customize keyboard shortcuts to speed up common actions and workflows.</value>
-    <comment>Help text shown under the "Shortcuts" header on the Edit Shortcut page.</comment>
-  </data>
   <data name="EditAction_NewKeyBinding.Header" xml:space="preserve">
-    <value>New shortcut</value>
+    <value>New keybinding</value>
     <comment>Header for the "add a new shortcut" row on the Edit Shortcut page.</comment>
   </data>
   <data name="EditAction_AddKeyBinding.Content" xml:space="preserve">
-    <value>Add shortcut</value>
+    <value>Add</value>
     <comment>Label for the accent button that appends a new keyboard shortcut to the current action.</comment>
   </data>
-  <data name="EditAction_AdditionalCustomizations.Header" xml:space="preserve">
+  <data name="EditAction_AdditionalCustomizations.Text" xml:space="preserve">
     <value>Additional customizations</value>
     <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
-  </data>
-  <data name="EditAction_AdditionalCustomizations.Description" xml:space="preserve">
-    <value>Fine tune how shortcuts behave.</value>
-    <comment>Help text shown under the "Additional customizations" header on the Edit Shortcut page.</comment>
   </data>
   <data name="EditAction_KeyBindingNumberFormat" xml:space="preserve">
     <value>Shortcut #{}</value>
     <comment>{Locked="#{}"} Header label for an individual keyboard shortcut inside the "Shortcuts" expander on the Edit Shortcut page. {} is replaced with the 1-based index of the shortcut (e.g. "Shortcut #1").</comment>
-  </data>
-  <data name="EditAction_DeleteCommand.Header" xml:space="preserve">
-    <value>Delete this shortcut</value>
-    <comment>Header for the setting container that holds the "Delete shortcut" button at the bottom of the Edit Shortcut page.</comment>
-  </data>
-  <data name="EditAction_DeleteCommand.Description" xml:space="preserve">
-    <value>This shortcut will be removed and any shortcuts associated with it will no longer work.</value>
-    <comment>Help text shown under the "Delete this shortcut" setting container on the Edit Shortcut page.</comment>
   </data>
   <data name="Actions_NullEnumValue" xml:space="preserve">
     <value>Use global setting</value>

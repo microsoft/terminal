@@ -811,6 +811,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ArgWrapper::BoolBindBack(bool newValue)
+    {
+        const auto currentValue = UnboxBool(_Value);
+        if (currentValue != newValue)
+        {
+            Value(box_value(newValue));
+        }
+    }
+
     void ArgWrapper::BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue)
     {
         if (newValue)
