@@ -1,5 +1,13 @@
-#include "pch.h"
+#define NOMINMAX
+
 #include "fzf.h"
+
+#include <span>
+#include <array>
+#include <ranges>
+#include <algorithm>
+#include <limits>
+#include <wil/result_macros.h>
 
 #undef CharLower
 #undef CharUpper
