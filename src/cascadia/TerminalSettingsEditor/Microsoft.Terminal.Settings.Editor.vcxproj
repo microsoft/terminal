@@ -176,7 +176,6 @@
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
     <ClInclude Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.h" />
-    <ClInclude Include="../fzf/fzf.h" />
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
@@ -390,7 +389,6 @@
       <DependentUpon>PreviewConnection.h</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)GeneratedSettingsIndex.g.cpp" />
-    <ClCompile Include="../fzf/fzf.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -508,6 +506,7 @@
       make sure that if you add a cppwinrt dependency to any of these projects,
       you also update all the consumers
     -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\fzf\fzf.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
