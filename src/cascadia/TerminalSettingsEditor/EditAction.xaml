@@ -429,7 +429,7 @@
     </Page.Resources>
 
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-        <StackPanel HorizontalAlignment="Stretch" Style="{StaticResource SettingsStackStyle}">
+        <StackPanel HorizontalAlignment="Stretch" Margin="0,36,0,0" Style="{StaticResource SettingsStackStyle}">
 
             <!--  Action type (top-most setting on the page)  -->
             <local:SettingsCard x:Name="ActionType" x:Uid="EditAction_ActionType">

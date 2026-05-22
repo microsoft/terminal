@@ -22,7 +22,7 @@
                 <Setter Property="Padding" Value="4" />
                 <Setter Property="HorizontalAlignment" Value="Center" />
                 <Setter Property="VerticalAlignment" Value="Center" />
-                <Setter Property="Background" Value="{ThemeResource ControlFillColorInputActiveBrush}" />
+                <Setter Property="Background" Value="{ThemeResource ControlFillColorDefaultBrush}" />
                 <Setter Property="BorderBrush" Value="{ThemeResource ControlElevationBorderBrush}" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
@@ -61,5 +61,5 @@
         HorizontalAlignment="Right"
         VerticalAlignment="Center"
         Orientation="Horizontal"
-        Spacing="2" />
+        Spacing="4" />
 </UserControl>
