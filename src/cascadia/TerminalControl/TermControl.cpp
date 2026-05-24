@@ -89,6 +89,34 @@ static Microsoft::Console::TSF::Handle& GetTSFHandle()
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    static bool _isSafeShellPath(const std::wstring_view& path)
+    {
+        if (path.empty())
+        {
+            return false;
+        }
+
+        for (const auto ch : path)
+        {
+            const bool isSafe = (ch >= L'a' && ch <= L'z') ||
+                                (ch >= L'A' && ch <= L'Z') ||
+                                (ch >= L'0' && ch <= L'9') ||
+                                ch == L'/' ||
+                                ch == L'.' ||
+                                ch == L'_' ||
+                                ch == L'-' ||
+                                ch == L'+' ||
+                                ch == L',' ||
+                                ch == L':' ||
+                                ch == L'@';
+            if (!isSafe)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     static void _translatePathInPlace(std::wstring& fullPath, PathTranslationStyle translationStyle)
     {
         static constexpr wil::zwstring_view s_pathPrefixes[] = {
@@ -3208,8 +3236,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const auto translationStyle{ _core.Settings().PathTranslationStyle() };
                     _translatePathInPlace(fullPath, translationStyle);
 
-                    // All translated paths get quotes, and all strings spaces get quotes; all translated paths get single quotes
-                    const auto quotesNeeded = translationStyle != PathTranslationStyle::None || fullPath.find(L' ') != std::wstring::npos;
+                    // Feature request: omit quotes when the path contains no spaces or shell-sensitive characters.
+                    // All translated paths get single quotes, and all strings with spaces get double quotes if not translated.
+                    const auto quotesNeeded = translationStyle != PathTranslationStyle::None ?
+                                                  !_isSafeShellPath(fullPath) :
+                                                  fullPath.find(L' ') != std::wstring::npos;
                     const auto quotesChar = translationStyle != PathTranslationStyle::None ? L'\'' : L'"';
 
                     // Append fullPath and also wrap it in quotes if needed
