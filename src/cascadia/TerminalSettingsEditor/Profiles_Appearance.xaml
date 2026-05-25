@@ -50,7 +50,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
             <RowDefinition Height="*" />
@@ -60,7 +60,6 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
-                    Margin="0,12,0,0"
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Control Preview  -->
             <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
@@ -81,66 +80,64 @@
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
 
             <!--  Section: Window settings  -->
-            <StackPanel Spacing="2"
-                        Style="{StaticResource PivotStackStyle}">
-                <TextBlock x:Uid="Profile_Section_Window"
+            <TextBlock x:Uid="Profile_Section_Window"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
-                <!--  Opacity  -->
-                <local:SettingsCard x:Name="Opacity"
+            <!--  Opacity  -->
+            <local:SettingsCard x:Name="Opacity"
                                         x:Uid="Profile_Opacity">
-                    <StackPanel>
-                        <Grid Style="{StaticResource CustomSliderControlGridStyle}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Slider x:Uid="Profile_OpacitySlider"
+                <StackPanel>
+                    <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Slider x:Uid="Profile_OpacitySlider"
                                     Grid.Column="0"
                                     Value="{x:Bind mtu:Converters.PercentageToPercentageValue(Profile.Opacity), BindBack=Profile.SetAcrylicOpacityPercentageValue, Mode=TwoWay}" />
-                            <TextBlock Grid.Column="1"
+                        <TextBlock Grid.Column="1"
                                        Style="{StaticResource SliderValueLabelStyle}"
                                        Text="{x:Bind mtu:Converters.PercentageToPercentageString(Profile.Opacity), Mode=OneWay}" />
-                        </Grid>
-                    </StackPanel>
-                </local:SettingsCard>
+                    </Grid>
+                </StackPanel>
+            </local:SettingsCard>
 
-                <!--  Use Acrylic  -->
-                <local:SettingsCard x:Name="UseAcrylic"
+            <!--  Use Acrylic  -->
+            <local:SettingsCard x:Name="UseAcrylic"
                                         x:Uid="Profile_UseAcrylic">
-                    <ToggleSwitch IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
+                <ToggleSwitch IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-                </local:SettingsCard>
+            </local:SettingsCard>
 
-                <!--  Padding  -->
-                <local:SettingsExpander x:Name="Padding"
+            <!--  Padding  -->
+            <local:SettingsExpander x:Name="Padding"
                                         x:Uid="Profile_Padding">
-                    <local:SettingsExpander.Content>
-                        <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                <local:SettingsExpander.Content>
+                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
                                    Text="{x:Bind Profile.Padding, Mode=OneWay}" />
-                    </local:SettingsExpander.Content>
-                    <local:SettingsExpander.ItemsHeader>
-                        <ContentPresenter Padding="16,12,16,16">
-                            <Border Margin="0,12,0,12"
+                </local:SettingsExpander.Content>
+                <local:SettingsExpander.ItemsHeader>
+                    <ContentPresenter Padding="16,12,16,16">
+                        <Border Margin="0,12,0,12"
                                     Padding="2,0,2,0"
                                     HorizontalAlignment="Left"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultSolidBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{StaticResource OverlayCornerRadius}">
-                                <Grid>
+                            <Grid>
 
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="48" />
-                                        <RowDefinition Height="48" />
-                                        <RowDefinition Height="48" />
-                                    </Grid.RowDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="48" />
+                                    <RowDefinition Height="48" />
+                                    <RowDefinition Height="48" />
+                                </Grid.RowDefinitions>
 
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="72" />
-                                        <ColumnDefinition Width="72" />
-                                        <ColumnDefinition Width="72" />
-                                    </Grid.ColumnDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="72" />
+                                    <ColumnDefinition Width="72" />
+                                </Grid.ColumnDefinitions>
 
-                                    <muxc:NumberBox Grid.Row="1"
+                                <muxc:NumberBox Grid.Row="1"
                                                     Grid.Column="0"
                                                     LargeChange="10"
                                                     Maximum="100"
@@ -149,7 +146,7 @@
                                                     Style="{StaticResource PaddingNumberBoxStyle}"
                                                     Value="{x:Bind Profile.LeftPadding, Mode=TwoWay}" />
 
-                                    <muxc:NumberBox Grid.Row="0"
+                                <muxc:NumberBox Grid.Row="0"
                                                     Grid.Column="1"
                                                     LargeChange="10"
                                                     Maximum="100"
@@ -158,7 +155,7 @@
                                                     Style="{StaticResource PaddingNumberBoxStyle}"
                                                     Value="{x:Bind Profile.TopPadding, Mode=TwoWay}" />
 
-                                    <muxc:NumberBox Grid.Row="1"
+                                <muxc:NumberBox Grid.Row="1"
                                                     Grid.Column="2"
                                                     LargeChange="10"
                                                     Maximum="100"
@@ -167,7 +164,7 @@
                                                     Style="{StaticResource PaddingNumberBoxStyle}"
                                                     Value="{x:Bind Profile.RightPadding, Mode=TwoWay}" />
 
-                                    <muxc:NumberBox Grid.Row="2"
+                                <muxc:NumberBox Grid.Row="2"
                                                     Grid.Column="1"
                                                     LargeChange="10"
                                                     Maximum="100"
@@ -176,75 +173,72 @@
                                                     Style="{StaticResource PaddingNumberBoxStyle}"
                                                     Value="{x:Bind Profile.BottomPadding, Mode=TwoWay}" />
 
-                                </Grid>
-                            </Border>
-                        </ContentPresenter>
-                    </local:SettingsExpander.ItemsHeader>
-                </local:SettingsExpander>
+                            </Grid>
+                        </Border>
+                    </ContentPresenter>
+                </local:SettingsExpander.ItemsHeader>
+            </local:SettingsExpander>
 
-                <!--  Scrollbar Visibility  -->
-                <local:SettingsCard x:Name="ScrollbarVisibility"
+            <!--  Scrollbar Visibility  -->
+            <local:SettingsCard x:Name="ScrollbarVisibility"
                                         x:Uid="Profile_ScrollbarVisibility">
-                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind Profile.ScrollStateList, Mode=OneWay}"
                               SelectedItem="{x:Bind Profile.CurrentScrollState, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}" />
-                </local:SettingsCard>
-            </StackPanel>
-            <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">
-                <StackPanel Orientation="Horizontal"
+            </local:SettingsCard>
+            <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
-                    <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
+                <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
                                Style="{StaticResource TextBlockSubtitleStyle}" />
 
-                    <!--  Create Unfocused Appearance  -->
-                    <Button x:Name="CreateUnfocusedAppearance"
+                <!--  Create Unfocused Appearance  -->
+                <Button x:Name="CreateUnfocusedAppearance"
                             x:Uid="Profile_CreateUnfocusedAppearanceButton"
                             Margin="8,0,0,0"
                             VerticalAlignment="Bottom"
                             Click="CreateUnfocusedAppearance_Click"
                             Style="{StaticResource BaseButtonStyle}"
                             Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon Margin="0,4,0,0"
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Margin="0,4,0,0"
                                           FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE710;" />
-                                <TextBlock x:Uid="Profile_AddAppearanceButton"
+                            <TextBlock x:Uid="Profile_AddAppearanceButton"
                                            Margin="8,0,0,0"
                                            FontSize="{StaticResource StandardIconSize}" />
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
 
-                    <!--  Delete Unfocused Appearance  -->
-                    <Button x:Name="DeleteUnfocusedAppearance"
+                <!--  Delete Unfocused Appearance  -->
+                <Button x:Name="DeleteUnfocusedAppearance"
                             x:Uid="Profile_DeleteUnfocusedAppearanceButton"
                             Margin="8,0,0,0"
                             VerticalAlignment="Bottom"
                             Click="DeleteUnfocusedAppearance_Click"
                             Style="{StaticResource DeleteButtonStyle}"
                             Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon FontSize="{StaticResource StandardIconSize}"
                                           Glyph="&#xE74D;" />
-                                <TextBlock x:Uid="Profile_DeleteAppearanceButton"
+                            <TextBlock x:Uid="Profile_DeleteAppearanceButton"
                                            Margin="8,0,0,0"
                                            FontSize="{StaticResource StandardIconSize}" />
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-                </StackPanel>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+            </StackPanel>
 
-                <!--  Unfocused Appearance  -->
-                <local:Appearances x:Name="UnfocusedAppearanceView"
+            <!--  Unfocused Appearance  -->
+            <local:Appearances x:Name="UnfocusedAppearanceView"
                                    Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
                                    SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                    Visibility="{x:Bind Profile.ShowUnfocusedAppearance, Mode=OneWay}"
                                    WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
-            </StackPanel>
         </StackPanel>
     </Grid>
 </Page>
