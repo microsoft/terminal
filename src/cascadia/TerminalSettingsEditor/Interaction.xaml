@@ -196,18 +196,30 @@
         <TextBlock x:Uid="Interaction_Section_Warnings" Style="{StaticResource TextBlockSubHeaderStyle}" />
 
         <!--  Confirm Close On  -->
-        <local:SettingsCard x:Name="ConfirmOnClose" x:Uid="Globals_ConfirmOnClose">
+        <local:SettingsExpander
+            x:Name="ConfirmOnClose"
+            x:Uid="Globals_ConfirmOnClose"
+            IsExpanded="True">
+            <local:SettingsExpander.HeaderIcon>
+                <FontIcon Glyph="&#xE7BA;" />
+            </local:SettingsExpander.HeaderIcon>
             <ComboBox
                 AutomationProperties.AccessibilityView="Content"
                 ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                 ItemsSource="{x:Bind ViewModel.ConfirmOnCloseList}"
                 SelectedItem="{x:Bind ViewModel.CurrentConfirmOnClose, Mode=TwoWay}"
                 Style="{StaticResource ComboBoxSettingStyle}" />
-        </local:SettingsCard>
-
-        <!--  Input Service Warning  -->
-        <local:SettingsCard x:Name="InputServiceWarning" x:Uid="Globals_InputServiceWarning">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}" Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingsCard>
+            <local:SettingsExpander.Items>
+                <!--  Input Service Warning  -->
+                <local:SettingsCard
+                    ContentAlignment="Left"
+                    HorizontalContentAlignment="Stretch">
+                    <CheckBox
+                        x:Name="InputServiceWarning"
+                        x:Uid="Globals_InputServiceWarning_Checkbox"
+                        IsChecked="{x:Bind ViewModel.InputServiceWarning, Mode=TwoWay}" />
+                </local:SettingsCard>
+            </local:SettingsExpander.Items>
+        </local:SettingsExpander>
     </StackPanel>
 </Page>

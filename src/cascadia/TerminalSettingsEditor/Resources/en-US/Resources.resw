@@ -2305,6 +2305,10 @@
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
   </data>
+  <data name="Globals_InputServiceWarning_Checkbox.Content" xml:space="preserve">
+    <value>Warn when "Touch Keyboard and Handwriting Panel Service" is disabled</value>
+    <comment>Label for a checkbox toggling the touch-keyboard / handwriting-panel service warning. {Locked="Touch Keyboard and Handwriting Panel Service"}</comment>
+  </data>
   <data name="Globals_WarnAboutLargePaste.Content" xml:space="preserve">
     <value>Warn when pasting more than 5 KiB</value>
   </data>
