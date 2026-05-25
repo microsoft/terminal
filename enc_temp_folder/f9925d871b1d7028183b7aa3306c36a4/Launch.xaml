@@ -62,7 +62,6 @@
                 SelectedItem="{x:Bind ViewModel.CurrentFirstWindowPreference, Mode=TwoWay}"
                 Style="{StaticResource ComboBoxSettingStyle}" />
             <local:SettingsExpander.Items>
-
                 <!--  Default Profile  -->
                 <local:SettingsCard x:Name="DefaultProfile" x:Uid="Globals_DefaultProfile">
                     <ComboBox
@@ -164,7 +163,6 @@
                         <FontIcon
                             VerticalAlignment="Center"
                             FontSize="16"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Glyph="&#xF573;">
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Uid="Globals_InitialCols_Tooltip" />
@@ -179,7 +177,6 @@
                         <FontIcon
                             VerticalAlignment="Center"
                             FontSize="16"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Glyph="&#xF577;">
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Uid="Globals_InitialRows_Tooltip" />

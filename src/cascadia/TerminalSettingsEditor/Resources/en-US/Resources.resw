@@ -431,7 +431,7 @@
     <comment>The string to be displayed when there is no current value in the y-coordinate number box.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.Content" xml:space="preserve">
-    <value>Let Windows decide</value>
+    <value>Use default launch position</value>
     <comment>A checkbox for the "launch position" setting. Toggling this control sets the launch position to whatever the Windows operating system decides.</comment>
   </data>
   <data name="Globals_DefaultLaunchPositionCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
@@ -439,7 +439,7 @@
     <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
   </data>
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
-    <value>First window contents</value>
+    <value>When Terminal starts</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
   </data>
   <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
@@ -467,8 +467,8 @@
     <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
   <data name="Globals_LaunchParameters.Description" xml:space="preserve">
-    <value></value>
-    <comment>Intentionally empty. Kept so the resource has a neutral (en-US) value while still present in other locales. Older description: "Settings that control how the terminal launches"</comment>
+    <value>Choose how Terminal opens</value>
+    <comment>A description for the "launch mode" expander.</comment>
   </data>
   <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>Launch mode</value>
@@ -534,6 +534,10 @@
     <value>Launch at login</value>
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin_Checkbox.Content" xml:space="preserve">
+    <value>Launch at login</value>
+    <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
+  </data>
   <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
     <value>Automatically launch Terminal when you log in to Windows.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
@@ -545,6 +549,10 @@
   <data name="Globals_CenterOnLaunch.Header" xml:space="preserve">
     <value>Center on launch</value>
     <comment>Header for a control to toggle whether the app should launch in the center of the screen, or not.</comment>
+  </data>
+  <data name="Globals_CenterOnLaunch_Checkbox.Content" xml:space="preserve">
+    <value>Center on launch</value>
+    <comment>Label for a checkbox to toggle whether the app should launch in the center of the screen, or not.</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
@@ -1543,8 +1551,16 @@
     <comment>Header for a group of settings that control the size of the app. Presented near "Globals_InitialCols" and "Globals_InitialRows".</comment>
   </data>
   <data name="Globals_LaunchSize.Description" xml:space="preserve">
-    <value>The number of rows and columns displayed in the window upon first load. Measured in characters.</value>
+    <value>Initial window size, in characters.</value>
     <comment>A description for what the "rows" and "columns" settings do. Presented near "Globals_LaunchSize.Header".</comment>
+  </data>
+  <data name="Globals_InitialCols_Tooltip.Content" xml:space="preserve">
+    <value>Columns — width of the window, in characters.</value>
+    <comment>Tooltip shown next to the launch-size columns number box.</comment>
+  </data>
+  <data name="Globals_InitialRows_Tooltip.Content" xml:space="preserve">
+    <value>Rows — height of the window, in characters.</value>
+    <comment>Tooltip shown next to the launch-size rows number box.</comment>
   </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>Launch position</value>
