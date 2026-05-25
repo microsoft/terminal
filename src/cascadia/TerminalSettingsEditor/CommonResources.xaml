@@ -106,6 +106,13 @@
     <Style x:Key="SettingsStackStyle" TargetType="StackPanel">
         <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
         <Setter Property="Spacing" Value="4" />
+        <Setter Property="ChildrenTransitions">
+            <Setter.Value>
+                <TransitionCollection>
+                    <RepositionThemeTransition IsStaggeringEnabled="False" />
+                </TransitionCollection>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!--  Used to stack a group of settings inside a pivot  -->
