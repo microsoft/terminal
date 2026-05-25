@@ -232,11 +232,11 @@
     <comment>This is the header for a control that lets the user select the yellow color for text displayed on the screen.</comment>
   </data>
   <data name="Globals_Language.Header" xml:space="preserve">
-    <value>Language (requires relaunch)</value>
+    <value>Language</value>
     <comment>The header for a control allowing users to choose the app's language.</comment>
   </data>
   <data name="Globals_Language.Description" xml:space="preserve">
-    <value>Selects a display language for the application. This will override your default Windows interface language.</value>
+    <value>Choose the display language for the application. Overrides the Windows display language and requires a relaunch.</value>
     <comment>A description explaining how this control changes the app's language. {Locked="Windows"}</comment>
   </data>
   <data name="Globals_LanguageDefault" xml:space="preserve">
@@ -1287,10 +1287,10 @@
     <comment>Tooltip for the "profiles" menu item. Navigates to a landing page that lists profile-related settings.</comment>
   </data>
   <data name="Profiles_GeneralSettingsHeader.Text" xml:space="preserve">
-    <value>General Profile Settings</value>
+    <value>General profile settings</value>
     <comment>Section header on the Profiles landing page. Introduces general-purpose profile settings such as the defaults shared by all profiles and the color schemes that profiles can use.</comment>
   </data>
-  <data name="Profiles_TerminalProfilesHeader.Text" xml:space="preserve">
+  <data name="Profiles_TerminalProfilesHeader.Header" xml:space="preserve">
     <value>Terminal profiles</value>
     <comment>Section header on the Profiles landing page. Introduces the list of individual terminal profiles configured by the user.</comment>
   </data>
