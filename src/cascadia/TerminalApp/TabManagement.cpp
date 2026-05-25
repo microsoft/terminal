@@ -510,40 +510,11 @@ namespace winrt::TerminalApp::implementation
             // 1. We want to customize this behavior (e.g., use MRU logic)
             // 2. In fullscreen (GH#5799) and focus (GH#7916) modes the _OnTabItemsChanged is not fired
             // 3. When rearranging tabs (GH#7916) _OnTabItemsChanged is suppressed
-            const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
 
-            if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed)
-            {
-                const auto newSelectedTab = _mruTabs.GetAt(0);
-                _UpdatedSelectedTab(newSelectedTab);
-                _tabView.SelectedItem(newSelectedTab.TabViewItem());
-            }
-            else
-            {
-                // We can't use
-                //   auto selectedIndex = _tabView.SelectedIndex();
-                // Because this will always return -1 in this scenario unfortunately.
-                //
-                // So, what we're going to try to do is move the focus to the tab
-                // to the right, within the bounds of how many tabs we have.
-                //
-                // EX: we have 4 tabs: [A, B, C, D]. If we close:
-                // * A (tabIndex=0): We'll want to focus tab B (now in index 0)
-                // * B (tabIndex=1): We'll want to focus tab C (now in index 1)
-                // * C (tabIndex=2): We'll want to focus tab D (now in index 2)
-                // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
-                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex, 0, _tabs.Size() - 1);
-                // _UpdatedSelectedTab will do the work of setting up the new tab as
-                // the focused one, and unfocusing all the others.
-                auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
-                _UpdatedSelectedTab(newSelectedTab);
+            const auto newSelectedTab = _mruTabs.GetAt(0);
+            _UpdatedSelectedTab(newSelectedTab);
+            _tabView.SelectedItem(newSelectedTab.TabViewItem());
 
-                // Also, we need to _manually_ set the SelectedItem of the tabView
-                // here. If we don't, then the TabView will technically not have a
-                // selected item at all, which can make things like ClosePane not
-                // work correctly.
-                _tabView.SelectedItem(newSelectedTab.TabViewItem());
-            }
         }
 
         // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
