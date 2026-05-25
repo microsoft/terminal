@@ -212,6 +212,8 @@
         BasedOn="{StaticResource BaseButtonStyle}"
         TargetType="Button">
         <Setter Property="MinHeight" Value="32" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
