@@ -92,15 +92,6 @@
                     </ComboBox>
                 </local:SettingsCard>
 
-                <!--  Start on User Login  -->
-                <local:SettingsCard ContentAlignment="Left" Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
-                    <CheckBox
-                        x:Name="StartOnUserLogin"
-                        x:Uid="Globals_StartOnUserLogin_Checkbox"
-                        IsChecked="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
-                        IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}" />
-                </local:SettingsCard>
-
                 <!--  Windowing Behavior  -->
                 <local:SettingsCard x:Name="WindowingBehavior" x:Uid="Globals_WindowingBehavior">
                     <ComboBox
@@ -109,6 +100,15 @@
                         ItemsSource="{x:Bind ViewModel.WindowingBehaviorList}"
                         SelectedItem="{x:Bind ViewModel.CurrentWindowingBehavior, Mode=TwoWay}"
                         Style="{StaticResource ComboBoxSettingStyle}" />
+                </local:SettingsCard>
+
+                <!--  Start on User Login  -->
+                <local:SettingsCard ContentAlignment="Left" Visibility="{x:Bind ViewModel.StartOnUserLoginAvailable, Mode=OneTime}">
+                    <CheckBox
+                        x:Name="StartOnUserLogin"
+                        x:Uid="Globals_StartOnUserLogin_Checkbox"
+                        IsChecked="{x:Bind ViewModel.StartOnUserLogin, Mode=TwoWay}"
+                        IsEnabled="{x:Bind ViewModel.StartOnUserLoginConfigurable, Mode=OneWay}" />
                 </local:SettingsCard>
             </local:SettingsExpander.Items>
         </local:SettingsExpander>
