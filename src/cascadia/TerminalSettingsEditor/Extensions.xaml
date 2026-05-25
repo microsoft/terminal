@@ -206,6 +206,9 @@
 
             <DataTemplate x:Key="JsonTemplate" x:DataType="local:FragmentExtensionViewModel">
                 <local:SettingsExpander Header="{x:Bind Fragment.Filename}" Margin="0,0,0,4">
+                    <local:SettingsExpander.HeaderIcon>
+                        <FontIcon Glyph="&#xE943;" />
+                    </local:SettingsExpander.HeaderIcon>
                     <local:SettingsExpander.Items>
                         <local:SettingsCard HorizontalContentAlignment="Stretch" ContentAlignment="Vertical">
                             <ScrollViewer Style="{StaticResource CodeBlockScrollViewerStyle}">
@@ -437,6 +440,9 @@
                 x:Name="Scope"
                 x:Uid="Extensions_Scope"
                 IsTabStop="False">
+                <local:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE77B;" />
+                </local:SettingsCard.HeaderIcon>
                 <TextBlock
                     VerticalAlignment="Center"
                     Style="{ThemeResource SecondaryTextBlockStyle}"

@@ -248,7 +248,7 @@
     <comment>The "input scope" of an IME tells it what type of characters should be available for input. A Chinese IME for instance may show English letters instead of Chinese ones. It's a technical term. We're using "input mode" instead of "input scope" to make it easier to understand for users.</comment>
   </data>
   <data name="Globals_DefaultInputScope.Description" xml:space="preserve">
-    <value>Informs the IME what language to use by default. For languages that rely on an IME and don't use Latin characters by default, this setting can be used to force English input on startup.</value>
+    <value>Choose the default IME input language. For IME-based languages, you can force English input on startup.</value>
   </data>
   <data name="Globals_DefaultInputScopeDefault.Content" xml:space="preserve">
     <value>Default</value>
@@ -305,15 +305,15 @@
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
   </data>
   <data name="Globals_DefaultProfile.Description" xml:space="preserve">
-    <value>Profile that opens when clicking the '+' icon or by typing the new tab key binding.</value>
-    <comment>A description for what the default profile is and when it's used.</comment>
+    <value></value>
+    <comment>Intentionally empty. Kept so the resource has a neutral (en-US) value while still present in other locales. Older description: "Profile that opens when clicking the '+' icon or by typing the new tab key binding."</comment>
   </data>
   <data name="Globals_DefaultTerminal.Header" xml:space="preserve">
     <value>Default terminal application</value>
     <comment>Header for a drop down that permits the user to select which installed Terminal application will launch when command line tools like CMD are run from the Windows Explorer run box or start menu or anywhere else that they do not already have a graphical window assigned.</comment>
   </data>
   <data name="Globals_DefaultTerminal.Description" xml:space="preserve">
-    <value>The terminal application that launches when a command-line application is run without an existing session, like from the Start Menu or Run dialog.</value>
+    <value>The terminal app used when a command-line app is launched without an existing session.</value>
     <comment>A description to clarify that the dropdown choice for default terminal will tell the operating system which Terminal application (Windows Terminal, the preview build, the legacy inbox window, or a 3rd party one) to use when starting a command line tool like CMD or Powershell that does not already have a window.</comment>
   </data>
   <data name="Globals_GraphicsAPI.Header" xml:space="preserve">
@@ -386,9 +386,17 @@
     <value>Columns</value>
     <comment>Header for a control to choose the number of columns in the terminal's text grid.</comment>
   </data>
+  <data name="Globals_InitialCols.Description" xml:space="preserve">
+    <value>Width of the window, measured in characters.</value>
+    <comment>A description for the "columns" setting, which controls the initial width of the terminal window in characters.</comment>
+  </data>
   <data name="Globals_InitialRows.Header" xml:space="preserve">
     <value>Rows</value>
     <comment>Header for a control to choose the number of rows in the terminal's text grid.</comment>
+  </data>
+  <data name="Globals_InitialRows.Description" xml:space="preserve">
+    <value>Height of the window, measured in characters.</value>
+    <comment>A description for the "rows" setting, which controls the initial height of the terminal window in characters.</comment>
   </data>
   <data name="Globals_InitialColsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Initial Columns</value>
@@ -431,11 +439,12 @@
     <comment>A description for what the "default launch position" checkbox does. Presented near "Globals_DefaultLaunchPositionCheckbox".</comment>
   </data>
   <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
-    <value>When Terminal starts</value>
+    <value>First window contents</value>
     <comment>Header for a control to select how the terminal should load its first window.</comment>
   </data>
   <data name="Globals_FirstWindowPreference.Description" xml:space="preserve">
-    <value>What should be shown when the first terminal is created.</value>
+    <value></value>
+    <comment>Intentionally empty. Kept so the resource has a neutral (en-US) value while still present in other locales. Older description: "What should be shown when the first terminal is created."</comment>
   </data>
   <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
     <value>Open a tab with the default profile</value>
@@ -454,12 +463,12 @@
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
-    <value>Launch parameters</value>
+    <value>Launch mode</value>
     <comment>Header for a set of settings that determine how terminal launches. These settings include the launch mode, launch position and whether the terminal should center itself on launch.</comment>
   </data>
   <data name="Globals_LaunchParameters.Description" xml:space="preserve">
-    <value>Settings that control how the terminal launches</value>
-    <comment>A description for what the "launch parameters" expander contains. Presented near "Globals_LaunchParameters.Header".</comment>
+    <value></value>
+    <comment>Intentionally empty. Kept so the resource has a neutral (en-US) value while still present in other locales. Older description: "Settings that control how the terminal launches"</comment>
   </data>
   <data name="Globals_LaunchModeSetting.Header" xml:space="preserve">
     <value>Launch mode</value>
@@ -522,7 +531,7 @@
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
-    <value>Launch on machine startup</value>
+    <value>Launch at login</value>
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
@@ -2841,7 +2850,7 @@
     <comment>Title of a section that groups settings that control how the terminal opens and behaves when launched.</comment>
   </data>
   <data name="Launch_Section_SystemInputDefaults.Text" xml:space="preserve">
-    <value>System &amp; input defaults</value>
+    <value>System and input defaults</value>
     <comment>Title of a section that groups settings for default system and input behaviors.</comment>
   </data>
   <data name="Interaction_Section_Clipboard.Text" xml:space="preserve">
@@ -2849,7 +2858,7 @@
     <comment>Title of a section that groups settings related to selection, copying, and pasting.</comment>
   </data>
   <data name="Interaction_Section_TextSelection.Text" xml:space="preserve">
-    <value>Text selection &amp; editing</value>
+    <value>Text selection and editing</value>
     <comment>Title of a section that groups settings related to text selection and editing.</comment>
   </data>
   <data name="Interaction_Section_WindowLayout.Text" xml:space="preserve">
