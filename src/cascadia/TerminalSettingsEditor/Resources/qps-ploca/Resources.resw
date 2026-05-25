@@ -333,22 +333,6 @@
   <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
     <value>Ďїřèĉт3Ď 11 !!!</value>
   </data>
-  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
-    <value>Ďіşǻьłэ рàґτíàľ Šŵąр Ċнаιŋ ĭήνάŀïδαţίбπ !!! !!! !!! !!!</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>Бў ďēƒăüℓţ, ťћэ ţèхţ ř℮ŋðěґĕґ υŝ℮ŝ ä FLIP_SEQUENTIAL Ŝωăр Сђáϊп åπδ ďεĉℓάŗέş δΐŗŧў ŗēćŧăñġℓέš νïд ťĥĕ Present1 ĀРĪ. Щĥêи тћїŝ ŝєŧŧΐñğ įѕ ℮лάьłзδ, α FLIP_DISCARD Şẁαр Ċħāīŉ ŵīĺļ ьё υѕėð íπśťεαď, āлδ ŋо ďīŗŧý ŕęсŧдиĝℓэş шīľĺ ъĕ δеĉľāŗэð. Ẃħέтħêґ òñё σř ŧнé ōтħεř ΐś ъёţŧęґ δéρ℮ήđѕ σή ÿούг ħäґďшάřέ ªήð νăŕιούѕ ǿτђēř ƒαстόяš. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! </value>
-    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>Ųѕε ŝόƒťщаřė яĕŋðεříлğ (WARP) !!! !!! !!!</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>Ẅнέⁿ éñâвĺĕď, ŧĥë тěřmϊñăľ шîľĺ ŭşē ă şóƒтшářě яãѕтĕгīżεŕ (WARP). Тћįş ŝеţŧΐπģ śнσύŀδ вё ĺєƒŧ δїşâьĺεδ ύπďέя ªℓмôšţ áŀł ćϊŕçϋмśтąпćēѕ. !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !!! !</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
-  </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
     <value>Τéжτ mĕαšûяēмєñţ мόðë !!! !!!</value>
     <comment>This text is shown next to a list of choices.</comment>

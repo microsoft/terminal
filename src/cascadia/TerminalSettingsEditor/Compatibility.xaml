@@ -2,14 +2,15 @@
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
-<Page x:Class="Microsoft.Terminal.Settings.Editor.Compatibility"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-      mc:Ignorable="d">
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Compatibility"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -17,127 +18,127 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <DataTemplate x:Key="EnumComboBoxTemplate"
-                          x:DataType="local:EnumEntry">
+            <DataTemplate x:Key="EnumComboBoxTemplate" x:DataType="local:EnumEntry">
                 <TextBlock Text="{x:Bind EnumName}" />
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
-        <!--  Section: Compatibility  -->
-        <StackPanel Spacing="2"
-                    Style="{StaticResource PivotStackStyle}">
-            <TextBlock x:Uid="Compatibility_Section_Compatibility"
-                       Margin="0,0,0,4"
-                       Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <!--  Allow Headless  -->
-            <local:SettingsCard x:Name="AllowHeadless"
-                                x:Uid="Globals_AllowHeadless">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingsCard>
 
-            <!--  Text Measurement  -->
-            <local:SettingsCard x:Name="TextMeasurement"
-                                x:Uid="Globals_TextMeasurement">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
-                          SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingsCard>
+        <!--  Allow Headless  -->
+        <local:SettingsCard
+            x:Name="AllowHeadless"
+            x:Uid="Globals_AllowHeadless"
+            Margin="0,36,0,0">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE756;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}" Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
 
-            <!--  Ambiguous Width  -->
-            <local:SettingsCard x:Name="AmbiguousWidth"
-                                x:Uid="Globals_AmbiguousWidth">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind ViewModel.AmbiguousWidthList}"
-                          SelectedItem="{x:Bind ViewModel.CurrentAmbiguousWidth, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingsCard>
+        <!--  Text Measurement  -->
+        <local:SettingsCard x:Name="TextMeasurement" x:Uid="Globals_TextMeasurement">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xEB41;" />
+            </local:SettingsCard.HeaderIcon>
+            <ComboBox
+                AutomationProperties.AccessibilityView="Content"
+                ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
+                SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
+                Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingsCard>
 
-            <!--  Debug Features  -->
-            <local:SettingsCard x:Name="DebugFeaturesEnabled"
-                                x:Uid="Globals_DebugFeaturesEnabled"
-                                Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingsCard>
-
-            <!--  Reset Application State  -->
-            <local:SettingsCard x:Name="ResetApplicationState"
-                                x:Uid="Settings_ResetApplicationState">
-                <Button x:Uid="Settings_ResetApplicationStateButton"
-                        Style="{StaticResource DeleteButtonStyle}">
-                    <Button.Flyout>
-                        <Flyout x:Name="ResetCacheFlyout"
-                                FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
-                            <StackPanel>
-                                <TextBlock x:Uid="Settings_ResetApplicationStateConfirmationMessageHeader"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <TextBlock x:Uid="Settings_ResetApplicationStateConfirmationMessageBody"
-                                           FontWeight="Normal"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <Button x:Uid="Settings_ResetApplicationStateConfirmationButton"
-                                        Click="ResetApplicationStateButton_Click" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </local:SettingsCard>
-
-            <!--  Reset to Default Settings  -->
-            <local:SettingsCard x:Name="ResetToDefaultSettings"
-                                x:Uid="Settings_ResetToDefaultSettings">
-                <Button x:Uid="Settings_ResetToDefaultSettingsButton"
-                        Style="{StaticResource DeleteButtonStyle}">
-                    <Button.Flyout>
-                        <Flyout FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
-                            <StackPanel>
-                                <TextBlock x:Uid="Settings_ResetToDefaultSettingsConfirmationMessageHeader"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <TextBlock x:Uid="Settings_ResetToDefaultSettingsConfirmationMessageBody"
-                                           FontWeight="Normal"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <Button x:Uid="Settings_ResetToDefaultSettingsConfirmationButton"
-                                        Click="{x:Bind ViewModel.ResetToDefaultSettings}" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </local:SettingsCard>
-        </StackPanel>
+        <!--  Ambiguous Width  -->
+        <local:SettingsCard x:Name="AmbiguousWidth" x:Uid="Globals_AmbiguousWidth">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE88D;" />
+            </local:SettingsCard.HeaderIcon>
+            <ComboBox
+                AutomationProperties.AccessibilityView="Content"
+                ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                ItemsSource="{x:Bind ViewModel.AmbiguousWidthList}"
+                SelectedItem="{x:Bind ViewModel.CurrentAmbiguousWidth, Mode=TwoWay}"
+                Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingsCard>
 
         <!--  Section: Rendering  -->
-        <StackPanel Spacing="2"
-                    Style="{StaticResource PivotStackStyle}">
-            <TextBlock x:Uid="Compatibility_Section_Rendering"
-                       Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <!--  Graphics API  -->
-            <local:SettingsCard x:Name="GraphicsAPI"
-                                x:Uid="Globals_GraphicsAPI">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind ViewModel.GraphicsAPIList}"
-                          SelectedItem="{x:Bind ViewModel.CurrentGraphicsAPI, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingsCard>
+        <TextBlock x:Uid="Compatibility_Section_Rendering" Style="{StaticResource TextBlockSubHeaderStyle}" />
+        <!--  Graphics API  -->
+        <local:SettingsCard x:Name="GraphicsAPI" x:Uid="Globals_GraphicsAPI">
+            <ComboBox
+                AutomationProperties.AccessibilityView="Content"
+                ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                ItemsSource="{x:Bind ViewModel.GraphicsAPIList}"
+                SelectedItem="{x:Bind ViewModel.CurrentGraphicsAPI, Mode=TwoWay}"
+                Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingsCard>
 
-            <!--  Disable Partial Invalidation  -->
-            <local:SettingsCard x:Name="DisablePartialInvalidation"
-                                x:Uid="Globals_DisablePartialInvalidation">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.DisablePartialInvalidation, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingsCard>
+        <!--  Disable Partial Invalidation  -->
+        <local:SettingsCard x:Name="DisablePartialInvalidation" x:Uid="Globals_DisablePartialInvalidation">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.DisablePartialInvalidation, Mode=TwoWay}" Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
 
-            <!--  Software Rendering  -->
-            <local:SettingsCard x:Name="SoftwareRendering"
-                                x:Uid="Globals_SoftwareRendering">
-                <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingsCard>
-        </StackPanel>
+        <!--  Software Rendering  -->
+        <local:SettingsCard x:Name="SoftwareRendering" x:Uid="Globals_SoftwareRendering">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}" Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
+
+        <!--  Section: Reset  -->
+        <TextBlock x:Uid="Compatibility_Section_Troubleshooting" Style="{StaticResource TextBlockSubHeaderStyle}" />
+
+        <!--  Reset Application State  -->
+        <local:SettingsCard x:Name="ResetApplicationState" x:Uid="Settings_ResetApplicationState">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xEA99;" />
+            </local:SettingsCard.HeaderIcon>
+            <Button x:Uid="Settings_ResetApplicationStateButton" Style="{StaticResource DeleteButtonStyle}">
+                <Button.Flyout>
+                    <Flyout x:Name="ResetCacheFlyout" FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
+                        <StackPanel>
+                            <TextBlock x:Uid="Settings_ResetApplicationStateConfirmationMessageHeader" Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <TextBlock
+                                x:Uid="Settings_ResetApplicationStateConfirmationMessageBody"
+                                FontWeight="Normal"
+                                Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <Button x:Uid="Settings_ResetApplicationStateConfirmationButton" Click="ResetApplicationStateButton_Click" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </local:SettingsCard>
+
+        <!--  Reset to Default Settings  -->
+        <local:SettingsCard x:Name="ResetToDefaultSettings" x:Uid="Settings_ResetToDefaultSettings">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE777;" />
+            </local:SettingsCard.HeaderIcon>
+            <Button x:Uid="Settings_ResetToDefaultSettingsButton" Style="{StaticResource DeleteButtonStyle}">
+                <Button.Flyout>
+                    <Flyout FlyoutPresenterStyle="{StaticResource CustomFlyoutPresenterStyle}">
+                        <StackPanel>
+                            <TextBlock x:Uid="Settings_ResetToDefaultSettingsConfirmationMessageHeader" Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <TextBlock
+                                x:Uid="Settings_ResetToDefaultSettingsConfirmationMessageBody"
+                                FontWeight="Normal"
+                                Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <Button x:Uid="Settings_ResetToDefaultSettingsConfirmationButton" Click="{x:Bind ViewModel.ResetToDefaultSettings}" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </local:SettingsCard>
+
+        <!--  Debug Features  -->
+        <local:SettingsCard
+            x:Name="DebugFeaturesEnabled"
+            x:Uid="Globals_DebugFeaturesEnabled"
+            Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xEBE8;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}" Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
     </StackPanel>
 </Page>

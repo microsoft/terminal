@@ -333,22 +333,6 @@
   <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
     <value>Direct3D 11</value>
   </data>
-  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
-    <value>Deshabilitar la invalidación parcial de la cadena de intercambio</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>De forma predeterminada, el representador de texto usa una cadena de intercambio de FLIP_SEQUENTIAL y declara rectángulos modificados a través de la API de Present1. Cuando esta configuración está habilitada, se usará una cadena de intercambio de FLIP_DISCARD y no se declarará ningún rectángulo con modificaciones. Si uno u otro es mejor depende de su hardware y de otros factores.</value>
-    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>Uso de la representación de software (WARP)</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>Cuando está habilitado, el terminal usará un rasterizador de software (WARP). Esta configuración debe dejarse deshabilitada en casi todas las circunstancias.</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
-  </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
     <value>Modo de medición de texto</value>
     <comment>This text is shown next to a list of choices.</comment>

@@ -335,7 +335,7 @@
   </data>
   <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
     <value>Disable partial Swap Chain invalidation</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
+    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a checkbox.</comment>
   </data>
   <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
     <value>By default, the text renderer uses a FLIP_SEQUENTIAL Swap Chain and declares dirty rectangles via the Present1 API. When this setting is enabled, a FLIP_DISCARD Swap Chain will be used instead, and no dirty rectangles will be declared. Whether one or the other is better depends on your hardware and various other factors.</value>
@@ -343,7 +343,7 @@
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
     <value>Use software rendering (WARP)</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
+    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a checkbox.</comment>
   </data>
   <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
     <value>When enabled, the terminal will use a software rasterizer (WARP). This setting should be left disabled under almost all circumstances.</value>
@@ -354,7 +354,7 @@
     <comment>This text is shown next to a list of choices.</comment>
   </data>
   <data name="Globals_TextMeasurement.Description" xml:space="preserve">
-    <value>This changes the way incoming text is grouped into cells. The "Grapheme clusters" option is the most modern and Unicode-correct way to do so, while "wcswidth" is a common approach on UNIX, and "Windows Console" replicates the way it used to work on Windows. Changing this setting requires a restart of Windows Terminal and it only applies to applications launched from within it.</value>
+    <value>Choose how text is grouped into cells. "Grapheme clusters" provides the most modern Unicode behavior. Restart Terminal to apply changes. Only affects applications launched from Terminal.</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
     <value>Grapheme clusters</value>
@@ -372,7 +372,7 @@
     <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
   <data name="Globals_AmbiguousWidth.Description" xml:space="preserve">
-    <value>Sets the width used for East Asian Ambiguous characters. "Narrow" (default) prioritizes compatibility, while "Wide" prioritizes readability with many CJK fonts. In "Wide" mode, some applications may not work correctly and cause erratic cursor movement. Changing this setting requires a restart of Windows Terminal and it only applies to applications launched from within it.</value>
+    <value>Choose the width used for East Asian Ambiguous characters. "Narrow" improves compatibility, while "Wide" improves readability with many CJK fonts. Some applications may not work correctly in "Wide" mode. Restart Terminal to apply changes.</value>
   </data>
   <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
     <value>Narrow</value>
@@ -574,7 +574,7 @@
     <comment>Additional description for what the "force vt input" setting does. Presented near "Globals_ForceVTInput.Header".</comment>
   </data>
   <data name="Globals_AllowHeadless.Description" xml:space="preserve">
-    <value>This allows actions such as Global Summon and Quake Mode actions to work even when no windows are open.</value>
+    <value>Allows Global Summon and Quake Mode to work when no windows are open.</value>
     <comment>Additional description for what the "allow headless" setting does. Presented near "Globals_AllowHeadless.Header".</comment>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
@@ -2291,7 +2291,7 @@
     <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
-    <value>Only if "bracketed paste" is disabled</value>
+    <value>When "bracketed paste" is off</value>
     <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
   </data>
   <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
@@ -2790,7 +2790,7 @@
     <value>Clear cache</value>
   </data>
   <data name="Settings_ResetApplicationState.Description" xml:space="preserve">
-    <value>The cache stores data related to saved sessions and automatically generated profiles.</value>
+    <value>Stores data related to saved sessions and automatically generated profiles.</value>
   </data>
   <data name="Settings_ResetToDefaultSettingsButton.Content" xml:space="preserve">
     <value>Reset</value>
@@ -2888,13 +2888,13 @@
     <value>System integration and notifications</value>
     <comment>Title of a section that groups settings related to system integration and notifications.</comment>
   </data>
-  <data name="Compatibility_Section_Compatibility.Text" xml:space="preserve">
-    <value>Compatibility</value>
-    <comment>Title of a section that groups compatibility-related settings.</comment>
-  </data>
   <data name="Compatibility_Section_Rendering.Text" xml:space="preserve">
     <value>Rendering</value>
     <comment>Title of a section that groups rendering-related settings.</comment>
+  </data>
+  <data name="Compatibility_Section_Troubleshooting.Text" xml:space="preserve">
+    <value>Troubleshooting</value>
+    <comment>Title of a section that groups troubleshooting tools: clearing cached state, resetting to default settings, and enabling debug features.</comment>
   </data>
   <data name="Profile_Section_VisualUI.Text" xml:space="preserve">
     <value>Visual/UI Affordance</value>

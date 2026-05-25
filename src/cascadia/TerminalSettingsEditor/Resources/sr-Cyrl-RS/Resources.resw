@@ -333,22 +333,6 @@
   <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
     <value>Direct3D 11</value>
   </data>
-  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
-    <value>Искључи делимичну Swap Chain инвалидацију</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>Подразумевано, исцртавач текста користи FLIP_SEQUENTIAL Swap Chain и декларише прљаве правоугаонике користећи Present1 API. Када се ово подешавање укључи, уместо њега се користи FLIP_DISCARD Swap Chain и не декларишу се прљави правоугаоници. Да ли је боље једно или друго, зависи од вашег хардвера и бројних других фактора.</value>
-    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>Користи софтверско исцртавање (WARP)</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>Када је укључено, терминал ће да користи софтверски исцртавач (WARP). Ово подешавање би требало да остане искључено у скоро свим случајевима.</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
-  </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
     <value>Режим мерења текста</value>
     <comment>This text is shown next to a list of choices.</comment>

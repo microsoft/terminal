@@ -62,7 +62,7 @@
 
     <x:Double x:Key="StandardIconSize">14.0</x:Double>
     <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
-    <x:Double x:Key="StandardBoxMinWidth">248</x:Double>
+    <x:Double x:Key="StandardBoxMinWidth">120</x:Double>
     <x:Double x:Key="StandardControlMaxWidth">1000</x:Double>
     <Thickness x:Key="SettingStackMargin">0,0,0,0</Thickness>
 

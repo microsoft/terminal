@@ -333,22 +333,6 @@
   <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
     <value>Direct3D 11</value>
   </data>
-  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
-    <value>부분 스왑 체인 무효화 사용 안 함</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>기본적으로 텍스트 렌더러는 FLIP_SEQUENTIAL 스왑 체인을 사용하고 Present1 API를 통해 더티 사각형을 선언합니다. 이 설정을 사용하면 FLIP_DISCARD 스왑 체인이 대신 사용되며 더티 사각형이 선언되지 않습니다. 하나 또는 다른 요소가 더 좋은지 여부는 하드웨어 및 다양한 다른 요인에 따라 달라집니다.</value>
-    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>소프트웨어 렌더링(WARP) 사용</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 터미널에서 소프트웨어 래스터라이저(WARP)를 사용합니다. 거의 모든 상황에서는 이 설정을 사용하지 않도록 설정해야 합니다.</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
-  </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
     <value>텍스트 측정 모드</value>
     <comment>This text is shown next to a list of choices.</comment>

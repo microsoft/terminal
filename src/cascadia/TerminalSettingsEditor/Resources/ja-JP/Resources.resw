@@ -333,22 +333,6 @@
   <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
     <value>Direct3D 11</value>
   </data>
-  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
-    <value>部分的なスワップ チェーンの無効化を無効にする</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>既定では、テキスト レンダラーは FLIP_SEQUENTIAL Swap Chain を使用し、Present1 API を介してダーティ四角形を宣言します。この設定を有効にすると、代わりに FLIP_DISCARD スワップ チェーンが使用され、ダーティ四角形は宣言されません。どちらか一方が望ましいかどうかは、お使いのハードウェアとその他のさまざまな要因によって異なります。</value>
-    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>ソフトウェア レンダリングを使用する (WARP)</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>有効にすると、ターミナルはソフトウェア ラスターライザー (WARP) を使用します。この設定は、ほとんどの状況で無効のままにする必要があります。</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
-  </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
     <value>テキスト測定モード</value>
     <comment>This text is shown next to a list of choices.</comment>

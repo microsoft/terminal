@@ -333,22 +333,6 @@
   <data name="Globals_GraphicsAPI_Direct3d11.Text" xml:space="preserve">
     <value>Direct3D 11</value>
   </data>
-  <data name="Globals_DisablePartialInvalidation.Header" xml:space="preserve">
-    <value>禁用部分交换链失效</value>
-    <comment>"Swap Chain" is an official technical term by Microsoft. This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_DisablePartialInvalidation.Description" xml:space="preserve">
-    <value>默认情况下，文本呈现器使用 FLIP_SEQUENTIAL 交换链并通过 Present1 API 声明脏矩形。启用此设置时，将改用 FLIP_DISCARD 交换链，并且不会声明脏矩形。一个或另一个是否更依赖于你的硬件和各种其他因素。</value>
-    <comment>{Locked="Present1","FLIP_DISCARD","FLIP_SEQUENTIAL"}</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
-    <value>使用软件渲染(WARP)</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform". This text is shown next to a toggle.</comment>
-  </data>
-  <data name="Globals_SoftwareRendering.Description" xml:space="preserve">
-    <value>启用后，终端将使用软件光栅 (WARP)。几乎在所有情况下都应禁用此设置。</value>
-    <comment>{Locked="WARP"} WARP is the "Windows Advanced Rasterization Platform".</comment>
-  </data>
   <data name="Globals_TextMeasurement.Header" xml:space="preserve">
     <value>文本度量模式</value>
     <comment>This text is shown next to a list of choices.</comment>
