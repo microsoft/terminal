@@ -4323,7 +4323,14 @@ namespace winrt::TerminalApp::implementation
         _overviewDismissedToken = overview.Dismissed([weakThis = get_weak()](auto&&, auto&&) {
             if (auto self = weakThis.get())
             {
-                self->_ExitOverview(std::nullopt);
+                // Escape semantics: cancel without committing any
+                // in-overview navigation. _ExitOverview(nullopt) would
+                // fall back to overview.SelectedIndex() (the hovered or
+                // arrow-keyed cell) and switch to that tab. Instead,
+                // dismiss the visuals and re-mount the tab that was
+                // focused when the overview opened.
+                self->_DismissOverviewVisuals();
+                self->_UpdatedSelectedTab(self->_GetFocusedTab());
             }
         });
 
