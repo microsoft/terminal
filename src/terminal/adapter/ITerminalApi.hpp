@@ -92,5 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength) = 0;
 
         virtual void SearchMissingCommand(const std::wstring_view command) = 0;
+
+        virtual std::wstring_view GetHostIdentity() const = 0;
     };
 }

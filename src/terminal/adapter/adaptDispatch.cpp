@@ -1484,6 +1484,17 @@ void AdaptDispatch::TertiaryDeviceAttributes()
 }
 
 // Routine Description:
+// - XTVERSION - Reports the name and version of the host application.
+//   The response format is DCS > | text ST. The host identity is determined
+//   by the host implementation via ITerminalApi::GetHostIdentity().
+// Arguments:
+// - <none>
+void AdaptDispatch::RequestTerminalNameVersion()
+{
+    _ReturnDcsResponse(fmt::format(FMT_COMPILE(L">|{}"), _api.GetHostIdentity()));
+}
+
+// Routine Description:
 // - VT52 Identify - Reports the identity of the terminal in VT52 emulation mode.
 //   An actual VT52 terminal would typically identify itself with ESC / K.
 //   But for a terminal that is emulating a VT52, the sequence should be ESC / Z.

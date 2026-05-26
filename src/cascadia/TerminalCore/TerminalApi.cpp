@@ -6,6 +6,7 @@
 #include "tracing.hpp"
 
 #include "../src/inc/unicode.hpp"
+#include <winrt/Windows.ApplicationModel.h>
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Render;
@@ -420,4 +421,23 @@ void Terminal::NotifyShellIntegrationMark()
 {
     // Notify the scrollbar that marks have been added so it can refresh the mark indicators
     _NotifyScrollEvent();
+}
+
+std::wstring_view Terminal::GetHostIdentity() const
+{
+    static const auto identity = []() -> std::wstring {
+        try
+        {
+            auto package = winrt::Windows::ApplicationModel::Package::Current();
+            auto version = package.Id().Version();
+            return fmt::format(FMT_COMPILE(L"Windows Terminal {}.{}.{}.{}"), version.Major, version.Minor, version.Build, version.Revision);
+        }
+        catch (...)
+        {
+            // Not packaged or other error - return fixed name
+            return L"Windows Terminal";
+        }
+    }();
+
+    return identity;
 }

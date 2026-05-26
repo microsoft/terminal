@@ -533,6 +533,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
             _dispatch->TertiaryDeviceAttributes();
         }
         break;
+    case CsiActionCodes::XT_RequestVersion:
+        if (parameters.at(0).value_or(0) == 0)
+        {
+            _dispatch->RequestTerminalNameVersion();
+        }
+        break;
     case CsiActionCodes::DECREQTPARM_RequestTerminalParameters:
         _dispatch->RequestTerminalParameters(parameters.at(0));
         break;

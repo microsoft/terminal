@@ -74,6 +74,8 @@ public:
 
     void SearchMissingCommand(std::wstring_view missingCommand) override;
 
+    std::wstring_view GetHostIdentity() const override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

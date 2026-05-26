@@ -165,6 +165,8 @@ public:
 
     void SearchMissingCommand(const std::wstring_view command) override;
 
+    std::wstring_view GetHostIdentity() const override;
+
 #pragma endregion
 
     void ClearMark();
