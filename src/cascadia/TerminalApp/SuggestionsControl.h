@@ -71,6 +71,19 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _nestedActionStack{ nullptr };
 
+        // Parameter-filling state. When set, the control is in `Filling[i]` mode (per
+        // doc/specs/#1595 - Suggestions UI/Snippet Parameters.md). When empty, the
+        // control is in normal `Browsing` mode. Mirrors the `_currentNestedCommands` /
+        // `_nestedActionStack` "I am in a substate" pattern.
+        struct ParameterFillingState
+        {
+            winrt::TerminalApp::FilteredCommand snippet{ nullptr };
+            winrt::Microsoft::Terminal::Settings::Model::SendInputArgs args{ nullptr };
+            uint32_t currentIndex{ 0 };
+            std::vector<std::wstring> filledValues; // one slot per Parameter, in order
+        };
+        std::optional<ParameterFillingState> _paramFilling;
+
         TerminalApp::SuggestionsMode _mode{ TerminalApp::SuggestionsMode::Palette };
         TerminalApp::SuggestionsDirection _direction{ TerminalApp::SuggestionsDirection::TopDown };
 
@@ -124,6 +137,23 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
         std::wstring _getTrimmedInput();
         uint32_t _getNumVisibleItems();
+
+        // Parameter-filling state-machine helpers (see ParameterFillingState above and
+        // doc/specs/#1595 - Suggestions UI/Snippet Parameters.md). These manage the
+        // transition Browsing -> Filling[0] -> ... -> Filling[last] -> dispatch.
+        void _enterParameterFilling(const winrt::TerminalApp::FilteredCommand& filteredCommand,
+                                    const winrt::Microsoft::Terminal::Settings::Model::SendInputArgs& args);
+        void _exitParameterFilling();
+        void _advanceParameterSlot();
+        void _retreatParameterSlot();
+        void _updateUIForParameterSlot();
+        void _previewResolvedInput();
+        void _dispatchResolvedSnippet();
+        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>
+            _buildParameterMap(bool includeLiveCurrent);
+        winrt::Microsoft::Terminal::Settings::Model::Command
+            _buildResolvedCommand(bool includeLiveCurrent);
+
         friend class TerminalAppLocalTests::TabTests;
     };
 }

@@ -42,6 +42,7 @@
     <ClCompile Include="DeserializationTests.cpp" />
     <ClCompile Include="NewTabMenuTests.cpp" />
     <ClCompile Include="SerializationTests.cpp" />
+    <ClCompile Include="SnippetParameterTests.cpp" />
     <ClCompile Include="TerminalSettingsTests.cpp" />
     <ClCompile Include="ThemeTests.cpp" />
     <ClCompile Include="MediaResourceTests.cpp" />

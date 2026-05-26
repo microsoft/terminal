@@ -1115,6 +1115,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto inArgs{ command.ActionAndArgs().Args().try_as<Model::SendInputArgs>() };
             const auto inputString{ inArgs ? inArgs.Input() : L"" };
             auto args = winrt::make_self<SendInputArgs>(til::hstring_format(FMT_COMPILE(L"{:\x7f^{}}{}"), L"", numBackspaces, inputString));
+            // Preserve the snippet's Parameters vector so the param-filling UI
+            // sees Size() > 0 and prompts the user instead of dispatching the
+            // raw ${name} token. The single-arg SendInputArgs ctor above only
+            // sets _Input; Parameters defaults to an empty vector. Mirror the
+            // null-check pattern used elsewhere.
+            if (inArgs)
+            {
+                if (const auto sourceParams{ inArgs.Parameters() })
+                {
+                    for (const auto& p : sourceParams)
+                    {
+                        args->Parameters().Append(p);
+                    }
+                }
+            }
             Model::ActionAndArgs actionAndArgs{ ShortcutAction::SendInput, *args };
 
             auto copy = cmdImpl->Copy();

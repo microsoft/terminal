@@ -639,6 +639,26 @@
     <value>Suggestions found: {0}</value>
     <comment>{0} will be replaced with a number.</comment>
   </data>
+  <data name="SuggestionsControl_ParameterPlaceholder" xml:space="preserve">
+    <value>Enter value for {0}</value>
+    <comment>Placeholder text shown in the Suggestions UI search box while the user is filling in a snippet parameter that has no description. {0} is replaced with the parameter's name (e.g. "host", "branch").</comment>
+  </data>
+  <data name="SuggestionsControl_ParameterStatus" xml:space="preserve">
+    <value>Parameter {0} of {1}: {2}</value>
+    <comment>Status text displayed above the search box while the user is filling in a snippet parameter. {0} is the 1-based index of the current parameter, {1} is the total number of parameters, {2} is the parameter's name.</comment>
+  </data>
+  <data name="SuggestionsControl_ParameterStatusFull" xml:space="preserve">
+    <value>Parameter {0} of {1}: {2} — {3}</value>
+    <comment>Automation/accessibility-only descriptor for the parameter status row, read by screen readers. {0} = 1-based index, {1} = total, {2} = parameter name, {3} = parameter description.</comment>
+  </data>
+  <data name="SuggestionsControl_ParameterAnnouncement" xml:space="preserve">
+    <value>Now filling: {0}. {1}</value>
+    <comment>Screen-reader announcement when the parameter-filling UI advances to a new slot. {0} is the parameter's name, {1} is its description.</comment>
+  </data>
+  <data name="SuggestionsControl_ParameterAnnouncementShort" xml:space="preserve">
+    <value>Now filling: {0}.</value>
+    <comment>Screen-reader announcement when the parameter-filling UI advances to a new slot that has no description. {0} is the parameter's name.</comment>
+  </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>
   </data>

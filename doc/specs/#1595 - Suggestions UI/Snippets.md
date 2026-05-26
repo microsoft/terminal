@@ -503,6 +503,7 @@ able to read snippets from the directory they `ssh`'d _from_ locally.
   command, but for snippets, the input as well.
 * [ ] [#12927] Enlighten the suggestions UI to support (_a yet undeclared syntax
   for_) snippets with prompt-able sections in them
+  * See the [Snippet Parameters] addenda spec for the proposed design.
 
 <!--
 
@@ -634,6 +635,7 @@ super straightforward.
 [#5790]: https://github.com/microsoft/terminal/issues/5790
 [Notebooks]: ./Markdown%20Notebooks.md
 [Suggestions UI]: ./Suggestions-UI.md
+[Snippet Parameters]: ./Snippet%20Parameters.md
 [#keep]: https://github.com/zadjii/keep
 [VsCode Tasks]: https://github.com/microsoft/terminal/blob/main/.vscode/tasks.json
 

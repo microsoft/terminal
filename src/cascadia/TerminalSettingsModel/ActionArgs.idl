@@ -252,11 +252,22 @@ namespace Microsoft.Terminal.Settings.Model
         Single Delta { get; };
     };
 
+    runtimeclass Parameter
+    {
+        Parameter();
+
+        String Name;
+        String Description;
+    };
+
     [default_interface] runtimeclass SendInputArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SendInputArgs(String input);
 
         String Input { get; };
+        Windows.Foundation.Collections.IVector<Parameter> Parameters { get; };
+
+        String Resolve(Windows.Foundation.Collections.IMap<String, String> values);
     };
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs, IActionArgsDescriptorAccess

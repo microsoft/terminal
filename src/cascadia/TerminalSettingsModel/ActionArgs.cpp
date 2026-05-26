@@ -18,6 +18,7 @@
 #include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
+#include "Parameter.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
 #include "SetFocusModeArgs.g.cpp"
@@ -434,6 +435,175 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto escapedInput = til::visualize_control_codes(Input());
         const auto name = RS_switchable_fmt(L"SendInputCommandKey", escapedInput);
         return winrt::hstring{ name };
+    }
+
+    // Resolves `${<name>}` tokens in the Input string against the supplied map.
+    //
+    // Semantics (locked API — see .squad/decisions.md):
+    //   * Single forward pass, pure. Does NOT touch `${profile.name}` /
+    //     `${scheme.name}`-style tokens — any token whose name contains a `.`
+    //     is left literal because an earlier substitution pass owns those.
+    //   * Only tokens whose name matches a declared Parameter (in `_Parameters`,
+    //     compared by Parameter.Name()) get substituted. Anything else passes
+    //     through literally — undeclared names, names with spaces, empty `${}`,
+    //     unclosed `${...`, bare `$` not followed by `{`.
+    //   * Backslash escape: `\$` consumes the backslash and emits a literal `$`
+    //     (so `\${foo}` becomes the literal text `${foo}`). `\\` collapses to
+    //     a single `\`. Any other `\X` is emitted literally as `\X`.
+    //   * If `_Parameters` is null/empty, every token is "undeclared" and the
+    //     input is returned unchanged.
+    //   * If the name IS declared but not present in `values`, an empty string
+    //     is substituted (the token is consumed, replaced by nothing).
+    winrt::hstring SendInputArgs::Resolve(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values)
+    {
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            const int32_t paramCount = _Parameters ? static_cast<int32_t>(_Parameters.Size()) : -1;
+            const int32_t valueCount = values ? static_cast<int32_t>(values.Size()) : -1;
+            std::wstring_view inputView{ _Input };
+            if (inputView.size() > 80)
+            {
+                inputView = inputView.substr(0, 80);
+            }
+            std::wstring msg{ L"[SnippetParams] SendInputArgs::Resolve called, input=\"" };
+            msg.append(inputView);
+            msg += L"\" parameters_count=";
+            msg += std::to_wstring(paramCount);
+            msg += L" values_count=";
+            msg += std::to_wstring(valueCount);
+            msg += L"\n";
+            OutputDebugStringW(msg.c_str());
+        }
+
+        const std::wstring_view input{ _Input };
+        std::wstring out;
+        out.reserve(input.size());
+
+        const auto len = input.size();
+        size_t i = 0;
+        while (i < len)
+        {
+            const auto c = input[i];
+
+            // Backslash escape handling. Only `\$` and `\\` are special; every
+            // other `\X` sequence is emitted verbatim (including the backslash).
+            if (c == L'\\' && i + 1 < len)
+            {
+                const auto next = input[i + 1];
+                if (next == L'$')
+                {
+                    out.push_back(L'$');
+                    i += 2;
+                    continue;
+                }
+                if (next == L'\\')
+                {
+                    out.push_back(L'\\');
+                    i += 2;
+                    continue;
+                }
+                // Not a recognized escape — emit the backslash literally and
+                // continue scanning from the next character.
+                out.push_back(L'\\');
+                ++i;
+                continue;
+            }
+
+            // Token detection: `${...}`. Anything else is just copied.
+            if (c == L'$' && i + 1 < len && input[i + 1] == L'{')
+            {
+                const auto nameStart = i + 2;
+                const auto closeIdx = input.find(L'}', nameStart);
+                if (closeIdx == std::wstring_view::npos)
+                {
+                    // Unclosed `${` — emit the `$` literally and let the rest
+                    // (including the `{`) get copied as plain characters.
+                    out.push_back(c);
+                    ++i;
+                    continue;
+                }
+
+                const auto name = input.substr(nameStart, closeIdx - nameStart);
+
+                // Malformed name: empty, contains `.` (well-known token owned
+                // by the earlier substitution pass), or contains whitespace.
+                auto malformed = name.empty();
+                if (!malformed)
+                {
+                    for (const auto ch : name)
+                    {
+                        if (ch == L'.' || ch == L' ' || ch == L'\t' || ch == L'\r' || ch == L'\n')
+                        {
+                            malformed = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (malformed)
+                {
+                    out.append(input.substr(i, closeIdx - i + 1));
+                    i = closeIdx + 1;
+                    continue;
+                }
+
+                // Is this name one of our declared parameters?
+                auto declared = false;
+                if (_Parameters)
+                {
+                    const auto paramCount = _Parameters.Size();
+                    for (uint32_t p = 0; p < paramCount; ++p)
+                    {
+                        const auto param = _Parameters.GetAt(p);
+                        if (param && std::wstring_view{ param.Name() } == name)
+                        {
+                            declared = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!declared)
+                {
+                    // Pass-through: emit the entire `${...}` literally.
+                    out.append(input.substr(i, closeIdx - i + 1));
+                    i = closeIdx + 1;
+                    continue;
+                }
+
+                // Declared parameter — substitute the supplied value, or empty
+                // string if the caller didn't provide one.
+                const winrt::hstring nameKey{ name };
+                if (values && values.HasKey(nameKey))
+                {
+                    const auto value = values.Lookup(nameKey);
+                    out.append(std::wstring_view{ value });
+                }
+                // else: declared but unsupplied → substitute empty string.
+
+                i = closeIdx + 1;
+                continue;
+            }
+
+            // Ordinary character (including `\r`, `\n`, etc.) — copy verbatim.
+            out.push_back(c);
+            ++i;
+        }
+
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            std::wstring_view outView{ out };
+            if (outView.size() > 80)
+            {
+                outView = outView.substr(0, 80);
+            }
+            std::wstring msg{ L"[SnippetParams] SendInputArgs::Resolve returning=\"" };
+            msg.append(outView);
+            msg += L"\"\n";
+            OutputDebugStringW(msg.c_str());
+        }
+
+        return winrt::hstring{ out };
     }
 
     winrt::hstring SplitPaneArgs::GenerateName(const winrt::WARC::ResourceContext& context) const

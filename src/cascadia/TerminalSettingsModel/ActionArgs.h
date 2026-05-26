@@ -17,6 +17,7 @@
 #include "SwapPaneArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 #include "SendInputArgs.g.h"
+#include "Parameter.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
 #include "SetFocusModeArgs.g.h"
@@ -137,8 +138,8 @@ protected:                                                                  \
     X(float, Delta, "delta", false, ArgTypeHint::None, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define SEND_INPUT_ARGS(X) \
-    X(winrt::hstring, Input, "input", args->Input().empty(), ArgTypeHint::None, L"")
+// SendInputArgs is hand-rolled below (it carries an IVector<Parameter>, which
+// doesn't fit the X-macro mold cleanly).
 
 ////////////////////////////////////////////////////////////////////////////////
 #define OPEN_SETTINGS_ARGS(X) \
@@ -892,7 +893,182 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS);
 
-    ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS);
+    struct Parameter : public ParameterT<Parameter>
+    {
+        Parameter() = default;
+
+        WINRT_PROPERTY(winrt::hstring, Name, L"");
+        WINRT_PROPERTY(winrt::hstring, Description, L"");
+    };
+
+    struct SendInputArgs : public SendInputArgsT<SendInputArgs>
+    {
+        SendInputArgs() = default;
+        SendInputArgs(winrt::hstring input) :
+            _Input{ std::move(input) } {}
+
+        WINRT_PROPERTY(winrt::hstring, Input, L"");
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::Parameter>, Parameters, winrt::single_threaded_vector<Model::Parameter>());
+
+        static constexpr std::string_view InputKey{ "input" };
+        static constexpr std::string_view ParametersKey{ "parameters" };
+
+    public:
+        hstring GenerateName() const { return GenerateName(GetLibraryResourceLoader().ResourceContext()); }
+        hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context) const;
+
+        winrt::hstring Resolve(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values);
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<SendInputArgs>();
+            if (otherAsUs)
+            {
+                if (otherAsUs->_Input != _Input)
+                {
+                    return false;
+                }
+
+                // Compare the parameter vectors element-by-element.
+                const auto& a = otherAsUs->_Parameters;
+                const auto& b = _Parameters;
+                const auto sizeA = a ? a.Size() : 0u;
+                const auto sizeB = b ? b.Size() : 0u;
+                if (sizeA != sizeB)
+                {
+                    return false;
+                }
+                for (uint32_t i = 0; i < sizeA; ++i)
+                {
+                    const auto pa = a.GetAt(i);
+                    const auto pb = b.GetAt(i);
+                    if (!pa || !pb)
+                    {
+                        if (pa != pb)
+                        {
+                            return false;
+                        }
+                        continue;
+                    }
+                    if (pa.Name() != pb.Name() || pa.Description() != pb.Description())
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<SendInputArgs>();
+            JsonUtils::GetValueForKey(json, InputKey, args->_Input);
+            JsonUtils::GetValueForKey(json, ParametersKey, args->_Parameters);
+            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+            {
+                const int32_t paramCount = args->_Parameters ? static_cast<int32_t>(args->_Parameters.Size()) : -1;
+                std::wstring_view inputView{ args->_Input };
+                if (inputView.size() > 80)
+                {
+                    inputView = inputView.substr(0, 80);
+                }
+                std::wstring msg{ L"[SnippetParams] SendInputArgs::FromJson read parameters: count=" };
+                msg += std::to_wstring(paramCount);
+                msg += L" input=\"";
+                msg.append(inputView);
+                msg += L"\"\n";
+                OutputDebugStringW(msg.c_str());
+            }
+            if (!args->_Parameters)
+            {
+                args->_Parameters = winrt::single_threaded_vector<Model::Parameter>();
+            }
+            if (args->_Input.empty())
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            return { *args, {} };
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+
+            const auto args{ get_self<SendInputArgs>(val) };
+            JsonUtils::SetValueForKey(json, InputKey, args->_Input);
+            if (args->_Parameters && args->_Parameters.Size() > 0)
+            {
+                JsonUtils::SetValueForKey(json, ParametersKey, args->_Parameters);
+            }
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<SendInputArgs>() };
+            copy->_Input = _Input;
+            auto newParams = winrt::single_threaded_vector<Model::Parameter>();
+            if (_Parameters)
+            {
+                for (const auto& p : _Parameters)
+                {
+                    auto pCopy = winrt::make_self<Parameter>();
+                    if (p)
+                    {
+                        pCopy->Name(p.Name());
+                        pCopy->Description(p.Description());
+                    }
+                    newParams.Append(*pCopy);
+                }
+            }
+            copy->_Parameters = newParams;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            til::hasher h;
+            h.write(_Input);
+            if (_Parameters)
+            {
+                for (const auto& p : _Parameters)
+                {
+                    if (p)
+                    {
+                        h.write(p.Name());
+                        h.write(p.Description());
+                    }
+                }
+            }
+            return h.finalize();
+        }
+        winrt::Windows::Foundation::Collections::IVectorView<Model::ArgDescriptor> GetArgDescriptors()
+        {
+            static const auto descriptors = []() {
+                std::vector<Model::ArgDescriptor> temp;
+                temp.push_back({ RS_(L"InputActionArgumentLocalized"), L"winrt::hstring", true, ArgTypeHint::None });
+                return winrt::single_threaded_vector(std::move(temp)).GetView();
+            }();
+            return descriptors;
+        }
+        IInspectable GetArgAt(uint32_t index) const
+        {
+            if (index == 0)
+            {
+                return winrt::box_value(_Input);
+            }
+            return nullptr;
+        }
+        void SetArgAt(uint32_t index, IInspectable value)
+        {
+            if (index == 0)
+            {
+                _Input = value ? winrt::unbox_value<winrt::hstring>(value) : winrt::hstring{};
+            }
+        }
+    };
 
     ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS);
 
@@ -1053,6 +1229,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(RenameTabArgs);
     BASIC_FACTORY(SwapPaneArgs);
     BASIC_FACTORY(SendInputArgs);
+    BASIC_FACTORY(Parameter);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(SetFocusModeArgs);
     BASIC_FACTORY(SetFullScreenArgs);
@@ -1085,4 +1262,58 @@ class ScopedResourceLoader;
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     const ScopedResourceLoader& EnglishOnlyResourceLoader() noexcept;
+}
+
+namespace Microsoft::Terminal::Settings::Model::JsonUtils
+{
+    template<>
+    struct ConversionTrait<winrt::Microsoft::Terminal::Settings::Model::Parameter>
+    {
+        static constexpr std::string_view NameKey{ "name" };
+        static constexpr std::string_view DescriptionKey{ "description" };
+
+        winrt::Microsoft::Terminal::Settings::Model::Parameter FromJson(const Json::Value& json)
+        {
+            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+            OutputDebugStringW(L"[SnippetParams] Parameter::FromJson entry\n");
+            auto p = winrt::make_self<winrt::Microsoft::Terminal::Settings::Model::implementation::Parameter>();
+            winrt::hstring name;
+            winrt::hstring description;
+            GetValueForKey(json, NameKey, name);
+            GetValueForKey(json, DescriptionKey, description);
+            p->Name(name);
+            p->Description(description);
+            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+            {
+                std::wstring msg{ L"[SnippetParams] Parameter::FromJson name=\"" };
+                msg.append(std::wstring_view{ name });
+                msg += L"\" description=\"";
+                msg.append(std::wstring_view{ description });
+                msg += L"\"\n";
+                OutputDebugStringW(msg.c_str());
+            }
+            return *p;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return json.isObject();
+        }
+
+        Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::Parameter& val)
+        {
+            Json::Value json{ Json::ValueType::objectValue };
+            if (val)
+            {
+                SetValueForKey(json, NameKey, val.Name());
+                SetValueForKey(json, DescriptionKey, val.Description());
+            }
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return "Parameter { name, description }";
+        }
+    };
 }
