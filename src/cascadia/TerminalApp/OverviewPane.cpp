@@ -467,13 +467,11 @@ namespace winrt::TerminalApp::implementation
         // window is being torn down — the originalParent may already be in
         // a disposed/disconnected state. Make it best-effort; the destructor
         // calls us and we must not throw.
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] ClearTabContent: reparenting {} entries\n"), _reparentedContent.size()).c_str());
         size_t reparentIdx = 0;
         for (auto& entry : _reparentedContent)
         {
             if (!entry.content)
             {
-                OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV]   [{}] no content, skip\n"), reparentIdx++).c_str());
                 continue;
             }
             try
@@ -495,7 +493,6 @@ namespace winrt::TerminalApp::implementation
                     entry.originalParent.Children().Append(entry.content);
                 }
                 const bool stillParented = static_cast<bool>(VisualTreeHelper::GetParent(entry.content));
-                OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV]   [{}] reparented hadOrigParent={} stillParented={}\n"), reparentIdx++, hadOrigParent, stillParented).c_str());
             }
             CATCH_LOG()
         }
@@ -594,7 +591,6 @@ namespace winrt::TerminalApp::implementation
     // bubbles to the global handler so other shortcuts keep working.
     void OverviewPane::_OnPreviewKeyDown(const IInspectable& sender, const KeyRoutedEventArgs& e)
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] OvPane::_OnPreviewKeyDown key={} handled={}\n"), static_cast<uint32_t>(e.OriginalKey()), e.Handled()).c_str());
         const auto items = PreviewGrid().Items();
         const auto itemCount = static_cast<int32_t>(items.Size());
         if (itemCount == 0)
@@ -647,7 +643,6 @@ namespace winrt::TerminalApp::implementation
 
     void OverviewPane::_OnKeyDown(const IInspectable& /*sender*/, const KeyRoutedEventArgs& e)
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] OvPane::_OnKeyDown key={} handled={}\n"), static_cast<uint32_t>(e.OriginalKey()), e.Handled()).c_str());
         const auto items = PreviewGrid().Items();
         const auto itemCount = static_cast<int32_t>(items.Size());
         if (itemCount == 0)
@@ -707,14 +702,10 @@ namespace winrt::TerminalApp::implementation
 
     void OverviewPane::_OnItemClicked(int32_t index)
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _OnItemClicked index={}\n"), index).c_str());
         _PlayExitAnimation([weakThis = get_weak(), index]() {
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _PlayExitAnimation.onComplete index={} weakAlive={}\n"), index, static_cast<bool>(weakThis.get())).c_str());
             if (auto self = weakThis.get())
             {
-                OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] raising TabSelected index={}\n"), index).c_str());
                 self->TabSelected.raise(*self, winrt::Windows::Foundation::IReference<int32_t>{ index });
-                OutputDebugStringW(L"[OV] TabSelected raised, returned\n");
             }
         });
     }
@@ -807,7 +798,6 @@ namespace winrt::TerminalApp::implementation
 
     void OverviewPane::_PlayExitAnimation(std::function<void()> onComplete)
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _PlayExitAnimation enter, _selectedIndex={}\n"), _selectedIndex).c_str());
         // Fade out the background overlay
         if (auto bgSb = Resources().Lookup(winrt::box_value(L"BackgroundFadeOut")).try_as<Storyboard>())
         {
@@ -817,14 +807,12 @@ namespace winrt::TerminalApp::implementation
         auto zoomParams = _GetZoomParamsForCell(_selectedIndex);
         if (!zoomParams)
         {
-            OutputDebugStringW(L"[OV] _PlayExitAnimation: zoomParams=nullopt, firing onComplete synchronously\n");
             if (onComplete)
             {
                 onComplete();
             }
             return;
         }
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _PlayExitAnimation: zoomParams scale={} tx={} ty={}\n"), std::get<0>(*zoomParams), std::get<1>(*zoomParams), std::get<2>(*zoomParams)).c_str());
         auto [scale, tx, ty] = *zoomParams;
 
         // Animate from the current grid view into the selected cell

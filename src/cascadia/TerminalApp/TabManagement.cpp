@@ -1065,7 +1065,6 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_UpdatedSelectedTab(const winrt::TerminalApp::Tab& tab)
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _UpdatedSelectedTab enter, tab={}\n"), static_cast<bool>(tab)).c_str());
         // Unfocus all the tabs.
         for (const auto& tab : _tabs)
         {
@@ -1078,9 +1077,7 @@ namespace winrt::TerminalApp::implementation
             auto content = tab ? tab.Content() : nullptr;
             const bool hasContent = static_cast<bool>(content);
             const bool hasParent = hasContent && static_cast<bool>(WUX::Media::VisualTreeHelper::GetParent(content));
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _UpdatedSelectedTab: about to Append, hasContent={} hasParent={}\n"), hasContent, hasParent).c_str());
             _tabContent.Children().Append(tab.Content());
-            OutputDebugStringW(L"[OV] _UpdatedSelectedTab: Append succeeded\n");
 
             // GH#7409: If the tab switcher is open, then we _don't_ want to
             // automatically focus the new tab here. The tab switcher wants
@@ -1095,7 +1092,6 @@ namespace winrt::TerminalApp::implementation
             const auto p = CommandPaletteElement();
             if (!p || p.Visibility() != Visibility::Visible)
             {
-                OutputDebugStringW(L"[OV] _UpdatedSelectedTab: calling tab.Focus(Programmatic)\n");
                 tab.Focus(FocusState::Programmatic);
                 _UpdateMRUTab(tab);
                 _updateAllTabCloseButtons();
@@ -1116,10 +1112,8 @@ namespace winrt::TerminalApp::implementation
             }
 
             _adjustProcessPriorityThrottled->Run();
-            OutputDebugStringW(L"[OV] _UpdatedSelectedTab: try-block finished cleanly\n");
         }
         CATCH_LOG();
-        OutputDebugStringW(L"[OV] _UpdatedSelectedTab: exiting\n");
     }
 
     void TerminalPage::_UpdateBackground(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile)
@@ -1138,7 +1132,6 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& /*eventArgs*/)
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _OnTabSelectionChanged: _rearranging={} _removing={} _isInOverviewMode={}\n"), _rearranging, _removing, _isInOverviewMode).c_str());
         if (!_rearranging && !_removing)
         {
             // If the user clicked a tab in the tab row while the overview is
@@ -1150,7 +1143,6 @@ namespace winrt::TerminalApp::implementation
 
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _OnTabSelectionChanged: tabView.SelectedIndex={}\n"), selectedIndex).c_str());
             if (selectedIndex >= 0 && selectedIndex < gsl::narrow_cast<int32_t>(_tabs.Size()))
             {
                 const auto tab{ _tabs.GetAt(selectedIndex) };

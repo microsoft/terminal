@@ -1790,7 +1790,6 @@ namespace winrt::TerminalApp::implementation
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
         const auto modifiers = _GetPressedModifierKeys();
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] TP::_KeyDownHandler vkey={} handled={} overviewMode={}\n"), static_cast<uint32_t>(vkey), e.Handled(), _isInOverviewMode).c_str());
 
         // GH#11076:
         // For some weird reason we sometimes receive a WM_KEYDOWN
@@ -1836,10 +1835,8 @@ namespace winrt::TerminalApp::implementation
         });
         if (!cmd)
         {
-            OutputDebugStringW(L"[OV] TP::_KeyDownHandler: no cmd bound, returning\n");
             return;
         }
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] TP::_KeyDownHandler: cmd found, action={}\n"), static_cast<uint32_t>(cmd.ActionAndArgs().Action())).c_str());
 
         // If the overview pane is open, most actions mutate tab state whose
         // Content() is currently reparented under the overview. Tear down the
@@ -1849,7 +1846,6 @@ namespace winrt::TerminalApp::implementation
         if (_isInOverviewMode &&
             cmd.ActionAndArgs().Action() != ShortcutAction::ToggleOverview)
         {
-            OutputDebugStringW(L"[OV] TP::_KeyDownHandler: dismissing overview before action dispatch\n");
             _DismissOverviewVisuals();
         }
 
@@ -4345,7 +4341,6 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_ExitOverview(const std::optional<uint32_t>& selectedIndex)
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] TP::_ExitOverview enter, selectedIndex.has_value={} value={}\n"), selectedIndex.has_value(), selectedIndex.value_or(0xFFFFFFFFu)).c_str());
         auto overview = FindName(L"OverviewPaneElement").try_as<OverviewPane>();
 
         // Determine which tab to switch to. Prefer the explicitly passed index
@@ -4362,18 +4357,14 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] TP::_ExitOverview before _DismissOverviewVisuals, tabToSelect.has_value={} value={}\n"), tabToSelect.has_value(), tabToSelect.value_or(0xFFFFFFFFu)).c_str());
         _DismissOverviewVisuals();
 
         if (tabToSelect.has_value())
         {
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] TP::_ExitOverview calling _SelectTab({})\n"), tabToSelect.value()).c_str());
             _SelectTab(tabToSelect.value());
         }
 
-        OutputDebugStringW(L"[OV] TP::_ExitOverview calling _UpdatedSelectedTab(_GetFocusedTab())\n");
         _UpdatedSelectedTab(_GetFocusedTab());
-        OutputDebugStringW(L"[OV] TP::_ExitOverview returning\n");
     }
 
     // Method Description:
@@ -4385,7 +4376,6 @@ namespace winrt::TerminalApp::implementation
     //   _UpdatedSelectedTab tries to mount it back into the content area).
     void TerminalPage::_DismissOverviewVisuals()
     {
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[OV] _DismissOverviewVisuals enter, _isInOverviewMode={}\n"), _isInOverviewMode).c_str());
         if (!_isInOverviewMode)
         {
             return;
@@ -4399,13 +4389,11 @@ namespace winrt::TerminalApp::implementation
             _overviewTabSelectedToken = {};
             _overviewDismissedToken = {};
 
-            OutputDebugStringW(L"[OV] _DismissOverviewVisuals calling overview.ClearTabContent()\n");
             overview.ClearTabContent();
             overview.Visibility(WUX::Visibility::Collapsed);
         }
 
         _isInOverviewMode = false;
-        OutputDebugStringW(L"[OV] _DismissOverviewVisuals exit\n");
     }
 
     bool TerminalPage::OverviewMode() const
