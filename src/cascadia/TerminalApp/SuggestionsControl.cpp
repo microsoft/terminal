@@ -439,6 +439,11 @@ namespace winrt::TerminalApp::implementation
                 {
                     // Commit whatever the user has typed for the current slot, then retreat.
                     _paramFilling->filledValues[_paramFilling->currentIndex] = std::wstring{ _searchBox().Text() };
+                    // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
+                    OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _previewKeyDownHandler: branch=FILL_COMMIT_RETREAT (Shift+Tab) slot={} capturedValue=\"{}\"\n"),
+                                                   _paramFilling->currentIndex,
+                                                   _paramFilling->filledValues[_paramFilling->currentIndex])
+                                           .c_str());
                     _retreatParameterSlot();
                 }
                 else
@@ -655,6 +660,11 @@ namespace winrt::TerminalApp::implementation
         {
             // Commit whatever's currently in the box for the active slot, then retreat.
             _paramFilling->filledValues[_paramFilling->currentIndex] = std::wstring{ _searchBox().Text() };
+            // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
+            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _moveBackButtonClicked: branch=FILL_COMMIT_RETREAT (back button) slot={} capturedValue=\"{}\"\n"),
+                                           _paramFilling->currentIndex,
+                                           _paramFilling->filledValues[_paramFilling->currentIndex])
+                                   .c_str());
             _retreatParameterSlot();
             return;
         }
@@ -802,10 +812,11 @@ namespace winrt::TerminalApp::implementation
                 _paramFilling->filledValues[_paramFilling->currentIndex] = std::wstring{ _searchBox().Text() };
                 const auto total = _paramFilling->args.Parameters().Size();
                 // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _dispatchCommand: branch=FILL_COMMIT currentIndex={} total={} advance={}\n"),
+                OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _dispatchCommand: branch=FILL_COMMIT currentIndex={} total={} advance={} capturedValue=\"{}\"\n"),
                                                _paramFilling->currentIndex,
                                                total,
-                                               (_paramFilling->currentIndex + 1 < total) ? L"true" : L"false")
+                                               (_paramFilling->currentIndex + 1 < total) ? L"true" : L"false",
+                                               _paramFilling->filledValues[_paramFilling->currentIndex])
                                        .c_str());
                 if (_paramFilling->currentIndex + 1 < total)
                 {
@@ -957,9 +968,24 @@ namespace winrt::TerminalApp::implementation
         state.filledValues.resize(args.Parameters().Size());
         _paramFilling.emplace(std::move(state));
 
+        // CRAWL-TIER USABILITY: the _searchBox doubles as the parameter-input text
+        // box during fill mode. In Menu mode (the snippets menu, which is how
+        // parameterized snippets are typically invoked) the search box is normally
+        // Collapsed (see Mode(SuggestionsMode::Menu)) — force it Visible so the
+        // user can see the cursor / IME composition, and so the programmatic
+        // Focus() call in _updateUIForParameterSlot actually moves focus
+        // (Collapsed elements cannot take focus, which was the root cause of
+        // typed input being silently dropped). Also collapse the filtered list
+        // entirely: it would only contain one informational row (the active
+        // snippet), and leaving it interactive lets the user press Enter on it
+        // and dispatch outside the fill flow.
+        _searchBox().Visibility(Visibility::Visible);
+        _filteredActionsView().Visibility(Visibility::Collapsed);
+
         // Collapse the filtered list to a single row: the active snippet itself.
-        // The simplest Crawl-tier affordance — keep the existing snippet row visible
-        // so the user can still see *which* snippet they're filling, and reuse the
+        // The simplest Crawl-tier affordance — keep the existing snippet row in
+        // the bound collection (it's not rendered, but keeping the collection
+        // non-empty avoids the empty-list code path) and reuse the
         // ParentCommandName slot (above the list, with its back button) for the
         // "Parameter N of M: name" status. The back button doubles as the GUI
         // affordance for Shift+Tab.
@@ -967,6 +993,9 @@ namespace winrt::TerminalApp::implementation
         _filteredActions.Append(filteredCommand);
 
         _updateUIForParameterSlot();
+
+        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
+        OutputDebugStringW(L"[SnippetParams] _enterParameterFilling: searchBox.Visibility=Visible, listView.Visibility=Collapsed (fill-mode UI engaged)\n");
     }
 
     // Method Description:
@@ -979,6 +1008,18 @@ namespace winrt::TerminalApp::implementation
         ParentCommandName(L"");
         // Restore the normal "Type a command name..." placeholder.
         SearchBoxPlaceholderText(RS_(L"SuggestionsControl_SearchBox/PlaceholderText"));
+
+        // Restore the list view and the parameter-description panel that
+        // _enterParameterFilling / _updateUIForParameterSlot toggled. The
+        // search box visibility goes back to whatever the current mode expects.
+        _filteredActionsView().Visibility(Visibility::Visible);
+        _descriptionsView().Visibility(Visibility::Collapsed);
+        _descriptionsBackdrop().Visibility(Visibility::Collapsed);
+        if (_mode == SuggestionsMode::Menu)
+        {
+            _searchBox().Visibility(Visibility::Collapsed);
+        }
+        _recalculateTopMargin();
     }
 
     // Method Description:
@@ -1041,6 +1082,54 @@ namespace winrt::TerminalApp::implementation
                                      description;
         SearchBoxPlaceholderText(placeholder);
 
+        // CRAWL-TIER USABILITY: render the parameter's name (title) and
+        // description (subtitle) in the existing _descriptionsView panel
+        // below the backdrop. Reuses the per-command-description tooltip
+        // pattern from _openTooltip — same XAML elements (_descriptionTitle,
+        // _descriptionComment), same `Documents::Run` + `LineBreak`
+        // composition, same Visibility toggles, same `_recalculateTopMargin()`
+        // hookup. We do NOT define new resources / styles / templates — the
+        // existing typography (14pt bold title, regular comment in a scroll
+        // viewer) matches the Crawl-tier ask of "standard subtle/secondary
+        // text".
+        _descriptionTitle().Inlines().Clear();
+        {
+            Documents::Run titleRun;
+            titleRun.Text(name);
+            _descriptionTitle().Inlines().Append(titleRun);
+        }
+        {
+            const auto& inlines{ _descriptionComment().Inlines() };
+            inlines.Clear();
+            if (!description.empty())
+            {
+                const auto lines = ::Microsoft::Console::Utils::SplitString(description, L'\n');
+                for (const auto& line : lines)
+                {
+                    std::wstring trimmed{ line };
+                    trimmed.erase(std::remove(trimmed.begin(), trimmed.end(), L'\r'), trimmed.end());
+                    if (trimmed.empty())
+                    {
+                        continue;
+                    }
+                    Documents::Run textRun;
+                    textRun.Text(trimmed);
+                    inlines.Append(textRun);
+                    inlines.Append(Documents::LineBreak{});
+                }
+            }
+        }
+        _descriptionsView().Visibility(Visibility::Visible);
+        _descriptionsBackdrop().Visibility(Visibility::Visible);
+        _recalculateTopMargin();
+
+        // Belt-and-suspenders: ensure the search box is Visible before we try
+        // to focus it. _enterParameterFilling already sets this, but a stray
+        // Mode() change mid-fill (or future code path) could re-Collapse it,
+        // and Focus(Programmatic) silently no-ops on a Collapsed element —
+        // which is the entire class of bug this UI fix was written to close.
+        _searchBox().Visibility(Visibility::Visible);
+
         // Restore any previously-filled value for this slot, then place the caret
         // at the end. Setting Text re-enters _filterTextChanged, which routes to
         // _previewResolvedInput() because _paramFilling is set — that's fine; the
@@ -1050,6 +1139,15 @@ namespace winrt::TerminalApp::implementation
         _searchBox().Text(winrt::hstring{ filled });
         _searchBox().Select(_searchBox().Text().size(), 0);
         _searchBox().Focus(Windows::UI::Xaml::FocusState::Programmatic);
+
+        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
+        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _updateUIForParameterSlot: slot={}/{} name=\"{}\" restoredValue=\"{}\" searchBoxText=\"{}\"\n"),
+                                       state.currentIndex + 1,
+                                       total,
+                                       std::wstring{ name },
+                                       filled,
+                                       std::wstring{ _searchBox().Text() })
+                               .c_str());
 
         // Accessibility: LiveRegion-style announcement on every slot transition so
         // Narrator users hear context change even though focus stays on the same
@@ -1121,6 +1219,15 @@ namespace winrt::TerminalApp::implementation
         _paramFilling.reset();
         ParentCommandName(L"");
         SearchBoxPlaceholderText(RS_(L"SuggestionsControl_SearchBox/PlaceholderText"));
+
+        // Mirror _exitParameterFilling's panel restoration so the next Open()
+        // doesn't inherit a collapsed list view or a stuck-visible description
+        // panel. We don't touch search-box visibility here because _close()
+        // collapses the whole control, and Mode() will reset _searchBox
+        // visibility on the next Open.
+        _filteredActionsView().Visibility(Visibility::Visible);
+        _descriptionsView().Visibility(Visibility::Collapsed);
+        _descriptionsBackdrop().Visibility(Visibility::Collapsed);
 
         _close();
 
@@ -1260,6 +1367,11 @@ namespace winrt::TerminalApp::implementation
         // resolved-so-far Command so the terminal's ghost text updates live.
         if (_paramFilling.has_value())
         {
+            // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
+            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _filterTextChanged (FILL_KEYSTROKE): slot={} searchBoxText=\"{}\"\n"),
+                                           _paramFilling->currentIndex,
+                                           std::wstring{ _searchBox().Text() })
+                                   .c_str());
             _previewResolvedInput();
             return;
         }
@@ -1514,6 +1626,18 @@ namespace winrt::TerminalApp::implementation
         _searchBox().Text(L"");
 
         _nestedActionStack.Clear();
+
+        // If we were dismissed mid-fill (LostFocus, light-dismiss, etc.) restore
+        // the inner-element visibilities so the next Open isn't stuck with a
+        // collapsed list view or a stuck-visible parameter-description panel.
+        // (The dispatch path also clears these in _dispatchResolvedSnippet; this
+        // is the defensive backstop for every other exit path.)
+        if (_paramFilling.has_value())
+        {
+            _filteredActionsView().Visibility(Visibility::Visible);
+            _descriptionsView().Visibility(Visibility::Collapsed);
+            _descriptionsBackdrop().Visibility(Visibility::Collapsed);
+        }
 
         // Clear any in-flight parameter-filling state — otherwise the next open
         // would inherit a stale Filling[i] mode.
