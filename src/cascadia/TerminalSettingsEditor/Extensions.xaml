@@ -205,7 +205,7 @@
             </DataTemplate>
 
             <DataTemplate x:Key="JsonTemplate" x:DataType="local:FragmentExtensionViewModel">
-                <local:SettingsExpander Header="{x:Bind Fragment.Filename}" Margin="0,0,0,4">
+                <local:SettingsExpander Margin="0,0,0,4" Header="{x:Bind Fragment.Filename}">
                     <local:SettingsExpander.HeaderIcon>
                         <FontIcon Glyph="&#xE943;" />
                     </local:SettingsExpander.HeaderIcon>
@@ -397,10 +397,7 @@
                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2321753" />
 
             <!--  Grouping: Active Extensions  -->
-            <TextBlock
-                x:Uid="Extensions_ActiveExtensionsHeader"
-                Margin="0,12,0,8"
-                Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <TextBlock x:Uid="Extensions_ActiveExtensionsHeader" Style="{StaticResource TextBlockSubHeaderStyle}" />
             <ItemsControl
                 x:Name="ActiveExtensionsList"
                 IsTabStop="False"
@@ -413,7 +410,7 @@
         <StackPanel Style="{StaticResource SettingsStackStyle}" Visibility="{x:Bind ViewModel.IsExtensionView, Mode=OneWay}">
             <!--  Extension Status  -->
 
-            <local:SettingsCard AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}" Margin="0,36,0,0">
+            <local:SettingsCard Margin="0,36,0,0" AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}">
                 <local:SettingsCard.Header>
                     <!--
                         BODGY
@@ -429,7 +426,6 @@
                 </local:SettingsCard.Header>
                 <ToggleSwitch
                     Grid.Column="1"
-                    Margin="0"
                     AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
                     IsOn="{x:Bind ViewModel.CurrentExtensionPackage.Enabled, Mode=TwoWay}"
                     Style="{StaticResource ToggleSwitchInExpanderStyle}"
