@@ -35,6 +35,7 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
+                    Margin="0,32,0,0"
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Antialiasing Mode  -->
             <local:SettingsCard x:Name="AntialiasingMode"

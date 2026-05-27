@@ -142,12 +142,11 @@
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
             <HyperlinkButton x:Uid="Actions_Disclaimer"
-                             Margin="0"
-                             Padding="0"
+                             Margin="-12,0,0,0"
                              NavigateUri="https://go.microsoft.com/fwlink/?linkid=2341386" />
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
-                    Margin="0,12,0,0"
+                    Margin="0,32,0,0"
                     Click="{x:Bind ViewModel.AddNewCommand}"
                     Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>

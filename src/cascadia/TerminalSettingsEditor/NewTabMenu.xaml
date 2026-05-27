@@ -229,6 +229,7 @@
 
     <Grid x:Name="RootGrid"
           MaxWidth="{StaticResource StandardControlMaxWidth}"
+          Margin="0,32,0,0"
           ColumnSpacing="16"
           RowSpacing="12">
         <Grid.ColumnDefinitions>

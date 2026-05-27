@@ -35,8 +35,7 @@
                     Style="{StaticResource SettingsStackStyle}">
 
             <!--  Section: {Profile.Name} profile (or "Profile defaults")  -->
-            <TextBlock Margin="0,0,0,4"
-                       Style="{StaticResource TextBlockSubHeaderStyle}"
+            <TextBlock Style="{StaticResource TextBlockSubHeaderStyle}"
                        Text="{x:Bind Profile.SectionHeaderText, Mode=OneWay}" />
             <!--  Name  -->
             <local:SettingsExpander x:Name="Name"
