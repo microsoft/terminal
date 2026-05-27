@@ -405,7 +405,7 @@
                                Style="{StaticResource TextBlockSubHeaderStyle}" />
                     <!--  Name  -->
                     <local:SettingsCard x:Name="CurrentFolderName"
-                                            x:Uid="NewTabMenu_CurrentFolderName">
+                                        x:Uid="NewTabMenu_CurrentFolderName">
                         <TextBox Style="{StaticResource TextBoxSettingStyle}"
                                  Text="{x:Bind ViewModel.CurrentFolderName, Mode=TwoWay}" />
                     </local:SettingsCard>
@@ -439,14 +439,14 @@
 
                     <!--  Inlining  -->
                     <local:SettingsCard x:Name="CurrentFolderInlining"
-                                            x:Uid="NewTabMenu_CurrentFolderInlining">
+                                        x:Uid="NewTabMenu_CurrentFolderInlining">
                         <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderInlining, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingsCard>
 
                     <!--  Allow Empty  -->
                     <local:SettingsCard x:Name="CurrentFolderAllowEmpty"
-                                            x:Uid="NewTabMenu_CurrentFolderAllowEmpty">
+                                        x:Uid="NewTabMenu_CurrentFolderAllowEmpty">
                         <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentFolderAllowEmpty, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                     </local:SettingsCard>

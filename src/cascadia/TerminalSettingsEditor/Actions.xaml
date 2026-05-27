@@ -2,15 +2,14 @@
     Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
     the MIT License. See LICENSE in the project root for license information.
 -->
-<Page
-    x:Class="Microsoft.Terminal.Settings.Editor.Actions"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:mtu="using:Microsoft.Terminal.UI"
-    mc:Ignorable="d">
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Actions"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      mc:Ignorable="d">
 
     <Page.Resources>
         <ResourceDictionary>
@@ -18,19 +17,17 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <Style
-                x:Key="ActionRowNameTextStyle"
-                BasedOn="{StaticResource BaseTextBlockStyle}"
-                TargetType="TextBlock">
+            <Style x:Key="ActionRowNameTextStyle"
+                   BasedOn="{StaticResource BaseTextBlockStyle}"
+                   TargetType="TextBlock">
                 <Setter Property="VerticalAlignment" Value="Center" />
                 <Setter Property="FontWeight" Value="Normal" />
                 <Setter Property="TextWrapping" Value="WrapWholeWords" />
             </Style>
 
-            <Style
-                x:Key="ActionRowSubtleButtonStyle"
-                BasedOn="{StaticResource DefaultButtonStyle}"
-                TargetType="Button">
+            <Style x:Key="ActionRowSubtleButtonStyle"
+                   BasedOn="{StaticResource DefaultButtonStyle}"
+                   TargetType="Button">
                 <Setter Property="MinWidth" Value="32" />
                 <Setter Property="Width" Value="32" />
                 <Setter Property="Height" Value="32" />
@@ -44,18 +41,16 @@
                 FlyoutPresenter style with no internal padding so a full-width Border
                 separator inside the flyout can reach the flyout's left/right edges.
             -->
-            <Style
-                x:Key="EdgeToEdgeFlyoutPresenterStyle"
-                BasedOn="{StaticResource DefaultFlyoutPresenterStyle}"
-                TargetType="FlyoutPresenter">
+            <Style x:Key="EdgeToEdgeFlyoutPresenterStyle"
+                   BasedOn="{StaticResource DefaultFlyoutPresenterStyle}"
+                   TargetType="FlyoutPresenter">
                 <Setter Property="Padding" Value="0" />
                 <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
                 <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
             </Style>
 
-            <Style
-                x:Key="ActionRowItemContainerStyle"
-                TargetType="ListViewItem">
+            <Style x:Key="ActionRowItemContainerStyle"
+                   TargetType="ListViewItem">
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="Padding" Value="12,8" />
                 <Setter Property="Template">
@@ -65,13 +60,12 @@
                                     Background="Transparent"
                                     BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                                     BorderThickness="0,0,0,1">
-                                <ContentPresenter
-                                    HorizontalAlignment="Stretch"
-                                    HorizontalContentAlignment="Stretch"
-                                    Margin="{TemplateBinding Padding}"
-                                    Content="{TemplateBinding Content}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                                    ContentTransitions="{TemplateBinding ContentTransitions}" />
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Stretch"
+                                                  HorizontalContentAlignment="Stretch"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  ContentTransitions="{TemplateBinding ContentTransitions}" />
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroup x:Name="CommonStates">
                                         <VisualState x:Name="Normal" />
@@ -95,18 +89,20 @@
 
             <!--  Templates  -->
             <DataTemplate x:Key="ViewAllKeyChordsFlyoutSeparatorTemplate">
-                <Border
-                    Height="1"
-                    Margin="0,4,0,4"
-                    Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                <Border Height="1"
+                        Margin="0,4,0,4"
+                        Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
             </DataTemplate>
 
             <DataTemplate x:Key="ViewAllKeyChordsFlyoutItemTemplate">
-                <local:KeyChordVisual Margin="{ThemeResource MenuFlyoutItemThemePaddingNarrow}" HorizontalAlignment="Right" />
+                <local:KeyChordVisual Margin="{ThemeResource MenuFlyoutItemThemePaddingNarrow}"
+                                      HorizontalAlignment="Right" />
             </DataTemplate>
 
-            <DataTemplate x:Key="CommandTemplate" x:DataType="local:CommandViewModel">
-                <Grid AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}" ColumnSpacing="8">
+            <DataTemplate x:Key="CommandTemplate"
+                          x:DataType="local:CommandViewModel">
+                <Grid AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}"
+                      ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
                         <!--  command name  -->
                         <ColumnDefinition Width="*" />
@@ -117,26 +113,24 @@
                     </Grid.ColumnDefinitions>
 
                     <!--  Command Name  -->
-                    <TextBlock
-                        Grid.Column="0"
-                        Style="{StaticResource ActionRowNameTextStyle}"
-                        Text="{x:Bind DisplayName, Mode=OneWay}" />
+                    <TextBlock Grid.Column="0"
+                               Style="{StaticResource ActionRowNameTextStyle}"
+                               Text="{x:Bind DisplayName, Mode=OneWay}" />
 
                     <!--  Key Chord  -->
-                    <local:KeyChordVisual
-                        Grid.Column="1"
-                        HorizontalAlignment="Right"
-                        KeyChord="{x:Bind FirstKeyChord, Mode=OneWay}" />
+                    <local:KeyChordVisual Grid.Column="1"
+                                          HorizontalAlignment="Right"
+                                          KeyChord="{x:Bind FirstKeyChord, Mode=OneWay}" />
 
                     <!--  "+N" button + flyout listing the additional key chords  -->
-                    <Button
-                        x:Uid="Actions_AdditionalKeyChordsButton"
-                        Grid.Column="2"
-                        AutomationProperties.Name="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
-                        Click="AdditionalKeyChordsButton_Click"
-                        Style="{StaticResource ActionRowSubtleButtonStyle}"
-                        Visibility="{x:Bind HasAdditionalKeyChords, Mode=OneWay}">
-                        <TextBlock FontSize="12" Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
+                    <Button x:Uid="Actions_AdditionalKeyChordsButton"
+                            Grid.Column="2"
+                            AutomationProperties.Name="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
+                            Click="AdditionalKeyChordsButton_Click"
+                            Style="{StaticResource ActionRowSubtleButtonStyle}"
+                            Visibility="{x:Bind HasAdditionalKeyChords, Mode=OneWay}">
+                        <TextBlock FontSize="12"
+                                   Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
                     </Button>
                 </Grid>
             </DataTemplate>
@@ -144,43 +138,40 @@
     </Page.Resources>
 
     <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
-        <StackPanel
-            HorizontalAlignment="Stretch"
-            Spacing="8"
-            Style="{StaticResource SettingsStackStyle}">
-            <HyperlinkButton
-                x:Uid="Actions_Disclaimer"
-                Margin="0"
-                Padding="0"
-                NavigateUri="https://go.microsoft.com/fwlink/?linkid=2341386" />
+        <StackPanel HorizontalAlignment="Stretch"
+                    Spacing="8"
+                    Style="{StaticResource SettingsStackStyle}">
+            <HyperlinkButton x:Uid="Actions_Disclaimer"
+                             Margin="0"
+                             Padding="0"
+                             NavigateUri="https://go.microsoft.com/fwlink/?linkid=2341386" />
             <!--  Add New Button  -->
-            <Button
-                x:Name="AddNewButton"
-                Margin="0,12,0,0"
-                Click="{x:Bind ViewModel.AddNewCommand}"
-                Style="{StaticResource AccentButtonStyle}">
+            <Button x:Name="AddNewButton"
+                    Margin="0,12,0,0"
+                    Click="{x:Bind ViewModel.AddNewCommand}"
+                    Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
-                        <FontIcon FontSize="{StaticResource StandardIconSize}" Glyph="&#xE710;" />
-                        <TextBlock x:Uid="Actions_AddNewTextBlock" Style="{StaticResource IconButtonTextBlockStyle}" />
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE710;" />
+                        <TextBlock x:Uid="Actions_AddNewTextBlock"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
                     </StackPanel>
                 </Button.Content>
             </Button>
 
             <!--  Commands  -->
-            <Grid
-                Background="{ThemeResource LayerFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{StaticResource OverlayCornerRadius}">
-                <ListView
-                    x:Name="CommandsListView"
-                    IsItemClickEnabled="True"
-                    ItemClick="{x:Bind ViewModel.CmdListItemClicked}"
-                    ItemContainerStyle="{StaticResource ActionRowItemContainerStyle}"
-                    ItemTemplate="{StaticResource CommandTemplate}"
-                    ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}"
-                    SelectionMode="None" />
+            <Grid Background="{ThemeResource LayerFillColorDefaultBrush}"
+                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                  BorderThickness="1"
+                  CornerRadius="{StaticResource OverlayCornerRadius}">
+                <ListView x:Name="CommandsListView"
+                          IsItemClickEnabled="True"
+                          ItemClick="{x:Bind ViewModel.CmdListItemClicked}"
+                          ItemContainerStyle="{StaticResource ActionRowItemContainerStyle}"
+                          ItemTemplate="{StaticResource CommandTemplate}"
+                          ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}"
+                          SelectionMode="None" />
             </Grid>
         </StackPanel>
     </Border>

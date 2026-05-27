@@ -14,7 +14,6 @@
 #include "GlobalAppearanceViewModel.h"
 #include "ColorSchemes.h"
 #include "EditColorScheme.h"
-#include "AddProfile.h"
 #include "Profiles.h"
 #include "InteractionViewModel.h"
 #include "LaunchViewModel.h"
@@ -645,18 +644,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus), _MakeTransitionInfo());
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None));
             }
-            else if (*clickedItemTag == addProfileTag)
-            {
-                _AppendProfilesRootCrumb();
-
-                auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
-                addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
-                contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), winrt::make<NavigateToPageArgs>(addProfileState, *this, elementToFocus), _MakeTransitionInfo());
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_AddNewProfile/Content"), BreadcrumbSubPage::None));
-
-                // Keep the Profiles nav item selected.
-                selectedNavTag = profilesTag;
-            }
         }
         else if (const auto& profile = vm.try_as<Editor::ProfileViewModel>())
         {
@@ -1046,10 +1033,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
             _Navigate(box_value(colorSchemesTag));
         });
-        _profilesPageVM.AddProfileRequested([this](const auto&, const auto&) {
+        _profilesPageVM.AddProfileRequested([this](const auto&, const winrt::guid& sourceProfile) {
             _navDirection = NavDirection::Forward;
             const auto resetDir = wil::scope_exit([this]() noexcept { _navDirection = NavDirection::Default; });
-            _Navigate(box_value(addProfileTag));
+            _AddProfileHandler(sourceProfile);
         });
         _profilesPageVM.OpenProfileRequested([this](const auto&, const Editor::ProfileViewModel& profile) {
             _navDirection = NavDirection::Forward;

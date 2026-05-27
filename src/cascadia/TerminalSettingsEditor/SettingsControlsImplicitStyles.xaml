@@ -35,7 +35,8 @@
     PointerOver/Pressed brushes, the drop-shadow popup, etc. Call sites that
     need a card-specific MinWidth set it explicitly on the instance.
 -->
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
         Right-aligned, compact ToggleSwitch. Replaces the WCT
