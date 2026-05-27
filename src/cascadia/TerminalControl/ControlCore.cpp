@@ -2946,8 +2946,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Map a PreviewInputSpanKind to the TextAttribute used to paint its run.
     // Normal mirrors the scalar Terminal::PreviewText baseline (default-on-default
     // italic) so a single Normal span is visually identical to the scalar path.
-    // Active and Placeholder flip the reverse-video bit so the slot stands out
-    // against the surrounding italic prefix/suffix.
+    // Active flips reverse-video so the slot stands out. Placeholder dims
+    // (faint + italic) so unfilled future slots are visible but clearly
+    // de-emphasized vs the active focus.
     static TextAttribute _previewAttrForSpanKind(winrt::Microsoft::Terminal::Control::PreviewInputSpanKind kind) noexcept
     {
         using Kind = winrt::Microsoft::Terminal::Control::PreviewInputSpanKind;
@@ -2958,12 +2959,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         switch (kind)
         {
         case Kind::Active:
-        case Kind::Placeholder:
-            // TODO(walk-polish): differentiate Placeholder from Active. For now
-            // both render as reverse-video so the user can see *which* slot is
-            // the focus target; future polish renders Placeholder as dim
-            // (italic-only) and keeps reverse-video exclusively for Active.
             attr.SetReverseVideo(true);
+            break;
+        case Kind::Placeholder:
+            attr.SetFaint(true);
             break;
         case Kind::Normal:
         default:

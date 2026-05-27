@@ -274,11 +274,16 @@ namespace Microsoft.Terminal.Settings.Model
     //                 when its value is non-empty (multi-cursor model;
     //                 Brady 2026-05-27). If the active value is empty,
     //                 Placeholder wins (no `ActivePlaceholder` kind).
+    //
+    // Integer values MUST match `Microsoft.Terminal.Control.PreviewInputSpanKind`
+    // so SuggestionsControl can do an identity cast across the projection
+    // boundary when forwarding spans to TermControl. See the comment in
+    // SuggestionsControl::_updatePreviewSpans before changing this ordering.
     enum SnippetPreviewSpanKind
     {
         Normal = 0,
-        Placeholder,
-        Active
+        Active,
+        Placeholder
     };
 
     // Projected wrapper for one (text, kind) run produced by the Walk-tier
