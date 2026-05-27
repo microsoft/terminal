@@ -789,13 +789,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 if (isEmpty)
                 {
-                    // Empty (active OR non-active) → Placeholder rendering
-                    // the parameter NAME. Per the test stubs:
-                    //   - "No `ActivePlaceholder` kind — when the active
-                    //     slot is empty, Placeholder wins (the parameter
-                    //     name is what the user sees)."
+                    // Empty slot renders the parameter NAME. If this is the
+                    // active slot (every occurrence, multi-cursor model),
+                    // show the name as Active so the user can see exactly
+                    // which slot they're about to type into — the name acts
+                    // as a pre-selected placeholder that gets replaced on
+                    // the first keystroke. Non-active empty slots stay
+                    // Placeholder (faint) so future slots are visible but
+                    // clearly de-emphasized.
                     flushNormal();
-                    spans.emplace_back(std::wstring{ name }, Model::SnippetPreviewSpanKind::Placeholder);
+                    spans.emplace_back(std::wstring{ name },
+                                       isActive ? Model::SnippetPreviewSpanKind::Active
+                                                : Model::SnippetPreviewSpanKind::Placeholder);
                 }
                 else if (isActive)
                 {
