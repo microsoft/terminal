@@ -1555,6 +1555,7 @@ SLGP
 SLIST
 slmult
 sln
+slnf
 slnx
 slpit
 SManifest
