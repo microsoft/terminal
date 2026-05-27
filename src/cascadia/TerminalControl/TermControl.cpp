@@ -3872,6 +3872,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // Spans-aware sibling of PreviewInput. Mirrors the scalar path exactly
+    // until the ControlCore boundary, where the IVector<PreviewInputSpan> is
+    // translated into a (text, runs) pair handed to Terminal::PreviewTextSpans.
+    // The scalar PreviewInput(String) API is unchanged and still callable;
+    // existing callers (ActionPreviewHandlers, dismiss site at L918, etc.)
+    // keep working bit-for-bit.
+    //
+    // No UIA announcement here: spans-aware previews carry richer semantics
+    // ("filling parameter <name>") that SuggestionsControl (Phase B) owns.
+    // The scalar path's PreviewTextAnnouncement is intentionally single-string;
+    // forwarding it here would either lose the per-span structure or
+    // double-announce on every keystroke.
+    void TermControl::PreviewInputSpans(const Windows::Foundation::Collections::IVector<Control::PreviewInputSpan>& spans)
+    {
+        get_self<ControlCore>(_core)->PreviewInputSpans(spans);
+    }
+
     void TermControl::AddMark(const Control::ScrollMark& mark)
     {
         _core.AddMark(mark);

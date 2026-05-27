@@ -19,6 +19,7 @@
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
 #include "Parameter.g.cpp"
+#include "SnippetPreviewRun.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
 #include "SetFocusModeArgs.g.cpp"
@@ -604,6 +605,223 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return winrt::hstring{ out };
+    }
+
+    // Walk-tier preview sibling of Resolve. See the doc comment in
+    // ActionArgs.h on `BuildSnippetPreviewSpans` for the full contract.
+    // Implementation strategy: delegate to BuildSnippetPreviewSpans and
+    // concatenate the runs. That guarantees the documented invariant
+    // "ResolveForPreview(values, idx) == concatenation of
+    // BuildSnippetPreviewSpans(input, parameters, values, idx) texts"
+    // by construction.
+    winrt::hstring SendInputArgs::ResolveForPreview(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values, uint32_t currentTabstopIndex)
+    {
+        const auto paramsView = _Parameters ? _Parameters.GetView() : Windows::Foundation::Collections::IVectorView<Model::Parameter>{ nullptr };
+        const auto spans = BuildSnippetPreviewSpans(std::wstring_view{ _Input }, paramsView, values, currentTabstopIndex);
+
+        std::wstring out;
+        size_t total = 0;
+        for (const auto& [text, _] : spans)
+        {
+            total += text.size();
+        }
+        out.reserve(total);
+        for (const auto& [text, _] : spans)
+        {
+            out.append(text);
+        }
+        return winrt::hstring{ out };
+    }
+
+    // Projected wrapper around the C++-only free function
+    // `BuildSnippetPreviewSpans`. The free function returns
+    // `std::vector<std::pair<std::wstring, SnippetPreviewSpanKind>>`, which
+    // cannot cross the WinRT projection boundary. This method packs the same
+    // data into an `IVector<SnippetPreviewRun>` so consumers in other
+    // projects (TerminalApp/SuggestionsControl) can reach it.
+    // UnitTests_SettingsModel continues to call the free function directly.
+    Windows::Foundation::Collections::IVector<Model::SnippetPreviewRun>
+        SendInputArgs::BuildPreviewSpans(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values, uint32_t currentTabstopIndex)
+    {
+        const auto paramsView = _Parameters ? _Parameters.GetView() : Windows::Foundation::Collections::IVectorView<Model::Parameter>{ nullptr };
+        const auto spans = BuildSnippetPreviewSpans(std::wstring_view{ _Input }, paramsView, values, currentTabstopIndex);
+
+        auto out = winrt::single_threaded_vector<Model::SnippetPreviewRun>();
+        for (const auto& [text, kind] : spans)
+        {
+            out.Append(*winrt::make_self<SnippetPreviewRun>(winrt::hstring{ text }, kind));
+        }
+        return out;
+    }
+
+    // Walk-tier span builder. See the doc comment in ActionArgs.h for the
+    // contract. Adjacent Normal runs are coalesced for renderer efficiency
+    // (the Walk_Spans_* test stubs document this).
+    std::vector<std::pair<std::wstring, Model::SnippetPreviewSpanKind>>
+    BuildSnippetPreviewSpans(
+        std::wstring_view input,
+        const Windows::Foundation::Collections::IVectorView<Model::Parameter>& parameters,
+        const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values,
+        uint32_t currentTabstopIndex)
+    {
+        std::vector<std::pair<std::wstring, Model::SnippetPreviewSpanKind>> spans;
+        std::wstring pendingNormal;
+
+        // Flush coalesced Normal buffer (if non-empty) into a single span.
+        const auto flushNormal = [&]() {
+            if (!pendingNormal.empty())
+            {
+                spans.emplace_back(std::move(pendingNormal), Model::SnippetPreviewSpanKind::Normal);
+                pendingNormal.clear();
+            }
+        };
+
+        // Resolve the active parameter's name, if any. An out-of-range
+        // currentTabstopIndex yields an empty active name → no span is Active.
+        std::wstring_view activeName;
+        const uint32_t paramCount = parameters ? parameters.Size() : 0u;
+        if (parameters && currentTabstopIndex < paramCount)
+        {
+            const auto activeParam = parameters.GetAt(currentTabstopIndex);
+            if (activeParam)
+            {
+                activeName = std::wstring_view{ activeParam.Name() };
+            }
+        }
+
+        const auto len = input.size();
+        size_t i = 0;
+        while (i < len)
+        {
+            const auto c = input[i];
+
+            // Backslash escape handling — mirrors Resolve.
+            if (c == L'\\' && i + 1 < len)
+            {
+                const auto next = input[i + 1];
+                if (next == L'$')
+                {
+                    pendingNormal.push_back(L'$');
+                    i += 2;
+                    continue;
+                }
+                if (next == L'\\')
+                {
+                    pendingNormal.push_back(L'\\');
+                    i += 2;
+                    continue;
+                }
+                pendingNormal.push_back(L'\\');
+                ++i;
+                continue;
+            }
+
+            // Token detection: `${...}`.
+            if (c == L'$' && i + 1 < len && input[i + 1] == L'{')
+            {
+                const auto nameStart = i + 2;
+                const auto closeIdx = input.find(L'}', nameStart);
+                if (closeIdx == std::wstring_view::npos)
+                {
+                    // Unclosed `${` — emit `$` literally, scan onward.
+                    pendingNormal.push_back(c);
+                    ++i;
+                    continue;
+                }
+
+                const auto name = input.substr(nameStart, closeIdx - nameStart);
+
+                // Malformed name: empty, dotted (well-known token owned by
+                // the earlier substitution pass), or whitespace-bearing.
+                auto malformed = name.empty();
+                if (!malformed)
+                {
+                    for (const auto ch : name)
+                    {
+                        if (ch == L'.' || ch == L' ' || ch == L'\t' || ch == L'\r' || ch == L'\n')
+                        {
+                            malformed = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (malformed)
+                {
+                    pendingNormal.append(input.substr(i, closeIdx - i + 1));
+                    i = closeIdx + 1;
+                    continue;
+                }
+
+                // Is this name one of our declared parameters?
+                auto declared = false;
+                if (parameters)
+                {
+                    for (uint32_t p = 0; p < paramCount; ++p)
+                    {
+                        const auto param = parameters.GetAt(p);
+                        if (param && std::wstring_view{ param.Name() } == name)
+                        {
+                            declared = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!declared)
+                {
+                    // Undeclared — pass through verbatim (Normal text).
+                    pendingNormal.append(input.substr(i, closeIdx - i + 1));
+                    i = closeIdx + 1;
+                    continue;
+                }
+
+                // Declared parameter — look up its value (empty if missing).
+                const winrt::hstring nameKey{ name };
+                std::wstring value;
+                if (values && values.HasKey(nameKey))
+                {
+                    value = std::wstring{ std::wstring_view{ values.Lookup(nameKey) } };
+                }
+
+                const bool isActive = !activeName.empty() && name == activeName;
+                const bool isEmpty = value.empty();
+
+                if (isEmpty)
+                {
+                    // Empty (active OR non-active) → Placeholder rendering
+                    // the parameter NAME. Per the test stubs:
+                    //   - "No `ActivePlaceholder` kind — when the active
+                    //     slot is empty, Placeholder wins (the parameter
+                    //     name is what the user sees)."
+                    flushNormal();
+                    spans.emplace_back(std::wstring{ name }, Model::SnippetPreviewSpanKind::Placeholder);
+                }
+                else if (isActive)
+                {
+                    // Active parameter with a typed value — every occurrence
+                    // gets Active styling (multi-cursor model, Brady 2026-05-27).
+                    flushNormal();
+                    spans.emplace_back(std::move(value), Model::SnippetPreviewSpanKind::Active);
+                }
+                else
+                {
+                    // Non-active filled parameter — looks like prose;
+                    // append to Normal buffer for coalescing.
+                    pendingNormal.append(value);
+                }
+
+                i = closeIdx + 1;
+                continue;
+            }
+
+            // Ordinary character — append to Normal buffer.
+            pendingNormal.push_back(c);
+            ++i;
+        }
+
+        flushNormal();
+        return spans;
     }
 
     winrt::hstring SplitPaneArgs::GenerateName(const winrt::WARC::ResourceContext& context) const

@@ -49,6 +49,12 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<winrt::TerminalApp::SuggestionsControl, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
         til::typed_event<Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> PreviewAction;
 
+        // Walk-tier inline snippet-parameter fill: raised on every keystroke /
+        // tabstop change inside fill mode. Empty IVector clears the preview.
+        til::typed_event<Windows::Foundation::IInspectable,
+                         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::PreviewInputSpan>>
+            PreviewInputSpansRequested;
+
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, PropertyChanged.raise);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, PropertyChanged.raise);
@@ -116,6 +122,7 @@ namespace winrt::TerminalApp::implementation
         void _filterTextChanged(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void _previewKeyDownHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
         void _keyUpHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::KeyRoutedEventArgs& e);
+        void _characterReceivedHandler(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs& args);
 
         void _rootPointerPressed(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
 
@@ -147,12 +154,13 @@ namespace winrt::TerminalApp::implementation
         void _advanceParameterSlot();
         void _retreatParameterSlot();
         void _updateUIForParameterSlot();
-        void _previewResolvedInput();
+        void _updatePreviewSpans();
+        void _clearPreviewSpans();
         void _dispatchResolvedSnippet();
         Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>
-            _buildParameterMap(bool includeLiveCurrent);
+            _buildParameterMap();
         winrt::Microsoft::Terminal::Settings::Model::Command
-            _buildResolvedCommand(bool includeLiveCurrent);
+            _buildResolvedCommand();
 
         friend class TerminalAppLocalTests::TabTests;
     };

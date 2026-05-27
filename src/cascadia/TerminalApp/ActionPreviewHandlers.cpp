@@ -209,4 +209,26 @@ namespace winrt::TerminalApp::implementation
             _PreviewAction(args.ActionAndArgs());
         }
     }
+
+    // Method Description:
+    // - Handler for SuggestionsControl::PreviewInputSpansRequested. The
+    //   SuggestionsControl raises this event during snippet parameter-fill mode
+    //   on every keystroke (and once with an empty IVector on clear/commit) to
+    //   paint the in-progress, partially-resolved snippet text into the active
+    //   pane's composition channel as live preview. Forwards the spans verbatim
+    //   to the active TermControl, which routes them through ControlCore to the
+    //   Terminal::PreviewTextSpans surface.
+    // Arguments:
+    // - spans: Pre-built run list (Normal / Active / Placeholder) ready for the
+    //   composition layer. An empty IVector clears any existing preview.
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnPreviewInputSpansRequested(const IInspectable& /*sender*/,
+                                                     const IVector<Microsoft::Terminal::Control::PreviewInputSpan>& spans)
+    {
+        if (const auto control = _GetActiveControl())
+        {
+            control.PreviewInputSpans(spans);
+        }
+    }
 }

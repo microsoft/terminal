@@ -2942,4 +2942,69 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->PreviewText(input);
     }
+
+    // Map a PreviewInputSpanKind to the TextAttribute used to paint its run.
+    // Normal mirrors the scalar Terminal::PreviewText baseline (default-on-default
+    // italic) so a single Normal span is visually identical to the scalar path.
+    // Active and Placeholder flip the reverse-video bit so the slot stands out
+    // against the surrounding italic prefix/suffix.
+    static TextAttribute _previewAttrForSpanKind(winrt::Microsoft::Terminal::Control::PreviewInputSpanKind kind) noexcept
+    {
+        using Kind = winrt::Microsoft::Terminal::Control::PreviewInputSpanKind;
+
+        // Match Terminal::PreviewText's `previewAttrs`: default-on-default italics.
+        TextAttribute attr{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
+
+        switch (kind)
+        {
+        case Kind::Active:
+        case Kind::Placeholder:
+            // TODO(walk-polish): differentiate Placeholder from Active. For now
+            // both render as reverse-video so the user can see *which* slot is
+            // the focus target; future polish renders Placeholder as dim
+            // (italic-only) and keeps reverse-video exclusively for Active.
+            attr.SetReverseVideo(true);
+            break;
+        case Kind::Normal:
+        default:
+            break;
+        }
+        return attr;
+    }
+
+    // Spans-aware sibling of PreviewInput. Walks the projected IVector once,
+    // concatenating each span's text and emitting one CompositionRange per
+    // span. Run lengths are measured in UTF-16 code units (the same unit
+    // Composition::attributes uses today — see
+    // Renderer::_PaintBufferOutputComposition in src/renderer/base/renderer.cpp);
+    // the renderer derives columns from the text when it paints, so wide-char
+    // handling is identical to the scalar path.
+    //
+    // Empty spans vector is treated as a dismiss (parity with PreviewInput(L"")).
+    void ControlCore::PreviewInputSpans(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Control::PreviewInputSpan>& spans)
+    {
+        if (!spans || spans.Size() == 0)
+        {
+            _terminal->PreviewText({});
+            return;
+        }
+
+        std::wstring text;
+        std::vector<::Microsoft::Console::Render::CompositionRange> runs;
+        runs.reserve(spans.Size());
+
+        for (const auto& span : spans)
+        {
+            if (!span)
+            {
+                continue;
+            }
+            const auto spanText = span.Text();
+            const std::wstring_view tv{ spanText };
+            text.append(tv);
+            runs.emplace_back(tv.size(), _previewAttrForSpanKind(span.Kind()));
+        }
+
+        _terminal->PreviewTextSpans(text, runs);
+    }
 }

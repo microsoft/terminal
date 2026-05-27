@@ -21,6 +21,7 @@
 #include "StringSentEventArgs.g.h"
 #include "SearchMissingCommandEventArgs.g.h"
 #include "WindowSizeChangedEventArgs.g.h"
+#include "PreviewInputSpan.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -252,6 +253,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::property<til::CoordType> BufferRow;
     };
 
+    struct PreviewInputSpan : public PreviewInputSpanT<PreviewInputSpan>
+    {
+    public:
+        PreviewInputSpan(const winrt::hstring& text,
+                         const winrt::Microsoft::Terminal::Control::PreviewInputSpanKind& kind) :
+            _Text(text),
+            _Kind(kind) {}
+
+        WINRT_PROPERTY(winrt::hstring, Text);
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::PreviewInputSpanKind, Kind);
+    };
+
     struct WindowSizeChangedEventArgs : public WindowSizeChangedEventArgsT<WindowSizeChangedEventArgs>
     {
     public:
@@ -270,4 +283,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
     BASIC_FACTORY(OpenHyperlinkEventArgs);
+    BASIC_FACTORY(PreviewInputSpan);
 }

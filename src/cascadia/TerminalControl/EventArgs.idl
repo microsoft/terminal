@@ -165,4 +165,24 @@ namespace Microsoft.Terminal.Control
         Int32 Width;
         Int32 Height;
     }
+
+    // Kind of a single span within a spans-aware preview (PreviewInputSpans).
+    // Mirrors the visual roles needed for the inline snippet-parameter fill
+    // UX (Walk tier). Renderer-side attribute mapping lives in ControlCore.
+    enum PreviewInputSpanKind
+    {
+        Normal = 0,    // Plain resolved text — prefix/suffix around the active tabstop.
+        Active,        // The tabstop currently being filled — rendered as inverse video.
+        Placeholder,   // An unfilled future tabstop — parameter name as visible hint.
+    };
+
+    // Value type carrying one attributed slice of a spans-aware preview.
+    // SuggestionsControl (Phase B) builds an IVector<PreviewInputSpan> per
+    // keystroke and hands it to TermControl::PreviewInputSpans.
+    runtimeclass PreviewInputSpan
+    {
+        PreviewInputSpan(String text, PreviewInputSpanKind kind);
+        String Text { get; };
+        PreviewInputSpanKind Kind { get; };
+    }
 }

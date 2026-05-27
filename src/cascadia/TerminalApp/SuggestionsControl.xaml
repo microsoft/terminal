@@ -15,6 +15,7 @@
              MinWidth="256"
              AllowFocusOnInteraction="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             CharacterReceived="_characterReceivedHandler"
              IsTabStop="True"
              LostFocus="_lostFocusHandler"
              PointerPressed="_rootPointerPressed"

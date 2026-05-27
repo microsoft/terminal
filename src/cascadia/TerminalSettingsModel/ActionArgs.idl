@@ -260,6 +260,45 @@ namespace Microsoft.Terminal.Settings.Model
         String Description;
     };
 
+    // Span kind for the Walk-tier inline snippet-parameter preview. The
+    // `BuildSnippetPreviewSpans` helper (C++-only, declared in ActionArgs.h)
+    // emits an ordered run of (text, kind) pairs that, concatenated, equal
+    // `SendInputArgs::ResolveForPreview`. Declared here in IDL so the
+    // UnitTests_SettingsModel project can reach it via the projection.
+    //
+    //   Normal      — prose between substitutions, or a typed mirror that is
+    //                 NOT the active tabstop's parameter.
+    //   Placeholder — declared-but-empty substitution; renders as the
+    //                 parameter NAME.
+    //   Active      — every occurrence of the active tabstop's parameter
+    //                 when its value is non-empty (multi-cursor model;
+    //                 Brady 2026-05-27). If the active value is empty,
+    //                 Placeholder wins (no `ActivePlaceholder` kind).
+    enum SnippetPreviewSpanKind
+    {
+        Normal = 0,
+        Placeholder,
+        Active
+    };
+
+    // Projected wrapper for one (text, kind) run produced by the Walk-tier
+    // snippet-preview span builder. The underlying C++ free function
+    // `implementation::BuildSnippetPreviewSpans` returns
+    // `std::vector<std::pair<std::wstring, SnippetPreviewSpanKind>>`, which
+    // is NOT a projectable type. `SnippetPreviewRun` +
+    // `SendInputArgs::BuildPreviewSpans` expose the same data through
+    // projected types so consumers outside the TerminalSettingsModel project
+    // (e.g. TerminalApp/SuggestionsControl) can reach it.
+    //
+    // `UnitTests_SettingsModel` continues to call the free function directly
+    // — it has access to `implementation::` headers.
+    runtimeclass SnippetPreviewRun
+    {
+        SnippetPreviewRun(String text, SnippetPreviewSpanKind kind);
+        String Text { get; };
+        SnippetPreviewSpanKind Kind { get; };
+    };
+
     [default_interface] runtimeclass SendInputArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         SendInputArgs(String input);
@@ -268,6 +307,25 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IVector<Parameter> Parameters { get; };
 
         String Resolve(Windows.Foundation.Collections.IMap<String, String> values);
+
+        // Like `Resolve`, but a declared parameter whose value is empty or
+        // missing renders as the parameter NAME (placeholder text) instead
+        // of collapsing to empty. Used by the Walk-tier inline preview so
+        // the user can SEE what they're filling before they start typing.
+        // `currentTabstopIndex` is accepted for signature symmetry with
+        // `BuildSnippetPreviewSpans` (the spans-aware sibling); the
+        // resolved-string surface does not actually consume it today.
+        String ResolveForPreview(Windows.Foundation.Collections.IMap<String, String> values, UInt32 currentTabstopIndex);
+
+        // Projected wrapper around the C++-only free function
+        // `implementation::BuildSnippetPreviewSpans(input, parameters,
+        //   values, currentTabstopIndex)`. Identical contract; reads
+        // `Input` and `Parameters` off `this`. Returns
+        // `IVector<SnippetPreviewRun>` so TerminalApp can consume the
+        // result across the projection boundary.
+        Windows.Foundation.Collections.IVector<SnippetPreviewRun>
+            BuildPreviewSpans(Windows.Foundation.Collections.IMap<String, String> values,
+                              UInt32 currentTabstopIndex);
     };
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs, IActionArgsDescriptorAccess

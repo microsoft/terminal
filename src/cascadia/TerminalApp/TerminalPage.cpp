@@ -2252,6 +2252,7 @@ namespace winrt::TerminalApp::implementation
         });
         p.DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         p.PreviewAction({ this, &TerminalPage::_PreviewActionHandler });
+        p.PreviewInputSpansRequested({ this, &TerminalPage::_OnPreviewInputSpansRequested });
 
         return p;
     }

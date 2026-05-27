@@ -144,6 +144,7 @@ namespace Microsoft.Terminal.Control
 
         void AdjustOpacity(Single Opacity, Boolean relative);
         void PreviewInput(String text);
+        void PreviewInputSpans(Windows.Foundation.Collections.IVector<PreviewInputSpan> spans);
 
         // You'd think this should just be "Opacity", but UIElement already
         // defines an "Opacity", which we're actually not setting at all. We're

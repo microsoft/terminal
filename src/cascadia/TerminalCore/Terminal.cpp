@@ -1682,6 +1682,106 @@ void Terminal::PreviewText(std::wstring_view input)
     _activeBuffer().NotifyPaintFrame();
 }
 
+// Spans-aware sibling of PreviewText. Writes a caller-supplied (text, runs)
+// pair into snippetPreview. Mirrors PreviewText's tail-padding behavior so
+// the preview overwrites trailing shell ghost text (e.g. PSReadLine's
+// inline prediction) the same way the scalar path does — the padding is
+// appended as one trailing default-attribute run, so the renderer paints
+// real spaces over whatever was there.
+//
+// Scope: this path skips the DEL-trim logic on purpose. Crawl callers pad
+// `\x7f` to backspace off the in-flight commandline; spans callers
+// (SuggestionsControl Phase B) build the visible template explicitly, so
+// the leading-DEL convention doesn't apply.
+//
+// Composition::attributes lengths are in UTF-16 code units, NOT columns —
+// the renderer derives columns by re-flowing the text in
+// Renderer::_PaintBufferOutputComposition (src/renderer/base/renderer.cpp:1104).
+// Callers therefore measure spans the same way std::wstring::size() does;
+// the renderer handles wide chars transparently.
+//
+// TODO(walk-risk): snippetPreview and tsfPreview share GetActiveComposition
+// (IRenderData.hpp:83). CJK IME composition into a parameter slot pre-empts
+// the parameter preview until composition commits; accepted as a Walk-tier
+// limitation per Brady's go-ahead and Ripley's rendering-surfaces memo.
+//
+// TODO(walk-risk): Long resolved prefixes can transiently overlap shell
+// text mid-frame; _PaintBufferOutputComposition absorbs trailing
+// whitespace and re-emits displaced chars. Corrected at commit. Already
+// true for the scalar PreviewText path; not a Walk regression.
+void Terminal::PreviewTextSpans(std::wstring_view text,
+                                const std::vector<::Microsoft::Console::Render::CompositionRange>& runs)
+{
+    static constexpr TextAttribute paddingAttrs{ CharacterAttributes::Italics, TextColor{}, TextColor{}, 0u, TextColor{} };
+
+    auto lock = LockForWriting();
+
+    if (_mainBuffer == nullptr)
+    {
+        return;
+    }
+
+    if (text.empty() || runs.empty())
+    {
+        snippetPreview.text = L"";
+        snippetPreview.cursorPos = 0;
+        snippetPreview.attributes.clear();
+        _activeBuffer().NotifyPaintFrame();
+        return;
+    }
+
+    // Build the visible content from the caller's spans, then pad out to the
+    // end of the viewport so we cover any shell ghost text. The padding is
+    // its own trailing run with default italic attrs — mirrors the scalar
+    // path's "spaces get the preview attribute" rule.
+    const auto bufferWidth = _GetMutableViewport().Width();
+    const auto cursorX = _activeBuffer().GetCursor().GetPosition().x;
+    const auto expectedLenTillEnd = static_cast<size_t>(bufferWidth) - static_cast<size_t>(cursorX);
+
+    std::wstring preview{ text };
+    const auto originalSize{ preview.size() };
+    const auto paddingCount = expectedLenTillEnd > originalSize ? expectedLenTillEnd - originalSize : 0u;
+    if (paddingCount > 0)
+    {
+        preview.insert(originalSize, paddingCount, L' ');
+    }
+
+    snippetPreview.text = til::visualize_nonspace_control_codes(preview);
+    snippetPreview.attributes.clear();
+    snippetPreview.attributes.reserve(runs.size() + 1);
+    for (const auto& r : runs)
+    {
+        snippetPreview.attributes.emplace_back(r);
+    }
+
+    // visualize_nonspace_control_codes leaves L' ' untouched (it only expands
+    // *non-space* control codes), so the trailing padding count is preserved
+    // exactly. The visible portion's length is whatever's left after subtracting
+    // the padding from the visualized text length.
+    //
+    // Caveat: if a caller passes control characters inside a span, those
+    // characters expand on visualization and the per-span run lengths
+    // (which still sum to the un-expanded visible length) will misalign with
+    // the visualized text. This matches the rainbow-suggestions path's
+    // limitation in the scalar PreviewText. Walk callers (SuggestionsControl
+    // Phase B) build spans from snippet template text + user-typed values —
+    // both printable in practice — so this is an accepted constraint.
+    const auto visibleLen = snippetPreview.text.size() - paddingCount;
+
+    // Cursor sits at the end of the caller's visible content (before the
+    // viewport padding). Phase B callers can place the active span last to
+    // park the cursor on the active slot; richer cursor placement is a
+    // future enhancement on this API surface.
+    snippetPreview.cursorPos = visibleLen;
+
+    if (paddingCount > 0)
+    {
+        snippetPreview.attributes.emplace_back(paddingCount, paddingAttrs);
+    }
+
+    _activeBuffer().NotifyPaintFrame();
+}
+
 // These functions are used by TerminalInput, which must build in conhost
 // against OneCore compatible signatures. See the definitions in
 // VtApiRedirection.hpp (which we cannot include cross-project.)

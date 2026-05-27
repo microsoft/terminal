@@ -97,7 +97,113 @@ namespace SettingsModelUnitTests
         // -----------------------------------------------------------------
         // Deferred — Walk-tier / requires UI-test infrastructure
         // -----------------------------------------------------------------
+        // Superseded by the Walk-tier test plan below — the state machine
+        // being tested has changed shape (no more `_searchBox`-as-input;
+        // preview/composition channel is the surface). Kept as a redirect
+        // so an old run still produces a visible "see Walk_*" pointer.
         TEST_METHOD(SnippetParameter_ParameterFillingStateMachine_TODO);
+
+        // -----------------------------------------------------------------
+        // 🚶 Walk-tier — inline template fill at the cursor
+        //
+        // Tracks the Walk-tier addendum:
+        //   doc/specs/snippet-parameters-inline-fill-addendum.md
+        //
+        // Brady's load-bearing approvals (treat as canonical):
+        //   1. Inline-template fill UX — YES
+        //   2. Composition channel (PreviewInput-with-spans) — YES
+        //   3. Tab at last tabstop = COMMIT, not wrap
+        //
+        // Naming convention:
+        //   *_WALK_TODO    — model/logic test stub; the test body documents
+        //                    the EXPECTED input/output table so the test is
+        //                    half-written when the helper lands. Tagged with
+        //                    the proposed helper API signature.
+        //   *_WALK_TODO_UI — requires the UI test harness (composition
+        //                    rendering, keyboard-input simulation, focus
+        //                    management, cursor positioning). Explicit defer
+        //                    per task constraint (D).
+        //
+        // Proposed helper APIs (DO NOT EXIST YET — flag for Parker / Dallas):
+        //
+        //   A. winrt::hstring SendInputArgs::ResolveForPreview(
+        //          IMap<hstring,hstring> values,
+        //          uint32_t currentTabstopIndex);
+        //      Like Resolve, but empty-valued *declared* parameters render
+        //      as the parameter NAME (placeholder semantics) instead of the
+        //      empty string. Used by the inline preview to keep the user
+        //      oriented before they start typing. Lives next to Resolve in
+        //      src/cascadia/TerminalSettingsModel/ActionArgs.{h,cpp}.
+        //
+        //   B. std::vector<std::pair<std::wstring, SnippetPreviewSpanKind>>
+        //      BuildSnippetPreviewSpans(
+        //          std::wstring_view input,
+        //          IVectorView<Parameter> parameters,
+        //          IMap<hstring,hstring> values,
+        //          uint32_t currentTabstopIndex);
+        //      Pure free function. Walks `input` and emits an ordered list
+        //      of (text, kind) runs ready for handoff to the composition
+        //      channel (Ripley's PreviewInputSpans proposal). SpanKind
+        //      ∈ { Normal, Placeholder, Active }. Preferred home:
+        //      src/cascadia/TerminalSettingsModel/ActionArgs.{h,cpp} so the
+        //      SettingsModel.UnitTests project can reach it without dragging
+        //      in TerminalApp. Alternate home (Dallas's call):
+        //      src/cascadia/TerminalApp/SuggestionsControl.{h,cpp} or a new
+        //      utility translation unit alongside it.
+        //
+        //   C. enum class SnippetPreviewSpanKind { Normal, Placeholder, Active };
+        //      Three kinds match Brady's UX:
+        //        - Normal      — prose between parameters, or a typed mirror
+        //                        of a repeated `${name}` that is NOT the
+        //                        active occurrence.
+        //        - Placeholder — empty-value slot; renders the parameter
+        //                        NAME (dim/italic in the eventual styling).
+        //        - Active      — the typed value at the current tabstop;
+        //                        renders with the active-tabstop styling
+        //                        (e.g. SetReverseVideo per Ripley's memo).
+        //      No `ActivePlaceholder` kind — when the active slot is empty,
+        //      Placeholder wins (the parameter name is what the user sees).
+        //
+        // Spec ambiguities flagged for MikeBot / Brady (see decision drop):
+        //   - Shift+Tab at first tabstop: spec doesn't say. Tests below
+        //     assume CLAMP (no-op). Open question.
+        //   - Mirror-Active scope on repeated `${name}`: RESOLVED
+        //     (Brady 2026-05-27) — multi-cursor model; ALL occurrences
+        //     of the active tabstop render Active.
+        // -----------------------------------------------------------------
+
+        // (A) Settings-model layer — preview-mode hook
+        TEST_METHOD(Walk_ResolveForPreview_EmptyValueRendersParameterName_WALK_TODO);
+        TEST_METHOD(Walk_ResolveForPreview_TypedValueRendersValue_WALK_TODO);
+        TEST_METHOD(Walk_ResolveForPreview_RepeatedTokenMirrorsValue_WALK_TODO);
+        TEST_METHOD(Walk_ResolveForPreview_UndeclaredTokenPassesThrough_WALK_TODO);
+
+        // (B) Tabstop ordering & navigation — UI surface
+        TEST_METHOD(Walk_Tabstop_InitialIsFirstDeclaredParameter_WALK_TODO_UI);
+        TEST_METHOD(Walk_Tabstop_OrderIsDeclarationOrderNotInputOrder_WALK_TODO_UI);
+        TEST_METHOD(Walk_Tabstop_TabAdvancesForward_WALK_TODO_UI);
+        TEST_METHOD(Walk_Tabstop_ShiftTabRetreats_WALK_TODO_UI);
+        TEST_METHOD(Walk_Tabstop_TabAtLastTabstopCommits_WALK_TODO_UI);
+        TEST_METHOD(Walk_Tabstop_ShiftTabAtFirstClamps_WALK_TODO_UI);
+
+        // (C) Span construction for the inline preview — model-layer logic
+        TEST_METHOD(Walk_Spans_SingleParam_EmptyValue_ActiveIndex_WALK_TODO);
+        TEST_METHOD(Walk_Spans_SingleParam_TypedValue_ActiveIndex_WALK_TODO);
+        TEST_METHOD(Walk_Spans_SingleParam_TypedValue_PastLastIndex_WALK_TODO);
+        TEST_METHOD(Walk_Spans_TwoParams_SecondActive_FirstFilled_WALK_TODO);
+        TEST_METHOD(Walk_Spans_TwoParams_FirstActive_SecondEmpty_WALK_TODO);
+        TEST_METHOD(Walk_Spans_RepeatedToken_AllOccurrencesActive_WALK_TODO);
+        TEST_METHOD(Walk_Spans_EmptyParamAtNonActiveSlot_RendersPlaceholder_WALK_TODO);
+
+        // (D) UI rendering & input — explicitly deferred per task constraint (D)
+        TEST_METHOD(Walk_UI_CompositionChannel_RendersSpansToTerminal_WALK_TODO_UI);
+        TEST_METHOD(Walk_UI_KeystrokeUpdatesActiveTabstopLive_WALK_TODO_UI);
+        TEST_METHOD(Walk_UI_RepeatedTokenMirrorsLiveAcrossOccurrences_WALK_TODO_UI);
+        TEST_METHOD(Walk_UI_CursorPositionsAtActiveTabstop_WALK_TODO_UI);
+        TEST_METHOD(Walk_UI_EscCancelsFillAndClearsPreview_WALK_TODO_UI);
+        TEST_METHOD(Walk_UI_EnterOnLastTabstopCommitsAndDispatches_WALK_TODO_UI);
+        TEST_METHOD(Walk_UI_TooltipShowsActiveParameterNameAndDescription_WALK_TODO_UI);
+        TEST_METHOD(Walk_UI_IMECompositionPreemptsSnippetPreview_WALK_TODO_UI);
 
     private:
         // Mirror of DeserializationTests::createSettings — we need our own
@@ -573,26 +679,492 @@ namespace SettingsModelUnitTests
 
     void SnippetParameterTests::SnippetParameter_ParameterFillingStateMachine_TODO()
     {
-        // The Browsing → Filling[i] → dispatch state machine on
-        // SuggestionsControl (spec section "Parameter-filling state machine
-        // in the Suggestions UI") requires the heavier WTT-style UI test
-        // harness. Out of scope for the Crawl tier — Lambert will follow
-        // up in a Walk-tier pass once the SettingsModel side is stable.
+        // SUPERSEDED. The Crawl-tier `_searchBox`-as-fill-input state
+        // machine was retired by the Walk-tier pivot (MikeBot's addendum,
+        // Brady-approved 2026-05-26). The new surface is the
+        // PreviewInput / Composition channel; the new tests live in the
+        // `Walk_*` section below. This stub stays as a breadcrumb so an
+        // old run still produces a visible pointer to the new tests.
         //
-        // What's deferred:
-        //   - Browsing → Filling[0] transition when Enter is pressed on a
-        //     parameterized snippet (spec: "we detect that the selected
-        //     Command's SendInputArgs has a non-empty parameters array,
-        //     suppress dispatch, and transition to Filling[0]")
-        //   - Tab / Enter advance, Shift+Tab back, Esc cancels (spec:
-        //     state-table in the UI/UX Design section)
-        //   - PreviewAction re-fires per keystroke with the
-        //     resolved-so-far Command (spec: same section)
-        //   - Keybinding behavior: bound parameterized sendInput opens
-        //     the Suggestions UI in Filling[0] (spec: "Parameterized
-        //     snippets bound to a key")
-        //   - waitForSuccess interaction: parameters resolved once before
-        //     any line is sent (spec: "waitForSuccess + parameters")
-        Log::Comment(L"Pending UI test infrastructure — see doc/specs/#1595 - Suggestions UI/Snippet Parameters.md, section 'Parameter-filling state machine in the Suggestions UI'.");
+        // See:
+        //   doc/specs/snippet-parameters-inline-fill-addendum.md
+        //   .squad/decisions.md (2026-05-26 Walk-tier entries)
+        Log::Comment(L"SUPERSEDED — see Walk_* tests below.");
+    }
+
+    // =====================================================================
+    // 🚶 Walk-tier — model-layer preview hook (A)
+    // =====================================================================
+    //
+    // These tests assume a NEW API `SendInputArgs::ResolveForPreview` that
+    // mirrors `Resolve` but renders empty-valued declared parameters as the
+    // parameter NAME (placeholder) instead of empty string. This is the
+    // semantic the inline preview needs so the user can SEE what they're
+    // filling in before they start typing (fixes Brady's "the thing I'm
+    // filling disappears" complaint).
+    //
+    // The dispatch-time Resolve semantics (empty → empty) are unchanged —
+    // already covered by SnippetParameter_ResolveEmptyValueAllowed above.
+
+    void SnippetParameterTests::Walk_ResolveForPreview_EmptyValueRendersParameterName_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"git checkout ${branch}"
+        //   parameters       = [ { Name: L"branch" } ]
+        //   values           = { branch -> L"" }
+        //   currentTabstop   = 0
+        //
+        // EXPECTED:
+        //   args->ResolveForPreview(values, 0) == L"git checkout branch"
+        //
+        // Rationale: declared-but-empty parameters render as their NAME in
+        // preview mode (placeholder text). Contrast with dispatch-time
+        // Resolve, which renders them as empty (see
+        // SnippetParameter_ResolveEmptyValueAllowed).
+        //
+        // WALK_TODO_API: SendInputArgs::ResolveForPreview(values, index)
+        //   in src/cascadia/TerminalSettingsModel/ActionArgs.{h,cpp}
+        Log::Comment(L"WALK_TODO: requires SendInputArgs::ResolveForPreview helper.");
+    }
+
+    void SnippetParameterTests::Walk_ResolveForPreview_TypedValueRendersValue_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"git checkout ${branch}"
+        //   parameters       = [ { Name: L"branch" } ]
+        //   values           = { branch -> L"main" }
+        //   currentTabstop   = 0
+        //
+        // EXPECTED:
+        //   args->ResolveForPreview(values, 0) == L"git checkout main"
+        //
+        // Rationale: once the user has typed anything, preview mode behaves
+        // exactly like Resolve — the placeholder semantics only apply to
+        // the empty case.
+        //
+        // WALK_TODO_API: SendInputArgs::ResolveForPreview(values, index)
+        Log::Comment(L"WALK_TODO: requires SendInputArgs::ResolveForPreview helper.");
+    }
+
+    void SnippetParameterTests::Walk_ResolveForPreview_RepeatedTokenMirrorsValue_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"git checkout -b ${branch} && git push -u origin ${branch}"
+        //   parameters       = [ { Name: L"branch" } ]
+        //   values           = { branch -> L"feature/x" }
+        //   currentTabstop   = 0
+        //
+        // EXPECTED:
+        //   args->ResolveForPreview(values, 0) ==
+        //     L"git checkout -b feature/x && git push -u origin feature/x"
+        //
+        // Rationale: mirror typing — both occurrences of ${branch} render
+        // the typed value. This is the same Resolve semantic already
+        // verified at dispatch by SnippetParameter_ResolveRepeatedOccurrence;
+        // this test asserts ResolveForPreview honors it too.
+        //
+        // WALK_TODO_API: SendInputArgs::ResolveForPreview(values, index)
+        Log::Comment(L"WALK_TODO: requires SendInputArgs::ResolveForPreview helper.");
+    }
+
+    void SnippetParameterTests::Walk_ResolveForPreview_UndeclaredTokenPassesThrough_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"echo ${foo}"
+        //   parameters       = [] (none declared)
+        //   values           = {}
+        //   currentTabstop   = 0
+        //
+        // EXPECTED:
+        //   args->ResolveForPreview(values, 0) == L"echo ${foo}"
+        //
+        // Rationale: undeclared tokens are NOT tabstops; they render
+        // literally in the preview. Matches dispatch-time Resolve behavior
+        // (see SnippetParameter_ResolveUndeclaredTokenPassesThrough).
+        // Spec §6.5: "Undeclared ${foo} in input is NOT a tabstop."
+        //
+        // WALK_TODO_API: SendInputArgs::ResolveForPreview(values, index)
+        Log::Comment(L"WALK_TODO: requires SendInputArgs::ResolveForPreview helper.");
+    }
+
+    // =====================================================================
+    // 🚶 Walk-tier — tabstop ordering & navigation (B)
+    // =====================================================================
+    //
+    // Tabstop navigation state lives in SuggestionsControl (currently the
+    // Crawl-tier `_paramFilling.currentIndex`). Walk's pivot may relocate
+    // this state into the new inline-fill controller — wherever it lands,
+    // the navigation semantics below must hold.
+    //
+    // These are UI-test stubs because tabstop transitions are observable
+    // only through focus / cursor position / span styling — none of which
+    // the SettingsModel.UnitTests project can reach. They are recorded
+    // here as the canonical contract so Dallas (Phase B) and the eventual
+    // UI-test harness owner have a single source of truth.
+
+    void SnippetParameterTests::Walk_Tabstop_InitialIsFirstDeclaredParameter_WALK_TODO_UI()
+    {
+        // Spec §6.1: "Initial tabstop is the first entry in the snippet's
+        // parameters array. NOT the first ${name} token encountered while
+        // scanning input left to right."
+        //
+        // SCENARIO:
+        //   parameters       = [ "branch", "remote" ]
+        //   input            = L"git push ${remote} ${branch}"
+        //   on engage:
+        //     currentTabstopIndex == 0  (the `branch` slot, not `remote`)
+        //     active span = ${branch}'s position in input
+        //
+        // WALK_TODO_UI: needs SuggestionsControl-fill-engage test harness.
+        Log::Comment(L"WALK_TODO_UI: tabstop-engage scenario — verify initial index = 0 (first declared).");
+    }
+
+    void SnippetParameterTests::Walk_Tabstop_OrderIsDeclarationOrderNotInputOrder_WALK_TODO_UI()
+    {
+        // Spec §6.2: "Order is declaration order. If parameters is
+        // [branch, remote] but input is `git push ${remote} ${branch}`,
+        // the initial tabstop is still `branch`."
+        //
+        // SCENARIO:
+        //   parameters       = [ "branch", "remote" ]
+        //   input            = L"git push ${remote} ${branch}"
+        //   Tab → currentTabstopIndex moves 0 → 1 (now on `remote`)
+        //   The active-span POSITION jumps backward in input (left of where
+        //   it just was), confirming declaration order drives navigation.
+        //
+        // WALK_TODO_UI: needs Tab-key simulation.
+        Log::Comment(L"WALK_TODO_UI: verify Tab navigates by declaration order, not input order.");
+    }
+
+    void SnippetParameterTests::Walk_Tabstop_TabAdvancesForward_WALK_TODO_UI()
+    {
+        // SCENARIO:
+        //   parameters       = [ "a", "b", "c" ]
+        //   currentIndex     = 0 → Tab → 1 → Tab → 2
+        //
+        // WALK_TODO_UI: needs Tab-key simulation in the inline-fill controller.
+        Log::Comment(L"WALK_TODO_UI: Tab advances currentTabstopIndex by 1.");
+    }
+
+    void SnippetParameterTests::Walk_Tabstop_ShiftTabRetreats_WALK_TODO_UI()
+    {
+        // SCENARIO:
+        //   parameters       = [ "a", "b", "c" ]
+        //   currentIndex     = 2 → Shift+Tab → 1 → Shift+Tab → 0
+        //   Previously-typed values persist on revisit (Spec §6.9).
+        //
+        // WALK_TODO_UI: needs Shift+Tab simulation and value-persistence verification.
+        Log::Comment(L"WALK_TODO_UI: Shift+Tab retreats and preserves typed values.");
+    }
+
+    void SnippetParameterTests::Walk_Tabstop_TabAtLastTabstopCommits_WALK_TODO_UI()
+    {
+        // BRADY-APPROVED (2026-05-26): Tab at last tabstop = COMMIT, not wrap.
+        // Spec §7.3 take-two: "Tab-on-last commits (synonym for Enter)".
+        //
+        // SCENARIO:
+        //   parameters       = [ "a", "b" ]
+        //   currentIndex     = 1 (last)
+        //   user types value into b, then presses Tab
+        //   EXPECTED: dispatch fires (same path as Enter); inline preview
+        //             clears; resolved string is sent to the shell.
+        //   NOT EXPECTED: currentIndex wraps to 0.
+        //
+        // WALK_TODO_UI: needs dispatch-pipeline observation + Tab simulation.
+        Log::Comment(L"WALK_TODO_UI: Tab at last tabstop commits (Brady — not wrap).");
+    }
+
+    void SnippetParameterTests::Walk_Tabstop_ShiftTabAtFirstClamps_WALK_TODO_UI()
+    {
+        // SPEC AMBIGUITY (open question for MikeBot / Brady):
+        //   Spec §7.3 picks Tab-at-last = commit, but is silent on
+        //   Shift+Tab at first. This test ASSUMES CLAMP (no-op) as the
+        //   sane default — the alternative (wrap to last) would feel
+        //   inconsistent with Tab-at-last's non-wrap semantic.
+        //
+        // SCENARIO:
+        //   parameters       = [ "a", "b" ]
+        //   currentIndex     = 0 (first)
+        //   user presses Shift+Tab
+        //   EXPECTED (chosen default): currentIndex stays 0 (no-op).
+        //   ALTERNATIVE (if Brady picks): currentIndex wraps to 1.
+        //
+        // WALK_TODO_UI: needs Shift+Tab simulation. Re-baseline test once
+        // Brady resolves the ambiguity.
+        Log::Comment(L"WALK_TODO_UI: Shift+Tab at first tabstop clamps (default — Brady to confirm).");
+    }
+
+    // =====================================================================
+    // 🚶 Walk-tier — span construction for inline preview (C)
+    // =====================================================================
+    //
+    // These tests document the EXPECTED output of the proposed
+    // `BuildSnippetPreviewSpans` helper (see Walk-tier header above). The
+    // helper is a pure function from
+    //   (input, parameters, values, currentTabstopIndex)
+    // to an ordered list of (text, kind) runs. Three kinds:
+    //   Normal      — prose, or a typed mirror that is NOT the active slot
+    //   Placeholder — empty-value slot rendered as the parameter NAME
+    //   Active      — the typed value at the current tabstop
+    //
+    // No `ActivePlaceholder` kind — when the active slot is empty,
+    // Placeholder wins (the parameter name is what the user sees).
+    //
+    // Each test body documents the input table and expected span sequence;
+    // when the helper lands, swap `Log::Comment` for the actual
+    // VERIFY_ARE_EQUAL loop.
+
+    void SnippetParameterTests::Walk_Spans_SingleParam_EmptyValue_ActiveIndex_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"git checkout ${branch}"
+        //   parameters       = [ { Name: L"branch" } ]
+        //   values           = { branch -> L"" }
+        //   currentTabstop   = 0
+        //
+        // EXPECTED SPANS (in order):
+        //   { L"git checkout ", Normal }
+        //   { L"branch",        Placeholder }
+        //
+        // Rationale: active tabstop with empty value renders the parameter
+        // NAME as placeholder text (Spec §6.6).
+        //
+        // WALK_TODO_API: BuildSnippetPreviewSpans(input, params, values, index)
+        Log::Comment(L"WALK_TODO: requires BuildSnippetPreviewSpans helper.");
+    }
+
+    void SnippetParameterTests::Walk_Spans_SingleParam_TypedValue_ActiveIndex_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"git checkout ${branch}"
+        //   parameters       = [ { Name: L"branch" } ]
+        //   values           = { branch -> L"main" }
+        //   currentTabstop   = 0
+        //
+        // EXPECTED SPANS (in order):
+        //   { L"git checkout ", Normal }
+        //   { L"main",          Active }
+        //
+        // Rationale: typed value at the current tabstop gets Active
+        // styling — the spec's "tabstop active" treatment (Spec §6.6).
+        //
+        // WALK_TODO_API: BuildSnippetPreviewSpans(input, params, values, index)
+        Log::Comment(L"WALK_TODO: requires BuildSnippetPreviewSpans helper.");
+    }
+
+    void SnippetParameterTests::Walk_Spans_SingleParam_TypedValue_PastLastIndex_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"git checkout ${branch}"
+        //   parameters       = [ { Name: L"branch" } ]
+        //   values           = { branch -> L"main" }
+        //   currentTabstop   = 1 (past-last — i.e. committed / pre-dispatch)
+        //
+        // EXPECTED SPANS (in order):
+        //   { L"git checkout main", Normal }
+        //
+        // Rationale: no active tabstop → no Active span. The entire
+        // resolved string renders flat as Normal. Adjacent Normal runs
+        // SHOULD be coalesced for renderer efficiency (the
+        // ${branch}-substitution and the surrounding prose merge into one).
+        //
+        // WALK_TODO_API: BuildSnippetPreviewSpans(input, params, values, index)
+        Log::Comment(L"WALK_TODO: requires BuildSnippetPreviewSpans helper.");
+    }
+
+    void SnippetParameterTests::Walk_Spans_TwoParams_SecondActive_FirstFilled_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"copy ${src} to ${dst}"
+        //   parameters       = [ { Name: L"src" }, { Name: L"dst" } ]
+        //   values           = { src -> L"a.txt", dst -> L"" }
+        //   currentTabstop   = 1 (on `dst`)
+        //
+        // EXPECTED SPANS (in order):
+        //   { L"copy ", Normal }
+        //   { L"a.txt", Normal }       // src is FILLED but NOT active → Normal
+        //   { L" to ",  Normal }
+        //   { L"dst",   Placeholder }  // dst is active AND empty → Placeholder
+        //
+        // Rationale: only the active tabstop gets Active styling; a filled
+        // non-active slot looks like prose. (Adjacent Normal runs MAY be
+        // coalesced by the helper; if so, expected becomes
+        // [ "copy a.txt to ", Normal ], [ "dst", Placeholder ].)
+        //
+        // WALK_TODO_API: BuildSnippetPreviewSpans(input, params, values, index)
+        Log::Comment(L"WALK_TODO: requires BuildSnippetPreviewSpans helper.");
+    }
+
+    void SnippetParameterTests::Walk_Spans_TwoParams_FirstActive_SecondEmpty_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"copy ${src} to ${dst}"
+        //   parameters       = [ { Name: L"src" }, { Name: L"dst" } ]
+        //   values           = { src -> L"a.txt", dst -> L"" }
+        //   currentTabstop   = 0 (on `src`)
+        //
+        // EXPECTED SPANS (in order):
+        //   { L"copy ", Normal }
+        //   { L"a.txt", Active }       // src is active AND typed → Active
+        //   { L" to ",  Normal }
+        //   { L"dst",   Placeholder }  // dst is empty (not active) → Placeholder
+        //
+        // Rationale: active = the tabstop currently being filled, regardless
+        // of whether other slots are empty or full.
+        //
+        // WALK_TODO_API: BuildSnippetPreviewSpans(input, params, values, index)
+        Log::Comment(L"WALK_TODO: requires BuildSnippetPreviewSpans helper.");
+    }
+
+    void SnippetParameterTests::Walk_Spans_RepeatedToken_AllOccurrencesActive_WALK_TODO()
+    {
+        // SPEC: Brady 2026-05-27 — multi-cursor model; all occurrences of the active tabstop render Active.
+        //   Repeated ${name} behaves like a text editor with multiple
+        //   cursors: even though the terminal itself doesn't have multi-
+        //   cursor, editing the active tabstop mirrors the typed value
+        //   live across every occurrence AND every occurrence carries the
+        //   Active styling (not just the first).
+        //
+        // INPUT:
+        //   input            = L"${x} and ${x}"
+        //   parameters       = [ { Name: L"x" } ]
+        //   values           = { x -> L"hi" }
+        //   currentTabstop   = 0
+        //
+        // EXPECTED SPANS (in order):
+        //   { L"hi",    Active }       // first occurrence of active tabstop
+        //   { L" and ", Normal }
+        //   { L"hi",    Active }       // mirror — also Active (multi-cursor model)
+        //
+        // WALK_TODO_API: BuildSnippetPreviewSpans(input, params, values, index)
+        Log::Comment(L"WALK_TODO: requires BuildSnippetPreviewSpans helper.");
+    }
+
+    void SnippetParameterTests::Walk_Spans_EmptyParamAtNonActiveSlot_RendersPlaceholder_WALK_TODO()
+    {
+        // INPUT:
+        //   input            = L"${a} ${b}"
+        //   parameters       = [ { Name: L"a" }, { Name: L"b" } ]
+        //   values           = { a -> L"", b -> L"x" }
+        //   currentTabstop   = 1 (on `b`)
+        //
+        // EXPECTED SPANS (in order):
+        //   { L"a", Placeholder }   // empty AND non-active → STILL Placeholder
+        //   { L" ", Normal }
+        //   { L"x", Active }        // active AND typed → Active
+        //
+        // Rationale: Placeholder is about value-state (empty), not about
+        // active-state. An empty slot reads as a placeholder regardless of
+        // which tabstop the user is currently on — this preserves the
+        // user's mental model of what still needs to be filled.
+        //
+        // WALK_TODO_API: BuildSnippetPreviewSpans(input, params, values, index)
+        Log::Comment(L"WALK_TODO: requires BuildSnippetPreviewSpans helper.");
+    }
+
+    // =====================================================================
+    // 🚶 Walk-tier — UI rendering & input (D — explicit defer)
+    // =====================================================================
+    //
+    // Per task constraint (D): anything requiring actual Composition
+    // rendering, keyboard-input simulation, focus management, or cursor
+    // positioning is recorded as a WALK_TODO_UI stub naming the scenario.
+    // No UI automation in this round.
+
+    void SnippetParameterTests::Walk_UI_CompositionChannel_RendersSpansToTerminal_WALK_TODO_UI()
+    {
+        // SCENARIO: BuildSnippetPreviewSpans output → Ripley's proposed
+        // PreviewInputSpans(text, IVector<TextAttributeRun>, cursorPos) →
+        // Composition.attributes → _PaintBufferOutputComposition renders
+        // with the right TextAttribute per run (italic/dim for Normal +
+        // Placeholder, SetReverseVideo or theme accent for Active).
+        // Verify by inspecting Composition.attributes after a PreviewInput
+        // round-trip.
+        //
+        // WALK_TODO_UI: needs ControlCore mock + Composition inspection.
+        Log::Comment(L"WALK_TODO_UI: composition-channel rendering pipeline.");
+    }
+
+    void SnippetParameterTests::Walk_UI_KeystrokeUpdatesActiveTabstopLive_WALK_TODO_UI()
+    {
+        // SCENARIO: user types a character into the active tabstop;
+        // BuildSnippetPreviewSpans is re-invoked, Composition re-rendered
+        // within one frame (no stale preview). Mirrors Crawl's
+        // _filterTextChanged → _previewResolvedInput → PreviewAction loop.
+        //
+        // WALK_TODO_UI: needs keystroke simulation + per-frame inspection.
+        Log::Comment(L"WALK_TODO_UI: per-keystroke active-tabstop live update.");
+    }
+
+    void SnippetParameterTests::Walk_UI_RepeatedTokenMirrorsLiveAcrossOccurrences_WALK_TODO_UI()
+    {
+        // SCENARIO: snippet `${branch} && ${branch}`, user types into the
+        // active tabstop, ALL occurrences update in lock-step per
+        // keystroke (verifies the mirror semantic at the rendering layer,
+        // not just at Resolve time).
+        //
+        // WALK_TODO_UI: needs keystroke simulation + multi-span inspection.
+        Log::Comment(L"WALK_TODO_UI: mirror-typing on repeated ${name} renders live.");
+    }
+
+    void SnippetParameterTests::Walk_UI_CursorPositionsAtActiveTabstop_WALK_TODO_UI()
+    {
+        // SCENARIO: Composition.cursorPos lands at the END of the active
+        // span (so the user types AT the slot, not in front of/behind it).
+        // On Tab/Shift+Tab, the cursor jumps to the new active span.
+        // Wide CJK chars in prefix shift the absolute column appropriately
+        // (covered by existing TSF path; verify Walk doesn't regress).
+        //
+        // WALK_TODO_UI: needs cursorPos inspection + wide-char fixture.
+        Log::Comment(L"WALK_TODO_UI: cursor positions at active tabstop on engage and Tab.");
+    }
+
+    void SnippetParameterTests::Walk_UI_EscCancelsFillAndClearsPreview_WALK_TODO_UI()
+    {
+        // SCENARIO: user presses Esc mid-fill. Preview Composition clears
+        // (`control.PreviewInput(L"")` dismiss idiom); inline overlay
+        // tears down; focus returns to the terminal; the shell sees NO
+        // input (no dispatch). Matches Crawl Decision 4 (Esc = full close).
+        //
+        // WALK_TODO_UI: needs Esc simulation + dispatch-pipeline observation.
+        Log::Comment(L"WALK_TODO_UI: Esc cancels fill and clears preview.");
+    }
+
+    void SnippetParameterTests::Walk_UI_EnterOnLastTabstopCommitsAndDispatches_WALK_TODO_UI()
+    {
+        // SCENARIO: user presses Enter while on the last tabstop.
+        // Resolve (NOT ResolveForPreview) is invoked with the captured
+        // values; the resulting hstring is sent through the normal
+        // sendInput action pipeline (same SendInputArgs(resolved) shape
+        // Crawl already produces). Tab-at-last has the same effect
+        // (Brady-approved, see Walk_Tabstop_TabAtLastTabstopCommits_*).
+        //
+        // WALK_TODO_UI: needs Enter simulation + dispatch capture.
+        Log::Comment(L"WALK_TODO_UI: Enter on last tabstop commits via Resolve+sendInput.");
+    }
+
+    void SnippetParameterTests::Walk_UI_TooltipShowsActiveParameterNameAndDescription_WALK_TODO_UI()
+    {
+        // SCENARIO: floating tooltip near the cursor shows the active
+        // parameter's Name (title) and Description (body). Updates on
+        // Tab/Shift+Tab. This is the spiritual successor to Crawl's
+        // _descriptionsBackdrop content (Spec "What goes away" section).
+        //
+        // WALK_TODO_UI: needs XAML tooltip inspection.
+        Log::Comment(L"WALK_TODO_UI: active-parameter tooltip content + tracking.");
+    }
+
+    void SnippetParameterTests::Walk_UI_IMECompositionPreemptsSnippetPreview_WALK_TODO_UI()
+    {
+        // SCENARIO (Brady-accepted as TODO): CJK user composing into a
+        // parameter slot — snippetPreview and tsfPreview share
+        // GetActiveComposition() so the snippet preview is pre-empted
+        // during composition, reappears on commit. Test recorded so the
+        // behavior is captured (not exercised — task constraint says
+        // "accept and TODO; do NOT write tests that exercise this").
+        //
+        // WALK_TODO_UI: documents IME-collision behavior. Do not implement
+        // until Brady reverses the accept-and-TODO call.
+        Log::Comment(L"WALK_TODO_UI: IME composition preempts snippet preview — accepted as TODO; do not exercise.");
     }
 }

@@ -41,5 +41,12 @@ namespace TerminalApp
 
         event Windows.Foundation.TypedEventHandler<SuggestionsControl, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.Command> PreviewAction;
+
+        // Walk-tier inline snippet-parameter fill: raised on every keystroke /
+        // tabstop change inside fill mode. The host (TerminalPage) forwards
+        // these spans to the active TermControl via `PreviewInputSpans`. Empty
+        // IVector clears the preview (mirrors the dismissal idiom of the
+        // scalar `PreviewInput(L"")`).
+        event Windows.Foundation.TypedEventHandler<Object, Windows.Foundation.Collections.IVector<Microsoft.Terminal.Control.PreviewInputSpan> > PreviewInputSpansRequested;
     }
 }

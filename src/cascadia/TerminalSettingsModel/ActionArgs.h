@@ -18,6 +18,7 @@
 #include "AdjustFontSizeArgs.g.h"
 #include "SendInputArgs.g.h"
 #include "Parameter.g.h"
+#include "SnippetPreviewRun.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
 #include "SetFocusModeArgs.g.h"
@@ -901,6 +902,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(winrt::hstring, Description, L"");
     };
 
+    // Projected wrapper for one Walk-tier snippet-preview run. See the
+    // doc comment on `runtimeclass SnippetPreviewRun` in ActionArgs.idl
+    // and on `BuildSnippetPreviewSpans` below.
+    struct SnippetPreviewRun : public SnippetPreviewRunT<SnippetPreviewRun>
+    {
+    public:
+        SnippetPreviewRun() = default;
+        SnippetPreviewRun(const winrt::hstring& text, const Model::SnippetPreviewSpanKind& kind) :
+            _Text(text),
+            _Kind(kind) {}
+
+        WINRT_PROPERTY(winrt::hstring, Text);
+        WINRT_PROPERTY(Model::SnippetPreviewSpanKind, Kind);
+    };
+
     struct SendInputArgs : public SendInputArgsT<SendInputArgs>
     {
         SendInputArgs() = default;
@@ -911,6 +927,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::Parameter>, Parameters, winrt::single_threaded_vector<Model::Parameter>());
 
         static constexpr std::string_view InputKey{ "input" };
+
+    public:
+        // Projected wrapper around the C++-only free function
+        // `implementation::BuildSnippetPreviewSpans` (declared below).
+        // Reads `_Input` and `_Parameters` off `this` and packs the
+        // result into an IVector<SnippetPreviewRun> so callers in other
+        // projects (TerminalApp/SuggestionsControl) can consume it.
+        // In-project consumers (UnitTests_SettingsModel) may continue
+        // to call the free function directly.
+        // MUST be public — WinRT codegen shim in
+        // Microsoft.Terminal.Settings.Model.h calls this via `this->shim()`.
+        Windows::Foundation::Collections::IVector<Model::SnippetPreviewRun>
+            BuildPreviewSpans(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values, uint32_t currentTabstopIndex);
+
+    protected:
         static constexpr std::string_view ParametersKey{ "parameters" };
 
     public:
@@ -918,6 +949,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring GenerateName(const winrt::Windows::ApplicationModel::Resources::Core::ResourceContext& context) const;
 
         winrt::hstring Resolve(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values);
+
+        // Walk-tier preview-mode sibling of Resolve. Declared parameters with
+        // empty/missing values render as the parameter NAME (placeholder).
+        // `currentTabstopIndex` is accepted for signature symmetry with
+        // BuildSnippetPreviewSpans; the resolved-string output does not
+        // currently differ per active-tabstop.
+        winrt::hstring ResolveForPreview(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values, uint32_t currentTabstopIndex);
 
         bool Equals(const IActionArgs& other)
         {
@@ -1069,6 +1107,42 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
     };
+
+    // Walk-tier free function — pure, not projectable (returns std::vector
+    // of std::wstring + Model enum). Lives in this namespace so the
+    // UnitTests_SettingsModel project (which already #includes ActionArgs.h)
+    // can reach it via `implementation::BuildSnippetPreviewSpans(...)`.
+    //
+    // Walks `input` and emits an ordered sequence of (text, kind) runs
+    // suitable for handoff to the spans-aware preview channel
+    // (TermControl::PreviewInputSpans). Adjacent Normal runs are coalesced.
+    //
+    // Contract (mirrors the test stubs in SnippetParameterTests.cpp Walk_Spans_*):
+    //   * Prose between substitutions → Normal.
+    //   * `${name}` whose name is declared in `parameters`:
+    //       - If `name` == parameters[currentTabstopIndex].Name (the active
+    //         parameter), every occurrence renders identically:
+    //           value non-empty → Active span carrying the value
+    //           value empty/missing → Placeholder span carrying the NAME
+    //         (multi-cursor model — Brady 2026-05-27)
+    //       - Otherwise:
+    //           value non-empty → Normal span carrying the value
+    //           value empty/missing → Placeholder span carrying the NAME
+    //   * `${name}` whose name is undeclared / dotted / malformed → passes
+    //     through verbatim as Normal text (identical to Resolve).
+    //   * Backslash escapes (`\$`, `\\`) behave identically to Resolve.
+    //   * If `currentTabstopIndex` is out of range (>= parameters.Size()),
+    //     no span is Active — every substitution falls into the "Otherwise"
+    //     bucket.
+    //
+    // The concatenation of all emitted span texts equals
+    // `SendInputArgs::ResolveForPreview(values, currentTabstopIndex)`.
+    std::vector<std::pair<std::wstring, Model::SnippetPreviewSpanKind>>
+    BuildSnippetPreviewSpans(
+        std::wstring_view input,
+        const Windows::Foundation::Collections::IVectorView<Model::Parameter>& parameters,
+        const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values,
+        uint32_t currentTabstopIndex);
 
     ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS);
 
@@ -1253,6 +1327,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(MultipleActionsArgs);
     BASIC_FACTORY(AdjustOpacityArgs);
     BASIC_FACTORY(SuggestionsArgs);
+    BASIC_FACTORY(SnippetPreviewRun);
     BASIC_FACTORY(SelectCommandArgs);
     BASIC_FACTORY(SelectOutputArgs);
 }

@@ -248,6 +248,8 @@ public:
 
     void ColorSelection(const TextAttribute& attr, winrt::Microsoft::Terminal::Core::MatchMode matchMode);
     void PreviewText(std::wstring_view input);
+    void PreviewTextSpans(std::wstring_view text,
+                          const std::vector<::Microsoft::Console::Render::CompositionRange>& runs);
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

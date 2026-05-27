@@ -263,6 +263,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ShouldShowSelectOutput();
 
         void PreviewInput(std::wstring_view input);
+        void PreviewInputSpans(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Control::PreviewInputSpan>& spans);
 
         RUNTIME_SETTING(float, Opacity, _settings.Opacity());
         RUNTIME_SETTING(float, FocusedOpacity, FocusedAppearance().Opacity());

@@ -27,6 +27,14 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        // _characterReceivedHandler is wired in SuggestionsControl.xaml on the
+        // UserControl root (`CharacterReceived="_characterReceivedHandler"`).
+        // _previewKeyDownHandler / _keyUpHandler / _lostFocusHandler likewise.
+        // No C++-side AddHandler call exists; XAML codegen does the binding
+        // during InitializeComponent() above.
+        OutputDebugStringW(L"[SnippetParams] SuggestionsControl ctor: XAML wires CharacterReceived/PreviewKeyDown/PreviewKeyUp on UserControl root\n");
+
         _itemTemplateSelector = Resources().Lookup(winrt::box_value(L"PaletteItemTemplateSelector")).try_as<PaletteItemTemplateSelector>();
         _listItemTemplate = Resources().Lookup(winrt::box_value(L"ListItemTemplate")).try_as<DataTemplate>();
 
@@ -375,6 +383,105 @@ namespace winrt::TerminalApp::implementation
         const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
         const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
+        // WALK-TIER FILL MODE: navigation + editing keys are owned by the
+        // UserControl. Printable chars come through _characterReceivedHandler.
+        // Handle this branch BEFORE the general key dispatch so the dropdown's
+        // arrow-nav / list selection doesn't intercept Tab/Enter/Esc.
+        if (_paramFilling.has_value())
+        {
+            auto& state = *_paramFilling;
+            const auto total = state.args.Parameters().Size();
+
+            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+            {
+                wchar_t buf[160];
+                swprintf_s(buf, L"[SnippetParams] _previewKeyDownHandler (fill) key=0x%04X shift=%d ctrl=%d currentIndex=%u total=%u handled-before=%d\n",
+                           static_cast<unsigned>(key), shiftDown ? 1 : 0, ctrlDown ? 1 : 0, state.currentIndex, total, e.Handled() ? 1 : 0);
+                OutputDebugStringW(buf);
+            }
+
+            if (key == VirtualKey::Tab && !shiftDown)
+            {
+                // Tab → advance, or COMMIT if at last slot.
+                if (state.currentIndex + 1 < total)
+                {
+                    OutputDebugStringW(L"[SnippetParams]   Tab: advance\n");
+                    _advanceParameterSlot();
+                }
+                else
+                {
+                    OutputDebugStringW(L"[SnippetParams]   Tab: COMMIT (at last slot)\n");
+                    _dispatchResolvedSnippet();
+                }
+                e.Handled(true);
+                return;
+            }
+            if (key == VirtualKey::Tab && shiftDown)
+            {
+                // Shift+Tab → retreat, CLAMP at first (no wrap, no-op).
+                if (state.currentIndex > 0)
+                {
+                    OutputDebugStringW(L"[SnippetParams]   Shift+Tab: retreat\n");
+                    _retreatParameterSlot();
+                }
+                else
+                {
+                    OutputDebugStringW(L"[SnippetParams]   Shift+Tab: CLAMP at slot 0 (no-op)\n");
+                }
+                e.Handled(true);
+                return;
+            }
+            if (key == VirtualKey::Enter)
+            {
+                // Enter → COMMIT regardless of which slot is active.
+                OutputDebugStringW(L"[SnippetParams]   Enter: COMMIT\n");
+                _dispatchResolvedSnippet();
+                e.Handled(true);
+                return;
+            }
+            if (key == VirtualKey::Escape)
+            {
+                // Esc → cancel fill, return to dropdown. Does NOT dismiss palette.
+                OutputDebugStringW(L"[SnippetParams]   Esc: cancel fill\n");
+                _exitParameterFilling();
+                e.Handled(true);
+                return;
+            }
+            if (key == VirtualKey::Back)
+            {
+                // Backspace → pop last char from active slot, refresh spans.
+                if (state.currentIndex < total && !state.filledValues[state.currentIndex].empty())
+                {
+                    state.filledValues[state.currentIndex].pop_back();
+                    {
+                        wchar_t buf[256];
+                        swprintf_s(buf, L"[SnippetParams]   Backspace: popped char, filledValues[%u]=\"%.80s\" (len=%zu)\n",
+                                   state.currentIndex, state.filledValues[state.currentIndex].c_str(), state.filledValues[state.currentIndex].size());
+                        OutputDebugStringW(buf);
+                    }
+                    _updatePreviewSpans();
+                }
+                else
+                {
+                    OutputDebugStringW(L"[SnippetParams]   Backspace: slot empty, no-op\n");
+                }
+                e.Handled(true);
+                return;
+            }
+            // Any other navigation key (arrows, PgUp/PgDn, Home/End) is ignored
+            // in fill mode — typed chars come through CharacterReceived. Mark
+            // Handled so the dropdown's list-nav doesn't fire while collapsed.
+            if (key == VirtualKey::Up || key == VirtualKey::Down ||
+                key == VirtualKey::PageUp || key == VirtualKey::PageDown ||
+                key == VirtualKey::Home || key == VirtualKey::End)
+            {
+                e.Handled(true);
+                return;
+            }
+            // Fall through for everything else (modifiers, etc.) — let
+            // CharacterReceived do the actual text input work.
+        }
+
         if (key == VirtualKey::Home && ctrlDown)
         {
             ScrollToTop();
@@ -424,60 +531,16 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _previewKeyDownHandler: key={} pressed, in_fill_mode={}, shiftDown={}\n"),
-                                           key == VirtualKey::Enter ? L"Enter" : (key == VirtualKey::Tab ? L"Tab" : L"Right"),
-                                           _paramFilling.has_value() ? L"true" : L"false",
-                                           shiftDown ? L"true" : L"false")
-                                   .c_str());
-
-            if (_paramFilling.has_value())
-            {
-                // Shift+Tab steps back to the previous parameter slot. Tab/Enter
-                // commit the current slot and advance (or dispatch if last).
-                if (key == VirtualKey::Tab && shiftDown)
-                {
-                    // Commit whatever the user has typed for the current slot, then retreat.
-                    _paramFilling->filledValues[_paramFilling->currentIndex] = std::wstring{ _searchBox().Text() };
-                    // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                    OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _previewKeyDownHandler: branch=FILL_COMMIT_RETREAT (Shift+Tab) slot={} capturedValue=\"{}\"\n"),
-                                                   _paramFilling->currentIndex,
-                                                   _paramFilling->filledValues[_paramFilling->currentIndex])
-                                           .c_str());
-                    _retreatParameterSlot();
-                }
-                else
-                {
-                    // Drive through _dispatchCommand so commit + advance/dispatch is centralized.
-                    _dispatchCommand(_paramFilling->snippet);
-                }
-                e.Handled(true);
-            }
-            else
-            {
-                const auto selectedCommand = _filteredActionsView().SelectedItem();
-                const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
-                // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _previewKeyDownHandler->_dispatchCommand: filteredCommand_null={}\n"),
-                                               filteredCommand ? L"false" : L"true")
-                                       .c_str());
-                _dispatchCommand(filteredCommand);
-                e.Handled(true);
-            }
+            const auto selectedCommand = _filteredActionsView().SelectedItem();
+            const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
+            _dispatchCommand(filteredCommand);
+            e.Handled(true);
         }
         else if (key == VirtualKey::Escape)
         {
-            // In Filling[i] mode, Esc cancels the entire dispatch and closes
-            // the Suggestions UI (per spec resolution — full close, matches
-            // today's Esc-on-empty-text behavior).
-            if (_paramFilling.has_value())
-            {
-                _exitParameterFilling();
-                _dismissPalette();
-            }
-            // Otherwise, dismiss the palette if the text is empty; otherwise, clear the
+            // Dismiss the palette if the text is empty; otherwise, clear the
             // search string.
-            else if (_searchBox().Text().empty())
+            if (_searchBox().Text().empty())
             {
                 _dismissPalette();
             }
@@ -522,6 +585,59 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_keyUpHandler(const IInspectable& /*sender*/,
                                            const Windows::UI::Xaml::Input::KeyRoutedEventArgs& /*e*/)
     {
+    }
+
+    // Method Description:
+    // - WALK-TIER FILL MODE: ingest printable characters typed by the user into
+    //   the active parameter slot. Control chars (Tab/Enter/Esc/Backspace/etc.)
+    //   are handled in _previewKeyDownHandler before this fires; we filter them
+    //   out here as belt-and-suspenders. Outside fill mode, do nothing and let
+    //   the event propagate normally (the dropdown TextBox is the keystroke
+    //   sink in Browsing mode).
+    void SuggestionsControl::_characterReceivedHandler(const IInspectable& /*sender*/,
+                                                       const Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs& args)
+    {
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        const auto ch = args.Character();
+        {
+            wchar_t buf[200];
+            const uint32_t idx = _paramFilling.has_value() ? _paramFilling->currentIndex : 0xFFFFFFFFu;
+            swprintf_s(buf, L"[SnippetParams] _characterReceivedHandler char=0x%04X currentIndex=%u handled-before=%d paramFilling=%d\n",
+                       static_cast<unsigned>(ch), idx, args.Handled() ? 1 : 0, _paramFilling.has_value() ? 1 : 0);
+            OutputDebugStringW(buf);
+        }
+
+        if (!_paramFilling.has_value())
+        {
+            OutputDebugStringW(L"[SnippetParams]   bail: not in fill mode\n");
+            return;
+        }
+
+        auto& state = *_paramFilling;
+        const auto total = state.args.Parameters().Size();
+        if (state.currentIndex >= total)
+        {
+            OutputDebugStringW(L"[SnippetParams]   bail: currentIndex out of range\n");
+            return;
+        }
+
+        // Skip control chars (< 0x20) and DEL (0x7f). Backspace, Tab, Enter,
+        // Esc all live in this range and are owned by _previewKeyDownHandler.
+        if (ch < 0x20 || ch == 0x7f)
+        {
+            OutputDebugStringW(L"[SnippetParams]   bail: filtered control char (owned by _previewKeyDownHandler)\n");
+            return;
+        }
+
+        state.filledValues[state.currentIndex].push_back(static_cast<wchar_t>(ch));
+        {
+            wchar_t buf[300];
+            swprintf_s(buf, L"[SnippetParams]   appended char='%lc' filledValues[%u]=\"%.80s\" (len=%zu) — calling _updatePreviewSpans\n",
+                       static_cast<wchar_t>(ch), state.currentIndex, state.filledValues[state.currentIndex].c_str(), state.filledValues[state.currentIndex].size());
+            OutputDebugStringW(buf);
+        }
+        _updatePreviewSpans();
+        args.Handled(true);
     }
 
     // Method Description:
@@ -616,8 +732,6 @@ namespace winrt::TerminalApp::implementation
         const auto selectedCommand = e.ClickedItem();
         if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
         {
-            // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-            OutputDebugStringW(L"[SnippetParams] _listItemClicked->_dispatchCommand (mouse click path through gate)\n");
             _dispatchCommand(filteredCommand);
         }
     }
@@ -655,20 +769,8 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_moveBackButtonClicked(const Windows::Foundation::IInspectable& /*sender*/,
                                                     const Windows::UI::Xaml::RoutedEventArgs&)
     {
-        // In parameter-filling mode, the back button is the GUI equivalent of Shift+Tab.
-        if (_paramFilling.has_value())
-        {
-            // Commit whatever's currently in the box for the active slot, then retreat.
-            _paramFilling->filledValues[_paramFilling->currentIndex] = std::wstring{ _searchBox().Text() };
-            // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _moveBackButtonClicked: branch=FILL_COMMIT_RETREAT (back button) slot={} capturedValue=\"{}\"\n"),
-                                           _paramFilling->currentIndex,
-                                           _paramFilling->filledValues[_paramFilling->currentIndex])
-                                   .c_str());
-            _retreatParameterSlot();
-            return;
-        }
-
+        // Walk-tier: the back button only appears inside the dropdown card,
+        // which is collapsed during fill mode. No fill-mode branch needed.
         PreviewAction.raise(*this, nullptr);
         _searchBox().Focus(FocusState::Programmatic);
 
@@ -765,59 +867,25 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void SuggestionsControl::_dispatchCommand(const winrt::TerminalApp::FilteredCommand& filteredCommand)
     {
-        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-        {
-            const auto fcValid = static_cast<bool>(filteredCommand);
-            std::wstring nameStr{ L"<null filteredCommand>" };
-            int32_t actionInt = -1;
-            if (fcValid)
-            {
-                if (const auto item = filteredCommand.Item())
-                {
-                    nameStr = std::wstring{ item.Name() };
-                    if (item.Type() == PaletteItemType::Action)
-                    {
-                        if (const auto api = winrt::get_self<ActionPaletteItem>(item))
-                        {
-                            if (const auto cmd = api->Command())
-                            {
-                                if (const auto aaa = cmd.ActionAndArgs())
-                                {
-                                    actionInt = static_cast<int32_t>(aaa.Action());
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    nameStr = L"<null item>";
-                }
-            }
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _dispatchCommand: ENTRY name=\"{}\" action={} in_fill_mode={}\n"),
-                                           nameStr,
-                                           actionInt,
-                                           _paramFilling.has_value() ? L"true" : L"false")
-                                   .c_str());
-        }
-
         if (filteredCommand)
         {
             // If we're already in parameter-filling mode, this dispatch is the user
-            // accepting the current slot's value. Commit it, then advance — or, if we're
-            // on the last slot, fall through to the dispatch path below by way of
-            // _dispatchResolvedSnippet().
+            // accepting the current slot's value. Advance — or, if we're on the
+            // last slot, fall through to the dispatch path via
+            // _dispatchResolvedSnippet(). state.filledValues is already current
+            // (the UserControl-level CharacterReceived / Backspace handlers keep
+            // it live as the user types).
             if (_paramFilling.has_value())
             {
-                _paramFilling->filledValues[_paramFilling->currentIndex] = std::wstring{ _searchBox().Text() };
                 const auto total = _paramFilling->args.Parameters().Size();
-                // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _dispatchCommand: branch=FILL_COMMIT currentIndex={} total={} advance={} capturedValue=\"{}\"\n"),
-                                               _paramFilling->currentIndex,
-                                               total,
-                                               (_paramFilling->currentIndex + 1 < total) ? L"true" : L"false",
-                                               _paramFilling->filledValues[_paramFilling->currentIndex])
-                                       .c_str());
+                // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+                {
+                    wchar_t buf[200];
+                    swprintf_s(buf, L"[SnippetParams] _dispatchCommand (fill branch) currentIndex=%u total=%u — %s\n",
+                               _paramFilling->currentIndex, total,
+                               (_paramFilling->currentIndex + 1 < total) ? L"advance" : L"COMMIT");
+                    OutputDebugStringW(buf);
+                }
                 if (_paramFilling->currentIndex + 1 < total)
                 {
                     _advanceParameterSlot();
@@ -836,36 +904,14 @@ namespace winrt::TerminalApp::implementation
                 const auto command{ actionPaletteItem->Command() };
 
                 // If this is a parameterized sendInput snippet, transition into
-                // Filling[0] instead of dispatching. (Crawl-tier of the Snippet
+                // Filling[0] instead of dispatching. (Walk-tier of the Snippet
                 // Parameters spec.)
                 const auto sendInputCmd = command.ActionAndArgs().Args().try_as<SendInputArgs>();
-                // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                {
-                    const auto castOk = static_cast<bool>(sendInputCmd);
-                    bool paramsNull = true;
-                    uint32_t paramsSize = 0;
-                    if (castOk)
-                    {
-                        const auto p = sendInputCmd.Parameters();
-                        paramsNull = (p == nullptr);
-                        if (!paramsNull)
-                        {
-                            paramsSize = p.Size();
-                        }
-                    }
-                    OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _dispatchCommand: try_as<SendInputArgs>={} parameters_null={} parameters_size={}\n"),
-                                                   castOk ? L"true" : L"false",
-                                                   paramsNull ? L"true" : L"false",
-                                                   paramsSize)
-                                           .c_str());
-                }
                 if (sendInputCmd)
                 {
                     if (const auto parameters = sendInputCmd.Parameters();
                         parameters && parameters.Size() > 0)
                     {
-                        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                        OutputDebugStringW(L"[SnippetParams] _dispatchCommand: branch=ENTER_FILLING\n");
                         _enterParameterFilling(filteredCommand, sendInputCmd);
                         return;
                     }
@@ -873,8 +919,6 @@ namespace winrt::TerminalApp::implementation
 
                 if (command.HasNestedCommands())
                 {
-                    // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                    OutputDebugStringW(L"[SnippetParams] _dispatchCommand: branch=DISPATCH_NESTED (showing nested commands)\n");
                     // If this Command had subcommands, then don't dispatch the
                     // action. Instead, display a new list of commands for the user
                     // to pick from.
@@ -900,8 +944,6 @@ namespace winrt::TerminalApp::implementation
                     // "ToggleCommandPalette" actions. We may want to do the
                     // same with "Suggestions" actions in the future, should we
                     // ever allow non-sendInput actions.
-                    // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-                    OutputDebugStringW(L"[SnippetParams] _dispatchCommand: branch=DISPATCH_DIRECTLY (raising DispatchCommandRequested — gate did NOT enter filling)\n");
                     DispatchCommandRequested.raise(*this, command);
 
                     if (const auto& sendInputCmd = command.ActionAndArgs().Args().try_as<SendInputArgs>())
@@ -944,81 +986,84 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_enterParameterFilling(const winrt::TerminalApp::FilteredCommand& filteredCommand,
                                                     const winrt::Microsoft::Terminal::Settings::Model::SendInputArgs& args)
     {
-        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-        {
-            std::wstring nameStr{ L"<null>" };
-            if (filteredCommand)
-            {
-                if (const auto item = filteredCommand.Item())
-                {
-                    nameStr = std::wstring{ item.Name() };
-                }
-            }
-            const auto paramCount = (args && args.Parameters()) ? args.Parameters().Size() : 0u;
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _enterParameterFilling: snippet=\"{}\" param_count={}\n"),
-                                           nameStr,
-                                           paramCount)
-                                   .c_str());
-        }
-
         ParameterFillingState state;
         state.snippet = filteredCommand;
         state.args = args;
         state.currentIndex = 0;
         state.filledValues.resize(args.Parameters().Size());
+
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            std::wstring_view inputView{ args.Input() };
+            if (inputView.size() > 80)
+            {
+                inputView = inputView.substr(0, 80);
+            }
+            wchar_t buf[300];
+            swprintf_s(buf, L"[SnippetParams] _enterParameterFilling: entering param-fill mode, paramCount=%u currentIndex=0 input=\"%.80s\"\n",
+                       args.Parameters().Size(), inputView.data());
+            OutputDebugStringW(buf);
+        }
+
         _paramFilling.emplace(std::move(state));
 
-        // CRAWL-TIER USABILITY: the _searchBox doubles as the parameter-input text
-        // box during fill mode. In Menu mode (the snippets menu, which is how
-        // parameterized snippets are typically invoked) the search box is normally
-        // Collapsed (see Mode(SuggestionsMode::Menu)) — force it Visible so the
-        // user can see the cursor / IME composition, and so the programmatic
-        // Focus() call in _updateUIForParameterSlot actually moves focus
-        // (Collapsed elements cannot take focus, which was the root cause of
-        // typed input being silently dropped). Also collapse the filtered list
-        // entirely: it would only contain one informational row (the active
-        // snippet), and leaving it interactive lets the user press Enter on it
-        // and dispatch outside the fill flow.
-        _searchBox().Visibility(Visibility::Visible);
-        _filteredActionsView().Visibility(Visibility::Collapsed);
+        // WALK-TIER UX: the terminal buffer itself shows the template (via
+        // TermControl::PreviewInputSpans). Collapse the dropdown card entirely
+        // so only the parameter-description tooltip floats near the cursor.
+        // The whole snippet-picker UI (search box, parent row + back button,
+        // list view) lives inside `_backdrop`; collapsing the parent hides
+        // them all in one shot with no per-element bookkeeping. The
+        // `_descriptionsBackdrop` sibling stays in `_listAndDescriptionStack`
+        // and becomes the only visible chrome.
+        _backdrop().Visibility(Visibility::Collapsed);
 
-        // Collapse the filtered list to a single row: the active snippet itself.
-        // The simplest Crawl-tier affordance — keep the existing snippet row in
-        // the bound collection (it's not rendered, but keeping the collection
-        // non-empty avoids the empty-list code path) and reuse the
-        // ParentCommandName slot (above the list, with its back button) for the
-        // "Parameter N of M: name" status. The back button doubles as the GUI
-        // affordance for Shift+Tab.
-        _filteredActions.Clear();
-        _filteredActions.Append(filteredCommand);
+        // Keystroke capture: the UserControl itself receives PreviewKeyDown /
+        // CharacterReceived during fill (no TextBox). Programmatic focus on
+        // *this so events arrive even though the search box is now hidden.
+        const auto focusOk = Focus(Windows::UI::Xaml::FocusState::Programmatic);
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            wchar_t buf[160];
+            swprintf_s(buf, L"[SnippetParams] _enterParameterFilling: Focus(Programmatic) on UserControl returned %d, backdrop collapsed\n", focusOk ? 1 : 0);
+            OutputDebugStringW(buf);
+        }
 
         _updateUIForParameterSlot();
-
-        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-        OutputDebugStringW(L"[SnippetParams] _enterParameterFilling: searchBox.Visibility=Visible, listView.Visibility=Collapsed (fill-mode UI engaged)\n");
     }
 
     // Method Description:
-    // - Tear down Filling[i] state and restore the search box placeholder text.
-    //   Does NOT close the control or clear visibility — caller decides whether
-    //   to dismiss the palette or fall through to dispatch.
+    // - Tear down Filling[i] state and restore the snippet-picker dropdown.
+    //   WALK-TIER semantics: Esc returns the user to the dropdown (does NOT
+    //   dismiss the palette). Clears the buffer-side preview.
     void SuggestionsControl::_exitParameterFilling()
     {
+        _clearPreviewSpans();
+
         _paramFilling.reset();
         ParentCommandName(L"");
-        // Restore the normal "Type a command name..." placeholder.
         SearchBoxPlaceholderText(RS_(L"SuggestionsControl_SearchBox/PlaceholderText"));
 
-        // Restore the list view and the parameter-description panel that
-        // _enterParameterFilling / _updateUIForParameterSlot toggled. The
-        // search box visibility goes back to whatever the current mode expects.
-        _filteredActionsView().Visibility(Visibility::Visible);
+        // Restore the dropdown card and tear down the parameter tooltip.
+        _backdrop().Visibility(Visibility::Visible);
         _descriptionsView().Visibility(Visibility::Collapsed);
         _descriptionsBackdrop().Visibility(Visibility::Collapsed);
-        if (_mode == SuggestionsMode::Menu)
+
+        // Restore focus to the appropriate element for the current mode so the
+        // user can keep navigating the snippet list immediately after Esc.
+        if (_mode == SuggestionsMode::Palette)
+        {
+            _searchBox().Visibility(Visibility::Visible);
+            _searchBox().Focus(FocusState::Programmatic);
+        }
+        else if (_mode == SuggestionsMode::Menu)
         {
             _searchBox().Visibility(Visibility::Collapsed);
+            if (const auto& dependencyObj = SelectedItem().try_as<winrt::Windows::UI::Xaml::DependencyObject>())
+            {
+                Input::FocusManager::TryFocusAsync(dependencyObj, FocusState::Programmatic);
+            }
         }
+
         _recalculateTopMargin();
     }
 
@@ -1027,16 +1072,34 @@ namespace winrt::TerminalApp::implementation
     //   the current slot's value into filledValues before calling.
     void SuggestionsControl::_advanceParameterSlot()
     {
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            const uint32_t before = _paramFilling->currentIndex;
+            const uint32_t after = before + 1;
+            const uint32_t total = _paramFilling->args.Parameters().Size();
+            wchar_t buf[160];
+            swprintf_s(buf, L"[SnippetParams] _advanceParameterSlot: index %u -> %u (count=%u)\n", before, after, total);
+            OutputDebugStringW(buf);
+        }
         _paramFilling->currentIndex++;
         _updateUIForParameterSlot();
     }
 
     // Method Description:
-    // - Move from Filling[i] back to Filling[i-1]. No-op at i==0. Caller must have
-    //   already committed the current slot's value into filledValues if they want
-    //   it preserved for re-entry.
+    // - Move from Filling[i] back to Filling[i-1]. CLAMPS at i==0 (no wrap).
+    //   filledValues persists across slot transitions, so re-entry restores
+    //   the prior text automatically.
     void SuggestionsControl::_retreatParameterSlot()
     {
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            const uint32_t before = _paramFilling->currentIndex;
+            const uint32_t total = _paramFilling->args.Parameters().Size();
+            wchar_t buf[160];
+            swprintf_s(buf, L"[SnippetParams] _retreatParameterSlot: index %u -> %u (count=%u)%s\n",
+                       before, (before == 0 ? 0u : before - 1u), total, (before == 0 ? L" [CLAMP no-op]" : L""));
+            OutputDebugStringW(buf);
+        }
         if (_paramFilling->currentIndex == 0)
         {
             return;
@@ -1046,14 +1109,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Refresh the parameter-filling UI for the current slot. Updates the status
-    //   row (ParentCommandName), placeholder text, search box contents (restored
-    //   from the previously-filled value for that slot, if any), Narrator
-    //   announcement, and the live preview.
+    // - Refresh the parameter-filling tooltip for the current slot, then push
+    //   a fresh PreviewInputSpans batch so the terminal buffer mirrors the new
+    //   active-tabstop. The dropdown card is already collapsed; we own only
+    //   the `_descriptionsBackdrop` card here.
     void SuggestionsControl::_updateUIForParameterSlot()
     {
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        OutputDebugStringW(L"[SnippetParams] _updateUIForParameterSlot: entry\n");
         if (!_paramFilling.has_value())
         {
+            OutputDebugStringW(L"[SnippetParams]   bail: not in fill mode\n");
             return;
         }
         const auto& state = *_paramFilling;
@@ -1061,37 +1127,24 @@ namespace winrt::TerminalApp::implementation
         const auto total = parameters.Size();
         if (state.currentIndex >= total)
         {
+            OutputDebugStringW(L"[SnippetParams]   bail: currentIndex out of range\n");
             return;
         }
         const auto current = parameters.GetAt(state.currentIndex);
         const auto name = current.Name();
         const auto description = current.Description();
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            wchar_t buf[300];
+            swprintf_s(buf, L"[SnippetParams]   slot %u/%u name=\"%.40s\" restoredValue=\"%.80s\"\n",
+                       state.currentIndex, total, name.c_str(), state.filledValues[state.currentIndex].c_str());
+            OutputDebugStringW(buf);
+        }
 
-        // Status row: "Parameter N of M: name". Reuses the ParentCommandName UI
-        // slot. The associated back button is now the Shift+Tab GUI affordance
-        // (see _moveBackButtonClicked).
-        const auto status = winrt::hstring{ RS_fmt(L"SuggestionsControl_ParameterStatus",
-                                                   state.currentIndex + 1,
-                                                   total,
-                                                   name) };
-        ParentCommandName(status);
-
-        // Placeholder: parameter's description, or fallback "Enter value for {name}".
-        const auto placeholder = description.empty() ?
-                                     winrt::hstring{ RS_fmt(L"SuggestionsControl_ParameterPlaceholder", name) } :
-                                     description;
-        SearchBoxPlaceholderText(placeholder);
-
-        // CRAWL-TIER USABILITY: render the parameter's name (title) and
-        // description (subtitle) in the existing _descriptionsView panel
-        // below the backdrop. Reuses the per-command-description tooltip
-        // pattern from _openTooltip — same XAML elements (_descriptionTitle,
-        // _descriptionComment), same `Documents::Run` + `LineBreak`
-        // composition, same Visibility toggles, same `_recalculateTopMargin()`
-        // hookup. We do NOT define new resources / styles / templates — the
-        // existing typography (14pt bold title, regular comment in a scroll
-        // viewer) matches the Crawl-tier ask of "standard subtle/secondary
-        // text".
+        // Tooltip title = parameter name; subtitle = description. Reuses the
+        // existing tooltip composition pattern (_descriptionTitle as 14pt
+        // header, _descriptionComment as multi-line body via Documents::Run +
+        // LineBreak). See _openTooltip for the original template.
         _descriptionTitle().Inlines().Clear();
         {
             Documents::Run titleRun;
@@ -1123,37 +1176,8 @@ namespace winrt::TerminalApp::implementation
         _descriptionsBackdrop().Visibility(Visibility::Visible);
         _recalculateTopMargin();
 
-        // Belt-and-suspenders: ensure the search box is Visible before we try
-        // to focus it. _enterParameterFilling already sets this, but a stray
-        // Mode() change mid-fill (or future code path) could re-Collapse it,
-        // and Focus(Programmatic) silently no-ops on a Collapsed element —
-        // which is the entire class of bug this UI fix was written to close.
-        _searchBox().Visibility(Visibility::Visible);
-
-        // Restore any previously-filled value for this slot, then place the caret
-        // at the end. Setting Text re-enters _filterTextChanged, which routes to
-        // _previewResolvedInput() because _paramFilling is set — that's fine; the
-        // explicit _previewResolvedInput() below is a belt-and-suspenders for the
-        // case where the value didn't change.
-        const auto& filled = state.filledValues[state.currentIndex];
-        _searchBox().Text(winrt::hstring{ filled });
-        _searchBox().Select(_searchBox().Text().size(), 0);
-        _searchBox().Focus(Windows::UI::Xaml::FocusState::Programmatic);
-
-        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-        OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _updateUIForParameterSlot: slot={}/{} name=\"{}\" restoredValue=\"{}\" searchBoxText=\"{}\"\n"),
-                                       state.currentIndex + 1,
-                                       total,
-                                       std::wstring{ name },
-                                       filled,
-                                       std::wstring{ _searchBox().Text() })
-                               .c_str());
-
-        // Accessibility: LiveRegion-style announcement on every slot transition so
-        // Narrator users hear context change even though focus stays on the same
-        // TextBox. Mirrors the existing nested-command announcement pattern at
-        // _updateUIForStackChange and _listItemSelectionChanged.
-        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(_searchBox()) })
+        // Accessibility: LiveRegion-style announcement on every slot transition.
+        if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(*this) })
         {
             const auto announcement = description.empty() ?
                                           winrt::hstring{ RS_fmt(L"SuggestionsControl_ParameterAnnouncementShort", name) } :
@@ -1165,67 +1189,143 @@ namespace winrt::TerminalApp::implementation
                 L"SuggestionsControlParameterSlotChanged" /* unique name for this notification category */);
         }
 
-        // Set the AutomationProperties.Name on the status row's TextBlock so a
-        // Narrator user navigating to it hears the full "Parameter N of M: name -
-        // description" descriptor (not just the visible status string).
-        if (const auto& parentText{ _parentCommandText() })
-        {
-            const auto fullDescriptor = description.empty() ?
-                                            status :
-                                            winrt::hstring{ RS_fmt(L"SuggestionsControl_ParameterStatusFull",
-                                                                   state.currentIndex + 1,
-                                                                   total,
-                                                                   name,
-                                                                   description) };
-            parentText.SetValue(Automation::AutomationProperties::NameProperty(), winrt::box_value(fullDescriptor));
-        }
-
-        _previewResolvedInput();
+        _updatePreviewSpans();
     }
 
     // Method Description:
-    // - Build a substituted-so-far Command and raise PreviewAction. Called per
-    //   keystroke in Filling[i] so the terminal's ghost text follows the user's
-    //   typing live.
-    void SuggestionsControl::_previewResolvedInput()
+    // - Build the spans IVector for the current snippet + accumulated values +
+    //   active tabstop, and raise PreviewInputSpansRequested. TerminalPage
+    //   forwards to the active TermControl.
+    //
+    // The span-build is delegated to `SendInputArgs::BuildPreviewSpans`, a
+    // projected method on Settings.Model. Cross-project call goes through the
+    // WinRT projection — no TerminalSettingsModel internal headers reach into
+    // this TU. The returned IVector<SnippetPreviewRun> carries the same
+    // (text, kind) pairs the implementation-side free function used to return
+    // via vector<pair<wstring, SnippetPreviewSpanKind>>; iteration is via
+    // run.Text() / run.Kind() on the projected runtimeclass.
+    void SuggestionsControl::_updatePreviewSpans()
     {
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        OutputDebugStringW(L"[SnippetParams] _updatePreviewSpans: entry\n");
         if (!_paramFilling.has_value())
         {
+            OutputDebugStringW(L"[SnippetParams]   bail: not in fill mode\n");
             return;
         }
-        const auto cmd = _buildResolvedCommand(/*includeLiveCurrent*/ true);
-        PreviewAction.raise(*this, cmd);
+        const auto& state = *_paramFilling;
+        const auto valuesMap = _buildParameterMap();
+
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            wchar_t buf[160];
+            swprintf_s(buf, L"[SnippetParams]   valuesMap.Size=%u currentIndex=%u — calling SendInputArgs::BuildPreviewSpans\n",
+                       valuesMap.Size(), state.currentIndex);
+            OutputDebugStringW(buf);
+        }
+
+        winrt::Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::SnippetPreviewRun> modelSpans{ nullptr };
+        try
+        {
+            modelSpans = state.args.BuildPreviewSpans(valuesMap, state.currentIndex);
+        }
+        catch (...)
+        {
+            OutputDebugStringW(L"[SnippetParams]   EXCEPTION: BuildPreviewSpans threw\n");
+            return;
+        }
+
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            const uint32_t runCount = modelSpans ? modelSpans.Size() : 0u;
+            wchar_t buf[160];
+            swprintf_s(buf, L"[SnippetParams]   BuildPreviewSpans returned %u run(s)\n", runCount);
+            OutputDebugStringW(buf);
+        }
+
+        auto outSpans = winrt::single_threaded_vector<winrt::Microsoft::Terminal::Control::PreviewInputSpan>();
+        uint32_t i = 0;
+        for (const auto& run : modelSpans)
+        {
+            // Model::SnippetPreviewSpanKind ↔ Control::PreviewInputSpanKind:
+            // both enums share the same integral values per IDL. The identity
+            // cast is well-defined; an explicit switch would just add line
+            // noise. Renderer-side attribute mapping (Active = inverse video,
+            // Placeholder = dim) lives in ControlCore.
+            const auto controlKind = static_cast<winrt::Microsoft::Terminal::Control::PreviewInputSpanKind>(static_cast<int32_t>(run.Kind()));
+            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+            {
+                wchar_t buf[300];
+                swprintf_s(buf, L"[SnippetParams]     run[%u] kind=%d text=\"%.80s\"\n",
+                           i, static_cast<int>(run.Kind()), run.Text().c_str());
+                OutputDebugStringW(buf);
+            }
+            outSpans.Append(winrt::Microsoft::Terminal::Control::PreviewInputSpan{ run.Text(), controlKind });
+            ++i;
+        }
+
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            wchar_t buf[160];
+            swprintf_s(buf, L"[SnippetParams]   raising PreviewInputSpansRequested with %u span(s)\n", outSpans.Size());
+            OutputDebugStringW(buf);
+        }
+        try
+        {
+            PreviewInputSpansRequested.raise(*this, outSpans);
+            OutputDebugStringW(L"[SnippetParams]   PreviewInputSpansRequested.raise returned OK\n");
+        }
+        catch (...)
+        {
+            OutputDebugStringW(L"[SnippetParams]   EXCEPTION: PreviewInputSpansRequested.raise threw\n");
+        }
+    }
+
+    // Method Description:
+    // - Clear the terminal-side preview by raising PreviewInputSpansRequested
+    //   with an empty IVector (semantic equivalent of the legacy
+    //   PreviewInput(L"") dismiss).
+    void SuggestionsControl::_clearPreviewSpans()
+    {
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        OutputDebugStringW(L"[SnippetParams] _clearPreviewSpans: raising PreviewInputSpansRequested with empty IVector\n");
+        auto emptySpans = winrt::single_threaded_vector<winrt::Microsoft::Terminal::Control::PreviewInputSpan>();
+        PreviewInputSpansRequested.raise(*this, emptySpans);
     }
 
     // Method Description:
     // - End-of-fill dispatch path. Builds a Command whose SendInputArgs.Input is
     //   the fully-resolved string (with every ${<name>} token substituted), then
     //   tears down fill state, closes the palette, and raises DispatchCommandRequested
-    //   with the transient resolved Command — re-entering the existing dispatch flow
-    //   on the TerminalPage / TermControl side WITHOUT mutating the original snippet.
+    //   with the transient resolved Command. The original snippet args are NOT mutated.
     void SuggestionsControl::_dispatchResolvedSnippet()
     {
-        // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-        OutputDebugStringW(L"[SnippetParams] _dispatchResolvedSnippet: building resolved command and raising DispatchCommandRequested (end-of-fill path)\n");
+        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+        {
+            const uint32_t idx = _paramFilling.has_value() ? _paramFilling->currentIndex : 0xFFFFFFFFu;
+            const uint32_t total = _paramFilling.has_value() ? _paramFilling->args.Parameters().Size() : 0u;
+            wchar_t buf[200];
+            swprintf_s(buf, L"[SnippetParams] _dispatchResolvedSnippet: COMMIT path entry, currentIndex=%u total=%u\n", idx, total);
+            OutputDebugStringW(buf);
+        }
+        const auto cmd = _buildResolvedCommand();
 
-        const auto cmd = _buildResolvedCommand(/*includeLiveCurrent*/ false);
+        // Clear preview FIRST so the buffer is empty when the resolved input
+        // gets sent for real (avoids a one-frame double-write).
+        _clearPreviewSpans();
 
-        // Stash search text length for the trace event before _close clears it.
-        const auto searchTextLength = _searchBox().Text().size();
+        const auto searchTextLength = (_paramFilling.has_value() && !_paramFilling->filledValues.empty()) ?
+                                          _paramFilling->filledValues.back().size() :
+                                          size_t{ 0 };
 
-        // Clear fill state FIRST so _close() doesn't try to do anything fill-aware
-        // (and so any re-entrant PreviewAction(nullptr) from _close is not mistaken
-        // for a fill-mode preview).
+        // Clear fill state FIRST so _close() doesn't try to do anything fill-aware.
         _paramFilling.reset();
         ParentCommandName(L"");
         SearchBoxPlaceholderText(RS_(L"SuggestionsControl_SearchBox/PlaceholderText"));
 
-        // Mirror _exitParameterFilling's panel restoration so the next Open()
-        // doesn't inherit a collapsed list view or a stuck-visible description
-        // panel. We don't touch search-box visibility here because _close()
-        // collapses the whole control, and Mode() will reset _searchBox
-        // visibility on the next Open.
-        _filteredActionsView().Visibility(Visibility::Visible);
+        // Restore the dropdown card and tear down the parameter tooltip so the
+        // next Open() doesn't inherit a collapsed backdrop.
+        _backdrop().Visibility(Visibility::Visible);
         _descriptionsView().Visibility(Visibility::Collapsed);
         _descriptionsBackdrop().Visibility(Visibility::Collapsed);
 
@@ -1243,50 +1343,48 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Build the parameter map handed to SendInputArgs.Resolve(). For preview,
-    //   pass includeLiveCurrent=true to use the search box's current text for the
-    //   active slot. For dispatch, the caller is expected to have already
-    //   committed the active slot into filledValues, so includeLiveCurrent=false.
+    // - Build the parameter map handed to SendInputArgs.Resolve() and to
+    //   BuildSnippetPreviewSpans. Reads straight from `state.filledValues`
+    //   (the UserControl-level keystroke handler keeps it current — there is
+    //   no separate "live" buffer to merge).
     Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>
-    SuggestionsControl::_buildParameterMap(bool includeLiveCurrent)
+    SuggestionsControl::_buildParameterMap()
     {
         auto map = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
         if (!_paramFilling.has_value())
         {
+            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+            OutputDebugStringW(L"[SnippetParams] _buildParameterMap: not in fill mode, returning empty map\n");
             return map;
         }
         const auto& state = *_paramFilling;
         const auto parameters = state.args.Parameters();
         const auto total = parameters.Size();
-
-        const std::wstring liveCurrent = (includeLiveCurrent && state.currentIndex < total) ?
-                                             std::wstring{ _searchBox().Text() } :
-                                             std::wstring{};
-
         for (uint32_t i = 0; i < total; ++i)
         {
             const auto pName = parameters.GetAt(i).Name();
-            const auto& value = (includeLiveCurrent && i == state.currentIndex) ?
-                                    liveCurrent :
-                                    state.filledValues[i];
-            map.Insert(pName, winrt::hstring{ value });
+            map.Insert(pName, winrt::hstring{ state.filledValues[i] });
+            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
+            {
+                wchar_t buf[300];
+                swprintf_s(buf, L"[SnippetParams] _buildParameterMap[%u] name=\"%.40s\" value=\"%.80s\"\n",
+                           i, pName.c_str(), state.filledValues[i].c_str());
+                OutputDebugStringW(buf);
+            }
         }
         return map;
     }
 
     // Method Description:
     // - Construct a transient Command whose SendInputArgs.Input is the resolved
-    //   (substituted) string, preserving the original snippet's name for telemetry
-    //   and consumer expectations. The original snippet's args are NOT mutated.
-    winrt::Microsoft::Terminal::Settings::Model::Command SuggestionsControl::_buildResolvedCommand(bool includeLiveCurrent)
+    //   (substituted) string, preserving the original snippet's name. The
+    //   original snippet's args are NOT mutated.
+    winrt::Microsoft::Terminal::Settings::Model::Command SuggestionsControl::_buildResolvedCommand()
     {
         const auto& state = *_paramFilling;
-        const auto map = _buildParameterMap(includeLiveCurrent);
+        const auto map = _buildParameterMap();
         const auto resolvedInput = state.args.Resolve(map);
 
-        // Preserve the original snippet's display name on the transient Command so
-        // downstream consumers (telemetry, history, ghost-text labelling) still see
-        // the right name.
         winrt::hstring originalName;
         if (const auto item = state.snippet.Item())
         {
@@ -1362,17 +1460,11 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_filterTextChanged(const IInspectable& /*sender*/,
                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
     {
-        // In Filling[i] mode, the search box IS the parameter input — no list
-        // filtering happens. Every keystroke re-raises PreviewAction with a
-        // resolved-so-far Command so the terminal's ghost text updates live.
+        // Walk-tier: in fill mode the search box is hidden inside the
+        // collapsed `_backdrop` and plays no role; keystrokes are captured
+        // at the UserControl level. Nothing to filter here — just bail.
         if (_paramFilling.has_value())
         {
-            // [SnippetParams] DEBUG: throwaway instrumentation — REMOVE BEFORE COMMIT
-            OutputDebugStringW(fmt::format(FMT_COMPILE(L"[SnippetParams] _filterTextChanged (FILL_KEYSTROKE): slot={} searchBoxText=\"{}\"\n"),
-                                           _paramFilling->currentIndex,
-                                           std::wstring{ _searchBox().Text() })
-                                   .c_str());
-            _previewResolvedInput();
             return;
         }
 
@@ -1627,14 +1719,16 @@ namespace winrt::TerminalApp::implementation
 
         _nestedActionStack.Clear();
 
-        // If we were dismissed mid-fill (LostFocus, light-dismiss, etc.) restore
-        // the inner-element visibilities so the next Open isn't stuck with a
-        // collapsed list view or a stuck-visible parameter-description panel.
-        // (The dispatch path also clears these in _dispatchResolvedSnippet; this
-        // is the defensive backstop for every other exit path.)
+        // If we were dismissed mid-fill (LostFocus, light-dismiss, etc.) clear
+        // the buffer-side preview and restore the dropdown card so the next
+        // Open() doesn't inherit a collapsed `_backdrop` or stuck-visible
+        // parameter tooltip. (_dispatchResolvedSnippet also performs this
+        // restoration on the commit path; this is the defensive backstop for
+        // every other exit path — Esc/light-dismiss/LostFocus.)
         if (_paramFilling.has_value())
         {
-            _filteredActionsView().Visibility(Visibility::Visible);
+            _clearPreviewSpans();
+            _backdrop().Visibility(Visibility::Visible);
             _descriptionsView().Visibility(Visibility::Collapsed);
             _descriptionsBackdrop().Visibility(Visibility::Collapsed);
         }

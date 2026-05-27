@@ -515,6 +515,7 @@ namespace winrt::TerminalApp::implementation
 
         void _PreviewAction(const Microsoft::Terminal::Settings::Model::ActionAndArgs& args);
         void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
+        void _OnPreviewInputSpansRequested(const IInspectable& sender, const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Control::PreviewInputSpan>& spans);
         void _EndPreview();
         void _RunRestorePreviews();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
