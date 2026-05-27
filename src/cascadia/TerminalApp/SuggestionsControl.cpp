@@ -1029,6 +1029,14 @@ namespace winrt::TerminalApp::implementation
         }
 
         _updateUIForParameterSlot();
+
+        // The outer UserControl was positioned by Open() using the full
+        // backdrop height. Now that the backdrop is collapsed and only the
+        // description tooltip is visible, re-anchor so it sits next to the
+        // cursor instead of floating where the full list used to be. Must
+        // happen AFTER _updateUIForParameterSlot() so the description has
+        // its text populated and a meaningful DesiredSize.
+        _recalculateTopMargin();
     }
 
     // Method Description:
@@ -1047,6 +1055,11 @@ namespace winrt::TerminalApp::implementation
         _backdrop().Visibility(Visibility::Visible);
         _descriptionsView().Visibility(Visibility::Collapsed);
         _descriptionsBackdrop().Visibility(Visibility::Collapsed);
+
+        // The backdrop is back; re-anchor so the (now full-height) control
+        // sits where Open() originally placed it instead of where the
+        // shrunken description tooltip left it.
+        _recalculateTopMargin();
 
         // Restore focus to the appropriate element for the current mode so the
         // user can keep navigating the snippet list immediately after Esc.
@@ -1875,7 +1888,15 @@ namespace winrt::TerminalApp::implementation
 
             // This is wackier, because we need to calculate the offset upwards
             // from our anchor. So we need to get the size of our elements:
-            const auto backdropHeight = _backdrop().ActualHeight();
+            //
+            // NOTE: when `_backdrop` is collapsed (param-fill mode), its
+            // `ActualHeight()` may still report the prior (visible) value
+            // until the next layout pass — so we can't rely on it being 0
+            // just because we set Visibility::Collapsed. Check Visibility()
+            // directly instead, which is the authoritative state.
+            const auto backdropHeight = _backdrop().Visibility() == Visibility::Visible ?
+                                            _backdrop().ActualHeight() :
+                                            0;
             const auto descriptionDesiredHeight = _descriptionsBackdrop().Visibility() == Visibility::Visible ?
                                                       _descriptionsBackdrop().DesiredSize().Height :
                                                       0;
