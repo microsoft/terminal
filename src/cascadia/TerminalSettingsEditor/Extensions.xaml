@@ -376,13 +376,13 @@
                              NavigateUri="https://go.microsoft.com/fwlink/?linkid=2321753" />
 
             <!--  Grouping: Active Extensions  -->
-            <TextBlock x:Uid="Extensions_ActiveExtensionsHeader" Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <ItemsControl
-                x:Name="ActiveExtensionsList"
-                IsTabStop="False"
-                ItemTemplateSelector="{StaticResource ExtensionPackageNavigatorTemplateSelector}"
-                ItemsSource="{x:Bind ViewModel.ExtensionPackages}"
-                XYFocusKeyboardNavigation="Enabled" />
+            <TextBlock x:Uid="Extensions_ActiveExtensionsHeader"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <ItemsControl x:Name="ActiveExtensionsList"
+                          IsTabStop="False"
+                          ItemTemplateSelector="{StaticResource ExtensionPackageNavigatorTemplateSelector}"
+                          ItemsSource="{x:Bind ViewModel.ExtensionPackages}"
+                          XYFocusKeyboardNavigation="Enabled" />
         </StackPanel>
 
         <!--  [Extension View Only]  -->
@@ -390,7 +390,8 @@
                     Visibility="{x:Bind ViewModel.IsExtensionView, Mode=OneWay}">
             <!--  Extension Status  -->
 
-            <local:SettingsCard Margin="0,36,0,0" AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}">
+            <local:SettingsCard Margin="0,36,0,0"
+                                AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}">
                 <local:SettingsCard.Header>
                     <!--
                         BODGY
@@ -403,12 +404,11 @@
                                       Content="{x:Bind ViewModel.CurrentExtensionPackage, Mode=OneWay}"
                                       ContentTemplate="{x:Bind ViewModel.CurrentExtensionPackageIdentifierTemplate, Mode=OneWay}" />
                 </local:SettingsCard.Header>
-                <ToggleSwitch
-                    Grid.Column="1"
-                    AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
-                    IsOn="{x:Bind ViewModel.CurrentExtensionPackage.Enabled, Mode=TwoWay}"
-                    Style="{StaticResource ToggleSwitchInExpanderStyle}"
-                    Tag="{x:Bind ViewModel.CurrentExtensionPackage.Package.Source, Mode=OneWay}" />
+                <ToggleSwitch Grid.Column="1"
+                              AutomationProperties.Name="{x:Bind ViewModel.CurrentExtensionPackage.AccessibleName, Mode=OneWay}"
+                              IsOn="{x:Bind ViewModel.CurrentExtensionPackage.Enabled, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}"
+                              Tag="{x:Bind ViewModel.CurrentExtensionPackage.Package.Source, Mode=OneWay}" />
             </local:SettingsCard>
 
             <local:SettingsCard x:Name="Scope"
