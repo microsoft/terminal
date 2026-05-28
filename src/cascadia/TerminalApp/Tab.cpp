@@ -2424,6 +2424,15 @@ namespace winrt::TerminalApp::implementation
             deselectedFontBrush.Color(winrt::Windows::UI::Colors::White());
         }
 
+        // If the deselected tab is effectively transparent (e.g. the default
+        // theme's tab.unfocusedBackground of "#00000000"), then the tab visually
+        // is the tab row. In that case, leave the deselected-state foreground
+        // brushes alone so the stock TabViewItemHeaderForeground
+        // (TextFillColorSecondaryBrush) shows through, matching Fluent
+        // defaults. Otherwise, our high-contrast black/white pick would make
+        // unfocused tab text look harsher than the focused selection.
+        const bool overrideDeselectedForeground = deselectedTabColor.a != 0;
+
         // Add the empty theme dictionaries
         const auto& tabItemThemeResources{ TabViewItem().Resources().ThemeDictionaries() };
         ResourceDictionary lightThemeDictionary;
@@ -2452,13 +2461,19 @@ namespace winrt::TerminalApp::implementation
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
 
             // TabViewItem.Foreground (aka text)
-            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
+            if (overrideDeselectedForeground)
+            {
+                currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForeground"), deselectedFontBrush);
+            }
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), isHighContrast ? selectedTabBrush : fontBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
 
             // TabViewItem.CloseButton.Foreground (aka X)
-            currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), deselectedFontBrush);
+            if (overrideDeselectedForeground)
+            {
+                currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForeground"), deselectedFontBrush);
+            }
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPressed"), isHighContrast ? deselectedFontBrush : secondaryFontBrush);
             currentDictionary.Insert(winrt::box_value(L"TabViewItemHeaderCloseButtonForegroundPointerOver"), isHighContrast ? deselectedFontBrush : fontBrush);
 
