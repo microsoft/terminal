@@ -342,6 +342,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::_AnnounceNavPaneState(bool opened)
+    {
+        if (const auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(SettingsNav()) })
+        {
+            automationPeer.RaiseNotificationEvent(
+                Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                Automation::Peers::AutomationNotificationProcessing::MostRecent,
+                opened ? RS_(L"Nav_PaneOpenedAnnouncement") : RS_(L"Nav_PaneClosedAnnouncement"),
+                L"SettingsNavPaneState");
+        }
+    }
+
+    void MainPage::SettingsNav_PaneOpened(const MUX::Controls::NavigationView&, const IInspectable&)
+    {
+        _AnnounceNavPaneState(true);
+    }
+
+    void MainPage::SettingsNav_PaneClosed(const MUX::Controls::NavigationView&, const IInspectable&)
+    {
+        _AnnounceNavPaneState(false);
+    }
+
     // Function Description:
     // - Called when NavigationView items are invoked. Navigates to the corresponding page.
     // Arguments:
