@@ -192,7 +192,7 @@ void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 //     screen buffer and an alternate. This creates a new alternate, and switches to it.
 //     If there is an already existing alternate, it is discarded.
 // Arguments:
-// - attrs - the attributes the buffer is initialized with.
+// - attrs - the attributes for initializing the buffer.
 // Return Value:
 // - <none>
 void ConhostInternalGetSet::UseAlternateScreenBuffer(const TextAttribute& attrs)

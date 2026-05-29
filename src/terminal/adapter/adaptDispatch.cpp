@@ -3002,17 +3002,15 @@ void AdaptDispatch::SoftReset()
     SetGraphicsRendition({}); // Normal rendition.
     SetCharacterProtectionAttribute({}); // Default (unprotected)
 
-    // Reset the saved cursor state.
-    // Note that XTerm only resets the main buffer state, but that
-    // seems likely to be a bug. Most other terminals reset both.
-    _savedCursorState.at(0) = {}; // Main buffer
-    _savedCursorState.at(1) = {}; // Alt buffer
+    // Reset only the active saved cursor state.
+    // This matches xterm behavior when DECSTR is processed while using
+    // the alternate screen buffer (GH#19918).
+    _savedCursorState.at(_usingAltBuffer ? 1 : 0) = {};
 
-    // The TerminalOutput state in these buffers must be reset to
+    // The TerminalOutput state in this buffer must be reset to
     // the same state as the _termOutput instance, which is not
     // necessarily equivalent to a full reset.
-    _savedCursorState.at(0).TermOutput = _termOutput;
-    _savedCursorState.at(1).TermOutput = _termOutput;
+    _savedCursorState.at(_usingAltBuffer ? 1 : 0).TermOutput = _termOutput;
 
     // Soft reset the Sixel parser if in use.
     if (_sixelParser)
@@ -3649,7 +3647,7 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
 }
 
 // Method Description:
-// - Performs a iTerm2 action
+// - Performs an iTerm2 action
 // - Ascribes to the ITermDispatch interface
 // - Currently, the actions we support are:
 //   * `OSC1337;SetMark`: mark a line as a prompt line
@@ -3878,7 +3876,7 @@ void AdaptDispatch::DoWTAction(const std::wstring_view string)
 // - SIXEL - Defines an image transmitted in sixel format via the returned
 //   StringHandler function.
 // Arguments:
-// - macroParameter - Selects one a of set of predefined aspect ratios.
+// - macroParameter - Selects one of a set of predefined aspect ratios.
 // - backgroundSelect - Whether the background should be transparent or opaque.
 // - backgroundColor - The color number used for the background (VT240).
 // Return Value:

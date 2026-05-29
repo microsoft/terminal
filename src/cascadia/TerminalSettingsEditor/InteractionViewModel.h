@@ -19,6 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_BINDABLE_ENUM_SETTING(TabSwitcherMode, Model::TabSwitcherMode, _WindowSettings.TabSwitcherMode);
         GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, _WindowSettings.CopyFormatting);
+        GETSET_BINDABLE_ENUM_SETTING(ConfirmOnClose, Model::ConfirmOnClose, _GlobalSettings.ConfirmOnClose);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, CopyOnSelect);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, TrimBlockSelection);
@@ -30,7 +31,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WordDelimiters);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, ConfirmCloseAllTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_WindowSettings, WarnAboutMultiLinePaste);

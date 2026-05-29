@@ -51,7 +51,7 @@ Author(s):
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
     X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
-    X(bool, ConfirmCloseAllTabs, "warning.confirmCloseAllTabs", true)                                                                                                                                 \
+    X(Model::ConfirmOnClose, ConfirmOnClose, "warning.confirmOnClose", Model::ConfirmOnClose::Automatic)                                                                                              \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
@@ -69,6 +69,7 @@ Author(s):
     X(bool, DisableAnimations, "disableAnimations", false)                                                                                                                                            \
     X(hstring, StartupActions, "startupActions", L"")                                                                                                                                                 \
     X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, SafeUriSchemes, "safeUriSchemes", nullptr)                                                                                    \
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
     X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                               \

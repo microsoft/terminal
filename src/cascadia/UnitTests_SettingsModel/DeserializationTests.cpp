@@ -1843,6 +1843,15 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(settings->ProfileDefaults().HasTabTitle(), copyImpl->ProfileDefaults().HasTabTitle());
         VERIFY_ARE_NOT_EQUAL(settings->ProfileDefaults().TabTitle(), copyImpl->ProfileDefaults().TabTitle());
 
+        // Verify HasXxx independence: setting a previously-inherited value on the clone
+        // should make HasXxx true on the clone but remain false on the original.
+        // SnapOnInput is not set in the JSON, so both should inherit the default.
+        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(0).HasSnapOnInput());
+        VERIFY_IS_FALSE(copyImpl->AllProfiles().GetAt(0).HasSnapOnInput());
+        copyImpl->AllProfiles().GetAt(0).SnapOnInput(false);
+        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(0).HasSnapOnInput());
+        VERIFY_IS_TRUE(copyImpl->AllProfiles().GetAt(0).HasSnapOnInput());
+
         Log::Comment(L"Test empty profiles.defaults");
         static constexpr std::string_view emptyPDJson{ R"(
         {

@@ -50,6 +50,13 @@ namespace Microsoft.Terminal.Settings.Model
         AfterCurrentTab,
     };
 
+    enum ConfirmOnClose
+    {
+        Never = 0,
+        Automatic = 1,
+        Always = 2,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         // ---- Global-only settings (not per-window) ----
         INHERITABLE_SETTING(String, Language);
@@ -61,6 +68,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
 
         // ---- Color schemes ----
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();

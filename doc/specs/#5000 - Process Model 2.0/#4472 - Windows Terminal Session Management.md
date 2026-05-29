@@ -469,7 +469,7 @@ This is a list of actionable tasks generated as described by this spec:
   commandline
 * [ ] Add a `NameWindow` action, subcommand that allows the user to set the name
   for the window.
-* [ ] Add an action that will cause all windows to briefly display a overlay
+* [ ] Add an action that will cause all windows to briefly display an overlay
   with the current window ID and name. This would be something like the
   "identify" feature of the Windows "Display" settings.
 

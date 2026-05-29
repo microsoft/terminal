@@ -1068,6 +1068,15 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring> args)
         return 0;
     }
 
+    // When a toast notification is clicked, Windows may launch a new instance
+    // with "--from-toast" as the argument. This is a no-op sentinel — the
+    // in-process Activated handler on the toast already handled activation.
+    // See DesktopNotification.cpp for more details.
+    if (args.size() == 2 && args[1] == L"--from-toast")
+    {
+        return 0;
+    }
+
     auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 
     for (auto& cmdBlob : commands)

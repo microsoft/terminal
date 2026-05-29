@@ -49,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleNotification(Windows.Foundation.IReference<Boolean> on);
 
         String BellSoundPreview { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };

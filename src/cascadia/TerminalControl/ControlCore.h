@@ -391,6 +391,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _colorGlyphs = true;
         CSSLengthPercentage _cellWidth;
         CSSLengthPercentage _cellHeight;
+        float _accumulatedFontSizeDelta = 0.f; // Preserved across reloads to prevent user zoom from being overwritten.
 
         // Rendering stuff.
         winrt::handle _lastSwapChainHandle{ nullptr };

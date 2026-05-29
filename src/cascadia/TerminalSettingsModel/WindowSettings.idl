@@ -23,7 +23,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowTabsFullscreen);
         INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
-        INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
         INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
@@ -60,6 +59,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
+        INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
         INHERITABLE_SETTING(ThemePair, Theme);
     }
 }
