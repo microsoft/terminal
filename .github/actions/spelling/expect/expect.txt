@@ -131,6 +131,7 @@ buflen
 buildsystems
 buildtransitive
 BValue
+BYPOSITION
 Cacafire
 CALLCONV
 CANDRABINDU

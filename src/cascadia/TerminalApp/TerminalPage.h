@@ -12,6 +12,8 @@
 #include "RenameWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
+#include "SystemMenuNewTabProfileItem.g.h"
+#include "SystemMenuNewTabProfilesArgs.g.h"
 #include "Toast.h"
 
 #include "WindowsPackageManagerFactory.h"
@@ -85,6 +87,21 @@ namespace winrt::TerminalApp::implementation
             _Window{ window },
             _Content{ content },
             _TabIndex{ tabIndex } {};
+    };
+
+    struct SystemMenuNewTabProfileItem : SystemMenuNewTabProfileItemT<SystemMenuNewTabProfileItem>
+    {
+        SystemMenuNewTabProfileItem() = default;
+
+        WINRT_PROPERTY(winrt::hstring, DisplayName, L"");
+        WINRT_PROPERTY(winrt::TerminalApp::SystemMenuNewTabProfileHandler, Handler, nullptr);
+    };
+
+    struct SystemMenuNewTabProfilesArgs : SystemMenuNewTabProfilesArgsT<SystemMenuNewTabProfilesArgs>
+    {
+        SystemMenuNewTabProfilesArgs() = default;
+
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::TerminalApp::SystemMenuNewTabProfileItem>, Profiles, nullptr);
     };
 
     struct LaunchPositionRequest : LaunchPositionRequestT<LaunchPositionRequest>
@@ -187,6 +204,8 @@ namespace winrt::TerminalApp::implementation
 
         uint32_t NumberOfTabs() const;
 
+        void PopulateSystemMenuNewTabProfiles();
+
         til::property_changed_event PropertyChanged;
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -215,6 +234,8 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs> RequestReceiveContent;
 
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
+
+        til::typed_event<IInspectable, winrt::TerminalApp::SystemMenuNewTabProfilesArgs> SystemMenuNewTabProfilesChanged;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);

@@ -134,6 +134,9 @@ private:
     void _HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& sender,
                                       winrt::TerminalApp::LaunchPositionRequest args);
 
+    void _SystemMenuNewTabProfilesChanged(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const winrt::TerminalApp::SystemMenuNewTabProfilesArgs& args);
+
     // Helper struct. By putting these all into one struct, we can revoke them
     // all at once, by assigning _revokers to a fresh Revokers instance. That'll
     // cause us to dtor the old one, which will immediately call revoke on all
@@ -164,6 +167,7 @@ private:
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
         winrt::TerminalApp::TerminalWindow::WindowSizeChanged_revoker WindowSizeChanged;
+        winrt::TerminalApp::TerminalWindow::SystemMenuNewTabProfilesChanged_revoker SystemMenuNewTabProfilesChanged;
     } _revokers{};
 
     // our IslandWindow is not a WinRT type. It can't make auto_revokers like

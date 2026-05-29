@@ -50,6 +50,19 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.Model.LaunchPosition Position;
     }
 
+    delegate void SystemMenuNewTabProfileHandler();
+
+    [default_interface] runtimeclass SystemMenuNewTabProfileItem
+    {
+        String DisplayName { get; };
+        SystemMenuNewTabProfileHandler Handler { get; };
+    };
+
+    [default_interface] runtimeclass SystemMenuNewTabProfilesArgs
+    {
+        IVector<SystemMenuNewTabProfileItem> Profiles { get; };
+    };
+
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged, Microsoft.Terminal.UI.IDirectKeyListener
     {
         TerminalPage(WindowProperties properties, ContentManager manager);
@@ -103,5 +116,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
 
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
+
+        event Windows.Foundation.TypedEventHandler<Object, SystemMenuNewTabProfilesArgs> SystemMenuNewTabProfilesChanged;
     }
 }

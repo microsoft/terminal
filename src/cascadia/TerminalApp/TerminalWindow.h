@@ -162,6 +162,8 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SettingsLoadEventArgs> SettingsChanged;
         til::typed_event<winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
+        FORWARDED_TYPED_EVENT(SystemMenuNewTabProfilesChanged, Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuNewTabProfilesArgs, _root, SystemMenuNewTabProfilesChanged);
+
     private:
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to

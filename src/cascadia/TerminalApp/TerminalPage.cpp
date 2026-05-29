@@ -1120,6 +1120,54 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Builds the list of active profiles and raises SystemMenuNewTabProfilesChanged
+    //   so the hosting window can populate its system menu "New Tab" submenu.
+    void TerminalPage::PopulateSystemMenuNewTabProfiles()
+    {
+        const auto activeProfiles = _settings.ActiveProfiles();
+        if (!activeProfiles || activeProfiles.Size() == 0)
+        {
+            return;
+        }
+
+        const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
+
+        auto profileItems = winrt::single_threaded_vector<winrt::TerminalApp::SystemMenuNewTabProfileItem>();
+
+        for (uint32_t i = 0; i < activeProfiles.Size(); i++)
+        {
+            const auto profile = activeProfiles.GetAt(i);
+            auto displayName = profile.Name();
+
+            if (profile.Guid() == defaultProfileGuid)
+            {
+                displayName = displayName + L" (default)";
+            }
+
+            NewTerminalArgs newTerminalArgs{ gsl::narrow_cast<int32_t>(i) };
+
+            auto handler = winrt::TerminalApp::SystemMenuNewTabProfileHandler(
+                [weakThis{ get_weak() }, newTerminalArgs]() {
+                    if (auto page{ weakThis.get() })
+                    {
+                        NewTabArgs newTabArgs{ newTerminalArgs };
+                        ActionAndArgs actionAndArgs{ ShortcutAction::NewTab, newTabArgs };
+                        page->_actionDispatch->DoAction(actionAndArgs);
+                    }
+                });
+
+            auto item = winrt::make_self<winrt::TerminalApp::implementation::SystemMenuNewTabProfileItem>();
+            item->DisplayName(displayName);
+            item->Handler(handler);
+            profileItems.Append(*item);
+        }
+
+        auto args = winrt::make_self<winrt::TerminalApp::implementation::SystemMenuNewTabProfilesArgs>();
+        args->Profiles(profileItems);
+        SystemMenuNewTabProfilesChanged.raise(*this, *args);
+    }
+
+    // Method Description:
     // - For a given list of tab menu entries, this method will create the corresponding
     //   list of flyout items. This is a recursive method that calls itself when it comes
     //   across a folder entry.
@@ -4041,6 +4089,8 @@ namespace winrt::TerminalApp::implementation
         // profile, which might have changed
         _UpdateTabWidthMode();
         _CreateNewTabFlyout();
+
+        PopulateSystemMenuNewTabProfiles();
 
         // Reload the current value of alwaysOnTop from the settings file. This
         // will let the user hot-reload this setting, but any runtime changes to

@@ -233,6 +233,7 @@ void AppHost::Initialize()
     _revokers.AlwaysOnTopChanged = _windowLogic.AlwaysOnTopChanged(winrt::auto_revoke, { this, &AppHost::_AlwaysOnTopChanged });
     _revokers.RaiseVisualBell = _windowLogic.RaiseVisualBell(winrt::auto_revoke, { this, &AppHost::_RaiseVisualBell });
     _revokers.SystemMenuChangeRequested = _windowLogic.SystemMenuChangeRequested(winrt::auto_revoke, { this, &AppHost::_SystemMenuChangeRequested });
+    _revokers.SystemMenuNewTabProfilesChanged = _windowLogic.SystemMenuNewTabProfilesChanged(winrt::auto_revoke, { this, &AppHost::_SystemMenuNewTabProfilesChanged });
     _revokers.ChangeMaximizeRequested = _windowLogic.ChangeMaximizeRequested(winrt::auto_revoke, { this, &AppHost::_ChangeMaximizeRequested });
     _revokers.RequestLaunchPosition = _windowLogic.RequestLaunchPosition(winrt::auto_revoke, { this, &AppHost::_HandleRequestLaunchPosition });
 
@@ -1098,6 +1099,48 @@ void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInsp
     {
     }
     }
+}
+
+// Method Description:
+// - Handles the SystemMenuNewTabProfilesChanged event from the TerminalPage.
+//   Rebuilds the "New Tab" submenu in the system menu (Alt+Space) with items
+//   driven by the app layer's action engine.
+// Arguments:
+// - args: The SystemMenuNewTabProfilesArgs containing the new list of
+//         profiles to show in the "New Tab" submenu.
+// Return Value:
+// - <none>
+void AppHost::_SystemMenuNewTabProfilesChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::TerminalApp::SystemMenuNewTabProfilesArgs& args)
+{
+    if (!_window)
+    {
+        return;
+    }
+
+    _window->RemoveSystemSubMenu(L"New Tab");
+
+    if (!args || !args.Profiles() || args.Profiles().Size() == 0)
+    {
+        return;
+    }
+
+    std::vector<std::pair<winrt::hstring, winrt::delegate<void()>>> profileItems;
+    profileItems.reserve(args.Profiles().Size());
+
+    for (const auto& item : args.Profiles())
+    {
+        auto handler = item.Handler();
+        auto callback = winrt::delegate<void()>([handler]() {
+            if (handler)
+            {
+                handler();
+            }
+        });
+
+        profileItems.emplace_back(item.DisplayName(), std::move(callback));
+    }
+
+    _window->AddSystemSubMenu(L"New Tab", profileItems);
 }
 
 // Method Description:
