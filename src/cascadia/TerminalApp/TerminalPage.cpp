@@ -5115,11 +5115,17 @@ namespace winrt::TerminalApp::implementation
                 bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
             }
 
-            const auto acrylicBrush = Media::AcrylicBrush();
-            acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            // Reuse the brush instead of recreating it; only update its colors below.
+            auto acrylicBrush = TitlebarBrush().try_as<Media::AcrylicBrush>();
+            if (acrylicBrush == nullptr)
+            {
+                acrylicBrush = Media::AcrylicBrush();
+                // Backdrop, not HostBackdrop: HostBackdrop flickers on pointer/focus repaints.
+                acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
+                acrylicBrush.TintOpacity(0.5);
+            }
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
-            acrylicBrush.TintOpacity(0.5);
 
             TitlebarBrush(acrylicBrush);
         }
