@@ -459,3 +459,8 @@ void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingComm
 {
     // Not implemented for conhost.
 }
+
+std::wstring_view ConhostInternalGetSet::GetHostIdentity() const
+{
+    return L"Windows Console Host";
+}

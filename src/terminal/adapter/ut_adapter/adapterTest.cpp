@@ -233,6 +233,11 @@ public:
         Log::Comment(L"SearchMissingCommand MOCK called...");
     }
 
+    std::wstring_view GetHostIdentity() const override
+    {
+        return _hostIdentity;
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.
@@ -401,6 +406,8 @@ public:
 
     std::wstring _expectedMenuJson{};
     unsigned int _expectedReplaceLength = 0;
+
+    std::wstring_view _hostIdentity{ L"Windows Console Host" };
 
 private:
     HANDLE _hCon;
@@ -1794,6 +1801,23 @@ public:
         _testGetSet->_returnResponseResult = FALSE;
 
         VERIFY_THROWS(_pDispatch->TertiaryDeviceAttributes(), std::exception);
+    }
+
+    TEST_METHOD(RequestTerminalNameVersionTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        // The test runner is unpackaged, so no package version is available.
+        Log::Comment(L"Test 1: Verify normal response.");
+        _testGetSet->PrepData();
+        _pDispatch->RequestTerminalNameVersion();
+        _testGetSet->ValidateInputEvent(L"\x1bP>|Windows Console Host\x1b\\");
+
+        Log::Comment(L"Test 2: Verify failure when ReturnResponse doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_returnResponseResult = FALSE;
+
+        VERIFY_THROWS(_pDispatch->RequestTerminalNameVersion(), std::exception);
     }
 
     TEST_METHOD(RequestDisplayedExtentTests)
@@ -4010,6 +4034,9 @@ public:
         _pDispatch->TertiaryDeviceAttributes();
         _testGetSet->ValidateInputEvent(L"\x90!|00000000\x9c");
 
+        _pDispatch->RequestTerminalNameVersion();
+        _testGetSet->ValidateInputEvent(L"\x90>|Windows Console Host\x9c");
+
         _pDispatch->RequestColorTableEntry(0);
         _testGetSet->ValidateInputEvent(L"\x9d\x34;0;rgb:0c0c/0c0c/0c0c\x9c");
 
@@ -4021,6 +4048,9 @@ public:
 
         _pDispatch->TertiaryDeviceAttributes();
         _testGetSet->ValidateInputEvent(L"\x1bP!|00000000\x1b\\");
+
+        _pDispatch->RequestTerminalNameVersion();
+        _testGetSet->ValidateInputEvent(L"\x1bP>|Windows Console Host\x1b\\");
 
         _pDispatch->RequestColorTableEntry(0);
         _testGetSet->ValidateInputEvent(L"\x1b]4;0;rgb:0c0c/0c0c/0c0c\x1b\\");

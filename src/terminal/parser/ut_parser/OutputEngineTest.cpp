@@ -1142,6 +1142,7 @@ public:
         _deviceAttributes{ false },
         _secondaryDeviceAttributes{ false },
         _tertiaryDeviceAttributes{ false },
+        _requestTerminalNameVersion{ false },
         _vt52DeviceAttributes{ false },
         _requestTerminalParameters{ false },
         _reportingPermission{ (DispatchTypes::ReportingPermission)-1 },
@@ -1308,6 +1309,11 @@ public:
         _tertiaryDeviceAttributes = true;
     }
 
+    void RequestTerminalNameVersion() noexcept override
+    {
+        _requestTerminalNameVersion = true;
+    }
+
     void Vt52DeviceAttributes() noexcept override
     {
         _vt52DeviceAttributes = true;
@@ -1472,6 +1478,7 @@ public:
     bool _deviceAttributes;
     bool _secondaryDeviceAttributes;
     bool _tertiaryDeviceAttributes;
+    bool _requestTerminalNameVersion;
     bool _vt52DeviceAttributes;
     bool _requestTerminalParameters;
     DispatchTypes::ReportingPermission _reportingPermission;
@@ -2388,6 +2395,46 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'c');
 
         VERIFY_IS_FALSE(pDispatch->_tertiaryDeviceAttributes);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestRequestTerminalNameVersion)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Test 1: Check default case, no params.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'>');
+        mach.ProcessCharacter(L'q');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalNameVersion);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 2: Check default case, 0 param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'>');
+        mach.ProcessCharacter(L'0');
+        mach.ProcessCharacter(L'q');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalNameVersion);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 3: Check fail case, 1 (or any other) param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'>');
+        mach.ProcessCharacter(L'1');
+        mach.ProcessCharacter(L'q');
+
+        VERIFY_IS_FALSE(pDispatch->_requestTerminalNameVersion);
 
         pDispatch->ClearState();
     }

@@ -26,6 +26,7 @@
 "DA1","","Primary Device Attributes","`VT100`","Terminal Management Functions","Identification, status, and Initialization","","",""
 "DA2","","Secondary Device Attributes","`VT220`","Terminal Management Functions","Identification, status, and Initialization","","",""
 "DA3","","Tertiary Device Attributes","`VT420`","Terminal Management Functions","Identification, status, and Initialization","","",""
+"XTVERSION","","Report Terminal Name and Version","`XTerm`","Terminal Management Functions","Identification, status, and Initialization","","",""
 "DSR","","Device Status Report","`VT100`","Terminal Management Functions","Identification, status, and Initialization","","",""
 "DECID","","Identify Device","`VT100`","Terminal Management Functions","Identification, status, and Initialization","","",""
 "DECTID","","Select Terminal ID","`VT510`","Terminal Management Functions","Identification, status, and Initialization","","",""
