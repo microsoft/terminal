@@ -125,7 +125,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResetFontSize();
         winrt::Windows::Foundation::Size GetFontSize() const;
 
-        void SendInput(const winrt::hstring& input);
+        void WriteInputString(const winrt::hstring& wstr, WriteInputStringType type);
+        void WriteInputStringWithoutBroadcast(const winrt::hstring& wstr, WriteInputStringType type);
         void ClearBuffer(Control::ClearBufferType clearType);
 
         void ToggleShaderEffects();
@@ -179,7 +180,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool RawWriteKeyEvent(const WORD vkey, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool RawWriteChar(const wchar_t character, const WORD scanCode, const winrt::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-        void RawWriteString(const winrt::hstring& text);
 
         void ShowContextMenu();
         bool OpenQuickFixMenu();
@@ -229,7 +229,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         BUBBLED_FORWARDED_TYPED_EVENT(CompletionsChanged,       IInspectable, Control::CompletionsChangedEventArgs);
         BUBBLED_FORWARDED_TYPED_EVENT(RestartTerminalRequested, IInspectable, IInspectable);
         BUBBLED_FORWARDED_TYPED_EVENT(WriteToClipboard,         IInspectable, Control::WriteToClipboardEventArgs);
-        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard,       IInspectable, Control::PasteFromClipboardEventArgs);
+        BUBBLED_FORWARDED_TYPED_EVENT(PasteFromClipboard,       IInspectable, IInspectable);
 
         // clang-format on
 
@@ -428,8 +428,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::Foundation::Point _toPosInDips(const Core::Point terminalCellPos);
         void _throttledUpdateScrollbar(const ScrollBarUpdate& update);
-
-        void _pasteTextWithBroadcast(const winrt::hstring& text);
 
         void _contextMenuHandler(IInspectable sender, Control::ContextMenuRequestedEventArgs args);
         void _showContextMenuAt(const winrt::Windows::Foundation::Point& controlRelativePos);

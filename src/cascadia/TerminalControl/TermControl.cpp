@@ -238,7 +238,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        core->SendInput(text);
+        core->WriteInputString(text, WriteInputStringType::Raw);
     }
 
     ::Microsoft::Console::Render::Renderer* TsfDataProvider::GetRenderer()
@@ -912,19 +912,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void TermControl::SendInput(const winrt::hstring& wstr)
+    void TermControl::WriteInputString(const winrt::hstring& wstr, WriteInputStringType type)
     {
-        // Dismiss any previewed input.
-        PreviewInput(hstring{});
+        WriteInputStringWithoutBroadcast(wstr, type);
 
         // only broadcast if there's an actual listener. Saves the overhead of some object creation.
         if (StringSent)
         {
-            StringSent.raise(*this, winrt::make<StringSentEventArgs>(wstr));
+            StringSent.raise(*this, winrt::make<StringSentEventArgs>(wstr, static_cast<uint32_t>(type)));
         }
-
-        RawWriteString(wstr);
     }
+
+    void TermControl::WriteInputStringWithoutBroadcast(const winrt::hstring& wstr, WriteInputStringType type)
+    {
+        // Dismiss any previewed input.
+        PreviewInput(hstring{});
+
+        _core.WriteInputString(wstr, type);
+    }
+
     void TermControl::ClearBuffer(Control::ClearBufferType clearType)
     {
         _core.ClearBuffer(clearType);
@@ -1524,11 +1530,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.SendCharEvent(character, scanCode, modifiers);
     }
 
-    void TermControl::RawWriteString(const winrt::hstring& text)
-    {
-        _core.SendInput(text);
-    }
-
     // Method Description:
     // - Manually handles key events for certain keys that can't be passed to us
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
@@ -1675,7 +1676,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // If it encounters a string that isn't, cppwinrt will abort().
                 // It should already be null-terminated, but let's make sure to not crash.
                 buf[buf_len] = L'\0';
-                _core.SendInput(std::wstring_view{ &buf[0], buf_len });
+                _core.WriteInputString(std::wstring_view{ &buf[0], buf_len }, WriteInputStringType::Raw);
             }
 
             s = {};
@@ -3102,7 +3103,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto link{ co_await e.DataView().GetApplicationLinkAsync() };
                 if (const auto strong = weak.get())
                 {
-                    _pasteTextWithBroadcast(link.AbsoluteUri());
+                    WriteInputString(link.AbsoluteUri(), WriteInputStringType::Clipboard);
                 }
             }
             CATCH_LOG();
@@ -3114,7 +3115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto link{ co_await e.DataView().GetWebLinkAsync() };
                 if (const auto strong = weak.get())
                 {
-                    _pasteTextWithBroadcast(link.AbsoluteUri());
+                    WriteInputString(link.AbsoluteUri(), WriteInputStringType::Clipboard);
                 }
             }
             CATCH_LOG();
@@ -3126,7 +3127,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto text{ co_await e.DataView().GetTextAsync() };
                 if (const auto strong = weak.get())
                 {
-                    _pasteTextWithBroadcast(text);
+                    WriteInputString(text, WriteInputStringType::Clipboard);
                 }
             }
             CATCH_LOG();
@@ -3224,25 +3225,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
                 }
 
-                _pasteTextWithBroadcast(winrt::hstring{ allPathsString });
+                WriteInputString(winrt::hstring{ allPathsString }, WriteInputStringType::Clipboard);
             }
         }
-    }
-
-    // Method Description:
-    // - Paste this text, and raise a StringSent, to potentially broadcast this
-    //   text to other controls in the app. For certain interactions, like
-    //   drag/dropping a file, we want to act like we "pasted" the text (even if
-    //   the text didn't come from the clipboard). This lets those interactions
-    //   broadcast as well.
-    void TermControl::_pasteTextWithBroadcast(const winrt::hstring& text)
-    {
-        // only broadcast if there's an actual listener. Saves the overhead of some object creation.
-        if (StringSent)
-        {
-            StringSent.raise(*this, winrt::make<StringSentEventArgs>(text));
-        }
-        _core.PasteText(text);
     }
 
     // Method Description:

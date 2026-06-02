@@ -3044,14 +3044,15 @@ void Pane::BroadcastChar(const winrt::Microsoft::Terminal::Control::TermControl&
 }
 
 void Pane::BroadcastString(const winrt::Microsoft::Terminal::Control::TermControl& sourceControl,
-                           const winrt::hstring& text)
+                           const winrt::hstring& text,
+                           const winrt::Microsoft::Terminal::Control::WriteInputStringType type)
 {
     WalkTree([&](const auto& pane) {
         if (const auto& termControl{ pane->GetTerminalControl() })
         {
             if (termControl != sourceControl && !termControl.ReadOnly())
             {
-                termControl.RawWriteString(text);
+                termControl.WriteInputStringWithoutBroadcast(text, type);
             }
         }
     });
