@@ -323,6 +323,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     DUPLICATE_SETTING_MACRO(TabColor);
     DUPLICATE_SETTING_MACRO(Padding);
     DUPLICATE_SETTING_MACRO(Icon);
+    DUPLICATE_SETTING_MACRO(BellSound);
 
     {
         const auto font = source.FontInfo();
@@ -353,6 +354,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, DarkColorSchemeName);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, LightColorSchemeName);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImagePath);
     }
 
     // UnfocusedAppearance is treated as a single setting,

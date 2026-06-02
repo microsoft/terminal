@@ -22,6 +22,11 @@ static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view OpacityKey{ "opacity" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
+// Internal _json keys that back the two independent dark/light settings. The polymorphic
+// on-disk "colorScheme" key is translated to/from these only in LayerJson/ToJson; these
+// keys themselves are never written to disk.
+static constexpr std::string_view DarkColorSchemeNameKey{ "colorSchemeDark" };
+static constexpr std::string_view LightColorSchemeNameKey{ "colorSchemeLight" };
 
 AppearanceConfig::AppearanceConfig(winrt::weak_ref<Model::Profile> sourceProfile) :
     _sourceProfile(std::move(sourceProfile))
@@ -57,12 +62,41 @@ Json::Value AppearanceConfig::ToJson() const
         JsonUtils::CopyKeyIfPresent(_json, json, key);
     }
 
-    // Opacity: copy from _json (may be int or float — preserves original form)
-    JsonUtils::CopyKeyIfPresent(_json, json, OpacityKey);
+    // Opacity: _json stores it as a float (0.0–1.0). Serialize it to
+    // integer-percent form (i.e. 0.5 -> 50) via IntAsFloatPercentConversionTrait.
+    if (_json.isMember(JsonKey(OpacityKey)) && !_json[JsonKey(OpacityKey)].isNull())
+    {
+        const auto opacityValue{ JsonUtils::GetValue<float>(_json[JsonKey(OpacityKey)]) };
+        JsonUtils::SetValueForKey(json, OpacityKey, opacityValue, IntAsFloatPercentConversionTrait{});
+    }
 
-    // ColorScheme: ConversionTrait<ColorSchemeReference> handles string<->object form.
-    // _json already has the correct serialized form from SetValueForKey.
-    JsonUtils::CopyKeyIfPresent(_json, json, ColorSchemeKey);
+    // ColorScheme: collapse the two independent dark/light settings back to the polymorphic
+    // on-disk "colorScheme" key. Emit a string when both this-layer sides are set and equal,
+    // otherwise an object containing only the side(s) this layer sets. (Mirrors main.)
+    {
+        const auto hasDark{ _json.isMember(JsonKey(DarkColorSchemeNameKey)) && !_json[JsonKey(DarkColorSchemeNameKey)].isNull() };
+        const auto hasLight{ _json.isMember(JsonKey(LightColorSchemeNameKey)) && !_json[JsonKey(LightColorSchemeNameKey)].isNull() };
+        if (hasDark || hasLight)
+        {
+            const auto& dark{ _json[JsonKey(DarkColorSchemeNameKey)] };
+            const auto& light{ _json[JsonKey(LightColorSchemeNameKey)] };
+            if (hasDark && hasLight && dark == light)
+            {
+                json[JsonKey(ColorSchemeKey)] = dark;
+            }
+            else
+            {
+                if (hasDark)
+                {
+                    json[JsonKey(ColorSchemeKey)]["dark"] = dark;
+                }
+                if (hasLight)
+                {
+                    json[JsonKey(ColorSchemeKey)]["light"] = light;
+                }
+            }
+        }
+    }
 
     // MTSM appearance settings: copy from _json (the source of truth)
 #define APPEARANCE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
@@ -207,9 +241,37 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     }
     _logSettingIfSet(OpacityKey, HasOpacity());
 
-    // ColorScheme: ConversionTrait<ColorSchemeReference> handles string↔object normalization.
-    // The raw JSON is stored in _json; the trait interprets it on read.
-    _logSettingIfSet(ColorSchemeKey, HasColorSchemeRef());
+    // ColorScheme: translate the polymorphic on-disk "colorScheme" key (string, or
+    // { "dark", "light" }) into the two independent internal keys. A string sets both sides;
+    // an object sets only the side(s) present (the missing side is left untouched so it
+    // inherits / retains a prior layer's value). Matches main's LayerJson behavior.
+    // ColorScheme: translate the polymorphic on-disk "colorScheme" key (string, or
+    // { "dark", "light" }) into the two independent internal keys. A string sets both sides;
+    // an object sets only the side(s) present (the missing side is left untouched so it
+    // inherits / retains a prior layer's value). Matches main's LayerJson behavior.
+    if (const auto& colorScheme{ json[JsonKey(ColorSchemeKey)] }; colorScheme.isString())
+    {
+        _json[JsonKey(DarkColorSchemeNameKey)] = colorScheme;
+        _json[JsonKey(LightColorSchemeNameKey)] = colorScheme;
+        _logSettingSet(ColorSchemeKey);
+    }
+    else if (colorScheme.isObject())
+    {
+        if (colorScheme.isMember("dark") && !colorScheme["dark"].isNull())
+        {
+            _json[JsonKey(DarkColorSchemeNameKey)] = colorScheme["dark"];
+            _logSettingSet("colorScheme.dark");
+        }
+        if (colorScheme.isMember("light") && !colorScheme["light"].isNull())
+        {
+            _json[JsonKey(LightColorSchemeNameKey)] = colorScheme["light"];
+            _logSettingSet("colorScheme.light");
+        }
+    }
+    // The raw polymorphic key was copied verbatim by MergeJsonKeys above; drop it so only the
+    // two internal keys remain as the source of truth (ToJson re-emits "colorScheme").
+    _json.removeMember(JsonKey(ColorSchemeKey));
+
 
     // MTSM settings are now JSON-backed (no backing fields).
     // Values are already in _json from the merge step above.
