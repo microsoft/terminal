@@ -553,6 +553,18 @@
     <value>When enabled, the window will be placed in the center of the screen when launched.</value>
     <comment>A description for what the "center on launch" setting does. Presented near "Globals_CenterOnLaunch.Header".</comment>
   </data>
+  <data name="Globals_RestoreWindowPosition/Content" xml:space="preserve">
+    <value>Restored</value>
+    <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_RestoreWindowPosition.Text".</comment>
+  </data>
+  <data name="Globals_RestoreWindowPosition.Text" xml:space="preserve">
+    <value>Restore window position and size</value>
+    <comment>Header for a control to toggle whether the app should restore the last used window position and size when launched.</comment>
+  </data>
+  <data name="Globals_RestoreWindowPosition.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>When enabled, the window will be restored to its last used position and size when launched.</value>
+    <comment>A description for what the "restore window position and size" setting does. Presented near "Globals_RestoreWindowPosition.Header".</comment>
+  </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>
     <comment>Header for a control to toggle if the app will always be presented on top of other windows, or is treated normally (when disabled).</comment>

@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // unique view model members.
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"CenterOnLaunch")
+            if (viewModelProperty == L"CenterOnLaunch" || viewModelProperty == L"RestoreWindowPosition")
             {
                 _NotifyChanges(L"LaunchParametersCurrentValue");
             }
@@ -226,6 +226,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Append the CenterOnLaunch part
         result = CenterOnLaunch() ? til::hstring_format(FMT_COMPILE(L"{}, {}"), result, RS_(L"Globals_CenterOnLaunchCentered")) : result;
+        
+        // Append the RestoreWindowPosition part
+        result = RestoreWindowPosition() ? til::hstring_format(FMT_COMPILE(L"{}, {}"), result, RS_(L"Globals_RestoreWindowPosition/Content")) : result;
         return result;
     }
 
