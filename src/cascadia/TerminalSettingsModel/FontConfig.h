@@ -60,5 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
+
+        void _ValidateThisLayer() const override;
     };
 }

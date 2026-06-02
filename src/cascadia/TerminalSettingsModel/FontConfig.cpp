@@ -144,6 +144,13 @@ void FontConfig::LayerJson(const Json::Value& json)
         _logSettingIfSet("size", json.isMember(JsonKey(LegacyFontSizeKey)));
         _logSettingIfSet("weight", json.isMember(JsonKey(LegacyFontWeightKey)));
     }
+
+    _ValidateThisLayer();
+}
+
+void FontConfig::_ValidateThisLayer() const
+{
+    MTSM_FONT_SETTINGS(MTSM_VALIDATE_SETTING)
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()

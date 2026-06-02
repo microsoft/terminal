@@ -69,11 +69,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Method Description:
         // - Actions to be performed after a child was created. Generally used to set
         //   any extraneous data from the parent into the child.
-        // Arguments:
-        // - <none>
-        // Return Value:
-        // - <none>
         virtual void _FinalizeInheritance() {}
+
+        // Method Description:
+        // - Eagerly deserialize every JSON-backed setting in *this layer* so malformed
+        //   values throw a JsonUtils::DeserializationError at parse time (reported with
+        //   location info by the settings loader) instead of lazily at first getter
+        //   access. Each settings class overrides this to validate its own settings.
+        virtual void _ValidateThisLayer() const {}
     };
 
     // This is like std::optional, but we can use it in inheritance to determine whether the user explicitly cleared it
@@ -632,3 +635,15 @@ public:                                                                         
         _##name = value;                                                                           \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);   \
     }
+
+// =============================================================================
+// Validation helper
+// =============================================================================
+// Expands to a statement that eagerly deserializes a single JSON-backed setting
+// from this layer's _json, forcing its ConversionTrait conversion to run so a
+// malformed value throws a JsonUtils::DeserializationError at parse time.
+// Designed to be passed to an MTSM_*_SETTINGS(X) X-macro list inside a class's
+// _ValidateThisLayer() override. Works for both regular and nullable JSON-backed
+// settings, since both generate a _get<Name>FromThisLayer() helper.
+#define MTSM_VALIDATE_SETTING(type, name, jsonKey, ...) \
+    std::ignore = _get##name##FromThisLayer();

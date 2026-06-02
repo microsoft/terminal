@@ -115,6 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static std::wstring NormalizeCommandLine(LPCWSTR commandLine);
 
         void _FinalizeInheritance() override;
+        void _ValidateThisLayer() const override;
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 

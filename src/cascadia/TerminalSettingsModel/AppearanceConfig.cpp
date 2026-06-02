@@ -290,6 +290,22 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     _logSettingIfSet("experimental.pixelShaderImagePath", _PixelShaderImagePath.has_value());
     JsonUtils::GetValueForKey(json, "backgroundImage", _BackgroundImagePath);
     _logSettingIfSet("backgroundImage", _BackgroundImagePath.has_value());
+
+    _ValidateThisLayer();
+}
+
+void AppearanceConfig::_ValidateThisLayer() const
+{
+    MTSM_APPEARANCE_SETTINGS(MTSM_VALIDATE_SETTING)
+
+    // Settings declared outside MTSM_APPEARANCE_SETTINGS that are still JSON-backed.
+    std::ignore = _getForegroundFromThisLayer();
+    std::ignore = _getBackgroundFromThisLayer();
+    std::ignore = _getSelectionBackgroundFromThisLayer();
+    std::ignore = _getCursorColorFromThisLayer();
+    std::ignore = _getOpacityFromThisLayer();
+    std::ignore = _getDarkColorSchemeNameFromThisLayer();
+    std::ignore = _getLightColorSchemeNameFromThisLayer();
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()

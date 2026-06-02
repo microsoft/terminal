@@ -230,6 +230,16 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
             }
         }
     }
+
+    _ValidateThisLayer();
+}
+
+void GlobalAppSettings::_ValidateThisLayer() const
+{
+    MTSM_GLOBAL_SETTINGS(MTSM_VALIDATE_SETTING)
+
+    // Settings declared outside MTSM_GLOBAL_SETTINGS that are still JSON-backed.
+    std::ignore = _getUnparsedDefaultProfileFromThisLayer();
 }
 
 void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTag origin, const bool withKeybindings)

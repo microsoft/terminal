@@ -241,6 +241,21 @@ void Profile::LayerJson(const Json::Value& json)
 
         _logSettingSet(UnfocusedAppearanceKey);
     }
+
+    _ValidateThisLayer();
+}
+
+void Profile::_ValidateThisLayer() const
+{
+    MTSM_PROFILE_SETTINGS(MTSM_VALIDATE_SETTING)
+
+    // Settings declared outside MTSM_PROFILE_SETTINGS that are still JSON-backed.
+    std::ignore = _getNameFromThisLayer();
+    std::ignore = _getSourceFromThisLayer();
+    std::ignore = _getHiddenFromThisLayer();
+    std::ignore = _getPaddingFromThisLayer();
+    std::ignore = _getTabColorFromThisLayer();
+    std::ignore = _getGuidFromThisLayer();
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const
