@@ -30,7 +30,6 @@ static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
-static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -125,15 +124,6 @@ void WindowSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste);
     JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
-    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
-    // "confirmOnClose" enum. true -> Automatic, false -> Never.
-    {
-        std::optional<bool> legacyConfirmClose;
-        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
-        {
-            _ConfirmOnClose = legacyConfirmClose.value() ? Model::ConfirmOnClose::Automatic : Model::ConfirmOnClose::Never;
-        }
-    }
 
 #define WINDOW_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);

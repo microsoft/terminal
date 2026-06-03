@@ -955,7 +955,7 @@ namespace winrt::TerminalApp::implementation
 
             if (result == ContentDialogResult::Primary && checkbox.IsChecked().Value())
             {
-                _currentWindowSettings().ConfirmOnClose(ConfirmOnClose::Never);
+                _settings.GlobalSettings().ConfirmOnClose(ConfirmOnClose::Never);
                 _settings.WriteSettingsToDisk();
             }
         }
@@ -2266,7 +2266,7 @@ namespace winrt::TerminalApp::implementation
     //   signal that we want to close everything.
     safe_void_coroutine TerminalPage::RequestQuit()
     {
-        const auto setting = _currentWindowSettings().ConfirmOnClose();
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
         if (setting != ConfirmOnClose::Never && !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
@@ -2373,7 +2373,7 @@ namespace winrt::TerminalApp::implementation
     // - true, if a warning dialog should be shown before closing the window
     bool TerminalPage::_ShouldWarnOnClose() const
     {
-        const auto setting = _currentWindowSettings().ConfirmOnClose();
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
         switch (setting)
         {
         case ConfirmOnClose::Always:
@@ -2398,7 +2398,7 @@ namespace winrt::TerminalApp::implementation
     // - true, if a warning dialog should be shown before closing the tab
     bool TerminalPage::_ShouldWarnOnCloseTab(const winrt::com_ptr<Tab>& tab) const
     {
-        const auto setting = _currentWindowSettings().ConfirmOnClose();
+        const auto setting = _settings.GlobalSettings().ConfirmOnClose();
         switch (setting)
         {
         case ConfirmOnClose::Always:

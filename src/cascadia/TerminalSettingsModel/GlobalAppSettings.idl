@@ -85,6 +85,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
+        INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
@@ -113,7 +114,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowTabsFullscreen);
         INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
-        INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
         INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);

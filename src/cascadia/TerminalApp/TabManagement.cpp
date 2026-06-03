@@ -818,7 +818,7 @@ namespace winrt::TerminalApp::implementation
 
                 // Check if we should warn before closing a single pane
                 // (only triggers on Always — Automatic doesn't warn for single pane)
-                const auto setting = _currentWindowSettings().ConfirmOnClose();
+                const auto setting = _settings.GlobalSettings().ConfirmOnClose();
                 if (setting == ConfirmOnClose::Always)
                 {
                     // If this is the last pane, closing it closes the tab,
@@ -855,7 +855,7 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_ClosePanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds)
     {
         // Show a single aggregate confirmation for closing multiple panes.
-        if (_currentWindowSettings().ConfirmOnClose() != ConfirmOnClose::Never)
+        if (_settings.GlobalSettings().ConfirmOnClose() != ConfirmOnClose::Never)
         {
             const auto weak = get_weak();
             auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultiplePanes);
@@ -932,7 +932,7 @@ namespace winrt::TerminalApp::implementation
 
         // Show a single aggregate confirmation instead of per-tab dialogs.
         const auto weak = get_weak();
-        if (_currentWindowSettings().ConfirmOnClose() != ConfirmOnClose::Never)
+        if (_settings.GlobalSettings().ConfirmOnClose() != ConfirmOnClose::Never)
         {
             auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultipleTabs);
 

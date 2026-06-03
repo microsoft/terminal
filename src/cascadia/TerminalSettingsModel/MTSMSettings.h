@@ -29,7 +29,8 @@ Author(s):
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                       \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)  \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                    \
-    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                       \
+    X(Model::ConfirmOnClose, ConfirmOnClose, "warning.confirmOnClose", Model::ConfirmOnClose::Automatic)
 
 // These are per-window settings - different windows can have different values.
 // The "base" window settings act as the defaults for all windows.
@@ -53,7 +54,6 @@ Author(s):
     X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
     X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
-    X(Model::ConfirmOnClose, ConfirmOnClose, "warning.confirmOnClose", Model::ConfirmOnClose::Automatic)                                                                                              \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
     X(Model::Docking, DockWindow, "dockWindow", nullptr)                                                                                                                                              \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \

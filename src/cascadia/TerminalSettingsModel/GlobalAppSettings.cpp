@@ -26,6 +26,7 @@ static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" 
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
 static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWarning" };
+static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view LegacyPersistedWindowLayout{ "persistedWindowLayout" };
 
 // Method Description:
@@ -126,6 +127,16 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origin)
 {
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
+
+    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
+    // "confirmOnClose" enum. true -> Automatic, false -> Never.
+    {
+        std::optional<bool> legacyConfirmClose;
+        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        {
+            _ConfirmOnClose = legacyConfirmClose.value() ? Model::ConfirmOnClose::Automatic : Model::ConfirmOnClose::Never;
+        }
+    }
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
