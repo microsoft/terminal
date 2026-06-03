@@ -39,6 +39,18 @@ namespace SettingsModelUnitTests
         TEST_METHOD(SpecialCasedSettingsJsonBacked);
         TEST_METHOD(NullableSettingJsonBacked);
         TEST_METHOD(ColorSchemeJsonBacked);
+
+        TEST_METHOD(BellSoundInPlaceMutationSyncsJson);
+        TEST_METHOD(ClearBellSoundClearsJson);
+        TEST_METHOD(EnvironmentVariablesInPlaceMutationSyncsJson);
+        TEST_METHOD(BellSoundWholeReplaceSetterDualWritesJson);
+        TEST_METHOD(BellSoundInPlaceInsertAtSyncsJson);
+        TEST_METHOD(BellSoundToJsonRoundTrip);
+        TEST_METHOD(BellSoundInheritedReturnsParentIVector);
+        TEST_METHOD(BellSoundChildMutationDoesNotAffectParent);
+
+        TEST_METHOD(ClearIconAlsoClearsJson);
+        TEST_METHOD(ClearIconAndBellSoundAreLogged);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -990,5 +1002,387 @@ namespace SettingsModelUnitTests
             const auto json2 = profileImpl->ToJson();
             VERIFY_IS_FALSE(json2.isMember("colorScheme"));
         }
+    }
+
+    // Verifies that mutating the returned IVector / IMap in place (i.e.
+    // .Append, .Insert, .RemoveAt, .Remove) lands in the parent's _json.
+    void ProfileTests::BellSoundInPlaceMutationSyncsJson()
+    {
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["foo.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasBellSound());
+        VERIFY_ARE_EQUAL(1u, profile.BellSound().Size());
+
+        // In-place append should land in _json.
+        const auto bell = MediaResourceHelper::FromString(L"bar.wav");
+        profile.BellSound().Append(bell);
+
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+
+        // In-place RemoveAt should also land in _json.
+        profile.BellSound().RemoveAt(0);
+        VERIFY_ARE_EQUAL(1u, profile.BellSound().Size());
+
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(1u, json2["bellSound"].size());
+    }
+
+    void ProfileTests::ClearBellSoundClearsJson()
+    {
+        Log::Comment(L"ClearBellSound must clear BOTH _BellSound and _json[bellSound]");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["foo.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasBellSound());
+
+        profile.ClearBellSound();
+
+        VERIFY_IS_FALSE(profile.HasBellSound());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_FALSE(json.isMember("bellSound"));
+    }
+
+    void ProfileTests::EnvironmentVariablesInPlaceMutationSyncsJson()
+    {
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "environment": { "FOO": "1" }
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasEnvironmentVariables());
+        VERIFY_ARE_EQUAL(1u, profile.EnvironmentVariables().Size());
+
+        // In-place Insert should land in _json.
+        profile.EnvironmentVariables().Insert(L"BAR", L"2");
+        VERIFY_ARE_EQUAL(2u, profile.EnvironmentVariables().Size());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("environment"));
+        VERIFY_ARE_EQUAL(2u, json["environment"].size());
+        VERIFY_ARE_EQUAL(std::string{ "2" }, json["environment"]["BAR"].asString());
+
+        // In-place Remove should also land in _json.
+        profile.EnvironmentVariables().Remove(L"FOO");
+        VERIFY_ARE_EQUAL(1u, profile.EnvironmentVariables().Size());
+
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(1u, json2["environment"].size());
+        VERIFY_IS_FALSE(json2["environment"].isMember("FOO"));
+    }
+
+    void ProfileTests::BellSoundWholeReplaceSetterDualWritesJson()
+    {
+        Log::Comment(L"BellSound(IVector) setter must dual-write to backing + _json");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_FALSE(profile.HasBellSound());
+
+        std::vector<IMediaResource> sounds;
+        sounds.push_back(MediaResourceHelper::FromString(L"alpha.wav"));
+        sounds.push_back(MediaResourceHelper::FromString(L"beta.wav"));
+        profile.BellSound(winrt::single_threaded_vector(std::move(sounds)));
+
+        // Backing reflects the new value.
+        VERIFY_IS_TRUE(profile.HasBellSound());
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+
+        // JSON reflects the new value too.
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "alpha.wav" }, json["bellSound"][0].asString());
+        VERIFY_ARE_EQUAL(std::string{ "beta.wav" }, json["bellSound"][1].asString());
+    }
+
+    void ProfileTests::BellSoundInPlaceInsertAtSyncsJson()
+    {
+        Log::Comment(L"In-place InsertAt/SetAt on the wrapper must also dual-write");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["middle.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // InsertAt(0, x) lands in _json at index 0.
+        profile.BellSound().InsertAt(0, MediaResourceHelper::FromString(L"first.wav"));
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "first.wav" }, json["bellSound"][0].asString());
+        VERIFY_ARE_EQUAL(std::string{ "middle.wav" }, json["bellSound"][1].asString());
+
+        // SetAt(0, x) replaces in-place and lands in _json.
+        profile.BellSound().SetAt(0, MediaResourceHelper::FromString(L"replaced.wav"));
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(std::string{ "replaced.wav" }, json2["bellSound"][0].asString());
+    }
+
+    void ProfileTests::BellSoundToJsonRoundTrip()
+    {
+        Log::Comment(L"A loaded BellSound must round-trip through ToJson without loss");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["a.wav", "b.wav", "c.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(3u, json["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "a.wav" }, json["bellSound"][0].asString());
+        VERIFY_ARE_EQUAL(std::string{ "b.wav" }, json["bellSound"][1].asString());
+        VERIFY_ARE_EQUAL(std::string{ "c.wav" }, json["bellSound"][2].asString());
+
+        // Mutate, ToJson again, content reflects the mutation.
+        profile.BellSound().Append(MediaResourceHelper::FromString(L"d.wav"));
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(4u, json2["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "d.wav" }, json2["bellSound"][3].asString());
+    }
+
+    void ProfileTests::BellSoundInheritedReturnsParentIVector()
+    {
+        Log::Comment(L"When child has no local BellSound, getter returns parent's IVector without a wrapper");
+
+        // Layered settings: profile.defaults has bellSound, profile does not.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "defaults": {
+                    "bellSound": ["inherited.wav"]
+                },
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+
+        VERIFY_IS_FALSE(profile.HasBellSound());
+
+        // Inheritance still resolves — getter sees parent's IVector.
+        const auto inherited = profile.BellSound();
+        VERIFY_IS_NOT_NULL(inherited);
+        VERIFY_ARE_EQUAL(1u, inherited.Size());
+
+        // The override source is the parent (the defaults layer).
+        const auto source = profile.BellSoundOverrideSource();
+        VERIFY_IS_NOT_NULL(source);
+        VERIFY_IS_TRUE(source.HasBellSound());
+    }
+
+    void ProfileTests::BellSoundChildMutationDoesNotAffectParent()
+    {
+        Log::Comment(L"After the editor copies inherited BellSound to the local layer, child wrapper mutations must not leak into the parent");
+
+        // Layered settings: profile.defaults has bellSound, profile does not.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "defaults": {
+                    "bellSound": ["parent.wav"]
+                },
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // Step 1: child has no local value; getter returns parent's IVector raw.
+        VERIFY_IS_FALSE(profile.HasBellSound());
+        const auto parentSource = profile.BellSoundOverrideSource();
+        VERIFY_IS_NOT_NULL(parentSource);
+        VERIFY_ARE_EQUAL(1u, parentSource.BellSound().Size());
+
+        // Step 2: emulate ProfileViewModel::_PrepareModelForBellSoundModification —
+        // copy inherited values into the local layer via the whole-replace setter.
+        std::vector<IMediaResource> local;
+        const auto inheritedView = profile.BellSound();
+        for (const auto& sound : inheritedView)
+        {
+            local.push_back(sound);
+        }
+        profile.BellSound(winrt::single_threaded_vector(std::move(local)));
+
+        VERIFY_IS_TRUE(profile.HasBellSound());
+
+        // Step 3: now the child getter returns a wrapper. Mutate via the wrapper.
+        profile.BellSound().Append(MediaResourceHelper::FromString(L"child.wav"));
+
+        // Child has 2 entries; parent (defaults) STILL has 1.
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+        VERIFY_ARE_EQUAL(1u, parentSource.BellSound().Size());
+        VERIFY_ARE_EQUAL(winrt::hstring{ L"parent.wav" }, parentSource.BellSound().GetAt(0).Path());
+
+        // Child JSON reflects the mutation; the override source is now the child itself.
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+    }
+
+    void ProfileTests::ClearIconAlsoClearsJson()
+    {
+        Log::Comment(L"INHERITABLE_MEDIA_RESOURCE_SETTING Clear must clear both backing field AND _json key");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "icon": "C:/icons/foo.png"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasIcon());
+        {
+            const auto json = profileImpl->ToJson();
+            VERIFY_IS_TRUE(json.isMember("icon"));
+        }
+
+        profile.ClearIcon();
+
+        // Backing AND _json key both cleared — auto-save would otherwise re-persist a stale icon.
+        VERIFY_IS_FALSE(profile.HasIcon());
+        const auto jsonAfter = profileImpl->ToJson();
+        VERIFY_IS_FALSE(jsonAfter.isMember("icon"));
+    }
+
+    void ProfileTests::ClearIconAndBellSoundAreLogged()
+    {
+        Log::Comment(L"Dual-clear macros must call _logSettingSet so telemetry sees the change");
+
+        // Empty profile — load-time logging never sees icon/bellSound, so the
+        // baseline _changeLog is empty for these keys. Clear is the only thing
+        // that could add them.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // Baseline: nothing logged for icon/bellSound on an empty profile.
+        {
+            std::set<std::string> baseline;
+            profileImpl->LogSettingChanges(baseline, "profile");
+            VERIFY_IS_FALSE(baseline.contains("profile.icon"));
+            VERIFY_IS_FALSE(baseline.contains("profile.bellSound"));
+        }
+
+        // Clear on a never-set value still hits the macro's _logSettingSet call.
+        // That's the contract we're locking in.
+        profile.ClearIcon();
+        profile.ClearBellSound();
+
+        std::set<std::string> changes;
+        profileImpl->LogSettingChanges(changes, "profile");
+        VERIFY_IS_TRUE(changes.contains("profile.icon"));
+        VERIFY_IS_TRUE(changes.contains("profile.bellSound"));
     }
 }

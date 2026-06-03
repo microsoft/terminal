@@ -47,8 +47,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define FONT_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::FontConfig, type, name, jsonKey, ##__VA_ARGS__)
-        MTSM_FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)
+        MTSM_FONT_SETTINGS_SCALARS(FONT_SETTINGS_INITIALIZE)
 #undef FONT_SETTINGS_INITIALIZE
+
+#define FONT_COLLECTION_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_JSON_BACKED_MAP_SETTING(Model::FontConfig, type, name, jsonKey, ##__VA_ARGS__)
+        MTSM_FONT_SETTINGS_COLLECTIONS(FONT_COLLECTION_INITIALIZE)
+#undef FONT_COLLECTION_INITIALIZE
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;

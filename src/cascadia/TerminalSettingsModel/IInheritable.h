@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "JsonUtils.h"
+#include "JsonSyncCollections.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -95,31 +96,53 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 //   - Setter(): sets the value
 //   - Clear<NAME>(): clears the user set value (reverts to inherited/default)
 //
-// There are two storage strategies:
+// Storage strategies (in order of preference):
 //
-//   1. JSON-backed (preferred): All state lives in _json (a Json::Value member).
-//      Use these for any setting with a ConversionTrait. The owning class must
-//      declare a `Json::Value _json{ Json::ValueType::objectValue };` member.
+//   1. JSON-backed scalars (the default for new settings). State lives in
+//      _json (a Json::Value member). Use these for any setting with a
+//      ConversionTrait. The owning class must declare
+//      `Json::Value _json{ Json::ValueType::objectValue };`.
+//      Macros: INHERITABLE_SETTING, INHERITABLE_SETTING_WITH_LOGGING,
+//              INHERITABLE_NULLABLE_SETTING.
 //
-//   2. Mutable backing-field (exception): State lives in a std::optional<T> member.
-//      Use these only for types that callers mutate in place after retrieval, such
-//      as IMediaResource (resolved via ResolveMediaResources), IVector, and IMap.
-//      A JSON-backed getter would deserialize a fresh copy on each call, losing
-//      those in-place mutations.
+//   2. JSON-backed collections (IVector<T> / IMap<K,V>). The getter returns
+//      a JsonSyncVector / JsonSyncMap wrapper that mirrors every in-place
+//      mutation into _json[jsonKey], so .Append / .InsertAt / .Insert /
+//      .RemoveAt / etc. don't get lost. _json is the only persistent state.
+//      Macros: INHERITABLE_JSON_BACKED_VECTOR_SETTING,
+//              INHERITABLE_JSON_BACKED_MAP_SETTING.
 //
-// When adding a new setting, use the JSON-backed macros unless the type requires
-// in-place mutation. Existing backing-field settings should be migrated to
-// JSON-backed as their mutation patterns are resolved.
+//   3. Backing-field (narrow special case for runtime resolution caches and
+//      sub-object presence/absence markers). State lives in a
+//      std::optional<T> member. Used when the runtime needs a persistent
+//      cache that JSON does not carry — specifically:
+//        - IMediaResource scalars: Icon, PixelShaderPath, BackgroundImagePath,
+//          PixelShaderImagePath. _resolved state set by ResolveMediaResources
+//          must persist across getter calls. (INHERITABLE_MEDIA_RESOURCE_SETTING.)
+//        - Sub-object presence markers: UnfocusedAppearance.
+//          (INHERITABLE_MUTABLE_SETTING.)
+//        - Hand-written hybrid cases: Profile::BellSound,
+//          GlobalAppSettings::NewTabMenu. Both keep a backing field for nested
+//          IMediaResource resolution but dual-write to _json via either a
+//          JsonSyncVector wrapper getter (BellSound) or surgical mutation APIs
+//          (NewTabMenu's Insert/Remove/Set/...InFolder/UpdateFolder*).
 //
-// Available macros (JSON-backed):
+// When adding a new setting, prefer (1) for scalars and (2) for collections.
+// Reach for (3) only when the runtime needs state that JSON doesn't capture.
+//
+// Available macros (JSON-backed scalars):
 //   INHERITABLE_SETTING(projectedType, type, name, jsonKey, ...)
 //   INHERITABLE_SETTING_WITH_LOGGING(projectedType, type, name, jsonKey, ...)
 //   INHERITABLE_NULLABLE_SETTING(projectedType, type, name, jsonKey, ...)
 //   _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, ...)
 //
-// Available macros (mutable backing-field):
+// Available macros (JSON-backed collections):
+//   INHERITABLE_JSON_BACKED_VECTOR_SETTING(projectedType, type, name, jsonKey, ...)
+//   INHERITABLE_JSON_BACKED_MAP_SETTING(projectedType, type, name, jsonKey, ...)
+//
+// Available macros (backing-field):
 //   INHERITABLE_MUTABLE_SETTING(projectedType, type, name, ...)
-//   INHERITABLE_NULLABLE_MUTABLE_SETTING(projectedType, type, name, ...)
+//   INHERITABLE_MEDIA_RESOURCE_SETTING(projectedType, name, jsonKey, ...)
 //
 // =============================================================================
 
@@ -434,19 +457,30 @@ private:                                                                        
 // =============================================================================
 // These use a std::optional<T> backing field instead of _json.
 //
-// Use these ONLY for types that callers mutate in place after retrieval.
-// A JSON-backed getter would deserialize a fresh copy on each call, so
-// in-place mutations (e.g. ResolveMediaResources) would be lost.
+// Use these ONLY when runtime state must persist across getter calls and JSON
+// alone cannot capture that state — specifically IMediaResource resolution
+// state and sub-object presence markers.
 //
-// Current uses:
-//   Profile:           Icon, EnvironmentVariables, BellSound, UnfocusedAppearance
-//   GlobalAppSettings: DisabledProfileSources, NewTabMenu
-//   AppearanceConfig:  PixelShaderPath, PixelShaderImagePath, BackgroundImagePath,
-//                      DarkColorSchemeName, LightColorSchemeName
-//   FontConfig:        FontAxes, FontFeatures
+// Current direct uses (after the auto-save refactor):
+//   Profile:           UnfocusedAppearance (INHERITABLE_MUTABLE_SETTING),
+//                      Icon (INHERITABLE_MEDIA_RESOURCE_SETTING),
+//                      BellSound (hand-written: backing field + wrapper getter)
+//   GlobalAppSettings: NewTabMenu (hand-written: backing field + surgical APIs)
+//   AppearanceConfig:  PixelShaderPath, PixelShaderImagePath, BackgroundImagePath
+//                      (INHERITABLE_MEDIA_RESOURCE_SETTING)
+//
+// Collection settings (DisabledProfileSources, FontAxes, FontFeatures,
+// EnvironmentVariables) are now JSON-backed via
+// INHERITABLE_JSON_BACKED_VECTOR_SETTING / _MAP_SETTING.
 
 // Shared base for backing-field inheritable settings.
-// Provides Has, Clear, OverrideSource, and the private implementation helpers.
+// Provides Has, OverrideSource, and the private implementation helpers
+// (backing field + parent-walk resolvers).
+//
+// Each OUTER macro that uses this base is responsible for defining its own
+// Clear<Name>() — backing-only for plain INHERITABLE_MUTABLE_SETTING, dual-write
+// (backing + _json) for INHERITABLE_MEDIA_RESOURCE_SETTING and
+// INHERITABLE_MEDIA_RESOURCE_VECTOR_SETTING — and its own getter/setter.
 #define _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, storageType, name, ...)         \
 public:                                                                                  \
     /* Returns true if the user explicitly set the value, false otherwise */             \
@@ -469,12 +503,6 @@ public:                                                                         
                                                                                          \
         /*no source was found*/                                                          \
         return nullptr;                                                                  \
-    }                                                                                    \
-                                                                                         \
-    /* Clear the user set value */                                                       \
-    void Clear##name()                                                                   \
-    {                                                                                    \
-        _##name = std::nullopt;                                                          \
     }                                                                                    \
                                                                                          \
 private:                                                                                 \
@@ -550,6 +578,7 @@ private:                                                                        
 // Mutable backing-field setting.
 // Getter returns the resolved value: this layer --> inherited --> default.
 // Setter writes to the std::optional<T> backing field.
+// Clear<Name>() resets the backing field only (this macro has no JSON to clear).
 #define INHERITABLE_MUTABLE_SETTING(projectedType, type, name, ...)                      \
     _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, std::optional<type>, name, ...)     \
 public:                                                                                  \
@@ -565,42 +594,12 @@ public:                                                                         
     void name(const type& value)                                                         \
     {                                                                                    \
         _##name = value;                                                                 \
-    }
-
-// Mutable nullable backing-field setting.
-// Same as INHERITABLE_MUTABLE_SETTING, but for optional settings where null is
-// a valid explicit value. Getter returns IReference<T>.
-#define INHERITABLE_NULLABLE_MUTABLE_SETTING(projectedType, type, name, ...)              \
-    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, NullableSetting<type>, name, ...)   \
-public:                                                                                  \
-    /* Returns the resolved value for this setting */                                    \
-    /* fallback: this layer --> inherited value --> default */                            \
-    winrt::Windows::Foundation::IReference<type> name() const                            \
-    {                                                                                    \
-        const auto val{ _get##name##Impl() };                                            \
-        if (val)                                                                         \
-        {                                                                                \
-            if (*val)                                                                    \
-            {                                                                            \
-                return **val;                                                            \
-            }                                                                            \
-            return nullptr;                                                              \
-        }                                                                                \
-        return winrt::Windows::Foundation::IReference<type>{ __VA_ARGS__ };              \
     }                                                                                    \
                                                                                          \
-    /* Overwrite the user set value */                                                   \
-    void name(const winrt::Windows::Foundation::IReference<type>& value)                 \
+    /* Clear the user set value (backing only — no _json key for this macro) */          \
+    void Clear##name()                                                                   \
     {                                                                                    \
-        if (value)                                                                       \
-        {                                                                                \
-            _##name = std::optional<type>{ value.Value() };                              \
-        }                                                                                \
-        else                                                                             \
-        {                                                                                \
-            /* explicitly set to null (not the same as clearing) */                      \
-            _##name = std::optional<type>{ std::nullopt };                               \
-        }                                                                                \
+        _##name = std::nullopt;                                                          \
     }
 
 // =============================================================================
@@ -610,7 +609,7 @@ public:                                                                         
 // Use for settings of type IMediaResource that need in-place resolution
 // (e.g., Icon, PixelShaderPath, BackgroundImagePath). The backing field
 // holds the runtime-resolved object. _json is the source of truth for
-// serialization. The setter dual-writes to both.
+// serialization. The setter and Clear dual-write to both.
 //
 // Parameters:
 //   projectedType - the WinRT projected type (e.g., Model::Profile)
@@ -634,6 +633,195 @@ public:                                                                         
     {                                                                                              \
         _##name = value;                                                                           \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);   \
+        _logSettingSet(jsonKey);                                                                    \
+        /* TODO GH#12424: raise WriteSettings event */                                              \
+    }                                                                                              \
+                                                                                                   \
+    /* Dual-clear: backing field + _json key. Both must clear so auto-save doesn't */               \
+    /* re-persist the cleared value. */                                                             \
+    void Clear##name()                                                                             \
+    {                                                                                              \
+        _##name = std::nullopt;                                                                    \
+        _json.removeMember(JsonKey(jsonKey));                                                       \
+        _logSettingSet(jsonKey);                                                                    \
+        /* TODO GH#12424: raise WriteSettings event */                                              \
+    }
+
+// =============================================================================
+// IMediaResource vector settings (BellSound-style).
+// =============================================================================
+//
+// Use for settings of type IVector<IMediaResource> that need in-place
+// resolution AND in-place IVector mutation (.Append, .InsertAt, .RemoveAt, …).
+// The backing field holds the runtime-resolved IMediaResource instances.
+// _json is the source of truth for serialization. The setter, Clear, and
+// in-place wrapper mutations all dual-write to both backing and _json.
+//
+// Asymmetric getter:
+//   - When Has<Name>() (this layer has its own value): returns a JsonSyncVector
+//     wrapper over the backing field. Mutations on the wrapper dual-write to
+//     both _##name and _json[jsonKey] via the onChange callback.
+//   - When inherited from a parent: returns the parent's IVector directly (no
+//     wrapper). Callers MUST materialize a local copy before mutating, by
+//     calling the whole-replace setter (the editor handles this in
+//     ProfileViewModel::_PrepareModelForBellSoundModification). After that,
+//     subsequent getter calls return a wrapper over the now-local backing.
+//
+// This asymmetry preserves parent isolation — child mutations through the
+// wrapper write into the child's own _##name and _json, never the parent's.
+//
+// Parameters:
+//   projectedType - the WinRT projected type (e.g., Model::Profile)
+//   name          - the setting name (e.g., BellSound)
+//   jsonKey       - the JSON key (e.g., "bellSound")
+//   ...           - fallback value when no layer has a value (e.g., nullptr).
+//                   Wrapped as IVector<IMediaResource>{ __VA_ARGS__ }, so
+//                   accepts nullptr or any IVector<IMediaResource>{}-compatible
+//                   initializer.
+//
+// Requires JsonSyncCollections.h to be transitively included.
+#define INHERITABLE_MEDIA_RESOURCE_VECTOR_SETTING(projectedType, name, jsonKey, ...)                                                  \
+    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType,                                                                                  \
+                                      std::optional<winrt::Windows::Foundation::Collections::IVector<IMediaResource>>,                \
+                                      name,                                                                                           \
+                                      __VA_ARGS__)                                                                                    \
+public:                                                                                                                               \
+    /* Asymmetric getter: wrapper when local, raw inherited IVector otherwise. */                                                     \
+    /* Returns the fallback default (typically nullptr) when no effective value exists. */                                            \
+    winrt::Windows::Foundation::Collections::IVector<IMediaResource> name()                                                           \
+    {                                                                                                                                 \
+        const auto val{ _get##name##Impl() };                                                                                         \
+        if (!val || !*val)                                                                                                            \
+        {                                                                                                                             \
+            return winrt::Windows::Foundation::Collections::IVector<IMediaResource>{ __VA_ARGS__ };                                   \
+        }                                                                                                                             \
+        if (Has##name())                                                                                                              \
+        {                                                                                                                             \
+            auto strong = get_strong();                                                                                               \
+            return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncVector<IMediaResource>>(        \
+                *val,                                                                                                                 \
+                [strong](winrt::Windows::Foundation::Collections::IVector<IMediaResource> const& current) {                           \
+                    auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<                                   \
+                        winrt::Windows::Foundation::Collections::IVector<IMediaResource>>{}.ToJson(current);                          \
+                    strong->_json[JsonKey(jsonKey)] = std::move(temp);                        \
+                    strong->_logSettingSet(jsonKey);                                                                                  \
+                    /* TODO GH#12424: raise WriteSettings event */                                                                    \
+                });                                                                                                                   \
+        }                                                                                                                             \
+        return *val;                                                                                                                  \
+    }                                                                                                                                 \
+                                                                                                                                      \
+    /* Whole-replace setter: dual-write to backing + _json. */                                                                        \
+    void name(const winrt::Windows::Foundation::Collections::IVector<IMediaResource>& value)                                          \
+    {                                                                                                                                 \
+        _##name = value;                                                                                                              \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                                     \
+        _logSettingSet(jsonKey);                                                                                                      \
+        /* TODO GH#12424: raise WriteSettings event */                                                                                \
+    }                                                                                                                                 \
+                                                                                                                                      \
+    /* Dual-clear: backing field + _json key. */                                                                                      \
+    void Clear##name()                                                                                                                \
+    {                                                                                                                                 \
+        _##name = std::nullopt;                                                                                                       \
+        _json.removeMember(JsonKey(jsonKey));                                                                                         \
+        _logSettingSet(jsonKey);                                                                                                      \
+        /* TODO GH#12424: raise WriteSettings event */                                                                                \
+    }
+
+// =============================================================================
+// JSON-backed collection inheritable settings (wrapper-returning getter)
+// =============================================================================
+//
+// Use these for settings whose runtime type is IVector<T> / IMap<K,V> and that
+// callers mutate in place (.Append, .InsertAt, .RemoveAt, .Insert, .Remove, …).
+// The getter returns a JsonSyncVector<T> / JsonSyncMap<K,V> wrapper that:
+//   - delegates reads to a shadow seeded from this layer's effective JSON,
+//   - mirrors every in-place mutation back into _json[jsonKey] via the wrapper's
+//     onChange callback,
+//   - returns nullptr when no effective value exists (preserves existing
+//     null-check semantics in caller sites that distinguish "absent" from
+//     "empty collection" and switch to the whole-replace setter path).
+//
+// Mutations through the returned wrapper auto-promote the setting into this
+// layer's _json (the wrapper's shadow is independent of any parent state, so
+// the parent is never mutated by the child).
+//
+// Requires JsonSyncCollections.h to be transitively included.
+
+// IVector<T> flavor.
+#define INHERITABLE_JSON_BACKED_VECTOR_SETTING(projectedType, type, name, jsonKey, ...)                                          \
+    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)                                                   \
+public:                                                                                                                          \
+    /* Returns nullptr when no effective value exists.                                                                       */  \
+    /* Otherwise returns a wrapper around a fresh shadow seeded from the effective JSON.                                     */  \
+    /* Mutations on the wrapper auto-promote the setting into this layer's _json.                                            */  \
+    type name()                                                                                                                  \
+    {                                                                                                                            \
+        const auto val{ _get##name##Impl() };                                                                                    \
+        if (!val || !*val)                                                                                                       \
+        {                                                                                                                        \
+            return nullptr;                                                                                                      \
+        }                                                                                                                        \
+        using ElementT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::CollectionElementOf<type>::element_type; \
+        auto strong = get_strong();                                                                                              \
+        return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncVector<ElementT>>(             \
+            *val,                                                                                                                \
+            [strong](type const& current) {                                                                                      \
+                auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);          \
+                strong->_json[JsonKey(jsonKey)] = std::move(temp);                       \
+                strong->_logSettingSet(jsonKey);                                                                                 \
+                /* TODO GH#12424: raise WriteSettings event */                                                                   \
+            });                                                                                                                  \
+    }                                                                                                                            \
+                                                                                                                                 \
+    /* Whole-replace setter (for "create from scratch" call sites). */                                                           \
+    void name(const type& value)                                                                                                 \
+    {                                                                                                                            \
+        const auto existingVal{ _get##name##FromThisLayer() };                                                                   \
+        if (!existingVal.has_value() || existingVal.value() != value)                                                            \
+        {                                                                                                                        \
+            _logSettingSet(jsonKey);                                                                                             \
+        }                                                                                                                        \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                                                       \
+            _json, jsonKey, value);                                                                                              \
+        /* TODO GH#12424: raise WriteSettings event */                                                                           \
+    }
+
+// IMap<K, V> flavor.
+#define INHERITABLE_JSON_BACKED_MAP_SETTING(projectedType, type, name, jsonKey, ...)                                              \
+    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)                                                   \
+public:                                                                                                                          \
+    type name()                                                                                                                  \
+    {                                                                                                                            \
+        const auto val{ _get##name##Impl() };                                                                                    \
+        if (!val || !*val)                                                                                                       \
+        {                                                                                                                        \
+            return nullptr;                                                                                                      \
+        }                                                                                                                        \
+        using KeyT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::MapKeyValueOf<type>::key_type;       \
+        using ValueT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::MapKeyValueOf<type>::value_type;   \
+        auto strong = get_strong();                                                                                              \
+        return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncMap<KeyT, ValueT>>(            \
+            *val,                                                                                                                \
+            [strong](type const& current) {                                                                                      \
+                auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);          \
+                strong->_json[JsonKey(jsonKey)] = std::move(temp);                       \
+                strong->_logSettingSet(jsonKey);                                                                                 \
+                /* TODO GH#12424: raise WriteSettings event */                                                                   \
+            });                                                                                                                  \
+    }                                                                                                                            \
+                                                                                                                                 \
+    void name(const type& value)                                                                                                 \
+    {                                                                                                                            \
+        const auto existingVal{ _get##name##FromThisLayer() };                                                                   \
+        if (!existingVal.has_value() || existingVal.value() != value)                                                            \
+        {                                                                                                                        \
+            _logSettingSet(jsonKey);                                                                                             \
+        }                                                                                                                        \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                                                       \
+            _json, jsonKey, value);                                                                                              \
+        /* TODO GH#12424: raise WriteSettings event */                                                                           \
     }
 
 // =============================================================================

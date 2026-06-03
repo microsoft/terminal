@@ -161,27 +161,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING_WITH_LOGGING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
-        MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+        MTSM_PROFILE_SETTINGS_SCALARS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
+
+#define PROFILE_COLLECTION_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_JSON_BACKED_MAP_SETTING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
+        MTSM_PROFILE_SETTINGS_COLLECTIONS(PROFILE_COLLECTION_INITIALIZE)
+#undef PROFILE_COLLECTION_INITIALIZE
 
         // IMediaResource settings with backing fields for resolution lifecycle.
         // _json is the source of truth for serialization. Setters dual-write to both
         // the backing field (for runtime resolution) and _json (for auto-save).
         INHERITABLE_MEDIA_RESOURCE_SETTING(Model::Profile, Icon, "icon", implementation::MediaResource::FromString(L"\uE756"))
-
-        // BellSound: IVector<IMediaResource> with backing field + dual-write setter.
-        _BASE_INHERITABLE_MUTABLE_SETTING(Model::Profile, std::optional<Windows::Foundation::Collections::IVector<IMediaResource>>, BellSound, nullptr)
-    public:
-        Windows::Foundation::Collections::IVector<IMediaResource> BellSound() const
-        {
-            const auto val{ _getBellSoundImpl() };
-            return val ? *val : nullptr;
-        }
-        void BellSound(const Windows::Foundation::Collections::IVector<IMediaResource>& value)
-        {
-            _BellSound = value;
-            ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, "bellSound", value);
-        }
+        INHERITABLE_MEDIA_RESOURCE_VECTOR_SETTING(Model::Profile, BellSound, "bellSound", nullptr)
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };

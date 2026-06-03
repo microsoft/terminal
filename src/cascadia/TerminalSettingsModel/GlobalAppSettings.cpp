@@ -42,6 +42,7 @@ void GlobalAppSettings::_FinalizeInheritance()
     for (const auto& parent : _parents)
     {
         _actionMap->AddLeastImportantParent(parent->_actionMap);
+        _newTabMenu->AddLeastImportantParent(parent->_newTabMenu);
         _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
 
         for (const auto& [k, v] : parent->_themes)
@@ -53,6 +54,7 @@ void GlobalAppSettings::_FinalizeInheritance()
         }
     }
     _actionMap->_FinalizeInheritance();
+    _newTabMenu->_FinalizeInheritance();
 }
 
 winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
@@ -61,6 +63,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 
     globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
+    globals->_newTabMenu = _newTabMenu->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
     globals->_json = _json;
 
@@ -81,17 +84,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         {
             const auto themeImpl{ winrt::get_self<implementation::Theme>(kv.Value()) };
             globals->_themes.Insert(kv.Key(), *themeImpl->Copy());
-        }
-    }
-
-    // Complex/mutable settings — backing fields for mutation lifecycle.
-    // _json (copied above) is the source of truth; backing fields hold runtime state.
-    if (_NewTabMenu)
-    {
-        globals->_NewTabMenu = winrt::single_threaded_vector<Model::NewTabMenuEntry>();
-        for (const auto& entry : *_NewTabMenu)
-        {
-            globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
         }
     }
 
@@ -177,10 +169,12 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
-    // Complex/mutable settings — backing fields populated from _json for runtime use.
-    // _json is the source of truth for serialization; backing fields are for mutation lifecycle.
-    JsonUtils::GetValueForKey(json, "newTabMenu", _NewTabMenu);
-    _logSettingIfSet("newTabMenu", _NewTabMenu.has_value());
+    // NewTabMenu lives in its own runtime class, so hand the subtree to it.
+    if (json.isMember("newTabMenu"))
+    {
+        _newTabMenu->LayerJson(json["newTabMenu"]);
+        _json.removeMember("newTabMenu");
+    }
 
     // GH#11975 We only want to allow sensible values and prevent crashes, so we are clamping those values
     // We only want to assign if the value did change through clamping,
@@ -364,8 +358,10 @@ Json::Value GlobalAppSettings::ToJson()
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
 #undef GLOBAL_SETTINGS_TO_JSON
 
-    // Complex/mutable settings — read from _json (source of truth), not backing fields
-    JsonUtils::CopyKeyIfPresent(_json, json, "newTabMenu");
+    if (HasNewTabMenu())
+    {
+        json["newTabMenu"] = _newTabMenu->ToJson();
+    }
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     json[JsonKey(KeybindingsKey)] = _actionMap->KeyBindingsToJson();
@@ -384,8 +380,6 @@ bool GlobalAppSettings::HasSetting(GlobalSettingKey key) const
 #undef _GLOBAL_HAS_SETTING
     case GlobalSettingKey::_UnparsedDefaultProfile:
         return HasUnparsedDefaultProfile();
-    case GlobalSettingKey::_NewTabMenu:
-        return HasNewTabMenu();
     default:
         return false;
     }
@@ -403,9 +397,6 @@ void GlobalAppSettings::ClearSetting(GlobalSettingKey key)
 #undef _GLOBAL_CLEAR_SETTING
     case GlobalSettingKey::_UnparsedDefaultProfile:
         ClearUnparsedDefaultProfile();
-        break;
-    case GlobalSettingKey::_NewTabMenu:
-        ClearNewTabMenu();
         break;
     default:
         break;
@@ -475,16 +466,7 @@ bool GlobalAppSettings::ShouldUsePersistedLayout() const
 void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
 {
     _actionMap->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
-    if (HasNewTabMenu())
-    {
-        for (const auto& entry : NewTabMenu())
-        {
-            if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
-            {
-                resolvable->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
-            }
-        }
-    }
+    _newTabMenu->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
     for (auto& parent : _parents)
     {
         parent->ResolveMediaResources(resolver);
@@ -511,41 +493,6 @@ void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
             }
         }
     }
-    else if (setting == "newTabMenu")
-    {
-        if (HasNewTabMenu())
-        {
-            for (const auto& entry : NewTabMenu())
-            {
-                std::string entryType;
-                switch (entry.Type())
-                {
-                case NewTabMenuEntryType::Profile:
-                    entryType = "profile";
-                    break;
-                case NewTabMenuEntryType::Separator:
-                    entryType = "separator";
-                    break;
-                case NewTabMenuEntryType::Folder:
-                    entryType = "folder";
-                    break;
-                case NewTabMenuEntryType::RemainingProfiles:
-                    entryType = "remainingProfiles";
-                    break;
-                case NewTabMenuEntryType::MatchProfiles:
-                    entryType = "matchProfiles";
-                    break;
-                case NewTabMenuEntryType::Action:
-                    entryType = "action";
-                    break;
-                case NewTabMenuEntryType::Invalid:
-                    // ignore invalid
-                    continue;
-                }
-                _changeLog.emplace(fmt::format(FMT_COMPILE("{}.{}"), setting, entryType));
-            }
-        }
-    }
     else
     {
         _changeLog.emplace(setting);
@@ -558,38 +505,7 @@ void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstrin
     _actionMap->UpdateCommandID(cmd, newID);
     // newID might have been empty when this function was called, if so actionMap would have generated a new ID, use that
     newID = cmd.ID();
-    if (HasNewTabMenu())
-    {
-        // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
-        std::function<void(const Model::NewTabMenuEntry&)> recursiveEntryIdUpdate;
-        recursiveEntryIdUpdate = [&](const Model::NewTabMenuEntry& entry) {
-            if (entry.Type() == NewTabMenuEntryType::Action)
-            {
-                if (const auto actionEntry{ entry.try_as<ActionEntry>() })
-                {
-                    if (actionEntry.ActionId() == oldID)
-                    {
-                        actionEntry.ActionId(newID);
-                    }
-                }
-            }
-            else if (entry.Type() == NewTabMenuEntryType::Folder)
-            {
-                if (const auto folderEntry{ entry.try_as<FolderEntry>() })
-                {
-                    for (const auto& nestedEntry : folderEntry.RawEntries())
-                    {
-                        recursiveEntryIdUpdate(nestedEntry);
-                    }
-                }
-            }
-        };
-
-        for (const auto& entry : NewTabMenu())
-        {
-            recursiveEntryIdUpdate(entry);
-        }
-    }
+    _newTabMenu->RemapActionIds(oldID, newID);
 }
 
 void GlobalAppSettings::_logSettingIfSet(const std::string_view& setting, const bool isSet)
@@ -598,8 +514,7 @@ void GlobalAppSettings::_logSettingIfSet(const std::string_view& setting, const 
     {
         // Exclude some false positives from userDefaults.json
         const bool settingCopyFormattingToDefault = til::equals_insensitive_ascii(setting, "copyFormatting") && HasCopyFormatting() && CopyFormatting() == static_cast<Control::CopyFormat>(0);
-        const bool settingNTMToDefault = til::equals_insensitive_ascii(setting, "newTabMenu") && HasNewTabMenu() && NewTabMenu().Size() == 1 && NewTabMenu().GetAt(0).Type() == NewTabMenuEntryType::RemainingProfiles;
-        if (!settingCopyFormattingToDefault && !settingNTMToDefault)
+        if (!settingCopyFormattingToDefault)
         {
             _logSettingSet(setting);
         }
@@ -612,4 +527,6 @@ void GlobalAppSettings::LogSettingChanges(std::set<std::string>& changes, const 
     {
         changes.emplace(fmt::format(FMT_COMPILE("{}.{}"), context, setting));
     }
+    const std::string newTabMenuContext{ fmt::format(FMT_COMPILE("{}.{}"), context, "newTabMenu") };
+    _newTabMenu->LogSettingChanges(changes, newTabMenuContext);
 }

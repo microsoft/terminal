@@ -683,7 +683,7 @@ void CascadiaSettings::_validateProfileEnvironmentVariables()
 }
 
 // Returns true if all regexes in the new tab menu are valid, false otherwise
-static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
+static bool _validateNTMEntries(const IVectorView<Model::NewTabMenuEntry>& entries)
 {
     if (!entries)
     {
@@ -693,7 +693,7 @@ static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
     {
         if (const auto& folderEntry = ntmEntry.try_as<Model::FolderEntry>())
         {
-            if (!_validateNTMEntries(folderEntry.RawEntries()))
+            if (const auto raw = folderEntry.RawEntries(); raw && !_validateNTMEntries(raw.GetView()))
             {
                 return false;
             }
@@ -711,7 +711,7 @@ static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
 
 void CascadiaSettings::_validateRegexes()
 {
-    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    if (!_validateNTMEntries(_globals->NewTabMenu().Entries()))
     {
         _warnings.Append(SettingsLoadWarnings::InvalidRegex);
     }

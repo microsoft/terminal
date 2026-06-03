@@ -18,8 +18,23 @@ Author(s):
 
 // Macro format (defaultArgs are optional):
 // (type, name, jsonKey, defaultArgs)
+//
+// Each MTSM_*_SETTINGS list is split into two groups so the getter/setter
+// generation can dispatch on storage shape while the bookkeeping passes
+// (ToJson, HasSetting, ClearSetting, enum, JsonKeyForSetting, LayerJson
+// logging) see one unified list:
+//
+//   MTSM_*_SETTINGS_SCALARS — regular JSON-backed scalar settings.
+//     Use with INHERITABLE_SETTING / INHERITABLE_SETTING_WITH_LOGGING.
+//
+//   MTSM_*_SETTINGS_COLLECTIONS — IVector<T> / IMap<K,V> settings whose
+//     callers mutate the returned container in place.
+//     Use with INHERITABLE_JSON_BACKED_VECTOR_SETTING /
+//     INHERITABLE_JSON_BACKED_MAP_SETTING.
+//
+//   MTSM_*_SETTINGS — unifies both for the bookkeeping passes.
 
-#define MTSM_GLOBAL_SETTINGS(X)                                                                                                                                                                       \
+#define MTSM_GLOBAL_SETTINGS_SCALARS(X)                                                                                                                                                               \
     X(int32_t, InitialRows, "initialRows", 30)                                                                                                                                                        \
     X(int32_t, InitialCols, "initialCols", 80)                                                                                                                                                        \
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
@@ -70,8 +85,14 @@ Author(s):
     X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                                     \
     X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
-    X(bool, ShowTabsFullscreen, "showTabsFullscreen", false)                                                                                                                                          \
+    X(bool, ShowTabsFullscreen, "showTabsFullscreen", false)
+
+#define MTSM_GLOBAL_SETTINGS_COLLECTIONS(X) \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)
+
+#define MTSM_GLOBAL_SETTINGS(X)         \
+    MTSM_GLOBAL_SETTINGS_SCALARS(X)     \
+    MTSM_GLOBAL_SETTINGS_COLLECTIONS(X)
 
 // Also add these settings to:
 // * Profile.idl
@@ -79,7 +100,7 @@ Author(s):
 // * TerminalSettings.cpp: TerminalSettings::_ApplyProfileSettings
 // * IControlSettings.idl or ICoreSettings.idl
 // * ControlProperties.h
-#define MTSM_PROFILE_SETTINGS(X)                                                                                                                               \
+#define MTSM_PROFILE_SETTINGS_SCALARS(X)                                                                                                                       \
     X(int32_t, HistorySize, "historySize", DEFAULT_HISTORY_SIZE)                                                                                               \
     X(bool, SnapOnInput, "snapOnInput", true)                                                                                                                  \
     X(bool, AltGrAliasing, "altGrAliasing", true)                                                                                                              \
@@ -106,8 +127,14 @@ Author(s):
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
     X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
-    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None) \
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
+
+#define MTSM_PROFILE_SETTINGS_COLLECTIONS(X) \
     X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)
+
+#define MTSM_PROFILE_SETTINGS(X)         \
+    MTSM_PROFILE_SETTINGS_SCALARS(X)     \
+    MTSM_PROFILE_SETTINGS_COLLECTIONS(X)
 
 // Intentionally omitted Profile settings:
 // * Name
@@ -118,16 +145,22 @@ Author(s):
 // * Padding: needs special FromJson parsing
 // * TabColor: is an optional setting, so needs to be set with INHERITABLE_NULLABLE_SETTING
 
-#define MTSM_FONT_SETTINGS(X)                                                          \
+#define MTSM_FONT_SETTINGS_SCALARS(X)                                                  \
     X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \
     X(float, FontSize, "size", DEFAULT_FONT_SIZE)                                      \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, "weight", DEFAULT_FONT_WEIGHT) \
     X(bool, EnableBuiltinGlyphs, "builtinGlyphs", true)                                \
     X(bool, EnableColorGlyphs, "colorGlyphs", true)                                    \
     X(winrt::hstring, CellWidth, "cellWidth")                                          \
-    X(winrt::hstring, CellHeight, "cellHeight")                                        \
-    X(IFontAxesMap, FontAxes, "axes")                                                  \
+    X(winrt::hstring, CellHeight, "cellHeight")
+
+#define MTSM_FONT_SETTINGS_COLLECTIONS(X) \
+    X(IFontAxesMap, FontAxes, "axes")     \
     X(IFontFeatureMap, FontFeatures, "features")
+
+#define MTSM_FONT_SETTINGS(X)         \
+    MTSM_FONT_SETTINGS_SCALARS(X)     \
+    MTSM_FONT_SETTINGS_COLLECTIONS(X)
 
 #define MTSM_APPEARANCE_SETTINGS(X)                                                                                                                                \
     X(Core::CursorStyle, CursorShape, "cursorShape", Core::CursorStyle::Bar)                                                                                       \
@@ -200,8 +233,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MTSM_GLOBAL_SETTINGS(_MTSM_ENUM_VALUE)
         // Special-cased global settings
         _UnparsedDefaultProfile,
-        // Complex/mutable settings with backing fields
-        _NewTabMenu,
         SETTINGS_SIZE
     };
 
@@ -273,8 +304,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             MTSM_GLOBAL_SETTINGS(_MTSM_KEY_CASE)
         case GlobalSettingKey::_UnparsedDefaultProfile:
             return "defaultProfile";
-        case GlobalSettingKey::_NewTabMenu:
-            return "newTabMenu";
         default:
             return {};
         }

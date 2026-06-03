@@ -25,6 +25,7 @@ Author(s):
 #include "ColorScheme.h"
 #include "Theme.h"
 #include "NewTabMenuEntry.h"
+#include "NewTabMenu.h"
 #include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
@@ -74,6 +75,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Theme CurrentTheme() noexcept;
         bool ShouldUsePersistedLayout() const;
 
+        Model::NewTabMenu NewTabMenu() const noexcept { return *_newTabMenu; }
+        bool HasNewTabMenu() const noexcept { return _newTabMenu->HasUserOverride(); }
+        void ClearNewTabMenu() { _newTabMenu->ClearUserOverride(); }
+
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
 
@@ -90,23 +95,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING_WITH_LOGGING(Model::GlobalAppSettings, type, name, jsonKey, ##__VA_ARGS__)
-        MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+        MTSM_GLOBAL_SETTINGS_SCALARS(GLOBAL_SETTINGS_INITIALIZE)
 #undef GLOBAL_SETTINGS_INITIALIZE
 
-        // NewTabMenu: mutable with backing field for editor in-place mutation.
-        // _json is the source of truth for serialization. Setter dual-writes to both.
-        _BASE_INHERITABLE_MUTABLE_SETTING(Model::GlobalAppSettings, std::optional<winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>>, NewTabMenu, winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }))
-    public:
-        winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry> NewTabMenu() const
-        {
-            const auto val{ _getNewTabMenuImpl() };
-            return val ? *val : winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} });
-        }
-        void NewTabMenu(const winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>& value)
-        {
-            _NewTabMenu = value;
-            ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, "newTabMenu", value);
-        }
+#define GLOBAL_COLLECTION_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_JSON_BACKED_VECTOR_SETTING(Model::GlobalAppSettings, type, name, jsonKey, ##__VA_ARGS__)
+        MTSM_GLOBAL_SETTINGS_COLLECTIONS(GLOBAL_COLLECTION_INITIALIZE)
+#undef GLOBAL_COLLECTION_INITIALIZE
 
     private:
 #ifdef NDEBUG
@@ -124,6 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool _legacyReloadEnvironmentVariables{ true };
         bool _legacyForceVTInput{ false };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
+        winrt::com_ptr<implementation::NewTabMenu> _newTabMenu{ winrt::make_self<implementation::NewTabMenu>() };
         std::set<std::string> _changeLog;
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;

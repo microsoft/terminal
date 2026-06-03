@@ -559,7 +559,8 @@ bool SettingsLoader::AddDynamicProfileFolders()
         folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
 
         // NewTabMenu is guaranteed to exist by FixupUserSettings, which runs before this fixup.
-        userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
+        const auto ntm = userSettings.globals->NewTabMenu();
+        ntm.InsertEntryAt(ntm.Size(), folderEntry.as<Model::NewTabMenuEntry>());
         state->SSHFolderGenerated(true);
         return true;
     }
@@ -695,7 +696,7 @@ bool SettingsLoader::FixupUserSettings()
     // that it should happen so late.
     if (!userSettings.globals->HasNewTabMenu())
     {
-        userSettings.globals->NewTabMenu(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }));
+        userSettings.globals->NewTabMenu().ReplaceAll(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }));
         // This one does not need to be written back to the settings file immediately, it can wait until we write one for another reason.
     }
 
@@ -1747,7 +1748,7 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     auto remainingProfiles = single_threaded_map(std::move(remainingProfilesMap));
 
     // We call a recursive helper function to process the entries
-    auto entries = _globals->NewTabMenu();
+    auto entries = _globals->NewTabMenu().Entries();
     _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
 
     // If a "remainingProfiles" entry has been found, assign to it the remaining profiles
@@ -1760,7 +1761,7 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
 // Method Description:
 // - Helper function that processes a set of tab menu entries and resolves any profile names
 //   or source fields as necessary - see function above for a more detailed explanation.
-void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTabMenuEntry> entries, IMap<int, Model::Profile>& remainingProfilesMap, Model::RemainingProfilesEntry& remainingProfilesEntry) const
+void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVectorView<Model::NewTabMenuEntry>& entries, IMap<int, Model::Profile>& remainingProfilesMap, Model::RemainingProfilesEntry& remainingProfilesEntry) const
 {
     if (entries == nullptr || entries.Size() == 0)
     {
@@ -1834,7 +1835,10 @@ void CascadiaSettings::_resolveNewTabMenuProfilesSet(const IVector<Model::NewTab
             const auto folderEntry{ winrt::get_self<implementation::FolderEntry>(entry.as<Model::FolderEntry>()) };
 
             auto folderEntries = folderEntry->RawEntries();
-            _resolveNewTabMenuProfilesSet(folderEntries, remainingProfilesMap, remainingProfilesEntry);
+            if (folderEntries)
+            {
+                _resolveNewTabMenuProfilesSet(folderEntries.GetView(), remainingProfilesMap, remainingProfilesEntry);
+            }
             break;
         }
 
