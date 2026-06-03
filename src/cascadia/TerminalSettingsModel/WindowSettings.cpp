@@ -28,6 +28,9 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
+static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
+static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
+static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -57,6 +60,14 @@ winrt::com_ptr<WindowSettings> WindowSettings::Copy() const
         for (const auto& entry : *_NewTabMenu)
         {
             globals->_NewTabMenu->Append(get_self<NewTabMenuEntry>(entry)->Copy());
+        }
+    }
+    if (_SafeUriSchemes)
+    {
+        globals->_SafeUriSchemes = winrt::single_threaded_vector<hstring>();
+        for (const auto& src : *_SafeUriSchemes)
+        {
+            globals->_SafeUriSchemes->Append(src);
         }
     }
 
@@ -111,6 +122,18 @@ void WindowSettings::LayerJson(const Json::Value& json)
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
+
+    JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste);
+    JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
+    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
+    // "confirmOnClose" enum. true -> Automatic, false -> Never.
+    {
+        std::optional<bool> legacyConfirmClose;
+        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        {
+            _ConfirmOnClose = legacyConfirmClose.value() ? Model::ConfirmOnClose::Automatic : Model::ConfirmOnClose::Never;
+        }
+    }
 
 #define WINDOW_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);

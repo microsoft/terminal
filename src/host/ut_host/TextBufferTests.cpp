@@ -1305,7 +1305,7 @@ void TextBufferTests::TestBackspaceRightSideVt()
     VERIFY_ARE_EQUAL(0, postCursorPosition.x);
     VERIFY_ARE_EQUAL(preCursorPosition.y, postCursorPosition.y - 1);
 
-    // make sure "yx" was written to the end of the line the cursor started on
+    // make sure "yx" was written to the end of the line where the cursor started
     const auto& row = tbi.GetRowByOffset(preCursorPosition.y);
     const auto rowText = row.GetText();
     auto it = rowText.crbegin();

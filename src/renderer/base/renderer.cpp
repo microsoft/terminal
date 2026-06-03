@@ -504,7 +504,7 @@ void Renderer::SynchronizedOutputChanged() noexcept
         // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
         //
         // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
-        // since there's no guarantee that this is the same lock as the one the VT parser uses.
+        // since there's no guarantee that this is the same lock as the one that the VT parser uses.
         // But the alternative is Denial-Of-Service of the render thread.
         //
         // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.

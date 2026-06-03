@@ -574,7 +574,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring ProfileViewModel::BellStylePreview() const
     {
         const auto bellStyle = BellStyle();
-        if (WI_AreAllFlagsSet(bellStyle, BellStyle::Audible | BellStyle::Window | BellStyle::Taskbar))
+        if (WI_AreAllFlagsSet(bellStyle, BellStyle::Audible | BellStyle::Window | BellStyle::Taskbar | BellStyle::Notification))
         {
             return RS_(L"Profile_BellStyleAll/Content");
         }
@@ -584,7 +584,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         std::vector<hstring> resultList;
-        resultList.reserve(3);
+        resultList.reserve(4);
         if (WI_IsFlagSet(bellStyle, BellStyle::Audible))
         {
             resultList.emplace_back(RS_(L"Profile_BellStyleAudible/Content"));
@@ -596,6 +596,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (WI_IsFlagSet(bellStyle, BellStyle::Taskbar))
         {
             resultList.emplace_back(RS_(L"Profile_BellStyleTaskbar/Content"));
+        }
+        if (WI_IsFlagSet(bellStyle, BellStyle::Notification))
+        {
+            resultList.emplace_back(RS_(L"Profile_BellStyleNotification/Content"));
         }
 
         // add in the commas
@@ -637,6 +641,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto currentStyle = BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
+        BellStyle(currentStyle);
+    }
+
+    void ProfileViewModel::SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Notification, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
 

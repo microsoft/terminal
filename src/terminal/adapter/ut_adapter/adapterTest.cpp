@@ -1648,7 +1648,7 @@ public:
 
         Log::Comment(L"Test 2: Verify space decrease");
         _testGetSet->PrepData();
-        // Define four 8-byte macros, i.e. 32 byes (2 macro blocks).
+        // Define four 8-byte macros, i.e. 32 bytes (2 macro blocks).
         _stateMachine->ProcessString(L"\033P1;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P2;0;0!z12345678\033\\");
         _stateMachine->ProcessString(L"\033P3;0;0!z12345678\033\\");
@@ -3151,7 +3151,7 @@ public:
 
         _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
-        Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
+        Log::Comment(L"Test 1: Change Indexed Foreground without index parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
@@ -3226,7 +3226,7 @@ public:
 
         _testGetSet->_expectedAttribute = _testGetSet->_textBuffer->GetCurrentAttributes();
 
-        Log::Comment(L"Test 1: Change Indexed Foreground with missing index sub parameter");
+        Log::Comment(L"Test 1: Change Indexed Foreground without index sub parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         _testGetSet->MakeSubParamsAndRanges({ { 5 } }, rgSubParamOpts, subParamRanges);
         _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);

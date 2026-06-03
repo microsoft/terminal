@@ -67,6 +67,13 @@ namespace Microsoft.Terminal.Settings.Model
         Double Height { get; };
     };
 
+    enum ConfirmOnClose
+    {
+        Never = 0,
+        Automatic = 1,
+        Always = 2,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
 
         INHERITABLE_SETTING(String, Language);
@@ -106,7 +113,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowTabsFullscreen);
         INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
-        INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
+        INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
         INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
@@ -132,6 +139,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
+        INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
         INHERITABLE_SETTING(Boolean, ScrollToZoom);
         INHERITABLE_SETTING(Boolean, ScrollToChangeOpacity);

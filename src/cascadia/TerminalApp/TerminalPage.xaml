@@ -86,17 +86,12 @@
                            Grid.Row="2"
                            x:Load="False" />
 
-        <ContentDialog x:Name="QuitDialog"
-                       x:Uid="QuitDialog"
+        <ContentDialog x:Name="ConfirmCloseDialog"
                        Grid.Row="2"
                        x:Load="False"
-                       DefaultButton="Primary" />
-
-        <ContentDialog x:Name="CloseAllDialog"
-                       x:Uid="CloseAllDialog"
-                       Grid.Row="2"
-                       x:Load="False"
-                       DefaultButton="Primary" />
+                       DefaultButton="Primary">
+            <CheckBox x:Uid="DontAskAgainCheckBox" />
+        </ContentDialog>
 
         <ContentDialog x:Name="CloseReadOnlyDialog"
                        x:Uid="CloseReadOnlyDialog"

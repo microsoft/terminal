@@ -26,9 +26,6 @@ static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" 
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
 static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWarning" };
-static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
-static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
-static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view LegacyPersistedWindowLayout{ "persistedWindowLayout" };
 
 // Method Description:

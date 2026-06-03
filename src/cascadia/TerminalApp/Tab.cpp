@@ -35,7 +35,6 @@ namespace winrt::TerminalApp::implementation
         _activePane = nullptr;
 
         _closePaneMenuItem.Visibility(WUX::Visibility::Collapsed);
-        _restartConnectionMenuItem.Visibility(WUX::Visibility::Collapsed);
 
         auto firstId = _nextPaneId;
 
@@ -86,6 +85,7 @@ namespace winrt::TerminalApp::implementation
 
         _MakeTabViewItem();
         _CreateContextMenu();
+        _UpdateMenuItemStates();
 
         _headerControl.TabStatus(_tabStatus);
 
@@ -654,7 +654,7 @@ namespace winrt::TerminalApp::implementation
 
         _activePane = original;
 
-        // Add a event handlers to the new panes' GotFocus event. When the pane
+        // Add event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
         _AttachEventHandlersToPane(original);
 
@@ -844,14 +844,14 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the separator in.
     // Return Value:
-    // - <none>
-    void Tab::ResizePane(const ResizeDirection& direction)
+    // - whether a pane was resized
+    bool Tab::ResizePane(const ResizeDirection& direction)
     {
         ASSERT_UI_THREAD();
 
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
-        _rootPane->ResizePane(direction);
+        return _rootPane->ResizePane(direction);
     }
 
     // Method Description:
@@ -1148,6 +1148,14 @@ namespace winrt::TerminalApp::implementation
                         tab->TabRaiseVisualBell.raise();
                     }
 
+                    // Send a desktop toast notification if requested, but only if
+                    // the pane isn't already in the belled state. This prevents
+                    // sending repeated toasts for repeated BEL characters.
+                    if (bellArgs.SendNotification() && !tab->_tabStatus.BellIndicator())
+                    {
+                        tab->TabToastNotificationRequested.raise(tab->Title(), L"", sender);
+                    }
+
                     // Show the bell indicator in the tab header
                     tab->ShowBellIndicator(true);
 
@@ -1165,6 +1173,18 @@ namespace winrt::TerminalApp::implementation
         {
             events.RestartTerminalRequested = terminal.RestartTerminalRequested(winrt::auto_revoke, { get_weak(), &Tab::_bubbleRestartTerminalRequested });
         }
+
+        events.NotificationRequested = content.NotificationRequested(
+            winrt::auto_revoke,
+            [dispatcher, weakThis](TerminalApp::IPaneContent sender, auto notifArgs) -> safe_void_coroutine {
+                const auto weakThisCopy = weakThis;
+                co_await wil::resume_foreground(dispatcher);
+                if (const auto tab{ weakThisCopy.get() })
+                {
+                    const auto title = notifArgs.Title().empty() ? tab->Title() : notifArgs.Title();
+                    tab->TabToastNotificationRequested.raise(title, notifArgs.Body(), sender);
+                }
+            });
 
         if (_tabStatus.IsInputBroadcastActive())
         {
@@ -1254,7 +1274,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Set an indicator on the tab if any pane is in a closed connection state.
-    // - Show/hide the Restart Connection context menu entry depending on active pane's state.
+    // - Show/hide the Restart Session context menu entry depending on active pane's state.
     // Arguments:
     // - <none>
     // Return Value:
@@ -1270,13 +1290,6 @@ namespace winrt::TerminalApp::implementation
             });
 
             _tabStatus.IsConnectionClosed(isClosed);
-        }
-
-        if (_activePane)
-        {
-            _restartConnectionMenuItem.Visibility(_activePane->IsConnectionClosed() ?
-                                                      WUX::Visibility::Visible :
-                                                      WUX::Visibility::Collapsed);
         }
     }
 
@@ -1348,6 +1361,22 @@ namespace winrt::TerminalApp::implementation
                 }
             });
         }
+
+        _UpdateMenuItemStates();
+    }
+
+    void Tab::_UpdateMenuItemStates()
+    {
+        // Terminal-specific menu items
+        const auto content = _activePane ? _activePane->GetContent() : nullptr;
+        const auto isTerm = content && content.try_as<winrt::TerminalApp::TerminalPaneContent>() != nullptr;
+        _duplicateTabMenuItem.IsEnabled(isTerm);
+        _exportTabMenuItem.IsEnabled(isTerm);
+        _findMenuItem.IsEnabled(isTerm);
+        _restartConnectionMenuItem.IsEnabled(isTerm);
+
+        // Snippets Pane can technically be split
+        _splitTabMenuItem.IsEnabled(isTerm || (content && content.try_as<winrt::TerminalApp::SnippetsPaneContent>() != nullptr));
     }
 
     // Method Description:
@@ -1652,106 +1681,100 @@ namespace winrt::TerminalApp::implementation
             Automation::AutomationProperties::SetHelpText(renameTabMenuItem, renameTabToolTip);
         }
 
-        Controls::MenuFlyoutItem duplicateTabMenuItem;
         {
             // "Duplicate tab"
             Controls::FontIcon duplicateTabSymbol;
             duplicateTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             duplicateTabSymbol.Glyph(L"\xF5ED");
 
-            duplicateTabMenuItem.Click({ get_weak(), &Tab::_duplicateTabClicked });
-            duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
-            duplicateTabMenuItem.Icon(duplicateTabSymbol);
+            _duplicateTabMenuItem.Click({ get_weak(), &Tab::_duplicateTabClicked });
+            _duplicateTabMenuItem.Text(RS_(L"DuplicateTabText"));
+            _duplicateTabMenuItem.Icon(duplicateTabSymbol);
 
             const auto duplicateTabToolTip = RS_(L"DuplicateTabToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(duplicateTabMenuItem, box_value(duplicateTabToolTip));
-            Automation::AutomationProperties::SetHelpText(duplicateTabMenuItem, duplicateTabToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_duplicateTabMenuItem, box_value(duplicateTabToolTip));
+            Automation::AutomationProperties::SetHelpText(_duplicateTabMenuItem, duplicateTabToolTip);
         }
 
-        Controls::MenuFlyoutItem splitTabMenuItem;
         {
             // "Split tab"
             Controls::FontIcon splitTabSymbol;
             splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
 
-            splitTabMenuItem.Click({ get_weak(), &Tab::_splitTabClicked });
-            splitTabMenuItem.Text(RS_(L"SplitTabText"));
-            splitTabMenuItem.Icon(splitTabSymbol);
+            _splitTabMenuItem.Click({ get_weak(), &Tab::_splitTabClicked });
+            _splitTabMenuItem.Text(RS_(L"SplitTabText"));
+            _splitTabMenuItem.Icon(splitTabSymbol);
 
             const auto splitTabToolTip = RS_(L"SplitTabToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(splitTabMenuItem, box_value(splitTabToolTip));
-            Automation::AutomationProperties::SetHelpText(splitTabMenuItem, splitTabToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_splitTabMenuItem, box_value(splitTabToolTip));
+            Automation::AutomationProperties::SetHelpText(_splitTabMenuItem, splitTabToolTip);
         }
 
-        Controls::MenuFlyoutItem closePaneMenuItem = _closePaneMenuItem;
         {
             // "Close pane"
-            closePaneMenuItem.Click({ get_weak(), &Tab::_closePaneClicked });
-            closePaneMenuItem.Text(RS_(L"ClosePaneText"));
+            _closePaneMenuItem.Click({ get_weak(), &Tab::_closePaneClicked });
+            _closePaneMenuItem.Text(RS_(L"ClosePaneText"));
 
             const auto closePaneToolTip = RS_(L"ClosePaneToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(closePaneMenuItem, box_value(closePaneToolTip));
-            Automation::AutomationProperties::SetHelpText(closePaneMenuItem, closePaneToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_closePaneMenuItem, box_value(closePaneToolTip));
+            Automation::AutomationProperties::SetHelpText(_closePaneMenuItem, closePaneToolTip);
         }
 
-        Controls::MenuFlyoutItem exportTabMenuItem;
         {
             // "Export tab"
             Controls::FontIcon exportTabSymbol;
             exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             exportTabSymbol.Glyph(L"\xE74E"); // Save
 
-            exportTabMenuItem.Click({ get_weak(), &Tab::_exportTextClicked });
-            exportTabMenuItem.Text(RS_(L"ExportTabText"));
-            exportTabMenuItem.Icon(exportTabSymbol);
+            _exportTabMenuItem.Click({ get_weak(), &Tab::_exportTextClicked });
+            _exportTabMenuItem.Text(RS_(L"ExportTabText"));
+            _exportTabMenuItem.Icon(exportTabSymbol);
 
             const auto exportTabToolTip = RS_(L"ExportTabToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(exportTabMenuItem, box_value(exportTabToolTip));
-            Automation::AutomationProperties::SetHelpText(exportTabMenuItem, exportTabToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_exportTabMenuItem, box_value(exportTabToolTip));
+            Automation::AutomationProperties::SetHelpText(_exportTabMenuItem, exportTabToolTip);
         }
 
-        Controls::MenuFlyoutItem findMenuItem;
         {
             // "Find"
             Controls::FontIcon findSymbol;
             findSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             findSymbol.Glyph(L"\xF78B"); // SearchMedium
 
-            findMenuItem.Click({ get_weak(), &Tab::_findClicked });
-            findMenuItem.Text(RS_(L"FindText"));
-            findMenuItem.Icon(findSymbol);
+            _findMenuItem.Click({ get_weak(), &Tab::_findClicked });
+            _findMenuItem.Text(RS_(L"FindText"));
+            _findMenuItem.Icon(findSymbol);
 
             const auto findToolTip = RS_(L"FindToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(findMenuItem, box_value(findToolTip));
-            Automation::AutomationProperties::SetHelpText(findMenuItem, findToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_findMenuItem, box_value(findToolTip));
+            Automation::AutomationProperties::SetHelpText(_findMenuItem, findToolTip);
         }
 
-        Controls::MenuFlyoutItem restartConnectionMenuItem = _restartConnectionMenuItem;
         {
-            // "Restart connection"
+            // "Restart session"
             Controls::FontIcon restartConnectionSymbol;
             restartConnectionSymbol.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
             restartConnectionSymbol.Glyph(L"\xE72C");
 
-            restartConnectionMenuItem.Click([weakThis](auto&&, auto&&) {
+            _restartConnectionMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
                     tab->_RestartActivePaneConnection();
                 }
             });
-            restartConnectionMenuItem.Text(RS_(L"RestartConnectionText"));
-            restartConnectionMenuItem.Icon(restartConnectionSymbol);
+            _restartConnectionMenuItem.Text(RS_(L"RestartConnectionText"));
+            _restartConnectionMenuItem.Icon(restartConnectionSymbol);
 
             const auto restartConnectionToolTip = RS_(L"RestartConnectionToolTip");
 
-            WUX::Controls::ToolTipService::SetToolTip(restartConnectionMenuItem, box_value(restartConnectionToolTip));
-            Automation::AutomationProperties::SetHelpText(restartConnectionMenuItem, restartConnectionToolTip);
+            WUX::Controls::ToolTipService::SetToolTip(_restartConnectionMenuItem, box_value(restartConnectionToolTip));
+            Automation::AutomationProperties::SetHelpText(_restartConnectionMenuItem, restartConnectionToolTip);
         }
 
         // Build the menu
@@ -1759,16 +1782,16 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutSeparator menuSeparator;
         contextMenuFlyout.Items().Append(chooseColorMenuItem);
         contextMenuFlyout.Items().Append(renameTabMenuItem);
-        contextMenuFlyout.Items().Append(duplicateTabMenuItem);
-        contextMenuFlyout.Items().Append(splitTabMenuItem);
+        contextMenuFlyout.Items().Append(_duplicateTabMenuItem);
+        contextMenuFlyout.Items().Append(_splitTabMenuItem);
         _AppendMoveMenuItems(contextMenuFlyout);
-        contextMenuFlyout.Items().Append(exportTabMenuItem);
-        contextMenuFlyout.Items().Append(findMenuItem);
-        contextMenuFlyout.Items().Append(restartConnectionMenuItem);
+        contextMenuFlyout.Items().Append(_exportTabMenuItem);
+        contextMenuFlyout.Items().Append(_findMenuItem);
+        contextMenuFlyout.Items().Append(_restartConnectionMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         auto closeSubMenu = _AppendCloseMenuItems(contextMenuFlyout);
-        closeSubMenu.Items().Append(closePaneMenuItem);
+        closeSubMenu.Items().Append(_closePaneMenuItem);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
         // back to our control.
@@ -2098,7 +2121,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Calculates if the tab is read-only.
     // The tab is considered read-only if one of the panes is read-only.
-    // If after the calculation the tab is read-only we hide the close button on the tab view item
+    // If, after the calculation, the tab is read-only we hide the close button on the tab view item
     void Tab::_RecalculateAndApplyReadOnly()
     {
         const auto control = GetActiveTerminalControl();
@@ -2125,7 +2148,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Creates a text for the title run in the tool tip by returning tab title
-    // or <profile name>: <tab title> in the case the profile name differs from the title
+    // or <profile name>: <tab title> if the profile name differs from the title
     // Arguments:
     // - <none>
     // Return Value:
@@ -2353,7 +2376,7 @@ namespace winrt::TerminalApp::implementation
         auto deselectedTabColor = color.with_alpha(77); // 255 * .3 = 77
 
         // If we DON'T have a color set from the color picker, or the profile's
-        // tabColor, but we do have a unfocused color in the theme, use the
+        // tabColor, but if we have an unfocused color in the theme, use the
         // unfocused theme color here instead.
         if (!GetTabColor().has_value() &&
             _unfocusedThemeColor != nullptr)

@@ -29,6 +29,7 @@ namespace Microsoft.Terminal.Settings.Model
         Audible = 0x1,
         Window = 0x2,
         Taskbar = 0x4,
+        Notification = 0x8,
         All = 0xffffffff
     };
 

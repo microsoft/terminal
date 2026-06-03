@@ -153,7 +153,10 @@ stages:
   - stage: Publish
     displayName: Publish
     pool: ${{ parameters.pool }}
-    dependsOn: [Build, Package]
+    dependsOn:
+      - Build
+      - ${{ if or(parameters.buildTerminal, parameters.buildConPTY, parameters.buildWPF) }}:
+          - Package
     jobs:
       # We only support the vpack for Release builds that include Terminal
       - ${{ if and(containsValue(parameters.buildConfigurations, 'Release'), parameters.buildTerminal, parameters.publishVpackToWindows) }}:

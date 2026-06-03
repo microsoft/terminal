@@ -84,8 +84,18 @@
 // {fmt}, a C++20-compatible formatting library
 #pragma warning(push)
 #pragma warning(disable: 4702) // unreachable code
+// Workaround: clang-cl advertises consteval support but fmt's use of it in
+// color.h triggers "call to consteval function is not a constant expression".
+// Hide __cpp_lib_is_constant_evaluated so fmt falls back to the non-consteval path.
+#ifdef __clang__
+#pragma push_macro("__cpp_lib_is_constant_evaluated")
+#undef __cpp_lib_is_constant_evaluated
+#endif
 #include <fmt/compile.h>
 #include <fmt/xchar.h>
+#ifdef __clang__
+#pragma pop_macro("__cpp_lib_is_constant_evaluated")
+#endif
 #pragma warning(pop)
 
 #define USE_INTERVAL_TREE_NAMESPACE

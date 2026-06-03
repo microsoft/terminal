@@ -36,7 +36,7 @@ We will do this by allowing users to define a dictionary in their settings.json 
 
 ### Axes of variation
 
-Specifying axes of variation is done in an extremely similar manner to the way font features are specified - a 4-character tag is used to specify which font axis is being modified and a numerical value is provided to specify the value the axis should be set to. For example, {'slnt', 20} specifies that the 'slant' axis should be set to 20.
+Specifying axes of variation is done in an extremely similar manner to the way font features are specified - a 4-character tag is used to specify which font axis is being modified and a numerical value is provided to specify the value for the axis. For example, {'slnt', 20} specifies that the 'slant' axis should be set to 20.
 
 There is also a standard list of axes of variation, and each axis has its own default. We will approach this the same way we approached font features, by allowing users to specify additional features or omit features without needing to redefine the defaults.
 
