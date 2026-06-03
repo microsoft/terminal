@@ -226,11 +226,6 @@ namespace winrt::TerminalApp::implementation
         _WindowProperties.PropertyChanged({ get_weak(), &TerminalPage::_windowPropertyChanged });
     }
 
-    winrt::Microsoft::Terminal::Settings::Model::WindowSettings TerminalPage::_currentWindowSettings() const
-    {
-        return _settings.WindowSettings(_WindowProperties.WindowName());
-    }
-
     // Method Description:
     // - implements the IInitializeWithWindow interface from shobjidl_core.
     // - We're going to use this HWND as the owner for the ConPTY windows, via
@@ -296,6 +291,11 @@ namespace winrt::TerminalApp::implementation
         // Upon settings update we reload the system settings for scrolling as well.
         // TODO: consider reloading this value periodically.
         _systemRowsToScroll = _ReadSystemRowsToScroll();
+    }
+
+    winrt::Microsoft::Terminal::Settings::Model::WindowSettings TerminalPage::_currentWindowSettings() const
+    {
+        return _settings.WindowSettings(_WindowProperties.WindowName());
     }
 
     bool TerminalPage::IsRunningElevated() const noexcept
