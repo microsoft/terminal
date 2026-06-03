@@ -34,64 +34,64 @@ Author(s):
 //
 //   MTSM_*_SETTINGS — unifies both for the bookkeeping passes.
 
-#define MTSM_GLOBAL_SETTINGS_SCALARS(X)                                                                                                                                                               \
-    X(int32_t, InitialRows, "initialRows", 30)                                                                                                                                                        \
-    X(int32_t, InitialCols, "initialCols", 80)                                                                                                                                                        \
-    X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
-    X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                      \
-    X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                              \
-    X(bool, ScrollToZoom, "experimental.scrollToZoom", true)                                                                                                                                          \
-    X(bool, ScrollToChangeOpacity, "experimental.scrollToChangeOpacity", true)                                                                                                                        \
-    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                         \
-    X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                                \
-    X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                           \
-    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                         \
-    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, "compatibility.ambiguousWidth", winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                               \
-    X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, "defaultInputScope")                                                                                                 \
-    X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                           \
-    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                           \
-    X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                              \
-    X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                                   \
-    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                                   \
-    X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
-    X(bool, ConfirmCloseAllTabs, "warning.confirmCloseAllTabs", true)                                                                                                                                 \
-    X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
-    X(hstring, Language, "language")                                                                                                                                                                  \
-    X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
-    X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
-    X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
-    X(bool, InputServiceWarning, "warning.inputService", true)                                                                                                                                        \
-    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
-    X(bool, WarnAboutLargePaste, "warning.largePaste", true)                                                                                                                                          \
-    X(winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste, WarnAboutMultiLinePaste, "warning.multiLinePaste", winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste::Automatic)       \
-    X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                                    \
-    X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                                  \
-    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
-    X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                                                           \
-    X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                                                           \
-    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                              \
-    X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                                                                        \
-    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                                                                  \
-    X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                                                                    \
-    X(bool, DisableAnimations, "disableAnimations", false)                                                                                                                                            \
-    X(hstring, StartupActions, "startupActions", L"")                                                                                                                                                 \
-    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                                                                     \
-    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
-    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
-    X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
-    X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
-    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
-    X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                               \
-    X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                                     \
-    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
-    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
+#define MTSM_GLOBAL_SETTINGS_SCALARS(X)                                                                                                                                                         \
+    X(int32_t, InitialRows, "initialRows", 30)                                                                                                                                                  \
+    X(int32_t, InitialCols, "initialCols", 80)                                                                                                                                                  \
+    X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                       \
+    X(bool, CopyOnSelect, "copyOnSelect", false)                                                                                                                                                \
+    X(bool, FocusFollowMouse, "focusFollowMouse", false)                                                                                                                                        \
+    X(bool, ScrollToZoom, "experimental.scrollToZoom", true)                                                                                                                                    \
+    X(bool, ScrollToChangeOpacity, "experimental.scrollToChangeOpacity", true)                                                                                                                  \
+    X(winrt::Microsoft::Terminal::Control::GraphicsAPI, GraphicsAPI, "rendering.graphicsAPI")                                                                                                   \
+    X(bool, DisablePartialInvalidation, "rendering.disablePartialInvalidation", false)                                                                                                          \
+    X(bool, SoftwareRendering, "rendering.software", false)                                                                                                                                     \
+    X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement, "compatibility.textMeasurement")                                                                                   \
+    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, "compatibility.ambiguousWidth", winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                         \
+    X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, "defaultInputScope")                                                                                           \
+    X(bool, UseBackgroundImageForWindow, "experimental.useBackgroundImageForWindow", false)                                                                                                     \
+    X(bool, TrimBlockSelection, "trimBlockSelection", true)                                                                                                                                     \
+    X(bool, DetectURLs, "experimental.detectURLs", true)                                                                                                                                        \
+    X(bool, AlwaysShowTabs, "alwaysShowTabs", true)                                                                                                                                             \
+    X(Model::NewTabPosition, NewTabPosition, "newTabPosition", Model::NewTabPosition::AfterLastTab)                                                                                             \
+    X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                           \
+    X(bool, ConfirmCloseAllTabs, "warning.confirmCloseAllTabs", true)                                                                                                                           \
+    X(Model::ThemePair, Theme, "theme")                                                                                                                                                         \
+    X(hstring, Language, "language")                                                                                                                                                            \
+    X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                      \
+    X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                    \
+    X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                     \
+    X(bool, InputServiceWarning, "warning.inputService", true)                                                                                                                                  \
+    X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                     \
+    X(bool, WarnAboutLargePaste, "warning.largePaste", true)                                                                                                                                    \
+    X(winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste, WarnAboutMultiLinePaste, "warning.multiLinePaste", winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste::Automatic) \
+    X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                              \
+    X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                            \
+    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                      \
+    X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                                                     \
+    X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                                                     \
+    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                        \
+    X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                                                                  \
+    X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                                                            \
+    X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                                                              \
+    X(bool, DisableAnimations, "disableAnimations", false)                                                                                                                                      \
+    X(hstring, StartupActions, "startupActions", L"")                                                                                                                                           \
+    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                                                               \
+    X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                    \
+    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                    \
+    X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                           \
+    X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                       \
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                   \
+    X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                         \
+    X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                               \
+    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                \
+    X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                 \
     X(bool, ShowTabsFullscreen, "showTabsFullscreen", false)
 
 #define MTSM_GLOBAL_SETTINGS_COLLECTIONS(X) \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)
 
-#define MTSM_GLOBAL_SETTINGS(X)         \
-    MTSM_GLOBAL_SETTINGS_SCALARS(X)     \
+#define MTSM_GLOBAL_SETTINGS(X)     \
+    MTSM_GLOBAL_SETTINGS_SCALARS(X) \
     MTSM_GLOBAL_SETTINGS_COLLECTIONS(X)
 
 // Also add these settings to:
@@ -132,8 +132,8 @@ Author(s):
 #define MTSM_PROFILE_SETTINGS_COLLECTIONS(X) \
     X(IEnvironmentVariableMap, EnvironmentVariables, "environment", nullptr)
 
-#define MTSM_PROFILE_SETTINGS(X)         \
-    MTSM_PROFILE_SETTINGS_SCALARS(X)     \
+#define MTSM_PROFILE_SETTINGS(X)     \
+    MTSM_PROFILE_SETTINGS_SCALARS(X) \
     MTSM_PROFILE_SETTINGS_COLLECTIONS(X)
 
 // Intentionally omitted Profile settings:
@@ -158,8 +158,8 @@ Author(s):
     X(IFontAxesMap, FontAxes, "axes")     \
     X(IFontFeatureMap, FontFeatures, "features")
 
-#define MTSM_FONT_SETTINGS(X)         \
-    MTSM_FONT_SETTINGS_SCALARS(X)     \
+#define MTSM_FONT_SETTINGS(X)     \
+    MTSM_FONT_SETTINGS_SCALARS(X) \
     MTSM_FONT_SETTINGS_COLLECTIONS(X)
 
 #define MTSM_APPEARANCE_SETTINGS(X)                                                                                                                                \
@@ -267,7 +267,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     constexpr std::string_view JsonKeyForSetting(ProfileSettingKey key)
     {
 #define _MTSM_KEY_CASE(type, name, jsonKey, ...) \
-    case ProfileSettingKey::name:                 \
+    case ProfileSettingKey::name:                \
         return jsonKey;
         switch (key)
         {
@@ -297,7 +297,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     constexpr std::string_view JsonKeyForSetting(GlobalSettingKey key)
     {
 #define _MTSM_KEY_CASE(type, name, jsonKey, ...) \
-    case GlobalSettingKey::name:                  \
+    case GlobalSettingKey::name:                 \
         return jsonKey;
         switch (key)
         {
@@ -313,7 +313,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     constexpr std::string_view JsonKeyForSetting(FontSettingKey key)
     {
 #define _MTSM_KEY_CASE(type, name, jsonKey, ...) \
-    case FontSettingKey::name:                    \
+    case FontSettingKey::name:                   \
         return jsonKey;
         switch (key)
         {
@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     constexpr std::string_view JsonKeyForSetting(AppearanceSettingKey key)
     {
 #define _MTSM_KEY_CASE(type, name, jsonKey, ...) \
-    case AppearanceSettingKey::name:              \
+    case AppearanceSettingKey::name:             \
         return jsonKey;
         switch (key)
         {

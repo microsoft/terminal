@@ -117,7 +117,7 @@ bool AppearanceConfig::HasSetting(AppearanceSettingKey key) const
     switch (key)
     {
 #define _APPEARANCE_HAS_SETTING(type, name, jsonKey, ...) \
-    case AppearanceSettingKey::name:                       \
+    case AppearanceSettingKey::name:                      \
         return Has##name();
         MTSM_APPEARANCE_SETTINGS(_APPEARANCE_HAS_SETTING)
 #undef _APPEARANCE_HAS_SETTING
@@ -151,7 +151,7 @@ void AppearanceConfig::ClearSetting(AppearanceSettingKey key)
     switch (key)
     {
 #define _APPEARANCE_CLEAR_SETTING(type, name, jsonKey, ...) \
-    case AppearanceSettingKey::name:                         \
+    case AppearanceSettingKey::name:                        \
         Clear##name();                                      \
         break;
         MTSM_APPEARANCE_SETTINGS(_APPEARANCE_CLEAR_SETTING)
@@ -271,7 +271,6 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     // The raw polymorphic key was copied verbatim by MergeJsonKeys above; drop it so only the
     // two internal keys remain as the source of truth (ToJson re-emits "colorScheme").
     _json.removeMember(JsonKey(ColorSchemeKey));
-
 
     // MTSM settings are now JSON-backed (no backing fields).
     // Values are already in _json from the merge step above.

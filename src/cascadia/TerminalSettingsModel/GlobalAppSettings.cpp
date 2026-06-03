@@ -374,7 +374,7 @@ bool GlobalAppSettings::HasSetting(GlobalSettingKey key) const
     switch (key)
     {
 #define _GLOBAL_HAS_SETTING(type, name, jsonKey, ...) \
-    case GlobalSettingKey::name:                       \
+    case GlobalSettingKey::name:                      \
         return Has##name();
         MTSM_GLOBAL_SETTINGS(_GLOBAL_HAS_SETTING)
 #undef _GLOBAL_HAS_SETTING
@@ -390,7 +390,7 @@ void GlobalAppSettings::ClearSetting(GlobalSettingKey key)
     switch (key)
     {
 #define _GLOBAL_CLEAR_SETTING(type, name, jsonKey, ...) \
-    case GlobalSettingKey::name:                         \
+    case GlobalSettingKey::name:                        \
         Clear##name();                                  \
         break;
         MTSM_GLOBAL_SETTINGS(_GLOBAL_CLEAR_SETTING)

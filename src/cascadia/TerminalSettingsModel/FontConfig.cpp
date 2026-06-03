@@ -54,7 +54,7 @@ bool FontConfig::HasSetting(FontSettingKey key) const
     switch (key)
     {
 #define _FONT_HAS_SETTING(type, name, jsonKey, ...) \
-    case FontSettingKey::name:                       \
+    case FontSettingKey::name:                      \
         return Has##name();
         MTSM_FONT_SETTINGS(_FONT_HAS_SETTING)
 #undef _FONT_HAS_SETTING
@@ -68,7 +68,7 @@ void FontConfig::ClearSetting(FontSettingKey key)
     switch (key)
     {
 #define _FONT_CLEAR_SETTING(type, name, jsonKey, ...) \
-    case FontSettingKey::name:                         \
+    case FontSettingKey::name:                        \
         Clear##name();                                \
         break;
         MTSM_FONT_SETTINGS(_FONT_CLEAR_SETTING)
@@ -148,8 +148,7 @@ void FontConfig::LayerJson(const Json::Value& json)
     _ValidateThisLayer();
 }
 
-void FontConfig::_ValidateThisLayer() const
-{
+void FontConfig::_ValidateThisLayer() const {
     MTSM_FONT_SETTINGS(MTSM_VALIDATE_SETTING)
 }
 

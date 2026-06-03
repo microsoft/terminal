@@ -158,162 +158,162 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // Provides Has, Clear, OverrideSource, and the private implementation helpers.
 // Does NOT provide the public getter/setter — use INHERITABLE_SETTING or
 // INHERITABLE_SETTING_WITH_LOGGING which add those on top of this base.
-#define _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, ...)              \
-public:                                                                                  \
-    /* Returns true if the user explicitly set the value, false otherwise */             \
-    bool Has##name() const                                                               \
-    {                                                                                    \
-        return _json.isMember(jsonKey) && !_json[jsonKey].isNull();                      \
-    }                                                                                    \
-                                                                                         \
-    /* Returns the object that provides the resolved value */                            \
-    projectedType name##OverrideSource()                                                 \
-    {                                                                                    \
-        /*iterate through parents to find one with a value*/                             \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return *source;                                                          \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no source was found*/                                                          \
-        return nullptr;                                                                  \
-    }                                                                                    \
-                                                                                         \
-    /* Clear the user set value */                                                       \
-    void Clear##name()                                                                   \
-    {                                                                                    \
-        _json.removeMember(JsonKey(jsonKey));                                             \
-    }                                                                                    \
-                                                                                         \
-private:                                                                                 \
-    /* Read value from this layer's _json only (no parent walk) */                       \
-    std::optional<type> _get##name##FromThisLayer() const                                \
-    {                                                                                    \
-        if (Has##name())                                                                 \
-        {                                                                                \
-            type val{ __VA_ARGS__ };                                                     \
-            ::Microsoft::Terminal::Settings::Model::JsonUtils::GetValueForKey(            \
-                _json, jsonKey, val);                                                     \
-            return val;                                                                  \
-        }                                                                                \
-        return std::nullopt;                                                             \
-    }                                                                                    \
-                                                                                         \
-    /* Resolve the value: this layer --> parents --> nullopt */                           \
-    std::optional<type> _get##name##Impl() const                                         \
-    {                                                                                    \
-        /*return value from this layer*/                                                 \
-        if (auto val{ _get##name##FromThisLayer() })                                     \
-        {                                                                                \
-            return val;                                                                  \
-        }                                                                                \
-                                                                                         \
-        /*iterate through parents to find a value*/                                      \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto val{ parent->_get##name##Impl() })                                  \
-            {                                                                            \
-                return val;                                                              \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no value was found*/                                                           \
-        return std::nullopt;                                                             \
-    }                                                                                    \
-                                                                                         \
-    /* Find the object that provides the resolved value */                               \
-    auto _get##name##OverrideSourceImpl()->decltype(get_strong())                        \
-    {                                                                                    \
-        /*we have a value*/                                                              \
-        if (Has##name())                                                                 \
-        {                                                                                \
-            return get_strong();                                                         \
-        }                                                                                \
-                                                                                         \
-        /*iterate through parents to find one with a value*/                             \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return source;                                                           \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no value was found*/                                                           \
-        return nullptr;                                                                  \
-    }                                                                                    \
-                                                                                         \
-    /* Find the override source and the value it provides */                             \
-    auto _get##name##OverrideSourceAndValueImpl()                                        \
-        ->std::pair<decltype(get_strong()), std::optional<type>>                         \
-    {                                                                                    \
-        /*we have a value*/                                                              \
-        if (Has##name())                                                                 \
-        {                                                                                \
-            return { get_strong(), _get##name##FromThisLayer() };                        \
-        }                                                                                \
-                                                                                         \
-        /*iterate through parents to find one with a value*/                             \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return { source, source->_get##name##FromThisLayer() };                  \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no value was found*/                                                           \
-        return { nullptr, std::nullopt };                                                \
+#define _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, ...)     \
+public:                                                                        \
+    /* Returns true if the user explicitly set the value, false otherwise */   \
+    bool Has##name() const                                                     \
+    {                                                                          \
+        return _json.isMember(jsonKey) && !_json[jsonKey].isNull();            \
+    }                                                                          \
+                                                                               \
+    /* Returns the object that provides the resolved value */                  \
+    projectedType name##OverrideSource()                                       \
+    {                                                                          \
+        /*iterate through parents to find one with a value*/                   \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })       \
+            {                                                                  \
+                return *source;                                                \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        /*no source was found*/                                                \
+        return nullptr;                                                        \
+    }                                                                          \
+                                                                               \
+    /* Clear the user set value */                                             \
+    void Clear##name()                                                         \
+    {                                                                          \
+        _json.removeMember(JsonKey(jsonKey));                                  \
+    }                                                                          \
+                                                                               \
+private:                                                                       \
+    /* Read value from this layer's _json only (no parent walk) */             \
+    std::optional<type> _get##name##FromThisLayer() const                      \
+    {                                                                          \
+        if (Has##name())                                                       \
+        {                                                                      \
+            type val{ __VA_ARGS__ };                                           \
+            ::Microsoft::Terminal::Settings::Model::JsonUtils::GetValueForKey( \
+                _json, jsonKey, val);                                          \
+            return val;                                                        \
+        }                                                                      \
+        return std::nullopt;                                                   \
+    }                                                                          \
+                                                                               \
+    /* Resolve the value: this layer --> parents --> nullopt */                \
+    std::optional<type> _get##name##Impl() const                               \
+    {                                                                          \
+        /*return value from this layer*/                                       \
+        if (auto val{ _get##name##FromThisLayer() })                           \
+        {                                                                      \
+            return val;                                                        \
+        }                                                                      \
+                                                                               \
+        /*iterate through parents to find a value*/                            \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto val{ parent->_get##name##Impl() })                        \
+            {                                                                  \
+                return val;                                                    \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        /*no value was found*/                                                 \
+        return std::nullopt;                                                   \
+    }                                                                          \
+                                                                               \
+    /* Find the object that provides the resolved value */                     \
+    auto _get##name##OverrideSourceImpl()->decltype(get_strong())              \
+    {                                                                          \
+        /*we have a value*/                                                    \
+        if (Has##name())                                                       \
+        {                                                                      \
+            return get_strong();                                               \
+        }                                                                      \
+                                                                               \
+        /*iterate through parents to find one with a value*/                   \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })       \
+            {                                                                  \
+                return source;                                                 \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        /*no value was found*/                                                 \
+        return nullptr;                                                        \
+    }                                                                          \
+                                                                               \
+    /* Find the override source and the value it provides */                   \
+    auto _get##name##OverrideSourceAndValueImpl()                              \
+        ->std::pair<decltype(get_strong()), std::optional<type>>               \
+    {                                                                          \
+        /*we have a value*/                                                    \
+        if (Has##name())                                                       \
+        {                                                                      \
+            return { get_strong(), _get##name##FromThisLayer() };              \
+        }                                                                      \
+                                                                               \
+        /*iterate through parents to find one with a value*/                   \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })       \
+            {                                                                  \
+                return { source, source->_get##name##FromThisLayer() };        \
+            }                                                                  \
+        }                                                                      \
+                                                                               \
+        /*no value was found*/                                                 \
+        return { nullptr, std::nullopt };                                      \
     }
 
 // JSON-backed inheritable setting.
 // Getter returns the resolved value: this layer --> inherited --> default.
 // Setter writes the value to _json.
-#define INHERITABLE_SETTING(projectedType, type, name, jsonKey, ...)                     \
-    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)           \
-public:                                                                                  \
-    /* Returns the resolved value for this setting */                                    \
-    /* fallback: this layer --> inherited value --> default */                            \
-    type name() const                                                                    \
-    {                                                                                    \
-        const auto val{ _get##name##Impl() };                                            \
-        return val ? *val : type{ __VA_ARGS__ };                                         \
-    }                                                                                    \
-                                                                                         \
-    /* Overwrite the user set value in _json */                                          \
-    void name(const type& value)                                                         \
-    {                                                                                    \
-        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                \
-            _json, jsonKey, value);                                                       \
+#define INHERITABLE_SETTING(projectedType, type, name, jsonKey, ...)           \
+    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__) \
+public:                                                                        \
+    /* Returns the resolved value for this setting */                          \
+    /* fallback: this layer --> inherited value --> default */                 \
+    type name() const                                                          \
+    {                                                                          \
+        const auto val{ _get##name##Impl() };                                  \
+        return val ? *val : type{ __VA_ARGS__ };                               \
+    }                                                                          \
+                                                                               \
+    /* Overwrite the user set value in _json */                                \
+    void name(const type& value)                                               \
+    {                                                                          \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(     \
+            _json, jsonKey, value);                                            \
     }
 
 // JSON-backed inheritable setting with change logging.
 // Same as INHERITABLE_SETTING, but the setter also calls _logSettingSet(jsonKey)
 // when the value actually changes (for settings change telemetry).
-#define INHERITABLE_SETTING_WITH_LOGGING(projectedType, type, name, jsonKey, ...)        \
-    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)           \
-public:                                                                                  \
-    /* Returns the resolved value for this setting */                                    \
-    /* fallback: this layer --> inherited value --> default */                            \
-    type name() const                                                                    \
-    {                                                                                    \
-        const auto val{ _get##name##Impl() };                                            \
-        return val ? *val : type{ __VA_ARGS__ };                                         \
-    }                                                                                    \
-                                                                                         \
-    /* Overwrite the user set value, log the change, and write to _json */               \
-    void name(const type& value)                                                         \
-    {                                                                                    \
-        const auto existingVal{ _get##name##FromThisLayer() };                           \
-        if (!existingVal.has_value() || existingVal.value() != value)                    \
-        {                                                                                \
-            _logSettingSet(jsonKey);                                                      \
-        }                                                                                \
-        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                \
-            _json, jsonKey, value);                                                       \
+#define INHERITABLE_SETTING_WITH_LOGGING(projectedType, type, name, jsonKey, ...) \
+    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)    \
+public:                                                                           \
+    /* Returns the resolved value for this setting */                             \
+    /* fallback: this layer --> inherited value --> default */                    \
+    type name() const                                                             \
+    {                                                                             \
+        const auto val{ _get##name##Impl() };                                     \
+        return val ? *val : type{ __VA_ARGS__ };                                  \
+    }                                                                             \
+                                                                                  \
+    /* Overwrite the user set value, log the change, and write to _json */        \
+    void name(const type& value)                                                  \
+    {                                                                             \
+        const auto existingVal{ _get##name##FromThisLayer() };                    \
+        if (!existingVal.has_value() || existingVal.value() != value)             \
+        {                                                                         \
+            _logSettingSet(jsonKey);                                              \
+        }                                                                         \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(        \
+            _json, jsonKey, value);                                               \
     }
 
 // JSON-backed nullable inheritable setting.
@@ -322,134 +322,134 @@ public:                                                                         
 //   Key present + null  → explicitly "no value" (getter returns nullptr)
 //   Key present + value → has a value
 // Getter returns IReference<T>.
-#define INHERITABLE_NULLABLE_SETTING(projectedType, type, name, jsonKey, ...)             \
-public:                                                                                  \
-    /* Key presence means explicitly set (even if value is null) */                      \
-    bool Has##name() const                                                               \
-    {                                                                                    \
-        return _json.isMember(jsonKey);                                                  \
-    }                                                                                    \
-                                                                                         \
-    /* Returns the object that provides the resolved value */                            \
-    projectedType name##OverrideSource()                                                 \
-    {                                                                                    \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return *source;                                                          \
-            }                                                                            \
-        }                                                                                \
-        return nullptr;                                                                  \
-    }                                                                                    \
-                                                                                         \
-    /* Clear the user set value (remove key entirely → inherit from parent) */           \
-    void Clear##name()                                                                   \
-    {                                                                                    \
-        _json.removeMember(JsonKey(jsonKey));                                             \
-    }                                                                                    \
-                                                                                         \
-    /* Returns the resolved value for this setting */                                    \
-    /* fallback: this layer --> inherited value --> default */                            \
-    winrt::Windows::Foundation::IReference<type> name() const                            \
-    {                                                                                    \
-        const auto val{ _get##name##Impl() };                                            \
-        if (val)                                                                         \
-        {                                                                                \
-            if (*val)                                                                    \
-            {                                                                            \
-                return **val;                                                            \
-            }                                                                            \
-            return nullptr;                                                              \
-        }                                                                                \
-        return winrt::Windows::Foundation::IReference<type>{ __VA_ARGS__ };              \
-    }                                                                                    \
-                                                                                         \
-    /* Overwrite the user set value in _json */                                          \
-    void name(const winrt::Windows::Foundation::IReference<type>& value)                 \
-    {                                                                                    \
-        if (value)                                                                       \
-        {                                                                                \
-            ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(            \
-                _json, jsonKey, value.Value());                                           \
-        }                                                                                \
-        else                                                                             \
-        {                                                                                \
-            /* explicitly set to null (not the same as clearing) */                      \
-            _json[JsonKey(jsonKey)] = Json::nullValue;                                   \
-        }                                                                                \
-    }                                                                                    \
-                                                                                         \
-private:                                                                                 \
-    /* Read nullable value from this layer's _json only (no parent walk) */              \
-    /* Returns: nullopt = not set. optional{nullopt} = explicitly null. */               \
-    /*          optional{optional{val}} = has value. */                                  \
-    NullableSetting<type> _get##name##FromThisLayer() const                              \
-    {                                                                                    \
-        if (_json.isMember(jsonKey))                                                     \
-        {                                                                                \
-            if (_json[jsonKey].isNull())                                                  \
-            {                                                                            \
-                return std::optional<type>{ std::nullopt };                               \
-            }                                                                            \
-            type val{};                                                                  \
-            ::Microsoft::Terminal::Settings::Model::JsonUtils::GetValueForKey(            \
-                _json, jsonKey, val);                                                     \
-            return std::optional<type>{ val };                                            \
-        }                                                                                \
-        return std::nullopt;                                                             \
-    }                                                                                    \
-                                                                                         \
-    /* Resolve the nullable value: this layer --> parents --> nullopt */                  \
-    NullableSetting<type> _get##name##Impl() const                                       \
-    {                                                                                    \
-        if (auto val{ _get##name##FromThisLayer() })                                     \
-        {                                                                                \
-            return val;                                                                  \
-        }                                                                                \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto val{ parent->_get##name##Impl() })                                  \
-            {                                                                            \
-                return val;                                                              \
-            }                                                                            \
-        }                                                                                \
-        return std::nullopt;                                                             \
-    }                                                                                    \
-                                                                                         \
-    /* Find the object that provides the resolved value */                               \
-    auto _get##name##OverrideSourceImpl()->decltype(get_strong())                        \
-    {                                                                                    \
-        if (Has##name())                                                                 \
-        {                                                                                \
-            return get_strong();                                                         \
-        }                                                                                \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return source;                                                           \
-            }                                                                            \
-        }                                                                                \
-        return nullptr;                                                                  \
-    }                                                                                    \
-                                                                                         \
-    /* Find the override source and the value it provides */                             \
-    auto _get##name##OverrideSourceAndValueImpl()                                        \
-        ->std::pair<decltype(get_strong()), NullableSetting<type>>                        \
-    {                                                                                    \
-        if (Has##name())                                                                 \
-        {                                                                                \
-            return { get_strong(), _get##name##FromThisLayer() };                        \
-        }                                                                                \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return { source, source->_get##name##FromThisLayer() };                  \
-            }                                                                            \
-        }                                                                                \
-        return { nullptr, std::nullopt };                                                \
+#define INHERITABLE_NULLABLE_SETTING(projectedType, type, name, jsonKey, ...)  \
+public:                                                                        \
+    /* Key presence means explicitly set (even if value is null) */            \
+    bool Has##name() const                                                     \
+    {                                                                          \
+        return _json.isMember(jsonKey);                                        \
+    }                                                                          \
+                                                                               \
+    /* Returns the object that provides the resolved value */                  \
+    projectedType name##OverrideSource()                                       \
+    {                                                                          \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })       \
+            {                                                                  \
+                return *source;                                                \
+            }                                                                  \
+        }                                                                      \
+        return nullptr;                                                        \
+    }                                                                          \
+                                                                               \
+    /* Clear the user set value (remove key entirely → inherit from parent) */ \
+    void Clear##name()                                                         \
+    {                                                                          \
+        _json.removeMember(JsonKey(jsonKey));                                  \
+    }                                                                          \
+                                                                               \
+    /* Returns the resolved value for this setting */                          \
+    /* fallback: this layer --> inherited value --> default */                 \
+    winrt::Windows::Foundation::IReference<type> name() const                  \
+    {                                                                          \
+        const auto val{ _get##name##Impl() };                                  \
+        if (val)                                                               \
+        {                                                                      \
+            if (*val)                                                          \
+            {                                                                  \
+                return **val;                                                  \
+            }                                                                  \
+            return nullptr;                                                    \
+        }                                                                      \
+        return winrt::Windows::Foundation::IReference<type>{ __VA_ARGS__ };    \
+    }                                                                          \
+                                                                               \
+    /* Overwrite the user set value in _json */                                \
+    void name(const winrt::Windows::Foundation::IReference<type>& value)       \
+    {                                                                          \
+        if (value)                                                             \
+        {                                                                      \
+            ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey( \
+                _json, jsonKey, value.Value());                                \
+        }                                                                      \
+        else                                                                   \
+        {                                                                      \
+            /* explicitly set to null (not the same as clearing) */            \
+            _json[JsonKey(jsonKey)] = Json::nullValue;                         \
+        }                                                                      \
+    }                                                                          \
+                                                                               \
+private:                                                                       \
+    /* Read nullable value from this layer's _json only (no parent walk) */    \
+    /* Returns: nullopt = not set. optional{nullopt} = explicitly null. */     \
+    /*          optional{optional{val}} = has value. */                        \
+    NullableSetting<type> _get##name##FromThisLayer() const                    \
+    {                                                                          \
+        if (_json.isMember(jsonKey))                                           \
+        {                                                                      \
+            if (_json[jsonKey].isNull())                                       \
+            {                                                                  \
+                return std::optional<type>{ std::nullopt };                    \
+            }                                                                  \
+            type val{};                                                        \
+            ::Microsoft::Terminal::Settings::Model::JsonUtils::GetValueForKey( \
+                _json, jsonKey, val);                                          \
+            return std::optional<type>{ val };                                 \
+        }                                                                      \
+        return std::nullopt;                                                   \
+    }                                                                          \
+                                                                               \
+    /* Resolve the nullable value: this layer --> parents --> nullopt */       \
+    NullableSetting<type> _get##name##Impl() const                             \
+    {                                                                          \
+        if (auto val{ _get##name##FromThisLayer() })                           \
+        {                                                                      \
+            return val;                                                        \
+        }                                                                      \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto val{ parent->_get##name##Impl() })                        \
+            {                                                                  \
+                return val;                                                    \
+            }                                                                  \
+        }                                                                      \
+        return std::nullopt;                                                   \
+    }                                                                          \
+                                                                               \
+    /* Find the object that provides the resolved value */                     \
+    auto _get##name##OverrideSourceImpl()->decltype(get_strong())              \
+    {                                                                          \
+        if (Has##name())                                                       \
+        {                                                                      \
+            return get_strong();                                               \
+        }                                                                      \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })       \
+            {                                                                  \
+                return source;                                                 \
+            }                                                                  \
+        }                                                                      \
+        return nullptr;                                                        \
+    }                                                                          \
+                                                                               \
+    /* Find the override source and the value it provides */                   \
+    auto _get##name##OverrideSourceAndValueImpl()                              \
+        ->std::pair<decltype(get_strong()), NullableSetting<type>>             \
+    {                                                                          \
+        if (Has##name())                                                       \
+        {                                                                      \
+            return { get_strong(), _get##name##FromThisLayer() };              \
+        }                                                                      \
+        for (const auto& parent : _parents)                                    \
+        {                                                                      \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })       \
+            {                                                                  \
+                return { source, source->_get##name##FromThisLayer() };        \
+            }                                                                  \
+        }                                                                      \
+        return { nullptr, std::nullopt };                                      \
     }
 
 // =============================================================================
@@ -481,125 +481,125 @@ private:                                                                        
 // Clear<Name>() — backing-only for plain INHERITABLE_MUTABLE_SETTING, dual-write
 // (backing + _json) for INHERITABLE_MEDIA_RESOURCE_SETTING and
 // INHERITABLE_MEDIA_RESOURCE_VECTOR_SETTING — and its own getter/setter.
-#define _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, storageType, name, ...)         \
-public:                                                                                  \
-    /* Returns true if the user explicitly set the value, false otherwise */             \
-    bool Has##name() const                                                               \
-    {                                                                                    \
-        return _##name.has_value();                                                      \
-    }                                                                                    \
-                                                                                         \
-    /* Returns the object that provides the resolved value */                            \
-    projectedType name##OverrideSource()                                                 \
-    {                                                                                    \
-        /*iterate through parents to find one with a value*/                             \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return *source;                                                          \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no source was found*/                                                          \
-        return nullptr;                                                                  \
-    }                                                                                    \
-                                                                                         \
-private:                                                                                 \
-    storageType _##name{ std::nullopt };                                                 \
-                                                                                         \
-    /* Resolve the value: this layer --> parents --> nullopt */                           \
-    storageType _get##name##Impl() const                                                 \
-    {                                                                                    \
-        /*return user set value*/                                                        \
-        if (_##name)                                                                     \
-        {                                                                                \
-            return _##name;                                                              \
-        }                                                                                \
-                                                                                         \
-        /*iterate through parents to find a value*/                                      \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto val{ parent->_get##name##Impl() })                                  \
-            {                                                                            \
-                return val;                                                              \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no value was found*/                                                           \
-        return std::nullopt;                                                             \
-    }                                                                                    \
-                                                                                         \
-    /* Find the object that provides the resolved value */                               \
-    auto _get##name##OverrideSourceImpl()->decltype(get_strong())                        \
-    {                                                                                    \
-        /*we have a value*/                                                              \
-        if (_##name)                                                                     \
-        {                                                                                \
-            return get_strong();                                                         \
-        }                                                                                \
-                                                                                         \
-        /*iterate through parents to find one with a value*/                             \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return source;                                                           \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no value was found*/                                                           \
-        return nullptr;                                                                  \
-    }                                                                                    \
-                                                                                         \
-    /* Find the override source and the value it provides */                             \
-    auto _get##name##OverrideSourceAndValueImpl()                                        \
-        ->std::pair<decltype(get_strong()), storageType>                                 \
-    {                                                                                    \
-        /*we have a value*/                                                              \
-        if (_##name)                                                                     \
-        {                                                                                \
-            return { get_strong(), _##name };                                            \
-        }                                                                                \
-                                                                                         \
-        /*iterate through parents to find one with a value*/                             \
-        for (const auto& parent : _parents)                                              \
-        {                                                                                \
-            if (auto source{ parent->_get##name##OverrideSourceImpl() })                 \
-            {                                                                            \
-                return { source, source->_##name };                                      \
-            }                                                                            \
-        }                                                                                \
-                                                                                         \
-        /*no value was found*/                                                           \
-        return { nullptr, std::nullopt };                                                \
+#define _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, storageType, name, ...) \
+public:                                                                          \
+    /* Returns true if the user explicitly set the value, false otherwise */     \
+    bool Has##name() const                                                       \
+    {                                                                            \
+        return _##name.has_value();                                              \
+    }                                                                            \
+                                                                                 \
+    /* Returns the object that provides the resolved value */                    \
+    projectedType name##OverrideSource()                                         \
+    {                                                                            \
+        /*iterate through parents to find one with a value*/                     \
+        for (const auto& parent : _parents)                                      \
+        {                                                                        \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })         \
+            {                                                                    \
+                return *source;                                                  \
+            }                                                                    \
+        }                                                                        \
+                                                                                 \
+        /*no source was found*/                                                  \
+        return nullptr;                                                          \
+    }                                                                            \
+                                                                                 \
+private:                                                                         \
+    storageType _##name{ std::nullopt };                                         \
+                                                                                 \
+    /* Resolve the value: this layer --> parents --> nullopt */                  \
+    storageType _get##name##Impl() const                                         \
+    {                                                                            \
+        /*return user set value*/                                                \
+        if (_##name)                                                             \
+        {                                                                        \
+            return _##name;                                                      \
+        }                                                                        \
+                                                                                 \
+        /*iterate through parents to find a value*/                              \
+        for (const auto& parent : _parents)                                      \
+        {                                                                        \
+            if (auto val{ parent->_get##name##Impl() })                          \
+            {                                                                    \
+                return val;                                                      \
+            }                                                                    \
+        }                                                                        \
+                                                                                 \
+        /*no value was found*/                                                   \
+        return std::nullopt;                                                     \
+    }                                                                            \
+                                                                                 \
+    /* Find the object that provides the resolved value */                       \
+    auto _get##name##OverrideSourceImpl()->decltype(get_strong())                \
+    {                                                                            \
+        /*we have a value*/                                                      \
+        if (_##name)                                                             \
+        {                                                                        \
+            return get_strong();                                                 \
+        }                                                                        \
+                                                                                 \
+        /*iterate through parents to find one with a value*/                     \
+        for (const auto& parent : _parents)                                      \
+        {                                                                        \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })         \
+            {                                                                    \
+                return source;                                                   \
+            }                                                                    \
+        }                                                                        \
+                                                                                 \
+        /*no value was found*/                                                   \
+        return nullptr;                                                          \
+    }                                                                            \
+                                                                                 \
+    /* Find the override source and the value it provides */                     \
+    auto _get##name##OverrideSourceAndValueImpl()                                \
+        ->std::pair<decltype(get_strong()), storageType>                         \
+    {                                                                            \
+        /*we have a value*/                                                      \
+        if (_##name)                                                             \
+        {                                                                        \
+            return { get_strong(), _##name };                                    \
+        }                                                                        \
+                                                                                 \
+        /*iterate through parents to find one with a value*/                     \
+        for (const auto& parent : _parents)                                      \
+        {                                                                        \
+            if (auto source{ parent->_get##name##OverrideSourceImpl() })         \
+            {                                                                    \
+                return { source, source->_##name };                              \
+            }                                                                    \
+        }                                                                        \
+                                                                                 \
+        /*no value was found*/                                                   \
+        return { nullptr, std::nullopt };                                        \
     }
 
 // Mutable backing-field setting.
 // Getter returns the resolved value: this layer --> inherited --> default.
 // Setter writes to the std::optional<T> backing field.
 // Clear<Name>() resets the backing field only (this macro has no JSON to clear).
-#define INHERITABLE_MUTABLE_SETTING(projectedType, type, name, ...)                      \
-    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, std::optional<type>, name, ...)     \
-public:                                                                                  \
-    /* Returns the resolved value for this setting */                                    \
-    /* fallback: this layer --> inherited value --> default */                            \
-    type name() const                                                                    \
-    {                                                                                    \
-        const auto val{ _get##name##Impl() };                                            \
-        return val ? *val : type{ __VA_ARGS__ };                                         \
-    }                                                                                    \
-                                                                                         \
-    /* Overwrite the user set value */                                                   \
-    void name(const type& value)                                                         \
-    {                                                                                    \
-        _##name = value;                                                                 \
-    }                                                                                    \
-                                                                                         \
-    /* Clear the user set value (backing only — no _json key for this macro) */          \
-    void Clear##name()                                                                   \
-    {                                                                                    \
-        _##name = std::nullopt;                                                          \
+#define INHERITABLE_MUTABLE_SETTING(projectedType, type, name, ...)                  \
+    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, std::optional<type>, name, ...) \
+public:                                                                              \
+    /* Returns the resolved value for this setting */                                \
+    /* fallback: this layer --> inherited value --> default */                       \
+    type name() const                                                                \
+    {                                                                                \
+        const auto val{ _get##name##Impl() };                                        \
+        return val ? *val : type{ __VA_ARGS__ };                                     \
+    }                                                                                \
+                                                                                     \
+    /* Overwrite the user set value */                                               \
+    void name(const type& value)                                                     \
+    {                                                                                \
+        _##name = value;                                                             \
+    }                                                                                \
+                                                                                     \
+    /* Clear the user set value (backing only — no _json key for this macro) */      \
+    void Clear##name()                                                               \
+    {                                                                                \
+        _##name = std::nullopt;                                                      \
     }
 
 // =============================================================================
@@ -617,34 +617,33 @@ public:                                                                         
 //   jsonKey       - the JSON key (e.g., "icon")
 //   ...           - default value (e.g., implementation::MediaResource::Empty())
 //
-#define INHERITABLE_MEDIA_RESOURCE_SETTING(projectedType, name, jsonKey, ...)                       \
-    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, std::optional<IMediaResource>, name,          \
-                                      implementation::MediaResource::Empty())                       \
-public:                                                                                            \
-    /* Returns the resolved value: this layer --> inherited --> default */                          \
-    IMediaResource name() const                                                                    \
-    {                                                                                              \
-        const auto v{ _get##name##Impl() };                                                        \
-        return v ? *v : IMediaResource{ __VA_ARGS__ };                                             \
-    }                                                                                              \
-                                                                                                   \
-    /* Dual-write: backing field (for resolution) + _json (for serialization) */                   \
-    void name(const IMediaResource& value)                                                         \
-    {                                                                                              \
-        _##name = value;                                                                           \
-        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);   \
-        _logSettingSet(jsonKey);                                                                    \
-        /* TODO GH#12424: raise WriteSettings event */                                              \
-    }                                                                                              \
-                                                                                                   \
-    /* Dual-clear: backing field + _json key. Both must clear so auto-save doesn't */               \
-    /* re-persist the cleared value. */                                                             \
-    void Clear##name()                                                                             \
-    {                                                                                              \
-        _##name = std::nullopt;                                                                    \
-        _json.removeMember(JsonKey(jsonKey));                                                       \
-        _logSettingSet(jsonKey);                                                                    \
-        /* TODO GH#12424: raise WriteSettings event */                                              \
+#define INHERITABLE_MEDIA_RESOURCE_SETTING(projectedType, name, jsonKey, ...)                                                     \
+    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType, std::optional<IMediaResource>, name, implementation::MediaResource::Empty()) \
+public:                                                                                                                           \
+    /* Returns the resolved value: this layer --> inherited --> default */                                                        \
+    IMediaResource name() const                                                                                                   \
+    {                                                                                                                             \
+        const auto v{ _get##name##Impl() };                                                                                       \
+        return v ? *v : IMediaResource{ __VA_ARGS__ };                                                                            \
+    }                                                                                                                             \
+                                                                                                                                  \
+    /* Dual-write: backing field (for resolution) + _json (for serialization) */                                                  \
+    void name(const IMediaResource& value)                                                                                        \
+    {                                                                                                                             \
+        _##name = value;                                                                                                          \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                                 \
+        _logSettingSet(jsonKey);                                                                                                  \
+        /* TODO GH#12424: raise WriteSettings event */                                                                            \
+    }                                                                                                                             \
+                                                                                                                                  \
+    /* Dual-clear: backing field + _json key. Both must clear so auto-save doesn't */                                             \
+    /* re-persist the cleared value. */                                                                                           \
+    void Clear##name()                                                                                                            \
+    {                                                                                                                             \
+        _##name = std::nullopt;                                                                                                   \
+        _json.removeMember(JsonKey(jsonKey));                                                                                     \
+        _logSettingSet(jsonKey);                                                                                                  \
+        /* TODO GH#12424: raise WriteSettings event */                                                                            \
     }
 
 // =============================================================================
@@ -680,53 +679,54 @@ public:                                                                         
 //                   initializer.
 //
 // Requires JsonSyncCollections.h to be transitively included.
-#define INHERITABLE_MEDIA_RESOURCE_VECTOR_SETTING(projectedType, name, jsonKey, ...)                                                  \
-    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType,                                                                                  \
-                                      std::optional<winrt::Windows::Foundation::Collections::IVector<IMediaResource>>,                \
-                                      name,                                                                                           \
-                                      __VA_ARGS__)                                                                                    \
-public:                                                                                                                               \
-    /* Asymmetric getter: wrapper when local, raw inherited IVector otherwise. */                                                     \
-    /* Returns the fallback default (typically nullptr) when no effective value exists. */                                            \
-    winrt::Windows::Foundation::Collections::IVector<IMediaResource> name()                                                           \
-    {                                                                                                                                 \
-        const auto val{ _get##name##Impl() };                                                                                         \
-        if (!val || !*val)                                                                                                            \
-        {                                                                                                                             \
-            return winrt::Windows::Foundation::Collections::IVector<IMediaResource>{ __VA_ARGS__ };                                   \
-        }                                                                                                                             \
-        if (Has##name())                                                                                                              \
-        {                                                                                                                             \
-            auto strong = get_strong();                                                                                               \
-            return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncVector<IMediaResource>>(        \
-                *val,                                                                                                                 \
-                [strong](winrt::Windows::Foundation::Collections::IVector<IMediaResource> const& current) {                           \
-                    auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<                                   \
-                        winrt::Windows::Foundation::Collections::IVector<IMediaResource>>{}.ToJson(current);                          \
-                    strong->_json[JsonKey(jsonKey)] = std::move(temp);                        \
-                    strong->_logSettingSet(jsonKey);                                                                                  \
-                    /* TODO GH#12424: raise WriteSettings event */                                                                    \
-                });                                                                                                                   \
-        }                                                                                                                             \
-        return *val;                                                                                                                  \
-    }                                                                                                                                 \
-                                                                                                                                      \
-    /* Whole-replace setter: dual-write to backing + _json. */                                                                        \
-    void name(const winrt::Windows::Foundation::Collections::IVector<IMediaResource>& value)                                          \
-    {                                                                                                                                 \
-        _##name = value;                                                                                                              \
-        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                                     \
-        _logSettingSet(jsonKey);                                                                                                      \
-        /* TODO GH#12424: raise WriteSettings event */                                                                                \
-    }                                                                                                                                 \
-                                                                                                                                      \
-    /* Dual-clear: backing field + _json key. */                                                                                      \
-    void Clear##name()                                                                                                                \
-    {                                                                                                                                 \
-        _##name = std::nullopt;                                                                                                       \
-        _json.removeMember(JsonKey(jsonKey));                                                                                         \
-        _logSettingSet(jsonKey);                                                                                                      \
-        /* TODO GH#12424: raise WriteSettings event */                                                                                \
+#define INHERITABLE_MEDIA_RESOURCE_VECTOR_SETTING(projectedType, name, jsonKey, ...)                                           \
+    _BASE_INHERITABLE_MUTABLE_SETTING(projectedType,                                                                           \
+                                      std::optional<winrt::Windows::Foundation::Collections::IVector<IMediaResource>>,         \
+                                      name,                                                                                    \
+                                      __VA_ARGS__)                                                                             \
+public:                                                                                                                        \
+    /* Asymmetric getter: wrapper when local, raw inherited IVector otherwise. */                                              \
+    /* Returns the fallback default (typically nullptr) when no effective value exists. */                                     \
+    winrt::Windows::Foundation::Collections::IVector<IMediaResource> name()                                                    \
+    {                                                                                                                          \
+        const auto val{ _get##name##Impl() };                                                                                  \
+        if (!val || !*val)                                                                                                     \
+        {                                                                                                                      \
+            return winrt::Windows::Foundation::Collections::IVector<IMediaResource>{ __VA_ARGS__ };                            \
+        }                                                                                                                      \
+        if (Has##name())                                                                                                       \
+        {                                                                                                                      \
+            auto strong = get_strong();                                                                                        \
+            return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncVector<IMediaResource>>( \
+                *val,                                                                                                          \
+                [strong](winrt::Windows::Foundation::Collections::IVector<IMediaResource> const& current) {                    \
+                    auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<                            \
+                                    winrt::Windows::Foundation::Collections::IVector<IMediaResource>>{}                        \
+                                    .ToJson(current);                                                                          \
+                    strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                         \
+                    strong->_logSettingSet(jsonKey);                                                                           \
+                    /* TODO GH#12424: raise WriteSettings event */                                                             \
+                });                                                                                                            \
+        }                                                                                                                      \
+        return *val;                                                                                                           \
+    }                                                                                                                          \
+                                                                                                                               \
+    /* Whole-replace setter: dual-write to backing + _json. */                                                                 \
+    void name(const winrt::Windows::Foundation::Collections::IVector<IMediaResource>& value)                                   \
+    {                                                                                                                          \
+        _##name = value;                                                                                                       \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                              \
+        _logSettingSet(jsonKey);                                                                                               \
+        /* TODO GH#12424: raise WriteSettings event */                                                                         \
+    }                                                                                                                          \
+                                                                                                                               \
+    /* Dual-clear: backing field + _json key. */                                                                               \
+    void Clear##name()                                                                                                         \
+    {                                                                                                                          \
+        _##name = std::nullopt;                                                                                                \
+        _json.removeMember(JsonKey(jsonKey));                                                                                  \
+        _logSettingSet(jsonKey);                                                                                               \
+        /* TODO GH#12424: raise WriteSettings event */                                                                         \
     }
 
 // =============================================================================
@@ -750,78 +750,78 @@ public:                                                                         
 // Requires JsonSyncCollections.h to be transitively included.
 
 // IVector<T> flavor.
-#define INHERITABLE_JSON_BACKED_VECTOR_SETTING(projectedType, type, name, jsonKey, ...)                                          \
-    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)                                                   \
-public:                                                                                                                          \
-    /* Returns nullptr when no effective value exists.                                                                       */  \
-    /* Otherwise returns a wrapper around a fresh shadow seeded from the effective JSON.                                     */  \
-    /* Mutations on the wrapper auto-promote the setting into this layer's _json.                                            */  \
-    type name()                                                                                                                  \
-    {                                                                                                                            \
-        const auto val{ _get##name##Impl() };                                                                                    \
-        if (!val || !*val)                                                                                                       \
-        {                                                                                                                        \
-            return nullptr;                                                                                                      \
-        }                                                                                                                        \
+#define INHERITABLE_JSON_BACKED_VECTOR_SETTING(projectedType, type, name, jsonKey, ...)                                                   \
+    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)                                                            \
+public:                                                                                                                                   \
+    /* Returns nullptr when no effective value exists.                                                                       */           \
+    /* Otherwise returns a wrapper around a fresh shadow seeded from the effective JSON.                                     */           \
+    /* Mutations on the wrapper auto-promote the setting into this layer's _json.                                            */           \
+    type name()                                                                                                                           \
+    {                                                                                                                                     \
+        const auto val{ _get##name##Impl() };                                                                                             \
+        if (!val || !*val)                                                                                                                \
+        {                                                                                                                                 \
+            return nullptr;                                                                                                               \
+        }                                                                                                                                 \
         using ElementT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::CollectionElementOf<type>::element_type; \
-        auto strong = get_strong();                                                                                              \
-        return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncVector<ElementT>>(             \
-            *val,                                                                                                                \
-            [strong](type const& current) {                                                                                      \
-                auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);          \
-                strong->_json[JsonKey(jsonKey)] = std::move(temp);                       \
-                strong->_logSettingSet(jsonKey);                                                                                 \
-                /* TODO GH#12424: raise WriteSettings event */                                                                   \
-            });                                                                                                                  \
-    }                                                                                                                            \
-                                                                                                                                 \
-    /* Whole-replace setter (for "create from scratch" call sites). */                                                           \
-    void name(const type& value)                                                                                                 \
-    {                                                                                                                            \
-        const auto existingVal{ _get##name##FromThisLayer() };                                                                   \
-        if (!existingVal.has_value() || existingVal.value() != value)                                                            \
-        {                                                                                                                        \
-            _logSettingSet(jsonKey);                                                                                             \
-        }                                                                                                                        \
-        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                                                       \
-            _json, jsonKey, value);                                                                                              \
-        /* TODO GH#12424: raise WriteSettings event */                                                                           \
+        auto strong = get_strong();                                                                                                       \
+        return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncVector<ElementT>>(                      \
+            *val,                                                                                                                         \
+            [strong](type const& current) {                                                                                               \
+                auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);                   \
+                strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                                        \
+                strong->_logSettingSet(jsonKey);                                                                                          \
+                /* TODO GH#12424: raise WriteSettings event */                                                                            \
+            });                                                                                                                           \
+    }                                                                                                                                     \
+                                                                                                                                          \
+    /* Whole-replace setter (for "create from scratch" call sites). */                                                                    \
+    void name(const type& value)                                                                                                          \
+    {                                                                                                                                     \
+        const auto existingVal{ _get##name##FromThisLayer() };                                                                            \
+        if (!existingVal.has_value() || existingVal.value() != value)                                                                     \
+        {                                                                                                                                 \
+            _logSettingSet(jsonKey);                                                                                                      \
+        }                                                                                                                                 \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                                                                \
+            _json, jsonKey, value);                                                                                                       \
+        /* TODO GH#12424: raise WriteSettings event */                                                                                    \
     }
 
 // IMap<K, V> flavor.
-#define INHERITABLE_JSON_BACKED_MAP_SETTING(projectedType, type, name, jsonKey, ...)                                              \
-    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)                                                   \
-public:                                                                                                                          \
-    type name()                                                                                                                  \
-    {                                                                                                                            \
-        const auto val{ _get##name##Impl() };                                                                                    \
-        if (!val || !*val)                                                                                                       \
-        {                                                                                                                        \
-            return nullptr;                                                                                                      \
-        }                                                                                                                        \
-        using KeyT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::MapKeyValueOf<type>::key_type;       \
-        using ValueT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::MapKeyValueOf<type>::value_type;   \
-        auto strong = get_strong();                                                                                              \
-        return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncMap<KeyT, ValueT>>(            \
-            *val,                                                                                                                \
-            [strong](type const& current) {                                                                                      \
-                auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);          \
-                strong->_json[JsonKey(jsonKey)] = std::move(temp);                       \
-                strong->_logSettingSet(jsonKey);                                                                                 \
-                /* TODO GH#12424: raise WriteSettings event */                                                                   \
-            });                                                                                                                  \
-    }                                                                                                                            \
-                                                                                                                                 \
-    void name(const type& value)                                                                                                 \
-    {                                                                                                                            \
-        const auto existingVal{ _get##name##FromThisLayer() };                                                                   \
-        if (!existingVal.has_value() || existingVal.value() != value)                                                            \
-        {                                                                                                                        \
-            _logSettingSet(jsonKey);                                                                                             \
-        }                                                                                                                        \
-        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                                                       \
-            _json, jsonKey, value);                                                                                              \
-        /* TODO GH#12424: raise WriteSettings event */                                                                           \
+#define INHERITABLE_JSON_BACKED_MAP_SETTING(projectedType, type, name, jsonKey, ...)                                            \
+    _BASE_INHERITABLE_SETTING(projectedType, type, name, jsonKey, __VA_ARGS__)                                                  \
+public:                                                                                                                         \
+    type name()                                                                                                                 \
+    {                                                                                                                           \
+        const auto val{ _get##name##Impl() };                                                                                   \
+        if (!val || !*val)                                                                                                      \
+        {                                                                                                                       \
+            return nullptr;                                                                                                     \
+        }                                                                                                                       \
+        using KeyT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::MapKeyValueOf<type>::key_type;     \
+        using ValueT = typename ::winrt::Microsoft::Terminal::Settings::Model::implementation::MapKeyValueOf<type>::value_type; \
+        auto strong = get_strong();                                                                                             \
+        return winrt::make<::winrt::Microsoft::Terminal::Settings::Model::implementation::JsonSyncMap<KeyT, ValueT>>(           \
+            *val,                                                                                                               \
+            [strong](type const& current) {                                                                                     \
+                auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);         \
+                strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                              \
+                strong->_logSettingSet(jsonKey);                                                                                \
+                /* TODO GH#12424: raise WriteSettings event */                                                                  \
+            });                                                                                                                 \
+    }                                                                                                                           \
+                                                                                                                                \
+    void name(const type& value)                                                                                                \
+    {                                                                                                                           \
+        const auto existingVal{ _get##name##FromThisLayer() };                                                                  \
+        if (!existingVal.has_value() || existingVal.value() != value)                                                           \
+        {                                                                                                                       \
+            _logSettingSet(jsonKey);                                                                                            \
+        }                                                                                                                       \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(                                                      \
+            _json, jsonKey, value);                                                                                             \
+        /* TODO GH#12424: raise WriteSettings event */                                                                          \
     }
 
 // =============================================================================

@@ -118,7 +118,6 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     // _json (copied above) is the source of truth; backing fields hold resolved runtime state.
     profile->_Icon = _Icon;
 
-
     // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
     if (_BellSound)
     {
@@ -421,7 +420,7 @@ bool Profile::HasSetting(ProfileSettingKey key) const
     switch (key)
     {
 #define _PROFILE_HAS_SETTING(type, name, jsonKey, ...) \
-    case ProfileSettingKey::name:                       \
+    case ProfileSettingKey::name:                      \
         return Has##name();
         MTSM_PROFILE_SETTINGS(_PROFILE_HAS_SETTING)
 #undef _PROFILE_HAS_SETTING
@@ -451,7 +450,7 @@ void Profile::ClearSetting(ProfileSettingKey key)
     switch (key)
     {
 #define _PROFILE_CLEAR_SETTING(type, name, jsonKey, ...) \
-    case ProfileSettingKey::name:                         \
+    case ProfileSettingKey::name:                        \
         Clear##name();                                   \
         break;
         MTSM_PROFILE_SETTINGS(_PROFILE_CLEAR_SETTING)
