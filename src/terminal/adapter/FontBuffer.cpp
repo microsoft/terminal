@@ -6,10 +6,7 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-FontBuffer::FontBuffer() noexcept
-{
-    SetEraseControl(DispatchTypes::DrcsEraseControl::AllRenditions);
-};
+
 
 bool FontBuffer::SetEraseControl(const DispatchTypes::DrcsEraseControl eraseControl) noexcept
 {
@@ -28,6 +25,11 @@ bool FontBuffer::SetEraseControl(const DispatchTypes::DrcsEraseControl eraseCont
         return false;
     }
 }
+
+FontBuffer::FontBuffer() noexcept
+{
+    SetEraseControl(DispatchTypes::DrcsEraseControl::AllRenditions);
+};
 
 bool FontBuffer::SetAttributes(const DispatchTypes::DrcsCellMatrix cellMatrix,
                                const VTParameter cellHeight,
