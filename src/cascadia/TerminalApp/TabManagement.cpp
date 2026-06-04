@@ -404,6 +404,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - If this window has a name, persist its current workspace layout to
+    //   ApplicationState. Intended to be called from the close-pane / close-tab
+    //   paths while tab/pane content is still alive (before it gets torn down).
+    void TerminalPage::_SaveWorkspaceIfNeeded()
+    {
+        const auto& windowName = _WindowProperties.WindowName();
+        if (!windowName.empty())
+        {
+            if (const auto layout = GetWindowLayout())
+            {
+                ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
+            }
+        }
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
@@ -455,14 +471,7 @@ namespace winrt::TerminalApp::implementation
         // the pane content will be torn down by the time _RemoveTab runs.
         if (_tabs.Size() == 1)
         {
-            const auto& windowName = _WindowProperties.WindowName();
-            if (!windowName.empty())
-            {
-                if (const auto layout = GetWindowLayout())
-                {
-                    ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
-                }
-            }
+            _SaveWorkspaceIfNeeded();
         }
 
         tab.Close();
@@ -830,14 +839,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (activeTab->GetLeafPaneCount() == 1)
                 {
-                    const auto& windowName = _WindowProperties.WindowName();
-                    if (!windowName.empty())
-                    {
-                        if (const auto layout = GetWindowLayout())
-                        {
-                            ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
-                        }
-                    }
+                    _SaveWorkspaceIfNeeded();
                 }
             }
         }
