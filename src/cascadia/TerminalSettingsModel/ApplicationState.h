@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
     };
 
-    #define COMMA ,
+#define COMMA ,
 
     struct ApplicationState : public ApplicationStateT<ApplicationState>
     {
