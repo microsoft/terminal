@@ -37,11 +37,7 @@ _CONSOLE_API_MSG& _CONSOLE_API_MSG::operator=(const _CONSOLE_API_MSG& other)
     // --> Just memcpy() the entire thing.
     memcpy(&Descriptor, &other.Descriptor, structPacketDataSize);
 
-    if (State.InputBuffer)
-    {
-        State.InputBuffer = _inputBuffer.data();
-    }
-
+    
     if (State.OutputBuffer)
     {
         State.OutputBuffer = _outputBuffer.data();
@@ -54,6 +50,12 @@ _CONSOLE_API_MSG& _CONSOLE_API_MSG::operator=(const _CONSOLE_API_MSG& other)
 
     return *this;
 }
+
+if (State.InputBuffer)
+    {
+        State.InputBuffer = _inputBuffer.data();
+    }
+
 
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const
 {
