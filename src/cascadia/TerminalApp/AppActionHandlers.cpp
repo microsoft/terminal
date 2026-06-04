@@ -945,7 +945,10 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
 
         const auto exePath{ GetWtExePath() };
-        const auto cmdline = fmt::format(FMT_COMPILE(L"-w {}"), std::wstring_view{ name });
+        // Quote/escape the window name so that ShellExecute -> CommandLineToArgvW
+        // round-trips it as a single argument even when it contains spaces or
+        // other characters that need escaping.
+        const auto cmdline = fmt::format(FMT_COMPILE(L"-w {}"), QuoteAndEscapeCommandlineArg(std::wstring_view{ name }));
 
         SHELLEXECUTEINFOW seInfo{ 0 };
         seInfo.cbSize = sizeof(seInfo);
