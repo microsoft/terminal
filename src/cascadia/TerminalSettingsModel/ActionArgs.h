@@ -1003,21 +1003,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<SendInputArgs>();
             JsonUtils::GetValueForKey(json, InputKey, args->_Input);
             JsonUtils::GetValueForKey(json, ParametersKey, args->_Parameters);
-            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-            {
-                const int32_t paramCount = args->_Parameters ? static_cast<int32_t>(args->_Parameters.Size()) : -1;
-                std::wstring_view inputView{ args->_Input };
-                if (inputView.size() > 80)
-                {
-                    inputView = inputView.substr(0, 80);
-                }
-                std::wstring msg{ L"[SnippetParams] SendInputArgs::FromJson read parameters: count=" };
-                msg += std::to_wstring(paramCount);
-                msg += L" input=\"";
-                msg.append(inputView);
-                msg += L"\"\n";
-                OutputDebugStringW(msg.c_str());
-            }
             if (!args->_Parameters)
             {
                 args->_Parameters = winrt::single_threaded_vector<Model::Parameter>();
@@ -1349,8 +1334,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         winrt::Microsoft::Terminal::Settings::Model::Parameter FromJson(const Json::Value& json)
         {
-            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-            OutputDebugStringW(L"[SnippetParams] Parameter::FromJson entry\n");
             auto p = winrt::make_self<winrt::Microsoft::Terminal::Settings::Model::implementation::Parameter>();
             winrt::hstring name;
             winrt::hstring description;
@@ -1358,15 +1341,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             GetValueForKey(json, DescriptionKey, description);
             p->Name(name);
             p->Description(description);
-            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-            {
-                std::wstring msg{ L"[SnippetParams] Parameter::FromJson name=\"" };
-                msg.append(std::wstring_view{ name });
-                msg += L"\" description=\"";
-                msg.append(std::wstring_view{ description });
-                msg += L"\"\n";
-                OutputDebugStringW(msg.c_str());
-            }
             return *p;
         }
 

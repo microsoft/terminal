@@ -27,14 +27,6 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        // _characterReceivedHandler is wired in SuggestionsControl.xaml on the
-        // UserControl root (`CharacterReceived="_characterReceivedHandler"`).
-        // _previewKeyDownHandler / _keyUpHandler / _lostFocusHandler likewise.
-        // No C++-side AddHandler call exists; XAML codegen does the binding
-        // during InitializeComponent() above.
-        OutputDebugStringW(L"[SnippetParams] SuggestionsControl ctor: XAML wires CharacterReceived/PreviewKeyDown/PreviewKeyUp on UserControl root\n");
-
         _itemTemplateSelector = Resources().Lookup(winrt::box_value(L"PaletteItemTemplateSelector")).try_as<PaletteItemTemplateSelector>();
         _listItemTemplate = Resources().Lookup(winrt::box_value(L"ListItemTemplate")).try_as<DataTemplate>();
 
@@ -392,25 +384,15 @@ namespace winrt::TerminalApp::implementation
             auto& state = *_paramFilling;
             const auto total = state.args.Parameters().Size();
 
-            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-            {
-                wchar_t buf[160];
-                swprintf_s(buf, L"[SnippetParams] _previewKeyDownHandler (fill) key=0x%04X shift=%d ctrl=%d currentIndex=%u total=%u handled-before=%d\n",
-                           static_cast<unsigned>(key), shiftDown ? 1 : 0, ctrlDown ? 1 : 0, state.currentIndex, total, e.Handled() ? 1 : 0);
-                OutputDebugStringW(buf);
-            }
-
             if (key == VirtualKey::Tab && !shiftDown)
             {
                 // Tab → advance, or COMMIT if at last slot.
                 if (state.currentIndex + 1 < total)
                 {
-                    OutputDebugStringW(L"[SnippetParams]   Tab: advance\n");
                     _advanceParameterSlot();
                 }
                 else
                 {
-                    OutputDebugStringW(L"[SnippetParams]   Tab: COMMIT (at last slot)\n");
                     _dispatchResolvedSnippet();
                 }
                 e.Handled(true);
@@ -421,12 +403,7 @@ namespace winrt::TerminalApp::implementation
                 // Shift+Tab → retreat, CLAMP at first (no wrap, no-op).
                 if (state.currentIndex > 0)
                 {
-                    OutputDebugStringW(L"[SnippetParams]   Shift+Tab: retreat\n");
                     _retreatParameterSlot();
-                }
-                else
-                {
-                    OutputDebugStringW(L"[SnippetParams]   Shift+Tab: CLAMP at slot 0 (no-op)\n");
                 }
                 e.Handled(true);
                 return;
@@ -434,7 +411,6 @@ namespace winrt::TerminalApp::implementation
             if (key == VirtualKey::Enter)
             {
                 // Enter → COMMIT regardless of which slot is active.
-                OutputDebugStringW(L"[SnippetParams]   Enter: COMMIT\n");
                 _dispatchResolvedSnippet();
                 e.Handled(true);
                 return;
@@ -442,7 +418,6 @@ namespace winrt::TerminalApp::implementation
             if (key == VirtualKey::Escape)
             {
                 // Esc → cancel fill, return to dropdown. Does NOT dismiss palette.
-                OutputDebugStringW(L"[SnippetParams]   Esc: cancel fill\n");
                 _exitParameterFilling();
                 e.Handled(true);
                 return;
@@ -453,17 +428,7 @@ namespace winrt::TerminalApp::implementation
                 if (state.currentIndex < total && !state.filledValues[state.currentIndex].empty())
                 {
                     state.filledValues[state.currentIndex].pop_back();
-                    {
-                        wchar_t buf[256];
-                        swprintf_s(buf, L"[SnippetParams]   Backspace: popped char, filledValues[%u]=\"%.80s\" (len=%zu)\n",
-                                   state.currentIndex, state.filledValues[state.currentIndex].c_str(), state.filledValues[state.currentIndex].size());
-                        OutputDebugStringW(buf);
-                    }
                     _updatePreviewSpans();
-                }
-                else
-                {
-                    OutputDebugStringW(L"[SnippetParams]   Backspace: slot empty, no-op\n");
                 }
                 e.Handled(true);
                 return;
@@ -597,19 +562,10 @@ namespace winrt::TerminalApp::implementation
     void SuggestionsControl::_characterReceivedHandler(const IInspectable& /*sender*/,
                                                        const Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs& args)
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
         const auto ch = args.Character();
-        {
-            wchar_t buf[200];
-            const uint32_t idx = _paramFilling.has_value() ? _paramFilling->currentIndex : 0xFFFFFFFFu;
-            swprintf_s(buf, L"[SnippetParams] _characterReceivedHandler char=0x%04X currentIndex=%u handled-before=%d paramFilling=%d\n",
-                       static_cast<unsigned>(ch), idx, args.Handled() ? 1 : 0, _paramFilling.has_value() ? 1 : 0);
-            OutputDebugStringW(buf);
-        }
 
         if (!_paramFilling.has_value())
         {
-            OutputDebugStringW(L"[SnippetParams]   bail: not in fill mode\n");
             return;
         }
 
@@ -617,7 +573,6 @@ namespace winrt::TerminalApp::implementation
         const auto total = state.args.Parameters().Size();
         if (state.currentIndex >= total)
         {
-            OutputDebugStringW(L"[SnippetParams]   bail: currentIndex out of range\n");
             return;
         }
 
@@ -625,17 +580,10 @@ namespace winrt::TerminalApp::implementation
         // Esc all live in this range and are owned by _previewKeyDownHandler.
         if (ch < 0x20 || ch == 0x7f)
         {
-            OutputDebugStringW(L"[SnippetParams]   bail: filtered control char (owned by _previewKeyDownHandler)\n");
             return;
         }
 
         state.filledValues[state.currentIndex].push_back(static_cast<wchar_t>(ch));
-        {
-            wchar_t buf[300];
-            swprintf_s(buf, L"[SnippetParams]   appended char='%lc' filledValues[%u]=\"%.80s\" (len=%zu) — calling _updatePreviewSpans\n",
-                       static_cast<wchar_t>(ch), state.currentIndex, state.filledValues[state.currentIndex].c_str(), state.filledValues[state.currentIndex].size());
-            OutputDebugStringW(buf);
-        }
         _updatePreviewSpans();
         args.Handled(true);
     }
@@ -878,14 +826,6 @@ namespace winrt::TerminalApp::implementation
             if (_paramFilling.has_value())
             {
                 const auto total = _paramFilling->args.Parameters().Size();
-                // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-                {
-                    wchar_t buf[200];
-                    swprintf_s(buf, L"[SnippetParams] _dispatchCommand (fill branch) currentIndex=%u total=%u — %s\n",
-                               _paramFilling->currentIndex, total,
-                               (_paramFilling->currentIndex + 1 < total) ? L"advance" : L"COMMIT");
-                    OutputDebugStringW(buf);
-                }
                 if (_paramFilling->currentIndex + 1 < total)
                 {
                     _advanceParameterSlot();
@@ -992,19 +932,6 @@ namespace winrt::TerminalApp::implementation
         state.currentIndex = 0;
         state.filledValues.resize(args.Parameters().Size());
 
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            std::wstring_view inputView{ args.Input() };
-            if (inputView.size() > 80)
-            {
-                inputView = inputView.substr(0, 80);
-            }
-            wchar_t buf[300];
-            swprintf_s(buf, L"[SnippetParams] _enterParameterFilling: entering param-fill mode, paramCount=%u currentIndex=0 input=\"%.80s\"\n",
-                       args.Parameters().Size(), inputView.data());
-            OutputDebugStringW(buf);
-        }
-
         _paramFilling.emplace(std::move(state));
 
         // WALK-TIER UX: the terminal buffer itself shows the template (via
@@ -1020,13 +947,7 @@ namespace winrt::TerminalApp::implementation
         // Keystroke capture: the UserControl itself receives PreviewKeyDown /
         // CharacterReceived during fill (no TextBox). Programmatic focus on
         // *this so events arrive even though the search box is now hidden.
-        const auto focusOk = Focus(Windows::UI::Xaml::FocusState::Programmatic);
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            wchar_t buf[160];
-            swprintf_s(buf, L"[SnippetParams] _enterParameterFilling: Focus(Programmatic) on UserControl returned %d, backdrop collapsed\n", focusOk ? 1 : 0);
-            OutputDebugStringW(buf);
-        }
+        Focus(Windows::UI::Xaml::FocusState::Programmatic);
 
         _updateUIForParameterSlot();
 
@@ -1085,15 +1006,6 @@ namespace winrt::TerminalApp::implementation
     //   the current slot's value into filledValues before calling.
     void SuggestionsControl::_advanceParameterSlot()
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            const uint32_t before = _paramFilling->currentIndex;
-            const uint32_t after = before + 1;
-            const uint32_t total = _paramFilling->args.Parameters().Size();
-            wchar_t buf[160];
-            swprintf_s(buf, L"[SnippetParams] _advanceParameterSlot: index %u -> %u (count=%u)\n", before, after, total);
-            OutputDebugStringW(buf);
-        }
         _paramFilling->currentIndex++;
         _updateUIForParameterSlot();
     }
@@ -1104,15 +1016,6 @@ namespace winrt::TerminalApp::implementation
     //   the prior text automatically.
     void SuggestionsControl::_retreatParameterSlot()
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            const uint32_t before = _paramFilling->currentIndex;
-            const uint32_t total = _paramFilling->args.Parameters().Size();
-            wchar_t buf[160];
-            swprintf_s(buf, L"[SnippetParams] _retreatParameterSlot: index %u -> %u (count=%u)%s\n",
-                       before, (before == 0 ? 0u : before - 1u), total, (before == 0 ? L" [CLAMP no-op]" : L""));
-            OutputDebugStringW(buf);
-        }
         if (_paramFilling->currentIndex == 0)
         {
             return;
@@ -1128,11 +1031,8 @@ namespace winrt::TerminalApp::implementation
     //   the `_descriptionsBackdrop` card here.
     void SuggestionsControl::_updateUIForParameterSlot()
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        OutputDebugStringW(L"[SnippetParams] _updateUIForParameterSlot: entry\n");
         if (!_paramFilling.has_value())
         {
-            OutputDebugStringW(L"[SnippetParams]   bail: not in fill mode\n");
             return;
         }
         const auto& state = *_paramFilling;
@@ -1140,19 +1040,11 @@ namespace winrt::TerminalApp::implementation
         const auto total = parameters.Size();
         if (state.currentIndex >= total)
         {
-            OutputDebugStringW(L"[SnippetParams]   bail: currentIndex out of range\n");
             return;
         }
         const auto current = parameters.GetAt(state.currentIndex);
         const auto name = current.Name();
         const auto description = current.Description();
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            wchar_t buf[300];
-            swprintf_s(buf, L"[SnippetParams]   slot %u/%u name=\"%.40s\" restoredValue=\"%.80s\"\n",
-                       state.currentIndex, total, name.c_str(), state.filledValues[state.currentIndex].c_str());
-            OutputDebugStringW(buf);
-        }
 
         // Tooltip title = parameter name; subtitle = description. Reuses the
         // existing tooltip composition pattern (_descriptionTitle as 14pt
@@ -1219,45 +1111,16 @@ namespace winrt::TerminalApp::implementation
     // run.Text() / run.Kind() on the projected runtimeclass.
     void SuggestionsControl::_updatePreviewSpans()
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        OutputDebugStringW(L"[SnippetParams] _updatePreviewSpans: entry\n");
         if (!_paramFilling.has_value())
         {
-            OutputDebugStringW(L"[SnippetParams]   bail: not in fill mode\n");
             return;
         }
         const auto& state = *_paramFilling;
         const auto valuesMap = _buildParameterMap();
 
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            wchar_t buf[160];
-            swprintf_s(buf, L"[SnippetParams]   valuesMap.Size=%u currentIndex=%u — calling SendInputArgs::BuildPreviewSpans\n",
-                       valuesMap.Size(), state.currentIndex);
-            OutputDebugStringW(buf);
-        }
-
-        winrt::Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::SnippetPreviewRun> modelSpans{ nullptr };
-        try
-        {
-            modelSpans = state.args.BuildPreviewSpans(valuesMap, state.currentIndex);
-        }
-        catch (...)
-        {
-            OutputDebugStringW(L"[SnippetParams]   EXCEPTION: BuildPreviewSpans threw\n");
-            return;
-        }
-
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            const uint32_t runCount = modelSpans ? modelSpans.Size() : 0u;
-            wchar_t buf[160];
-            swprintf_s(buf, L"[SnippetParams]   BuildPreviewSpans returned %u run(s)\n", runCount);
-            OutputDebugStringW(buf);
-        }
+        const auto modelSpans = state.args.BuildPreviewSpans(valuesMap, state.currentIndex);
 
         auto outSpans = winrt::single_threaded_vector<winrt::Microsoft::Terminal::Control::PreviewInputSpan>();
-        uint32_t i = 0;
         for (const auto& run : modelSpans)
         {
             // Model::SnippetPreviewSpanKind ↔ Control::PreviewInputSpanKind:
@@ -1266,32 +1129,10 @@ namespace winrt::TerminalApp::implementation
             // noise. Renderer-side attribute mapping (Active = inverse video,
             // Placeholder = dim) lives in ControlCore.
             const auto controlKind = static_cast<winrt::Microsoft::Terminal::Control::PreviewInputSpanKind>(static_cast<int32_t>(run.Kind()));
-            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-            {
-                wchar_t buf[300];
-                swprintf_s(buf, L"[SnippetParams]     run[%u] kind=%d text=\"%.80s\"\n",
-                           i, static_cast<int>(run.Kind()), run.Text().c_str());
-                OutputDebugStringW(buf);
-            }
             outSpans.Append(winrt::Microsoft::Terminal::Control::PreviewInputSpan{ run.Text(), controlKind });
-            ++i;
         }
 
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            wchar_t buf[160];
-            swprintf_s(buf, L"[SnippetParams]   raising PreviewInputSpansRequested with %u span(s)\n", outSpans.Size());
-            OutputDebugStringW(buf);
-        }
-        try
-        {
-            PreviewInputSpansRequested.raise(*this, outSpans);
-            OutputDebugStringW(L"[SnippetParams]   PreviewInputSpansRequested.raise returned OK\n");
-        }
-        catch (...)
-        {
-            OutputDebugStringW(L"[SnippetParams]   EXCEPTION: PreviewInputSpansRequested.raise threw\n");
-        }
+        PreviewInputSpansRequested.raise(*this, outSpans);
     }
 
     // Method Description:
@@ -1300,8 +1141,6 @@ namespace winrt::TerminalApp::implementation
     //   PreviewInput(L"") dismiss).
     void SuggestionsControl::_clearPreviewSpans()
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        OutputDebugStringW(L"[SnippetParams] _clearPreviewSpans: raising PreviewInputSpansRequested with empty IVector\n");
         auto emptySpans = winrt::single_threaded_vector<winrt::Microsoft::Terminal::Control::PreviewInputSpan>();
         PreviewInputSpansRequested.raise(*this, emptySpans);
     }
@@ -1313,14 +1152,6 @@ namespace winrt::TerminalApp::implementation
     //   with the transient resolved Command. The original snippet args are NOT mutated.
     void SuggestionsControl::_dispatchResolvedSnippet()
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            const uint32_t idx = _paramFilling.has_value() ? _paramFilling->currentIndex : 0xFFFFFFFFu;
-            const uint32_t total = _paramFilling.has_value() ? _paramFilling->args.Parameters().Size() : 0u;
-            wchar_t buf[200];
-            swprintf_s(buf, L"[SnippetParams] _dispatchResolvedSnippet: COMMIT path entry, currentIndex=%u total=%u\n", idx, total);
-            OutputDebugStringW(buf);
-        }
         const auto cmd = _buildResolvedCommand();
 
         // Clear preview FIRST so the buffer is empty when the resolved input
@@ -1366,8 +1197,6 @@ namespace winrt::TerminalApp::implementation
         auto map = winrt::single_threaded_map<winrt::hstring, winrt::hstring>();
         if (!_paramFilling.has_value())
         {
-            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-            OutputDebugStringW(L"[SnippetParams] _buildParameterMap: not in fill mode, returning empty map\n");
             return map;
         }
         const auto& state = *_paramFilling;
@@ -1377,13 +1206,6 @@ namespace winrt::TerminalApp::implementation
         {
             const auto pName = parameters.GetAt(i).Name();
             map.Insert(pName, winrt::hstring{ state.filledValues[i] });
-            // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-            {
-                wchar_t buf[300];
-                swprintf_s(buf, L"[SnippetParams] _buildParameterMap[%u] name=\"%.40s\" value=\"%.80s\"\n",
-                           i, pName.c_str(), state.filledValues[i].c_str());
-                OutputDebugStringW(buf);
-            }
         }
         return map;
     }

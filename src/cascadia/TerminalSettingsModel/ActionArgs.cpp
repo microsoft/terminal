@@ -457,25 +457,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //     is substituted (the token is consumed, replaced by nothing).
     winrt::hstring SendInputArgs::Resolve(const Windows::Foundation::Collections::IMap<winrt::hstring, winrt::hstring>& values)
     {
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            const int32_t paramCount = _Parameters ? static_cast<int32_t>(_Parameters.Size()) : -1;
-            const int32_t valueCount = values ? static_cast<int32_t>(values.Size()) : -1;
-            std::wstring_view inputView{ _Input };
-            if (inputView.size() > 80)
-            {
-                inputView = inputView.substr(0, 80);
-            }
-            std::wstring msg{ L"[SnippetParams] SendInputArgs::Resolve called, input=\"" };
-            msg.append(inputView);
-            msg += L"\" parameters_count=";
-            msg += std::to_wstring(paramCount);
-            msg += L" values_count=";
-            msg += std::to_wstring(valueCount);
-            msg += L"\n";
-            OutputDebugStringW(msg.c_str());
-        }
-
         const std::wstring_view input{ _Input };
         std::wstring out;
         out.reserve(input.size());
@@ -589,19 +570,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Ordinary character (including `\r`, `\n`, etc.) — copy verbatim.
             out.push_back(c);
             ++i;
-        }
-
-        // [SnippetParams] THROWAWAY DEBUG LOGGING — remove before commit.
-        {
-            std::wstring_view outView{ out };
-            if (outView.size() > 80)
-            {
-                outView = outView.substr(0, 80);
-            }
-            std::wstring msg{ L"[SnippetParams] SendInputArgs::Resolve returning=\"" };
-            msg.append(outView);
-            msg += L"\"\n";
-            OutputDebugStringW(msg.c_str());
         }
 
         return winrt::hstring{ out };
