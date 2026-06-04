@@ -467,7 +467,6 @@ namespace winrt::TerminalApp::implementation
         // window is being torn down — the originalParent may already be in
         // a disposed/disconnected state. Make it best-effort; the destructor
         // calls us and we must not throw.
-        size_t reparentIdx = 0;
         for (auto& entry : _reparentedContent)
         {
             if (!entry.content)
@@ -486,13 +485,11 @@ namespace winrt::TerminalApp::implementation
 
                 _DetachContent(entry.content);
 
-                const bool hadOrigParent = static_cast<bool>(entry.originalParent);
                 // Put it back where it came from
                 if (entry.originalParent)
                 {
                     entry.originalParent.Children().Append(entry.content);
                 }
-                const bool stillParented = static_cast<bool>(VisualTreeHelper::GetParent(entry.content));
             }
             CATCH_LOG()
         }

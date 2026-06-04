@@ -1120,9 +1120,6 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _tabContent.Children().Clear();
-            auto content = tab ? tab.Content() : nullptr;
-            const bool hasContent = static_cast<bool>(content);
-            const bool hasParent = hasContent && static_cast<bool>(WUX::Media::VisualTreeHelper::GetParent(content));
             _tabContent.Children().Append(tab.Content());
 
             // GH#7409: If the tab switcher is open, then we _don't_ want to
