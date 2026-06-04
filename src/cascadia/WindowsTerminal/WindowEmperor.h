@@ -28,6 +28,16 @@ public:
         WM_MESSAGE_BOX_CLOSED,
         WM_IDENTIFY_ALL_WINDOWS,
         WM_NOTIFY_FROM_NOTIFICATION_AREA,
+        WM_GET_WINDOW_LIST,
+    };
+
+    // Used by WM_GET_WINDOW_LIST.  Callers allocate a vector on their
+    // stack and pass a pointer through LPARAM; the emperor fills it in
+    // synchronously via SendMessage.
+    struct WindowListEntry
+    {
+        uint64_t Id;
+        std::wstring Name;
     };
 
     HWND GetMainWindow() const noexcept;
