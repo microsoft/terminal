@@ -21,7 +21,7 @@ constexpr CHAR_INFO makeCharInfo(T ch, WORD attr)
     CHAR_INFO info{};
     // If T is a char, it'll be a signed integer, whereas UnicodeChar is an unsigned one.
     // A negative char like -1 would then result in a wchar_t of 0xffff instead of the expected 0xff.
-    // Casting ch to a unsigned integer first prevents such "sign extension".
+    // Casting ch to an unsigned integer first prevents such "sign extension".
     info.Char.UnicodeChar = static_cast<WCHAR>(til::as_unsigned(ch));
     info.Attributes = attr;
     return info;

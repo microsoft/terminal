@@ -149,7 +149,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
         { LegacyInputServiceWarningKey, "warning.inputService" },
         { LegacyWarnAboutLargePasteKey, "warning.largePaste" },
         { LegacyWarnAboutMultiLinePasteKey, "warning.multiLinePaste" },
-        { LegacyConfirmCloseAllTabsKey, "warning.confirmCloseAllTabs" },
     };
     for (const auto& [legacyKey, canonicalKey] : legacyKeyMappings)
     {
@@ -157,6 +156,17 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
         {
             _fixupsAppliedDuringLoad = true;
             _json[JsonKey(canonicalKey)] = json[JsonKey(legacyKey)];
+        }
+    }
+    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
+    // "confirmOnClose" enum. true -> Automatic, false -> Never.
+    {
+        std::optional<bool> legacyConfirmClose;
+        constexpr auto confirmOnCloseKey = JsonKeyForSetting(GlobalSettingKey::ConfirmOnClose);
+        if (!json.isMember(JsonKey(confirmOnCloseKey)) && JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        {
+            JsonUtils::SetValueForKey(_json, confirmOnCloseKey, legacyConfirmClose.value() ? ConfirmOnClose::Automatic : ConfirmOnClose::Never);
+            _fixupsAppliedDuringLoad = true;
         }
     }
 

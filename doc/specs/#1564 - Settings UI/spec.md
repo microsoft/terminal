@@ -9,7 +9,7 @@ issue id: #1564
 
 ## Abstract
 
-This spec describes the basic functionality of the settings UI, including disabling it, the navigation items, launch methods, and editing of settings. The specific layout of each page will defined in later design reviews.
+This spec describes the basic functionality of the settings UI, including disabling it, the navigation items, launch methods, and editing of settings. The specific layout of each page will be defined in later design reviews.
 
 ## Inspiration
 

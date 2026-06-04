@@ -504,7 +504,7 @@ void Renderer::SynchronizedOutputChanged() noexcept
         // essentially drop our renderer to 10 FPS, because `_isSynchronizingOutput` is always true.
         //
         // Obviously calling LockConsole/UnlockConsole here is an awful, ugly hack,
-        // since there's no guarantee that this is the same lock as the one the VT parser uses.
+        // since there's no guarantee that this is the same lock as the one that the VT parser uses.
         // But the alternative is Denial-Of-Service of the render thread.
         //
         // Note that this causes raw throughput of DECSET 2026 to be comparatively low, but that's fine.
@@ -1061,38 +1061,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             ROW* rowBackup = nullptr;
             if (row == compositionRow)
             {
-                auto& scratch = buffer.GetScratchpadRow();
-                scratch.CopyFrom(r);
-                rowBackup = &scratch;
-
-                std::wstring_view text{ activeComposition.text };
-                RowWriteState state{
-                    .columnLimit = r.GetReadableColumnCount(),
-                    .columnEnd = _compositionCache->absoluteOrigin.x,
-                };
-
-                size_t off = 0;
-                for (const auto& range : activeComposition.attributes)
-                {
-                    const auto len = range.len;
-                    auto attr = range.attr;
-
-                    // Use the color at the cursor if TSF didn't specify any explicit color.
-                    if (attr.GetBackground().IsDefault())
-                    {
-                        attr.SetBackground(_compositionCache->baseAttribute.GetBackground());
-                    }
-                    if (attr.GetForeground().IsDefault())
-                    {
-                        attr.SetForeground(_compositionCache->baseAttribute.GetForeground());
-                    }
-
-                    state.text = text.substr(off, len);
-                    state.columnBegin = state.columnEnd;
-                    const_cast<ROW&>(r).ReplaceText(state);
-                    const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
-                    off += len;
-                }
+                rowBackup = _PaintBufferOutputComposition(buffer, r, activeComposition);
             }
             const auto restore = wil::scope_exit([&] {
                 if (rowBackup)
@@ -1130,6 +1099,107 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             }
         }
     }
+}
+
+ROW* Renderer::_PaintBufferOutputComposition(TextBuffer& buffer, const ROW& r, const Composition& activeComposition)
+{
+    auto& scratch = buffer.GetScratchpadRow();
+    scratch.CopyFrom(r);
+
+    // *Overwrite* the original text with the active composition...
+    til::CoordType compositionEnd = 0;
+    {
+        std::wstring_view text{ activeComposition.text };
+        RowWriteState state{
+            .columnLimit = r.GetReadableColumnCount(),
+            .columnEnd = _compositionCache->absoluteOrigin.x,
+        };
+
+        size_t off = 0;
+        for (const auto& range : activeComposition.attributes)
+        {
+            const auto len = range.len;
+            auto attr = range.attr;
+
+            // Use the color at the cursor if TSF didn't specify any explicit color.
+            if (attr.GetBackground().IsDefault())
+            {
+                attr.SetBackground(_compositionCache->baseAttribute.GetBackground());
+            }
+            if (attr.GetForeground().IsDefault())
+            {
+                attr.SetForeground(_compositionCache->baseAttribute.GetForeground());
+            }
+
+            state.text = text.substr(off, len);
+            state.columnBegin = state.columnEnd;
+            const_cast<ROW&>(r).ReplaceText(state);
+            const_cast<ROW&>(r).ReplaceAttributes(state.columnBegin, state.columnEnd, attr);
+            off += len;
+        }
+
+        compositionEnd = state.columnEnd;
+    }
+
+    // The text we've overwritten may have been crucial to the user,
+    // so copy it back by absorbing available whitespace to the right
+    // and re-inserting the non-whitespace characters instead.
+    const auto compositionWidth = compositionEnd - _compositionCache->absoluteOrigin.x;
+    const auto colLimit = r.GetReadableColumnCount();
+    if (compositionWidth > 0 && compositionEnd < colLimit)
+    {
+        const auto text = scratch.GetText();
+        auto srcCol = _compositionCache->absoluteOrigin.x;
+        auto dstCol = compositionEnd;
+        auto remaining = compositionWidth;
+        size_t i = scratch.GetCharOffset(srcCol);
+
+        while (i < text.size() && dstCol < colLimit)
+        {
+            // Treat whitespace we encounter as a credit towards our composition width.
+            // This loop essentially absorbs the whitespace.
+            while (i < text.size() && til::at(text, i) == L' ' && remaining > 0)
+            {
+                remaining--;
+                srcCol++;
+                i++;
+            }
+            if (remaining <= 0)
+            {
+                break;
+            }
+
+            // Find the end of the non-whitespace span: Our span of text to insert.
+            auto spanEnd = i;
+            while (spanEnd < text.size() && til::at(text, spanEnd) != L' ')
+            {
+                spanEnd++;
+            }
+
+            // Copy the non-whitespace segment from the original text (scratch) back in.
+            RowCopyTextFromState state{
+                .source = scratch,
+                .columnBegin = dstCol,
+                .columnLimit = colLimit,
+                .sourceColumnBegin = srcCol,
+                .sourceColumnLimit = scratch.GetLeadingColumnAtCharOffset(spanEnd),
+            };
+            const_cast<ROW&>(r).CopyTextFrom(state);
+
+            const auto srcBeg = gsl::narrow_cast<uint16_t>(srcCol);
+            const auto srcEnd = gsl::narrow_cast<uint16_t>(state.sourceColumnEnd);
+            const auto attr = scratch.Attributes().slice(srcBeg, srcEnd);
+            const auto dstBeg = gsl::narrow_cast<uint16_t>(dstCol);
+            const auto dstEnd = gsl::narrow_cast<uint16_t>(dstCol + attr.size());
+            const_cast<ROW&>(r).Attributes().replace(dstBeg, dstEnd, attr);
+
+            dstCol = state.columnEnd;
+            srcCol = state.sourceColumnEnd;
+            i = spanEnd;
+        }
+    }
+
+    return &scratch;
 }
 
 static bool _IsAllSpaces(const std::wstring_view v)

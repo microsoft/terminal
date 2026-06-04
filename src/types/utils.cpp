@@ -172,7 +172,7 @@ std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view str
 //      spec2: a color in the following format:
 //          "#<red><green><blue>"
 //
-//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
+//   In both specs, <color> is a value contains up to 4 hex digits, uppercase or lowercase.
 // Arguments:
 // - string - The string containing the color spec string to parse.
 // Return Value:
@@ -544,7 +544,7 @@ bool Utils::HexToUint(const wchar_t wch,
 // - wstr - String to convert.
 // - value - receives the int value of the string
 // Return Value:
-// - true iff the string is a unsigned integer string.
+// - true iff the string is an unsigned integer string.
 bool Utils::StringToUint(const std::wstring_view wstr,
                          unsigned int& value)
 {

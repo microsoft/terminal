@@ -111,6 +111,8 @@
                               IsChecked="{x:Bind Profile.IsBellStyleFlagSet(2), BindBack=Profile.SetBellStyleWindow, Mode=TwoWay}" />
                     <CheckBox x:Uid="Profile_BellStyleTaskbar"
                               IsChecked="{x:Bind Profile.IsBellStyleFlagSet(4), BindBack=Profile.SetBellStyleTaskbar, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_BellStyleNotification"
+                              IsChecked="{x:Bind Profile.IsBellStyleFlagSet(8), BindBack=Profile.SetBellStyleNotification, Mode=TwoWay}" />
                 </StackPanel>
             </local:SettingContainer>
 
