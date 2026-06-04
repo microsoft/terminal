@@ -134,7 +134,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Nullable/optional settings (JSON-backed)
         INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, "tabColor", nullptr)
-        INHERITABLE_MUTABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+
+        // UnfocusedAppearance holds a live AppearanceConfig sub-object whose
+        // presence is the marker; it needs a backing field (not _json).
+        _BASE_INHERITABLE_MUTABLE_SETTING(Model::Profile, std::optional<Model::IAppearanceConfig>, UnfocusedAppearance, nullptr)
+    public:
+        Model::IAppearanceConfig UnfocusedAppearance() const
+        {
+            const auto val{ _getUnfocusedAppearanceImpl() };
+            return val ? *val : Model::IAppearanceConfig{ nullptr };
+        }
+        void UnfocusedAppearance(const Model::IAppearanceConfig& value)
+        {
+            _UnfocusedAppearance = value;
+        }
+        void ClearUnfocusedAppearance()
+        {
+            _UnfocusedAppearance = std::nullopt;
+        }
 
         // Settings that are JSON-backed but need custom handling in ToJson/LayerJson
         INHERITABLE_SETTING(Model::Profile, hstring, Name, "name", L"Default")

@@ -51,7 +51,7 @@ namespace SettingsModelUnitTests
 
         TEST_METHOD(ClearIconAlsoClearsJson);
         TEST_METHOD(ClearIconAndBellSoundAreLogged);
-        
+
         TEST_METHOD(SettingInheritanceFallback);
         TEST_METHOD(ClearSettingRestoresInheritance);
         TEST_METHOD(HasSettingAtSpecificLayer);
@@ -844,7 +844,7 @@ namespace SettingsModelUnitTests
         // NOTE: CascadiaSettings::_validateAllSchemesExist() runs during construction and
         // clears any DarkColorSchemeName/LightColorSchemeName that doesn't name a registered
         // scheme (falling back to the default). So every scheme the cases below reference must
-        // be registered via this inbox JSON, otherwise the loaded values get wiped on load.
+        // be registered via this inbox JSON; otherwise the loaded values get wiped on load.
         static constexpr std::string_view inboxSchemes{ R"({
             "schemes": [
                 { "name": "Campbell",       "black": "#0C0C0C", "red": "#C50F1F", "green": "#13A10E", "yellow": "#C19C00", "blue": "#0037DA", "purple": "#881798", "cyan": "#3A96DD", "white": "#CCCCCC", "brightBlack": "#767676", "brightRed": "#E74856", "brightGreen": "#16C60C", "brightYellow": "#F9F1A5", "brightBlue": "#3B78FF", "brightPurple": "#B4009E", "brightCyan": "#61D6D6", "brightWhite": "#F2F2F2" },
@@ -1390,7 +1390,7 @@ namespace SettingsModelUnitTests
         VERIFY_IS_TRUE(changes.contains("profile.bellSound"));
     }
 
-        void ProfileTests::SettingInheritanceFallback()
+    void ProfileTests::SettingInheritanceFallback()
     {
         // Verify that when no layer defines a setting, the default value is used.
         // Also verify that when only user defaults defines it, profiles inherit from there.

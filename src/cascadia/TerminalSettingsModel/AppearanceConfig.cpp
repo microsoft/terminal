@@ -242,13 +242,8 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     _logSettingIfSet(OpacityKey, HasOpacity());
 
     // ColorScheme: translate the polymorphic on-disk "colorScheme" key (string, or
-    // { "dark", "light" }) into the two independent internal keys. A string sets both sides;
-    // an object sets only the side(s) present (the missing side is left untouched so it
-    // inherits / retains a prior layer's value). Matches main's LayerJson behavior.
-    // ColorScheme: translate the polymorphic on-disk "colorScheme" key (string, or
-    // { "dark", "light" }) into the two independent internal keys. A string sets both sides;
-    // an object sets only the side(s) present (the missing side is left untouched so it
-    // inherits / retains a prior layer's value). Matches main's LayerJson behavior.
+    // { "dark", "light" }) into the two independent internal keys. A string sets both
+    // sides; an object sets only the side(s) present, leaving the other to inherit.
     if (const auto& colorScheme{ json[JsonKey(ColorSchemeKey)] }; colorScheme.isString())
     {
         _json[JsonKey(DarkColorSchemeNameKey)] = colorScheme;

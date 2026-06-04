@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         _entries = std::nullopt;
         _json = Json::Value{ Json::arrayValue };
-        // TODO GH#12424: raise WriteSettings event
+        // TODO GH#17000: raise WriteSettings event
     }
 
     void NewTabMenu::ReplaceAll(const IVector<Model::NewTabMenuEntry>& entries)
@@ -377,7 +377,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         _json = std::move(arr);
         _emitChangeLog();
-        // TODO GH#12424: raise WriteSettings event
+        // TODO GH#17000: raise WriteSettings event
     }
 
     void NewTabMenu::_emitChangeLog()

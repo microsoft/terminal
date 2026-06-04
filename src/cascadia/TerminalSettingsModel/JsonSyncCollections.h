@@ -6,33 +6,15 @@ Module Name:
 - JsonSyncCollections.h
 
 Abstract:
-- IVector / IMap wrapper templates that mirror in-place mutations into a
-  parent settings object's Json::Value _json. Required for "hybrid" settings
-  whose JSON storage would otherwise miss .Append / .InsertAt / .Insert /
-  .RemoveAt / etc. issued by the settings editor on the returned container.
-
-  Two backing flavors are supported, both via the same wrapper template:
-
-  1. Ephemeral shadow: caller passes a freshly-constructed IVector / IMap
-     (seeded from the effective JSON value) as the backing. The wrapper is
-     short-lived and discarded after use. _json is the only persistent
-     source of truth. Used for DisabledProfileSources, FontAxes,
-     FontFeatures, EnvironmentVariables.
-
-  2. Persistent backing: caller passes an existing long-lived IVector / IMap
-     field on the parent (e.g. Profile::_BellSound) as the backing. The
-     wrapper dual-writes to that field AND to _json. Used for BellSound,
-     where IMediaResource resolution state must persist across getter calls.
-
-  The wrapper invokes an onChange callback after every mutation. The
-  callback typically captures a strong ref to the parent and re-serializes
-  the current backing into _json[key] via JsonUtils::SetValueForKey, then
-  fires the WriteSettings signal (TODO GH#12424).
-
-  These templates intentionally implement IVector / IMap only — not
-  IObservableVector / IObservableMap. No editor call site subscribes to
-  VectorChanged / MapChanged on the returned collection; subscribers live
-  on parallel VM-side observable collections.
+- IVector / IMap wrapper templates that mirror in-place mutations (.Append,
+  .InsertAt, .RemoveAt, .Insert, …) into a parent settings object's _json via an
+  onChange callback. Without this, editor mutations on a returned container would
+  be lost. The backing may be an ephemeral shadow seeded from _json (the common
+  case; _json is the source of truth) or a persistent field whose state must
+  outlive the call (e.g. Profile::_BellSound, which holds IMediaResource
+  resolution state).
+- IVector / IMap only — not the IObservable variants; nothing subscribes to
+  VectorChanged / MapChanged here (VM-side collections handle that).
 
 Author(s):
 - Carlos Zamora - June 2026
