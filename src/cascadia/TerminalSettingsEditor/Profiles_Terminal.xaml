@@ -81,6 +81,16 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingContainer>
 
+            <!--  Allow OSC 777 Desktop Notifications  -->
+            <local:SettingContainer x:Name="AllowOscNotifications"
+                                    x:Uid="Profile_AllowOscNotifications"
+                                    ClearSettingValue="{x:Bind Profile.ClearAllowOscNotifications}"
+                                    HasSettingValue="{x:Bind Profile.HasAllowOscNotifications, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.AllowOscNotificationsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Profile.AllowOscNotifications, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Answerback Message  -->
             <local:SettingContainer x:Name="AnswerbackMessage"
                                     x:Uid="Profile_AnswerbackMessage"

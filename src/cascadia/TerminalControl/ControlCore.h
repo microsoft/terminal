@@ -292,6 +292,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
         til::typed_event<IInspectable, Control::CompletionsChangedEventArgs> CompletionsChanged;
         til::typed_event<IInspectable, Control::SearchMissingCommandEventArgs> SearchMissingCommand;
+        til::typed_event<IInspectable, Control::ShowNotificationEventArgs> ShowNotification;
         til::typed_event<> RefreshQuickFixUI;
         til::typed_event<IInspectable, Control::WindowSizeChangedEventArgs> WindowSizeChanged;
 
@@ -333,6 +334,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const int velocity,
                                    const std::chrono::microseconds duration);
         void _terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow);
+        void _terminalShowNotification(std::wstring_view title, std::wstring_view body);
         void _terminalWindowSizeChanged(int32_t width, int32_t height);
 
         void _terminalCompletionsChanged(std::wstring_view menuJson, unsigned int replaceLength);
