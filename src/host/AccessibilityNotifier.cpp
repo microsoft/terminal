@@ -49,7 +49,12 @@ void AccessibilityNotifier::Initialize(HWND hwnd, DWORD msaaDelay, DWORD uiaDela
             _msaaDelay = static_cast<int64_t>(msaaDelay) * -10000;
         }
     }
-
+    {
+    static_assert(sizeof(U) <= sizeof(T), "use this for narrowing");
+    constexpr T min = std::numeric_limits<U>::min();
+    constexpr T max = std::numeric_limits<U>::max();
+    return gsl::narrow_cast<U>(v < min ? min : (v > max ? max : v));
+}
     if (uiaDelay < 10000)
     {
         _uiaEnabled = true;
