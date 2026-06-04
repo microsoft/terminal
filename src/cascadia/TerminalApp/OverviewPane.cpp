@@ -211,9 +211,7 @@ namespace winrt::TerminalApp::implementation
         // build cells with floor sizes and apply the real adaptive layout
         // from the LayoutUpdated handler once XAML has measured.
         const auto wrapper = ContentWrapper();
-        const auto aspect = (referenceWidth > 0 && referenceHeight > 0)
-                                ? referenceWidth / referenceHeight
-                                : FallbackAspect;
+        const auto aspect = (referenceWidth > 0 && referenceHeight > 0) ? referenceWidth / referenceHeight : FallbackAspect;
         _referenceAspect = aspect;
         const auto layout = _ComputeAdaptiveLayout(static_cast<int32_t>(tabs.Size()),
                                                    wrapper.ActualWidth(),
