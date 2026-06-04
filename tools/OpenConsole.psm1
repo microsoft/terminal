@@ -416,7 +416,7 @@ function Invoke-CodeFormat() {
         [switch]$IgnoreXaml
     )
 
-    $clangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -prerelease -find "**\x64\bin\clang-format.exe"
+    $clangFormatPath = & 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe' -latest -find "**\x64\bin\clang-format.exe"
     If ([String]::IsNullOrEmpty($clangFormatPath)) {
         Write-Error "No Visual Studio-supplied version of clang-format could be found."
     }

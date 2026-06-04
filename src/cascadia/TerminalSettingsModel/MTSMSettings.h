@@ -162,8 +162,7 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Frame, "frame", nullptr)                                            \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
     X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
-    X(bool, UseMica, "useMica", false)                                                                                             \
-    X(bool, ShowWorkspacesButton, "showWorkspacesButton", true)
+    X(bool, UseMica, "useMica", false)
 
 #define MTSM_THEME_SETTINGS_SETTINGS(X) \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "theme", winrt::Windows::UI::Xaml::ElementTheme::Default)

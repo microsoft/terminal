@@ -8,7 +8,6 @@
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:local="using:TerminalApp"
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                  xmlns:mtu="using:Microsoft.Terminal.UI"
                   xmlns:mux="using:Microsoft.UI.Xaml.Controls"
                   Background="{ThemeResource TabViewBackground}"
                   mc:Ignorable="d">
@@ -36,45 +35,14 @@
                  TabWidthMode="Equal">
 
         <mux:TabView.TabStripHeader>
-            <StackPanel Orientation="Horizontal">
-                <!--  EA18 is the "Shield" glyph  -->
-                <FontIcon x:Uid="ElevationShield"
-                          Margin="9,4,0,4"
-                          FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                          FontSize="16"
-                          Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                          Glyph="&#xEA18;"
-                          Visibility="{x:Bind ShowElevationShield, Mode=OneWay}" />
-
-                <!--  Workspace/windows button  -->
-                <Button x:Name="WorkspaceDropdown"
-                        x:Uid="WorkspaceDropdown"
-                        Margin="4,0,0,4"
-                        Padding="8,0,0,0"
-                        VerticalAlignment="Stretch"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Visibility="{x:Bind ShowWorkspacesButton, Mode=OneWay}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal"
-                                    Spacing="8">
-                            <!--  EE40 is the "TaskViewSettings" glyph  -->
-                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                      FontSize="12"
-                                      Glyph="&#xEE40;" />
-                            <TextBlock x:Name="WorkspaceNameText"
-                                       Padding="0,0,8,0"
-                                       VerticalAlignment="Center"
-                                       FontSize="12"
-                                       Text="{x:Bind WorkspaceName, Mode=OneWay}"
-                                       Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(WorkspaceName), Mode=OneWay}" />
-                        </StackPanel>
-                    </Button.Content>
-                    <Button.Flyout>
-                        <MenuFlyout x:Name="WorkspaceFlyout" />
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
+            <!--  EA18 is the "Shield" glyph  -->
+            <FontIcon x:Uid="ElevationShield"
+                      Margin="9,4,0,4"
+                      FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                      FontSize="16"
+                      Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                      Glyph="&#xEA18;"
+                      Visibility="{x:Bind ShowElevationShield, Mode=OneWay}" />
         </mux:TabView.TabStripHeader>
 
         <mux:TabView.TabStripFooter>

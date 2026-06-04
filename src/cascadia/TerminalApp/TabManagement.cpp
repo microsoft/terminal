@@ -404,22 +404,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - If this window has a name, persist its current workspace layout to
-    //   ApplicationState. Intended to be called from the close-pane / close-tab
-    //   paths while tab/pane content is still alive (before it gets torn down).
-    void TerminalPage::_SaveWorkspaceIfNeeded()
-    {
-        const auto& windowName = _WindowProperties.WindowName();
-        if (!windowName.empty())
-        {
-            if (const auto layout = GetWindowLayout())
-            {
-                ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
-            }
-        }
-    }
-
-    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
@@ -466,14 +450,6 @@ namespace winrt::TerminalApp::implementation
         auto actions = t->BuildStartupActions(BuildStartupKind::None);
         _AddPreviouslyClosedPaneOrTab(std::move(actions));
 
-        // If this is the last tab in a named window, persist the workspace
-        // layout now while tab content is still alive. After tab.Close()
-        // the pane content will be torn down by the time _RemoveTab runs.
-        if (_tabs.Size() == 1)
-        {
-            _SaveWorkspaceIfNeeded();
-        }
-
         tab.Close();
     }
 
@@ -494,13 +470,6 @@ namespace winrt::TerminalApp::implementation
         auto unsetRemoving = wil::scope_exit([&]() noexcept { _removing = false; });
 
         const auto focusedTabIndex{ _GetFocusedTabIndex() };
-
-        // NOTE: Workspace persistence for named windows used to live here,
-        // but by the time _RemoveTab runs the pane content may already be
-        // torn down (e.g. from the close-pane path). Instead, workspace
-        // saves are handled earlier:
-        //  - Close-pane (last pane): in _HandleClosePaneRequested
-        //  - Close-tab: in _HandleCloseTabRequested
 
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
@@ -828,21 +797,6 @@ namespace winrt::TerminalApp::implementation
             state.args.emplace(state.args.begin(), std::move(splitPaneAction));
         }
         _AddPreviouslyClosedPaneOrTab(std::move(state.args));
-
-        // If this is the last pane on the last tab of a named window, persist
-        // the workspace layout now while the pane content is still alive.
-        // We can't wait until _RemoveTab, because pane->Close() below will
-        // destroy the content before _RemoveTab is reached.
-        if (_tabs.Size() == 1)
-        {
-            if (const auto activeTab{ _GetFocusedTabImpl() })
-            {
-                if (activeTab->GetLeafPaneCount() == 1)
-                {
-                    _SaveWorkspaceIfNeeded();
-                }
-            }
-        }
 
         // If specified, detach before closing to directly update the pane structure
         pane->Close();
