@@ -143,6 +143,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowKittyKeyboardMode);
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtChecksumReport);
         OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtClipboardWrite);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AllowOscNotifications);
         OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
         OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
         OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);

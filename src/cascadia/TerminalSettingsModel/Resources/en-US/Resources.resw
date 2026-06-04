@@ -521,6 +521,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Reset window name</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Open workspace "{0}"</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Open workspace</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Rename window...</value>
   </data>
@@ -742,6 +749,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Open current working directory</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Workspaces...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Close tab</value>

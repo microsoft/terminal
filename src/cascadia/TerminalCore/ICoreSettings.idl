@@ -124,6 +124,7 @@ namespace Microsoft.Terminal.Core
         Boolean AllowKittyKeyboardMode { get; };
         Boolean AllowVtChecksumReport { get; };
         Boolean AllowVtClipboardWrite { get; };
+        Boolean AllowOscNotifications { get; };
         Boolean TrimBlockSelection { get; };
         Boolean DetectURLs { get; };
 
