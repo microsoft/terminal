@@ -113,9 +113,7 @@
     ON_ALL_ACTIONS(OpenScratchpad)          \
     ON_ALL_ACTIONS(OpenAbout)               \
     ON_ALL_ACTIONS(QuickFix)                \
-    ON_ALL_ACTIONS(OpenCWD)                 \
-    ON_ALL_ACTIONS(OpenWorkspace)           \
-    ON_ALL_ACTIONS(Workspaces)
+    ON_ALL_ACTIONS(OpenCWD)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
@@ -160,8 +158,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(Suggestions)          \
     ON_ALL_ACTIONS_WITH_ARGS(SelectCommand)        \
     ON_ALL_ACTIONS_WITH_ARGS(SelectOutput)         \
-    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)       \
-    ON_ALL_ACTIONS_WITH_ARGS(OpenWorkspace)
+    ON_ALL_ACTIONS_WITH_ARGS(ColorSelection)
 
 // These two macros here are for actions that we only use as internal currency.
 // They don't need to be parsed by the settings model, or saved as actions to

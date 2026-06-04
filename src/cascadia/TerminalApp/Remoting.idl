@@ -51,6 +51,5 @@ namespace TerminalApp
         CommandlineArgs Command { get; };
         String Content { get; };
         Windows.Foundation.IReference<Windows.Foundation.Rect> InitialBounds { get; };
-        Microsoft.Terminal.Settings.Model.WindowLayout PersistedLayout;
     };
 }
