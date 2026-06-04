@@ -258,7 +258,7 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
-    WindowLayout TerminalWindow::GetWindowLayout()
+    WindowLayout TerminalWindow::GetWindowLayout() const
     {
         if (_root)
         {

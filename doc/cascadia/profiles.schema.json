@@ -441,6 +441,7 @@
         "openTabColorPicker",
         "openTabRenamer",
         "openWindowRenamer",
+        "openWorkspace",
         "paste",
         "prevTab",
         "quakeMode",
@@ -1722,6 +1723,28 @@
         }
       ]
     },
+    "OpenWorkspaceAction": {
+      "description": "Arguments corresponding to an openWorkspace Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "openWorkspace"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the workspace to open. If omitted, the workspaces UI will be shown so the user can pick one."
+            }
+          }
+        }
+      ]
+    },
     "FocusPaneAction": {
       "description": "Arguments corresponding to a focusPane Action",
       "allOf": [
@@ -2042,8 +2065,8 @@
           "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
           "$ref": "#/$defs/ThemeColor"
         },
-        "showWindowsButton": {
-          "description": "When set to true, the workspace/windows button will be shown in the tab row.",
+        "showWorkspacesButton": {
+          "description": "When set to true, the workspaces button will be shown in the tab row.",
           "type": "boolean",
           "default": true
         }
@@ -2213,6 +2236,9 @@
             },
             {
               "$ref": "#/$defs/RenameWindowAction"
+            },
+            {
+              "$ref": "#/$defs/OpenWorkspaceAction"
             },
             {
               "$ref": "#/$defs/FocusPaneAction"

@@ -19,14 +19,8 @@ namespace winrt::TerminalApp::implementation
 
         til::property_changed_event PropertyChanged;
         WINRT_OBSERVABLE_PROPERTY(bool, ShowElevationShield, PropertyChanged.raise, false);
-        WINRT_OBSERVABLE_PROPERTY(bool, ShowWindowsButton, PropertyChanged.raise, true);
-
-    public:
-        winrt::hstring WorkspaceName() const noexcept { return _WorkspaceName; }
-        void WorkspaceName(const winrt::hstring& value);
-
-    private:
-        winrt::hstring _WorkspaceName{};
+        WINRT_OBSERVABLE_PROPERTY(bool, ShowWorkspacesButton, PropertyChanged.raise, true);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, WorkspaceName, PropertyChanged.raise, L"");
     };
 }
 

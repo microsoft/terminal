@@ -48,12 +48,13 @@
 
                 <!--  Workspace/windows button  -->
                 <Button x:Name="WorkspaceDropdown"
+                        x:Uid="WorkspaceDropdown"
                         Margin="4,0,0,4"
                         Padding="8,0,0,0"
                         VerticalAlignment="Stretch"
                         Background="Transparent"
                         BorderThickness="0"
-                        Visibility="{x:Bind ShowWindowsButton, Mode=OneWay}">
+                        Visibility="{x:Bind ShowWorkspacesButton, Mode=OneWay}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal"
                                     Spacing="8">

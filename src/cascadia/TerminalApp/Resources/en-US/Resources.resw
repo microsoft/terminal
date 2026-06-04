@@ -744,16 +744,16 @@
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
   <data name="NameThisWindowMenuItem" xml:space="preserve">
-    <value>Name this window…</value>
+    <value>Name this window...</value>
     <comment>Menu item text shown when the current window has no name assigned</comment>
   </data>
   <data name="RenameThisWindowMenuItem" xml:space="preserve">
-    <value>Rename this window…</value>
+    <value>Rename this window...</value>
     <comment>Menu item text shown when the current window already has a name</comment>
   </data>
   <data name="WindowListUnnamedEntry" xml:space="preserve">
     <value>#{0} (unnamed)</value>
-    <comment>{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
+    <comment>{locked="{0}"}{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
   </data>
   <data name="DeleteWorkspaceMenuItem" xml:space="preserve">
     <value>Delete workspace?</value>
@@ -764,8 +764,12 @@
     <comment>Menu item text for opening a saved workspace</comment>
   </data>
   <data name="ConfirmDeleteWorkspaceTitle" xml:space="preserve">
-    <value>Are you sure you want to delete the workspace "{0}"?</value>
-    <comment>{0} is the workspace name. Shown in a confirmation dialog when the user tries to delete a saved workspace.</comment>
+    <value>Delete "{0}"?</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Shown as the title of a confirmation dialog when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceBody" xml:space="preserve">
+    <value>Are you sure you want to delete "{0}"? Sessions associated with this workspace will also be deleted.</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Body text of the confirmation dialog shown when the user tries to delete a saved workspace.</comment>
   </data>
   <data name="ConfirmDeleteWorkspaceDelete" xml:space="preserve">
     <value>Delete</value>
@@ -832,6 +836,9 @@
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>This Terminal window is running as administrator</value>
+  </data>
+  <data name="WorkspaceDropdown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Workspaces</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Suggestions found: {0}</value>

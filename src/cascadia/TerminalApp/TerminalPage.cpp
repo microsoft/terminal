@@ -460,10 +460,10 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
 
-        // Apply the ShowWindowsButton theme setting.
+        // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme())
         {
-            _tabRow.ShowWindowsButton(theme.Window() ? theme.Window().ShowWindowsButton() : true);
+            _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
         }
 
         _adjustProcessPriorityThrottled = std::make_shared<ThrottledFunc<>>(
@@ -4122,10 +4122,10 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.ShowElevationShield(IsRunningElevated() && _settings.GlobalSettings().ShowAdminShield());
 
-        // Apply the ShowWindowsButton theme setting.
+        // Apply the ShowWorkspacesButton theme setting.
         if (const auto theme = _settings.GlobalSettings().CurrentTheme())
         {
-            _tabRow.ShowWindowsButton(theme.Window() ? theme.Window().ShowWindowsButton() : true);
+            _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
         }
 
         Media::SolidColorBrush transparent{ Windows::UI::Colors::Transparent() };
@@ -5769,7 +5769,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Rebuild the workspace flyout contents. Called every time the flyout opens
-    // Rebuild the workspace flyout contents. Called every time the flyout opens
     // so it reflects the current set of persisted workspaces.
     void TerminalPage::_PopulateWorkspaceFlyout()
     {
@@ -5829,7 +5828,7 @@ namespace winrt::TerminalApp::implementation
                 const auto name = pair.Key();
 
                 // Skip workspaces that correspond to a currently-open window.
-                if (openWindowNames.count(name))
+                if (openWindowNames.contains(name))
                 {
                     continue;
                 }
@@ -5863,10 +5862,7 @@ namespace winrt::TerminalApp::implementation
                     WUX::Controls::MenuFlyoutItem deleteItem{};
                     deleteItem.Text(RS_(L"DeleteWorkspaceMenuItem"));
 
-                    WUX::Controls::FontIcon trashIcon{};
-                    trashIcon.Glyph(L"\xE74D"); // Delete glyph
-                    trashIcon.FontFamily(Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
-                    deleteItem.Icon(trashIcon);
+                    auto trashIcon = UI::IconPathConverter::IconWUX(L"\xE74D"); // Delete  glyph
 
                     deleteItem.Click([weakThis{ get_weak() }, name](auto&&, auto&&) -> safe_void_coroutine {
                         auto page{ weakThis.get() };
@@ -5878,6 +5874,7 @@ namespace winrt::TerminalApp::implementation
                         // Build and show a confirmation ContentDialog.
                         ContentDialog dialog{};
                         dialog.Title(winrt::box_value(winrt::hstring{ RS_fmt(L"ConfirmDeleteWorkspaceTitle", name) }));
+                        dialog.Content(winrt::box_value(winrt::hstring{ RS_fmt(L"ConfirmDeleteWorkspaceBody", name) }));
                         dialog.PrimaryButtonText(RS_(L"ConfirmDeleteWorkspaceDelete"));
                         dialog.CloseButtonText(RS_(L"ConfirmDeleteWorkspaceCancel"));
                         dialog.DefaultButton(ContentDialogButton::Close);

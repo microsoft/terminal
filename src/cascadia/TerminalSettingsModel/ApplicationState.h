@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
 //   (source, type, function name, JSON key, ...variadic construction arguments)
+// Note: we're using the COMMA macro hack for the template arguments as used elsewhere.
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                                  \
     X(FileSource::Shared, winrt::hstring, SettingsHash, "settingsHash")                                                                                                   \
     X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
@@ -42,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
     X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")                                                  \
     X(FileSource::Local, std::unordered_set<hstring>, DismissedBadges, "dismissedBadges")                                                                                 \
+    X(FileSource::Local, Windows::Foundation::Collections::IMap<hstring COMMA Model::WindowLayout>, PersistedWorkspaces, "persistedWorkspaces")                           \
     X(FileSource::Shared, bool, SSHFolderGenerated, "sshFolderGenerated", false)
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
@@ -56,6 +58,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
     };
+
+    #define COMMA ,
 
     struct ApplicationState : public ApplicationStateT<ApplicationState>
     {
@@ -94,8 +98,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) std::optional<type> name{ __VA_ARGS__ };
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
-            // Manually declared because IMap<K,V> has a comma that breaks the macro.
-            std::optional<Windows::Foundation::Collections::IMap<hstring, Model::WindowLayout>> PersistedWorkspaces;
         };
         til::shared_mutex<state_t> _state;
         std::filesystem::path _sharedPath;
@@ -112,6 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::string _readLocalContents() const;
         void _writeLocalContents(const std::string_view content) const;
     };
+#undef COMMA
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation

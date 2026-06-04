@@ -20,7 +20,6 @@ static constexpr std::string_view TabLayoutKey{ "tabLayout" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view InitialSizeKey{ "initialSize" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
-static constexpr std::string_view PersistedWorkspacesKey{ "persistedWorkspaces" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
@@ -254,6 +253,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return *state;
     }
 
+// Need the COMMA macro hack for IMap template arguments in the macros
+#define COMMA ,
+
     // Method Description:
     // - Loads data from the given json blob. Will only read the data that's in
     //   the specified parseSource - so if we're reading the Local state file,
@@ -277,10 +279,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
-
-        // Manually handled because IMap<K,V> has a comma that breaks the X-macro.
-        if (WI_IsFlagSet(parseSource, FileSource::Local))
-            state->PersistedWorkspaces = JsonUtils::GetValueForKey<std::optional<Windows::Foundation::Collections::IMap<hstring, Model::WindowLayout>>>(root, PersistedWorkspacesKey);
     }
 
     Json::Value ApplicationState::ToJson(FileSource parseSource) const noexcept
@@ -303,13 +301,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
-
-            // Manually handled because IMap<K,V> has a comma that breaks the X-macro.
-            if (WI_IsFlagSet(parseSource, FileSource::Local))
-                JsonUtils::SetValueForKey(root, PersistedWorkspacesKey, state->PersistedWorkspaces);
         }
         return root;
     }
+
+#undef COMMA
 
     void ApplicationState::AppendPersistedWindowLayout(Model::WindowLayout layout)
     {
@@ -476,7 +472,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                  \
         _throttler();                                            \
     }
+#define COMMA ,
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
+#undef COMMA
 #undef MTSM_APPLICATION_STATE_GEN
 
     // Method Description:
