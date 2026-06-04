@@ -97,6 +97,17 @@ namespace SettingsModelUnitTests
 
         VERIFY_IS_FALSE(state->RenameWorkspace(L"win1", L"win1"));
         VERIFY_IS_FALSE(state->RenameWorkspace(L"", L"win2"));
+
+        // Renaming to an empty name removes the stale entry under the old name.
+        VERIFY_IS_TRUE(state->RenameWorkspace(L"win1", L""));
+        const auto all = state->AllPersistedWorkspaces();
+        if (all)
+        {
+            VERIFY_IS_FALSE(all.HasKey(L"win1"));
+            VERIFY_IS_FALSE(all.HasKey(L""));
+        }
+
+        // Calling again is now a no-op because the entry is gone.
         VERIFY_IS_FALSE(state->RenameWorkspace(L"win1", L""));
     }
 
