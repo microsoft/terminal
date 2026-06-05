@@ -24,6 +24,7 @@
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
+    <ClCompile Include="JsonManager.cpp" />
     <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
@@ -82,6 +83,7 @@
       <Filter>json</Filter>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="JsonManager.h" />
     <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="DefaultTerminal.h" />
     <ClInclude Include="FileUtils.h" />
@@ -108,6 +110,7 @@
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
+    <Midl Include="JsonManager.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />

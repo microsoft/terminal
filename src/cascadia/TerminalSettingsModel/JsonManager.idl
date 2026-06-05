@@ -1,0 +1,40 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "CascadiaSettings.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    // Owns settings.json persistence and file-change watching, split out of
+    // CascadiaSettings for Auto-Save. An instance is owned by the app
+    // (AppLogic). Auto-save is only enabled while a successfully-loaded
+    // settings tree is bound via SetLiveSettings().
+    [default_interface] runtimeclass JsonManager
+    {
+        JsonManager();
+
+        // Lifecycle. The folder watcher is owned here but explicitly started
+        // and stopped by the app. JsonManager never reloads or touches
+        // UI-bound state itself; it only raises SettingsChangedExternally.
+        void Start();
+        void Stop();
+
+        // Binds the live settings tree. The app MUST call this only after a
+        // successful load, and MUST NOT bind a failed load or the defaults
+        // fallback. Auto-save is disabled until a tree is bound.
+        void SetLiveSettings(CascadiaSettings settings);
+        void ClearLiveSettings();
+
+        // Schedules a debounced auto-save of the bound tree. No-op if unbound.
+        void RequestSave();
+
+        // Synchronously writes the bound tree to disk. Used by load-time
+        // fixups, which must not route through the debounce. Returns true on
+        // success.
+        Boolean Save();
+
+        // Raised when an external (non-self) edit to settings.json is detected
+        // on disk. The app handles marshaling any reload onto the UI thread.
+        event Windows.Foundation.TypedEventHandler<JsonManager, Object> SettingsChangedExternally;
+    }
+}

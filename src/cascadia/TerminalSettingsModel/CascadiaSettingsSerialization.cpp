@@ -1484,6 +1484,62 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _validateSettings();
 
     ExpandCommands();
+
+    _installWriteSink();
+}
+
+// Auto-save: create one shared sink and install it on every
+// inheritable object in the live tree so that mutating any setting requests a
+// debounced save. The sink stays a no-op until SetWriteHandler() binds a
+// handler (which JsonManager only does for a successfully-loaded live tree).
+// Copy()/clone paths construct fresh objects without a sink, so editor clones
+// and the defaults fallback never auto-save.
+void CascadiaSettings::_installWriteSink()
+{
+    _writeSink = std::make_shared<std::function<void()>>();
+
+    const auto installForProfile = [&](implementation::Profile* prof) {
+        if (!prof)
+        {
+            return;
+        }
+        prof->SetWriteSettingsSink(_writeSink);
+        if (const auto da = prof->DefaultAppearance())
+        {
+            winrt::get_self<AppearanceConfig>(da)->SetWriteSettingsSink(_writeSink);
+        }
+        if (const auto ua = prof->UnfocusedAppearance())
+        {
+            winrt::get_self<AppearanceConfig>(ua)->SetWriteSettingsSink(_writeSink);
+        }
+        if (const auto fi = prof->FontInfo())
+        {
+            winrt::get_self<FontConfig>(fi)->SetWriteSettingsSink(_writeSink);
+        }
+    };
+
+    if (_globals)
+    {
+        _globals->SetWriteSettingsSink(_writeSink);
+        if (const auto ntm = _globals->NewTabMenu())
+        {
+            winrt::get_self<implementation::NewTabMenu>(ntm)->SetWriteSettingsSink(_writeSink);
+        }
+    }
+
+    installForProfile(_baseLayerProfile.get());
+    for (const auto& p : _allProfiles)
+    {
+        installForProfile(winrt::get_self<implementation::Profile>(p));
+    }
+}
+
+void CascadiaSettings::SetWriteHandler(std::function<void()> handler)
+{
+    if (_writeSink)
+    {
+        *_writeSink = std::move(handler);
+    }
 }
 
 // Method Description:
@@ -1513,10 +1569,7 @@ const std::filesystem::path& CascadiaSettings::_releaseSettingsPath()
 // Returns a has (approximately) uniquely identifying the settings.json contents on disk.
 winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const FILETIME& lastWriteTime)
 {
-    const auto fileHash = til::hash(settings);
-    const ULARGE_INTEGER fileTime{ lastWriteTime.dwLowDateTime, lastWriteTime.dwHighDateTime };
-    const auto hash = fmt::format(FMT_COMPILE(L"{:016x}-{:016x}"), fileHash, fileTime.QuadPart);
-    return winrt::hstring{ hash };
+    return CalculateSettingsHash(settings, lastWriteTime);
 }
 
 // This returns something akin to %LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState
@@ -1613,7 +1666,9 @@ bool CascadiaSettings::WriteSettingsToDisk()
 void CascadiaSettings::_writeSettingsToDisk(std::string_view contents)
 {
     FILETIME lastWriteTime{};
-    til::io::write_utf8_string_to_file_atomic(_settingsPath(), contents, &lastWriteTime);
+    // Auto-save (GH#12424): write atomically via a process-unique temp file and
+    // keep a best-effort "settings.json.bak" backup of the prior contents.
+    WriteSettingsFile(_settingsPath(), contents, /*makeBackup*/ true, &lastWriteTime);
 
     _hash = _calculateHash(contents, lastWriteTime);
 

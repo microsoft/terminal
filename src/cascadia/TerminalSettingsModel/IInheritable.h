@@ -14,6 +14,9 @@ Author(s):
 --*/
 #pragma once
 
+#include <memory>
+#include <functional>
+
 #include "JsonUtils.h"
 #include "JsonSyncCollections.h"
 
@@ -64,8 +67,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return _parents;
         }
 
+        // A shared "request auto-save" sink. The owning CascadiaSettings
+        // creates one sink and installs it on every object in the *live* tree.
+        // When a setting on this layer is mutated, _NotifyWriteSettings() invokes
+        // the sink, which requests a debounced auto-save. The sink is intentionally
+        // NOT copied by Copy()/clone paths, so editor clones (and the defaults
+        // fallback) never auto-save the user's settings.json.
+        using WriteSettingsSink = std::shared_ptr<std::function<void()>>;
+        void SetWriteSettingsSink(const WriteSettingsSink& sink)
+        {
+            _writeSettingsSink = sink;
+        }
+
     protected:
         std::vector<com_ptr<T>> _parents{};
+
+        WriteSettingsSink _writeSettingsSink{};
+
+        // Invoked by setters/clears to request an auto-save of the owning tree.
+        // No-op until a sink is installed (i.e. only on the committed live tree).
+        void _NotifyWriteSettings() const
+        {
+            if (_writeSettingsSink && *_writeSettingsSink)
+            {
+                (*_writeSettingsSink)();
+            }
+        }
 
         // Method Description:
         // - Actions to be performed after a child was created. Generally used to set
@@ -150,6 +177,7 @@ public:                                                                         
     void Clear##name()                                                                \
     {                                                                                 \
         _json.removeMember(JsonKey(jsonKey));                                         \
+        _NotifyWriteSettings();                                         \
     }                                                                                 \
                                                                                       \
 private:                                                                              \
@@ -218,7 +246,7 @@ public:                                                                    \
         }                                                                  \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey( \
             _json, jsonKey, value);                                        \
-        /* TODO GH#17000: raise WriteSettings event */                     \
+        _NotifyWriteSettings();                     \
     }
 
 // JSON-backed inheritable setting.
@@ -240,6 +268,7 @@ public:                                                                        \
     {                                                                          \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(     \
             _json, jsonKey, value);                                            \
+        _NotifyWriteSettings();                                            \
     }
 
 // JSON-backed inheritable setting with change logging.
@@ -284,6 +313,7 @@ public:                                                                         
             /* explicitly set to null (not the same as clearing) */                                                                  \
             _json[JsonKey(jsonKey)] = Json::nullValue;                                                                               \
         }                                                                                                                            \
+        _NotifyWriteSettings();                                                       \
     }
 
 // =============================================================================
@@ -409,7 +439,7 @@ public:                                                                         
         _##name = value;                                                                                                          \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                                 \
         _logSettingSet(jsonKey);                                                                                                  \
-        /* TODO GH#17000: raise WriteSettings event */                                                                            \
+        _NotifyWriteSettings();                                                                            \
     }                                                                                                                             \
                                                                                                                                   \
     /* Dual-clear: backing field + _json key. Both must clear so auto-save doesn't */                                             \
@@ -419,7 +449,7 @@ public:                                                                         
         _##name = std::nullopt;                                                                                                   \
         _json.removeMember(JsonKey(jsonKey));                                                                                     \
         _logSettingSet(jsonKey);                                                                                                  \
-        /* TODO GH#17000: raise WriteSettings event */                                                                            \
+        _NotifyWriteSettings();                                                                            \
     }
 
 // IMediaResource vector setting (BellSound): needs both IMediaResource
@@ -459,7 +489,7 @@ public:                                                                         
                                     .ToJson(current);                                                                          \
                     strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                         \
                     strong->_logSettingSet(jsonKey);                                                                           \
-                    /* TODO GH#17000: raise WriteSettings event */                                                             \
+                    strong->_NotifyWriteSettings();                                                             \
                 });                                                                                                            \
         }                                                                                                                      \
         return *val;                                                                                                           \
@@ -471,7 +501,7 @@ public:                                                                         
         _##name = value;                                                                                                       \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                              \
         _logSettingSet(jsonKey);                                                                                               \
-        /* TODO GH#17000: raise WriteSettings event */                                                                         \
+        _NotifyWriteSettings();                                                                         \
     }                                                                                                                          \
                                                                                                                                \
     /* Dual-clear: backing field + _json key. */                                                                               \
@@ -480,7 +510,7 @@ public:                                                                         
         _##name = std::nullopt;                                                                                                \
         _json.removeMember(JsonKey(jsonKey));                                                                                  \
         _logSettingSet(jsonKey);                                                                                               \
-        /* TODO GH#17000: raise WriteSettings event */                                                                         \
+        _NotifyWriteSettings();                                                                         \
     }
 
 // JSON-backed collection settings (IVector<T> / IMap<K,V>) that callers mutate
@@ -511,7 +541,7 @@ public:                                                                         
                 auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);                   \
                 strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                                        \
                 strong->_logSettingSet(jsonKey);                                                                                          \
-                /* TODO GH#17000: raise WriteSettings event */                                                                            \
+                strong->_NotifyWriteSettings();                                                                            \
             });                                                                                                                           \
     }                                                                                                                                     \
                                                                                                                                           \
@@ -538,7 +568,7 @@ public:                                                                         
                 auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);         \
                 strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                              \
                 strong->_logSettingSet(jsonKey);                                                                                \
-                /* TODO GH#17000: raise WriteSettings event */                                                                  \
+                strong->_NotifyWriteSettings();                                                                  \
             });                                                                                                                 \
     }                                                                                                                           \
                                                                                                                                 \

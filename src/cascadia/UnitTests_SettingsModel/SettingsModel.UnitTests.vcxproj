@@ -41,6 +41,7 @@
     <ClCompile Include="CommandTests.cpp" />
     <ClCompile Include="DeserializationTests.cpp" />
     <ClCompile Include="JsonSyncCollectionsTests.cpp" />
+    <ClCompile Include="JsonManagerTests.cpp" />
     <ClCompile Include="NewTabMenuTests.cpp" />
     <ClCompile Include="SerializationTests.cpp" />
     <ClCompile Include="TerminalSettingsTests.cpp" />

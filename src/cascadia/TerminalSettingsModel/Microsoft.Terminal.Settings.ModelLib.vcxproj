@@ -86,6 +86,9 @@
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="JsonManager.h">
+      <DependentUpon>JsonManager.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="JsonSyncCollections.h" />
     <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
@@ -165,6 +168,9 @@
     <ClCompile Include="GlobalAppSettings.cpp">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="JsonManager.cpp">
+      <DependentUpon>JsonManager.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="KeyChordSerialization.cpp">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClCompile>
@@ -230,6 +236,7 @@
     <Midl Include="Command.idl" />
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="GlobalAppSettings.idl" />
+    <Midl Include="JsonManager.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
     <Midl Include="TerminalWarnings.idl" />

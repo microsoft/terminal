@@ -302,38 +302,30 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void AppLogic::_RegisterSettingsChange()
     {
-        const std::filesystem::path settingsPath{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
-        _reader.create(
-            settingsPath.parent_path().c_str(),
-            false,
-            // We want file modifications, AND when files are renamed to be
-            // settings.json. This second case will often happen with text
-            // editors, who will write a temp file, then rename it to be the
-            // actual file you wrote. So listen for that too.
-            wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
-            [this, settingsBasename = settingsPath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
-                // DO NOT create a static reference to ApplicationState::SharedInstance here.
-                //
-                // ApplicationState::SharedInstance already caches its own
-                // static ref. If _we_ keep a static ref to the member in
-                // AppState, then our reference will keep ApplicationState alive
-                // after the `ActionToStringMap` gets cleaned up. Then, when we
-                // try to persist the actions in the window state, we won't be
-                // able to. We'll try to look up the action and the map just
-                // won't exist. We'll explode, even though the Terminal is
-                // tearing down anyways. So we'll just die, but still invoke
-                // WinDBG's post-mortem debugger, who won't be able to attach to
-                // the process that's already exiting.
-                //
-                // So DON'T ~give a mouse a cookie~ take a static ref here.
+        // The JsonManager owns the settings.json watcher and the auto-save write
+        // path. It raises SettingsChangedExternally (on a background
+        // thread) when it detects an edit it didn't make; we marshal a throttled
+        // reload onto the UI thread in response.
+        _jsonManager = Settings::Model::JsonManager{};
+        _jsonManager.SettingsChangedExternally([weakSelf = get_weak()](auto&&, auto&&) {
+            if (auto self{ weakSelf.get() })
+            {
+                self->ReloadSettingsThrottled();
+            }
+        });
+        _jsonManager.Start();
 
-                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
-
-                if (modifiedBasename == settingsBasename)
-                {
-                    ReloadSettingsThrottled();
-                }
-            });
+        // Bind the live tree for auto-save -- but only if the initial load
+        // actually succeeded. We must never auto-save the defaults fallback over
+        // a user's broken settings.json.
+        if (SUCCEEDED(_settingsLoadedResult))
+        {
+            _jsonManager.SetLiveSettings(_settings);
+        }
+        else
+        {
+            _jsonManager.ClearLiveSettings();
+        }
     }
 
     void AppLogic::_ApplyLanguageSettingChange() noexcept
@@ -389,6 +381,11 @@ namespace winrt::TerminalApp::implementation
             if (initialLoad)
             {
                 _settings = CascadiaSettings::LoadDefaults();
+                // Don't auto-save the defaults over the user's broken file.
+                if (_jsonManager)
+                {
+                    _jsonManager.ClearLiveSettings();
+                }
             }
             else
             {
@@ -409,6 +406,11 @@ namespace winrt::TerminalApp::implementation
         else
         {
             _settings.LogSettingChanges(true);
+            // Rebind the freshly-loaded tree for auto-save.
+            if (_jsonManager)
+            {
+                _jsonManager.SetLiveSettings(_settings);
+            }
         }
 
         _ApplyLanguageSettingChange();

@@ -72,7 +72,9 @@ namespace winrt::TerminalApp::implementation
         // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
         // (C++ destroys members in reverse-declaration-order.)
         winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
-        wil::unique_folder_change_reader_nothrow _reader;
+        // Owns the settings.json watcher + auto-save write path.
+        // Raises SettingsChangedExternally, which we handle by reloading.
+        Microsoft::Terminal::Settings::Model::JsonManager _jsonManager{ nullptr };
 
         TerminalApp::ContentManager _contentManager{ winrt::make<implementation::ContentManager>() };
 

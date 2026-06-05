@@ -170,6 +170,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ResetApplicationState() const;
         void ResetToDefaultSettings();
         bool WriteSettingsToDisk();
+        void SetWriteHandler(std::function<void()> handler);
+
         Json::Value ToJson() const;
         Model::Profile ProfileDefaults() const;
         Model::Profile CreateNewProfile();
@@ -207,6 +209,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
         void _refreshDefaultTerminals();
         void _writeSettingsToDisk(std::string_view contents);
+
+        // Auto-save (GH#12424): the shared "request auto-save" sink installed on
+        // every inheritable object in this live tree. Empty until SetWriteHandler.
+        std::shared_ptr<std::function<void()>> _writeSink;
+        void _installWriteSink();
 
         void _resolveDefaultProfile() const;
         void _resolveNewTabMenuProfiles() const;
