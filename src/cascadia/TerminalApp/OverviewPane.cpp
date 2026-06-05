@@ -35,7 +35,7 @@ using namespace winrt::Windows::System;
 //      window resize re-runs _ApplyAdaptiveLayout (debounced to >=1px).
 //      LayoutUpdated fires too often to use as the resize signal.
 //   6. Exit (Enter / Escape / outside click): _PlayExitAnimation runs the
-//      zoom-into-cell + fade-out, then ClearTabContent reparents the live
+//      zoom-into-cell + fade-out, then ClearTabContent will re-parent the live
 //      tab content back to its original parent. Destructor also calls
 //      ClearTabContent and tolerates partially-disposed visual trees.
 
@@ -333,8 +333,8 @@ namespace winrt::TerminalApp::implementation
             // space (encourages fewer-columns/more-rows when there's room).
             const auto totalArea = previewW * previewH * tabCount;
             const auto fitBonus = fitsVertically ? 1.25 : 0.7;
-            const auto vfill = std::clamp(gridH / std::max(availH, 1.0), 0.0, 1.0);
-            const auto fillBonus = 0.5 + 0.5 * vfill; // 0.5 ... 1.0
+            const auto verticalFill = std::clamp(gridH / std::max(availH, 1.0), 0.0, 1.0);
+            const auto fillBonus = 0.5 + 0.5 * verticalFill; // 0.5 ... 1.0
             const auto floorPenalty = belowFloor ? 0.5 : 1.0;
             const auto score = totalArea * fitBonus * fillBonus * floorPenalty;
 
