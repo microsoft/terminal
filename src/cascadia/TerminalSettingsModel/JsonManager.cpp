@@ -5,6 +5,9 @@
 #include "JsonManager.h"
 #include "CascadiaSettings.h"
 #include "FileUtils.h"
+#include "ApplicationState.h"
+#include "DefaultTerminal.h"
+#include "resource.h"
 
 #include <til/io.h>
 
@@ -31,10 +34,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     JsonManager::~JsonManager()
     {
-        // Tear down the watcher before the rest of *this is destroyed.
-        // _writeThrottler (last-declared member) is destroyed first, cancelling
-        // any pending callback.
+        // Stop watching first so the flush's write below can't trigger a
+        // self-write callback during teardown.
         Stop();
+
+        // Flush any pending auto-save so a debounced write isn't lost on shutdown
+        // (e.g. a setting changed moments before the app exits). The flush runs
+        // _write(), which only touches the captured byte snapshot -- not the tree.
+        _writeThrottler.flush();
     }
 
     // Begins watching the settings directory for external changes.
@@ -70,18 +77,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // loaded tree (never a failed load or the defaults fallback).
     void JsonManager::SetLiveSettings(const Model::CascadiaSettings& settings)
     {
+        // Detach the previous tree's write handler so a stale tree still retained
+        // elsewhere can no longer schedule saves against us.
+        if (auto old = _liveSettings.get())
+        {
+            winrt::get_self<implementation::CascadiaSettings>(old)->SetWriteHandler(nullptr);
+        }
+
         {
             std::scoped_lock lock{ _stateMutex };
-            ++_generation;
+            _generation.bump();
             _pendingSnapshot.clear();
-            _autoSaveEnabled = static_cast<bool>(settings);
             _expectedDiskHash = settings ? settings.Hash() : winrt::hstring{};
         }
 
-        _liveSettings = settings ? winrt::make_weak(settings) : winrt::weak_ref<Model::CascadiaSettings>{ nullptr };
-
         if (settings)
         {
+            _liveSettings = winrt::make_weak(settings);
+
             auto self = winrt::get_self<implementation::CascadiaSettings>(settings);
             auto weakThis = get_weak();
             self->SetWriteHandler([weakThis]() {
@@ -91,20 +104,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 }
             });
         }
+        else
+        {
+            _liveSettings = nullptr;
+        }
     }
 
     // Unbinds the live tree and disables auto-save (e.g. on load failure or
-    // when falling back to the defaults settings object).
+    // when falling back to the defaults settings object). Identical to binding a
+    // null tree.
     void JsonManager::ClearLiveSettings()
     {
-        {
-            std::scoped_lock lock{ _stateMutex };
-            ++_generation;
-            _pendingSnapshot.clear();
-            _autoSaveEnabled = false;
-            _expectedDiskHash = {};
-        }
-        _liveSettings = winrt::weak_ref<Model::CascadiaSettings>{ nullptr };
+        SetLiveSettings(nullptr);
     }
 
     // Captures a snapshot of the bound tree (on the calling/owner thread) and
@@ -112,20 +123,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // thread, keeps all model-tree traversal on the owner thread.
     void JsonManager::RequestSave()
     {
-        uint64_t generation{};
-        {
-            std::scoped_lock lock{ _stateMutex };
-            if (!_autoSaveEnabled)
-            {
-                return;
-            }
-            generation = _generation;
-        }
-
+        // A bound (non-null) tree is exactly what enables auto-save.
         const auto live = _liveSettings.get();
         if (!live)
         {
             return;
+        }
+
+        til::generation_t generation;
+        {
+            std::scoped_lock lock{ _stateMutex };
+            generation = _generation;
         }
 
         std::string snapshot;
@@ -151,37 +159,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _pendingSnapshotGeneration = generation;
         }
         _writeThrottler();
-    }
-
-    // Synchronously writes the bound tree to disk. Used by callers that need the
-    // write to complete before returning (rather than the debounced path).
-    bool JsonManager::Save()
-    {
-        {
-            std::scoped_lock lock{ _stateMutex };
-            if (!_autoSaveEnabled)
-            {
-                return false;
-            }
-        }
-
-        const auto live = _liveSettings.get();
-        if (!live)
-        {
-            return false;
-        }
-
-        std::string snapshot;
-        try
-        {
-            snapshot = _serialize(live);
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            return false;
-        }
-        return _persistSnapshot(snapshot);
     }
 
     // Debounce callback (timer thread): writes the captured snapshot.
@@ -227,22 +204,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             FILETIME diskTime{};
             const auto diskContent = til::io::read_file_as_utf8_string_if_exists(path, false, &diskTime);
-            if (!diskContent.empty())
+            if (diskContent.empty())
+            {
+                // The file was deleted/emptied externally. Treat as a conflict so
+                // we don't silently recreate it, unless we never had a baseline
+                // (nothing to lose).
+                conflict = !_expectedDiskHash.empty();
+            }
+            else
             {
                 const auto diskHash = CalculateSettingsHash(diskContent, diskTime);
-                if (!_expectedDiskHash.empty() && diskHash != _expectedDiskHash)
-                {
-                    // Disk diverged from our baseline, likely due to an external edit. Disk is
-                    // the source of truth, so drop our pending change.
-                    conflict = true;
-                }
+                // Disk diverged from our baseline, likely due to an external edit.
+                // Disk is the source of truth, so drop our pending change.
+                conflict = !_expectedDiskHash.empty() && diskHash != _expectedDiskHash;
             }
 
             if (!conflict)
             {
-                FILETIME newTime{};
-                WriteSettingsFile(path, snapshot, /*makeBackup*/ true, &newTime);
-                _expectedDiskHash = CalculateSettingsHash(snapshot, newTime);
+                _expectedDiskHash = _writeContent(snapshot);
             }
         }
 
@@ -296,8 +275,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         LOG_CAUGHT_EXCEPTION();
     }
 
-    // Serializes a settings tree to JSON using the same writer settings as
-    // CascadiaSettings::WriteSettingsToDisk. Must run on the owner thread.
+    // Serializes a settings tree to JSON. Walks the model tree (ToJson), so it
+    // must run on the owner thread.
     std::string JsonManager::_serialize(const Model::CascadiaSettings& settings)
     {
         auto self = winrt::get_self<implementation::CascadiaSettings>(settings);
@@ -308,5 +287,58 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
         return Json::writeString(wbuilder, self->ToJson());
+    }
+
+    // Low-level write: atomically writes content to settings.json (with a .bak
+    // backup) and returns the resulting content/time hash. Pure I/O -- it never
+    // touches the model tree, so it is safe to call from the background timer
+    // thread (the auto-save path) as well as from the owner thread.
+    winrt::hstring JsonManager::_writeContent(std::string_view content)
+    {
+        const std::filesystem::path path{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
+        FILETIME newTime{};
+        WriteSettingsFile(path, content, /*makeBackup*/ true, &newTime);
+        return CalculateSettingsHash(content, newTime);
+    }
+
+    // Force-writes a tree to disk: serialize + atomic write + .bak + persist the
+    // default-terminal choice. Returns the new hash (empty on failure). Static --
+    // no instance and no auto-save baseline check. Used by load-time fixups, the
+    // settings-editor clone save, and other explicit savers. Must run on the
+    // thread that owns the tree (it reads tree state for the defterm persist).
+    winrt::hstring JsonManager::WriteSettings(const Model::CascadiaSettings& settings)
+    try
+    {
+        if (!settings)
+        {
+            return {};
+        }
+
+        const auto content = _serialize(settings);
+        const auto hash = _writeContent(content);
+
+        // Persist the default terminal choice (GH#10003: only when actually
+        // initialized). Read the cached member directly -- the public getter
+        // would trigger an expensive defterm refresh.
+        auto self = winrt::get_self<implementation::CascadiaSettings>(settings);
+        if (self->_currentDefaultTerminal)
+        {
+            DefaultTerminal::Current(self->_currentDefaultTerminal);
+        }
+
+        return hash;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return {};
+    }
+
+    // Resets ApplicationState and writes the user-defaults template to disk.
+    void JsonManager::ResetToDefaultSettings()
+    {
+        ApplicationState::SharedInstance().Reset();
+        const std::filesystem::path path{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
+        WriteSettingsFile(path, LoadStringResource(IDR_USER_DEFAULTS), /*makeBackup*/ true);
     }
 }

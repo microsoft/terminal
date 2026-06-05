@@ -951,7 +951,9 @@ namespace winrt::TerminalApp::implementation
             if (result == ContentDialogResult::Primary && checkbox.IsChecked().Value())
             {
                 _settings.GlobalSettings().ConfirmOnClose(ConfirmOnClose::Never);
-                _settings.WriteSettingsToDisk();
+                // Persisted via auto-save: the setter fires the write sink, which
+                // updates the JsonManager baseline and avoids a redundant write +
+                // spurious reload (GH#12424). A pending write is flushed on exit.
             }
         }
 

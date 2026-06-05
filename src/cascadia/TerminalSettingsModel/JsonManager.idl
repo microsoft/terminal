@@ -13,6 +13,15 @@ namespace Microsoft.Terminal.Settings.Model
     {
         JsonManager();
 
+        // Force-writes the given tree to disk (serialize + atomic write + .bak).
+        // Returns the new content/time hash, or an empty string on failure.
+        // Static so it works without an instance: used by load-time fixups, the
+        // settings-editor clone save, and other explicit savers.
+        static String WriteSettings(CascadiaSettings settings);
+
+        // Resets ApplicationState and writes the user-defaults template to disk.
+        static void ResetToDefaultSettings();
+
         // Lifecycle. The folder watcher is owned here but explicitly started
         // and stopped by the app. JsonManager never reloads or touches
         // UI-bound state itself; it only raises SettingsChangedExternally.
@@ -27,11 +36,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         // Schedules a debounced auto-save of the bound tree. No-op if unbound.
         void RequestSave();
-
-        // Synchronously writes the bound tree to disk. Used by load-time
-        // fixups, which must not route through the debounce. Returns true on
-        // success.
-        Boolean Save();
 
         // Raised when an external (non-self) edit to settings.json is detected
         // on disk. The app handles marshaling any reload onto the UI thread.

@@ -22,6 +22,33 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    // A late-bound, shared "request auto-save" notifier (GH#12424). One instance
+    // is created by CascadiaSettings and installed (by shared_ptr) on every
+    // object in the *live* settings tree. When a setting is mutated, the object
+    // calls Notify(); CascadiaSettings binds the actual handler after a
+    // successful load via SetHandler(). Until a handler is bound, Notify() is a
+    // no-op. The notifier is deliberately NOT propagated by Copy()/clone paths,
+    // so editor clones (and the defaults fallback) never auto-save the user's
+    // settings.json.
+    struct SettingsWriteNotifier
+    {
+        void Notify() const
+        {
+            if (_handler)
+            {
+                _handler();
+            }
+        }
+
+        void SetHandler(std::function<void()> handler)
+        {
+            _handler = std::move(handler);
+        }
+
+    private:
+        std::function<void()> _handler;
+    };
+
     template<typename T>
     struct IInheritable
     {
@@ -68,12 +95,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // A shared "request auto-save" sink. The owning CascadiaSettings
-        // creates one sink and installs it on every object in the *live* tree.
-        // When a setting on this layer is mutated, _NotifyWriteSettings() invokes
-        // the sink, which requests a debounced auto-save. The sink is intentionally
-        // NOT copied by Copy()/clone paths, so editor clones (and the defaults
-        // fallback) never auto-save the user's settings.json.
-        using WriteSettingsSink = std::shared_ptr<std::function<void()>>;
+        // creates one notifier and installs it on every object in the *live*
+        // tree. When a setting on this layer is mutated, _NotifyWriteSettings()
+        // invokes the notifier, which requests a debounced auto-save. The notifier
+        // is intentionally NOT copied by Copy()/clone paths, so editor clones (and
+        // the defaults fallback) never auto-save the user's settings.json.
+        using WriteSettingsSink = std::shared_ptr<SettingsWriteNotifier>;
         void SetWriteSettingsSink(const WriteSettingsSink& sink)
         {
             _writeSettingsSink = sink;
@@ -88,9 +115,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // No-op until a sink is installed (i.e. only on the committed live tree).
         void _NotifyWriteSettings() const
         {
-            if (_writeSettingsSink && *_writeSettingsSink)
+            if (_writeSettingsSink)
             {
-                (*_writeSettingsSink)();
+                _writeSettingsSink->Notify();
             }
         }
 

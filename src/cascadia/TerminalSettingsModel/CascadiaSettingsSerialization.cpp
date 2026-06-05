@@ -20,6 +20,7 @@
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
 #include "FileUtils.h"
+#include "JsonManager.h"
 
 #include "ProfileEntry.h"
 #include "FolderEntry.h"
@@ -1284,13 +1285,23 @@ try
     // settings string back to the file.
     if (mustWriteToDisk)
     {
-        settings->WriteSettingsToDisk();
+        // JsonManager::WriteSettings (GH#12424) force-writes and returns the new
+        // hash (empty on failure); capture it so reload-detection has an accurate
+        // baseline.
+        const auto hash = JsonManager::WriteSettings(settings.as<Model::CascadiaSettings>());
+        if (hash.empty())
+        {
+            settings->_warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
+        }
+        else
+        {
+            settings->_hash = hash;
+        }
     }
     else
     {
         // lastWriteTime is only valid if mustWriteToDisk is false.
-        // Additionally WriteSettingsToDisk() updates the _hash for us already.
-        settings->_hash = _calculateHash(settingsString, lastWriteTime);
+        settings->_hash = CalculateSettingsHash(settingsString, lastWriteTime);
     }
 
     settings->_researchOnLoad();
@@ -1496,7 +1507,7 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
 // and the defaults fallback never auto-save.
 void CascadiaSettings::_installWriteSink()
 {
-    _writeSink = std::make_shared<std::function<void()>>();
+    _writeSink = std::make_shared<implementation::SettingsWriteNotifier>();
 
     const auto installForProfile = [&](implementation::Profile* prof) {
         if (!prof)
@@ -1532,13 +1543,22 @@ void CascadiaSettings::_installWriteSink()
     {
         installForProfile(winrt::get_self<implementation::Profile>(p));
     }
+
+    // TODO CARLOS: Known gaps (GH#12424): ColorScheme and Theme are not IInheritable / not
+    // JSON-backed, so per-property in-place edits (e.g. SetColorTableEntry,
+    // individual theme colors) do NOT trigger auto-save. ActionMap is IInheritable
+    // but not JSON-backed, so individual action edits don't either. Add/remove of
+    // color schemes and themes IS covered via the GlobalAppSettings collection
+    // mutators (AddColorScheme/RemoveColorScheme/DuplicateColorScheme/AddTheme).
+    // Full per-property coverage waits for those types becoming JSON-backed and is
+    // only required once the settings editor relies on auto-save.
 }
 
 void CascadiaSettings::SetWriteHandler(std::function<void()> handler)
 {
     if (_writeSink)
     {
-        *_writeSink = std::move(handler);
+        _writeSink->SetHandler(std::move(handler));
     }
 }
 
@@ -1564,12 +1584,6 @@ const std::filesystem::path& CascadiaSettings::_releaseSettingsPath()
 {
     static const auto path = GetReleaseSettingsPath() / SettingsFilename;
     return path;
-}
-
-// Returns a has (approximately) uniquely identifying the settings.json contents on disk.
-winrt::hstring CascadiaSettings::_calculateHash(std::string_view settings, const FILETIME& lastWriteTime)
-{
-    return CalculateSettingsHash(settings, lastWriteTime);
 }
 
 // This returns something akin to %LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState
@@ -1626,58 +1640,6 @@ void CascadiaSettings::ResetApplicationState() const
     state.Reset();
     state.SettingsHash(hash);
     state.Flush();
-}
-
-void CascadiaSettings::ResetToDefaultSettings()
-{
-    ApplicationState::SharedInstance().Reset();
-    _writeSettingsToDisk(LoadStringResource(IDR_USER_DEFAULTS));
-}
-
-// Method Description:
-// - Write the current state of CascadiaSettings to our settings file
-// - Create a backup file with the current contents, if one does not exist
-// - Persists the default terminal handler choice to the registry
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-bool CascadiaSettings::WriteSettingsToDisk()
-{
-    // write current settings to current settings file
-    Json::StreamWriterBuilder wbuilder;
-    wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
-    wbuilder.settings_["indentation"] = "    ";
-    wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
-
-    try
-    {
-        _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
-    }
-    catch (...)
-    {
-        LOG_CAUGHT_EXCEPTION();
-        _warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
-        return false;
-    }
-    return true;
-}
-
-void CascadiaSettings::_writeSettingsToDisk(std::string_view contents)
-{
-    FILETIME lastWriteTime{};
-    // Auto-save (GH#12424): write atomically via a process-unique temp file and
-    // keep a best-effort "settings.json.bak" backup of the prior contents.
-    WriteSettingsFile(_settingsPath(), contents, /*makeBackup*/ true, &lastWriteTime);
-
-    _hash = _calculateHash(contents, lastWriteTime);
-
-    // Persists the default terminal choice
-    // GH#10003 - Only do this if _currentDefaultTerminal was actually initialized.
-    if (_currentDefaultTerminal)
-    {
-        DefaultTerminal::Current(_currentDefaultTerminal);
-    }
 }
 
 #ifndef NDEBUG

@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        _settings.ResetToDefaultSettings();
+        JsonManager::ResetToDefaultSettings();
     }
 
     Compatibility::Compatibility()

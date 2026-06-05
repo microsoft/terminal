@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../TerminalSettingsModel/ColorScheme.h"
 #include "../TerminalSettingsModel/FileUtils.h"
 #include "JsonTestClass.h"
 
@@ -26,6 +27,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(WriteSettingsFileCreatesBackup);
         TEST_METHOD(WriteHandlerFiresOnSetterAndClear);
         TEST_METHOD(ClonedSettingsDoNotFireWriteHandler);
+        TEST_METHOD(CollectionEditsFireWriteHandler);
 
     private:
         static std::filesystem::path _tempFile(const wchar_t* name)
@@ -155,5 +157,34 @@ namespace SettingsModelUnitTests
         // Sanity: the original tree's handler still fires.
         settings->AllProfiles().GetAt(0).HistorySize(7000);
         VERIFY_ARE_EQUAL(1, writeRequests);
+    }
+
+    void JsonManagerTests::CollectionEditsFireWriteHandler()
+    {
+        // Color schemes / themes aren't IInheritable, so per-property edits aren't
+        // covered, but add/remove is wired at the GlobalAppSettings collection
+        // level. Verify that coarse-grained coverage requests a save.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+
+        auto writeRequests = 0;
+        settings->SetWriteHandler([&]() { ++writeRequests; });
+
+        const auto scheme = winrt::make<implementation::ColorScheme>(winrt::hstring{ L"My Scheme" });
+        settings->GlobalSettings().AddColorScheme(scheme);
+        VERIFY_ARE_EQUAL(1, writeRequests);
+
+        settings->GlobalSettings().RemoveColorScheme(L"My Scheme");
+        VERIFY_ARE_EQUAL(2, writeRequests);
     }
 }

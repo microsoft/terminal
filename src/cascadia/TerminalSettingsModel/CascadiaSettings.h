@@ -143,6 +143,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct CascadiaSettings : CascadiaSettingsT<CascadiaSettings>
     {
+        // JsonManager performs settings.json persistence (GH#12424) and reads the
+        // cached _currentDefaultTerminal directly to persist the default-terminal
+        // choice without triggering an expensive defterm refresh.
+        friend struct JsonManager;
+
     public:
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
@@ -168,8 +173,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::ActionMap ActionMap() const noexcept;
         winrt::Windows::Foundation::Collections::IVectorView<Model::ExtensionPackage> Extensions();
         void ResetApplicationState() const;
-        void ResetToDefaultSettings();
-        bool WriteSettingsToDisk();
         void SetWriteHandler(std::function<void()> handler);
 
         Json::Value ToJson() const;
@@ -203,16 +206,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         static const std::filesystem::path& _settingsPath();
         static const std::filesystem::path& _releaseSettingsPath();
-        static winrt::hstring _calculateHash(std::string_view settings, const FILETIME& lastWriteTime);
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
         Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
         void _refreshDefaultTerminals();
-        void _writeSettingsToDisk(std::string_view contents);
 
-        // Auto-save (GH#12424): the shared "request auto-save" sink installed on
-        // every inheritable object in this live tree. Empty until SetWriteHandler.
-        std::shared_ptr<std::function<void()>> _writeSink;
+        // Auto-save (GH#12424): the shared "request auto-save" notifier installed
+        // on every inheritable object in this live tree. Empty until SetWriteHandler.
+        std::shared_ptr<implementation::SettingsWriteNotifier> _writeSink;
         void _installWriteSink();
 
         void _resolveDefaultProfile() const;

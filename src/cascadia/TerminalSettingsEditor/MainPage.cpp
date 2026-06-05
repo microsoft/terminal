@@ -861,9 +861,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::SaveButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
         _settingsClone.LogSettingChanges(false);
-        if (!_settingsClone.WriteSettingsToDisk())
+        if (JsonManager::WriteSettings(_settingsClone).empty())
         {
-            ShowLoadWarningsDialog.raise(*this, _settingsClone.Warnings());
+            // The write failed. Surface the clone's existing warnings plus an
+            // explicit "failed to write" warning (the old WriteSettingsToDisk
+            // appended this internally).
+            auto warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() };
+            for (auto&& w : _settingsClone.Warnings())
+            {
+                warnings.Append(w);
+            }
+            warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
+            ShowLoadWarningsDialog.raise(*this, warnings.GetView());
         }
     }
 
