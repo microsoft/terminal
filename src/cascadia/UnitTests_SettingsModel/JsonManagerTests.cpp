@@ -5,6 +5,7 @@
 
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/ActionMap.h"
 #include "../TerminalSettingsModel/FileUtils.h"
 #include "JsonTestClass.h"
 
@@ -12,6 +13,7 @@
 
 using namespace Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -28,6 +30,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(WriteHandlerFiresOnSetterAndClear);
         TEST_METHOD(ClonedSettingsDoNotFireWriteHandler);
         TEST_METHOD(CollectionEditsFireWriteHandler);
+        TEST_METHOD(ActionMapEditsFireWriteHandler);
 
     private:
         static std::filesystem::path _tempFile(const wchar_t* name)
@@ -186,5 +189,67 @@ namespace SettingsModelUnitTests
 
         settings->GlobalSettings().RemoveColorScheme(L"My Scheme");
         VERIFY_ARE_EQUAL(2, writeRequests);
+    }
+
+    void JsonManagerTests::ActionMapEditsFireWriteHandler()
+    {
+        // ActionMap isn't JSON-backed, but its mutators request a save directly and
+        // it's registered with the write sink, so user action/keybinding edits must
+        // request an auto-save.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            },
+            "actions": [
+                { "command": "newTab", "id": "Test.NewTab" }
+            ],
+            "keybindings": [
+                { "keys": "ctrl+t", "id": "Test.NewTab" }
+            ]
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+
+        auto writeRequests = 0;
+        settings->SetWriteHandler([&]() { ++writeRequests; });
+
+        auto actionMap = settings->GlobalSettings().ActionMap();
+
+        // { ctrl, alt, shift, win, vkey, scanCode }
+        const KeyChord ctrlT{ true, false, false, false, static_cast<int32_t>('T'), 0 };
+        const KeyChord ctrlShiftT{ true, false, true, false, static_cast<int32_t>('T'), 0 };
+        const KeyChord ctrlY{ true, false, false, false, static_cast<int32_t>('Y'), 0 };
+
+        // Binding a key chord to an existing action requests a save.
+        actionMap.AddKeyBinding(ctrlY, L"Test.NewTab");
+        VERIFY_ARE_EQUAL(1, writeRequests);
+
+        // Rebinding a key chord requests a save.
+        actionMap.RebindKeys(ctrlY, ctrlShiftT);
+        VERIFY_ARE_EQUAL(2, writeRequests);
+
+        // Unbinding a key chord requests a save.
+        actionMap.DeleteKeyBinding(ctrlShiftT);
+        VERIFY_ARE_EQUAL(3, writeRequests);
+
+        // Adding a command (this funnels through AddAction, the path the settings
+        // editor's "add action" also uses) requests a save.
+        actionMap.AddSendInputAction(L"My Snippet", L"echo hi\r", nullptr);
+        VERIFY_ARE_EQUAL(4, writeRequests);
+
+        // Deleting a user command requests a save.
+        actionMap.DeleteUserCommand(L"Test.NewTab");
+        VERIFY_ARE_EQUAL(5, writeRequests);
+
+        // The editor works on a deep clone, which must never auto-save the live
+        // file: a clone's ActionMap edit must NOT invoke the handler.
+        const auto clone = settings->Copy();
+        clone.GlobalSettings().ActionMap().AddKeyBinding(ctrlT, L"Test.NewTab");
+        VERIFY_ARE_EQUAL(5, writeRequests);
     }
 }

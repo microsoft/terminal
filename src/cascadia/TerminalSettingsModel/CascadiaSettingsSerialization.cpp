@@ -1536,6 +1536,10 @@ void CascadiaSettings::_installWriteSink()
         {
             winrt::get_self<implementation::NewTabMenu>(ntm)->SetWriteSettingsSink(_writeSink);
         }
+        if (const auto am = _globals->ActionMap())
+        {
+            winrt::get_self<implementation::ActionMap>(am)->SetWriteSettingsSink(_writeSink);
+        }
     }
 
     installForProfile(_baseLayerProfile.get());
@@ -1543,15 +1547,6 @@ void CascadiaSettings::_installWriteSink()
     {
         installForProfile(winrt::get_self<implementation::Profile>(p));
     }
-
-    // TODO CARLOS: Known gaps (GH#12424): ColorScheme and Theme are not IInheritable / not
-    // JSON-backed, so per-property in-place edits (e.g. SetColorTableEntry,
-    // individual theme colors) do NOT trigger auto-save. ActionMap is IInheritable
-    // but not JSON-backed, so individual action edits don't either. Add/remove of
-    // color schemes and themes IS covered via the GlobalAppSettings collection
-    // mutators (AddColorScheme/RemoveColorScheme/DuplicateColorScheme/AddTheme).
-    // Full per-property coverage waits for those types becoming JSON-backed and is
-    // only required once the settings editor relies on auto-save.
 }
 
 void CascadiaSettings::SetWriteHandler(std::function<void()> handler)

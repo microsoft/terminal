@@ -713,6 +713,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (!name.empty())
             {
                 _NestedCommands.emplace(name, cmd);
+                _NotifyWriteSettings();
             }
             return;
         }
@@ -721,6 +722,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (cmdImpl->IterateOn() != ExpandCommandType::None)
         {
             _IterableCommands.emplace_back(cmd);
+            _NotifyWriteSettings();
             return;
         }
 
@@ -730,6 +732,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _TryUpdateActionMap(cmd);
         _TryUpdateKeyChord(cmd, keys);
+        _NotifyWriteSettings();
     }
 
     // Method Description:
@@ -971,6 +974,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _KeyMap.insert_or_assign(oldKeys, L"");
         }
 
+        _NotifyWriteSettings();
         return true;
     }
 
@@ -995,6 +999,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // set to unbound in this layer
             _KeyMap.emplace(keys, L"");
         }
+        _NotifyWriteSettings();
     }
 
     void ActionMap::AddKeyBinding(Control::KeyChord keys, const winrt::hstring& cmdID)
@@ -1002,6 +1007,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _KeyMap.insert_or_assign(keys, cmdID);
         _changeLog.emplace(KeysKey);
         _RefreshKeyBindingCaches();
+        _NotifyWriteSettings();
     }
 
     // Method Description:
@@ -1024,6 +1030,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         _ActionMap.erase(cmdID);
         _RefreshKeyBindingCaches();
+        _NotifyWriteSettings();
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -1243,6 +1250,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 _KeyMap.erase(keys);
                 _KeyMap.emplace(keys, newID);
             }
+            _NotifyWriteSettings();
         }
         _RefreshKeyBindingCaches();
     }
