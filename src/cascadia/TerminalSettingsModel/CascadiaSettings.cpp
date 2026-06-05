@@ -219,23 +219,9 @@ Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& win
 {
     if (!windowName.empty())
     {
-        if (windowName == L"_quake")
+        if (auto it = _windows.TryLookup(windowName))
         {
-            // The quake window should always have its own settings.
-            // If we don't have one, create one.
-            auto it = _windows.TryLookup(windowName);
-            if (it)
-            {
-                return it;
-            }
-        }
-        else
-        {
-            auto it = _windows.TryLookup(windowName);
-            if (it)
-            {
-                return it;
-            }
+            return it;
         }
     }
     return *_baseWindowSettings;
