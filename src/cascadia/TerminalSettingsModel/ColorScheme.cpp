@@ -16,10 +16,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI;
 
 static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view ForegroundKey{ "foreground" };
-static constexpr std::string_view BackgroundKey{ "background" };
-static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
-static constexpr std::string_view CursorColorKey{ "cursorColor" };
 
 static constexpr size_t ColorSchemeExpectedSize = 16;
 static constexpr std::array<std::pair<std::string_view, size_t>, 18> TableColorsMapping{ {
@@ -46,28 +42,48 @@ static constexpr std::array<std::pair<std::string_view, size_t>, 18> TableColors
     { "brightMagenta", 13 },
 } };
 
+#define COLORSCHEME_NAMED_COLORS(GEN)                                   \
+    GEN(Foreground, "foreground", DEFAULT_FOREGROUND)                   \
+    GEN(Background, "background", DEFAULT_BACKGROUND)                   \
+    GEN(SelectionBackground, "selectionBackground", DEFAULT_FOREGROUND) \
+    GEN(CursorColor, "cursorColor", DEFAULT_CURSOR_COLOR)
+
+// The named colors paired with their default values. Used to drive the
+// constructor seed, _layerJson validation, and ToJson copy from a single list.
+// The individual getters still reference their DEFAULT_* constant directly.
+#define GEN_NAMED_COLOR_DEFAULT(name, jsonKey, defaultVal) \
+    { jsonKey, static_cast<winrt::Microsoft::Terminal::Core::Color>(defaultVal) },
+static const std::array<std::pair<std::string_view, winrt::Microsoft::Terminal::Core::Color>, 4> NamedColorDefaults{ {
+    COLORSCHEME_NAMED_COLORS(GEN_NAMED_COLOR_DEFAULT)
+} };
+#undef GEN_NAMED_COLOR_DEFAULT
+
 ColorScheme::ColorScheme() noexcept :
     ColorScheme{ winrt::hstring{} }
 {
 }
 
 ColorScheme::ColorScheme(const winrt::hstring& name) noexcept :
-    _Name{ name },
     _Origin{ OriginTag::User }
 {
+    JsonUtils::SetValueForKey(_json, NameKey, name);
+    for (const auto& [key, defaultValue] : NamedColorDefaults)
+    {
+        JsonUtils::SetValueForKey(_json, key, defaultValue);
+    }
+
     const auto table = Utils::CampbellColorTable();
-    std::copy_n(table.data(), table.size(), _table.data());
+    for (size_t i = 0; i < ColorSchemeExpectedSize; ++i)
+    {
+        const Core::Color color = til::at(table, i);
+        JsonUtils::SetValueForKey(_json, til::at(TableColorsMapping, i).first, color);
+    }
 }
 
 winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
 {
-    auto scheme{ winrt::make_self<ColorScheme>() };
-    scheme->_Name = _Name;
-    scheme->_Foreground = _Foreground;
-    scheme->_Background = _Background;
-    scheme->_SelectionBackground = _SelectionBackground;
-    scheme->_CursorColor = _CursorColor;
-    scheme->_table = _table;
+    auto scheme{ winrt::make_self<ColorScheme>(uninitialized_t{}) };
+    scheme->_json = _json;
     scheme->_Origin = _Origin;
     return scheme;
 }
@@ -97,19 +113,22 @@ winrt::com_ptr<ColorScheme> ColorScheme::FromJson(const Json::Value& json)
 bool ColorScheme::_layerJson(const Json::Value& json)
 {
     // Required fields
-    auto isValid = JsonUtils::GetValueForKey(json, NameKey, _Name);
+    winrt::hstring name{};
+    auto isValid = JsonUtils::GetValueForKey(json, NameKey, name);
 
-    // Optional fields (they have defaults in ColorScheme.h)
-    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+    // Optional fields; parsing them here only validates their type.
+    Core::Color namedColor{};
+    for (const auto& [key, _] : NamedColorDefaults)
+    {
+        JsonUtils::GetValueForKey(json, key, namedColor);
+    }
 
     // Required fields
+    std::array<Core::Color, COLOR_TABLE_SIZE> table{};
     size_t colorCount = 0;
     for (const auto& [key, index] : TableColorsMapping)
     {
-        colorCount += JsonUtils::GetValueForKey(json, key, til::at(_table, index));
+        colorCount += JsonUtils::GetValueForKey(json, key, til::at(table, index));
         if (colorCount == ColorSchemeExpectedSize)
         {
             break;
@@ -117,8 +136,43 @@ bool ColorScheme::_layerJson(const Json::Value& json)
     }
 
     isValid &= (colorCount == 16); // Valid schemes should have exactly 16 colors
+    if (!isValid)
+    {
+        return false;
+    }
 
-    return isValid;
+    JsonUtils::MergeJsonKeys(json, _json);
+    _normalizeTableAliasKeys();
+    return true;
+}
+
+// Moves any alias color key (magenta -> purple, brightMagenta -> brightPurple;
+// GH#11456) onto its canonical key so getters/ToJson only deal with canonical
+// keys. The canonical key wins if both are present (matching the _layerJson
+// validation loop's canonical-first preference). The node is copied whole, so an
+// attached comment travels with the value.
+void ColorScheme::_normalizeTableAliasKeys()
+{
+    static constexpr std::array<std::pair<std::string_view, std::string_view>, 2> aliases{ {
+        { "magenta", "purple" },
+        { "brightMagenta", "brightPurple" },
+    } };
+
+    for (const auto& [alias, canonical] : aliases)
+    {
+        const auto aliasKey = JsonKey(alias);
+        if (_json.isMember(aliasKey))
+        {
+            const auto canonicalKey = JsonKey(canonical);
+            if (!_json.isMember(canonicalKey))
+            {
+                // Copy via a temporary to avoid jsoncpp self-aliasing concerns.
+                const Json::Value moved = _json[aliasKey];
+                _json[canonicalKey] = moved;
+            }
+            _json.removeMember(aliasKey);
+        }
+    }
 }
 
 // Method Description:
@@ -131,24 +185,72 @@ Json::Value ColorScheme::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 
-    JsonUtils::SetValueForKey(json, NameKey, _Name);
-    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
-
-    for (size_t i = 0; i < ColorSchemeExpectedSize; ++i)
+    JsonUtils::CopyKeyIfPresent(_json, json, NameKey);
+    for (const auto& [key, _] : NamedColorDefaults)
     {
-        const auto& key = til::at(TableColorsMapping, i).first;
-        JsonUtils::SetValueForKey(json, key, til::at(_table, i));
+        JsonUtils::CopyKeyIfPresent(_json, json, key);
+    }
+
+    for (uint32_t i = 0; i < ColorSchemeExpectedSize; ++i)
+    {
+        JsonUtils::CopyKeyIfPresent(_json, json, til::at(TableColorsMapping, i).first);
     }
 
     return json;
 }
 
-winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() const noexcept
+winrt::hstring ColorScheme::Name() const
 {
-    return winrt::com_array<Core::Color>{ _table };
+    winrt::hstring name{};
+    JsonUtils::GetValueForKey(_json, NameKey, name);
+    return name;
+}
+
+void ColorScheme::Name(const winrt::hstring& value)
+{
+    JsonUtils::SetValueForKeyPreservingComments(_json, NameKey, value);
+}
+
+// Reads a color from _json, falling back to defaultValue when the key is absent.
+winrt::Microsoft::Terminal::Core::Color ColorScheme::_getColor(std::string_view key, const Core::Color& defaultValue) const
+{
+    auto value = defaultValue;
+    JsonUtils::GetValueForKey(_json, key, value);
+    return value;
+}
+
+// Writes a color to _json while preserving any comment attached to the key.
+void ColorScheme::_setColor(std::string_view key, const Core::Color& value)
+{
+    JsonUtils::SetValueForKeyPreservingComments(_json, key, value);
+}
+
+#define GEN_NAMED_COLOR_ACCESSOR(name, jsonKey, defaultVal)             \
+    winrt::Microsoft::Terminal::Core::Color ColorScheme::name() const   \
+    {                                                                   \
+        return _getColor(jsonKey, static_cast<Core::Color>(defaultVal)); \
+    }                                                                   \
+    void ColorScheme::name(const Core::Color& value)                    \
+    {                                                                   \
+        _setColor(jsonKey, value);                                      \
+    }
+COLORSCHEME_NAMED_COLORS(GEN_NAMED_COLOR_ACCESSOR)
+#undef GEN_NAMED_COLOR_ACCESSOR
+
+#undef COLORSCHEME_NAMED_COLORS
+
+// Method Description:
+// - Returns the resolved 16-entry color table, reading each entry from _json and
+//   falling back to the Campbell value for any entry not set.
+winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() const
+{
+    std::array<Core::Color, COLOR_TABLE_SIZE> table{};
+    const auto campbell = Utils::CampbellColorTable();
+    for (size_t i = 0; i < ColorSchemeExpectedSize; ++i)
+    {
+        til::at(table, i) = _getColor(til::at(TableColorsMapping, i).first, static_cast<Core::Color>(til::at(campbell, i)));
+    }
+    return winrt::com_array<Core::Color>{ table };
 }
 
 // Method Description:
@@ -158,10 +260,10 @@ winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() c
 // - value: the color value we are setting the color table color to
 // Return Value:
 // - none
-void ColorScheme::SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept
+void ColorScheme::SetColorTableEntry(uint8_t index, const Core::Color& value)
 {
-    THROW_HR_IF(E_INVALIDARG, index >= _table.size());
-    _table[index] = value;
+    THROW_HR_IF(E_INVALIDARG, index >= COLOR_TABLE_SIZE);
+    _setColor(til::at(TableColorsMapping, index).first, value);
 }
 
 bool ColorScheme::IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept
@@ -169,5 +271,14 @@ bool ColorScheme::IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<Colo
     // The caller likely only got here if the names were the same, so skip checking that one.
     // We do not care about the cursor color or the selection background, as the main reason we are
     // doing equivalence merging is to replace old, poorly-specified versions of those two properties.
-    return _table == other->_table && _Background == other->_Background && _Foreground == other->_Foreground;
+    const auto thisTable = Table();
+    const auto otherTable = other->Table();
+    for (uint32_t i = 0; i < thisTable.size(); ++i)
+    {
+        if (!(thisTable[i] == otherTable[i]))
+        {
+            return false;
+        }
+    }
+    return Background() == other->Background() && Foreground() == other->Foreground();
 }

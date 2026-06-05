@@ -18,6 +18,7 @@ Author(s):
 
 #include "../../inc/conattrs.hpp"
 #include "DefaultSettings.h"
+#include "JsonUtils.h"
 
 #include "ColorScheme.g.h"
 
@@ -26,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ColorScheme : ColorSchemeT<ColorScheme>
     {
         // A ColorScheme constructed with uninitialized_t
-        // leaves _table uninitialized.
+        // leaves _json empty to be populated lazily.
         struct uninitialized_t
         {
         };
@@ -46,22 +47,36 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
 
-        com_array<Core::Color> Table() const noexcept;
-        void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
+        com_array<Core::Color> Table() const;
+        void SetColorTableEntry(uint8_t index, const Core::Color& value);
 
         bool IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept;
 
-        WINRT_PROPERTY(winrt::hstring, Name);
+        winrt::hstring Name() const;
+        void Name(const winrt::hstring& value);
+
+        Core::Color Foreground() const;
+        void Foreground(const Core::Color& value);
+
+        Core::Color Background() const;
+        void Background(const Core::Color& value);
+
+        Core::Color SelectionBackground() const;
+        void SelectionBackground(const Core::Color& value);
+
+        Core::Color CursorColor() const;
+        void CursorColor(const Core::Color& value);
+
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
-        WINRT_PROPERTY(Core::Color, Foreground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
-        WINRT_PROPERTY(Core::Color, Background, static_cast<Core::Color>(DEFAULT_BACKGROUND));
-        WINRT_PROPERTY(Core::Color, SelectionBackground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
-        WINRT_PROPERTY(Core::Color, CursorColor, static_cast<Core::Color>(DEFAULT_CURSOR_COLOR));
 
     private:
         bool _layerJson(const Json::Value& json);
+        void _normalizeTableAliasKeys();
 
-        std::array<Core::Color, COLOR_TABLE_SIZE> _table;
+        Core::Color _getColor(std::string_view key, const Core::Color& defaultValue) const;
+        void _setColor(std::string_view key, const Core::Color& value);
+
+        Json::Value _json{ Json::ValueType::objectValue };
     };
 }
 

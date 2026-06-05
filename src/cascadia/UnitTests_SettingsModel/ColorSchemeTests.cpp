@@ -25,6 +25,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(LayerColorSchemesOnArray);
         TEST_METHOD(UpdateSchemeReferences);
+        TEST_METHOD(RoundtripPreservesComments);
 
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollision);
         TEST_METHOD(LayerColorSchemesWithUserOwnedCollisionRetargetsAllProfiles);
@@ -85,6 +86,75 @@ namespace SettingsModelUnitTests
         Log::Comment(L"Roundtrip Test for Color Scheme");
         auto outJson{ scheme->ToJson() };
         VERIFY_ARE_EQUAL(schemeObject, outJson);
+    }
+
+    void ColorSchemeTests::RoundtripPreservesComments()
+    {
+        // A complete scheme carrying comments on a few keys:
+        //  - FG_NOTE: a standalone comment line before "foreground" (commentBefore)
+        //  - BG_NOTE: a trailing same-line comment after "background"
+        //  - ALIAS_NOTE: a comment before the alias key "magenta", which must
+        //    travel with the value when it is normalized onto "purple"
+        // Distinct marker text avoids substring collisions when we scan the output.
+        const std::string schemeWithComments{ R"({
+            "name": "Commented",
+            // FG_NOTE
+            "foreground": "#F2F2F2",
+            "background": "#0C0C0C", // BG_NOTE
+            "selectionBackground": "#131313",
+            "cursorColor": "#FFFFFF",
+            "black": "#0C0C0C",
+            "red": "#C50F1F",
+            "green": "#13A10E",
+            "yellow": "#C19C00",
+            "blue": "#0037DA",
+            // ALIAS_NOTE
+            "magenta": "#881798",
+            "cyan": "#3A96DD",
+            "white": "#CCCCCC",
+            "brightBlack": "#767676",
+            "brightRed": "#E74856",
+            "brightGreen": "#16C60C",
+            "brightYellow": "#F9F1A5",
+            "brightBlue": "#3B78FF",
+            "brightPurple": "#B4009E",
+            "brightCyan": "#61D6D6",
+            "brightWhite": "#F2F2F2"
+        })" };
+
+        const auto schemeObject = VerifyParseSucceeded(schemeWithComments);
+        const auto scheme = ColorScheme::FromJson(schemeObject);
+        VERIFY_IS_NOT_NULL(scheme);
+
+        auto serialize = [](const Json::Value& json) {
+            Json::StreamWriterBuilder wbuilder;
+            wbuilder.settings_["commentStyle"] = "All";
+            return Json::writeString(wbuilder, json);
+        };
+
+        Log::Comment(L"Comments on known keys survive a load -> save roundtrip");
+        auto outJson{ scheme->ToJson() };
+
+        // Precise node-level check for the most reliable placement.
+        VERIFY_IS_TRUE(outJson["foreground"].hasComment(Json::commentBefore));
+
+        // End-to-end: the comment text lands in the serialized output.
+        auto serialized = serialize(outJson);
+        VERIFY_IS_TRUE(serialized.find("FG_NOTE") != std::string::npos);
+        VERIFY_IS_TRUE(serialized.find("BG_NOTE") != std::string::npos);
+
+        Log::Comment(L"A comment on an alias key moves to its canonical key");
+        VERIFY_IS_FALSE(outJson.isMember("magenta"));
+        VERIFY_IS_TRUE(outJson.isMember("purple"));
+        VERIFY_IS_TRUE(outJson["purple"].hasComment(Json::commentBefore));
+        VERIFY_IS_TRUE(serialized.find("ALIAS_NOTE") != std::string::npos);
+
+        Log::Comment(L"Editing a property preserves its existing comment");
+        scheme->Foreground(rgb(0x12, 0x34, 0x56));
+        outJson = scheme->ToJson();
+        VERIFY_IS_TRUE(outJson["foreground"].hasComment(Json::commentBefore));
+        serialized = serialize(outJson);
+        VERIFY_IS_TRUE(serialized.find("FG_NOTE") != std::string::npos);
     }
 
     void ColorSchemeTests::LayerColorSchemesOnArray()

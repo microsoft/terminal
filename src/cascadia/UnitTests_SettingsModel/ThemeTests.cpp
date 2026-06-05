@@ -28,6 +28,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(ParseNullWindowTheme);
         TEST_METHOD(ParseThemeWithNullThemeColor);
         TEST_METHOD(InvalidCurrentTheme);
+        TEST_METHOD(RoundtripThemeComments);
 
         static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
@@ -264,5 +265,48 @@ namespace SettingsModelUnitTests
             Log::Comment(NoThrowString().Format(deserializationErrorMessage.c_str()));
             throw e;
         }
+    }
+
+    void ThemeTests::RoundtripThemeComments()
+    {
+        Log::Comment(L"A theme loaded then re-serialized should preserve JSON comments and unknown keys (GH#12424).");
+
+        // Comments are placed at representative positions:
+        //  - before/after the "name" member
+        //  - before a sub-object member ("window") -- the outer comment
+        //  - before a key inside a sub-object ("useMica") -- an inner comment
+        // An unknown key ("unknownThemeKey") exercises forward-compatible retention.
+        static constexpr std::string_view commentedTheme{ R"json({
+            // comment-before-name
+            "name": "commented", // comment-after-name
+            // comment-before-window
+            "window":
+            {
+                // comment-before-useMica
+                "useMica": true
+            },
+            "unknownThemeKey": "keep-me"
+        })json" };
+
+        const auto themeObject = VerifyParseSucceeded(commentedTheme);
+        const auto theme = Theme::FromJson(themeObject);
+        VERIFY_ARE_EQUAL(L"commented", theme->Name());
+
+        const auto output = toString(theme->ToJson());
+        Log::Comment(NoThrowString().Format(til::u8u16(output).c_str()));
+
+        // Every comment must survive the round-trip.
+        VERIFY_IS_TRUE(output.find("comment-before-name") != std::string::npos, L"comment before 'name' preserved");
+        VERIFY_IS_TRUE(output.find("comment-after-name") != std::string::npos, L"trailing comment after 'name' preserved");
+        VERIFY_IS_TRUE(output.find("comment-before-window") != std::string::npos, L"outer comment before sub-object 'window' preserved");
+        VERIFY_IS_TRUE(output.find("comment-before-useMica") != std::string::npos, L"inner comment inside sub-object preserved");
+
+        // Unknown keys must round-trip rather than being silently dropped.
+        VERIFY_IS_TRUE(output.find("unknownThemeKey") != std::string::npos, L"unknown key preserved");
+        VERIFY_IS_TRUE(output.find("keep-me") != std::string::npos, L"unknown key value preserved");
+
+        // And the actual values must still be correct.
+        VERIFY_IS_NOT_NULL(theme->Window());
+        VERIFY_ARE_EQUAL(true, theme->Window().UseMica());
     }
 }

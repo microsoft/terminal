@@ -72,13 +72,40 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define THEME_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     WINRT_PROPERTY(type, name, ##__VA_ARGS__)
 
-#define THEME_OBJECT(className, macro)         \
-    struct className : className##T<className> \
-    {                                          \
-        winrt::com_ptr<className> Copy();      \
-        Json::Value ToJson();                  \
-                                               \
-        macro(THEME_SETTINGS_INITIALIZE);      \
+#define THEME_SETTINGS_JSON_INITIALIZE(type, name, jsonKey, ...)                                                          \
+public:                                                                                                                   \
+    type name() const                                                                                                     \
+    {                                                                                                                     \
+        if (auto val{ ::Microsoft::Terminal::Settings::Model::JsonUtils::GetValueForKey<std::optional<type>>(_json, jsonKey) }) \
+        {                                                                                                                 \
+            return *val;                                                                                                  \
+        }                                                                                                                 \
+        return type{ __VA_ARGS__ };                                                                                       \
+    }                                                                                                                     \
+    void name(const type& value)                                                                                          \
+    {                                                                                                                     \
+        ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                         \
+    }                                                                                                                     \
+    bool Has##name() const                                                                                                \
+    {                                                                                                                     \
+        return _json.isMember(jsonKey) && !_json[jsonKey].isNull();                                                       \
+    }                                                                                                                     \
+    void Clear##name()                                                                                                    \
+    {                                                                                                                     \
+        _json.removeMember(jsonKey);                                                                                      \
+    }
+
+#define THEME_OBJECT(className, macro)                     \
+    struct className : className##T<className>             \
+    {                                                      \
+        winrt::com_ptr<className> Copy();                  \
+        Json::Value ToJson();                              \
+        void LayerJson(const Json::Value& json);           \
+                                                           \
+        macro(THEME_SETTINGS_JSON_INITIALIZE);             \
+                                                           \
+    private:                                               \
+        Json::Value _json{ Json::ValueType::objectValue }; \
     };
 
     THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
@@ -109,9 +136,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MTSM_THEME_SETTINGS(THEME_SETTINGS_INITIALIZE)
 
     private:
+        Json::Value _json{ Json::ValueType::objectValue };
     };
 
 #undef THEME_SETTINGS_INITIALIZE
+#undef THEME_SETTINGS_JSON_INITIALIZE
 #undef THEME_OBJECT
 }
 

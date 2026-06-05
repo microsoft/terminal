@@ -250,6 +250,44 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         SetValueForKey(json, key, target, ConversionTrait<std::decay_t<T>>{});
     }
 
+    template<typename T>
+    void SetValueForKeyPreservingComments(Json::Value& json, std::string_view key, const T& target)
+    {
+        const auto jsonKey = JsonKey(key);
+
+        std::array<std::string, Json::numberOfCommentPlacement> savedComments;
+        std::array<bool, Json::numberOfCommentPlacement> hadComment{};
+        if (json.isMember(jsonKey))
+        {
+            const auto& node = json[jsonKey];
+            for (auto p = 0; p < Json::numberOfCommentPlacement; ++p)
+            {
+                const auto placement = static_cast<Json::CommentPlacement>(p);
+                if (node.hasComment(placement))
+                {
+                    savedComments[p] = node.getComment(placement);
+                    hadComment[p] = true;
+                }
+            }
+        }
+
+        SetValueForKey(json, key, target);
+
+        // SetValueForKey skips empty optionals, so the key may legitimately not
+        // exist afterward -- only restore comments if the node is present.
+        if (json.isMember(jsonKey))
+        {
+            auto& node = json[jsonKey];
+            for (auto p = 0; p < Json::numberOfCommentPlacement; ++p)
+            {
+                if (hadComment[p])
+                {
+                    node.setComment(savedComments[p], static_cast<Json::CommentPlacement>(p));
+                }
+            }
+        }
+    }
+
     // CopyKeyIfPresent: copies a key's raw Json::Value from source to target
     // if it exists in source. No type conversion — just raw JSON copy.
     // Used in ToJson() to copy JSON-backed settings from _json to output.

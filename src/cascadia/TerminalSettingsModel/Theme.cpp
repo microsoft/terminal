@@ -35,25 +35,22 @@ static constexpr std::string_view DarkNameKey{ "dark" };
 static constexpr wchar_t RegKeyDwm[] = L"Software\\Microsoft\\Windows\\DWM";
 static constexpr wchar_t RegKeyAccentColor[] = L"AccentColor";
 
-#define THEME_SETTINGS_COPY(type, name, jsonKey, ...) \
-    result->_##name = _##name;
-
-#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, _##name);
-
-#define THEME_OBJECT(className, macro)                    \
-    winrt::com_ptr<className> className::Copy()           \
-    {                                                     \
-        auto result{ winrt::make_self<className>() };     \
-        macro(THEME_SETTINGS_COPY);                       \
-        return result;                                    \
-    }                                                     \
-                                                          \
-    Json::Value className::ToJson()                       \
-    {                                                     \
-        Json::Value json{ Json::ValueType::objectValue }; \
-        macro(THEME_SETTINGS_TO_JSON);                    \
-        return json;                                      \
+#define THEME_OBJECT(className, macro)                 \
+    winrt::com_ptr<className> className::Copy()         \
+    {                                                   \
+        auto result{ winrt::make_self<className>() };   \
+        result->_json = _json;                          \
+        return result;                                  \
+    }                                                   \
+                                                        \
+    Json::Value className::ToJson()                     \
+    {                                                   \
+        return _json;                                   \
+    }                                                   \
+                                                        \
+    void className::LayerJson(const Json::Value& json)  \
+    {                                                   \
+        JsonUtils::MergeJsonKeys(json, _json);          \
     }
 
 THEME_OBJECT(WindowTheme, MTSM_THEME_WINDOW_SETTINGS);
@@ -61,8 +58,6 @@ THEME_OBJECT(SettingsTheme, MTSM_THEME_SETTINGS_SETTINGS);
 THEME_OBJECT(TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
 THEME_OBJECT(TabTheme, MTSM_THEME_TAB_SETTINGS);
 
-#undef THEME_SETTINGS_COPY
-#undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT
 
 winrt::Microsoft::Terminal::Settings::Model::ThemeColor ThemeColor::FromColor(const winrt::Microsoft::Terminal::Core::Color& coreColor) noexcept
@@ -183,14 +178,6 @@ uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
     return 0;
 }
 
-#define THEME_SETTINGS_FROM_JSON(type, name, jsonKey, ...)                    \
-    {                                                                         \
-        std::optional<type> _val;                                             \
-        _val = JsonUtils::GetValueForKey<std::optional<type>>(json, jsonKey); \
-        if (_val)                                                             \
-            result->name(*_val);                                              \
-    }
-
 #define THEME_OBJECT_CONVERTER(nameSpace, name, macro)                                         \
     template<>                                                                                 \
     struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<nameSpace::name> \
@@ -200,7 +187,7 @@ uint8_t ThemeColor::UnfocusedTabOpacity() const noexcept
             if (json == Json::Value::null)                                                     \
                 return nullptr;                                                                \
             auto result = winrt::make_self<nameSpace::implementation::name>();                 \
-            macro(THEME_SETTINGS_FROM_JSON);                                                   \
+            result->LayerJson(json);                                                           \
             return *result;                                                                    \
         }                                                                                      \
                                                                                                \
@@ -225,8 +212,6 @@ THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, SettingsThem
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabRowTheme, MTSM_THEME_TABROW_SETTINGS);
 THEME_OBJECT_CONVERTER(winrt::Microsoft::Terminal::Settings::Model, TabTheme, MTSM_THEME_TAB_SETTINGS);
 
-#undef THEME_SETTINGS_FROM_JSON
-#undef THEME_SETTINGS_TO_JSON
 #undef THEME_OBJECT_CONVERTER
 
 Theme::Theme(const winrt::WUX::ElementTheme& requestedTheme) noexcept
@@ -240,6 +225,7 @@ winrt::com_ptr<Theme> Theme::Copy() const
 {
     auto theme{ winrt::make_self<Theme>() };
 
+    theme->_json = _json;
     theme->_Name = _Name;
 
     if (_Window)
@@ -271,6 +257,7 @@ winrt::com_ptr<Theme> Theme::Copy() const
 winrt::com_ptr<Theme> Theme::FromJson(const Json::Value& json)
 {
     auto result = winrt::make_self<Theme>();
+    result->_json = json;
 
     JsonUtils::GetValueForKey(json, NameKey, result->_Name);
 
@@ -347,14 +334,30 @@ void Theme::LogSettingChanges(std::set<std::string>& changes, const std::string_
 // - the JsonObject representing this instance
 Json::Value Theme::ToJson() const
 {
-    Json::Value json{ Json::ValueType::objectValue };
+    Json::Value json{ _json };
 
-    JsonUtils::SetValueForKey(json, NameKey, _Name);
+    // Overlay Name, preserving its comment if present.
+    auto nameJson{ JsonUtils::ConversionTrait<winrt::hstring>().ToJson(_Name) };
+    if (json.isMember(JsonKey(NameKey)))
+    {
+        json[JsonKey(NameKey)].copyPayload(nameJson);
+    }
+    else
+    {
+        json[JsonKey(NameKey)] = nameJson;
+    }
 
-    // Don't serialize anything if the object is null.
-#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
-    if (_##name)                                         \
-        JsonUtils::SetValueForKey(json, jsonKey, _##name);
+#define THEME_SETTINGS_TO_JSON(type, name, jsonKey, ...)                \
+    if (_##name)                                                        \
+    {                                                                   \
+        Json::Value subJson{ Json::ValueType::objectValue };           \
+        JsonUtils::SetValueForKey(subJson, jsonKey, _##name);          \
+        json[JsonKey(jsonKey)].copyPayload(subJson[JsonKey(jsonKey)]);  \
+    }                                                                   \
+    else                                                                \
+    {                                                                   \
+        json.removeMember(JsonKey(jsonKey));                           \
+    }
 
     MTSM_THEME_SETTINGS(THEME_SETTINGS_TO_JSON)
 #undef THEME_SETTINGS_TO_JSON
