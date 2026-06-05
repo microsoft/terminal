@@ -83,7 +83,7 @@
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="WindowSettings.h">
-      <DependentUpon>WindowSettings.idl</DependentUpon>
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="MTSMSettings.h" />
@@ -165,7 +165,7 @@
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="WindowSettings.cpp">
-      <DependentUpon>WindowSettings.idl</DependentUpon>
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="KeyChordSerialization.cpp">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
@@ -228,7 +228,6 @@
     <Midl Include="Command.idl" />
     <Midl Include="DefaultTerminal.idl" />
     <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="WindowSettings.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
     <Midl Include="TerminalWarnings.idl" />

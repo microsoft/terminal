@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import "GlobalAppSettings.idl";
-import "WindowSettings.idl";
 import "Profile.idl";
 import "TerminalWarnings.idl";
 import "DefaultTerminal.idl";
