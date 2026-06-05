@@ -19,12 +19,13 @@ Author(s):
 #include "../../inc/conattrs.hpp"
 #include "DefaultSettings.h"
 #include "JsonUtils.h"
+#include "SettingsWriteNotifier.h"
 
 #include "ColorScheme.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct ColorScheme : ColorSchemeT<ColorScheme>
+    struct ColorScheme : ColorSchemeT<ColorScheme>, WriteNotifiable
     {
         // A ColorScheme constructed with uninitialized_t
         // leaves _json empty to be populated lazily.

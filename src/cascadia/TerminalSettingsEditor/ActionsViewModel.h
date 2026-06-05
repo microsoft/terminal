@@ -268,6 +268,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys);
         void AddCopiedCommand(const Model::Command& newCommand);
         void RegenerateCommandID(const Model::Command& command);
+        void NotifyUserActionEdited();
 
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> NameToActionMap();

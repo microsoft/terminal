@@ -27,6 +27,7 @@ Author(s):
 #include "Theme.g.h"
 
 #include "JsonUtils.h"
+#include "SettingsWriteNotifier.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -85,6 +86,7 @@ public:                                                                         
     void name(const type& value)                                                                                          \
     {                                                                                                                     \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                         \
+        NotifyWriteSettings();                                                                                           \
     }                                                                                                                     \
     bool Has##name() const                                                                                                \
     {                                                                                                                     \
@@ -93,10 +95,11 @@ public:                                                                         
     void Clear##name()                                                                                                    \
     {                                                                                                                     \
         _json.removeMember(jsonKey);                                                                                      \
+        NotifyWriteSettings();                                                                                           \
     }
 
 #define THEME_OBJECT(className, macro)                     \
-    struct className : className##T<className>             \
+    struct className : className##T<className>, WriteNotifiable \
     {                                                      \
         winrt::com_ptr<className> Copy();                  \
         Json::Value ToJson();                              \
@@ -126,6 +129,7 @@ public:                                                                         
         static com_ptr<Theme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context);
+        void SetWriteSettingsSink(const WriteNotifiable::WriteSettingsSink& sink);
 
         winrt::Windows::UI::Xaml::ElementTheme RequestedTheme() const noexcept;
 

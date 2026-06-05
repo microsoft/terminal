@@ -209,6 +209,7 @@ winrt::hstring ColorScheme::Name() const
 void ColorScheme::Name(const winrt::hstring& value)
 {
     JsonUtils::SetValueForKeyPreservingComments(_json, NameKey, value);
+    NotifyWriteSettings();
 }
 
 // Reads a color from _json, falling back to defaultValue when the key is absent.
@@ -223,6 +224,7 @@ winrt::Microsoft::Terminal::Core::Color ColorScheme::_getColor(std::string_view 
 void ColorScheme::_setColor(std::string_view key, const Core::Color& value)
 {
     JsonUtils::SetValueForKeyPreservingComments(_json, key, value);
+    NotifyWriteSettings();
 }
 
 #define GEN_NAMED_COLOR_ACCESSOR(name, jsonKey, defaultVal)             \

@@ -248,6 +248,26 @@ winrt::com_ptr<Theme> Theme::Copy() const
     return theme;
 }
 
+void Theme::SetWriteSettingsSink(const WriteNotifiable::WriteSettingsSink& sink)
+{
+    if (_Window)
+    {
+        winrt::get_self<implementation::WindowTheme>(_Window)->SetWriteSettingsSink(sink);
+    }
+    if (_Settings)
+    {
+        winrt::get_self<implementation::SettingsTheme>(_Settings)->SetWriteSettingsSink(sink);
+    }
+    if (_TabRow)
+    {
+        winrt::get_self<implementation::TabRowTheme>(_TabRow)->SetWriteSettingsSink(sink);
+    }
+    if (_Tab)
+    {
+        winrt::get_self<implementation::TabTheme>(_Tab)->SetWriteSettingsSink(sink);
+    }
+}
+
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:

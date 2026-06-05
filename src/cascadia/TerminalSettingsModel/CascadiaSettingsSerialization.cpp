@@ -1540,6 +1540,14 @@ void CascadiaSettings::_installWriteSink()
         {
             winrt::get_self<implementation::ActionMap>(am)->SetWriteSettingsSink(_writeSink);
         }
+        for (const auto& entry : _globals->ColorSchemes())
+        {
+            winrt::get_self<implementation::ColorScheme>(entry.Value())->SetWriteSettingsSink(_writeSink);
+        }
+        for (const auto& entry : _globals->Themes())
+        {
+            winrt::get_self<implementation::Theme>(entry.Value())->SetWriteSettingsSink(_writeSink);
+        }
     }
 
     installForProfile(_baseLayerProfile.get());

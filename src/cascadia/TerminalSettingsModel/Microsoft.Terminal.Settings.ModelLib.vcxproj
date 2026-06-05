@@ -90,6 +90,7 @@
       <DependentUpon>JsonManager.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="JsonSyncCollections.h" />
+    <ClInclude Include="SettingsWriteNotifier.h" />
     <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />

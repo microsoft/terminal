@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         _entries = std::nullopt;
         _json = Json::Value{ Json::arrayValue };
-        _NotifyWriteSettings();
+        NotifyWriteSettings();
     }
 
     void NewTabMenu::ReplaceAll(const IVector<Model::NewTabMenuEntry>& entries)
@@ -377,7 +377,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         _json = std::move(arr);
         _emitChangeLog();
-        _NotifyWriteSettings();
+        NotifyWriteSettings();
     }
 
     void NewTabMenu::_emitChangeLog()

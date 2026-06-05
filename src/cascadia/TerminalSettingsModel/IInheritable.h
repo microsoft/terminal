@@ -19,38 +19,12 @@ Author(s):
 
 #include "JsonUtils.h"
 #include "JsonSyncCollections.h"
+#include "SettingsWriteNotifier.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    // A late-bound, shared "request auto-save" notifier (GH#12424). One instance
-    // is created by CascadiaSettings and installed (by shared_ptr) on every
-    // object in the *live* settings tree. When a setting is mutated, the object
-    // calls Notify(); CascadiaSettings binds the actual handler after a
-    // successful load via SetHandler(). Until a handler is bound, Notify() is a
-    // no-op. The notifier is deliberately NOT propagated by Copy()/clone paths,
-    // so editor clones (and the defaults fallback) never auto-save the user's
-    // settings.json.
-    struct SettingsWriteNotifier
-    {
-        void Notify() const
-        {
-            if (_handler)
-            {
-                _handler();
-            }
-        }
-
-        void SetHandler(std::function<void()> handler)
-        {
-            _handler = std::move(handler);
-        }
-
-    private:
-        std::function<void()> _handler;
-    };
-
     template<typename T>
-    struct IInheritable
+    struct IInheritable : WriteNotifiable
     {
     public:
         // Method Description:
@@ -94,32 +68,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return _parents;
         }
 
-        // A shared "request auto-save" sink. The owning CascadiaSettings
-        // creates one notifier and installs it on every object in the *live*
-        // tree. When a setting on this layer is mutated, _NotifyWriteSettings()
-        // invokes the notifier, which requests a debounced auto-save. The notifier
-        // is intentionally NOT copied by Copy()/clone paths, so editor clones (and
-        // the defaults fallback) never auto-save the user's settings.json.
-        using WriteSettingsSink = std::shared_ptr<SettingsWriteNotifier>;
-        void SetWriteSettingsSink(const WriteSettingsSink& sink)
-        {
-            _writeSettingsSink = sink;
-        }
+        // The shared "request auto-save" sink (SetWriteSettingsSink,
+        // _writeSettingsSink, NotifyWriteSettings) is inherited from
+        // WriteNotifiable. The owning CascadiaSettings installs one shared sink on
+        // every object in the *live* tree; mutators call NotifyWriteSettings().
+        // The sink is intentionally NOT copied by Copy()/clone paths, so editor
+        // clones (and the defaults fallback) never auto-save the user's settings.
 
     protected:
         std::vector<com_ptr<T>> _parents{};
-
-        WriteSettingsSink _writeSettingsSink{};
-
-        // Invoked by setters/clears to request an auto-save of the owning tree.
-        // No-op until a sink is installed (i.e. only on the committed live tree).
-        void _NotifyWriteSettings() const
-        {
-            if (_writeSettingsSink)
-            {
-                _writeSettingsSink->Notify();
-            }
-        }
 
         // Method Description:
         // - Actions to be performed after a child was created. Generally used to set
@@ -204,7 +161,7 @@ public:                                                                         
     void Clear##name()                                                                \
     {                                                                                 \
         _json.removeMember(JsonKey(jsonKey));                                         \
-        _NotifyWriteSettings();                                         \
+        NotifyWriteSettings();                                         \
     }                                                                                 \
                                                                                       \
 private:                                                                              \
@@ -273,7 +230,7 @@ public:                                                                    \
         }                                                                  \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey( \
             _json, jsonKey, value);                                        \
-        _NotifyWriteSettings();                     \
+        NotifyWriteSettings();                     \
     }
 
 // JSON-backed inheritable setting.
@@ -295,7 +252,7 @@ public:                                                                        \
     {                                                                          \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(     \
             _json, jsonKey, value);                                            \
-        _NotifyWriteSettings();                                            \
+        NotifyWriteSettings();                                            \
     }
 
 // JSON-backed inheritable setting with change logging.
@@ -340,7 +297,7 @@ public:                                                                         
             /* explicitly set to null (not the same as clearing) */                                                                  \
             _json[JsonKey(jsonKey)] = Json::nullValue;                                                                               \
         }                                                                                                                            \
-        _NotifyWriteSettings();                                                       \
+        NotifyWriteSettings();                                                       \
     }
 
 // =============================================================================
@@ -466,7 +423,7 @@ public:                                                                         
         _##name = value;                                                                                                          \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                                 \
         _logSettingSet(jsonKey);                                                                                                  \
-        _NotifyWriteSettings();                                                                            \
+        NotifyWriteSettings();                                                                            \
     }                                                                                                                             \
                                                                                                                                   \
     /* Dual-clear: backing field + _json key. Both must clear so auto-save doesn't */                                             \
@@ -476,7 +433,7 @@ public:                                                                         
         _##name = std::nullopt;                                                                                                   \
         _json.removeMember(JsonKey(jsonKey));                                                                                     \
         _logSettingSet(jsonKey);                                                                                                  \
-        _NotifyWriteSettings();                                                                            \
+        NotifyWriteSettings();                                                                            \
     }
 
 // IMediaResource vector setting (BellSound): needs both IMediaResource
@@ -516,7 +473,7 @@ public:                                                                         
                                     .ToJson(current);                                                                          \
                     strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                         \
                     strong->_logSettingSet(jsonKey);                                                                           \
-                    strong->_NotifyWriteSettings();                                                             \
+                    strong->NotifyWriteSettings();                                                             \
                 });                                                                                                            \
         }                                                                                                                      \
         return *val;                                                                                                           \
@@ -528,7 +485,7 @@ public:                                                                         
         _##name = value;                                                                                                       \
         ::Microsoft::Terminal::Settings::Model::JsonUtils::SetValueForKey(_json, jsonKey, value);                              \
         _logSettingSet(jsonKey);                                                                                               \
-        _NotifyWriteSettings();                                                                         \
+        NotifyWriteSettings();                                                                         \
     }                                                                                                                          \
                                                                                                                                \
     /* Dual-clear: backing field + _json key. */                                                                               \
@@ -537,7 +494,7 @@ public:                                                                         
         _##name = std::nullopt;                                                                                                \
         _json.removeMember(JsonKey(jsonKey));                                                                                  \
         _logSettingSet(jsonKey);                                                                                               \
-        _NotifyWriteSettings();                                                                         \
+        NotifyWriteSettings();                                                                         \
     }
 
 // JSON-backed collection settings (IVector<T> / IMap<K,V>) that callers mutate
@@ -568,7 +525,7 @@ public:                                                                         
                 auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);                   \
                 strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                                        \
                 strong->_logSettingSet(jsonKey);                                                                                          \
-                strong->_NotifyWriteSettings();                                                                            \
+                strong->NotifyWriteSettings();                                                                            \
             });                                                                                                                           \
     }                                                                                                                                     \
                                                                                                                                           \
@@ -595,7 +552,7 @@ public:                                                                         
                 auto temp = ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<type>{}.ToJson(current);         \
                 strong->_json[JsonKey(jsonKey)] = std::move(temp);                                                              \
                 strong->_logSettingSet(jsonKey);                                                                                \
-                strong->_NotifyWriteSettings();                                                                  \
+                strong->NotifyWriteSettings();                                                                  \
             });                                                                                                                 \
     }                                                                                                                           \
                                                                                                                                 \

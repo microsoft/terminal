@@ -5,6 +5,7 @@
 
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/Theme.h"
 #include "../TerminalSettingsModel/ActionMap.h"
 #include "../TerminalSettingsModel/FileUtils.h"
 #include "JsonTestClass.h"
@@ -30,6 +31,8 @@ namespace SettingsModelUnitTests
         TEST_METHOD(WriteHandlerFiresOnSetterAndClear);
         TEST_METHOD(ClonedSettingsDoNotFireWriteHandler);
         TEST_METHOD(CollectionEditsFireWriteHandler);
+        TEST_METHOD(ColorSchemePerPropertyEditsFireWriteHandler);
+        TEST_METHOD(ThemeSubObjectEditsFireWriteHandler);
         TEST_METHOD(ActionMapEditsFireWriteHandler);
 
     private:
@@ -164,9 +167,6 @@ namespace SettingsModelUnitTests
 
     void JsonManagerTests::CollectionEditsFireWriteHandler()
     {
-        // Color schemes / themes aren't IInheritable, so per-property edits aren't
-        // covered, but add/remove is wired at the GlobalAppSettings collection
-        // level. Verify that coarse-grained coverage requests a save.
         static constexpr std::string_view settingsJson{ R"({
             "profiles": {
                 "list": [
@@ -191,11 +191,67 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(2, writeRequests);
     }
 
+    void JsonManagerTests::ColorSchemePerPropertyEditsFireWriteHandler()
+    {
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+
+        auto writeRequests = 0;
+        settings->SetWriteHandler([&]() { ++writeRequests; });
+
+        // Adding the scheme forwards the sink to it; the add itself requests a save.
+        const auto scheme = winrt::make<implementation::ColorScheme>(winrt::hstring{ L"My Scheme" });
+        settings->GlobalSettings().AddColorScheme(scheme);
+        VERIFY_ARE_EQUAL(1, writeRequests);
+
+        // Each per-property edit requests a save.
+        scheme.Foreground(til::color{ 0x10, 0x20, 0x30 });
+        VERIFY_ARE_EQUAL(2, writeRequests);
+
+        scheme.SetColorTableEntry(0, til::color{ 0x40, 0x50, 0x60 });
+        VERIFY_ARE_EQUAL(3, writeRequests);
+
+        scheme.Name(L"Renamed Scheme");
+        VERIFY_ARE_EQUAL(4, writeRequests);
+    }
+
+    void JsonManagerTests::ThemeSubObjectEditsFireWriteHandler()
+    {
+        static constexpr std::string_view themeJson{ R"({
+            "name": "MyTheme",
+            "window": { "useMica": false }
+        })" };
+
+        const auto theme = implementation::Theme::FromJson(VerifyParseSucceeded(themeJson));
+        VERIFY_IS_NOT_NULL(theme);
+
+        auto writeRequests = 0;
+        const auto sink = std::make_shared<implementation::SettingsWriteNotifier>();
+        sink->SetHandler([&]() { ++writeRequests; });
+        theme->SetWriteSettingsSink(sink);
+
+        const auto window = theme->Window();
+        VERIFY_IS_NOT_NULL(window);
+
+        winrt::get_self<implementation::WindowTheme>(window)->UseMica(true);
+        VERIFY_ARE_EQUAL(1, writeRequests);
+
+        winrt::get_self<implementation::WindowTheme>(window)->ClearUseMica();
+        VERIFY_ARE_EQUAL(2, writeRequests);
+    }
+
     void JsonManagerTests::ActionMapEditsFireWriteHandler()
     {
-        // ActionMap isn't JSON-backed, but its mutators request a save directly and
-        // it's registered with the write sink, so user action/keybinding edits must
-        // request an auto-save.
         static constexpr std::string_view settingsJson{ R"({
             "profiles": {
                 "list": [
@@ -246,10 +302,10 @@ namespace SettingsModelUnitTests
         actionMap.DeleteUserCommand(L"Test.NewTab");
         VERIFY_ARE_EQUAL(5, writeRequests);
 
-        // The editor works on a deep clone, which must never auto-save the live
-        // file: a clone's ActionMap edit must NOT invoke the handler.
-        const auto clone = settings->Copy();
-        clone.GlobalSettings().ActionMap().AddKeyBinding(ctrlT, L"Test.NewTab");
-        VERIFY_ARE_EQUAL(5, writeRequests);
+        // An in-place editor edit (rename/action/arg change mutates the Command
+        // directly, bypassing the mutators above) is signaled via the projected
+        // NotifyWriteSettings and must request a save.
+        actionMap.NotifyWriteSettings();
+        VERIFY_ARE_EQUAL(6, writeRequests);
     }
 }

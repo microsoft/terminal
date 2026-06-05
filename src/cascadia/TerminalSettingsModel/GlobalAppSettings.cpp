@@ -277,16 +277,14 @@ void GlobalAppSettings::LayerActionsFrom(const Json::Value& json, const OriginTa
 void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
 {
     _colorSchemes.Insert(scheme.Name(), scheme);
-    // Coarse-grained auto-save coverage (GH#12424): color schemes aren't
-    // IInheritable, so add/remove is notified here at the collection level. (No-op
-    // until this tree is the live, bound tree.)
-    _NotifyWriteSettings();
+    winrt::get_self<ColorScheme>(scheme)->SetWriteSettingsSink(_writeSettingsSink);
+    NotifyWriteSettings();
 }
 
 void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
 {
     _colorSchemes.TryRemove(schemeName);
-    _NotifyWriteSettings();
+    NotifyWriteSettings();
 }
 
 winrt::Microsoft::Terminal::Settings::Model::ColorScheme GlobalAppSettings::DuplicateColorScheme(const Model::ColorScheme& source)
@@ -460,9 +458,8 @@ winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentThe
 void GlobalAppSettings::AddTheme(const Model::Theme& theme)
 {
     _themes.Insert(theme.Name(), theme);
-    // Coarse-grained auto-save coverage (GH#12424): themes aren't IInheritable,
-    // so add is notified here at the collection level. (No-op until bound.)
-    _NotifyWriteSettings();
+    winrt::get_self<implementation::Theme>(theme)->SetWriteSettingsSink(_writeSettingsSink);
+    NotifyWriteSettings();
 }
 
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Theme> GlobalAppSettings::Themes() noexcept

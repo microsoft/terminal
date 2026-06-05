@@ -95,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     // there are some other cases as well
                     Model::ActionAndArgs newActionAndArgs{ actionEnum, emptyArgs };
                     _command.ActionAndArgs(newActionAndArgs);
+                    get_self<ActionsViewModel>(actionsPageVM)->NotifyUserActionEdited();
                     if (_IsNewCommand)
                     {
                         actionsPageVM.RegenerateCommandID(_command);
@@ -129,6 +130,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (_command.Name() != newName)
         {
             _command.Name(newName);
+            if (const auto actionsPageVM{ _actionsPageVM.get() })
+            {
+                get_self<ActionsViewModel>(actionsPageVM)->NotifyUserActionEdited();
+            }
             _NotifyChanges(L"DisplayName", L"DisplayNameAndKeyChordAutomationPropName");
             _cachedDisplayName.clear();
         }
@@ -309,6 +314,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         actionArgsVM.WrapperValueChanged([weakThis = get_weak()](const IInspectable& /*sender*/, const IInspectable& /*args*/) {
             if (auto weak = weakThis.get())
             {
+                if (const auto actionsPageVM{ weak->_actionsPageVM.get() })
+                {
+                    get_self<ActionsViewModel>(actionsPageVM)->NotifyUserActionEdited();
+                }
                 // for new commands, make sure we generate a new ID every time any arg value changes
                 if (weak->_IsNewCommand)
                 {
@@ -1374,6 +1383,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ActionsViewModel::RegenerateCommandID(const Model::Command& command)
     {
         _Settings.UpdateCommandID(command, {});
+    }
+
+    void ActionsViewModel::NotifyUserActionEdited()
+    {
+        if (_Settings)
+        {
+            if (const auto actionMap{ _Settings.ActionMap() })
+            {
+                actionMap.NotifyWriteSettings();
+            }
+        }
     }
 
     void ActionsViewModel::_CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& /*args*/)
