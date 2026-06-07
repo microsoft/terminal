@@ -9,6 +9,32 @@
 
 namespace ColorFix
 {
+    union RGB
+    {
+        struct
+        {
+            float r;
+            float g;
+            float b;
+            float _; // Padding, to align it to 16 bytes for vectorization
+        };
+        float data[4];
+    };
+
+    union Lab
+    {
+        struct
+        {
+            float l;
+            float a;
+            float b;
+            float _;
+        };
+        float data[4];
+    };
+
+    Lab ColorrefToOklab(COLORREF color) noexcept;
+    COLORREF OklabToColorref(const Lab& color) noexcept;
     COLORREF GetPerceivableColor(COLORREF color, COLORREF reference, float minSquaredDistance) noexcept;
     COLORREF AdjustLightness(COLORREF color, float delta) noexcept;
     float GetLightness(COLORREF color) noexcept;
