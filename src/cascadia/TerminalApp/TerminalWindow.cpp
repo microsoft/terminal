@@ -303,7 +303,7 @@ namespace winrt::TerminalApp::implementation
 
     Microsoft::Terminal::Settings::Model::Theme TerminalWindow::Theme()
     {
-        return _settings.GlobalSettings().CurrentTheme();
+        return _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
     }
 
     // WinUI can't show 2 dialogs simultaneously. Yes, really. If you do, you get an exception.
@@ -380,7 +380,7 @@ namespace winrt::TerminalApp::implementation
         auto themingLambda{ [weak](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
             if (const auto strong = weak.get())
             {
-                auto theme{ strong->_settings.GlobalSettings().CurrentTheme() };
+                auto theme{ strong->_settings.GlobalSettings().CurrentTheme(strong->_currentWindowSettings()) };
                 auto requestedTheme{ theme.RequestedTheme() };
                 auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
                 while (element)

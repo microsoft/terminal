@@ -1316,7 +1316,7 @@ void CascadiaSettings::_researchOnLoad()
     {
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
-        const auto themeInUse = GlobalSettings().CurrentTheme().Name();
+        const auto themeInUse = GlobalSettings().CurrentTheme(WindowSettingsDefaults()).Name();
         const auto changedTheme = _globals->HasTheme();
 
         // system: 0

@@ -799,7 +799,7 @@ namespace SettingsModelUnitTests
 
         const auto activeProfiles = settings->ActiveProfiles();
         const auto colorSchemes = settings->GlobalSettings().ColorSchemes();
-        const auto currentTheme = settings->GlobalSettings().CurrentTheme();
+        const auto currentTheme = settings->GlobalSettings().CurrentTheme(settings->WindowSettingsDefaults());
         const auto terminalSettings0 = createTerminalSettings(activeProfiles.GetAt(0), colorSchemes, currentTheme);
         const auto terminalSettings1 = createTerminalSettings(activeProfiles.GetAt(1), colorSchemes, currentTheme);
         const auto terminalSettings2 = createTerminalSettings(activeProfiles.GetAt(2), colorSchemes, currentTheme);

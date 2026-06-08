@@ -9,6 +9,8 @@
 #include "Utils.h"
 #include "../../types/inc/ColorFix.hpp"
 
+#include <ThrottledFunc.h>
+
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;

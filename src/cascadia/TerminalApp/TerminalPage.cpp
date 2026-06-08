@@ -375,7 +375,7 @@ namespace winrt::TerminalApp::implementation
 
         // Initialize the state of the CloseButtonOverlayMode property of
         // our TabView, to match the tab.showCloseButton property in the theme.
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
         {
             const auto visibility = theme.Tab() ? theme.Tab().ShowCloseButton() : Settings::Model::TabCloseButtonVisibility::Always;
 
@@ -4082,7 +4082,7 @@ namespace winrt::TerminalApp::implementation
         // our TabView, to match the tab.showCloseButton property in the theme.
         //
         // Also update every tab's individual IsClosable to match the same property.
-        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
         const auto visibility = (theme && theme.Tab()) ?
                                     theme.Tab().ShowCloseButton() :
                                     Settings::Model::TabCloseButtonVisibility::Always;
@@ -4696,7 +4696,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element)
     {
-        auto theme{ _settings.GlobalSettings().CurrentTheme() };
+        auto theme{ _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()) };
         auto requestedTheme{ theme.RequestedTheme() };
         while (element)
         {
@@ -5070,7 +5070,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto theme = _settings.GlobalSettings().CurrentTheme();
+        const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings());
         auto requestedTheme{ theme.RequestedTheme() };
 
         {

@@ -375,7 +375,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // GH#19927 - Theme the search box's internal popup now that the
         // visual tree is ready and control templates are applied
-        const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_settingsSource.WindowSettingsDefaults());
         const auto hasThemeForSettings{ theme.Settings() != nullptr };
         const auto requestedTheme = hasThemeForSettings ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
         _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
@@ -1149,7 +1149,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        const auto theme = _settingsSource.GlobalSettings().CurrentTheme();
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_settingsSource.WindowSettingsDefaults());
         const auto hasThemeForSettings{ theme.Settings() != nullptr };
         const auto appTheme = theme.RequestedTheme();
         const auto requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;

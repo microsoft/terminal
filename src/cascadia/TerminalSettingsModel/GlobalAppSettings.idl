@@ -81,7 +81,7 @@ namespace Microsoft.Terminal.Settings.Model
         // ---- Themes ----
         Windows.Foundation.Collections.IMapView<String, Theme> Themes();
         void AddTheme(Theme theme);
-        Theme CurrentTheme { get; };
+        Theme CurrentTheme(WindowSettings window);
 
         Boolean ShouldUsePersistedLayout();
     }

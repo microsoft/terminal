@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings
         const auto windowSettings = appSettings.WindowSettingsDefaults();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(windowSettings);
-        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme());
+        settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
 
         return settings;
     }
@@ -91,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Settings
             const auto globals = appSettings.GlobalSettings();
             child = winrt::make_self<TerminalSettings>();
             child->_parent = settings->get_strong();
-            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
+            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme(appSettings.WindowSettingsDefaults()));
         }
 
         return TerminalSettingsCreateResult{ settings.get(), child.get() };

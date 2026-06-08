@@ -96,6 +96,7 @@ namespace TerminalApp
         TaskbarState TaskbarState{ get; };
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         Windows.UI.Xaml.Media.Brush FrameBrush { get; };
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
         void WindowActivated(Boolean activated);
 
         Boolean GetMinimizeToNotificationArea();
