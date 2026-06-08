@@ -28,6 +28,8 @@ namespace ControlUnitTests
         TEST_METHOD(InstantiateCore);
         TEST_METHOD(TestInitialize);
         TEST_METHOD(TestAdjustAcrylic);
+        TEST_METHOD(TestRuntimeOpacitySurvivesSettingsReload);
+        TEST_METHOD(TestReadOnlySurvivesSettingsReload);
 
         TEST_METHOD(TestFreeAfterClose);
 
@@ -204,6 +206,66 @@ namespace ControlUnitTests
         Log::Comment(L"Decreasing opacity more doesn't actually change it to be < 0");
         expectedOpacity = 0.0f;
         core->AdjustOpacity(-0.25f);
+    }
+
+    void ControlCoreTests::TestRuntimeOpacitySurvivesSettingsReload()
+    {
+        // GH#12424: a runtime opacity adjustment (Ctrl+Shift+scroll / adjustOpacity)
+        // must survive a settings reload as a delta over the new settings opacity,
+        // rather than snapping back to the configured value.
+        auto [settings, conn] = _createSettingsAndConnection();
+
+        settings->UseAcrylic(true);
+        settings->Opacity(0.5f);
+
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        core->Initialize(270, 380, 1.0);
+        VERIFY_IS_TRUE(core->_initializedTerminal);
+
+        Log::Comment(L"Adjust opacity at runtime: 0.5 -> 0.7 (delta +0.2)");
+        core->AdjustOpacity(0.2f);
+        VERIFY_ARE_EQUAL(0.7f, core->Opacity());
+
+        Log::Comment(L"Reload settings with a different opacity (0.4). A reload builds a "
+                     L"fresh settings object, so use a separate mock here.");
+        auto reloaded = winrt::make_self<MockControlSettings>();
+        reloaded->UseAcrylic(true);
+        reloaded->Opacity(0.4f);
+        core->UpdateSettings(*reloaded, *reloaded);
+
+        Log::Comment(L"The runtime delta (+0.2) rides on top of the new settings opacity "
+                     L"(0.4) -> 0.6, instead of being stomped back to 0.4.");
+        VERIFY_ARE_EQUAL(0.6f, core->Opacity());
+        // Acrylic follows the resolved (runtime-preserved) opacity, which is < 1.0.
+        VERIFY_IS_TRUE(core->UseAcrylic());
+
+        Log::Comment(L"With no runtime adjustment, a reload follows the settings opacity.");
+        auto core2 = createCore(*settings, *conn);
+        core2->Initialize(270, 380, 1.0);
+        VERIFY_ARE_EQUAL(0.5f, core2->Opacity());
+        auto reloaded2 = winrt::make_self<MockControlSettings>();
+        reloaded2->UseAcrylic(true);
+        reloaded2->Opacity(0.3f);
+        core2->UpdateSettings(*reloaded2, *reloaded2);
+        VERIFY_ARE_EQUAL(0.3f, core2->Opacity());
+    }
+
+    void ControlCoreTests::TestReadOnlySurvivesSettingsReload()
+    {
+        // GH#12424: a runtime read-only toggle must not be reset by a settings reload.
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto core = createCore(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        core->Initialize(270, 380, 1.0);
+
+        VERIFY_IS_FALSE(core->IsInReadOnlyMode());
+        core->SetReadOnlyMode(true);
+        VERIFY_IS_TRUE(core->IsInReadOnlyMode());
+
+        auto reloaded = winrt::make_self<MockControlSettings>();
+        core->UpdateSettings(*reloaded, *reloaded);
+        VERIFY_IS_TRUE(core->IsInReadOnlyMode());
     }
 
     void ControlCoreTests::TestFreeAfterClose()

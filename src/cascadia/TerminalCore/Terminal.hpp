@@ -356,6 +356,11 @@ private:
     std::optional<std::wstring> _startingTitle;
     std::optional<til::color> _startingTabColor;
 
+    // Tracks whether UpdateSettings has run at least once, so the first load
+    // doesn't mistake the constructor's default fg/bg color setup for runtime VT
+    // color overrides when preserving them across reloads (GH#12424).
+    bool _colorSchemeInitialized{ false };
+
     std::vector<til::point_span> _searchHighlights;
     size_t _searchHighlightFocused = 0;
 

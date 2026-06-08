@@ -25,6 +25,7 @@ namespace TerminalCoreUnitTests
         TEST_CLASS(TerminalApiTest);
 
         TEST_METHOD(SetColorTableEntry);
+        TEST_METHOD(PreserveRuntimeColorAcrossSettingsReload);
 
         TEST_METHOD(CursorVisibilityViaStateMachine);
 
@@ -58,6 +59,47 @@ void TerminalApiTest::SetColorTableEntry()
     VERIFY_NO_THROW(term._renderSettings.SetColorTableEntry(255, 100));
 
     VERIFY_THROWS(term._renderSettings.SetColorTableEntry(512, 100), std::exception);
+}
+
+void TerminalApiTest::PreserveRuntimeColorAcrossSettingsReload()
+{
+    // GH#12424: a color table entry changed at runtime by a VT sequence (e.g.
+    // OSC 4) must survive a settings reload -- the new color scheme updates the
+    // baseline, but the runtime override is preserved. A non-overridden entry
+    // still picks up the new scheme.
+    Terminal term{ Terminal::TestDummyMarker{} };
+    DummyRenderer renderer{ &term };
+    term.Create({ 100, 100 }, 0, renderer);
+
+    const auto makeUniformTable = [](uint8_t v) {
+        std::array<winrt::Microsoft::Terminal::Core::Color, 16> table;
+        table.fill(winrt::Microsoft::Terminal::Core::Color{ v, v, v, 255 });
+        return table;
+    };
+
+    // Initial load with scheme A (all entries 0x111111).
+    auto settingsA = winrt::make_self<MockTermSettings>(100, 100, 100);
+    settingsA->SetColorTable(makeUniformTable(0x11));
+    term.UpdateSettings(*settingsA);
+
+    // Simulate an OSC color override at index 5.
+    const auto runtimeColor = static_cast<COLORREF>(RGB(0xAB, 0xCD, 0xEF));
+    term._renderSettings.SetColorTableEntry(5, runtimeColor);
+    VERIFY_ARE_EQUAL(runtimeColor, term._renderSettings.GetColorTableEntry(5));
+
+    // Reload with scheme B (all entries 0x222222). A reload builds a fresh
+    // settings object, so use a separate mock.
+    auto settingsB = winrt::make_self<MockTermSettings>(100, 100, 100);
+    settingsB->SetColorTable(makeUniformTable(0x22));
+    term.UpdateSettings(*settingsB);
+
+    const auto schemeBColor = static_cast<COLORREF>(til::color{ winrt::Microsoft::Terminal::Core::Color{ 0x22, 0x22, 0x22, 255 } });
+
+    Log::Comment(L"The runtime-overridden entry keeps its value across the reload.");
+    VERIFY_ARE_EQUAL(runtimeColor, term._renderSettings.GetColorTableEntry(5));
+
+    Log::Comment(L"A non-overridden entry picks up the new scheme.");
+    VERIFY_ARE_EQUAL(schemeBColor, term._renderSettings.GetColorTableEntry(3));
 }
 
 // Terminal::_WriteBuffer used to enter infinite loops under certain conditions.

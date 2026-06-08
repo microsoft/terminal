@@ -253,6 +253,10 @@ namespace winrt::TerminalApp::implementation
         bool _isFullscreen{ false };
         bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
+        // Runtime override for always-on-top (toggled via ToggleAlwaysOnTop). When
+        // set, it wins over GlobalSettings().AlwaysOnTop() so a settings reload
+        // doesn't stomp the user's runtime toggle (GH#12424).
+        std::optional<bool> _runtimeAlwaysOnTop{ std::nullopt };
         bool _showTabsFullscreen{ false };
 
         std::optional<uint32_t> _loadFromPersistedLayoutIdx{};

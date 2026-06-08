@@ -91,6 +91,18 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
 // - settings: an ICoreSettings with new settings values for us to use.
 void Terminal::UpdateSettings(ICoreSettings settings)
 {
+    // Capture any color table entries that were overridden at runtime by VT
+    // sequences (OSC 4/10/11/12) so the color-scheme refresh below doesn't stomp
+    // them on a settings reload (GH#12424). They're re-applied after the new
+    // scheme is saved as the default. Skipped on the very first load, where the
+    // constructor's default fg/bg setup would otherwise look like a runtime
+    // override (the scheme baseline isn't established until the first save below).
+    std::vector<std::pair<size_t, COLORREF>> runtimeColorOverrides;
+    if (_colorSchemeInitialized)
+    {
+        runtimeColorOverrides = GetRenderSettings().GetRuntimeColorTableOverrides();
+    }
+
     UpdateAppearance(settings);
 
     _snapOnInput = settings.SnapOnInput();
@@ -122,6 +134,15 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     // Save the changes made above and in UpdateAppearance as the new default render settings.
     GetRenderSettings().SaveDefaultSettings();
+
+    // Re-apply any runtime VT color overrides captured above on top of the
+    // refreshed scheme baseline, so a settings reload preserves them (GH#12424).
+    // A hard reset (RIS) still restores the new scheme via RestoreDefaultSettings.
+    for (const auto& [index, color] : runtimeColorOverrides)
+    {
+        GetRenderSettings().SetColorTableEntry(index, color);
+    }
+    _colorSchemeInitialized = true;
 
     if (!_startingTitle)
     {

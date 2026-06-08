@@ -4042,10 +4042,11 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabWidthMode();
         _CreateNewTabFlyout();
 
-        // Reload the current value of alwaysOnTop from the settings file. This
-        // will let the user hot-reload this setting, but any runtime changes to
-        // the alwaysOnTop setting will be lost.
-        _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
+        // Reload the current value of alwaysOnTop from the settings file, but let
+        // a runtime toggle (ToggleAlwaysOnTop) win so a settings reload doesn't
+        // stomp it (GH#12424). This still lets the user hot-reload the setting when
+        // they haven't overridden it at runtime.
+        _isAlwaysOnTop = _runtimeAlwaysOnTop.value_or(_settings.GlobalSettings().AlwaysOnTop());
         AlwaysOnTopChanged.raise(*this, nullptr);
 
         _showTabsFullscreen = _settings.GlobalSettings().ShowTabsFullscreen();
@@ -4266,6 +4267,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::ToggleAlwaysOnTop()
     {
         _isAlwaysOnTop = !_isAlwaysOnTop;
+        // Record the runtime override so a settings reload preserves it (GH#12424).
+        _runtimeAlwaysOnTop = _isAlwaysOnTop;
         AlwaysOnTopChanged.raise(*this, nullptr);
     }
 

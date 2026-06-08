@@ -35,6 +35,7 @@ namespace Microsoft::Console::Render
         void SetRenderMode(const Mode mode, const bool enabled) noexcept;
         bool GetRenderMode(const Mode mode) const noexcept;
         const std::array<COLORREF, TextColor::TABLE_SIZE>& GetColorTable() const noexcept;
+        std::vector<std::pair<size_t, COLORREF>> GetRuntimeColorTableOverrides() const;
         void ResetColorTable() noexcept;
         void SetColorTableEntry(const size_t tableIndex, const COLORREF color);
         COLORREF GetColorTableEntry(const size_t tableIndex) const;

@@ -912,6 +912,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::UpdateSettings(const IControlSettings& settings, const IControlAppearance& newAppearance)
     {
+        // Capture any runtime opacity adjustment (e.g. Ctrl+Shift+scroll, the
+        // adjustOpacity action) as a delta over the *old* settings opacity before
+        // _settings is replaced. On reload we re-apply that delta over the new
+        // settings opacity instead of snapping back to the configured value, so a
+        // settings reload doesn't stomp the user's runtime adjustment (GH#12424).
+        // This mirrors the font-size delta below, but is derived from the live
+        // runtime value rather than stored, because opacity is clamped to [0,1] on
+        // every adjustment -- a separately accumulated delta would drift out of
+        // sync with the (clamped) runtime opacity.
+        std::optional<float> runtimeOpacityDelta;
+        if (_runtimeOpacity)
+        {
+            runtimeOpacityDelta = *_runtimeOpacity - _settings.Opacity();
+        }
+
         _settings = settings;
         _hasUnfocusedAppearance = static_cast<bool>(newAppearance);
         _unfocusedAppearance = _hasUnfocusedAppearance ? newAppearance : settings;
@@ -922,11 +937,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _colorGlyphs = _settings.EnableColorGlyphs();
         _cellWidth = CSSLengthPercentage::FromString(_settings.CellWidth().c_str());
         _cellHeight = CSSLengthPercentage::FromString(_settings.CellHeight().c_str());
-        _runtimeOpacity = std::nullopt;
-        _runtimeFocusedOpacity = std::nullopt;
 
-        // Manually turn off acrylic if they turn off transparency.
-        _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
+        // Preserve a runtime opacity adjustment across the reload by re-applying
+        // the captured delta over the new settings opacity. FocusedAppearance() is
+        // _settings, so _runtimeFocusedOpacity shares the same base and resolves to
+        // the same value.
+        if (runtimeOpacityDelta)
+        {
+            const auto resolvedOpacity = std::clamp(_settings.Opacity() + *runtimeOpacityDelta, 0.0f, 1.0f);
+            _runtimeOpacity = resolvedOpacity;
+            _runtimeFocusedOpacity = resolvedOpacity;
+        }
+        else
+        {
+            _runtimeOpacity = std::nullopt;
+            _runtimeFocusedOpacity = std::nullopt;
+        }
+
+        // Manually turn off acrylic if they turn off transparency. Use the resolved
+        // (runtime-preserved) opacity so acrylic follows the runtime adjustment.
+        _runtimeUseAcrylic = Opacity() < 1.0 && _settings.UseAcrylic();
 
         const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta);
 

@@ -80,6 +80,31 @@ const std::array<COLORREF, TextColor::TABLE_SIZE>& RenderSettings::GetColorTable
 }
 
 // Routine Description:
+// - Returns the color table entries that have diverged from the saved defaults
+//   since the last SaveDefaultSettings() -- i.e. entries that were changed at
+//   runtime, typically by OSC color sequences (OSC 4/10/11/12). A settings
+//   reload uses this to refresh the color-scheme baseline (the default table)
+//   without stomping these runtime overrides (GH#12424).
+// - The frame colors (tab fg/bg) are intentionally excluded: they're driven by
+//   the separate tab-color settings/runtime path, not treated as VT overrides.
+std::vector<std::pair<size_t, COLORREF>> RenderSettings::GetRuntimeColorTableOverrides() const
+{
+    std::vector<std::pair<size_t, COLORREF>> overrides;
+    for (size_t i = 0; i < TextColor::TABLE_SIZE; i++)
+    {
+        if (i == TextColor::FRAME_FOREGROUND || i == TextColor::FRAME_BACKGROUND)
+        {
+            continue;
+        }
+        if (_colorTable.at(i) != _defaultColorTable.at(i))
+        {
+            overrides.emplace_back(i, _colorTable.at(i));
+        }
+    }
+    return overrides;
+}
+
+// Routine Description:
 // - Resets the first 16 color table entries with default values.
 void RenderSettings::ResetColorTable() noexcept
 {
