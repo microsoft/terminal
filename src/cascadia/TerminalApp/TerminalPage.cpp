@@ -4014,12 +4014,13 @@ namespace winrt::TerminalApp::implementation
         // up the previous ones we built.
         _terminalSettingsCache->Reset(_settings);
 
+        const auto windowSettings = _currentWindowSettings();
         for (const auto& tab : _tabs)
         {
             if (auto tabImpl{ _GetTabImpl(tab) })
             {
                 // Let the tab know that there are new settings. It's up to each content to decide what to do with them.
-                tabImpl->UpdateSettings(_settings);
+                tabImpl->UpdateSettings(_settings, windowSettings);
 
                 // Update the icon of the tab for the currently focused profile in that tab.
                 // Only do this for TerminalTabs. Other types of tabs won't have multiple panes
