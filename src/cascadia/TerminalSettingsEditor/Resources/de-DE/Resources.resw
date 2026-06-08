@@ -668,6 +668,14 @@
     <value>Starten</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
   </data>
+  <data name="Nav_PaneOpenedAnnouncement" xml:space="preserve">
+    <value>Navigationsbereich geöffnet</value>
+    <comment>Screen reader announcement made when the user activates the toggle button that opens the settings navigation pane.</comment>
+  </data>
+  <data name="Nav_PaneClosedAnnouncement" xml:space="preserve">
+    <value>Navigationsbereich geschlossen</value>
+    <comment>Screen reader announcement made when the user activates the toggle button that closes the settings navigation pane.</comment>
+  </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>JSON-Datei öffnen</value>
     <comment>Header for a menu item. This opens the JSON file that is used to log the app's settings.</comment>
