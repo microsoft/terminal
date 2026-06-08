@@ -228,27 +228,6 @@ namespace winrt::TerminalApp::implementation
                 _warnings.push_back(newSettings.Warnings().GetAt(i));
             }
 
-            _hasSettingsStartupActions = false;
-            const auto startupActions = newSettings.WindowSettingsDefaults().StartupActions();
-            if (!startupActions.empty())
-            {
-                _settingsAppArgs.FullResetState();
-
-                ExecuteCommandlineArgs args{ newSettings.WindowSettingsDefaults().StartupActions() };
-                auto result = _settingsAppArgs.ParseArgs(args);
-                if (result == 0)
-                {
-                    _hasSettingsStartupActions = true;
-
-                    // Validation also injects new-tab command if implicit new-tab was provided.
-                    _settingsAppArgs.ValidateStartupCommands();
-                }
-                else
-                {
-                    _warnings.push_back(SettingsLoadWarnings::FailedToParseStartupActions);
-                }
-            }
-
             _settings = std::move(newSettings);
 
             hr = _warnings.empty() ? S_OK : S_FALSE;
@@ -265,11 +244,6 @@ namespace winrt::TerminalApp::implementation
             LOG_HR(hr);
         }
         return hr;
-    }
-
-    bool AppLogic::HasSettingsStartupActions() const noexcept
-    {
-        return _hasSettingsStartupActions;
     }
 
     // Call this function after loading your _settings.
@@ -494,13 +468,36 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
     }
 
-    TerminalApp::TerminalWindow AppLogic::CreateNewWindow()
+    TerminalApp::TerminalWindow AppLogic::CreateNewWindow(const winrt::hstring& windowName)
     {
         auto warnings{ winrt::multi_threaded_vector<SettingsLoadWarnings>() };
         for (auto&& warn : _warnings)
         {
             warnings.Append(warn);
         }
+
+        // Look up the StartupActions for _this_ window's settings (which
+        // may differ from the defaults if the user has per-window-name
+        // overrides). Parse them here, per-window, rather than once globally,
+        // so that each window can have its own startupActions.
+        ::TerminalApp::AppCommandlineArgs settingsAppArgs;
+        auto hasSettingsStartupActions = false;
+        const auto startupActions = _settings.WindowSettings(windowName).StartupActions();
+        if (!startupActions.empty())
+        {
+            ExecuteCommandlineArgs cmdlineArgs{ startupActions };
+            if (settingsAppArgs.ParseArgs(cmdlineArgs) == 0)
+            {
+                hasSettingsStartupActions = true;
+                // Validation also injects new-tab command if implicit new-tab was provided.
+                settingsAppArgs.ValidateStartupCommands();
+            }
+            else
+            {
+                warnings.Append(SettingsLoadWarnings::FailedToParseStartupActions);
+            }
+        }
+
         auto ev = winrt::make_self<SettingsLoadEventArgs>(false,
                                                           _settingsLoadedResult,
                                                           _settingsLoadExceptionText,
@@ -509,9 +506,9 @@ namespace winrt::TerminalApp::implementation
 
         auto window = winrt::make_self<implementation::TerminalWindow>(*ev, _contentManager);
 
-        if (_hasSettingsStartupActions)
+        if (hasSettingsStartupActions)
         {
-            window->SetSettingsStartupArgs(_settingsAppArgs.GetStartupActions());
+            window->SetSettingsStartupArgs(settingsAppArgs.GetStartupActions());
         }
         return *window;
     }
