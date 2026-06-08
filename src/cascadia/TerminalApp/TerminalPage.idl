@@ -19,6 +19,10 @@ namespace TerminalApp
     {
         String ProposedName { get; };
     };
+    [default_interface] runtimeclass NewWindowRequestedArgs
+    {
+        Microsoft.Terminal.Settings.Model.NewTerminalArgs TerminalArgs { get; };
+    };
     [default_interface] runtimeclass RequestMoveContentArgs
     {
         String Window { get; };
@@ -103,5 +107,10 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
 
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
+
+        // Raised when the page wants the monarch to create a brand-new
+        // window in-process whose first tab is described by the given
+        // NewTerminalArgs. No new wt.exe process is spawned.
+        event Windows.Foundation.TypedEventHandler<Object, NewWindowRequestedArgs> RequestNewWindow;
     }
 }
