@@ -282,8 +282,9 @@ void AppHost::Initialize()
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
-    _revokers.RequestNewWindow = _windowLogic.RequestNewWindow(winrt::auto_revoke, { this, &AppHost::_HandleNewWindowRequested });
     _revokers.RequestWindowList = _windowLogic.RequestWindowList(winrt::auto_revoke, { this, &AppHost::_HandleRequestWindowList });
+    _revokers.RequestOpenWindow = _windowLogic.RequestOpenWindow(winrt::auto_revoke, { this, &AppHost::_HandleOpenWindowRequested });
+    _revokers.RequestNewWindow = _windowLogic.RequestNewWindow(winrt::auto_revoke, { this, &AppHost::_HandleNewWindowRequested });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -442,6 +443,18 @@ void AppHost::_HandleRequestWindowList(const winrt::Windows::Foundation::IInspec
         w.Id(entry.Id);
         w.Name(winrt::hstring{ entry.Name });
         windowEntries.Append(w);
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w ...")` dance.
+// Asks the WindowEmperor to summon a named window or restore its persisted
+// workspace, without launching a second wt.exe.
+void AppHost::_HandleOpenWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                         const winrt::TerminalApp::OpenWindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->OpenWindow(args.Name());
     }
 }
 

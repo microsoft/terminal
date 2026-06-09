@@ -47,6 +47,11 @@ public:
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
 
+    // In-process entry point for opening (or summoning) a named window and
+    // restoring its persisted workspace if one exists. Equivalent to
+    // `wt -w <name>` without spawning a new process.
+    void OpenWindow(const winrt::hstring& name);
+
     // In-process entry point for creating a brand-new window whose first tab
     // is described by `terminalArgs`. Equivalent to
     // `wt -w -1 new-tab <terminalArgs>` without spawning a new process and
@@ -65,6 +70,7 @@ private:
     [[nodiscard]] static LRESULT __stdcall _wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
     AppHost* _mostRecentWindow() const noexcept;
+    void _createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args);
     bool _summonWindow(const SummonWindowSelectionArgs& args) const;
     void _summonAllWindows() const;
     void _dispatchSpecialKey(const MSG& msg) const;

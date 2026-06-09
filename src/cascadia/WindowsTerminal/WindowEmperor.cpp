@@ -297,6 +297,40 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 }
 
 // Public entry point used by in-process callers (e.g. AppHost reacting to a
+// TerminalPage RequestOpenWindow event) to open or summon a named window —
+// restoring its persisted workspace if one exists — without spawning a second
+// wt.exe. Bypasses the commandline parser entirely.
+void WindowEmperor::OpenWindow(const winrt::hstring& name)
+{
+    _assertIsMainThread();
+
+    if (name.empty())
+    {
+        return;
+    }
+
+    // If a window with this name is already live, just summon it.
+    // This mirrors the summon behavior in AppHost::DispatchCommandline (which is
+    // what the old `wt -w <name>` ShellExecute path effectively triggered).
+    if (const auto window = GetWindowByName(name))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summon{};
+        summon.MoveToCurrentDesktop(false);
+        summon.DropdownDuration(0);
+        summon.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summon.ToggleVisibility(false);
+        window->HandleSummon(std::move(summon));
+        return;
+    }
+
+    // Otherwise, create a new window under that name. A default-constructed
+    // CommandlineArgs is supplied as the launch fallback for the case where
+    // no persisted workspace exists; AppHost ignores it when PersistedLayout
+    // is set.
+    _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
+}
+
+// Public entry point used by in-process callers (e.g. AppHost reacting to a
 // TerminalPage RequestNewWindow event) to create a brand-new window whose
 // first tab is described by `terminalArgs`. Bypasses the commandline parser
 // entirely by handing AppHost a pre-built startup-action list.
@@ -319,6 +353,27 @@ void WindowEmperor::OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Mo
     request.StartupActions(std::move(actions));
     CreateNewWindow(std::move(request));
 }
+
+// Shared tail used by both the commandline dispatch path and OpenWindow():
+// build a WindowRequestedArgs for a new window and, if the request carries a
+// name, atomically claim any persisted workspace stored under that name so
+// it's restored here and no subsequent caller can pick up the same entry.
+void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args)
+{
+    winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
+    request.WindowName(windowName);
+
+    if (!windowName.empty())
+    {
+        if (const auto layout = ApplicationState::SharedInstance().TakeWorkspace(windowName))
+        {
+            request.PersistedLayout(layout);
+        }
+    }
+
+    CreateNewWindow(std::move(request));
+}
+
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 {
     int64_t max = INT64_MIN;
@@ -824,22 +879,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
     else
     {
-        winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
-        request.WindowName(std::move(windowName));
-
-        // If we're opening a named window that doesn't exist yet, atomically
-        // claim any persisted workspace with that name so we restore it here
-        // and no subsequent window can pick up the same entry.
-        const auto& reqName = request.WindowName();
-        if (!reqName.empty())
-        {
-            if (const auto layout = ApplicationState::SharedInstance().TakeWorkspace(reqName))
-            {
-                request.PersistedLayout(layout);
-            }
-        }
-
-        CreateNewWindow(std::move(request));
+        _createWindowMaybeRestoringWorkspace(windowId, windowName, std::move(args));
     }
 }
 

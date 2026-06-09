@@ -10,8 +10,9 @@
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
-#include "SummonWindowByIdRequestedArgs.g.h"
+#include "OpenWindowRequestedArgs.g.h"
 #include "NewWindowRequestedArgs.g.h"
+#include "SummonWindowByIdRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
 #include "WindowListEntry.g.h"
@@ -77,13 +78,13 @@ namespace winrt::TerminalApp::implementation
             _ProposedName{ name } {};
     };
 
-    struct SummonWindowByIdRequestedArgs : SummonWindowByIdRequestedArgsT<SummonWindowByIdRequestedArgs>
+    struct OpenWindowRequestedArgs : OpenWindowRequestedArgsT<OpenWindowRequestedArgs>
     {
-        WINRT_PROPERTY(uint64_t, WindowId);
+        WINRT_PROPERTY(winrt::hstring, Name);
 
     public:
-        SummonWindowByIdRequestedArgs(uint64_t id) :
-            _WindowId{ id } {};
+        OpenWindowRequestedArgs(const winrt::hstring& name) :
+            _Name{ name } {};
     };
 
     struct NewWindowRequestedArgs : NewWindowRequestedArgsT<NewWindowRequestedArgs>
@@ -93,6 +94,15 @@ namespace winrt::TerminalApp::implementation
     public:
         NewWindowRequestedArgs(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs) :
             _TerminalArgs{ terminalArgs } {};
+    };
+
+    struct SummonWindowByIdRequestedArgs : SummonWindowByIdRequestedArgsT<SummonWindowByIdRequestedArgs>
+    {
+        WINRT_PROPERTY(uint64_t, WindowId);
+
+    public:
+        SummonWindowByIdRequestedArgs(uint64_t id) :
+            _WindowId{ id } {};
     };
 
     struct RequestMoveContentArgs : RequestMoveContentArgsT<RequestMoveContentArgs>
@@ -259,6 +269,7 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
         til::typed_event<IInspectable, winrt::TerminalApp::WindowListRequest> RequestWindowList;
+        til::typed_event<IInspectable, winrt::TerminalApp::OpenWindowRequestedArgs> RequestOpenWindow;
         til::typed_event<IInspectable, winrt::TerminalApp::NewWindowRequestedArgs> RequestNewWindow;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
@@ -382,7 +393,7 @@ namespace winrt::TerminalApp::implementation
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
         void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs);
-        safe_void_coroutine _OpenWorkspaceWindow(const winrt::hstring name);
+        void _OpenWorkspaceWindow(const winrt::hstring name);
 
         void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 

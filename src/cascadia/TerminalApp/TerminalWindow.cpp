@@ -1112,11 +1112,6 @@ namespace winrt::TerminalApp::implementation
         _initialContentArgs = wil::to_vector(args);
     }
 
-    void TerminalWindow::SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout)
-    {
-        _cachedLayout = layout;
-    }
-
     // Method Description:
     // - Provide a pre-built list of startup actions for this window. Used by
     //   in-process callers (see WindowEmperor::OpenNewWindow) that already
@@ -1125,6 +1120,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::SetStartupActions(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions)
     {
         _initialContentArgs = wil::to_vector(actions);
+    }
+
+    void TerminalWindow::SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout)
+    {
+        _cachedLayout = layout;
     }
 
     // Method Description:

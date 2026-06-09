@@ -888,28 +888,14 @@ namespace winrt::TerminalApp::implementation
         RequestNewWindow.raise(*this, args);
     }
 
-    // Launch `wt -w <name>` so the monarch can either summon an existing
-    // window with that name or restore a persisted workspace.
-    safe_void_coroutine TerminalPage::_OpenWorkspaceWindow(const winrt::hstring name)
+    // Ask the WindowEmperor (in-process) to open or summon a named window,
+    // restoring its persisted workspace if one exists. The event bubbles up
+    // through TerminalWindow to AppHost, which calls into the WindowEmperor
+    // directly — no second wt.exe process is launched.
+    void TerminalPage::_OpenWorkspaceWindow(const winrt::hstring name)
     {
-        co_await winrt::resume_background();
-
-        const auto exePath{ GetWtExePath() };
-        // Quote/escape the window name so that ShellExecute -> CommandLineToArgvW
-        // round-trips it as a single argument even when it contains spaces or
-        // other characters that need escaping.
-        const auto cmdline = fmt::format(FMT_COMPILE(L"-w {}"), QuoteAndEscapeCommandlineArg(std::wstring_view{ name }));
-
-        SHELLEXECUTEINFOW seInfo{ 0 };
-        seInfo.cbSize = sizeof(seInfo);
-        seInfo.fMask = SEE_MASK_NOASYNC;
-        seInfo.lpVerb = L"open";
-        seInfo.lpFile = exePath.c_str();
-        seInfo.lpParameters = cmdline.c_str();
-        seInfo.nShow = SW_SHOWNORMAL;
-        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
-
-        co_return;
+        const auto args = winrt::make<implementation::OpenWindowRequestedArgs>(name);
+        RequestOpenWindow.raise(*this, args);
     }
 
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
