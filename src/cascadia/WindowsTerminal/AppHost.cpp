@@ -142,6 +142,11 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
         _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
         _launchShowWindowCommand = SW_NORMAL;
     }
+    else if (const auto actions = windowArgs.StartupActions(); actions && actions.Size() > 0)
+    {
+        _windowLogic.SetStartupActions(actions);
+        _launchShowWindowCommand = SW_NORMAL;
+    }
     else
     {
         const auto args = windowArgs.Command();
@@ -277,6 +282,7 @@ void AppHost::Initialize()
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
+    _revokers.RequestNewWindow = _windowLogic.RequestNewWindow(winrt::auto_revoke, { this, &AppHost::_HandleNewWindowRequested });
     _revokers.RequestWindowList = _windowLogic.RequestWindowList(winrt::auto_revoke, { this, &AppHost::_HandleRequestWindowList });
 
     // BODGY
@@ -436,6 +442,18 @@ void AppHost::_HandleRequestWindowList(const winrt::Windows::Foundation::IInspec
         w.Id(entry.Id);
         w.Name(winrt::hstring{ entry.Name });
         windowEntries.Append(w);
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w -1 new-tab ...")`
+// dance. Asks the WindowEmperor to create a fresh window whose first tab is
+// described by the given NewTerminalArgs.
+void AppHost::_HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                        const winrt::TerminalApp::NewWindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->OpenNewWindow(args.TerminalArgs());
     }
 }
 

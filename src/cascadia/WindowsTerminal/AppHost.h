@@ -100,6 +100,9 @@ private:
     void _OpenSystemMenu(const winrt::Windows::Foundation::IInspectable& sender,
                          const winrt::Windows::Foundation::IInspectable& args);
 
+    void _HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                   const winrt::TerminalApp::NewWindowRequestedArgs& args);
+
     void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::TerminalApp::SystemMenuChangeArgs& args);
 
@@ -167,6 +170,7 @@ private:
         winrt::TerminalApp::TerminalWindow::RequestMoveContent_revoker RequestMoveContent;
         winrt::TerminalApp::TerminalWindow::RequestReceiveContent_revoker RequestReceiveContent;
         winrt::TerminalApp::TerminalWindow::RequestLaunchPosition_revoker RequestLaunchPosition;
+        winrt::TerminalApp::TerminalWindow::RequestNewWindow_revoker RequestNewWindow;
         winrt::TerminalApp::TerminalWindow::RequestWindowList_revoker RequestWindowList;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;

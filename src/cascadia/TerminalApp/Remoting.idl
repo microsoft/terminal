@@ -52,5 +52,6 @@ namespace TerminalApp
         String Content { get; };
         Windows.Foundation.IReference<Windows.Foundation.Rect> InitialBounds { get; };
         Microsoft.Terminal.Settings.Model.WindowLayout PersistedLayout;
+        Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.ActionAndArgs> StartupActions;
     };
 }

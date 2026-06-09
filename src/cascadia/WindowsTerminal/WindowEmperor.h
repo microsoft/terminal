@@ -47,6 +47,12 @@ public:
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
 
+    // In-process entry point for creating a brand-new window whose first tab
+    // is described by `terminalArgs`. Equivalent to
+    // `wt -w -1 new-tab <terminalArgs>` without spawning a new process and
+    // without going through commandline parsing.
+    void OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs);
+
 private:
     struct SummonWindowSelectionArgs
     {

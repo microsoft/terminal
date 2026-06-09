@@ -11,6 +11,7 @@
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "SummonWindowByIdRequestedArgs.g.h"
+#include "NewWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
 #include "WindowListEntry.g.h"
@@ -83,6 +84,15 @@ namespace winrt::TerminalApp::implementation
     public:
         SummonWindowByIdRequestedArgs(uint64_t id) :
             _WindowId{ id } {};
+    };
+
+    struct NewWindowRequestedArgs : NewWindowRequestedArgsT<NewWindowRequestedArgs>
+    {
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs, TerminalArgs, nullptr);
+
+    public:
+        NewWindowRequestedArgs(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs) :
+            _TerminalArgs{ terminalArgs } {};
     };
 
     struct RequestMoveContentArgs : RequestMoveContentArgsT<RequestMoveContentArgs>
@@ -249,6 +259,7 @@ namespace winrt::TerminalApp::implementation
 
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
         til::typed_event<IInspectable, winrt::TerminalApp::WindowListRequest> RequestWindowList;
+        til::typed_event<IInspectable, winrt::TerminalApp::NewWindowRequestedArgs> RequestNewWindow;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);
@@ -370,7 +381,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
-        safe_void_coroutine _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs newContentArgs);
+        void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs);
         safe_void_coroutine _OpenWorkspaceWindow(const winrt::hstring name);
 
         void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
