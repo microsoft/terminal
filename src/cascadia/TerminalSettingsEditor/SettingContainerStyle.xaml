@@ -123,6 +123,4 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
     </Style>
-
-
 </ResourceDictionary>

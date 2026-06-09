@@ -67,6 +67,13 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingsCard>
 
+            <!--  Allow OSC 777 Desktop Notifications  -->
+            <local:SettingsCard x:Name="AllowOscNotifications"
+                                    x:Uid="Profile_AllowOscNotifications">
+                <ToggleSwitch IsOn="{x:Bind Profile.AllowOscNotifications, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingsCard>
+
             <!--  Answerback Message  -->
             <local:SettingsExpander x:Name="AnswerbackMessage"
                                     x:Uid="Profile_AnswerbackMessage">

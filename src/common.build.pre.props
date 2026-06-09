@@ -122,8 +122,6 @@
           Conhost code uses a lot of nameless structs/unions.
         C4312: 'type cast': conversion from 'A' to 'B' of greater size
           Conhost code converts DWORDs to HANDLEs for instance.
-        C4467: usage of ATL attributes is deprecated
-          Conhost code still uses ATL.
         C26445: Do not assign std::span or std::string_view to a reference. They are cheap to construct and are not owners of the underlying data. (gsl.view).
           Even for MSVC v19.32 this is actually far from true. Copying (as opposed to referencing) larger
           than register-sized structures is fairly expensive. Example: https://godbolt.org/z/oPco88PaP
@@ -136,7 +134,7 @@
         C26494: Variable 'index' is uninitialized. Always initialize an object (type. 5).
           This diagnostic is broken in VS 17.7 which our CI currently uses. It's fixed in 17.8.
       -->
-      <DisableSpecificWarnings>4201;4312;4467;5105;26434;26445;26456;26478;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4201;4312;5105;26434;26445;26456;26478;26494;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
