@@ -358,7 +358,7 @@ winget configure .config\configuration.winget
 * You must install the following Workloads via the VS Installer. Note: Opening
   the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
   * Desktop Development with C++
-  * WinUI applicatoin development
+  * WinUI application development
 * You must install the [.NET Framework 4.7.2 Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
