@@ -909,10 +909,7 @@ namespace winrt::TerminalApp::implementation
             newContentArgs = NewTerminalArgs{};
         }
 
-        // If this is a NewTerminalArgs, resolve its profile up-front so the
-        // spawned window doesn't need to re-resolve it. Other content types
-        // (e.g. scratchpad) don't have profiles to evaluate — they get passed
-        // through as-is.
+        // Manually fill in the evaluated profile
         if (const auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
             const auto profile{ _settings.GetProfileForArgs(terminalArgs) };

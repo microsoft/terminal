@@ -296,10 +296,9 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     }
 }
 
-// Public entry point used by in-process callers (e.g. AppHost reacting to a
-// TerminalPage RequestNewWindow event) to create a brand-new window whose
-// first tab is described by `contentArgs`. Bypasses the commandline parser
-// entirely by handing AppHost a pre-built startup-action list.
+// Create a new window with a tab is described by `contentArgs`. Bypasses the
+// commandline parser entirely by handing AppHost a pre-built startup-action
+// list. Used by the TerminalPage::_OpenNewWindow event.
 void WindowEmperor::OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs)
 {
     _assertIsMainThread();
@@ -319,6 +318,7 @@ void WindowEmperor::OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Mo
     request.StartupActions(std::move(actions));
     CreateNewWindow(std::move(request));
 }
+
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 {
     int64_t max = INT64_MIN;
