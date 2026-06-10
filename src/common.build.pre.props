@@ -6,12 +6,12 @@
     <!-- We're controlling the output paths manually; do not let the rest of VS override them. -->
     <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
 
-    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)\..\bin\$(Platform)\$(Configuration)\</OutDir>
     <!-- C++/WinRT projects get their own project-specific output directories. -->
-    <OutDir Condition="'$(OpenConsoleCppWinRTProject)'=='true'">$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <OutDir Condition="'$(OpenConsoleCppWinRTProject)'=='true'">$(SolutionDir)\..\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
     <OutputPath>$(OutDir)</OutputPath>
 
-    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(SolutionDir)\..\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IntermediateOutputPath>$(IntDir)</IntermediateOutputPath>
 
     <!-- Both pairs of OutDir/OutputPath and IntDir/IntermediateOutputPath must be set;
@@ -20,7 +20,7 @@
 
   <PropertyGroup>
     <!-- This one is always set so that non-redirected projects can depend on it. -->
-    <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OpenConsoleCommonOutDir>
+    <OpenConsoleCommonOutDir>$(SolutionDir)\..\bin\$(Platform)\$(Configuration)\</OpenConsoleCommonOutDir>
   </PropertyGroup>
 
   <ItemGroup Label="ProjectConfigurations">
@@ -283,8 +283,8 @@
       This saves running a powershell script for every project.
     -->
     <VcpkgApplocalDeps>false</VcpkgApplocalDeps>
-    <VcpkgInstalledDir>$(SolutionDir)\obj\$(Platform)\vcpkg</VcpkgInstalledDir>
-    <VcpkgInstalledDir Condition="'$(Configuration)'=='Fuzzing'">$(SolutionDir)\obj\$(Platform)\vcpkg-fuzzing</VcpkgInstalledDir>
+    <VcpkgInstalledDir>$(SolutionDir)\..\obj\$(Platform)\vcpkg</VcpkgInstalledDir>
+    <VcpkgInstalledDir Condition="'$(Configuration)'=='Fuzzing'">$(SolutionDir)\..\obj\$(Platform)\vcpkg-fuzzing</VcpkgInstalledDir>
     <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VCPKG_ROOT)</VcpkgRoot>
     <!-- VsInstallRoot is set by Visual Studio and MSBuild -->
     <VcpkgRoot Condition="'$(VcpkgRoot)'==''">$(VsInstallRoot)\VC\vcpkg</VcpkgRoot>
