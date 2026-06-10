@@ -102,14 +102,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         if (!_ActionIconProperty)
         {
-            // No metadata default value — a fresh FontIcon is allocated per
-            // card in OnApplyTemplate when the user hasn't set ActionIcon
-            // explicitly. We cannot use a default FontIcon here because
-            // UIElements have a single-parent constraint (one instance can't
-            // be shared across cards) and a default string was rendering
-            // through ContentPresenter -> TextBlock, whose line-height
-            // padding made the Viewbox-scaled glyph visibly smaller than
-            // WCT's SymbolIcon default.
+            // No metadata default: a FontIcon is a UIElement and can't be shared as a
+            // DP default (single-parent constraint), so _EnsureDefaultActionIcon assigns
+            // a fresh default chevron per card when the consumer hasn't set one.
             _ActionIconProperty = DependencyProperty::Register(
                 L"ActionIcon",
                 xaml_typename<IInspectable>(),
@@ -203,10 +198,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _contentChangedToken = 0;
         }
 
+        _EnsureDefaultActionIcon();
         _UpdateActionIconVisibility();
         _UpdateHeaderVisibility();
         _UpdateDescriptionVisibility();
         _UpdateHeaderIconVisibility();
+        _UpdateContentVisibility();
         // Initial visual states.
         _CheckInitialVisualState();
         _CheckHeaderIconState();
@@ -217,6 +214,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (const auto strongThis = weakThis.get())
             {
                 strongThis->_SetAccessibleContentName();
+                strongThis->_UpdateContentVisibility();
             }
         });
 
@@ -281,15 +279,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // Add row spacing whenever the content sits below the header (Vertical or RightWrapped*)
         // AND there's both Content and (Header or Description) to space apart.
-        //
-        // For the Vertical case we read ContentAlignment() directly rather than
-        // state.Name(): our Left/Vertical visual states are empty placeholders
-        // (the actual layout work happens in _UpdateContentAlignmentState via
-        // direct C++ property writes) and an empty <VisualState> may not have
-        // its name register as CurrentState when GoToState fires in WinUI 2 —
-        // leaving stackedLayout incorrectly false. RightWrapped*, in contrast,
-        // are size-triggered visual states with real setters and ControlSizeTrigger,
-        // so their CurrentState is reliably observed.
+        // For Vertical we read ContentAlignment() directly: that state is an empty
+        // placeholder (see _UpdateContentAlignmentState) and an empty <VisualState>'s name
+        // may not register as CurrentState under WinUI 2 GoToState. RightWrapped* have real
+        // setters/triggers, so their CurrentState is observed reliably.
         const auto stateName{ state ? state.Name() : hstring{} };
         const bool stackedLayout =
             ContentAlignment() == Editor::SettingsCardContentAlignment::Vertical ||
@@ -305,11 +298,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                       hstring{ shouldSpace ? ContentSpacingState : NoContentSpacingState },
                                       true);
 
-        // Belt-and-suspenders for the WinUI 2 quirk: VisualState.Setters activated
-        // by C++ GoToState don't reliably engage. The ContentSpacing setter
-        // targets PART_RootGrid.RowSpacing; set it directly here as well so the
-        // Vertical / RightWrapped stacked-layout cards actually get the breathing
-        // room between header and content that WCT shows.
+        // Same WinUI 2 quirk as _UpdateContentAlignmentState: also set the
+        // ContentSpacing setter's target (PART_RootGrid.RowSpacing) directly, since
+        // GoToState-activated setters don't reliably engage.
         if (const auto child{ GetTemplateChild(hstring{ RootGridPart }) })
         {
             if (const auto rootGrid{ child.try_as<Grid>() })
@@ -437,6 +428,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return FocusManager::GetFocusedElement().try_as<FrameworkElement>();
     }
 
+    void SettingsCard::_EnsureDefaultActionIcon()
+    {
+        // Default chevron, matching WCT (whose IconElement ActionIcon defaults to the
+        // \uE974 glyph). Created per card because a FontIcon can't be a shared DP default.
+        if (ActionIcon())
+        {
+            return;
+        }
+
+        Controls::FontIcon defaultIcon;
+        defaultIcon.FontFamily(winrt::Windows::UI::Xaml::Media::FontFamily{ L"Segoe Fluent Icons, Segoe MDL2 Assets" });
+        defaultIcon.FontSize(20.0);
+        defaultIcon.Glyph(L"\uE974");
+        defaultIcon.IsTextScaleFactorEnabled(false);
+        ActionIcon(defaultIcon);
+    }
+
     void SettingsCard::_UpdateActionIconVisibility()
     {
         if (const auto child{ GetTemplateChild(hstring{ ActionIconPresenterHolder }) })
@@ -481,18 +489,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void SettingsCard::_UpdateContentVisibility()
+    {
+        // Collapse the content presenter when there's no content, so an empty card
+        // doesn't reserve the content column. Mirrors WCT's ContentVisibilityStates
+        // group (driven there by an IsNullOrEmptyStateTrigger).
+        if (const auto child{ GetTemplateChild(hstring{ ContentPresenterPart }) })
+        {
+            if (const auto frameworkChild{ child.try_as<FrameworkElement>() })
+            {
+                frameworkChild.Visibility(_isNullOrEmpty(Content()) ? Visibility::Collapsed : Visibility::Visible);
+            }
+        }
+    }
+
     void SettingsCard::_UpdateContentAlignmentState()
     {
-        // Map ContentAlignment to the visual state name *and* the corresponding
-        // direct layout values. We drive both: GoToState keeps the visual state
-        // machine in sync (so _CheckVerticalSpacingState sees the right CurrentState),
-        // but we *also* apply the layout properties directly to PART_ContentPresenter
-        // because in WinUI 2, attached-property changes (Grid.Row/Grid.Column) and
-        // HorizontalAlignment changes inside VisualState.Setters or Storyboards
-        // don't reliably engage when activated by programmatic VisualStateManager::GoToState
-        // — only by XAML StateTriggers (which is what WCT uses via tk:IsEqualStateTrigger).
-        // Until/unless an equivalent state trigger gets ported, the direct C++ set is
-        // the load-bearing path for Left/Vertical.
+        // Map ContentAlignment to its visual state *and* apply the layout values directly
+        // to PART_ContentPresenter. We drive both because in WinUI 2 attached-property and
+        // alignment changes inside VisualState.Setters don't engage via programmatic
+        // GoToState (only via XAML StateTriggers, as WCT uses), so the direct C++ writes
+        // are the load-bearing path for Left/Vertical, while GoToState just keeps
+        // CurrentState in sync for _CheckVerticalSpacingState.
         std::wstring_view state{ RightState };
         int contentRow{ 0 };
         int contentColumn{ 2 };

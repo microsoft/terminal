@@ -69,7 +69,7 @@
 
             <!--  Allow OSC 777 Desktop Notifications  -->
             <local:SettingsCard x:Name="AllowOscNotifications"
-                                    x:Uid="Profile_AllowOscNotifications">
+                                x:Uid="Profile_AllowOscNotifications">
                 <ToggleSwitch IsOn="{x:Bind Profile.AllowOscNotifications, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingsCard>

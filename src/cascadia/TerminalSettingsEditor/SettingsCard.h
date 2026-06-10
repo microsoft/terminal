@@ -56,9 +56,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _DisableButtonInteraction();
         void _GoToCommonState(const std::wstring_view& state, bool useTransitions);
         void _UpdateActionIconVisibility();
+        void _EnsureDefaultActionIcon();
         void _UpdateHeaderVisibility();
         void _UpdateDescriptionVisibility();
         void _UpdateHeaderIconVisibility();
+        void _UpdateContentVisibility();
         void _UpdateContentAlignmentState();
         void _CheckInitialVisualState();
         void _CheckHeaderIconState();

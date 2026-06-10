@@ -206,9 +206,7 @@
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="TextWrapping" Value="NoWrap" />
         <!--  Value is set below to appease the compiler. The localized resource is used instead.  -->
-        <Setter x:Uid="TextBoxSettingStyle_PlaceholderText"
-                Property="PlaceholderText"
-                Value="None" />
+        <Setter x:Uid="TextBoxSettingStyle_PlaceholderText" Property="PlaceholderText" Value="None" />
     </Style>
 
     <!--  Text Block  -->

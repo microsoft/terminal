@@ -199,14 +199,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     ResourceDictionary StyleExtensions::_sharedImplicitStylesDictionary{ nullptr };
 
-    // Lazy singleton: loads SettingsControlsImplicitStyles.xaml exactly once
-    // for the process lifetime. We do NOT append this dictionary itself to any
-    // element's MergedDictionaries — that triggers "Element is already the
-    // child of another element" once a second element tries to merge it.
-    // Instead, EnsureImplicitStylesMergedInto copies the dictionary's entries
-    // (Style references) into the target's own Resources. Style instances are
-    // reference types but not UIElements, so sharing them across multiple
-    // elements' Resources collections is safe.
+    // Lazy singleton: loads SettingsControlsImplicitStyles.xaml once for the process
+    // lifetime. See that file's header for why we copy entries instead of appending
+    // the dictionary to MergedDictionaries.
     ResourceDictionary StyleExtensions::_SharedImplicitStylesDictionary()
     {
         if (!_sharedImplicitStylesDictionary)
@@ -252,14 +247,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 return;
             }
 
-            // Copy each entry (Style or other resource) from the shared loaded
-            // dictionary into the target's Resources. Style instances are
-            // reference types that can safely be shared across multiple
-            // element Resources collections (unlike UIElements, which have a
-            // single-parent constraint). We deliberately do NOT
-            // MergedDictionaries.Append(sharedDict) — that path throws
-            // "Element is already the child of another element" once a second
-            // element tries to merge the same shared dict.
+            // Copy each entry into the target's Resources. Styles are reference types
+            // that can be shared across elements (unlike the dictionary itself, which
+            // can't be appended to more than one MergedDictionaries. See the XAML header).
             for (const auto& kv : sharedDict)
             {
                 if (!resources.HasKey(kv.Key()))
