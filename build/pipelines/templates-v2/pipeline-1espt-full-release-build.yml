@@ -78,6 +78,7 @@ extends:
     - 1ES.PT.ViaStartRight
     pool:
       name: SHINE-INT-L
+      demands: ImageOverride -equals SHINE-VS18-Latest
       os: windows
     sdl:
       tsa:
@@ -164,6 +165,7 @@ extends:
               parameters:
                 pool:
                   name: SHINE-INT-S
+                  demands: ImageOverride -equals SHINE-VS18-Latest
                   os: windows
                 outerTemplateContext:
                   outputs:
@@ -184,6 +186,7 @@ extends:
               parameters:
                 pool:
                   name: SHINE-INT-S
+                  demands: ImageOverride -equals SHINE-VS18-Latest
                   os: windows
                 outerTemplateContext:
                   outputs:
@@ -202,6 +205,7 @@ extends:
               parameters:
                 pool:
                   name: SHINE-INT-S
+                  demands: ImageOverride -equals SHINE-VS18-Latest
                   os: windows
                 outerTemplateContext:
                   outputs:
@@ -226,6 +230,7 @@ extends:
             parameters:
               pool:
                 name: SHINE-INT-S
+                demands: ImageOverride -equals SHINE-VS18-Latest
                 os: windows
               includePublicSymbolServer: ${{ parameters.publishSymbolsToPublic }}
               symbolExpiryTime: ${{ parameters.symbolExpiryTime }}
