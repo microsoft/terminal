@@ -176,17 +176,8 @@
     <ClInclude Include="SettingsExpander.h">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="StyleExtensions.h">
-      <DependentUpon>StyleExtensions.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ControlSizeTrigger.h">
-      <DependentUpon>ControlSizeTrigger.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="CornerRadiusFilterConverters.h">
-      <DependentUpon>CornerRadiusFilterConverters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="StringDefaultTemplateSelector.h">
-      <DependentUpon>StringDefaultTemplateSelector.idl</DependentUpon>
+    <ClInclude Include="SettingsControlsHelpers.h">
+      <DependentUpon>SettingsControlsHelpers.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
     <ClInclude Include="PreviewConnection.h" />
@@ -263,9 +254,6 @@
     </Page>
     <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
-    </Page>
-    <Page Include="SettingContainerStyle.xaml">
-      <Type>DefaultStyle</Type>
     </Page>
     <Page Include="SettingsControlsStyle.xaml">
       <Type>DefaultStyle</Type>
@@ -409,17 +397,8 @@
     <ClCompile Include="SettingsExpander.cpp">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="StyleExtensions.cpp">
-      <DependentUpon>StyleExtensions.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ControlSizeTrigger.cpp">
-      <DependentUpon>ControlSizeTrigger.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="CornerRadiusFilterConverters.cpp">
-      <DependentUpon>CornerRadiusFilterConverters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="StringDefaultTemplateSelector.cpp">
-      <DependentUpon>StringDefaultTemplateSelector.idl</DependentUpon>
+    <ClCompile Include="SettingsControlsHelpers.cpp">
+      <DependentUpon>SettingsControlsHelpers.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="PreviewConnection.cpp">
@@ -531,16 +510,7 @@
     <Midl Include="SettingsExpander.idl">
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="StyleExtensions.idl">
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="ControlSizeTrigger.idl">
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="CornerRadiusFilterConverters.idl">
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="StringDefaultTemplateSelector.idl">
+    <Midl Include="SettingsControlsHelpers.idl">
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

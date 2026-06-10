@@ -31,10 +31,7 @@
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingsCard.idl" />
     <Midl Include="SettingsExpander.idl" />
-    <Midl Include="StyleExtensions.idl" />
-    <Midl Include="ControlSizeTrigger.idl" />
-    <Midl Include="CornerRadiusFilterConverters.idl" />
-    <Midl Include="StringDefaultTemplateSelector.idl" />
+    <Midl Include="SettingsControlsHelpers.idl" />
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="NewTabMenuViewModel.idl" />
   </ItemGroup>
@@ -56,7 +53,6 @@
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
     <Page Include="EditAction.xaml" />
-    <Page Include="SettingContainerStyle.xaml" />
     <Page Include="SettingsControlsStyle.xaml" />
     <Page Include="SettingsControlsImplicitStyles.xaml" />
     <Page Include="AddProfile.xaml" />

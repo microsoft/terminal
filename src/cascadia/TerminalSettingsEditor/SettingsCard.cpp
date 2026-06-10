@@ -5,7 +5,7 @@
 #include "SettingsCard.h"
 #include "SettingsCard.g.cpp"
 #include "SettingsCardAutomationPeer.g.cpp"
-#include "StyleExtensions.h"
+#include "SettingsControlsHelpers.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System;

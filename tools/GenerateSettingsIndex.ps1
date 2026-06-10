@@ -210,7 +210,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         }
 
         # Extract Name via GetAttribute to avoid PowerShell's XML integration
-        # returning the element name (e.g. "local:SettingContainer") when x:Name is absent.
+        # returning the element name (e.g. "local:SettingsCard") when x:Name is absent.
         $name = $settingContainer.GetAttribute("x:Name")
         if ([string]::IsNullOrEmpty($name))
         {

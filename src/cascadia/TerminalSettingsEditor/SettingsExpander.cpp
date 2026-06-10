@@ -6,7 +6,7 @@
 #include "SettingsExpander.g.cpp"
 #include "SettingsExpanderAutomationPeer.g.cpp"
 #include "SettingsExpanderItemStyleSelector.g.cpp"
-#include "StyleExtensions.h"
+#include "SettingsControlsHelpers.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;

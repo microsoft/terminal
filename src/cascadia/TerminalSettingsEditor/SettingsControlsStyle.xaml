@@ -161,7 +161,6 @@
     -->
     <x:String x:Key="SettingsExpanderChevronToolTip">Show all settings</x:String>
 
-    <local:CornerRadiusConverter x:Key="CornerRadiusConverter" />
     <local:TopCornerRadiusFilterConverter x:Key="TopCornerRadiusFilterConverter" />
     <local:BottomCornerRadiusFilterConverter x:Key="BottomCornerRadiusFilterConverter" />
 

@@ -1,0 +1,65 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+// Helper types backing the Windows Community Toolkit port of SettingsCard/SettingsExpander.
+// These are grouped together so the port boundary is obvious.
+namespace Microsoft.Terminal.Settings.Editor
+{
+    // A conditional state trigger that activates based on the size of a target
+    // FrameworkElement. Ported from CommunityToolkit.WinUI.ControlSizeTrigger.
+    [default_interface] runtimeclass ControlSizeTrigger : Windows.UI.Xaml.StateTriggerBase
+    {
+        ControlSizeTrigger();
+
+        Boolean CanTrigger;
+        static Windows.UI.Xaml.DependencyProperty CanTriggerProperty { get; };
+
+        Double MinWidth;
+        static Windows.UI.Xaml.DependencyProperty MinWidthProperty { get; };
+
+        Double MaxWidth;
+        static Windows.UI.Xaml.DependencyProperty MaxWidthProperty { get; };
+
+        Double MinHeight;
+        static Windows.UI.Xaml.DependencyProperty MinHeightProperty { get; };
+
+        Double MaxHeight;
+        static Windows.UI.Xaml.DependencyProperty MaxHeightProperty { get; };
+
+        Windows.UI.Xaml.FrameworkElement TargetElement;
+        static Windows.UI.Xaml.DependencyProperty TargetElementProperty { get; };
+
+        Boolean IsActive { get; };
+    }
+
+    // Filter a CornerRadius down to only its top/bottom corners. Used
+    // by the SettingsExpander template so the header and items panel visually
+    // stitch together with rounded outer corners only.
+    [default_interface] runtimeclass TopCornerRadiusFilterConverter : Windows.UI.Xaml.Data.IValueConverter
+    {
+        TopCornerRadiusFilterConverter();
+    }
+
+    [default_interface] runtimeclass BottomCornerRadiusFilterConverter : Windows.UI.Xaml.Data.IValueConverter
+    {
+        BottomCornerRadiusFilterConverter();
+    }
+
+    // Selects a template only when the bound item is a string. Used by
+    // SettingsCard/SettingsExpander to render string Header/Description content.
+    [default_interface] runtimeclass StringDefaultTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        StringDefaultTemplateSelector();
+
+        Windows.UI.Xaml.DataTemplate StringTemplate;
+    }
+
+    // Injects the project's SettingsControlsImplicitStyles.xaml dictionary into a
+    // SettingsCard/SettingsExpander's Resources so children (e.g. ToggleSwitch)
+    // pick up card-appropriate defaults. Loaded from C++ rather than the WCT
+    // attached-property Setter pattern, which crashes WinUI 2 in this codebase.
+    static runtimeclass StyleExtensions
+    {
+        static void EnsureImplicitStylesMergedInto(Windows.UI.Xaml.FrameworkElement target);
+    }
+}

@@ -201,7 +201,7 @@
                 </local:SettingsCard>
             </DataTemplate>
 
-            <!--  This styling matches that of ExpanderSettingContainerStyle for consistency  -->
+            <!--  This styling matches that of the SettingsExpander for consistency  -->
             <Style x:Key="ExpanderStyle"
                    TargetType="muxc:Expander">
                 <Setter Property="MinHeight" Value="64" />
