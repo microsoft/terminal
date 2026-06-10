@@ -22,11 +22,11 @@ properties:
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: vsPackage
       directives:
-        description: Install Visual Studio 2022 Community (any edition is OK)
+        description: Install Visual Studio 2026 Community (any edition is OK)
         # Requires elevation for the set operation (i.e., installation)
         securityContext: elevated
       settings:
-        id: Microsoft.VisualStudio.2022.Community
+        id: Microsoft.VisualStudio.Community
         source: winget
     - resource: Microsoft.VisualStudio.DSC/VSComponents
       dependsOn:
@@ -38,6 +38,6 @@ properties:
         securityContext: elevated
       settings:
         productId: Microsoft.VisualStudio.Product.Community
-        channelId: VisualStudio.17.Release
+        channelId: VisualStudio.18.Release
         vsConfigFile: '${WinGetConfigRoot}\..\.vsconfig'
   configurationVersion: 0.2.0
