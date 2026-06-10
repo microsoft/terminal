@@ -353,9 +353,7 @@ winget configure .config\configuration.winget
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
 * You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
-* You must have the [Windows 11 (10.0.26100.0)
-  SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
-  installed
+* You must have the [Windows 11 (10.0.26100) SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) installed at version 10.0.26100.8249 or greater.
 * You must have at least [VS 2026](https://visualstudio.microsoft.com/downloads/) version 18.6 installed
 * You must install the following Workloads via the VS Installer. Note: Opening
   the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
