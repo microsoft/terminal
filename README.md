@@ -339,7 +339,7 @@ You can configure your environment to build Terminal in one of two ways:
 ### Using WinGet configuration file
 
 After cloning the repository, you can use a [WinGet configuration file](https://learn.microsoft.com/en-us/windows/package-manager/configuration/#use-a-winget-configuration-file-to-configure-your-machine)
-to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2022 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2022. To run the default configuration file, you can either double-click the file from explorer or run the following command:
+to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2026 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2026. To run the default configuration file, you can either double-click the file from explorer or run the following command:
 
 ```powershell
 winget configure .config\configuration.winget
@@ -356,16 +356,12 @@ winget configure .config\configuration.winget
 * You must have the [Windows 11 (10.0.22621.0)
   SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
   installed
-* You must have at least [VS
-  2022](https://visualstudio.microsoft.com/downloads/) installed
+* You must have at least [VS 2026](https://visualstudio.microsoft.com/downloads/) version 18.6 installed
 * You must install the following Workloads via the VS Installer. Note: Opening
-  the solution in VS 2022 will [prompt you to install missing components
-  automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
+  the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
   * Desktop Development with C++
-  * Universal Windows Platform Development
-  * **The following Individual Components**
-    * C++ (v143) Universal Windows Platform Tools
-* You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
+  * WinUI applicatoin development
+* You must install the [.NET Framework 4.7.2 Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
 
