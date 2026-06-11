@@ -873,10 +873,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Ask the WindowEmperor (in-process) to create a brand-new window whose
-    // first tab is described by `contentArgs`. The event bubbles up through
-    // TerminalWindow to AppHost, which calls into the WindowEmperor directly
-    // — no second wt.exe process is launched, and no commandline parsing
-    // happens along the way.
+    // first tab is described by `contentArgs`. This will bubble up to AppHost,
+    // who will call WindowEmperor::CreateNewWindow.
     void TerminalPage::_OpenNewWindow(const INewContentArgs& contentArgs)
     {
         if (!contentArgs)
@@ -884,8 +882,17 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto args = winrt::make<implementation::NewWindowRequestedArgs>(contentArgs);
-        RequestNewWindow.raise(*this, args);
+        ActionAndArgs newTabAction{};
+        newTabAction.Action(ShortcutAction::NewTab);
+        newTabAction.Args(NewTabArgs{ contentArgs });
+
+        auto actions = winrt::single_threaded_vector<ActionAndArgs>({ std::move(newTabAction) });
+
+        // It's fine to pass `0` as the window ID, since this event path will
+        // always land in CreateNewWindow, which will just ignore it. 
+        winrt::TerminalApp::WindowRequestedArgs request{ 0, winrt::TerminalApp::CommandlineArgs{} };
+        request.StartupActions(std::move(actions));
+        RequestNewWindow.raise(*this, request);
     }
 
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,

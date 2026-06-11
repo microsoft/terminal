@@ -37,8 +37,6 @@ public:
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
-    // OpenNewWindow is used for opening a new window with args for the new tab
-    void OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs);
 
 private:
     struct SummonWindowSelectionArgs

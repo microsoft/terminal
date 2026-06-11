@@ -296,29 +296,6 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     }
 }
 
-// Create a new window with a tab is described by `contentArgs`. Bypasses the
-// commandline parser entirely by handing AppHost a pre-built startup-action
-// list. Used by the TerminalPage::_OpenNewWindow event.
-void WindowEmperor::OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs)
-{
-    _assertIsMainThread();
-
-    if (!contentArgs)
-    {
-        return;
-    }
-
-    Settings::Model::ActionAndArgs newTabAction{};
-    newTabAction.Action(Settings::Model::ShortcutAction::NewTab);
-    newTabAction.Args(Settings::Model::NewTabArgs{ contentArgs });
-
-    auto actions = winrt::single_threaded_vector<Settings::Model::ActionAndArgs>({ std::move(newTabAction) });
-
-    winrt::TerminalApp::WindowRequestedArgs request{ 0, winrt::TerminalApp::CommandlineArgs{} };
-    request.StartupActions(std::move(actions));
-    CreateNewWindow(std::move(request));
-}
-
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 {
     int64_t max = INT64_MIN;

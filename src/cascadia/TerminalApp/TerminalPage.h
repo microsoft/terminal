@@ -10,7 +10,6 @@
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
-#include "NewWindowRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
 #include "Toast.h"
@@ -72,15 +71,6 @@ namespace winrt::TerminalApp::implementation
     public:
         RenameWindowRequestedArgs(const winrt::hstring& name) :
             _ProposedName{ name } {};
-    };
-
-    struct NewWindowRequestedArgs : NewWindowRequestedArgsT<NewWindowRequestedArgs>
-    {
-        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::INewContentArgs, ContentArgs, nullptr);
-
-    public:
-        NewWindowRequestedArgs(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs) :
-            _ContentArgs{ contentArgs } {};
     };
 
     struct RequestMoveContentArgs : RequestMoveContentArgsT<RequestMoveContentArgs>
@@ -225,7 +215,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs> RequestReceiveContent;
 
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
-        til::typed_event<IInspectable, winrt::TerminalApp::NewWindowRequestedArgs> RequestNewWindow;
+        til::typed_event<IInspectable, winrt::TerminalApp::WindowRequestedArgs> RequestNewWindow;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);

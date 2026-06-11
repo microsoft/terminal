@@ -141,7 +141,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
-        event Windows.Foundation.TypedEventHandler<Object, NewWindowRequestedArgs> RequestNewWindow;
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
 
         void AttachContent(String content, UInt32 tabIndex);
         void SendContentToOther(RequestReceiveContentArgs args);

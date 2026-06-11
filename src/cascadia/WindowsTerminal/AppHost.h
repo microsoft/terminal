@@ -98,7 +98,7 @@ private:
                          const winrt::Windows::Foundation::IInspectable& args);
 
     void _HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                                   const winrt::TerminalApp::NewWindowRequestedArgs& args);
+                                   const winrt::TerminalApp::WindowRequestedArgs& args);
 
     void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::TerminalApp::SystemMenuChangeArgs& args);
