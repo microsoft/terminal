@@ -114,41 +114,50 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Name);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Source);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Hidden);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Icon);
-        OBSERVABLE_PROJECTED_SETTING(_profile, CloseOnExit);
-        OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
-        OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
-        OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
-        OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
-        OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BellSound);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RightClickContextMenu);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ShowMarks);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AutoMarkPrompts);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RepositionCursorWithMouse);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ForceVTInput);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowKittyKeyboardMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtChecksumReport);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtClipboardWrite);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowOscNotifications);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
-        OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, DragDropDelimiter);
+
+// The clearable settings this view model projects from the underlying profile model.
+// This is the single source of truth for both the declarations below and the
+// ClearX() calls in ResetSettings()
+#define PROFILE_VIEW_MODEL_PROJECTED_SETTINGS(X) \
+    X(_profile, Name)                            \
+    X(_profile, Source)                          \
+    X(_profile, Hidden)                          \
+    X(_profile, Icon)                            \
+    X(_profile, CloseOnExit)                     \
+    X(_profile, TabTitle)                        \
+    X(_profile, TabColor)                        \
+    X(_profile, SuppressApplicationTitle)        \
+    X(_profile, ScrollState)                     \
+    X(_profile, Padding)                         \
+    X(_profile, Commandline)                     \
+    X(_profile, StartingDirectory)               \
+    X(_profile, AntialiasingMode)                \
+    X(_profile.DefaultAppearance(), Opacity)     \
+    X(_profile.DefaultAppearance(), UseAcrylic)  \
+    X(_profile, HistorySize)                     \
+    X(_profile, SnapOnInput)                     \
+    X(_profile, AltGrAliasing)                   \
+    X(_profile, BellStyle)                       \
+    X(_profile, BellSound)                       \
+    X(_profile, Elevate)                         \
+    X(_profile, ReloadEnvironmentVariables)      \
+    X(_profile, RightClickContextMenu)           \
+    X(_profile, ShowMarks)                       \
+    X(_profile, AutoMarkPrompts)                 \
+    X(_profile, RepositionCursorWithMouse)       \
+    X(_profile, ForceVTInput)                    \
+    X(_profile, AllowKittyKeyboardMode)          \
+    X(_profile, AllowVtChecksumReport)           \
+    X(_profile, AllowVtClipboardWrite)           \
+    X(_profile, AllowOscNotifications)           \
+    X(_profile, AnswerbackMessage)               \
+    X(_profile, RainbowSuggestions)              \
+    X(_profile, PathTranslationStyle)            \
+    X(_profile, DragDropDelimiter)
+
+#define PROFILE_VIEW_MODEL_DECLARE_SETTING(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
+        PROFILE_VIEW_MODEL_PROJECTED_SETTINGS(PROFILE_VIEW_MODEL_DECLARE_SETTING)
+#undef PROFILE_VIEW_MODEL_DECLARE_SETTING
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);

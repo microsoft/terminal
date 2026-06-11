@@ -813,73 +813,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ProfileViewModel::ResetSettings()
     {
-        // Clear all profile-level settings (not Guid/ConnectionType which are permanent)
-        // NOTE: When adding a new OBSERVABLE_PROJECTED_SETTING to ProfileViewModel,
-        //       also add the corresponding ClearX() call here.
-        ClearName();
-        ClearSource();
-        ClearHidden();
-        ClearIcon();
-        ClearCloseOnExit();
-        ClearTabTitle();
-        ClearTabColor();
-        ClearSuppressApplicationTitle();
-        ClearScrollState();
-        ClearPadding();
-        ClearCommandline();
-        ClearStartingDirectory();
+        // Clear every projected profile setting. Each Clear##name() notifies the bound
+        // properties and cascades to derived previews via our PropertyChanged handler.
+#define PROFILE_VIEW_MODEL_CLEAR_SETTING(target, name) Clear##name();
+        PROFILE_VIEW_MODEL_PROJECTED_SETTINGS(PROFILE_VIEW_MODEL_CLEAR_SETTING)
+#undef PROFILE_VIEW_MODEL_CLEAR_SETTING
         _lastStartingDirectoryPath.clear();
-        ClearAntialiasingMode();
-        ClearOpacity();
-        ClearUseAcrylic();
-        ClearHistorySize();
-        ClearSnapOnInput();
-        ClearAltGrAliasing();
-        ClearBellStyle();
-        ClearBellSound();
-        ClearElevate();
-        ClearReloadEnvironmentVariables();
-        ClearRightClickContextMenu();
-        ClearShowMarks();
-        ClearAutoMarkPrompts();
-        ClearRepositionCursorWithMouse();
-        ClearForceVTInput();
-        ClearAllowKittyKeyboardMode();
-        ClearAllowVtChecksumReport();
-        ClearAllowVtClipboardWrite();
-        ClearAnswerbackMessage();
-        ClearRainbowSuggestions();
-        ClearPathTranslationStyle();
-        ClearDragDropDelimiter();
 
-        // Clear appearance settings on the underlying models.
-        const auto defaultAppearance = _profile.DefaultAppearance();
-        defaultAppearance.ClearDarkColorSchemeName();
-        defaultAppearance.ClearLightColorSchemeName();
-        defaultAppearance.ClearRetroTerminalEffect();
-        defaultAppearance.ClearCursorShape();
-        defaultAppearance.ClearCursorHeight();
-        defaultAppearance.ClearBackgroundImagePath();
-        defaultAppearance.ClearBackgroundImageOpacity();
-        defaultAppearance.ClearBackgroundImageStretchMode();
-        defaultAppearance.ClearBackgroundImageAlignment();
-        defaultAppearance.ClearIntenseTextStyle();
-        defaultAppearance.ClearAdjustIndistinguishableColors();
-        defaultAppearance.ClearForeground();
-        defaultAppearance.ClearBackground();
-        defaultAppearance.ClearSelectionBackground();
-        defaultAppearance.ClearCursorColor();
+        // Not exposed to SUI
+        _profile.ClearEnvironmentVariables();
+        _profile.ClearAllowKeypadMode();
 
-        const auto fontConfig = _profile.FontInfo();
-        fontConfig.ClearFontFace();
-        fontConfig.ClearFontSize();
-        fontConfig.ClearCellHeight();
-        fontConfig.ClearCellWidth();
-        fontConfig.ClearFontWeight();
-        fontConfig.ClearEnableBuiltinGlyphs();
-        fontConfig.ClearEnableColorGlyphs();
-        fontConfig.ClearFontAxes();
-        fontConfig.ClearFontFeatures();
+        // Clear complex child objects
+        _profile.DefaultAppearance().ClearAllSettings();
+        _profile.FontInfo().ClearAllSettings();
 
         if (HasUnfocusedAppearance())
         {
