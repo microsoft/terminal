@@ -7,8 +7,6 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Compatibility.h"
-#include "Rendering.h"
-#include "RenderingViewModel.h"
 #include "Extensions.h"
 #include "Actions.h"
 #include "ProfileViewModel.h"
@@ -575,11 +573,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<NavigateToPageArgs>(winrt::make<InteractionViewModel>(_settingsClone.GlobalSettings()), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Interaction/Content"), BreadcrumbSubPage::None));
-            }
-            else if (*clickedItemTag == renderingTag)
-            {
-                contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<NavigateToPageArgs>(winrt::make<RenderingViewModel>(_settingsClone), *this, elementToFocus));
-                _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Rendering/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == compatibilityTag)
             {

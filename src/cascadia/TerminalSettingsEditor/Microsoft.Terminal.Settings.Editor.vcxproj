@@ -119,10 +119,6 @@
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="RenderingViewModel.h">
-      <DependentUpon>RenderingViewModel.idl</DependentUpon>
-      <SubType>Code</SubType>
-    </ClInclude>
     <ClInclude Include="InteractionViewModel.h">
       <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -166,9 +162,6 @@
     <ClInclude Include="Appearances.h">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
-    </ClInclude>
-    <ClInclude Include="Rendering.h">
-      <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingContainer.h">
       <DependentUpon>SettingContainer.idl</DependentUpon>
@@ -244,9 +237,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Appearances.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Rendering.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="SettingContainerStyle.xaml">
@@ -331,10 +321,6 @@
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="RenderingViewModel.cpp">
-      <DependentUpon>RenderingViewModel.idl</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile>
     <ClCompile Include="InteractionViewModel.cpp">
       <DependentUpon>InteractionViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -378,9 +364,6 @@
     <ClCompile Include="Appearances.cpp">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
-    </ClCompile>
-    <ClCompile Include="Rendering.cpp">
-      <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="SettingContainer.cpp">
       <DependentUpon>SettingContainer.idl</DependentUpon>
@@ -443,10 +426,6 @@
       <DependentUpon>Compatibility.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="Rendering.idl">
-      <DependentUpon>Rendering.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
     <Midl Include="SearchIndex.idl" />
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -456,7 +435,6 @@
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
-    <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />

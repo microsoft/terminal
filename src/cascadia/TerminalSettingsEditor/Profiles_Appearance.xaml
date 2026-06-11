@@ -80,11 +80,10 @@
                                SourceProfile="{x:Bind Profile, Mode=OneWay}"
                                WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
 
-            <!--  Grouping: Transparency  -->
+            <!--  Section: Window settings  -->
             <StackPanel Style="{StaticResource PivotStackStyle}">
-                <TextBlock x:Uid="Profile_TransparencyHeader"
+                <TextBlock x:Uid="Profile_Section_Window"
                            Style="{StaticResource TextBlockSubHeaderStyle}" />
-
                 <!--  Opacity  -->
                 <local:SettingContainer x:Name="Opacity"
                                         x:Uid="Profile_Opacity"
@@ -116,13 +115,6 @@
                     <ToggleSwitch IsOn="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
-
-            </StackPanel>
-
-            <!--  Grouping: Window  -->
-            <StackPanel Style="{StaticResource PivotStackStyle}">
-                <TextBlock x:Uid="Profile_WindowHeader"
-                           Style="{StaticResource TextBlockSubHeaderStyle}" />
 
                 <!--  Padding  -->
                 <local:SettingContainer x:Name="Padding"

@@ -100,6 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool AutoMarkPromptsAvailable() const noexcept;
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
+        hstring SectionHeaderText() const;
         bool Orphaned() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
