@@ -5115,17 +5115,23 @@ namespace winrt::TerminalApp::implementation
                 bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
             }
 
-            // Reuse the brush instead of recreating it; only update its colors below.
+            // Reuse the existing brush when the tint is unchanged. Recreating
+            // the acrylic on every update (we get one for every
+            // BackgroundBrush event from the focused control, even when
+            // nothing changed) tears the effect down and rebuilds it, which
+            // flickers. When the tint actually changes we do create a new
+            // brush, so that everything listening for a Background change
+            // (e.g. the caption buttons' light/dark theme) still updates.
             auto acrylicBrush = TitlebarBrush().try_as<Media::AcrylicBrush>();
-            if (acrylicBrush == nullptr)
+            if (acrylicBrush == nullptr || til::color{ acrylicBrush.TintColor() } != bgColor)
             {
                 acrylicBrush = Media::AcrylicBrush();
                 // Backdrop, not HostBackdrop: HostBackdrop flickers on pointer/focus repaints.
                 acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
                 acrylicBrush.TintOpacity(0.5);
+                acrylicBrush.FallbackColor(bgColor);
+                acrylicBrush.TintColor(bgColor);
             }
-            acrylicBrush.FallbackColor(bgColor);
-            acrylicBrush.TintColor(bgColor);
 
             TitlebarBrush(acrylicBrush);
         }
