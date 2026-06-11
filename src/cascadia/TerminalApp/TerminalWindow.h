@@ -237,7 +237,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RequestLaunchPosition, Windows::Foundation::IInspectable, winrt::TerminalApp::LaunchPositionRequest, _root, RequestLaunchPosition);
         FORWARDED_TYPED_EVENT(RequestWindowList, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowListRequest, _root, RequestWindowList);
         FORWARDED_TYPED_EVENT(RequestOpenWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::OpenWindowRequestedArgs, _root, RequestOpenWindow);
-        FORWARDED_TYPED_EVENT(RequestNewWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::NewWindowRequestedArgs, _root, RequestNewWindow);
+        FORWARDED_TYPED_EVENT(RequestNewWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowRequestedArgs, _root, RequestNewWindow);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

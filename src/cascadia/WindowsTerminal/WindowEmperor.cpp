@@ -330,29 +330,6 @@ void WindowEmperor::OpenWindow(const winrt::hstring& name)
     _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
 }
 
-// Create a new window with a tab is described by `contentArgs`. Bypasses the
-// commandline parser entirely by handing AppHost a pre-built startup-action
-// list. Used by the TerminalPage::_OpenNewWindow event.
-void WindowEmperor::OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs)
-{
-    _assertIsMainThread();
-
-    if (!contentArgs)
-    {
-        return;
-    }
-
-    Settings::Model::ActionAndArgs newTabAction{};
-    newTabAction.Action(Settings::Model::ShortcutAction::NewTab);
-    newTabAction.Args(Settings::Model::NewTabArgs{ contentArgs });
-
-    auto actions = winrt::single_threaded_vector<Settings::Model::ActionAndArgs>({ std::move(newTabAction) });
-
-    winrt::TerminalApp::WindowRequestedArgs request{ 0, winrt::TerminalApp::CommandlineArgs{} };
-    request.StartupActions(std::move(actions));
-    CreateNewWindow(std::move(request));
-}
-
 // Shared tail used by both the commandline dispatch path and OpenWindow():
 // build a WindowRequestedArgs for a new window and, if the request carries a
 // name, atomically claim any persisted workspace stored under that name so

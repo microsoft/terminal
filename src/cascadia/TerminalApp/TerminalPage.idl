@@ -23,10 +23,6 @@ namespace TerminalApp
     {
         String Name { get; };
     };
-    [default_interface] runtimeclass NewWindowRequestedArgs
-    {
-        Microsoft.Terminal.Settings.Model.INewContentArgs ContentArgs { get; };
-    };
     [default_interface] runtimeclass SummonWindowByIdRequestedArgs
     {
         UInt64 WindowId { get; };
@@ -137,6 +133,6 @@ namespace TerminalApp
         // one exists. No new wt.exe process is spawned.
         event Windows.Foundation.TypedEventHandler<Object, OpenWindowRequestedArgs> RequestOpenWindow;
 
-        event Windows.Foundation.TypedEventHandler<Object, NewWindowRequestedArgs> RequestNewWindow;
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
     }
 }

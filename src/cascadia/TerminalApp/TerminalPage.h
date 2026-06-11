@@ -11,7 +11,6 @@
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
 #include "OpenWindowRequestedArgs.g.h"
-#include "NewWindowRequestedArgs.g.h"
 #include "SummonWindowByIdRequestedArgs.g.h"
 #include "RequestMoveContentArgs.g.h"
 #include "LaunchPositionRequest.g.h"
@@ -85,15 +84,6 @@ namespace winrt::TerminalApp::implementation
     public:
         OpenWindowRequestedArgs(const winrt::hstring& name) :
             _Name{ name } {};
-    };
-
-    struct NewWindowRequestedArgs : NewWindowRequestedArgsT<NewWindowRequestedArgs>
-    {
-        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::INewContentArgs, ContentArgs, nullptr);
-
-    public:
-        NewWindowRequestedArgs(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs) :
-            _ContentArgs{ contentArgs } {};
     };
 
     struct SummonWindowByIdRequestedArgs : SummonWindowByIdRequestedArgsT<SummonWindowByIdRequestedArgs>
@@ -270,7 +260,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
         til::typed_event<IInspectable, winrt::TerminalApp::WindowListRequest> RequestWindowList;
         til::typed_event<IInspectable, winrt::TerminalApp::OpenWindowRequestedArgs> RequestOpenWindow;
-        til::typed_event<IInspectable, winrt::TerminalApp::NewWindowRequestedArgs> RequestNewWindow;
+        til::typed_event<IInspectable, winrt::TerminalApp::WindowRequestedArgs> RequestNewWindow;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);

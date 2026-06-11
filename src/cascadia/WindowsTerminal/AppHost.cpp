@@ -459,14 +459,14 @@ void AppHost::_HandleOpenWindowRequested(const winrt::Windows::Foundation::IInsp
 }
 
 // In-process replacement for the old `ShellExecute("wt -w -1 new-tab ...")`
-// dance. Asks the WindowEmperor to create a fresh window whose first tab is
-// described by the given INewContentArgs.
+// dance. The page hands us a pre-built WindowRequestedArgs (with its
+// StartupActions already populated); we just forward it to the WindowEmperor.
 void AppHost::_HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable&,
-                                        const winrt::TerminalApp::NewWindowRequestedArgs& args)
+                                        const winrt::TerminalApp::WindowRequestedArgs& args)
 {
     if (_windowManager && args)
     {
-        _windowManager->OpenNewWindow(args.ContentArgs());
+        _windowManager->CreateNewWindow(args);
     }
 }
 
