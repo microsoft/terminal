@@ -41,5 +41,6 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IVector<String> RecentCommands;
         Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages;
         Windows.Foundation.Collections.IVector<String> AllowedCommandlines;
+        Double QuakeWindowSizePercent;
     }
 }
