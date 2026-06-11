@@ -889,7 +889,7 @@ namespace winrt::TerminalApp::implementation
         auto actions = winrt::single_threaded_vector<ActionAndArgs>({ std::move(newTabAction) });
 
         // It's fine to pass `0` as the window ID, since this event path will
-        // always land in CreateNewWindow, which will just ignore it. 
+        // always land in CreateNewWindow, which will just ignore it.
         winrt::TerminalApp::WindowRequestedArgs request{ 0, winrt::TerminalApp::CommandlineArgs{} };
         request.StartupActions(std::move(actions));
         RequestNewWindow.raise(*this, request);
