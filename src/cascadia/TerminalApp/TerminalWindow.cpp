@@ -1104,6 +1104,15 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Provide a pre-built list of startup actions for this window. Used by
+    //   the in-proc OpenNewWindow event (see TerminalPage::_OpenNewWindow ->
+    //   TerminalWindow -> AppHost -> WindowEmperor::OpenNewWindow)
+    void TerminalWindow::SetStartupActions(const IVector<ActionAndArgs>& actions)
+    {
+        _initialContentArgs = wil::to_vector(actions);
+    }
+
+    // Method Description:
     // - Parse the provided commandline arguments into actions, and try to
     //   perform them immediately.
     // - This function returns 0, unless a there was a non-zero result from

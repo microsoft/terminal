@@ -137,6 +137,11 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
         _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
         _launchShowWindowCommand = SW_NORMAL;
     }
+    else if (const auto actions = windowArgs.StartupActions(); actions && actions.Size() > 0)
+    {
+        _windowLogic.SetStartupActions(actions);
+        _launchShowWindowCommand = SW_NORMAL;
+    }
     else
     {
         const auto args = windowArgs.Command();
@@ -271,6 +276,7 @@ void AppHost::Initialize()
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
+    _revokers.RequestNewWindow = _windowLogic.RequestNewWindow(winrt::auto_revoke, { this, &AppHost::_HandleNewWindowRequested });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -408,6 +414,18 @@ void AppHost::_HandleRequestLaunchPosition(const winrt::Windows::Foundation::IIn
                                            winrt::TerminalApp::LaunchPositionRequest args)
 {
     args.Position(_GetWindowLaunchPosition());
+}
+
+// In-process replacement for the old `ShellExecute("wt -w -1 new-tab ...")`
+// dance. The page hands us a pre-built WindowRequestedArgs (with its
+// StartupActions already populated); we just forward it to the WindowEmperor.
+void AppHost::_HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                        const winrt::TerminalApp::WindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->CreateNewWindow(args);
+    }
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()

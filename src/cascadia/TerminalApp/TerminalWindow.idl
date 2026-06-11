@@ -56,6 +56,7 @@ namespace TerminalApp
 
         Int32 SetStartupCommandline(CommandlineArgs args);
         void SetStartupContent(String json, Windows.Foundation.IReference<Windows.Foundation.Rect> bounds);
+        void SetStartupActions(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.ActionAndArgs> actions);
         Int32 ExecuteCommandline(CommandlineArgs args);
 
         Boolean ShouldImmediatelyHandoffToElevated();
@@ -140,6 +141,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RequestMoveContentArgs> RequestMoveContent;
         event Windows.Foundation.TypedEventHandler<Object, RequestReceiveContentArgs> RequestReceiveContent;
         event Windows.Foundation.TypedEventHandler<Object, LaunchPositionRequest> RequestLaunchPosition;
+        event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
 
         void AttachContent(String content, UInt32 tabIndex);
         void SendContentToOther(RequestReceiveContentArgs args);
