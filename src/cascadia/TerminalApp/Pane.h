@@ -109,7 +109,8 @@ public:
     winrt::Microsoft::Terminal::Settings::Model::INewContentArgs GetTerminalArgsForPane(winrt::TerminalApp::BuildStartupKind kind) const;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings& settings);
-    bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+    bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction, float amount = .05f);
+
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
                                             const std::vector<uint32_t>& mruPanes);
@@ -223,6 +224,7 @@ public:
     til::event<gotFocusArgs> GotFocus;
     til::event<winrt::delegate<std::shared_ptr<Pane>>> LostFocus;
     til::event<winrt::delegate<std::shared_ptr<Pane>>> Detached;
+    til::event<winrt::delegate<std::shared_ptr<Pane>, winrt::Windows::Foundation::Point, Borders>> ManipulationRequested;
 
 private:
     struct PanePoint;
@@ -252,9 +254,16 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
 
+    winrt::event_token _firstManipulatedToken{ 0 };
+    winrt::event_token _secondManipulatedToken{ 0 };
+
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
     winrt::TerminalApp::IPaneContent::CloseRequested_revoker _closeRequestedRevoker;
+
+    winrt::Windows::UI::Xaml::UIElement::ManipulationDelta_revoker _manipulationDeltaRevoker;
+    winrt::Windows::UI::Xaml::UIElement::ManipulationStarted_revoker _manipulationStartedRevoker;
+    bool _shouldManipulate{ false };
 
     Borders _borders{ Borders::None };
 
@@ -280,7 +289,9 @@ private:
     Borders _GetCommonBorders();
     winrt::Windows::UI::Xaml::Media::SolidColorBrush _ComputeBorderColor();
 
-    bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+    void _handleOrBubbleManipulation(std::shared_ptr<Pane> sender, const winrt::Windows::Foundation::Point delta, Borders side);
+    void _handleManipulation(const winrt::Windows::Foundation::Point delta);
+    bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction, float amount);
 
     std::shared_ptr<Pane> _FindParentOfPane(const std::shared_ptr<Pane> pane);
     std::pair<PanePoint, PanePoint> _GetOffsetsForPane(const PanePoint parentOffset) const;
@@ -302,6 +313,11 @@ private:
                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
     void _ContentLostFocusHandler(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& e);
+
+    void _ManipulationStartedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                     const winrt::Windows::UI::Xaml::Input::ManipulationStartedRoutedEventArgs& e);
+    void _ManipulationDeltaHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                   const winrt::Windows::UI::Xaml::Input::ManipulationDeltaRoutedEventArgs& e);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
