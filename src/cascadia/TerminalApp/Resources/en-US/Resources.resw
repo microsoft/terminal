@@ -433,6 +433,10 @@
   <data name="CmdSizeDesc" xml:space="preserve">
     <value>Specify the number of columns and rows for the terminal, in "c,r" format.</value>
   </data>
+  <data name="CmdHelpFooter" xml:space="preserve">
+    <value>If no command is specified, "new-tab" is assumed by default. Use "wt new-tab --help" to view new-tab options, including "-d,--startingDirectory".</value>
+    <comment>{Locked="\"new-tab\"","\"wt new-tab --help\"","\"-d,--startingDirectory\""}</comment>
+  </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>
   </data>

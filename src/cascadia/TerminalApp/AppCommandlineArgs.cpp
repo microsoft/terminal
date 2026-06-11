@@ -143,6 +143,7 @@ void AppCommandlineArgs::_buildParser()
     // E.g., for "wt.exe -M -d c:/", we will use -M for the launch mode, but once we will encounter -d
     // we will know that the prefix is over and try to handle the suffix as a new tab subcommand
     _app.prefix_command();
+    _app.footer(RS_A(L"CmdHelpFooter"));
 
     // -v,--version: Displays version info
     auto versionCallback = [this](int64_t /*count*/) {
