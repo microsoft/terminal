@@ -5115,19 +5115,27 @@ namespace winrt::TerminalApp::implementation
                 bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
             }
 
-            // Reuse the existing brush when the tint is unchanged. Recreating
-            // the acrylic on every update (we get one for every
-            // BackgroundBrush event from the focused control, even when
-            // nothing changed) tears the effect down and rebuilds it, which
-            // flickers. When the tint actually changes we do create a new
-            // brush, so that everything listening for a Background change
-            // (e.g. the caption buttons' light/dark theme) still updates.
+            // GH#14384: a HostBackdrop tab row over a terminal's in-app
+            // Backdrop acrylic flickers; match the terminal's source instead.
+            auto tabRowSource = Media::AcrylicBackgroundSource::HostBackdrop;
+            if (terminalBrush)
+            {
+                if (const auto termAcrylic = terminalBrush.try_as<Media::AcrylicBrush>())
+                {
+                    if (termAcrylic.BackgroundSource() == Media::AcrylicBackgroundSource::Backdrop)
+                    {
+                        tabRowSource = Media::AcrylicBackgroundSource::Backdrop;
+                    }
+                }
+            }
+
+            // Reuse the brush unless the source or tint changed; recreating it
+            // on every BackgroundBrush event rebuilds the acrylic and flickers.
             auto acrylicBrush = TitlebarBrush().try_as<Media::AcrylicBrush>();
-            if (acrylicBrush == nullptr || til::color{ acrylicBrush.TintColor() } != bgColor)
+            if (acrylicBrush == nullptr || acrylicBrush.BackgroundSource() != tabRowSource || til::color{ acrylicBrush.TintColor() } != bgColor)
             {
                 acrylicBrush = Media::AcrylicBrush();
-                // Backdrop, not HostBackdrop: HostBackdrop flickers on pointer/focus repaints.
-                acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::Backdrop);
+                acrylicBrush.BackgroundSource(tabRowSource);
                 acrylicBrush.TintOpacity(0.5);
                 acrylicBrush.FallbackColor(bgColor);
                 acrylicBrush.TintColor(bgColor);
