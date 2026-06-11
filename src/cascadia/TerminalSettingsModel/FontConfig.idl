@@ -15,6 +15,8 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass FontConfig {
         Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
 
+        void ClearAllSettings();
+
         INHERITABLE_FONT_SETTING(String, FontFace);
         INHERITABLE_FONT_SETTING(Single, FontSize);
         INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);

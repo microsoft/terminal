@@ -138,6 +138,23 @@ winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourcePro
     return _sourceProfile.get();
 }
 
+void AppearanceConfig::ClearAllSettings()
+{
+#define APPEARANCE_SETTINGS_CLEAR(type, name, jsonKey, ...) \
+    Clear##name();
+    MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_CLEAR)
+#undef APPEARANCE_SETTINGS_CLEAR
+
+    // The following settings aren't part of MTSM_APPEARANCE_SETTINGS, so clear them explicitly.
+    ClearForeground();
+    ClearBackground();
+    ClearSelectionBackground();
+    ClearCursorColor();
+    ClearOpacity();
+    ClearDarkColorSchemeName();
+    ClearLightColorSchemeName();
+}
+
 std::tuple<winrt::hstring, Model::OriginTag> AppearanceConfig::_getSourceProfileBasePathAndOrigin() const
 {
     winrt::hstring sourceBasePath{};

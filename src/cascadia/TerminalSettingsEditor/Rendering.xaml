@@ -23,26 +23,27 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Style="{StaticResource SettingsStackStyle}">
-        <local:SettingContainer x:Name="GraphicsAPI"
-                                x:Uid="Globals_GraphicsAPI">
+    <StackPanel Spacing="2"
+                Style="{StaticResource SettingsStackStyle}">
+        <local:SettingsCard x:Name="GraphicsAPI"
+                            x:Uid="Globals_GraphicsAPI">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.GraphicsAPIList}"
                       SelectedItem="{x:Bind ViewModel.CurrentGraphicsAPI, Mode=TwoWay}"
                       Style="{StaticResource ComboBoxSettingStyle}" />
-        </local:SettingContainer>
+        </local:SettingsCard>
 
-        <local:SettingContainer x:Name="DisablePartialInvalidation"
-                                x:Uid="Globals_DisablePartialInvalidation">
+        <local:SettingsCard x:Name="DisablePartialInvalidation"
+                            x:Uid="Globals_DisablePartialInvalidation">
             <ToggleSwitch IsOn="{x:Bind ViewModel.DisablePartialInvalidation, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+        </local:SettingsCard>
 
-        <local:SettingContainer x:Name="SoftwareRendering"
-                                x:Uid="Globals_SoftwareRendering">
+        <local:SettingsCard x:Name="SoftwareRendering"
+                            x:Uid="Globals_SoftwareRendering">
             <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+        </local:SettingsCard>
     </StackPanel>
 </Page>

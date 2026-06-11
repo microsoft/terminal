@@ -110,6 +110,14 @@ winrt::Microsoft::Terminal::Settings::Model::Profile FontConfig::SourceProfile()
     return _sourceProfile.get();
 }
 
+void FontConfig::ClearAllSettings()
+{
+#define FONT_SETTINGS_CLEAR(type, name, jsonKey, ...) \
+    Clear##name();
+    MTSM_FONT_SETTINGS(FONT_SETTINGS_CLEAR)
+#undef FONT_SETTINGS_CLEAR
+}
+
 void FontConfig::_logSettingSet(const std::string_view& setting)
 {
     if (setting == "axes" && _FontAxes.has_value())

@@ -35,254 +35,222 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
+                    Spacing="2"
                     Style="{StaticResource SettingsStackStyle}">
             <!--  Antialiasing Mode  -->
-            <local:SettingContainer x:Name="AntialiasingMode"
-                                    x:Uid="Profile_AntialiasingMode"
-                                    ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"
-                                    HasSettingValue="{x:Bind Profile.HasAntialiasingMode, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="AntialiasingMode"
+                                x:Uid="Profile_AntialiasingMode">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind Profile.AntiAliasingModeList, Mode=OneWay}"
                           SelectedItem="{x:Bind Profile.CurrentAntiAliasingMode, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  AltGr Aliasing  -->
-            <local:SettingContainer x:Name="AltGrAliasing"
-                                    x:Uid="Profile_AltGrAliasing"
-                                    ClearSettingValue="{x:Bind Profile.ClearAltGrAliasing}"
-                                    HasSettingValue="{x:Bind Profile.HasAltGrAliasing, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="AltGrAliasing"
+                                x:Uid="Profile_AltGrAliasing">
                 <ToggleSwitch IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Snap On Input  -->
-            <local:SettingContainer x:Name="SnapOnInput"
-                                    x:Uid="Profile_SnapOnInput"
-                                    ClearSettingValue="{x:Bind Profile.ClearSnapOnInput}"
-                                    HasSettingValue="{x:Bind Profile.HasSnapOnInput, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.SnapOnInputOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="SnapOnInput"
+                                x:Uid="Profile_SnapOnInput">
                 <ToggleSwitch IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  History Size  -->
-            <local:SettingContainer x:Name="HistorySize"
-                                    x:Uid="Profile_HistorySize"
-                                    ClearSettingValue="{x:Bind Profile.ClearHistorySize}"
-                                    HasSettingValue="{x:Bind Profile.HasHistorySize, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.HistorySizeOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="HistorySize"
+                                x:Uid="Profile_HistorySize">
                 <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
                                 LargeChange="100"
                                 Minimum="0"
                                 SmallChange="10"
                                 Style="{StaticResource NumberBoxSettingStyle}"
                                 Value="{x:Bind Profile.HistorySize, Mode=TwoWay}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Close On Exit  -->
-            <local:SettingContainer x:Name="CloseOnExit"
-                                    x:Uid="Profile_CloseOnExit"
-                                    ClearSettingValue="{x:Bind Profile.ClearCloseOnExit}"
-                                    HasSettingValue="{x:Bind Profile.HasCloseOnExit, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="CloseOnExit"
+                                x:Uid="Profile_CloseOnExit">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind Profile.CloseOnExitModeList, Mode=OneWay}"
                           SelectedItem="{x:Bind Profile.CurrentCloseOnExitMode, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Bell Style  -->
-            <local:SettingContainer x:Name="BellStyle"
-                                    x:Uid="Profile_BellStyle"
-                                    ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
-                                    CurrentValue="{x:Bind Profile.BellStylePreview, Mode=OneWay}"
-                                    HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <StackPanel>
-                    <CheckBox x:Uid="Profile_BellStyleAudible"
-                              IsChecked="{x:Bind Profile.IsBellStyleFlagSet(1), BindBack=Profile.SetBellStyleAudible, Mode=TwoWay}" />
-                    <CheckBox x:Uid="Profile_BellStyleWindow"
-                              IsChecked="{x:Bind Profile.IsBellStyleFlagSet(2), BindBack=Profile.SetBellStyleWindow, Mode=TwoWay}" />
-                    <CheckBox x:Uid="Profile_BellStyleTaskbar"
-                              IsChecked="{x:Bind Profile.IsBellStyleFlagSet(4), BindBack=Profile.SetBellStyleTaskbar, Mode=TwoWay}" />
-                    <CheckBox x:Uid="Profile_BellStyleNotification"
-                              IsChecked="{x:Bind Profile.IsBellStyleFlagSet(8), BindBack=Profile.SetBellStyleNotification, Mode=TwoWay}" />
-                </StackPanel>
-            </local:SettingContainer>
+            <local:SettingsExpander x:Name="BellStyle"
+                                    x:Uid="Profile_BellStyle">
+                <local:SettingsExpander.Content>
+                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                               Text="{x:Bind Profile.BellStylePreview, Mode=OneWay}" />
+                </local:SettingsExpander.Content>
+                <local:SettingsExpander.ItemsHeader>
+                    <ContentPresenter Padding="16,12,16,16">
+                        <StackPanel>
+                            <CheckBox x:Uid="Profile_BellStyleAudible"
+                                      IsChecked="{x:Bind Profile.IsBellStyleFlagSet(1), BindBack=Profile.SetBellStyleAudible, Mode=TwoWay}" />
+                            <CheckBox x:Uid="Profile_BellStyleWindow"
+                                      IsChecked="{x:Bind Profile.IsBellStyleFlagSet(2), BindBack=Profile.SetBellStyleWindow, Mode=TwoWay}" />
+                            <CheckBox x:Uid="Profile_BellStyleTaskbar"
+                                      IsChecked="{x:Bind Profile.IsBellStyleFlagSet(4), BindBack=Profile.SetBellStyleTaskbar, Mode=TwoWay}" />
+                            <CheckBox x:Uid="Profile_BellStyleNotification"
+                                      IsChecked="{x:Bind Profile.IsBellStyleFlagSet(8), BindBack=Profile.SetBellStyleNotification, Mode=TwoWay}" />
+                        </StackPanel>
+                    </ContentPresenter>
+                </local:SettingsExpander.ItemsHeader>
+            </local:SettingsExpander>
 
             <!--  Bell Sound  -->
-            <local:SettingContainer x:Name="BellSound"
-                                    x:Uid="Profile_BellSound"
-                                    ClearSettingValue="{x:Bind Profile.ClearBellSound}"
-                                    CurrentValue="{x:Bind Profile.BellSoundPreview, Mode=OneWay}"
-                                    HasSettingValue="{x:Bind Profile.HasBellSound, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.BellSoundOverrideSource, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}">
-                <StackPanel Spacing="10">
-                    <TextBlock x:Uid="Profile_BellSoundInfo"
-                               Style="{StaticResource DisclaimerStyle}" />
-                    <ItemsControl ItemsSource="{x:Bind Profile.CurrentBellSounds, Mode=OneWay}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Spacing="4" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="local:BellSoundViewModel">
-                                <Grid TabFocusNavigation="Local">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="300" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <!--  standard UI for bell sound entry  -->
-                                    <StackPanel Grid.Column="0"
-                                                Visibility="{x:Bind FileExists, Mode=OneWay}">
-                                        <TextBlock Style="{StaticResource TextBlockSettingStyle}"
-                                                   Text="{x:Bind DisplayPath, Mode=OneWay}" />
-                                        <TextBlock Foreground="{ThemeResource SubgroupHeaderBrush}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   Text="{x:Bind SubText, Mode=OneWay}"
-                                                   Visibility="{x:Bind ShowDirectory, Mode=OneWay}" />
-                                    </StackPanel>
-                                    <!--  When a file is not found, we use this UI  -->
-                                    <StackPanel Grid.Column="0"
-                                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(FileExists), Mode=OneWay}">
-                                        <TextBlock Style="{StaticResource TextBlockSettingStyle}"
-                                                   Text="{x:Bind DisplayPath, Mode=OneWay}"
-                                                   TextDecorations="Strikethrough" />
-                                        <TextBlock Foreground="{ThemeResource SubgroupHeaderBrush}"
-                                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                                   Text="{x:Bind SubText, Mode=OneWay}" />
-                                    </StackPanel>
-                                    <Button x:Uid="Profile_BellSoundAudioPreview"
-                                            Grid.Column="1"
-                                            Margin="4,0,0,0"
-                                            VerticalAlignment="Stretch"
-                                            Click="BellSoundAudioPreview_Click"
-                                            IsEnabled="{x:Bind FileExists, Mode=OneWay}"
-                                            Style="{StaticResource BrowseButtonStyle}"
-                                            Tag="{Binding Mode=OneWay}">
-                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                                  Glyph="&#xE767;" />
-                                    </Button>
-                                    <Button x:Uid="Profile_BellSoundDelete"
-                                            Grid.Column="2"
-                                            Margin="4,0,0,0"
-                                            VerticalAlignment="Stretch"
-                                            Click="BellSoundDelete_Click"
-                                            Style="{StaticResource DeleteButtonStyle}"
-                                            Tag="{Binding Mode=OneWay}">
-                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                                  Glyph="&#xE74D;" />
-                                    </Button>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <Button x:Name="AddBellSoundButton"
-                            Click="BellSoundAdd_Click">
-                        <StackPanel Orientation="Horizontal">
-                            <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                      Glyph="&#xE948;" />
-                            <TextBlock x:Uid="Profile_AddBellSound"
-                                       Margin="8,0,0,0" />
+            <local:SettingsExpander x:Name="BellSound"
+                                    x:Uid="Profile_BellSound">
+                <local:SettingsExpander.Content>
+                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                               Text="{x:Bind Profile.BellSoundPreview, Mode=OneWay}" />
+                </local:SettingsExpander.Content>
+                <local:SettingsExpander.ItemsHeader>
+                    <ContentPresenter Padding="16,12,16,16">
+                        <StackPanel Spacing="10">
+                            <TextBlock x:Uid="Profile_BellSoundInfo"
+                                       Style="{StaticResource DisclaimerStyle}" />
+                            <ItemsControl ItemsSource="{x:Bind Profile.CurrentBellSounds, Mode=OneWay}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="4" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:BellSoundViewModel">
+                                        <Grid TabFocusNavigation="Local">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="300" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <!--  standard UI for bell sound entry  -->
+                                            <StackPanel Grid.Column="0"
+                                                        Visibility="{x:Bind FileExists, Mode=OneWay}">
+                                                <TextBlock Style="{StaticResource TextBlockSettingStyle}"
+                                                           Text="{x:Bind DisplayPath, Mode=OneWay}" />
+                                                <TextBlock Foreground="{ThemeResource SubgroupHeaderBrush}"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Text="{x:Bind SubText, Mode=OneWay}"
+                                                           Visibility="{x:Bind ShowDirectory, Mode=OneWay}" />
+                                            </StackPanel>
+                                            <!--  When a file is not found, we use this UI  -->
+                                            <StackPanel Grid.Column="0"
+                                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(FileExists), Mode=OneWay}">
+                                                <TextBlock Style="{StaticResource TextBlockSettingStyle}"
+                                                           Text="{x:Bind DisplayPath, Mode=OneWay}"
+                                                           TextDecorations="Strikethrough" />
+                                                <TextBlock Foreground="{ThemeResource SubgroupHeaderBrush}"
+                                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                                           Text="{x:Bind SubText, Mode=OneWay}" />
+                                            </StackPanel>
+                                            <Button x:Uid="Profile_BellSoundAudioPreview"
+                                                    Grid.Column="1"
+                                                    Margin="4,0,0,0"
+                                                    VerticalAlignment="Stretch"
+                                                    Click="BellSoundAudioPreview_Click"
+                                                    IsEnabled="{x:Bind FileExists, Mode=OneWay}"
+                                                    Style="{StaticResource BrowseButtonStyle}"
+                                                    Tag="{Binding Mode=OneWay}">
+                                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                          Glyph="&#xE767;" />
+                                            </Button>
+                                            <Button x:Uid="Profile_BellSoundDelete"
+                                                    Grid.Column="2"
+                                                    Margin="4,0,0,0"
+                                                    VerticalAlignment="Stretch"
+                                                    Click="BellSoundDelete_Click"
+                                                    Style="{StaticResource DeleteButtonStyle}"
+                                                    Tag="{Binding Mode=OneWay}">
+                                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                          Glyph="&#xE74D;" />
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button x:Name="AddBellSoundButton"
+                                    Click="BellSoundAdd_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                              Glyph="&#xE948;" />
+                                    <TextBlock x:Uid="Profile_AddBellSound"
+                                               Margin="8,0,0,0" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
-                    </Button>
-                </StackPanel>
-            </local:SettingContainer>
+                    </ContentPresenter>
+                </local:SettingsExpander.ItemsHeader>
+            </local:SettingsExpander>
 
             <!--  RightClickContextMenu  -->
-            <local:SettingContainer x:Name="RightClickContextMenu"
-                                    x:Uid="Profile_RightClickContextMenu"
-                                    ClearSettingValue="{x:Bind Profile.ClearRightClickContextMenu}"
-                                    HasSettingValue="{x:Bind Profile.HasRightClickContextMenu, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.RightClickContextMenuOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="RightClickContextMenu"
+                                x:Uid="Profile_RightClickContextMenu">
                 <ToggleSwitch IsOn="{x:Bind Profile.RightClickContextMenu, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  ShowMarks  -->
-            <local:SettingContainer x:Name="ShowMarks"
-                                    x:Uid="Profile_ShowMarks"
-                                    ClearSettingValue="{x:Bind Profile.ClearShowMarks}"
-                                    HasSettingValue="{x:Bind Profile.HasShowMarks, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.ShowMarksOverrideSource, Mode=OneWay}"
-                                    Visibility="{x:Bind Profile.ShowMarksAvailable}">
+            <local:SettingsCard x:Name="ShowMarks"
+                                x:Uid="Profile_ShowMarks"
+                                Visibility="{x:Bind Profile.ShowMarksAvailable}">
                 <ToggleSwitch IsOn="{x:Bind Profile.ShowMarks, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  AutoMarkPrompts  -->
-            <local:SettingContainer x:Name="AutoMarkPrompts"
-                                    x:Uid="Profile_AutoMarkPrompts"
-                                    ClearSettingValue="{x:Bind Profile.ClearAutoMarkPrompts}"
-                                    HasSettingValue="{x:Bind Profile.HasAutoMarkPrompts, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.AutoMarkPromptsOverrideSource, Mode=OneWay}"
-                                    Visibility="{x:Bind Profile.AutoMarkPromptsAvailable}">
+            <local:SettingsCard x:Name="AutoMarkPrompts"
+                                x:Uid="Profile_AutoMarkPrompts"
+                                Visibility="{x:Bind Profile.AutoMarkPromptsAvailable}">
                 <ToggleSwitch IsOn="{x:Bind Profile.AutoMarkPrompts, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  ReloadEnvVars  -->
-            <local:SettingContainer x:Name="ReloadEnvVars"
-                                    x:Uid="Profile_ReloadEnvVars"
-                                    ClearSettingValue="{x:Bind Profile.ClearReloadEnvironmentVariables}"
-                                    HasSettingValue="{x:Bind Profile.HasReloadEnvironmentVariables, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.ReloadEnvironmentVariablesOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="ReloadEnvVars"
+                                x:Uid="Profile_ReloadEnvVars">
                 <ToggleSwitch IsOn="{x:Bind Profile.ReloadEnvironmentVariables, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  RepositionCursorWithMouse  -->
-            <local:SettingContainer x:Name="RepositionCursorWithMouse"
-                                    x:Uid="Profile_RepositionCursorWithMouse"
-                                    ClearSettingValue="{x:Bind Profile.ClearRepositionCursorWithMouse}"
-                                    HasSettingValue="{x:Bind Profile.HasRepositionCursorWithMouse, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.RepositionCursorWithMouseOverrideSource, Mode=OneWay}"
-                                    Visibility="{x:Bind Profile.RepositionCursorWithMouseAvailable}">
+            <local:SettingsCard x:Name="RepositionCursorWithMouse"
+                                x:Uid="Profile_RepositionCursorWithMouse"
+                                Visibility="{x:Bind Profile.RepositionCursorWithMouseAvailable}">
                 <ToggleSwitch IsOn="{x:Bind Profile.RepositionCursorWithMouse, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  RainbowSuggestions  -->
-            <local:SettingContainer x:Name="RainbowSuggestions"
-                                    x:Uid="Profile_RainbowSuggestions"
-                                    ClearSettingValue="{x:Bind Profile.ClearRainbowSuggestions}"
-                                    HasSettingValue="{x:Bind Profile.HasRainbowSuggestions, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.RainbowSuggestionsOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="RainbowSuggestions"
+                                x:Uid="Profile_RainbowSuggestions">
                 <ToggleSwitch IsOn="{x:Bind Profile.RainbowSuggestions, Mode=TwoWay}"
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Path Translation  -->
-            <local:SettingContainer x:Name="PathTranslationStyle"
-                                    x:Uid="Profile_PathTranslationStyle"
-                                    ClearSettingValue="{x:Bind Profile.ClearPathTranslationStyle}"
-                                    HasSettingValue="{x:Bind Profile.HasPathTranslationStyle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.PathTranslationStyleOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="PathTranslationStyle"
+                                x:Uid="Profile_PathTranslationStyle">
                 <ComboBox AutomationProperties.AccessibilityView="Content"
                           ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                           ItemsSource="{x:Bind Profile.PathTranslationStyleList, Mode=OneWay}"
                           SelectedItem="{x:Bind Profile.CurrentPathTranslationStyle, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
             <!--  Drag Drop Delimiter  -->
-            <local:SettingContainer x:Name="DragDropDelimiter"
-                                    x:Uid="Profile_DragDropDelimiter"
-                                    ClearSettingValue="{x:Bind Profile.ClearDragDropDelimiter}"
-                                    HasSettingValue="{x:Bind Profile.HasDragDropDelimiter, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Profile.DragDropDelimiterOverrideSource, Mode=OneWay}">
+            <local:SettingsCard x:Name="DragDropDelimiter"
+                                x:Uid="Profile_DragDropDelimiter">
                 <TextBox Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind Profile.DragDropDelimiter, Mode=TwoWay}" />
-            </local:SettingContainer>
+            </local:SettingsCard>
 
         </StackPanel>
     </Grid>
