@@ -43,20 +43,17 @@ public:
     HWND GetMainWindow() const noexcept;
     AppHost* GetWindowById(uint64_t id) const noexcept;
     AppHost* GetWindowByName(std::wstring_view name) const noexcept;
+    // CreateNewWindow is used for creating a new window from existing Content
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
+    // OpenNewWindow is used for opening a new window with args for the new tab
+    void OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs);
 
     // In-process entry point for opening (or summoning) a named window and
     // restoring its persisted workspace if one exists. Equivalent to
     // `wt -w <name>` without spawning a new process.
     void OpenWindow(const winrt::hstring& name);
-
-    // In-process entry point for creating a brand-new window whose first tab
-    // is described by `terminalArgs`. Equivalent to
-    // `wt -w -1 new-tab <terminalArgs>` without spawning a new process and
-    // without going through commandline parsing.
-    void OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs);
 
 private:
     struct SummonWindowSelectionArgs

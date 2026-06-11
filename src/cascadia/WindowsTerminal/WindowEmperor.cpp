@@ -330,22 +330,21 @@ void WindowEmperor::OpenWindow(const winrt::hstring& name)
     _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
 }
 
-// Public entry point used by in-process callers (e.g. AppHost reacting to a
-// TerminalPage RequestNewWindow event) to create a brand-new window whose
-// first tab is described by `terminalArgs`. Bypasses the commandline parser
-// entirely by handing AppHost a pre-built startup-action list.
-void WindowEmperor::OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs)
+// Create a new window with a tab is described by `contentArgs`. Bypasses the
+// commandline parser entirely by handing AppHost a pre-built startup-action
+// list. Used by the TerminalPage::_OpenNewWindow event.
+void WindowEmperor::OpenNewWindow(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs)
 {
     _assertIsMainThread();
 
-    if (!terminalArgs)
+    if (!contentArgs)
     {
         return;
     }
 
     Settings::Model::ActionAndArgs newTabAction{};
     newTabAction.Action(Settings::Model::ShortcutAction::NewTab);
-    newTabAction.Args(Settings::Model::NewTabArgs{ terminalArgs });
+    newTabAction.Args(Settings::Model::NewTabArgs{ contentArgs });
 
     auto actions = winrt::single_threaded_vector<Settings::Model::ActionAndArgs>({ std::move(newTabAction) });
 

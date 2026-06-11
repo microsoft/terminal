@@ -873,18 +873,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Ask the WindowEmperor (in-process) to create a brand-new window whose
-    // first tab is described by `terminalArgs`. The event bubbles up through
+    // first tab is described by `contentArgs`. The event bubbles up through
     // TerminalWindow to AppHost, which calls into the WindowEmperor directly
     // — no second wt.exe process is launched, and no commandline parsing
     // happens along the way.
-    void TerminalPage::_OpenNewWindow(const NewTerminalArgs& terminalArgs)
+    void TerminalPage::_OpenNewWindow(const INewContentArgs& contentArgs)
     {
-        if (!terminalArgs)
+        if (!contentArgs)
         {
             return;
         }
 
-        const auto args = winrt::make<implementation::NewWindowRequestedArgs>(terminalArgs);
+        const auto args = winrt::make<implementation::NewWindowRequestedArgs>(contentArgs);
         RequestNewWindow.raise(*this, args);
     }
 
@@ -919,16 +919,17 @@ namespace winrt::TerminalApp::implementation
             newContentArgs = NewTerminalArgs{};
         }
 
-        // Only NewTerminalArgs are routable to a new window today. Other content
-        // types (e.g. scratchpad) have no `wt`-equivalent representation.
+        // If this is a NewTerminalArgs, resolve its profile up-front so the
+        // spawned window doesn't need to re-resolve it. Other content types
+        // (e.g. scratchpad) don't have profiles to evaluate — they get passed
+        // through as-is.
         if (const auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
-            // Manually fill in the evaluated profile so the spawned window doesn't
-            // need to re-resolve it.
             const auto profile{ _settings.GetProfileForArgs(terminalArgs) };
             terminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-            _OpenNewWindow(terminalArgs);
         }
+
+        _OpenNewWindow(newContentArgs);
         actionArgs.Handled(true);
     }
 

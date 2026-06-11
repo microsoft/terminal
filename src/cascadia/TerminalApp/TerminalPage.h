@@ -89,11 +89,11 @@ namespace winrt::TerminalApp::implementation
 
     struct NewWindowRequestedArgs : NewWindowRequestedArgsT<NewWindowRequestedArgs>
     {
-        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs, TerminalArgs, nullptr);
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::INewContentArgs, ContentArgs, nullptr);
 
     public:
-        NewWindowRequestedArgs(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs) :
-            _TerminalArgs{ terminalArgs } {};
+        NewWindowRequestedArgs(const winrt::Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs) :
+            _ContentArgs{ contentArgs } {};
     };
 
     struct SummonWindowByIdRequestedArgs : SummonWindowByIdRequestedArgsT<SummonWindowByIdRequestedArgs>
@@ -392,7 +392,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
-        void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& terminalArgs);
+        void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs);
         void _OpenWorkspaceWindow(const winrt::hstring name);
 
         void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
