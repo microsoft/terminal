@@ -32,6 +32,26 @@ namespace SettingsModelUnitTests
         TEST_METHOD(TestCorrectOldDefaultShellPaths);
         TEST_METHOD(ProfileDefaultsProhibitedSettings);
 
+        TEST_METHOD(JsonSyncOnSetAndClear);
+        TEST_METHOD(SettingKeyEnumAndJsonKeyLookup);
+        TEST_METHOD(GenericHasAndClearMatchTypedAPIs);
+        TEST_METHOD(CurrentSettingsReturnsCorrectKeys);
+        TEST_METHOD(SpecialCasedSettingsJsonBacked);
+        TEST_METHOD(NullableSettingJsonBacked);
+        TEST_METHOD(ColorSchemeJsonBacked);
+
+        TEST_METHOD(BellSoundInPlaceMutationSyncsJson);
+        TEST_METHOD(ClearBellSoundClearsJson);
+        TEST_METHOD(EnvironmentVariablesInPlaceMutationSyncsJson);
+        TEST_METHOD(BellSoundWholeReplaceSetterDualWritesJson);
+        TEST_METHOD(BellSoundInPlaceInsertAtSyncsJson);
+        TEST_METHOD(BellSoundToJsonRoundTrip);
+        TEST_METHOD(BellSoundInheritedReturnsParentIVector);
+        TEST_METHOD(BellSoundChildMutationDoesNotAffectParent);
+
+        TEST_METHOD(ClearIconAlsoClearsJson);
+        TEST_METHOD(ClearIconAndBellSoundAreLogged);
+
         TEST_METHOD(SettingInheritanceFallback);
         TEST_METHOD(ClearSettingRestoresInheritance);
         TEST_METHOD(HasSettingAtSpecificLayer);
@@ -535,6 +555,839 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_NOT_EQUAL(Utils::GuidFromString(L"{00000000-0000-0000-0000-000000000000}"), static_cast<GUID>(allProfiles.GetAt(2).Guid()));
         VERIFY_ARE_NOT_EQUAL(L"Default Profile Source", allProfiles.GetAt(2).Source());
         VERIFY_ARE_NOT_EQUAL(L"foo.exe", allProfiles.GetAt(2).Commandline());
+    }
+
+    void ProfileTests::JsonSyncOnSetAndClear()
+    {
+        // Verify that setting a value via the typed setter updates the internal
+        // _json, and clearing it removes the key from _json.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "historySize": 1000
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // Verify initial value
+        VERIFY_ARE_EQUAL(1000, profile.HistorySize());
+        VERIFY_IS_TRUE(profile.HasHistorySize());
+
+        // Modify setting; _json should be updated
+        profile.HistorySize(5000);
+        VERIFY_ARE_EQUAL(5000, profile.HistorySize());
+
+        // Verify ToJson reflects the change
+        const auto json = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(5000, json["historySize"].asInt());
+
+        // Clear setting; should fall back to default
+        profile.ClearHistorySize();
+        VERIFY_IS_FALSE(profile.HasHistorySize());
+        // Should now inherit or use default (9001 is the DEFAULT_HISTORY_SIZE)
+        VERIFY_ARE_EQUAL(DEFAULT_HISTORY_SIZE, profile.HistorySize());
+
+        // ToJson should no longer have historySize
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_IS_FALSE(json2.isMember("historySize"));
+    }
+
+    void ProfileTests::SettingKeyEnumAndJsonKeyLookup()
+    {
+        // Verify that the SettingKey enums map to correct JSON keys.
+        using namespace implementation;
+
+        // Spot-check a few profile setting keys
+        VERIFY_ARE_EQUAL(std::string_view{ "historySize" }, JsonKeyForSetting(ProfileSettingKey::HistorySize));
+        VERIFY_ARE_EQUAL(std::string_view{ "snapOnInput" }, JsonKeyForSetting(ProfileSettingKey::SnapOnInput));
+        VERIFY_ARE_EQUAL(std::string_view{ "commandline" }, JsonKeyForSetting(ProfileSettingKey::Commandline));
+        VERIFY_ARE_EQUAL(std::string_view{ "tabTitle" }, JsonKeyForSetting(ProfileSettingKey::TabTitle));
+
+        // Special-cased settings
+        VERIFY_ARE_EQUAL(std::string_view{ "name" }, JsonKeyForSetting(ProfileSettingKey::_Name));
+        VERIFY_ARE_EQUAL(std::string_view{ "guid" }, JsonKeyForSetting(ProfileSettingKey::_Guid));
+        VERIFY_ARE_EQUAL(std::string_view{ "hidden" }, JsonKeyForSetting(ProfileSettingKey::_Hidden));
+        VERIFY_ARE_EQUAL(std::string_view{ "padding" }, JsonKeyForSetting(ProfileSettingKey::_Padding));
+        VERIFY_ARE_EQUAL(std::string_view{ "tabColor" }, JsonKeyForSetting(ProfileSettingKey::_TabColor));
+
+        // Global setting keys
+        VERIFY_ARE_EQUAL(std::string_view{ "initialRows" }, JsonKeyForSetting(GlobalSettingKey::InitialRows));
+        VERIFY_ARE_EQUAL(std::string_view{ "alwaysOnTop" }, JsonKeyForSetting(GlobalSettingKey::AlwaysOnTop));
+
+        // Font setting keys
+        VERIFY_ARE_EQUAL(std::string_view{ "face" }, JsonKeyForSetting(FontSettingKey::FontFace));
+        VERIFY_ARE_EQUAL(std::string_view{ "size" }, JsonKeyForSetting(FontSettingKey::FontSize));
+
+        // SETTINGS_SIZE should be a valid (but large) enum value
+        VERIFY_IS_TRUE(static_cast<int>(ProfileSettingKey::SETTINGS_SIZE) > 0);
+        VERIFY_IS_TRUE(static_cast<int>(GlobalSettingKey::SETTINGS_SIZE) > 0);
+        VERIFY_IS_TRUE(static_cast<int>(FontSettingKey::SETTINGS_SIZE) > 0);
+        VERIFY_IS_TRUE(static_cast<int>(AppearanceSettingKey::SETTINGS_SIZE) > 0);
+    }
+
+    void ProfileTests::GenericHasAndClearMatchTypedAPIs()
+    {
+        // Verify that HasSetting(key) and ClearSetting(key) match the
+        // typed HasXxx() and ClearXxx() methods.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "historySize": 1000,
+                        "snapOnInput": false
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // HasSetting should match HasXxx for set values
+        VERIFY_ARE_EQUAL(profile.HasHistorySize(), profileImpl->HasSetting(implementation::ProfileSettingKey::HistorySize));
+        VERIFY_ARE_EQUAL(profile.HasSnapOnInput(), profileImpl->HasSetting(implementation::ProfileSettingKey::SnapOnInput));
+
+        // HasSetting should match HasXxx for unset values
+        VERIFY_ARE_EQUAL(profile.HasTabTitle(), profileImpl->HasSetting(implementation::ProfileSettingKey::TabTitle));
+        VERIFY_IS_FALSE(profileImpl->HasSetting(implementation::ProfileSettingKey::TabTitle));
+
+        // ClearSetting should behave like ClearXxx
+        profileImpl->ClearSetting(implementation::ProfileSettingKey::HistorySize);
+        VERIFY_IS_FALSE(profile.HasHistorySize());
+        VERIFY_IS_FALSE(profileImpl->HasSetting(implementation::ProfileSettingKey::HistorySize));
+    }
+
+    void ProfileTests::CurrentSettingsReturnsCorrectKeys()
+    {
+        // Verify that CurrentSettings() returns the keys that are explicitly
+        // set at the current layer.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "historySize": 1000,
+                        "snapOnInput": false,
+                        "tabTitle": "MyTab"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        const auto currentKeys = profileImpl->CurrentSettings();
+
+        // historySize, snapOnInput, and tabTitle should be in the list
+        auto hasHistorySize = false;
+        auto hasSnapOnInput = false;
+        auto hasTabTitle = false;
+        for (const auto& key : currentKeys)
+        {
+            if (key == implementation::ProfileSettingKey::HistorySize)
+            {
+                hasHistorySize = true;
+            }
+            if (key == implementation::ProfileSettingKey::SnapOnInput)
+            {
+                hasSnapOnInput = true;
+            }
+            if (key == implementation::ProfileSettingKey::TabTitle)
+            {
+                hasTabTitle = true;
+            }
+        }
+        VERIFY_IS_TRUE(hasHistorySize, L"historySize should be in CurrentSettings");
+        VERIFY_IS_TRUE(hasSnapOnInput, L"snapOnInput should be in CurrentSettings");
+        VERIFY_IS_TRUE(hasTabTitle, L"tabTitle should be in CurrentSettings");
+
+        // Clear one and verify it's removed
+        profileImpl->ClearSetting(implementation::ProfileSettingKey::TabTitle);
+        const auto updatedKeys = profileImpl->CurrentSettings();
+        auto hasTabTitleAfterClear = false;
+        for (const auto& key : updatedKeys)
+        {
+            if (key == implementation::ProfileSettingKey::TabTitle)
+            {
+                hasTabTitleAfterClear = true;
+            }
+        }
+        VERIFY_IS_FALSE(hasTabTitleAfterClear, L"tabTitle should NOT be in CurrentSettings after clear");
+    }
+
+    void ProfileTests::SpecialCasedSettingsJsonBacked()
+    {
+        // Verify that special-cased settings (Name, Guid, Hidden, Padding)
+        // are now JSON-backed: setters write to _json, Has/Clear work correctly.
+        //
+        // NOTE: The "VisibleProfile" entry below exists only so CascadiaSettings
+        // doesn't throw AllProfilesHidden during load.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "TestProfile",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "hidden": true,
+                        "padding": "12"
+                    },
+                    {
+                        "name": "VisibleProfile",
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                        "hidden": false
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // Verify initial values loaded from JSON
+        VERIFY_ARE_EQUAL(L"TestProfile", profile.Name());
+        VERIFY_IS_TRUE(profile.HasName());
+        VERIFY_IS_TRUE(profile.Hidden());
+        VERIFY_IS_TRUE(profile.HasHidden());
+        VERIFY_ARE_EQUAL(L"12", profile.Padding());
+        VERIFY_IS_TRUE(profile.HasPadding());
+
+        // Modify Name via setter — should update _json
+        profile.Name(L"NewName");
+        VERIFY_ARE_EQUAL(L"NewName", profile.Name());
+        const auto json1 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(L"NewName", til::u8u16(json1["name"].asString()));
+
+        // Clear Name — should fall back to default
+        profile.ClearName();
+        VERIFY_IS_FALSE(profile.HasName());
+        VERIFY_ARE_EQUAL(L"Default", profile.Name());
+
+        // Modify Hidden via setter
+        profile.Hidden(false);
+        VERIFY_ARE_EQUAL(false, profile.Hidden());
+        VERIFY_IS_TRUE(profile.HasHidden());
+
+        // Clear Hidden — should fall back to default (false)
+        profile.ClearHidden();
+        VERIFY_IS_FALSE(profile.HasHidden());
+        VERIFY_ARE_EQUAL(false, profile.Hidden());
+
+        // Modify Padding — should write to _json
+        profile.Padding(L"24");
+        VERIFY_ARE_EQUAL(L"24", profile.Padding());
+
+        // Test Guid setter
+        static constexpr winrt::guid testGuid{ 0x11111111, 0x2222, 0x3333, { 0x44, 0x44, 0x55, 0x55, 0x66, 0x66, 0x77, 0x77 } };
+        profile.Guid(testGuid);
+        VERIFY_ARE_EQUAL(testGuid, profile.Guid());
+    }
+
+    void ProfileTests::NullableSettingJsonBacked()
+    {
+        // Verify that nullable settings (TabColor) are JSON-backed.
+        // Null is a valid explicit value meaning "no color".
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "tabColor": "#FF0000"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // Verify initial value
+        VERIFY_IS_TRUE(profile.HasTabColor());
+        VERIFY_IS_NOT_NULL(profile.TabColor());
+
+        // Set to null explicitly (means "no color")
+        profile.TabColor(nullptr);
+        VERIFY_IS_TRUE(profile.HasTabColor()); // still "set" — explicitly null
+        VERIFY_IS_NULL(profile.TabColor());
+
+        // Clear — should inherit from parent (which has no tabColor)
+        profile.ClearTabColor();
+        VERIFY_IS_FALSE(profile.HasTabColor());
+
+        // ToJson should not have tabColor after clearing
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_FALSE(json.isMember("tabColor"));
+    }
+
+    void ProfileTests::ColorSchemeJsonBacked()
+    {
+        // Verify that DarkColorSchemeName/LightColorSchemeName are JSON-backed,
+        // including round-trip through LayerJson/ToJson, parent inheritance,
+        // and the polymorphic colorScheme key (string vs object forms).
+        //
+        // NOTE: CascadiaSettings::_validateAllSchemesExist() runs during construction and
+        // clears any DarkColorSchemeName/LightColorSchemeName that doesn't name a registered
+        // scheme (falling back to the default). So every scheme the cases below reference must
+        // be registered via this inbox JSON; otherwise the loaded values get wiped on load.
+        static constexpr std::string_view inboxSchemes{ R"({
+            "schemes": [
+                { "name": "Campbell",       "black": "#0C0C0C", "red": "#C50F1F", "green": "#13A10E", "yellow": "#C19C00", "blue": "#0037DA", "purple": "#881798", "cyan": "#3A96DD", "white": "#CCCCCC", "brightBlack": "#767676", "brightRed": "#E74856", "brightGreen": "#16C60C", "brightYellow": "#F9F1A5", "brightBlue": "#3B78FF", "brightPurple": "#B4009E", "brightCyan": "#61D6D6", "brightWhite": "#F2F2F2" },
+                { "name": "One Half Dark",  "black": "#0C0C0C", "red": "#C50F1F", "green": "#13A10E", "yellow": "#C19C00", "blue": "#0037DA", "purple": "#881798", "cyan": "#3A96DD", "white": "#CCCCCC", "brightBlack": "#767676", "brightRed": "#E74856", "brightGreen": "#16C60C", "brightYellow": "#F9F1A5", "brightBlue": "#3B78FF", "brightPurple": "#B4009E", "brightCyan": "#61D6D6", "brightWhite": "#F2F2F2" },
+                { "name": "One Half Light", "black": "#0C0C0C", "red": "#C50F1F", "green": "#13A10E", "yellow": "#C19C00", "blue": "#0037DA", "purple": "#881798", "cyan": "#3A96DD", "white": "#CCCCCC", "brightBlack": "#767676", "brightRed": "#E74856", "brightGreen": "#16C60C", "brightYellow": "#F9F1A5", "brightBlue": "#3B78FF", "brightPurple": "#B4009E", "brightCyan": "#61D6D6", "brightWhite": "#F2F2F2" },
+                { "name": "Tango Dark",     "black": "#0C0C0C", "red": "#C50F1F", "green": "#13A10E", "yellow": "#C19C00", "blue": "#0037DA", "purple": "#881798", "cyan": "#3A96DD", "white": "#CCCCCC", "brightBlack": "#767676", "brightRed": "#E74856", "brightGreen": "#16C60C", "brightYellow": "#F9F1A5", "brightBlue": "#3B78FF", "brightPurple": "#B4009E", "brightCyan": "#61D6D6", "brightWhite": "#F2F2F2" }
+            ]
+        })" };
+
+        // Case 1: string form input — sets both dark and light to the same scheme
+        {
+            static constexpr std::string_view settingsJson{ R"({
+                "profiles": {
+                    "list": [
+                        {
+                            "name": "profile0",
+                            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                            "colorScheme": "One Half Dark"
+                        }
+                    ]
+                }
+            })" };
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson, inboxSchemes);
+            const auto profile = settings->AllProfiles().GetAt(0);
+            const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+            const auto appearance = profile.DefaultAppearance();
+            const auto appearanceImpl = winrt::get_self<implementation::AppearanceConfig>(appearance);
+
+            // Both dark and light should be set to the same value
+            VERIFY_ARE_EQUAL(L"One Half Dark", appearance.DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Dark", appearance.LightColorSchemeName());
+            VERIFY_IS_TRUE(appearanceImpl->HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(appearanceImpl->HasLightColorSchemeName());
+
+            // ToJson should collapse to a string since dark == light
+            const auto json = profileImpl->ToJson();
+            VERIFY_IS_TRUE(json.isMember("colorScheme"));
+            VERIFY_IS_TRUE(json["colorScheme"].isString());
+            VERIFY_ARE_EQUAL("One Half Dark", json["colorScheme"].asString());
+        }
+
+        // Case 2: object form input — dark and light are different
+        {
+            static constexpr std::string_view settingsJson{ R"({
+                "profiles": {
+                    "list": [
+                        {
+                            "name": "profile0",
+                            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                            "colorScheme": {
+                                "dark": "One Half Dark",
+                                "light": "One Half Light"
+                            }
+                        }
+                    ]
+                }
+            })" };
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson, inboxSchemes);
+            const auto profile = settings->AllProfiles().GetAt(0);
+            const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+            const auto appearance = profile.DefaultAppearance();
+
+            // Each should return its own value
+            VERIFY_ARE_EQUAL(L"One Half Dark", appearance.DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Light", appearance.LightColorSchemeName());
+
+            // ToJson should produce an object since dark != light
+            const auto json = profileImpl->ToJson();
+            VERIFY_IS_TRUE(json.isMember("colorScheme"));
+            VERIFY_IS_TRUE(json["colorScheme"].isObject());
+            VERIFY_ARE_EQUAL("One Half Dark", json["colorScheme"]["dark"].asString());
+            VERIFY_ARE_EQUAL("One Half Light", json["colorScheme"]["light"].asString());
+        }
+
+        // Case 3: setter updates — setting dark should preserve light, and vice versa
+        {
+            static constexpr std::string_view settingsJson{ R"({
+                "profiles": {
+                    "list": [
+                        {
+                            "name": "profile0",
+                            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                            "colorScheme": "Campbell"
+                        }
+                    ]
+                }
+            })" };
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson, inboxSchemes);
+            const auto profile = settings->AllProfiles().GetAt(0);
+            const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+            const auto appearance = profile.DefaultAppearance();
+
+            // Change dark only — light should stay "Campbell"
+            appearance.DarkColorSchemeName(L"Tango Dark");
+            VERIFY_ARE_EQUAL(L"Tango Dark", appearance.DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"Campbell", appearance.LightColorSchemeName());
+
+            // ToJson should produce an object since dark != light
+            const auto json1 = profileImpl->ToJson();
+            VERIFY_IS_TRUE(json1["colorScheme"].isObject());
+            VERIFY_ARE_EQUAL("Tango Dark", json1["colorScheme"]["dark"].asString());
+            VERIFY_ARE_EQUAL("Campbell", json1["colorScheme"]["light"].asString());
+
+            // Change light to match dark — should collapse to string on ToJson
+            appearance.LightColorSchemeName(L"Tango Dark");
+            VERIFY_ARE_EQUAL(L"Tango Dark", appearance.LightColorSchemeName());
+            const auto json2 = profileImpl->ToJson();
+            VERIFY_IS_TRUE(json2["colorScheme"].isString());
+            VERIFY_ARE_EQUAL("Tango Dark", json2["colorScheme"].asString());
+        }
+
+        // Case 4: clear — dark/light are independent. Clearing one side (even when it came from
+        // a string input that set both) leaves the other side untouched. This matches main's
+        // two-settings model: ClearDark only clears dark.
+        {
+            static constexpr std::string_view settingsJson{ R"({
+                "profiles": {
+                    "list": [
+                        {
+                            "name": "profile0",
+                            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                            "colorScheme": "One Half Dark"
+                        }
+                    ]
+                }
+            })" };
+
+            const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson, inboxSchemes);
+            const auto profile = settings->AllProfiles().GetAt(0);
+            const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+            const auto appearance = profile.DefaultAppearance();
+            const auto appearanceImpl = winrt::get_self<implementation::AppearanceConfig>(appearance);
+
+            VERIFY_IS_TRUE(appearanceImpl->HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(appearanceImpl->HasLightColorSchemeName());
+
+            // Clear dark only — light is independent and stays set.
+            appearanceImpl->ClearDarkColorSchemeName();
+            VERIFY_IS_FALSE(appearanceImpl->HasDarkColorSchemeName());
+            VERIFY_IS_TRUE(appearanceImpl->HasLightColorSchemeName());
+
+            // Dark falls back to the default "Campbell"; light retains "One Half Dark".
+            VERIFY_ARE_EQUAL(L"Campbell", appearance.DarkColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Dark", appearance.LightColorSchemeName());
+
+            // ToJson emits an object containing only the still-set light side.
+            const auto json = profileImpl->ToJson();
+            VERIFY_IS_TRUE(json.isMember("colorScheme"));
+            VERIFY_IS_TRUE(json["colorScheme"].isObject());
+            VERIFY_IS_FALSE(json["colorScheme"].isMember("dark"));
+            VERIFY_ARE_EQUAL("One Half Dark", json["colorScheme"]["light"].asString());
+
+            // Clearing light too removes colorScheme entirely.
+            appearanceImpl->ClearLightColorSchemeName();
+            VERIFY_IS_FALSE(appearanceImpl->HasLightColorSchemeName());
+            const auto json2 = profileImpl->ToJson();
+            VERIFY_IS_FALSE(json2.isMember("colorScheme"));
+        }
+    }
+
+    // Verifies that mutating the returned IVector / IMap in place (i.e.
+    // .Append, .Insert, .RemoveAt, .Remove) lands in the parent's _json.
+    void ProfileTests::BellSoundInPlaceMutationSyncsJson()
+    {
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["foo.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasBellSound());
+        VERIFY_ARE_EQUAL(1u, profile.BellSound().Size());
+
+        // In-place append should land in _json.
+        const auto bell = MediaResourceHelper::FromString(L"bar.wav");
+        profile.BellSound().Append(bell);
+
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+
+        // In-place RemoveAt should also land in _json.
+        profile.BellSound().RemoveAt(0);
+        VERIFY_ARE_EQUAL(1u, profile.BellSound().Size());
+
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(1u, json2["bellSound"].size());
+    }
+
+    void ProfileTests::ClearBellSoundClearsJson()
+    {
+        Log::Comment(L"ClearBellSound must clear BOTH _BellSound and _json[bellSound]");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["foo.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasBellSound());
+
+        profile.ClearBellSound();
+
+        VERIFY_IS_FALSE(profile.HasBellSound());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_FALSE(json.isMember("bellSound"));
+    }
+
+    void ProfileTests::EnvironmentVariablesInPlaceMutationSyncsJson()
+    {
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "environment": { "FOO": "1" }
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasEnvironmentVariables());
+        VERIFY_ARE_EQUAL(1u, profile.EnvironmentVariables().Size());
+
+        // In-place Insert should land in _json.
+        profile.EnvironmentVariables().Insert(L"BAR", L"2");
+        VERIFY_ARE_EQUAL(2u, profile.EnvironmentVariables().Size());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("environment"));
+        VERIFY_ARE_EQUAL(2u, json["environment"].size());
+        VERIFY_ARE_EQUAL(std::string{ "2" }, json["environment"]["BAR"].asString());
+
+        // In-place Remove should also land in _json.
+        profile.EnvironmentVariables().Remove(L"FOO");
+        VERIFY_ARE_EQUAL(1u, profile.EnvironmentVariables().Size());
+
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(1u, json2["environment"].size());
+        VERIFY_IS_FALSE(json2["environment"].isMember("FOO"));
+    }
+
+    void ProfileTests::BellSoundWholeReplaceSetterDualWritesJson()
+    {
+        Log::Comment(L"BellSound(IVector) setter must dual-write to backing + _json");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_FALSE(profile.HasBellSound());
+
+        std::vector<IMediaResource> sounds;
+        sounds.push_back(MediaResourceHelper::FromString(L"alpha.wav"));
+        sounds.push_back(MediaResourceHelper::FromString(L"beta.wav"));
+        profile.BellSound(winrt::single_threaded_vector(std::move(sounds)));
+
+        // Backing reflects the new value.
+        VERIFY_IS_TRUE(profile.HasBellSound());
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+
+        // JSON reflects the new value too.
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "alpha.wav" }, json["bellSound"][0].asString());
+        VERIFY_ARE_EQUAL(std::string{ "beta.wav" }, json["bellSound"][1].asString());
+    }
+
+    void ProfileTests::BellSoundInPlaceInsertAtSyncsJson()
+    {
+        Log::Comment(L"In-place InsertAt/SetAt on the wrapper must also dual-write");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["middle.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // InsertAt(0, x) lands in _json at index 0.
+        profile.BellSound().InsertAt(0, MediaResourceHelper::FromString(L"first.wav"));
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "first.wav" }, json["bellSound"][0].asString());
+        VERIFY_ARE_EQUAL(std::string{ "middle.wav" }, json["bellSound"][1].asString());
+
+        // SetAt(0, x) replaces in-place and lands in _json.
+        profile.BellSound().SetAt(0, MediaResourceHelper::FromString(L"replaced.wav"));
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(std::string{ "replaced.wav" }, json2["bellSound"][0].asString());
+    }
+
+    void ProfileTests::BellSoundToJsonRoundTrip()
+    {
+        Log::Comment(L"A loaded BellSound must round-trip through ToJson without loss");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "bellSound": ["a.wav", "b.wav", "c.wav"]
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(3u, json["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "a.wav" }, json["bellSound"][0].asString());
+        VERIFY_ARE_EQUAL(std::string{ "b.wav" }, json["bellSound"][1].asString());
+        VERIFY_ARE_EQUAL(std::string{ "c.wav" }, json["bellSound"][2].asString());
+
+        // Mutate, ToJson again, content reflects the mutation.
+        profile.BellSound().Append(MediaResourceHelper::FromString(L"d.wav"));
+        const auto json2 = profileImpl->ToJson();
+        VERIFY_ARE_EQUAL(4u, json2["bellSound"].size());
+        VERIFY_ARE_EQUAL(std::string{ "d.wav" }, json2["bellSound"][3].asString());
+    }
+
+    void ProfileTests::BellSoundInheritedReturnsParentIVector()
+    {
+        Log::Comment(L"When child has no local BellSound, getter returns parent's IVector without a wrapper");
+
+        // Layered settings: profile.defaults has bellSound, profile does not.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "defaults": {
+                    "bellSound": ["inherited.wav"]
+                },
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+
+        VERIFY_IS_FALSE(profile.HasBellSound());
+
+        // Inheritance still resolves — getter sees parent's IVector.
+        const auto inherited = profile.BellSound();
+        VERIFY_IS_NOT_NULL(inherited);
+        VERIFY_ARE_EQUAL(1u, inherited.Size());
+
+        // The override source is the parent (the defaults layer).
+        const auto source = profile.BellSoundOverrideSource();
+        VERIFY_IS_NOT_NULL(source);
+        VERIFY_IS_TRUE(source.HasBellSound());
+    }
+
+    void ProfileTests::BellSoundChildMutationDoesNotAffectParent()
+    {
+        Log::Comment(L"After the editor copies inherited BellSound to the local layer, child wrapper mutations must not leak into the parent");
+
+        // Layered settings: profile.defaults has bellSound, profile does not.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "defaults": {
+                    "bellSound": ["parent.wav"]
+                },
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // Step 1: child has no local value; getter returns parent's IVector raw.
+        VERIFY_IS_FALSE(profile.HasBellSound());
+        const auto parentSource = profile.BellSoundOverrideSource();
+        VERIFY_IS_NOT_NULL(parentSource);
+        VERIFY_ARE_EQUAL(1u, parentSource.BellSound().Size());
+
+        // Step 2: emulate ProfileViewModel::_PrepareModelForBellSoundModification —
+        // copy inherited values into the local layer via the whole-replace setter.
+        std::vector<IMediaResource> local;
+        const auto inheritedView = profile.BellSound();
+        for (const auto& sound : inheritedView)
+        {
+            local.push_back(sound);
+        }
+        profile.BellSound(winrt::single_threaded_vector(std::move(local)));
+
+        VERIFY_IS_TRUE(profile.HasBellSound());
+
+        // Step 3: now the child getter returns a wrapper. Mutate via the wrapper.
+        profile.BellSound().Append(MediaResourceHelper::FromString(L"child.wav"));
+
+        // Child has 2 entries; parent (defaults) STILL has 1.
+        VERIFY_ARE_EQUAL(2u, profile.BellSound().Size());
+        VERIFY_ARE_EQUAL(1u, parentSource.BellSound().Size());
+        VERIFY_ARE_EQUAL(winrt::hstring{ L"parent.wav" }, parentSource.BellSound().GetAt(0).Path());
+
+        // Child JSON reflects the mutation; the override source is now the child itself.
+        const auto json = profileImpl->ToJson();
+        VERIFY_IS_TRUE(json.isMember("bellSound"));
+        VERIFY_ARE_EQUAL(2u, json["bellSound"].size());
+    }
+
+    void ProfileTests::ClearIconAlsoClearsJson()
+    {
+        Log::Comment(L"INHERITABLE_MEDIA_RESOURCE_SETTING Clear must clear both backing field AND _json key");
+
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "icon": "C:/icons/foo.png"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        VERIFY_IS_TRUE(profile.HasIcon());
+        {
+            const auto json = profileImpl->ToJson();
+            VERIFY_IS_TRUE(json.isMember("icon"));
+        }
+
+        profile.ClearIcon();
+
+        // Backing AND _json key both cleared — auto-save would otherwise re-persist a stale icon.
+        VERIFY_IS_FALSE(profile.HasIcon());
+        const auto jsonAfter = profileImpl->ToJson();
+        VERIFY_IS_FALSE(jsonAfter.isMember("icon"));
+    }
+
+    void ProfileTests::ClearIconAndBellSoundAreLogged()
+    {
+        Log::Comment(L"Dual-clear macros must call _logSettingSet so telemetry sees the change");
+
+        // Empty profile — load-time logging never sees icon/bellSound, so the
+        // baseline _changeLog is empty for these keys. Clear is the only thing
+        // that could add them.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "list": [
+                    {
+                        "name": "p",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+        // Baseline: nothing logged for icon/bellSound on an empty profile.
+        {
+            std::set<std::string> baseline;
+            profileImpl->LogSettingChanges(baseline, "profile");
+            VERIFY_IS_FALSE(baseline.contains("profile.icon"));
+            VERIFY_IS_FALSE(baseline.contains("profile.bellSound"));
+        }
+
+        // Clear on a never-set value still hits the macro's _logSettingSet call.
+        // That's the contract we're locking in.
+        profile.ClearIcon();
+        profile.ClearBellSound();
+
+        std::set<std::string> changes;
+        profileImpl->LogSettingChanges(changes, "profile");
+        VERIFY_IS_TRUE(changes.contains("profile.icon"));
+        VERIFY_IS_TRUE(changes.contains("profile.bellSound"));
     }
 
     void ProfileTests::SettingInheritanceFallback()
