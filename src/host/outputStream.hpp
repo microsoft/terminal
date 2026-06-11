@@ -66,6 +66,7 @@ public:
     void PlayMidiNote(const int noteNumber, const int velocity, const std::chrono::microseconds duration) override;
 
     bool IsVtInputEnabled() const override;
+    bool IsConhost() const override;
 
     void NotifyBufferRotation(const int delta) override;
     void NotifyShellIntegrationMark() override;
