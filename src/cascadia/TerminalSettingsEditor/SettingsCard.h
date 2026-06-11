@@ -59,6 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _EnsureDefaultActionIcon();
         void _UpdateHeaderVisibility();
         void _UpdateDescriptionVisibility();
+        void _UpdateFullDescription();
         void _UpdateHeaderIconVisibility();
         void _UpdateContentVisibility();
         void _UpdateContentAlignmentState();

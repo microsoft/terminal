@@ -50,9 +50,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         static void _InitializeProperties();
         static void _OnIsExpandedChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
+        static void _OnDescriptionChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
         static void _OnItemsConnectedPropertyChanged(const Windows::UI::Xaml::DependencyObject& d, const Windows::UI::Xaml::DependencyPropertyChangedEventArgs& e);
 
         void _SetAccessibleName();
+        void _UpdateFullDescription();
         void _UpdateItemsSource();
         void _SubscribeToItemsVectorChanged();
         void _ApplyItemContainerStyles();

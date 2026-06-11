@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 L"Description",
                 xaml_typename<IInspectable>(),
                 xaml_typename<Editor::SettingsExpander>(),
-                PropertyMetadata{ nullptr });
+                PropertyMetadata{ nullptr, PropertyChangedCallback{ &SettingsExpander::_OnDescriptionChanged } });
         }
         if (!_HeaderIconProperty)
         {
@@ -148,6 +148,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         StyleExtensions::EnsureImplicitStylesMergedInto(*this);
 
         _SetAccessibleName();
+        _UpdateFullDescription();
 
         // Drop the prior template's host before locating the new one.
         _itemsHost = nullptr;
@@ -173,6 +174,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (const auto headerString{ unbox_value_or<hstring>(Header(), hstring{}) }; !headerString.empty())
         {
             AutomationProperties::SetName(*this, headerString);
+        }
+    }
+
+    // DEVIATION FROM WCT: Expose the Description via FullDescription
+    void SettingsExpander::_UpdateFullDescription()
+    {
+        AutomationProperties::SetFullDescription(*this, unbox_value_or<hstring>(Description(), hstring{}));
+    }
+
+    void SettingsExpander::_OnDescriptionChanged(const DependencyObject& d, const DependencyPropertyChangedEventArgs& /*e*/)
+    {
+        if (const auto obj{ d.try_as<Editor::SettingsExpander>() })
+        {
+            get_self<SettingsExpander>(obj)->_UpdateFullDescription();
         }
     }
 

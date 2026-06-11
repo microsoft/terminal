@@ -203,14 +203,16 @@
                                Text="{x:Bind ViewModel.LaunchSizeCurrentValue, Mode=OneWay}" />
                 </local:SettingsExpander.Content>
                 <local:SettingsExpander.Items>
-                    <local:SettingsCard x:Uid="Globals_InitialCols">
+                    <local:SettingsCard x:Name="InitialColsCard"
+                                        x:Uid="Globals_InitialCols">
                         <muxc:NumberBox x:Uid="Globals_InitialColsBox"
                                         Maximum="999"
                                         Minimum="1"
                                         Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                         Value="{x:Bind ViewModel.InitialCols, Mode=TwoWay}" />
                     </local:SettingsCard>
-                    <local:SettingsCard x:Uid="Globals_InitialRows">
+                    <local:SettingsCard x:Name="InitialRowsCard"
+                                        x:Uid="Globals_InitialRows">
                         <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
                                         Maximum="999"
                                         Minimum="1"
@@ -228,7 +230,8 @@
                                Text="{x:Bind ViewModel.LaunchParametersCurrentValue, Mode=OneWay}" />
                 </local:SettingsExpander.Content>
                 <local:SettingsExpander.Items>
-                    <local:SettingsCard x:Uid="Globals_LaunchModeSetting">
+                    <local:SettingsCard x:Name="LaunchModeCard"
+                                        x:Uid="Globals_LaunchModeSetting">
                         <ComboBox x:Name="LaunchModeComboBox"
                                   AutomationProperties.AccessibilityView="Content"
                                   ItemTemplate="{StaticResource EnumComboBoxTemplate}"
@@ -236,7 +239,8 @@
                                   SelectedItem="{x:Bind ViewModel.CurrentLaunchMode, Mode=TwoWay}"
                                   Style="{StaticResource ComboBoxSettingStyle}" />
                     </local:SettingsCard>
-                    <local:SettingsCard x:Uid="Globals_LaunchPosition">
+                    <local:SettingsCard x:Name="LaunchPositionCard"
+                                        x:Uid="Globals_LaunchPosition">
                         <StackPanel Orientation="Vertical"
                                     Spacing="4">
                             <StackPanel Orientation="Horizontal"
@@ -259,7 +263,8 @@
                                       IsChecked="{x:Bind ViewModel.UseDefaultLaunchPosition, Mode=TwoWay}" />
                         </StackPanel>
                     </local:SettingsCard>
-                    <local:SettingsCard x:Uid="Globals_CenterOnLaunch">
+                    <local:SettingsCard x:Name="CenterOnLaunchCard"
+                                        x:Uid="Globals_CenterOnLaunch">
                         <ToggleSwitch x:Name="CenterOnLaunchToggle"
                                       IsOn="{x:Bind ViewModel.CenterOnLaunch, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitchInExpanderStyle}" />

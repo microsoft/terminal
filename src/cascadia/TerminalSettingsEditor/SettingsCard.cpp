@@ -215,6 +215,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 strongThis->_SetAccessibleContentName();
                 strongThis->_UpdateContentVisibility();
+                strongThis->_UpdateFullDescription();
             }
         });
 
@@ -475,6 +476,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 frameworkChild.Visibility(_isNullOrEmpty(Description()) ? Visibility::Collapsed : Visibility::Visible);
             }
+        }
+
+        _UpdateFullDescription();
+    }
+
+    // DEVIATION FROM WCT: Expose the Description via FullDescription
+    void SettingsCard::_UpdateFullDescription()
+    {
+        const auto description = Description();
+        const auto text = _isNullOrEmpty(description) ? hstring{} : unbox_value_or<hstring>(description, hstring{});
+
+        AutomationProperties::SetFullDescription(*this, text);
+
+        if (const auto element{ Content().try_as<UIElement>() }; element && !element.try_as<Panel>())
+        {
+            AutomationProperties::SetFullDescription(element, text);
         }
     }
 
