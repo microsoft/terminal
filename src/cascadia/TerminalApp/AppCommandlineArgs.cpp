@@ -9,6 +9,13 @@
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;
 
+namespace
+{
+    constexpr std::size_t HelpTextLeftColumnWidth{ 24 };
+    constexpr std::size_t HelpTextRightColumnWidth{ 48 };
+    constexpr std::size_t HelpTextParagraphWidth{ HelpTextLeftColumnWidth + HelpTextRightColumnWidth };
+}
+
 // Either a ; at the start of a line, or a ; preceded by any non-\ char.
 const std::wregex AppCommandlineArgs::_commandDelimiterRegex{ LR"(^;|[^\\];)" };
 
@@ -135,6 +142,10 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    _app.get_formatter()->column_width(HelpTextLeftColumnWidth);
+    _app.get_formatter()->right_column_width(HelpTextRightColumnWidth);
+    _app.get_formatter()->description_paragraph_width(HelpTextParagraphWidth);
+
     // We define or parser as a prefix command, to support "implicit new tab subcommand" scenario.
     // In this scenario we will try to parse the prefix that contains parameters like launch mode,
     // but will not encounter an explicit command.
