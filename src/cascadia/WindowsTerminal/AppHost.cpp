@@ -1231,6 +1231,36 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
     if (!noForeground)
     {
         SetForegroundWindow(_window->GetHandle());
+
+        // GH#14384, GH#16052: an acrylic tab row starts up stuck on its opaque
+        // fallback, because XAML evaluated the island's transparency policy
+        // while our window was still hidden, and it only re-evaluates on a
+        // real foreground change (microsoft-ui-xaml#6414). Bounce the
+        // foreground off a throwaway window once, so the acrylic composes on
+        // the first frame the user sees. Skip it for autoHideWindow: the
+        // deactivation would dismiss the window, and summoning it back is a
+        // real foreground change anyways.
+        const auto& globals = _appLogic.Settings().GlobalSettings();
+        if (globals.UseAcrylicInTabRow() && !globals.AutoHideWindow())
+        {
+            wil::unique_hwnd helper{ CreateWindowExW(WS_EX_TOOLWINDOW,
+                                                     L"STATIC",
+                                                     nullptr,
+                                                     WS_POPUP | WS_VISIBLE,
+                                                     -32000,
+                                                     -32000,
+                                                     1,
+                                                     1,
+                                                     nullptr,
+                                                     nullptr,
+                                                     wil::GetModuleInstanceHandle(),
+                                                     nullptr) };
+            if (helper)
+            {
+                SetForegroundWindow(helper.get());
+                SetForegroundWindow(_window->GetHandle());
+            }
+        }
     }
 
     // Don't set our state to Initialized until after the call to ShowWindow.
