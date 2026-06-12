@@ -31,10 +31,14 @@ Pane::Pane(IPaneContent content, const bool lastFocused) :
     _lastActive{ lastFocused }
 {
     _setPaneContent(std::move(content));
-    _root.Children().Append(_borderFirst);
+    _CreatePaneHeader();
 
     const auto& control{ _content.GetRoot() };
-    _borderFirst.Child(control);
+
+    // Set up leaf layout: header in _root row 0, content in _borderFirst row 1.
+    // The TermControl stays as the direct child of _borderFirst (no Grid wrapper)
+    // so the SwapChainPanel renders correctly.
+    _SetupLeafLayout(control);
 
     // Register an event with the control to have it inform us when it gains focus.
     if (control)
@@ -1228,6 +1232,12 @@ void Pane::UpdateVisuals()
     const auto& brush{ _ComputeBorderColor() };
     _borderFirst.BorderBrush(brush);
     _borderSecond.BorderBrush(brush);
+
+    // Update pane header color to match focus state
+    if (_paneHeaderBorder && _paneHeaderBorder.Visibility() == winrt::Windows::UI::Xaml::Visibility::Visible)
+    {
+        _paneHeaderBorder.Background(brush);
+    }
 }
 
 // Method Description:
@@ -1450,9 +1460,9 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.RowDefinitions().Clear();
 
         // Reattach the TermControl to our grid.
-        _root.Children().Append(_borderFirst);
+        _CreatePaneHeader();
         const auto& control{ _content.GetRoot() };
-        _borderFirst.Child(control);
+        _SetupLeafLayout(control);
 
         // Make sure to set our _splitState before focusing the control. If you
         // fail to do this, when the tab handles the GotFocus event and asks us
@@ -1755,7 +1765,92 @@ void Pane::_setPaneContent(IPaneContent content)
 }
 
 // Method Description:
-// - Sets up row/column definitions for this pane. There are three total
+// - Creates the pane header UI elements (title bar shown above the content).
+//   The header is initially collapsed and only shown via ShowPaneHeaders().
+void Pane::_CreatePaneHeader()
+{
+    namespace WUX = winrt::Windows::UI::Xaml;
+
+    _paneHeaderText = Controls::TextBlock{};
+    _paneHeaderText.FontSize(12);
+    _paneHeaderText.Padding({ 8, 2, 8, 2 });
+    _paneHeaderText.IsTextSelectionEnabled(false);
+    _paneHeaderText.TextTrimming(WUX::TextTrimming::CharacterEllipsis);
+    if (_content)
+    {
+        _paneHeaderText.Text(_content.Title());
+        _titleChangedRevoker = _content.TitleChanged(winrt::auto_revoke, [this](auto&&, auto&&) {
+            _paneHeaderBorder.Dispatcher().RunAsync(
+                winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
+                [this]() {
+                    if (_content && _paneHeaderText)
+                    {
+                        _paneHeaderText.Text(_content.Title());
+                    }
+                });
+        });
+    }
+
+    _paneHeaderBorder = Controls::Border{};
+    _paneHeaderBorder.Padding({ 0, 0, 0, 0 });
+    _paneHeaderBorder.Child(_paneHeaderText);
+    _paneHeaderBorder.Visibility(WUX::Visibility::Collapsed);
+}
+
+// Method Description:
+// - Sets up the leaf pane layout in _root: a header row (auto-sized) and a
+//   content row (star-sized). The TermControl stays as the direct child of
+//   _borderFirst so the SwapChainPanel renders correctly.
+void Pane::_SetupLeafLayout(const winrt::Windows::UI::Xaml::UIElement& control)
+{
+    auto headerRow = Controls::RowDefinition{};
+    headerRow.Height(GridLengthHelper::Auto());
+    auto contentRow = Controls::RowDefinition{};
+    contentRow.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+    _root.RowDefinitions().Append(headerRow);
+    _root.RowDefinitions().Append(contentRow);
+
+    Controls::Grid::SetRow(_paneHeaderBorder, 0);
+    Controls::Grid::SetRow(_borderFirst, 1);
+
+    _root.Children().Append(_paneHeaderBorder);
+    _root.Children().Append(_borderFirst);
+
+    if (control)
+    {
+        _borderFirst.Child(control);
+    }
+}
+
+// Method Description:
+// - Show or hide the pane header title bar on all leaf panes in the tree.
+//   Called by Tab when the number of panes changes.
+void Pane::ShowPaneHeaders(bool show)
+{
+    if (_IsLeaf())
+    {
+        if (_paneHeaderBorder)
+        {
+            namespace WUX = winrt::Windows::UI::Xaml;
+            _paneHeaderBorder.Visibility(show ? WUX::Visibility::Visible : WUX::Visibility::Collapsed);
+
+            if (show)
+            {
+                const auto& brush = _ComputeBorderColor();
+                _paneHeaderBorder.Background(brush);
+                _paneHeaderText.Foreground(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::White()));
+            }
+        }
+    }
+    else
+    {
+        _firstChild->ShowPaneHeaders(show);
+        _secondChild->ShowPaneHeaders(show);
+    }
+}
+
+// Method Description:
+// - Sets up row/column definitions for this pane.There are three total
 //   row/cols. The middle one is for the separator. The first and third are for
 //   each of the child panes, and are given a size in pixels, based off the
 //   available space, and the percent of the space they respectively consume,
@@ -2320,6 +2415,10 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _root.ColumnDefinitions().Clear();
     _root.RowDefinitions().Clear();
     _CreateRowColDefinitions();
+
+    // Reset Grid.Row on _borderFirst — it may have been set to row 1 in the
+    // leaf layout (header=row0, content=row1).
+    Controls::Grid::SetRow(_borderFirst, 0);
 
     _borderFirst.Child(_firstChild->GetRootElement());
     _borderSecond.Child(_secondChild->GetRootElement());
