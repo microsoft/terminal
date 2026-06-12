@@ -99,6 +99,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean UsingNoIcon { get; };
 
         String TabTitlePreview { get; };
+        String SectionHeaderText { get; };
         String AnswerbackMessagePreview { get; };
         Windows.UI.Color TabColorPreview { get; };
         Windows.UI.Color TabThemeColorPreview { get; };

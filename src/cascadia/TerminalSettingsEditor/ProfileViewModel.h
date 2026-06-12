@@ -103,6 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool Orphaned() const;
         hstring TabTitlePreview() const;
+        hstring SectionHeaderText() const;
         hstring AnswerbackMessagePreview() const;
         Windows::UI::Color TabColorPreview() const;
         Windows::UI::Color TabThemeColorPreview() const;

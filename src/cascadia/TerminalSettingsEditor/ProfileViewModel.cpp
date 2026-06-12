@@ -52,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (viewModelProperty == L"IsBaseLayer")
             {
                 // we _always_ want to show the background image settings in base layer
-                _NotifyChanges(L"BackgroundImageSettingsEnabled");
+                _NotifyChanges(L"BackgroundImageSettingsEnabled", L"SectionHeaderText");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
@@ -127,6 +127,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (viewModelProperty == L"TabThemeColorPreview")
             {
                 _NotifyChanges(L"TabColorPreview");
+            }
+            else if (viewModelProperty == L"Name")
+            {
+                _NotifyChanges(L"SectionHeaderText");
             }
         });
 
@@ -356,6 +360,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return answerbackMessage;
         }
         return RS_(L"Profile_AnswerbackMessageNone");
+    }
+
+    hstring ProfileViewModel::SectionHeaderText() const
+    {
+        if (IsBaseLayer())
+        {
+            return RS_(L"Profile_DefaultsSectionHeader");
+        }
+        return hstring{ RS_fmt(L"Profile_NameSectionHeaderFormat", Name()) };
     }
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
