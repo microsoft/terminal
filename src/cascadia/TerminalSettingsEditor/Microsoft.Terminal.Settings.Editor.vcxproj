@@ -52,8 +52,8 @@
     <ClInclude Include="EditAction.h">
       <DependentUpon>EditAction.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="AddProfile.h">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
+    <ClInclude Include="Profiles.h">
+      <DependentUpon>Profiles.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
@@ -192,7 +192,7 @@
     <Page Include="EditAction.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="AddProfile.xaml">
+    <Page Include="Profiles.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CommonResources.xaml">
@@ -275,8 +275,8 @@
     <ClCompile Include="EditAction.cpp">
       <DependentUpon>EditAction.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="AddProfile.cpp">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
+    <ClCompile Include="Profiles.cpp">
+      <DependentUpon>Profiles.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -413,8 +413,8 @@
       <DependentUpon>Actions.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="AddProfile.idl">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
+    <Midl Include="Profiles.idl">
+      <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="EnumEntry.idl" />

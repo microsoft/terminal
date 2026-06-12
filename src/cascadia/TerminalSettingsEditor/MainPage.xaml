@@ -164,11 +164,6 @@
                                      x:Uid="Nav_Appearance"
                                      Tag="GlobalAppearance_Nav" />
 
-            <muxc:NavigationViewItem x:Name="ColorSchemesNavItem"
-                                     x:Uid="Nav_ColorSchemes"
-                                     Tag="ColorSchemes_Nav" />
-
-
             <muxc:NavigationViewItem x:Name="RenderingNavItem"
                                      x:Uid="Nav_Rendering"
                                      Tag="Rendering_Nav" />
@@ -194,11 +189,9 @@
                                      x:Uid="Nav_Extensions"
                                      Tag="Extensions_Nav" />
 
-            <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
-
-            <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
-                                     x:Uid="Nav_ProfileDefaults"
-                                     Tag="GlobalProfile_Nav" />
+            <muxc:NavigationViewItem x:Name="ProfilesNavItem"
+                                     x:Uid="Nav_Profiles"
+                                     Tag="Profiles_Nav" />
         </muxc:NavigationView.MenuItems>
 
         <muxc:NavigationView.FooterMenuItems>
@@ -217,17 +210,7 @@
                           Grid.Row="0">
                 <Frame x:Name="contentFrame"
                        Grid.Row="0"
-                       Padding="16,0,16,48">
-                    <Frame.ContentTransitions>
-                        <TransitionCollection>
-                            <NavigationThemeTransition>
-                                <NavigationThemeTransition.DefaultNavigationTransitionInfo>
-                                    <DrillInNavigationTransitionInfo />
-                                </NavigationThemeTransition.DefaultNavigationTransitionInfo>
-                            </NavigationThemeTransition>
-                        </TransitionCollection>
-                    </Frame.ContentTransitions>
-                </Frame>
+                       Padding="16,0,16,48" />
             </ScrollViewer>
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"

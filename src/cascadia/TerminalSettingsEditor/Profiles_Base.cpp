@@ -21,9 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto startingDirCheckboxTooltip{ ToolTipService::GetToolTip(StartingDirectoryUseParentCheckbox()) };
         Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
 
-        AppearanceNavigator().Header(box_value(RS_(L"Profile_Appearance/Header")));
-        TerminalNavigator().Header(box_value(RS_(L"Profile_Terminal/Header")));
-        AdvancedNavigator().Header(box_value(RS_(L"Profile_Advanced/Header")));
+        Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
     }
 
     void Profiles_Base::OnNavigatedTo(const NavigationEventArgs& e)
@@ -50,7 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (_Profile.FocusDeleteButton())
             {
-                DeleteProfileButton().Focus(FocusState::Programmatic);
+                DeleteButton().Focus(FocusState::Programmatic);
                 _Profile.FocusDeleteButton(false);
             }
         });

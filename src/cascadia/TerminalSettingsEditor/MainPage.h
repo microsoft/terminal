@@ -86,21 +86,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
-        void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
-        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
+        void _CreateAndNavigateToNewProfile(const Model::Profile& profile);
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
         void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _SetupProfileEventHandling(const winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel profile);
         void _SetupColorSchemesEventHandling();
         void _SetupActionsEventHandling();
+        void _SetupProfilesPageEventHandling();
         void _NavigateToProfileSubPage(const Editor::ProfileViewModel& profile, ProfileSubPage page, const IInspectable& breadcrumbTag, const hstring& elementToFocus);
 
         void _PreNavigateHelper();
-        void _Navigate(const IInspectable& vm, BreadcrumbSubPage subPage, hstring elementToFocus = {});
+        void _Navigate(const IInspectable& vm, BreadcrumbSubPage subPage = BreadcrumbSubPage::None, hstring elementToFocus = {});
+        Windows::UI::Xaml::Media::Animation::NavigationTransitionInfo _MakeTransitionInfo() const;
+
+        enum class NavDirection
+        {
+            Default,
+            Forward,
+            Back
+        };
+        NavDirection _navDirection{ NavDirection::Default };
         void _NavigateToProfileHandler(const IInspectable& sender, winrt::guid profileGuid);
         void _NavigateToColorSchemeHandler(const IInspectable& sender, const IInspectable& args);
-        Microsoft::UI::Xaml::Controls::NavigationViewItem _FindProfileNavItem(winrt::guid profileGuid) const;
+        Editor::ProfileViewModel _FindProfileViewModelByGuid(winrt::guid profileGuid) const;
+
+        void _AppendProfilesRootCrumb();
+        void _SelectNavItemByTag(std::wstring_view tag);
 
         void _AnnounceNavPaneState(bool opened);
 
@@ -110,11 +122,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         safe_void_coroutine _UpdateSearchIndex();
 
         winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel _profileDefaultsVM{ nullptr };
-        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Editor::ProfileViewModel> _profileVMs{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageViewModel _colorSchemesPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ActionsViewModel _actionsVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::NewTabMenuViewModel _newTabMenuPageVM{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::ExtensionsViewModel _extensionsVM{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ProfilesPageViewModel _profilesPageVM{ nullptr };
 
         Windows::Foundation::IAsyncOperation<Windows::Foundation::Collections::IObservableVector<Windows::Foundation::IInspectable>> _currentSearch{ nullptr };
 

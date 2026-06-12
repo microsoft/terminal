@@ -103,9 +103,9 @@ $ClassMap = @{
         NavigationParam = "GlobalProfile_Nav"
         SubPage         = "BreadcrumbSubPage::Profile_Advanced"
     }
-    "Microsoft::Terminal::Settings::Editor::AddProfile" = @{
-        ResourceName    = "Nav_AddNewProfile/Content"
-        NavigationParam = "AddProfile"
+    "Microsoft::Terminal::Settings::Editor::Profiles" = @{
+        ResourceName    = "Nav_Profiles/Content"
+        NavigationParam = "Profiles_Nav"
         SubPage         = "BreadcrumbSubPage::None"
     }
 }
@@ -175,18 +175,6 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
         # "add new" button
         $entries += [pscustomobject]@{
             ResourceName    = "ColorScheme_AddNewButton/Text"
-            ParentPage      = $pageClass
-            NavigationParam = $ClassMap[$pageClass].NavigationParam
-            SubPage         = $ClassMap[$pageClass].SubPage
-            ElementName     = "AddNewButton"
-            File            = $filename
-        }
-    }
-    elseif ($filename -eq "AddProfile.xaml")
-    {
-        # "add new" button
-        $entries += [pscustomobject]@{
-            ResourceName    = "AddProfile_AddNewTextBlock/Text"
             ParentPage      = $pageClass
             NavigationParam = $ClassMap[$pageClass].NavigationParam
             SubPage         = $ClassMap[$pageClass].SubPage
