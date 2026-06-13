@@ -470,6 +470,32 @@ namespace winrt::TerminalApp::implementation
         void _OnTabPointerPressed(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         safe_void_coroutine _OnTabPointerReleasedCloseTab(IInspectable sender);
 
+        // GH#6661: when the OS drag/drop pipeline is disabled (elevated session),
+        // implement tab reorder ourselves via raw pointer events on each TabViewItem.
+        struct PointerReorderState
+        {
+            bool dragging{ false };
+            uint32_t pointerId{ 0 };
+            double anchorX{ 0.0 };
+            double grabOffsetX{ 0.0 };
+            double naturalLeft{ 0.0 };
+            double draggedWidth{ 0.0 };
+            uint32_t originalIndex{ 0 };
+            uint32_t targetIndex{ 0 };
+            std::vector<float> naturalLefts;
+            std::vector<float> naturalWidths;
+            winrt::Microsoft::UI::Xaml::Controls::TabViewItem item{ nullptr };
+            winrt::Windows::UI::Xaml::Media::TranslateTransform dragTransform{ nullptr };
+            winrt::Windows::UI::Xaml::UIElement::PointerCaptureLost_revoker pointerCaptureLost;
+        };
+        PointerReorderState _pointerReorder{};
+        static constexpr double _pointerReorderThresholdPx{ 8.0 };
+        void _OnTabPointerMoved(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        void _BeginPointerReorder(const winrt::Microsoft::UI::Xaml::Controls::TabViewItem& item,
+                                  const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _UpdatePointerReorder(const Windows::UI::Xaml::Input::PointerRoutedEventArgs& e);
+        void _EndPointerReorder();
+
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
