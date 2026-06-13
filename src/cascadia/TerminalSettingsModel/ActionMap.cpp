@@ -5,6 +5,7 @@
 #include "AllShortcutActions.h"
 #include "ActionMap.h"
 #include "Command.h"
+
 #include <til/io.h>
 
 #include "ActionMap.g.cpp"
@@ -1289,7 +1290,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring currentWorkingDirectory)
     {
         // enumerate all the parent directories we want to import snippets from
-        std::filesystem::path directory{ std::wstring_view{ currentWorkingDirectory } };
+        std::filesystem::path directory;
+        if (::Microsoft::Console::Utils::IsValidDirectory(currentWorkingDirectory.c_str()))
+        {
+            directory.assign(std::wstring_view{ currentWorkingDirectory });
+        }
+
         std::vector<std::filesystem::path> directories;
         while (!directory.empty())
         {
