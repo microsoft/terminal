@@ -70,6 +70,7 @@ servicebus
 slnt
 ssh
 stakeholders
+storyboards
 subpage
 subpages
 sustainability
