@@ -332,8 +332,8 @@ namespace winrt::TerminalApp::implementation
 
             const auto selectedCommand = _filteredActionsView().SelectedItem();
             const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
-            _dispatchCommand(filteredCommand);
             e.Handled(true);
+            _dispatchCommand(filteredCommand);
         }
         else if (key == VirtualKey::Escape)
         {
@@ -795,7 +795,19 @@ namespace winrt::TerminalApp::implementation
                     // All other actions can just be dispatched.
                     if (command.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
                     {
-                        DispatchCommandRequested.raise(*this, command);
+                        if (command.ActionAndArgs().Action() == ShortcutAction::ExportBuffer)
+                        {
+                            Dispatcher().RunAsync(CoreDispatcherPriority::Low, [weak = get_weak(), command]() {
+                                if (auto self{ weak.get() })
+                                {
+                                    self->DispatchCommandRequested.raise(*self, command);
+                                }
+                            });
+                        }
+                        else
+                        {
+                            DispatchCommandRequested.raise(*this, command);
+                        }
                     }
 
                     TraceLoggingWrite(
