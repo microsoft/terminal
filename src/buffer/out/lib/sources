@@ -6,3 +6,7 @@
 
 TARGETNAME              = ConBufferOut
 TARGETTYPE              = LIBRARY
+
+# TODO: Uses guarded AVX2 instructions.
+# Deliverable 62164273: Allow using intrinsics WITHOUT the target CPU feature being enabled
+USE_CLANG=0

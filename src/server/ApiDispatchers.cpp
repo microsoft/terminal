@@ -17,9 +17,9 @@
         g_hConhostV2EventTraceProvider,                              \
         "API_" ApiName,                                              \
         TraceLoggingPid(TraceGetProcessId(m), "OriginatingProcess"), \
-        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread"),   \
-        __VA_ARGS__ __VA_OPT__(, )                                   \
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),               \
+        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread")    \
+        __VA_OPT__(,) __VA_ARGS__,                                   \
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),                   \
         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
 static DWORD TraceGetProcessId(CONSOLE_API_MSG* const m)
