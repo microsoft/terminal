@@ -46,10 +46,10 @@ namespace Microsoft::Console::Interactivity::Win32
         [[nodiscard]] HRESULT _SetIconFromReference(_In_ HICON& hIconRef, const HICON hNewIcon);
         void _FreeIconFromReference(_In_ HICON& hIconRef);
 
-        bool _fInitialized;
-        HICON _hDefaultIcon;
-        HICON _hDefaultSmIcon;
-        HICON _hIcon;
-        HICON _hSmIcon;
+        bool _fInitialized = false;
+        HICON _hDefaultIcon = nullptr;
+        HICON _hDefaultSmIcon = nullptr;
+        HICON _hIcon = nullptr;
+        HICON _hSmIcon = nullptr;
     };
 }

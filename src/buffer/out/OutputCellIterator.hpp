@@ -115,7 +115,7 @@ private:
 
     OutputCellView _currentView;
 
-    size_t _pos;
-    size_t _distance;
+    size_t _pos = 0;
+    size_t _distance = 0;
     size_t _fillLimit;
 };

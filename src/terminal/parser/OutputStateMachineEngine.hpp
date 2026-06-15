@@ -53,7 +53,7 @@ namespace Microsoft::Console::VirtualTerminal
 
     private:
         std::unique_ptr<ITermDispatch> _dispatch;
-        wchar_t _lastPrintedChar;
+        wchar_t _lastPrintedChar = L'\0'; // same as AsciiChars::NUL
 
         enum EscActionCodes : uint64_t
         {

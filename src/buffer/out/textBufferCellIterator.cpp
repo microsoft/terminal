@@ -34,7 +34,6 @@ TextBufferCellIterator::TextBufferCellIterator(const TextBuffer& buffer, til::po
     _pos(pos),
     _pRow(s_GetRow(buffer, pos)),
     _bounds(limits),
-    _exceeded(false),
     _view({}, {}, {}, TextAttributeBehavior::Stored),
     _attrIter(s_GetRow(buffer, pos)->AttrBegin())
 {

@@ -190,57 +190,57 @@ public:
 private:
     RenderSettings _renderSettings;
 
-    DWORD _dwHotKey;
-    DWORD _dwStartupFlags;
+    DWORD _dwHotKey = 0;
+    DWORD _dwStartupFlags = 0;
     WORD _wFillAttribute;
     WORD _wPopupFillAttribute;
-    WORD _wShowWindow; // used when window is created
-    WORD _wReserved;
+    WORD _wShowWindow = SW_SHOWNORMAL; // used when window is created
+    WORD _wReserved = 0;
     // START - This section filled via memcpy from shortcut properties. Do not rearrange/change.
     COORD _dwScreenBufferSize;
     COORD _dwWindowSize; // this is in characters.
     COORD _dwWindowOrigin; // used when window is created
-    DWORD _nFont;
+    DWORD _nFont = 0;
     COORD _dwFontSize;
-    UINT _uFontFamily;
-    UINT _uFontWeight;
+    UINT _uFontFamily = 0;
+    UINT _uFontWeight = 0;
     WCHAR _FaceName[LF_FACESIZE];
-    UINT _uCursorSize;
-    BOOL _bFullScreen; // deprecated
-    BOOL _bQuickEdit;
-    BOOL _bInsertMode; // used by command line editing
-    BOOL _bAutoPosition;
-    UINT _uHistoryBufferSize;
-    UINT _uNumberOfHistoryBuffers;
-    BOOL _bHistoryNoDup;
+    UINT _uCursorSize = Cursor::CURSOR_SMALL_SIZE;
+    BOOL _bFullScreen = false; // deprecated
+    BOOL _bQuickEdit = true;
+    BOOL _bInsertMode = true; // used by command line editing
+    BOOL _bAutoPosition = true;
+    UINT _uHistoryBufferSize = 25; // DEFAULT_NUMBER_OF_COMMANDS
+    UINT _uNumberOfHistoryBuffers = 4; // DEFAULT_NUMBER_OF_BUFFERS
+    BOOL _bHistoryNoDup = false;
     // END - memcpy
     UINT _uCodePage;
-    UINT _uScrollScale;
-    bool _fTrimLeadingZeros;
-    bool _fEnableColorSelection;
-    bool _bLineSelection;
-    bool _bWrapText; // whether to use text wrapping when resizing the window
-    bool _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
-    BYTE _bWindowAlpha; // describes the opacity of the window
+    UINT _uScrollScale = 1;
+    bool _fTrimLeadingZeros = false;
+    bool _fEnableColorSelection = false;
+    bool _bLineSelection = true;
+    bool _bWrapText = true; // whether to use text wrapping when resizing the window
+    bool _fCtrlKeyShortcutsDisabled = false; // disables Ctrl+<something> key intercepts
+    BYTE _bWindowAlpha = BYTE_MAX; // describes the opacity of the window
 
-    bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
+    bool _fFilterOnPaste = false; // should we filter text when the user pastes? (e.g. remove <tab>)
     std::wstring _LaunchFaceName;
-    bool _fAllowAltF4Close;
-    DWORD _dwVirtTermLevel;
+    bool _fAllowAltF4Close = true;
+    DWORD _dwVirtTermLevel = 0;
     DWORD _msaaDelay = 100;
     DWORD _uiaDelay = 25;
     SettingsTextMeasurementMode _textMeasurement = SettingsTextMeasurementMode::Graphemes;
-    bool _fUseDx;
-    bool _fCopyColor;
+    bool _fUseDx = false;
+    bool _fCopyColor = false;
     bool _fEnableBuiltinGlyphs = true;
 
     // this is used for the special STARTF_USESIZE mode.
-    bool _fUseWindowSizePixels;
+    bool _fUseWindowSizePixels = false;
     COORD _dwWindowSizePixels;
 
-    CursorType _CursorType;
+    CursorType _CursorType = CursorType::Legacy;
 
-    bool _fInterceptCopyPaste;
+    bool _fInterceptCopyPaste = false;
 
     bool _TerminalScrolling = true;
     WCHAR _answerbackMessage[32] = {};

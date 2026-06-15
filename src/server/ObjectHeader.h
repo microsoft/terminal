@@ -42,11 +42,11 @@ public:
     void IncrementOriginalScreenBuffer();
 
 private:
-    ULONG _ulOpenCount;
-    ULONG _ulReaderCount;
-    ULONG _ulWriterCount;
-    ULONG _ulReadShareCount;
-    ULONG _ulWriteShareCount;
+    ULONG _ulOpenCount = 0;
+    ULONG _ulReaderCount = 0;
+    ULONG _ulWriterCount = 0;
+    ULONG _ulReadShareCount = 0;
+    ULONG _ulWriteShareCount = 0;
 
 #ifdef UNIT_TESTING
     friend class ObjectTests;

@@ -15,46 +15,16 @@ constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 Settings::Settings() :
-    _dwHotKey(0),
-    _dwStartupFlags(0),
     _wFillAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE), // White (not bright) on black by default
     _wPopupFillAttribute(FOREGROUND_RED | FOREGROUND_BLUE | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY), // Purple on white (bright) by default
-    _wShowWindow(SW_SHOWNORMAL),
-    _wReserved(0),
     // dwScreenBufferSize initialized below
     // dwWindowSize initialized below
     // dwWindowOrigin initialized below
-    _nFont(0),
     // dwFontSize initialized below
-    _uFontFamily(0),
-    _uFontWeight(0),
     // FaceName initialized below
-    _uCursorSize(Cursor::CURSOR_SMALL_SIZE),
-    _bFullScreen(false),
-    _bQuickEdit(true),
-    _bInsertMode(true),
-    _bAutoPosition(true),
-    _uHistoryBufferSize(DEFAULT_NUMBER_OF_COMMANDS),
-    _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
-    _bHistoryNoDup(false),
     // ColorTable initialized below
-    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
-    _uScrollScale(1),
-    _bLineSelection(true),
-    _bWrapText(true),
-    _fCtrlKeyShortcutsDisabled(false),
-    _bWindowAlpha(BYTE_MAX), // 255 alpha = opaque. 0 = transparent.
-    _fFilterOnPaste(false),
-    _LaunchFaceName{},
-    _fTrimLeadingZeros(FALSE),
-    _fEnableColorSelection(FALSE),
-    _fAllowAltF4Close(true),
-    _dwVirtTermLevel(0),
-    _fUseWindowSizePixels(false),
+    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP)
     // window size pixels initialized below
-    _fInterceptCopyPaste(0),
-    _fUseDx(false),
-    _fCopyColor(false)
 {
     _dwScreenBufferSize.X = 80;
     _dwScreenBufferSize.Y = 25;
@@ -72,8 +42,6 @@ Settings::Settings() :
 
     ZeroMemory((void*)&_FaceName, sizeof(_FaceName));
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
-
-    _CursorType = CursorType::Legacy;
 }
 
 // Routine Description:

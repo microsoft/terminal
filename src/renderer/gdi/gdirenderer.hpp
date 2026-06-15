@@ -86,7 +86,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
-        HWND _hwndTargetWindow;
+        HWND _hwndTargetWindow = (HWND)INVALID_HANDLE_VALUE;
 
         [[nodiscard]] static HRESULT s_SetWindowLongWHelper(const HWND hWnd,
                                                             const int nIndex,
@@ -94,7 +94,7 @@ namespace Microsoft::Console::Render
 
         static bool FontHasWesternScript(HDC hdc);
 
-        bool _fPaintStarted;
+        bool _fPaintStarted = false;
 
         til::rect _invalidCharacters;
         PAINTSTRUCT _psInvalidData;
@@ -125,7 +125,7 @@ namespace Microsoft::Console::Render
 
         static const size_t s_cPolyTextCache = 80;
         POLYTEXTW _pPolyText[s_cPolyTextCache];
-        size_t _cPolyText;
+        size_t _cPolyText = 0;
         [[nodiscard]] HRESULT _FlushBufferLines() noexcept;
 
         std::vector<RECT> cursorInvertRects;
@@ -148,26 +148,26 @@ namespace Microsoft::Console::Render
 
         LineMetrics _lineMetrics;
         til::size _coordFontLast;
-        int _iCurrentDpi;
 
         static const int s_iBaseDpi = USER_DEFAULT_SCREEN_DPI;
+        int _iCurrentDpi = s_iBaseDpi;
 
         til::size _szMemorySurface;
-        HBITMAP _hbitmapMemorySurface;
+        HBITMAP _hbitmapMemorySurface = nullptr;
         [[nodiscard]] HRESULT _PrepareMemoryBitmap(const HWND hwnd) noexcept;
 
         til::size _szInvalidScroll;
         til::rect _rcInvalid;
-        bool _fInvalidRectUsed;
+        bool _fInvalidRectUsed = false;
 
-        COLORREF _lastFg;
-        COLORREF _lastBg;
+        COLORREF _lastFg = INVALID_COLOR;
+        COLORREF _lastBg = INVALID_COLOR;
 
-        FontType _lastFontType;
+        FontType _lastFontType = FontType::Undefined;
         bool _fontHasWesternScript = false;
 
-        XFORM _currentLineTransform;
-        LineRendition _currentLineRendition;
+        XFORM _currentLineTransform = IDENTITY_XFORM;
+        LineRendition _currentLineRendition = LineRendition::SingleWidth;
 
         // Memory pooling to save alloc/free work to the OS for things
         // frequently created and dropped.

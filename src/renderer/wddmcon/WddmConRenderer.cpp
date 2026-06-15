@@ -9,26 +9,12 @@
 
 #pragma hdrstop
 
-//
-// Default non-bright white.
-//
-
-#define DEFAULT_COLOR_ATTRIBUTE (0xC)
-
 #define DEFAULT_FONT_WIDTH (8)
 #define DEFAULT_FONT_HEIGHT (12)
 
 using namespace Microsoft::Console::Render;
 
-WddmConEngine::WddmConEngine() noexcept :
-    RenderEngineBase(),
-    _hWddmConCtx(INVALID_HANDLE_VALUE),
-    _displayHeight(0),
-    _displayWidth(0),
-    _displayState(nullptr),
-    _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)
-{
-}
+WddmConEngine::WddmConEngine() noexcept = default;
 
 void WddmConEngine::FreeResources(ULONG displayHeight)
 {

@@ -59,7 +59,7 @@ protected:
     const ROW* _pRow;
     const TextBuffer& _buffer;
     const Microsoft::Console::Types::Viewport _bounds;
-    bool _exceeded;
+    bool _exceeded = false;
     til::point _pos;
 
 #if UNIT_TESTING

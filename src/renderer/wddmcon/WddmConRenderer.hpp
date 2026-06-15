@@ -65,18 +65,21 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
-        HANDLE _hWddmConCtx;
+        // Default non-bright white.
+        static constexpr WORD s_defaultColor = 0xC;
+
+        HANDLE _hWddmConCtx = INVALID_HANDLE_VALUE;
 
         // Helpers
         void FreeResources(ULONG displayHeight);
 
         // Variables
-        LONG _displayHeight;
-        LONG _displayWidth;
+        LONG _displayHeight = 0;
+        LONG _displayWidth = 0;
         til::rect _dirtyArea;
 
-        PCD_IO_ROW_INFORMATION* _displayState;
+        PCD_IO_ROW_INFORMATION* _displayState = nullptr;
 
-        WORD _currentLegacyColorAttribute;
+        WORD _currentLegacyColorAttribute = s_defaultColor;
     };
 }

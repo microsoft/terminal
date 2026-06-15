@@ -18,8 +18,7 @@ constexpr COLORREF COLOR_INQUIRY_COLOR = 0xfeffffff; // It's like INVALID_COLOR 
 
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
-    _dispatch(std::move(pDispatch)),
-    _lastPrintedChar(AsciiChars::NUL)
+    _dispatch(std::move(pDispatch))
 {
     THROW_HR_IF_NULL(E_INVALIDARG, _dispatch.get());
 }

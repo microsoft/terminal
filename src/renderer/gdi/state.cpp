@@ -19,21 +19,9 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - An instance of a Renderer.
 GdiEngine::GdiEngine() :
-    _hwndTargetWindow((HWND)INVALID_HANDLE_VALUE),
 #if DBG
     _debugWindow((HWND)INVALID_HANDLE_VALUE),
 #endif
-    _iCurrentDpi(s_iBaseDpi),
-    _hbitmapMemorySurface(nullptr),
-    _cPolyText(0),
-    _fInvalidRectUsed(false),
-    _lastFg(INVALID_COLOR),
-    _lastBg(INVALID_COLOR),
-    _lastFontType(FontType::Undefined),
-    _currentLineTransform(IDENTITY_XFORM),
-    _currentLineRendition(LineRendition::SingleWidth),
-    _fPaintStarted(false),
-    _invalidCharacters{},
     _pool{ til::pmr::get_default_resource() }, // It's important the pool is first so it can be given to the others on construction.
     _polyStrings{ &_pool },
     _polyWidths{ &_pool }

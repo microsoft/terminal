@@ -27,8 +27,6 @@ OutputCellIterator::OutputCellIterator(const wchar_t& wch, const size_t fillLimi
     _currentView(s_GenerateView(wch)),
     _run(),
     _attr(InvalidTextAttribute),
-    _pos(0),
-    _distance(0),
     _fillLimit(fillLimit)
 {
 }
@@ -43,8 +41,6 @@ OutputCellIterator::OutputCellIterator(const TextAttribute& attr, const size_t f
     _currentView(s_GenerateView(attr)),
     _run(),
     _attr(InvalidTextAttribute),
-    _pos(0),
-    _distance(0),
     _fillLimit(fillLimit)
 {
 }
@@ -60,8 +56,6 @@ OutputCellIterator::OutputCellIterator(const wchar_t& wch, const TextAttribute& 
     _currentView(s_GenerateView(wch, attr)),
     _run(),
     _attr(InvalidTextAttribute),
-    _pos(0),
-    _distance(0),
     _fillLimit(fillLimit)
 {
 }
@@ -76,8 +70,6 @@ OutputCellIterator::OutputCellIterator(const CHAR_INFO& charInfo, const size_t f
     _currentView(s_GenerateView(charInfo)),
     _run(),
     _attr(InvalidTextAttribute),
-    _pos(0),
-    _distance(0),
     _fillLimit(fillLimit)
 {
 }
@@ -91,8 +83,6 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) noexce
     _currentView(s_GenerateView(utf16Text)),
     _run(utf16Text),
     _attr(InvalidTextAttribute),
-    _pos(0),
-    _distance(0),
     _fillLimit(0)
 {
 }
@@ -107,8 +97,6 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
     _currentView(s_GenerateView(utf16Text, attribute)),
     _run(utf16Text),
     _attr(attribute),
-    _distance(0),
-    _pos(0),
     _fillLimit(fillLimit)
 {
 }
@@ -122,8 +110,6 @@ OutputCellIterator::OutputCellIterator(const std::span<const WORD> legacyAttrs) 
     _currentView(s_GenerateViewLegacyAttr(til::at(legacyAttrs, 0))),
     _run(legacyAttrs),
     _attr(InvalidTextAttribute),
-    _distance(0),
-    _pos(0),
     _fillLimit(0)
 {
 }
@@ -137,8 +123,6 @@ OutputCellIterator::OutputCellIterator(const std::span<const CHAR_INFO> charInfo
     _currentView(s_GenerateView(til::at(charInfos, 0))),
     _run(charInfos),
     _attr(InvalidTextAttribute),
-    _distance(0),
-    _pos(0),
     _fillLimit(0)
 {
 }
@@ -152,8 +136,6 @@ OutputCellIterator::OutputCellIterator(const std::span<const OutputCell> cells) 
     _currentView(s_GenerateView(til::at(cells, 0))),
     _run(cells),
     _attr(InvalidTextAttribute),
-    _distance(0),
-    _pos(0),
     _fillLimit(0)
 {
 }

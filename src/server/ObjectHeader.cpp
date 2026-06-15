@@ -8,14 +8,7 @@
 
 #include "../host/inputReadHandleData.h"
 
-ConsoleObjectHeader::ConsoleObjectHeader() :
-    _ulOpenCount(0),
-    _ulReaderCount(0),
-    _ulWriterCount(0),
-    _ulReadShareCount(0),
-    _ulWriteShareCount(0)
-{
-}
+ConsoleObjectHeader::ConsoleObjectHeader() = default;
 
 // Routine Description:
 // - This routine allocates an input or output handle from the process's handle table.
