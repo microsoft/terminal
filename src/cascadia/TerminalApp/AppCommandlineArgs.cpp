@@ -744,12 +744,21 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args.AppendCommandLine(_appendCommandLineOption);
     }
 
-    bool inheritEnv = hasCommandline;
+    std::optional<bool> inheritEnv;
+    if (hasCommandline)
+    {
+        inheritEnv = true;
+    }
+
     if (*subcommand.inheritEnvOption)
     {
         inheritEnv = _inheritEnvironment;
     }
-    args.ReloadEnvironmentVariables(!inheritEnv);
+
+    if (inheritEnv.has_value())
+    {
+        args.ReloadEnvironmentVariables(!*inheritEnv);
+    }
 
     return args;
 }
