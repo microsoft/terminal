@@ -18,7 +18,7 @@
         "API_" ApiName,                                              \
         TraceLoggingPid(TraceGetProcessId(m), "OriginatingProcess"), \
         TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread")    \
-        __VA_OPT__(,) __VA_ARGS__,                                   \
+            __VA_OPT__(, ) __VA_ARGS__,                              \
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),                   \
         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
