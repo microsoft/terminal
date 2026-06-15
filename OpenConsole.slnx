@@ -23,7 +23,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
       <Deploy Solution="Debug|x64" />
     </Project>
@@ -50,7 +49,6 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
     </Project>
     <Project Path="src/host/ft_uia/Host.Tests.UIA.csproj" Id="c17e1bf3-9d34-4779-9458-a8ef98cc5662">
       <BuildDependency Project="src/host/exe/Host.EXE.vcxproj" />
@@ -78,7 +76,6 @@
       <Build Solution="*|ARM64" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/host/lib/hostlib.vcxproj" Id="06ec74cb-9a12-429c-b551-8562ec954746">
@@ -114,7 +111,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/host/ut_lib/host.unittest.vcxproj" Id="06ec74cb-9a12-429c-b551-8562ec954747">
@@ -129,7 +125,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/interactivity/base/lib/InteractivityBase.vcxproj" Id="06ec74cb-9a12-429c-b551-8562ec964846">
@@ -149,7 +144,6 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/interactivity/win32/lib/win32.LIB.vcxproj" Id="06ec74cb-9a12-429c-b551-8532ec964726">
@@ -176,7 +170,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/internal/internal.vcxproj" Id="ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00">
@@ -228,7 +221,6 @@
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/winconpty/ft_pty/winconpty.FeatureTests.vcxproj" Id="024052de-83fb-4653-aea4-90790d29d5bd">
@@ -237,14 +229,12 @@
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/winconpty/lib/winconptylib.vcxproj" Id="58a03bb2-df5a-4b66-91a0-7ef3ba01269a">
       <Platform Solution="*|Any CPU" Project="Win32" />
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -255,7 +245,6 @@
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/tsf/tsf.vcxproj" Id="2fd12fbb-1ddb-46d8-b818-1023c624caca">
@@ -283,7 +272,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -311,7 +299,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -347,7 +334,6 @@
       <Platform Solution="*|Any CPU" Project="Win32" />
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/renderer/wddmcon/lib/wddmcon.vcxproj" Id="75c6f576-18e9-4566-978a-f0a301cac090">
@@ -381,7 +367,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/terminal/input/lib/terminalinput.vcxproj" Id="1cf55140-ef6a-4736-a403-957e4f7430bb">
@@ -405,7 +390,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/terminal/parser/ft_fuzzwrapper/FuzzWrapper.vcxproj" Id="f210a4ae-e02a-4bfc-80bb-f50a672fe763">
@@ -418,7 +402,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/terminal/parser/lib/parser.vcxproj" Id="3ae13314-1939-4dfa-9c14-38ca0834050c">
@@ -442,7 +425,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -460,7 +442,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
       <Deploy Solution="Debug|ARM64" />
       <Deploy Solution="Debug|x64" />
@@ -485,7 +466,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/TerminalApp/TerminalAppLib.vcxproj" Id="ca5cad1a-9a12-429c-b551-8562ec954746">
@@ -502,7 +482,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/TerminalConnection/TerminalConnection.vcxproj" Id="ca5cad1a-c46d-4588-b1c0-40f31ae9100b">
@@ -515,7 +494,6 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -532,7 +510,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/TerminalControl/TerminalControlLib.vcxproj" Id="ca5cad1a-44bd-4ac7-ac72-6ca5b3ab89ed">
@@ -553,7 +530,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/TerminalCore/lib/TerminalCore-lib.vcxproj" Id="ca5cad1a-abcd-429c-b551-8562ec954746">
@@ -564,7 +540,6 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -578,7 +553,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/TerminalSettingsEditor/Microsoft.Terminal.Settings.Editor.vcxproj" Id="ca5cad1a-0b5e-45c3-96a8-bb496bfe4e32">
@@ -590,7 +564,8 @@
       <Platform Solution="Release|Any CPU" Project="Win32" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Debug|Any CPU" Project="false" />
-      <Build Solution="Fuzzing|*" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
       <Build Solution="Release|Any CPU" Project="false" />
       <Deploy Solution="AuditMode|*" />
       <Deploy Solution="Debug|x64" />
@@ -605,7 +580,6 @@
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/TerminalSettingsModel/Microsoft.Terminal.Settings.ModelLib.vcxproj" Id="ca5cad1a-d7ec-4107-b7c6-79cb77ae2907">
@@ -615,7 +589,6 @@
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -631,7 +604,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/LocalTests_TerminalApp/TestHostApp/TestHostApp.vcxproj" Id="a021edff-45c8-4dc2-bef7-36e1b3b8cfe8">
@@ -645,7 +617,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
       <Deploy Solution="Debug|ARM64" />
       <Deploy Solution="Debug|x64" />
@@ -661,7 +632,6 @@
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/UnitTests_SettingsModel/SettingsModel.UnitTests.vcxproj" Id="ca5cad1a-9b68-456a-b13e-c8218070dc42">
@@ -673,7 +643,6 @@
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/UnitTests_TerminalCore/UnitTests.vcxproj" Id="2c2beef4-9333-4d05-b12a-1905cbf112f9">
@@ -684,7 +653,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/ut_app/TerminalApp.UnitTests.vcxproj" Id="ca5cad1a-9333-4d05-b12a-1905cbf112f9">
@@ -696,7 +664,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/WindowsTerminal_UIATests/WindowsTerminal.UIA.Tests.csproj" Id="f19dacd5-0c6e-40dc-b6e4-767a3200542c">
@@ -711,7 +678,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -720,7 +686,6 @@
       <Platform Solution="*|Any CPU" Project="Win32" />
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/UIHelpers/UIHelpers.vcxproj" Id="6515f03f-e56d-4db4-b23d-ac4fb80db36f">
@@ -728,12 +693,12 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/UIMarkdown/UIMarkdown.vcxproj" Id="7615f03f-e56d-4db4-b23d-bd4fb80db36f">
       <Build Solution="Debug|Any CPU" Project="false" />
-      <Build Solution="Fuzzing|*" Project="false" />
+      <Build Solution="Fuzzing|ARM64" Project="false" />
+      <Build Solution="Fuzzing|x86" Project="false" />
       <Build Solution="Release|Any CPU" Project="false" />
     </Project>
     <Project Path="src/cascadia/WinRTUtils/WinRTUtils.vcxproj" Id="ca5cad1a-039a-4929-ba2a-8beb2e4106fe">
@@ -747,14 +712,12 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/wt/wt.vcxproj" Id="506fd703-baa7-4f6e-9361-64f550ec8fca">
       <Platform Solution="*|Any CPU" Project="Win32" />
       <Build Solution="*|Any CPU" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -766,7 +729,6 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/cascadia/WindowsTerminal/WindowsTerminal.vcxproj" Id="ca5cad1a-1754-4a9d-93d7-857a9d17cb1b">
@@ -787,7 +749,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -821,7 +782,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>
@@ -904,7 +864,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/tools/ConsoleBench/ConsoleBench.vcxproj" Id="be92101c-04f8-48da-99f0-e1f4f1d2dc48">
@@ -916,7 +875,6 @@
       <Build Solution="AuditMode|ARM64" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
     </Project>
     <Project Path="src/tools/ConsoleMonitor/ConsoleMonitor.vcxproj" Id="328729e9-6723-416e-9c98-951f1473bbe1">
       <BuildType Solution="AuditMode|ARM64" Project="Release" />
@@ -935,7 +893,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/tools/fontlist/FontList.vcxproj" Id="919544ac-d39b-463f-8414-3c3c67cf727c">
@@ -948,7 +905,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/tools/nihilist/Nihilist.vcxproj" Id="fc802440-ad6a-4919-8f2c-7701f2b38d79">
@@ -961,7 +917,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/tools/RenderingTests/RenderingTests.vcxproj" Id="37c995e0-2349-4154-8e77-4a52c0c7f46d">
@@ -981,7 +936,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/tools/TerminalStress/TerminalStress.csproj">
@@ -992,7 +946,6 @@
       <Build Solution="AuditMode|Any CPU" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="Fuzzing|Any CPU" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
     </Project>
     <Project Path="src/tools/U8U16Test/U8U16Test.vcxproj" Id="a602a555-baac-46e1-a91d-3dab0475c5a1">
       <BuildType Solution="AuditMode|*" Project="Release" />
@@ -1028,7 +981,6 @@
       <Build Solution="*|ARM64" Project="false" />
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
     <Project Path="src/tools/vtpipeterm/VtPipeTerm.vcxproj" Id="814dbdde-894e-4327-a6e1-740504850098">
@@ -1042,7 +994,6 @@
       <Build Solution="AuditMode|x64" Project="false" />
       <Build Solution="AuditMode|x86" Project="false" />
       <Build Solution="Fuzzing|ARM64" Project="false" />
-      <Build Solution="Fuzzing|x64" Project="false" />
       <Build Solution="Fuzzing|x86" Project="false" />
     </Project>
   </Folder>

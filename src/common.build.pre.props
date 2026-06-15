@@ -89,8 +89,10 @@
 
       Audit, however, *does* require linking components built in Release mode...
     -->
+    <!--
     <ConfigurationSupportsHybridCRT Condition="'$(Configuration)'=='Fuzzing'">false</ConfigurationSupportsHybridCRT>
     <ConfigurationSupportsHybridCRT Condition="'$(ConfigurationSupportsHybridCRT)'==''">true</ConfigurationSupportsHybridCRT>
+    -->
   </PropertyGroup>
 
   <!-- For ALL build types-->
@@ -100,7 +102,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
-    <EnableHybridCRT Condition="'$(EnableHybridCRT)'=='' and '$(ConfigurationSupportsHybridCRT)'=='true'">true</EnableHybridCRT>
+    <EnableHybridCRT Condition="'$(EnableHybridCRT)'==''">true</EnableHybridCRT>
     <UseCrtSDKReferenceStaticWarning Condition="'$(EnableHybridCRT)'=='true'">false</UseCrtSDKReferenceStaticWarning>
     <!--
       We must set this to True for projects that do not contain any ClCompile entries.
@@ -250,6 +252,9 @@
     <OCClangArchitectureName Condition="'$(Platform)'=='x64'">x86_64</OCClangArchitectureName>
     <OCClangArchitectureName Condition="'$(Platform)'=='Win32'">i386</OCClangArchitectureName>
     <OCClangArchitectureName Condition="'$(Platform)'=='x86'">i386</OCClangArchitectureName>
+    <OCClangAsanThunkName Condition="'$(EnableHybridCRT)'=='true'">static</OCClangAsanThunkName>
+    <OCClangAsanThunkName Condition="'$(EnableHybridCRT)'=='false'">dynamic</OCClangAsanThunkName>
+    <UseCrtSDKReferenceStaticWarning>false</UseCrtSDKReferenceStaticWarning> <!-- shut up -->
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Fuzzing'">
     <ClCompile>
@@ -261,6 +266,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>libsancov.lib;clang_rt.asan_dynamic-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/INFERASANLIBS:NO /WHOLEARCHIVE:clang_rt.asan_$(OCClangAsanThunkName)_runtime_thunk-$(OCClangArchitectureName).lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 
