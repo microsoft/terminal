@@ -87,11 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Profile.CurrentPage(ProfileSubPage::Advanced);
     }
 
-    void Profiles_Base::ResetProfileConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        Profile().ResetSettings();
-    }
-
     void Profiles_Base::DeleteConfirmation_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
     {
         TraceLoggingWrite(

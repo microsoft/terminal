@@ -151,25 +151,6 @@
                               Style="{StaticResource ToggleSwitchInExpanderStyle}" />
             </local:SettingsCard>
 
-            <!--  Reset Profile  -->
-            <local:SettingsCard x:Name="ResetProfile"
-                                x:Uid="Profile_ResetProfile"
-                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
-                <Button x:Uid="Profile_ResetProfileButton"
-                        Style="{StaticResource DeleteButtonStyle}">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <TextBlock x:Uid="Profile_ResetProfileConfirmationMessage"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <Button x:Uid="Profile_ResetProfileConfirmationButton"
-                                        Click="ResetProfileConfirmation_Click" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </local:SettingsCard>
-
             <!--  Delete Profile  -->
             <local:SettingsCard x:Name="DeleteProfile"
                                 x:Uid="Profile_DeleteProfile"

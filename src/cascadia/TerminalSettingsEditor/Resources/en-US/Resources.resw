@@ -1657,26 +1657,6 @@
     <value>Are you sure you want to delete this profile?</value>
     <comment>A confirmation message displayed when the user intends to delete a profile.</comment>
   </data>
-  <data name="Profile_ResetProfile.Header" xml:space="preserve">
-    <value>Reset this profile to default settings</value>
-    <comment>Header for a settings card that resets the profile to inherited defaults.</comment>
-  </data>
-  <data name="Profile_ResetProfile.Description" xml:space="preserve">
-    <value>Clears all customizations and restores inherited defaults from the Defaults profile</value>
-    <comment>Description for the reset profile settings card.</comment>
-  </data>
-  <data name="Profile_ResetProfileButton.Content" xml:space="preserve">
-    <value>Reset</value>
-    <comment>Button label to reset a profile's settings.</comment>
-  </data>
-  <data name="Profile_ResetProfileConfirmationMessage.Text" xml:space="preserve">
-    <value>Are you sure you want to reset all settings for this profile? This cannot be undone.</value>
-    <comment>A confirmation message displayed when the user intends to reset a profile.</comment>
-  </data>
-  <data name="Profile_ResetProfileConfirmationButton.Content" xml:space="preserve">
-    <value>Reset profile</value>
-    <comment>Button label for positive confirmation of resetting a profile.</comment>
-  </data>
   <data name="Profile_DeleteProfile.Header" xml:space="preserve">
     <value>Delete this profile</value>
     <comment>Header for a settings card that deletes the profile.</comment>

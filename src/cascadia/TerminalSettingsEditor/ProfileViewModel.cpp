@@ -811,32 +811,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DeleteProfileRequested.raise(*this, *deleteProfileArgs);
     }
 
-    void ProfileViewModel::ResetSettings()
-    {
-        // Clear every projected profile setting. Each Clear##name() notifies the bound
-        // properties and cascades to derived previews via our PropertyChanged handler.
-#define PROFILE_VIEW_MODEL_CLEAR_SETTING(target, name) Clear##name();
-        PROFILE_VIEW_MODEL_PROJECTED_SETTINGS(PROFILE_VIEW_MODEL_CLEAR_SETTING)
-#undef PROFILE_VIEW_MODEL_CLEAR_SETTING
-        _lastStartingDirectoryPath.clear();
-
-        // Not exposed to SUI
-        _profile.ClearEnvironmentVariables();
-        _profile.ClearAllowKeypadMode();
-
-        // Clear complex child objects
-        _profile.DefaultAppearance().ClearAllSettings();
-        _profile.FontInfo().ClearAllSettings();
-
-        if (HasUnfocusedAppearance())
-        {
-            DeleteUnfocusedAppearance();
-        }
-
-        _RefreshDefaultAppearanceViewModel();
-        _NotifyChanges(L"DefaultAppearance", L"TabThemeColorPreview", L"TabColorPreview");
-    }
-
     void ProfileViewModel::SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList)
     {
         DefaultAppearance().SchemesList(schemesList);
