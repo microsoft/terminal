@@ -40,8 +40,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // This allows us to prioritize certain fields over others when scoring search results.
     std::array<std::pair<std::optional<winrt::hstring>, int>, 2> LocalizedIndexEntry::GetSearchableFields() const
     {
-        // Profile Defaults entries (DisplayTextUid starts with "Profile_") get a higher weight
-        const auto weight = til::starts_with(std::wstring_view{ Entry->ResourceName }, L"Profile_") ? WeightProfileDefaults : WeightDisplayTextLocalized;
+        // Profile Defaults entries get a higher weight so they rank above per-profile matches.
+        const auto weight = (std::wstring_view{ Entry->NavigationArgTag } == globalProfileTag) ? WeightProfileDefaults : WeightDisplayTextLocalized;
         return { { { std::optional<winrt::hstring>{ DisplayTextLocalized }, weight },
                    { DisplayTextNeutral, WeightDisplayTextNeutral } } };
     }

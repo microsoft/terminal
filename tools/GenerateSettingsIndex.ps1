@@ -33,7 +33,9 @@ $ProhibitedUids = @(
     "Profile_MissingFontFaces",
     "Profile_ProportionalFontFaces",
     "Profile_ResetProfile",
-    "Profile_TerminalNavigator"
+    "Profile_TerminalNavigator",
+    "Profiles_ColorSchemesNavigator",
+    "Profiles_DefaultsNavigator"
 )
 
 # Prohibited XAML files (already limited to Page root elements)
@@ -65,6 +67,7 @@ $ClassMap = @{
         ResourceName    = "Nav_ColorSchemes/Content"
         NavigationParam = "ColorSchemes_Nav"
         SubPage         = "BreadcrumbSubPage::None"
+        SecondaryLabel  = "Nav_Profiles/Content"
     }
     "Microsoft::Terminal::Settings::Editor::Rendering" = @{
         ResourceName    = "Nav_Rendering/Content"
@@ -256,12 +259,15 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
 
         if ($includeInBuildIndex)
         {
+            # Profiles > Defaults results should show "Profiles" as secondary label
+            $buildSecondaryLabel = $navigationParam -eq "GlobalProfile_Nav" ? "Nav_Profiles/Content" : $null
             $entries += [pscustomobject]@{
                 ResourceName      = "$($settingContainer.Uid)/Header"
                 ParentPage        = $pageClass
                 NavigationParam   = $navigationParam
                 SubPage           = $subPage
                 ElementName       = $name
+                SecondaryLabel    = $buildSecondaryLabel
                 File              = $filename
             }
         }
