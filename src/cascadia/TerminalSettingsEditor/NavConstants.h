@@ -19,7 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     inline constexpr std::wstring_view extensionsTag{ L"Extensions_Nav" };
     inline constexpr std::wstring_view profilesTag{ L"Profiles_Nav" };
     inline constexpr std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
-    inline constexpr std::wstring_view addProfileTag{ L"AddProfile" };
     inline constexpr std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
     inline constexpr std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
@@ -36,7 +35,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::pair{ extensionsTag, L"\xEA86" }, /* Puzzle */
         std::pair{ profilesTag, L"\xE7EE" }, /* Other User */
         std::pair{ globalProfileTag, L"\xE81E" }, /* Map Layers */
-        std::pair{ addProfileTag, L"\xE710" }, /* Add */
         std::pair{ openJsonTag, L"\xE713" }, /* Settings */
     };
 }
