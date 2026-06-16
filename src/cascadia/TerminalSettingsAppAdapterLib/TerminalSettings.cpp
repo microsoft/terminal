@@ -352,6 +352,7 @@ namespace winrt::Microsoft::Terminal::Settings
         _AllowKittyKeyboardMode = profile.AllowKittyKeyboardMode();
         _AllowVtChecksumReport = profile.AllowVtChecksumReport();
         _AllowVtClipboardWrite = profile.AllowVtClipboardWrite();
+        _AllowOscNotifications = profile.AllowOscNotifications();
         _PathTranslationStyle = profile.PathTranslationStyle();
         _DragDropDelimiter = profile.DragDropDelimiter();
         _NotifyOnActivity = profile.NotifyOnActivity();

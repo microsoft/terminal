@@ -2472,6 +2472,13 @@
           },
           "type": "array"
         },
+        "safeUriSchemes": {
+          "description": "Specifies a list of URI schemes that are considered safe. No confirmation will be required to open URIs with these schemes.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "rendering.graphicsAPI": {
           "description": "Direct3D 11 provides a more performant and feature-rich experience, whereas Direct2D is more stable. The default option \"Automatic\" will pick the API that best fits your graphics hardware. If you experience significant issues, consider using Direct2D.",
           "type": "string",
@@ -2785,6 +2792,11 @@
         "compatibility.allowOSC52": {
           "default": true,
           "description": "When set to true, VT applications will be allowed to set the contents of the local clipboard using OSC 52 (Manipulate Selection Data).",
+          "type": "boolean"
+        },
+        "compatibility.allowOSC777": {
+          "default": false,
+          "description": "When set to true, applications can send OSC 777 escape sequences to trigger desktop toast notifications with a custom title and body.",
           "type": "boolean"
         },
         "unfocusedAppearance": {

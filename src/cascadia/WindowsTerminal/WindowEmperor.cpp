@@ -99,9 +99,8 @@ static const uint8_t* deserializeString(const uint8_t* it, const uint8_t* end, w
     uint32_t len;
     it = deserializeUint32(it, end, len);
 
-    const auto bytes = static_cast<size_t>(len) * sizeof(wchar_t);
-
-    if (bytes == 0 || static_cast<size_t>(end - it) < bytes)
+    size_t bytes{};
+    if (!SUCCEEDED(SizeTMult(static_cast<size_t>(len), sizeof(wchar_t), &bytes)) || bytes == 0 || static_cast<size_t>(end - it) < bytes)
     {
         throw std::out_of_range("Not enough data for string content");
     }

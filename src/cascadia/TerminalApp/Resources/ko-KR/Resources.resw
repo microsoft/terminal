@@ -496,23 +496,47 @@
     <value>타사 통지</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
-  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_Cancel" xml:space="preserve">
     <value>취소</value>
   </data>
-  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
-    <value>모두 닫기</value>
-  </data>
-  <data name="QuitDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllTitle" xml:space="preserve">
     <value>모든 창을 닫으시겠습니까?</value>
   </data>
-  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
-    <value>취소</value>
-  </data>
-  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllPrimary" xml:space="preserve">
     <value>모두 닫기</value>
   </data>
-  <data name="CloseAllDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_WindowTitle" xml:space="preserve">
     <value>모든 탭을 닫으시겠습니까?</value>
+  </data>
+  <data name="ConfirmCloseDialog_WindowPrimary" xml:space="preserve">
+    <value>모두 닫기</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabTitle" xml:space="preserve">
+    <value>이 탭을 닫으시겠습니까?</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabPrimary" xml:space="preserve">
+    <value>탭 닫기</value>
+  </data>
+  <data name="ConfirmCloseDialog_PaneTitle" xml:space="preserve">
+    <value>이 창을 닫으시겠습니까?</value>
+  </data>
+  <data name="ConfirmCloseDialog_PanePrimary" xml:space="preserve">
+    <value>창 닫기</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsTitle" xml:space="preserve">
+    <value>이러한 탭을 닫으시겠습니까?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsPrimary" xml:space="preserve">
+    <value>탭 닫기</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesTitle" xml:space="preserve">
+    <value>이 창을 닫으시겠습니까?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesPrimary" xml:space="preserve">
+    <value>창 닫기</value>
+  </data>
+  <data name="DontAskAgainCheckBox.Content" xml:space="preserve">
+    <value>다시 묻지 않기</value>
   </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
     <value>취소</value>
@@ -745,6 +769,14 @@
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>"{0}" 탭의 활동</value>
+    <comment>{0} is the tab title. Shown as the body of a desktop notification when tab activity is detected.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>"{0}" 탭의 활동(창 "{1}")</value>
+    <comment>{0} is the tab title, {1} is the window name. Shown as the body of a desktop notification when tab activity is detected and the window has a name.</comment>
+  </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>지정된 시작 디렉터리에서 새 탭 열기</value>
   </data>
@@ -881,10 +913,10 @@
     <value>설정하면 이 명령은 프로필의 기본 명령 대신 프로필의 기본 명령에 추가됩니다.</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>연결 다시 시작</value>
+    <value>세션 다시 시작</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
-    <value>활성 창 연결 다시 시작</value>
+    <value>활성 창에서 세션을 다시 시작하세요.</value>
   </data>
   <data name="SnippetPaneTitle.Text" xml:space="preserve">
     <value>짧은 요약</value>

@@ -215,6 +215,7 @@ namespace winrt::TerminalApp::implementation
         til::typed_event<Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs> RequestReceiveContent;
 
         til::typed_event<IInspectable, winrt::TerminalApp::LaunchPositionRequest> RequestLaunchPosition;
+        til::typed_event<IInspectable, winrt::TerminalApp::WindowRequestedArgs> RequestNewWindow;
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, PropertyChanged.raise, nullptr);
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, FrameBrush, PropertyChanged.raise, nullptr);
@@ -334,7 +335,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _duplicateConnectionForRestart(const TerminalApp::TerminalPaneContent& paneContent);
         void _restartPaneConnection(const TerminalApp::TerminalPaneContent&, const winrt::Windows::Foundation::IInspectable&);
 
-        safe_void_coroutine _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs newContentArgs);
+        void _OpenNewWindow(const Microsoft::Terminal::Settings::Model::INewContentArgs& contentArgs);
 
         void _OpenNewTerminalViaDropdown(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -426,7 +427,7 @@ namespace winrt::TerminalApp::implementation
                         const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                         const float splitSize,
                         std::shared_ptr<Pane> newPane);
-        void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        bool _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void _ToggleSplitOrientation();
 
         void _ScrollPage(ScrollDirection scrollDirection);
@@ -438,7 +439,7 @@ namespace winrt::TerminalApp::implementation
 
         safe_void_coroutine _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::Control::OpenHyperlinkEventArgs eventArgs);
         static bool _IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri);
-        static bool _IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri);
+        bool _IsUriConsideredSomewhatSafe(const winrt::Windows::Foundation::Uri& parsedUri) const;
 
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(bool dismissSelection, bool singleLine, bool withControlSequences, Microsoft::Terminal::Control::CopyFormat formats);

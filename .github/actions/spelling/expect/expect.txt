@@ -241,6 +241,7 @@ consoletaeftemplates
 consoleuwp
 CONSOLEWINDOWOWNER
 consrv
+consteval
 constexprable
 contentfiles
 conterm
@@ -1074,6 +1075,7 @@ NOCONTEXTHELP
 NOCOPYBITS
 nodiscard
 NODUP
+NODEFAULT
 noexcepts
 NOFONT
 NOHIDDENTEXT
@@ -1553,6 +1555,7 @@ SLGP
 SLIST
 slmult
 sln
+slnf
 slnx
 slpit
 SManifest
@@ -1560,6 +1563,7 @@ SMARTQUOTE
 SMTO
 snapcx
 snapcy
+SND
 snk
 SOLIDBOX
 Solutiondir
@@ -1754,6 +1758,7 @@ UPKEY
 upss
 uregex
 URegular
+urxvt
 usebackq
 USECALLBACK
 USECOLOR

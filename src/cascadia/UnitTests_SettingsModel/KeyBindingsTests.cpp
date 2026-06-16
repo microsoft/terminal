@@ -176,9 +176,9 @@ namespace SettingsModelUnitTests
         auto hashFromKey = [&](auto& kc) {
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
+            const auto& realArgs = actionAndArgs.Args().template as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs.ContentArgs());
-            const auto terminalArgs{ realArgs.ContentArgs().try_as<NewTerminalArgs>() };
+            const auto terminalArgs{ realArgs.ContentArgs().template try_as<NewTerminalArgs>() };
             return terminalArgs.Hash();
         };
 

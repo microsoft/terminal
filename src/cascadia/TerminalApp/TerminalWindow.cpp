@@ -108,13 +108,19 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     Documents::Run textRun;
     textRun.Text(text);
 
-    // Color the text red (light theme) or yellow (dark theme) based on the system theme
-    auto key = winrt::box_value(L"ErrorTextBrush");
-    if (resources.HasKey(key))
+    // GH #18147 - In High Contrast mode, don't override the foreground.
+    // Let the text inherit the system HC text color from its parent element,
+    // since SystemErrorTextColor doesn't adapt to High Contrast themes.
+    if (!winrt::Windows::UI::ViewManagement::AccessibilitySettings{}.HighContrast())
     {
-        auto g = resources.Lookup(key);
-        auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
-        textRun.Foreground(brush);
+        // Color the text red (light theme) or yellow (dark theme) based on the system theme
+        auto key = winrt::box_value(L"ErrorTextBrush");
+        if (resources.HasKey(key))
+        {
+            auto g = resources.Lookup(key);
+            auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+            textRun.Foreground(brush);
+        }
     }
 
     return textRun;
@@ -1095,6 +1101,15 @@ namespace winrt::TerminalApp::implementation
 
         const auto args = _contentStringToActions(content, true);
         _initialContentArgs = wil::to_vector(args);
+    }
+
+    // Method Description:
+    // - Provide a pre-built list of startup actions for this window. Used by
+    //   the in-proc OpenNewWindow event (see TerminalPage::_OpenNewWindow ->
+    //   TerminalWindow -> AppHost -> WindowEmperor::OpenNewWindow)
+    void TerminalWindow::SetStartupActions(const IVector<ActionAndArgs>& actions)
+    {
+        _initialContentArgs = wil::to_vector(actions);
     }
 
     // Method Description:

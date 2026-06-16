@@ -1353,7 +1353,11 @@ namespace winrt::TerminalApp::implementation
         // Use the Tab object's identity hash as a stable toast tag.
         // This survives tab reordering and cross-window moves.
         const auto tabHash = std::hash<winrt::Windows::Foundation::IUnknown>{}(*tab);
+#ifdef _WIN64
         const hstring tabTag{ fmt::format(FMT_COMPILE(L"wt-tab-{:016x}"), tabHash) };
+#else
+        const hstring tabTag{ fmt::format(FMT_COMPILE(L"wt-tab-{:08x}"), tabHash) };
+#endif
 
         const implementation::DesktopNotificationArgs args{
             .Title = notificationTitle,

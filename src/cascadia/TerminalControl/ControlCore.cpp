@@ -144,6 +144,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto pfnOutputStarted = [this] { _terminalOutputStarted(); };
         _terminal->SetOutputStartedCallback(pfnOutputStarted);
+        
+        auto pfnShowNotification = [this](auto&& PH1, auto&& PH2) { _terminalShowNotification(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); };
+        _terminal->SetShowNotificationCallback(pfnShowNotification);
 
         auto pfnClearQuickFix = [this] { ClearQuickFix(); };
         _terminal->SetClearQuickFixCallback(pfnClearQuickFix);
@@ -942,7 +945,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Manually turn off acrylic if they turn off transparency.
         _runtimeUseAcrylic = _settings.Opacity() < 1.0 && _settings.UseAcrylic();
 
-        const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize());
+        const auto sizeChanged = _setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta);
 
         // Update the terminal core with its new Core settings
         _terminal->UpdateSettings(_settings);
@@ -1180,11 +1183,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - none
     void ControlCore::ResetFontSize()
     {
-        const auto lock = _terminal->LockForWriting();
-
-        if (_setFontSizeUnderLock(_settings.FontSize()))
+        if (std::exchange(_accumulatedFontSizeDelta, 0.f) != 0.f)
         {
-            _refreshSizeUnderLock();
+            // No point in doing this if there was no delta.
+            AdjustFontSize(0);
         }
     }
 
@@ -1194,9 +1196,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - fontSizeDelta: The amount to increase or decrease the font size by.
     void ControlCore::AdjustFontSize(float fontSizeDelta)
     {
+        _accumulatedFontSizeDelta += fontSizeDelta;
+
         const auto lock = _terminal->LockForWriting();
 
-        if (_setFontSizeUnderLock(_desiredFont.GetFontSize() + fontSizeDelta))
+        if (_setFontSizeUnderLock(_settings.FontSize() + _accumulatedFontSizeDelta))
         {
             _refreshSizeUnderLock();
         }
@@ -1733,6 +1737,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::_terminalSearchMissingCommand(std::wstring_view missingCommand, const til::CoordType& bufferRow)
     {
         SearchMissingCommand.raise(*this, make<implementation::SearchMissingCommandEventArgs>(hstring{ missingCommand }, bufferRow));
+    }
+
+    void ControlCore::_terminalShowNotification(std::wstring_view title, std::wstring_view body)
+    {
+        ShowNotification.raise(*this, make<implementation::ShowNotificationEventArgs>(hstring{ title }, hstring{ body }));
     }
 
     void ControlCore::OpenCWD()

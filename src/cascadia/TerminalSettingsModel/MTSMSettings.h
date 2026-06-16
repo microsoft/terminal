@@ -63,6 +63,7 @@ Author(s):
     X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
     X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                                                                    \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, SafeUriSchemes, "safeUriSchemes", nullptr)                                                                                    \
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
     X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
@@ -107,6 +108,7 @@ Author(s):
     X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                        \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                            \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                                \
+    X(bool, AllowOscNotifications, "compatibility.allowOSC777", false)                                                                                              \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                                    \
     X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                        \
     X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)   \
