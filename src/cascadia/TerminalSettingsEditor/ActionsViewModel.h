@@ -69,16 +69,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Initialize();
 
         winrt::hstring DisplayName();
-        winrt::hstring Name();
+        winrt::hstring Name() const noexcept;
         void Name(const winrt::hstring& newName);
         winrt::hstring DisplayNameAndKeyChordAutomationPropName();
 
-        winrt::hstring FirstKeyChordText();
-        winrt::hstring AdditionalKeyChordCountText();
-        winrt::hstring AdditionalKeyChordTooltipText();
+        winrt::hstring FirstKeyChordText() const;
+        Control::KeyChord FirstKeyChord() const noexcept;
+        bool HasNoKeyChords() const noexcept;
+        bool HasAdditionalKeyChords() const noexcept;
+        winrt::hstring AdditionalKeyChordCountText() const;
+        winrt::hstring AdditionalKeyChordTooltipText() const;
 
-        winrt::hstring ID();
-        bool IsUserAction();
+        winrt::hstring ID() const noexcept;
+        bool IsUserAction() const noexcept;
 
         void Edit_Click();
         til::typed_event<Editor::CommandViewModel, IInspectable> EditRequested;
@@ -89,9 +92,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AddKeybinding_Click();
 
         // UIA text
-        winrt::hstring ActionNameTextBoxAutomationPropName();
-        winrt::hstring ShortcutActionComboBoxAutomationPropName();
-        winrt::hstring AdditionalArgumentsControlAutomationPropName();
+        winrt::hstring ActionNameTextBoxAutomationPropName() const;
+        winrt::hstring ShortcutActionComboBoxAutomationPropName() const;
+        winrt::hstring AdditionalArgumentsControlAutomationPropName() const;
 
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
@@ -115,6 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _RegisterActionArgsVMEvents(Editor::ActionArgsViewModel actionArgsVM);
         void _ReplaceCommandWithUserCopy(bool reinitialize);
         void _CreateAndInitializeActionArgsVMHelper();
+        void _ReindexKeyChordList();
     };
 
     struct ArgWrapper : ArgWrapperT<ArgWrapper>, ViewModelHelper<ArgWrapper>
@@ -155,6 +159,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void UInt32BindBack(const double newValue);
         void UInt32OptionalBindBack(const double newValue);
         void FloatBindBack(const double newValue);
+        void BoolBindBack(bool newValue);
         void BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue);
         void TerminalCoreColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
         void WindowsUIColorBindBack(const winrt::Windows::Foundation::IReference<Microsoft::Terminal::Core::Color> newValue);
@@ -230,15 +235,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CancelChanges();
         void DeleteKeyChord();
 
+        winrt::hstring DisplayLabel() const;
+
         // UIA Text
         hstring CancelButtonName() const noexcept;
         hstring AcceptButtonName() const noexcept;
         hstring DeleteButtonName() const noexcept;
+        hstring EditButtonName() const noexcept;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
         VIEW_MODEL_OBSERVABLE_PROPERTY(winrt::hstring, KeyChordText);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(int32_t, Index, 0);
 
     public:
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> AddKeyChordRequested;
