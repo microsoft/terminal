@@ -112,6 +112,20 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
 
         settings->_globals = _globals->Copy();
         settings->_baseWindowSettings = _baseWindowSettings->Copy();
+
+        // Copy the per-window-name settings, otherwise saving from the settings
+        // UI would drop the entire "windows"
+        settings->_windows = winrt::single_threaded_map<winrt::hstring, Model::WindowSettings>();
+        for (const auto& [name, window] : _windows)
+        {
+            const auto windowImpl{ winrt::get_self<implementation::WindowSettings>(window) };
+            settings->_windows.Insert(name, *windowImpl->Copy());
+        }
+        if (_quakeWindowSettings)
+        {
+            settings->_quakeWindowSettings = _quakeWindowSettings->Copy();
+        }
+
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
 
