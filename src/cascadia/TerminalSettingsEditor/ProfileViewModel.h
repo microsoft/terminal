@@ -104,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
         bool Orphaned() const;
+        hstring AccessibleStateDescription() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
         hstring AnswerbackMessageAccessibleName() const;

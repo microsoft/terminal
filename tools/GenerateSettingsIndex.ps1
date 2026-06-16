@@ -95,6 +95,7 @@ $ClassMap = @{
         ResourceName    = "Nav_ProfileDefaults/Content"
         NavigationParam = "GlobalProfile_Nav"
         SubPage         = "BreadcrumbSubPage::None"
+        SecondaryLabel  = "Nav_Profiles/Content"
     }
     "Microsoft::Terminal::Settings::Editor::Profiles_Appearance" = @{
         ResourceName    = "Nav_ProfileDefaults/Content"
@@ -114,6 +115,12 @@ $ClassMap = @{
     "Microsoft::Terminal::Settings::Editor::AddProfile" = @{
         ResourceName    = "Nav_AddNewProfile/Content"
         NavigationParam = "AddProfile"
+        SubPage         = "BreadcrumbSubPage::None"
+        SecondaryLabel  = "Nav_Profiles/Content"
+    }
+    "Microsoft::Terminal::Settings::Editor::Profiles" = @{
+        ResourceName    = "Nav_Profiles/Content"
+        NavigationParam = "Profiles_Nav"
         SubPage         = "BreadcrumbSubPage::None"
     }
 }
@@ -166,6 +173,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             NavigationParam = $ClassMap[$pageClass].NavigationParam
             SubPage         = $ClassMap[$pageClass].SubPage
             ElementName     = $null # No specific element to navigate to, for the page itself
+            SecondaryLabel  = $ClassMap[$pageClass].SecondaryLabel # Resource name for the result's sub-text (i.e. parent page name); $null if none
             File            = $filename
         }
     }
@@ -199,6 +207,7 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             NavigationParam = $ClassMap[$pageClass].NavigationParam
             SubPage         = $ClassMap[$pageClass].SubPage
             ElementName     = "AddNewButton"
+            SecondaryLabel  = $ClassMap[$pageClass].SecondaryLabel
             File            = $filename
         }
     }
@@ -295,8 +304,9 @@ function FormatEntry($e)
     $formattedResourceName = 'USES_RESOURCE(L"{0}")' -f $e.ResourceName
     $formattedNavigationParam = 'L"{0}"' -f $e.NavigationParam # null Navigation param resolves to empty string
     $formattedElementName = 'L"{0}"' -f $e.ElementName
+    $formattedSecondaryLabel = [string]::IsNullOrEmpty($e.SecondaryLabel) ? 'L""' : ('USES_RESOURCE(L"{0}")' -f $e.SecondaryLabel)
 
-    return "            IndexEntry{{ {0}, {1}, {2}, {3} }}, // {4}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $e.File)
+    return "            IndexEntry{{ {0}, {1}, {2}, {3}, {4} }}, // {5}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $formattedSecondaryLabel, $e.File)
 }
 
 function FormatEntries($es) {
@@ -304,7 +314,7 @@ function FormatEntries($es) {
 }
 
 # Sort and remove duplicates
-$entries = $entries | Sort-Object ResourceName, ParentPage, NavigationParam, SubPage, ElementName, File -Unique
+$entries = $entries | Sort-Object ResourceName, ParentPage, NavigationParam, SubPage, ElementName, SecondaryLabel, File -Unique
 
 $buildTimeEntries = @()
 $profileEntries = @()
@@ -360,6 +370,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         
         // x:Name of the SettingContainer to navigate to on the page (i.e. "DefaultProfile")
         wil::zwstring_view ElementName;
+
+        // Resource name of the search result's secondary label (i.e. parent page name like "Nav_Profiles/Content").
+        // Empty if the entry has no secondary label.
+        // NOTE: wrapped in USES_RESOURCE() like ResourceName when non-empty.
+        wil::zwstring_view SecondaryLabelResourceName;
     };
 
     const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex();
