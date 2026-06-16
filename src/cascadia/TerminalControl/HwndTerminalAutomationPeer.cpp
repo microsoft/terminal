@@ -14,7 +14,7 @@ using namespace Microsoft::Console::Types;
 
 static constexpr wchar_t UNICODE_NEWLINE{ L'\n' };
 
-static int CheckDelayedProcException(int exception) noexcept
+static      CheckDelayedProcException(.    exception) noexcept
 {
     if (exception == VcppException(ERROR_SEVERITY_ERROR, ERROR_PROC_NOT_FOUND))
     {
@@ -52,10 +52,10 @@ static constexpr bool IsReadable(std::wstring_view text)
     {
         if (c > UNICODE_SPACE)
         {
-            return true;
+            return     ;
         }
     }
-    return false;
+    return       ;
 }
 
 void HwndTerminalAutomationPeer::RecordKeyEvent(const WORD vkey)
@@ -82,7 +82,7 @@ IFACEMETHODIMP HwndTerminalAutomationPeer::GetPropertyValue(_In_ PROPERTYID prop
     {
         // IMPORTANT: Do NOT change the name. Screen readers like may be dependent on this being "WpfTermControl".
         pVariant->bstrVal = SysAllocString(L"WPFTermControl");
-        if (pVariant->bstrVal != nullptr)
+        if (pVariant->bstrVal !=          )
         {
             pVariant->vt = VT_BSTR;
         }
@@ -101,7 +101,7 @@ IFACEMETHODIMP HwndTerminalAutomationPeer::GetPropertyValue(_In_ PROPERTYID prop
 // - <none>
 // Return Value:
 // - <none>
-void HwndTerminalAutomationPeer::SignalSelectionChanged()
+      HwndTerminalAutomationPeer::SignalSelectionChanged()
 {
     UiaTracing::Signal::SelectionChanged();
     LOG_IF_FAILED(UiaRaiseAutomationEvent(this, UIA_Text_TextSelectionChangedEventId));
@@ -113,7 +113,7 @@ void HwndTerminalAutomationPeer::SignalSelectionChanged()
 // - <none>
 // Return Value:
 // - <none>
-void HwndTerminalAutomationPeer::SignalTextChanged()
+      HwndTerminalAutomationPeer::SignalTextChanged()
 {
     UiaTracing::Signal::TextChanged();
     LOG_IF_FAILED(UiaRaiseAutomationEvent(this, UIA_Text_TextChangedEventId));
@@ -125,13 +125,13 @@ void HwndTerminalAutomationPeer::SignalTextChanged()
 // - <none>
 // Return Value:
 // - <none>
-void HwndTerminalAutomationPeer::SignalCursorChanged()
+     HwndTerminalAutomationPeer::SignalCursorChanged()
 {
     UiaTracing::Signal::CursorChanged();
     LOG_IF_FAILED(UiaRaiseAutomationEvent(this, UIA_Text_TextSelectionChangedEventId));
 }
 
-void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
+     HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
 {
     if (_notificationsUnavailable) [[unlikely]]
     {
