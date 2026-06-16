@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::pair{ newTabMenuTag, L"\xE71D" }, /* All Apps */
         std::pair{ extensionsTag, L"\xEA86" }, /* Puzzle */
         std::pair{ profilesTag, L"\xE7EE" }, /* Other User */
-        std::pair{ globalProfileTag, L"\xE81E" }, /* Map Layers */
+        std::pair{ globalProfileTag, L"\xE7EE" }, /* Other User */
         std::pair{ openJsonTag, L"\xE713" }, /* Settings */
     };
 }
