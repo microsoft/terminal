@@ -55,6 +55,9 @@ namespace Microsoft.Terminal.Settings.Editor
         // View-model specific
         String DisplayName { get; };
         String FirstKeyChordText { get; };
+        Microsoft.Terminal.Control.KeyChord FirstKeyChord { get; };
+        Boolean HasNoKeyChords { get; };
+        Boolean HasAdditionalKeyChords { get; };
         String AdditionalKeyChordCountText { get; };
         String AdditionalKeyChordTooltipText { get; };
         String DisplayNameAndKeyChordAutomationPropName { get; };
@@ -111,6 +114,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void UInt32BindBack(Double newValue);
         void UInt32OptionalBindBack(Double newValue);
         void FloatBindBack(Double newValue);
+        void BoolBindBack(Boolean newValue);
         void BoolOptionalBindBack(Windows.Foundation.IReference<Boolean> newValue);
         void TerminalCoreColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
         void WindowsUIColorBindBack(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color> newValue);
@@ -138,9 +142,12 @@ namespace Microsoft.Terminal.Settings.Editor
         String KeyChordText { get; };
 
         // UI side
+        Microsoft.Terminal.Control.KeyChord CurrentKeys { get; };
         Microsoft.Terminal.Control.KeyChord ProposedKeys;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
         Boolean IsInEditMode { get; };
+        Int32 Index;
+        String DisplayLabel { get; };
         void ToggleEditMode();
         void AcceptChanges();
         void CancelChanges();
@@ -148,6 +155,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String CancelButtonName { get; };
         String AcceptButtonName { get; };
         String DeleteButtonName { get; };
+        String EditButtonName { get; };
 
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> AddKeyChordRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
