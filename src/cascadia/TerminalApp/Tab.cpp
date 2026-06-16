@@ -165,13 +165,13 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    void Tab::_UpdateHeaderControlMaxWidth(const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
+    void Tab::_UpdateHeaderControlMaxWidth(const WindowSettings& windowSettings)
     {
         try
         {
             // Make sure to try/catch this, because the LocalTests won't be
             // able to use this helper.
-            if (windowSettings.TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            if (windowSettings.TabWidthMode() == MUX::Controls::TabViewWidthMode::SizeToContent)
             {
                 _headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
             }
