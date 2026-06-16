@@ -28,8 +28,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void RequestOpenDefaults();
         void RequestOpenColorSchemes();
-        void RequestAddProfile();
+        void RequestAddProfile(const winrt::guid& sourceProfile);
         void RequestOpenProfile(const Editor::ProfileViewModel& profile);
+
+        Editor::ProfileViewModel SelectedSourceProfile() const noexcept { return _SelectedSourceProfile; }
+        void SelectSourceProfile(const Editor::ProfileViewModel& profile);
+        bool HasSelectedSourceProfile() const noexcept { return static_cast<bool>(_SelectedSourceProfile); }
+        winrt::hstring SelectedSourceProfileLabel() const;
+        Windows::UI::Xaml::Controls::IconElement SelectedSourceProfileIcon() const;
 
         // DON'T YOU DARE ADD A `WINRT_CALLBACK(PropertyChanged` TO A CLASS DERIVED FROM ViewModelHelper. Do this instead:
         using ViewModelHelper<ProfilesPageViewModel>::PropertyChanged;
@@ -39,8 +45,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> OpenDefaultsRequested;
         til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> OpenColorSchemesRequested;
-        til::typed_event<Windows::Foundation::IInspectable, Windows::Foundation::IInspectable> AddProfileRequested;
+        til::typed_event<Windows::Foundation::IInspectable, winrt::guid> AddProfileRequested;
         til::typed_event<Windows::Foundation::IInspectable, Editor::ProfileViewModel> OpenProfileRequested;
+
+    private:
+        Editor::ProfileViewModel _SelectedSourceProfile{ nullptr };
     };
 
     struct Profiles : public HasScrollViewer<Profiles>, ProfilesT<Profiles>
@@ -52,7 +61,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void Defaults_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
         void ColorSchemes_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
-        void AddProfile_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
+        void AddProfile_Click(const Microsoft::UI::Xaml::Controls::SplitButton& sender, const Microsoft::UI::Xaml::Controls::SplitButtonClickEventArgs& args);
+        void AddProfileFlyout_Opening(const Windows::Foundation::IInspectable& sender, const Windows::Foundation::IInspectable& args);
         void Profile_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& args);
 
         til::property_changed_event PropertyChanged;

@@ -52,9 +52,6 @@
     <ClInclude Include="EditAction.h">
       <DependentUpon>EditAction.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="AddProfile.h">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
-    </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
     </ClInclude>
@@ -196,9 +193,6 @@
     <Page Include="EditAction.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="AddProfile.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -281,9 +275,6 @@
     </ClCompile>
     <ClCompile Include="EditAction.cpp">
       <DependentUpon>EditAction.xaml</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="AddProfile.cpp">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -422,10 +413,6 @@
   <ItemGroup>
     <Midl Include="Actions.idl">
       <DependentUpon>Actions.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="AddProfile.idl">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="EnumEntry.idl" />
