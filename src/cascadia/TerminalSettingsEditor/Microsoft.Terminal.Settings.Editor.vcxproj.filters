@@ -60,5 +60,6 @@
     <Page Include="NullableColorPicker.xaml" />
     <Page Include="IconPicker.xaml" />
     <Page Include="NewTabMenu.xaml" />
+    <Page Include="Profiles.xaml" />
   </ItemGroup>
 </Project>

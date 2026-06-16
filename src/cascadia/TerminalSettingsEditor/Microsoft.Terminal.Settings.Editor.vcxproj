@@ -119,6 +119,10 @@
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Profiles.h">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="RenderingViewModel.h">
       <DependentUpon>RenderingViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -237,6 +241,9 @@
     <Page Include="Profiles_Base.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Profiles_Base_Orphaned.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -338,6 +345,10 @@
     </ClCompile>
     <ClCompile Include="ColorSchemesPageViewModel.cpp">
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles.cpp">
+      <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="RenderingViewModel.cpp">
@@ -471,6 +482,10 @@
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
+    <Midl Include="Profiles.idl">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="RenderingViewModel.idl" />
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
