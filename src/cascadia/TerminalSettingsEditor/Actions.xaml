@@ -17,182 +17,122 @@
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <!--  Theme Dictionary  -->
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Dark">
-                    <!--  TextBox colors !  -->
-                    <SolidColorBrush x:Key="TextControlBackground"
-                                     Color="#333333" />
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
-                                     Color="#B5B5B5" />
-                    <SolidColorBrush x:Key="TextControlForeground"
-                                     Color="#B5B5B5" />
-                    <SolidColorBrush x:Key="TextControlBorderBrush"
-                                     Color="#404040" />
-                    <SolidColorBrush x:Key="TextControlButtonForeground"
-                                     Color="#B5B5B5" />
-
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
-                                     Color="#404040" />
-                    <SolidColorBrush x:Key="TextControlForegroundPointerOver"
-                                     Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
-                                     Color="#404040" />
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
-                                     Color="#FF4343" />
-
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
-                                     Color="#333333" />
-                    <SolidColorBrush x:Key="TextControlForegroundFocused"
-                                     Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
-                                     Color="#404040" />
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
-                                     Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
-                                     Color="#FF4343" />
-
-                    <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
-                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Light">
-                    <!--  TextBox colors !  -->
-                    <SolidColorBrush x:Key="TextControlBackground"
-                                     Color="#CCCCCC" />
-                    <SolidColorBrush x:Key="TextBoxPlaceholderTextThemeBrush"
-                                     Color="#636363" />
-                    <SolidColorBrush x:Key="TextControlBorderBrush"
-                                     Color="#636363" />
-                    <SolidColorBrush x:Key="TextControlButtonForeground"
-                                     Color="#636363" />
-
-                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver"
-                                     Color="#DADADA" />
-                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
-                                     Color="#636363" />
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPointerOver"
-                                     Color="#FF4343" />
-
-                    <SolidColorBrush x:Key="TextControlBackgroundFocused"
-                                     Color="#CCCCCC" />
-                    <SolidColorBrush x:Key="TextControlBorderBrushFocused"
-                                     Color="#636363" />
-                    <SolidColorBrush x:Key="TextControlButtonForegroundPressed"
-                                     Color="#FFFFFF" />
-                    <SolidColorBrush x:Key="TextControlButtonBackgroundPressed"
-                                     Color="#FF4343" />
-
-                    <!--  KeyChordText styles  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border">
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="BorderThickness" Value="1" />
-                        <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
-                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
-                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock">
-                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
-                    </Style>
-
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-
-                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
-                    <Style x:Key="KeyChordBorderStyle"
-                           TargetType="Border" />
-                    <Style x:Key="KeyChordTextBlockStyle"
-                           TargetType="TextBlock" />
-
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
-
-            <!--  Styles  -->
-            <Style x:Key="KeyBindingContainerStyle"
-                   BasedOn="{StaticResource DefaultListViewItemStyle}"
-                   TargetType="ListViewItem">
-                <Setter Property="Padding" Value="12,4,4,4" />
-                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
-            </Style>
-            <Style x:Key="KeyBindingNameTextBlockStyle"
+            <Style x:Key="ActionRowNameTextStyle"
                    BasedOn="{StaticResource BaseTextBlockStyle}"
                    TargetType="TextBlock">
                 <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="FontWeight" Value="Normal" />
                 <Setter Property="TextWrapping" Value="WrapWholeWords" />
             </Style>
-            <Style x:Key="KeyChordEditorStyle"
-                   TargetType="local:KeyChordListener">
-                <Setter Property="HorizontalAlignment" Value="Right" />
+
+            <Style x:Key="ActionRowSubtleButtonStyle"
+                   BasedOn="{StaticResource DefaultButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="MinWidth" Value="32" />
+                <Setter Property="Width" Value="32" />
+                <Setter Property="Height" Value="32" />
+                <Setter Property="Padding" Value="0" />
                 <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
             </Style>
 
-            <!--  Converters & Misc.  -->
-            <SolidColorBrush x:Key="ActionContainerBackgroundEditing"
-                             Color="{ThemeResource SystemListMediumColor}" />
-            <SolidColorBrush x:Key="ActionContainerBackground"
-                             Color="Transparent" />
+            <!--
+                FlyoutPresenter style with no internal padding so a full-width Border
+                separator inside the flyout can reach the flyout's left/right edges.
+            -->
+            <Style x:Key="EdgeToEdgeFlyoutPresenterStyle"
+                   BasedOn="{StaticResource DefaultFlyoutPresenterStyle}"
+                   TargetType="FlyoutPresenter">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            </Style>
+
+            <Style x:Key="ActionRowItemContainerStyle"
+                   TargetType="ListViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListViewItem">
+                            <Border x:Name="OuterBorder"
+                                    Background="Transparent"
+                                    BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                    BorderThickness="0,0,0,1">
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Stretch"
+                                                  HorizontalContentAlignment="Stretch"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  ContentTransitions="{TemplateBinding ContentTransitions}" />
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="OuterBorder.Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <VisualState.Setters>
+                                                <Setter Target="OuterBorder.Background" Value="{ThemeResource SubtleFillColorTertiaryBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
 
             <!--  Templates  -->
+            <DataTemplate x:Key="ViewAllKeyChordsFlyoutSeparatorTemplate">
+                <Border Height="1"
+                        Margin="0,4,0,4"
+                        Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="ViewAllKeyChordsFlyoutItemTemplate">
+                <local:KeyChordVisual Margin="{ThemeResource MenuFlyoutItemThemePaddingNarrow}"
+                                      HorizontalAlignment="Right" />
+            </DataTemplate>
+
             <DataTemplate x:Key="CommandTemplate"
                           x:DataType="local:CommandViewModel">
-                <ListViewItem AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}"
-                              Style="{StaticResource KeyBindingContainerStyle}">
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <!--  command name  -->
-                            <ColumnDefinition Width="*" />
-                            <!--  key chord  -->
-                            <ColumnDefinition Width="auto" />
-                        </Grid.ColumnDefinitions>
+                <Grid AutomationProperties.Name="{x:Bind DisplayNameAndKeyChordAutomationPropName, Mode=OneWay}"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <!--  command name  -->
+                        <ColumnDefinition Width="*" />
+                        <!--  key chord  -->
+                        <ColumnDefinition Width="Auto" />
+                        <!--  "+N" / "..." button  -->
+                        <ColumnDefinition Width="36" />
+                    </Grid.ColumnDefinitions>
 
-                        <!--  Command Name  -->
-                        <TextBlock Grid.Column="0"
-                                   FontWeight="Normal"
-                                   Style="{StaticResource KeyBindingNameTextBlockStyle}"
-                                   Text="{x:Bind DisplayName, Mode=OneWay}" />
-                        <!--  Key Chord Text  -->
-                        <Grid Grid.Column="1"
-                              HorizontalAlignment="Right"
-                              VerticalAlignment="Center"
-                              ColumnSpacing="4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0"
-                                    Padding="8,4,8,4"
-                                    Style="{ThemeResource KeyChordBorderStyle}"
-                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(FirstKeyChordText)}">
-                                <TextBlock FontSize="14"
-                                           Style="{ThemeResource KeyChordTextBlockStyle}"
-                                           Text="{x:Bind FirstKeyChordText, Mode=OneWay}"
-                                           TextWrapping="WrapWholeWords" />
-                            </Border>
-                            <Border Grid.Column="1"
-                                    Padding="8,4,8,4"
-                                    Style="{ThemeResource KeyChordBorderStyle}"
-                                    ToolTipService.ToolTip="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
-                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(AdditionalKeyChordCountText)}">
-                                <TextBlock FontSize="14"
-                                           Style="{ThemeResource KeyChordTextBlockStyle}"
-                                           Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
-                            </Border>
-                        </Grid>
-                    </Grid>
-                </ListViewItem>
+                    <!--  Command Name  -->
+                    <TextBlock Grid.Column="0"
+                               Style="{StaticResource ActionRowNameTextStyle}"
+                               Text="{x:Bind DisplayName, Mode=OneWay}" />
+
+                    <!--  Key Chord  -->
+                    <local:KeyChordVisual Grid.Column="1"
+                                          HorizontalAlignment="Right"
+                                          KeyChord="{x:Bind FirstKeyChord, Mode=OneWay}" />
+
+                    <!--  "+N" button + flyout listing the additional key chords  -->
+                    <Button x:Uid="Actions_AdditionalKeyChordsButton"
+                            Grid.Column="2"
+                            AutomationProperties.Name="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
+                            Click="AdditionalKeyChordsButton_Click"
+                            Style="{StaticResource ActionRowSubtleButtonStyle}"
+                            Visibility="{x:Bind HasAdditionalKeyChords, Mode=OneWay}">
+                        <TextBlock FontSize="12"
+                                   Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
+                    </Button>
+                </Grid>
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -202,13 +142,13 @@
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
             <HyperlinkButton x:Uid="Actions_Disclaimer"
-                             Margin="0"
-                             Padding="0"
+                             Margin="-12,0,0,0"
                              NavigateUri="https://go.microsoft.com/fwlink/?linkid=2341386" />
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
-                    Margin="0,12,0,0"
-                    Click="{x:Bind ViewModel.AddNewCommand}">
+                    Margin="0,32,0,0"
+                    Click="{x:Bind ViewModel.AddNewCommand}"
+                    Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"
@@ -220,12 +160,18 @@
             </Button>
 
             <!--  Commands  -->
-            <ListView x:Name="CommandsListView"
-                      Margin="-8,0,0,0"
-                      IsItemClickEnabled="True"
-                      ItemClick="{x:Bind ViewModel.CmdListItemClicked}"
-                      ItemTemplate="{StaticResource CommandTemplate}"
-                      ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}" />
+            <Grid Background="{ThemeResource LayerFillColorDefaultBrush}"
+                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                  BorderThickness="1"
+                  CornerRadius="{StaticResource OverlayCornerRadius}">
+                <ListView x:Name="CommandsListView"
+                          IsItemClickEnabled="True"
+                          ItemClick="{x:Bind ViewModel.CmdListItemClicked}"
+                          ItemContainerStyle="{StaticResource ActionRowItemContainerStyle}"
+                          ItemTemplate="{StaticResource CommandTemplate}"
+                          ItemsSource="{x:Bind ViewModel.CommandList, Mode=OneWay}"
+                          SelectionMode="None" />
+            </Grid>
         </StackPanel>
     </Border>
 </Page>
