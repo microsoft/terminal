@@ -93,6 +93,7 @@ private:
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
     CLI::App* _saveCommand;
+    CLI::App* _newProfileCommand;
 
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
@@ -125,6 +126,11 @@ private:
     int _focusPaneTarget{ -1 };
     std::string _saveInputName;
     std::string _keyChordOption;
+
+    std::string _newProfileName;
+    std::string _newProfileStartingDirectory;
+    std::string _newProfileColorScheme;
+    bool _newProfileRandomColorScheme{ false };
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     const Commandline* _currentCommandline{ nullptr };
@@ -150,6 +156,7 @@ private:
     void _buildMovePaneParser();
     void _buildSwapPaneParser();
     void _buildFocusPaneParser();
+    void _buildNewProfileParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();
     int _handleExit(const CLI::App& command, const CLI::Error& e);

@@ -296,6 +296,21 @@
   <data name="SaveSnippetDesc" xml:space="preserve">
     <value>Save command line as input action</value>
   </data>
+  <data name="CmdNewProfileDesc" xml:space="preserve">
+    <value>Create a new profile from the current working directory and persist it to settings without opening a new tab or window</value>
+  </data>
+  <data name="CmdNewProfileNameArgDesc" xml:space="preserve">
+    <value>The name of the new profile. Defaults to the leaf of the current working directory</value>
+  </data>
+  <data name="CmdNewProfileStartingDirArgDesc" xml:space="preserve">
+    <value>The starting directory of the new profile. Defaults to the current working directory</value>
+  </data>
+  <data name="CmdNewProfileColorSchemeArgDesc" xml:space="preserve">
+    <value>The name of the color scheme to assign to the new profile</value>
+  </data>
+  <data name="CmdNewProfileRandomColorSchemeArgDesc" xml:space="preserve">
+    <value>Assign a random color scheme to the new profile</value>
+  </data>
   <data name="SaveSnippetArgDesc" xml:space="preserve">
     <value>An optional argument</value>
   </data>

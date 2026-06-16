@@ -164,7 +164,9 @@
 // They don't need to be parsed by the settings model, or saved as actions to
 // JSON.
 #define INTERNAL_SHORTCUT_ACTIONS \
-    ON_ALL_ACTIONS(SaveSnippet)
+    ON_ALL_ACTIONS(SaveSnippet)   \
+    ON_ALL_ACTIONS(NewProfile)
 
-#define INTERNAL_SHORTCUT_ACTIONS_WITH_ARGS \
-    ON_ALL_ACTIONS_WITH_ARGS(SaveSnippet)\
+#define INTERNAL_SHORTCUT_ACTIONS_WITH_ARGS    \
+    ON_ALL_ACTIONS_WITH_ARGS(SaveSnippet)      \
+    ON_ALL_ACTIONS_WITH_ARGS(NewProfile)

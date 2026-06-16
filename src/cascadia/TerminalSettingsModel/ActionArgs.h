@@ -35,6 +35,7 @@
 #include "AddMarkArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "SaveSnippetArgs.g.h"
+#include "NewProfileArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 #include "SuggestionsArgs.g.h"
 #include "FindMatchArgs.g.h"
@@ -224,6 +225,14 @@ protected:                                                                  \
     X(winrt::hstring, Name, "name", false, ArgTypeHint::None, L"")                                     \
     X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), ArgTypeHint::None, L"") \
     X(winrt::hstring, KeyChord, "keyChord", false, ArgTypeHint::None, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define NEW_PROFILE_ARGS(X)                                                                       \
+    X(winrt::hstring, Name, "name", false, ArgTypeHint::None, L"")                                \
+    X(winrt::hstring, StartingDirectory, "startingDirectory", false, ArgTypeHint::None, L"")      \
+    X(winrt::hstring, ColorScheme, "colorScheme", false, ArgTypeHint::None, L"")                  \
+    X(winrt::hstring, Commandline, "commandline", false, ArgTypeHint::None, L"")                  \
+    X(bool, RandomColorScheme, "randomColorScheme", false, ArgTypeHint::None, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SUGGESTIONS_ARGS(X)                                                                    \
@@ -930,6 +939,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(SaveSnippetArgs, SAVE_TASK_ARGS);
 
+    ACTION_ARGS_STRUCT(NewProfileArgs, NEW_PROFILE_ARGS);
+
     ACTION_ARGS_STRUCT(SuggestionsArgs, SUGGESTIONS_ARGS);
 
     ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
@@ -1066,6 +1077,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(MoveTabArgs);
     BASIC_FACTORY(OpenSettingsArgs);
     BASIC_FACTORY(SaveSnippetArgs);
+    BASIC_FACTORY(NewProfileArgs);
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
     BASIC_FACTORY(FocusPaneArgs);

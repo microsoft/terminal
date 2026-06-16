@@ -11,6 +11,8 @@
 #include "../TerminalSettingsAppAdapterLib/TerminalSettings.h"
 #include "Utils.h"
 
+#include <random>
+
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Text;
@@ -1333,6 +1335,80 @@ namespace winrt::TerminalApp::implementation
                 args.Handled(true);
             }
         }
+    }
+
+    void TerminalPage::_HandleNewProfile(const IInspectable& /*sender*/,
+                                         const ActionEventArgs& args)
+    {
+        if (!args)
+        {
+            return;
+        }
+
+        const auto& realArgs = args.ActionArgs().try_as<NewProfileArgs>();
+        if (!realArgs)
+        {
+            return;
+        }
+
+        try
+        {
+            auto newProfile = _settings.CreateNewProfile();
+            if (!newProfile)
+            {
+                return;
+            }
+
+            if (!realArgs.Name().empty())
+            {
+                newProfile.Name(realArgs.Name());
+            }
+
+            if (!realArgs.StartingDirectory().empty())
+            {
+                newProfile.StartingDirectory(realArgs.StartingDirectory());
+            }
+
+            if (!realArgs.Commandline().empty())
+            {
+                newProfile.Commandline(realArgs.Commandline());
+            }
+
+            // Resolve color scheme: either a specific one, or pick a random one.
+            winrt::hstring schemeName;
+            if (realArgs.RandomColorScheme())
+            {
+                const auto schemes = _settings.GlobalSettings().ColorSchemes();
+                const auto schemeCount = schemes.Size();
+                if (schemeCount > 0)
+                {
+                    std::vector<winrt::hstring> names;
+                    names.reserve(schemeCount);
+                    for (const auto& kvp : schemes)
+                    {
+                        names.emplace_back(kvp.Key());
+                    }
+                    std::random_device rd;
+                    std::mt19937 gen{ rd() };
+                    std::uniform_int_distribution<size_t> dist{ 0, names.size() - 1 };
+                    schemeName = names[dist(gen)];
+                }
+            }
+            else if (!realArgs.ColorScheme().empty())
+            {
+                schemeName = realArgs.ColorScheme();
+            }
+
+            if (!schemeName.empty())
+            {
+                newProfile.DefaultAppearance().DarkColorSchemeName(schemeName);
+                newProfile.DefaultAppearance().LightColorSchemeName(schemeName);
+            }
+
+            _settings.WriteSettingsToDisk();
+            args.Handled(true);
+        }
+        CATCH_LOG();
     }
 
     void TerminalPage::ActionSaved(winrt::hstring input, winrt::hstring name, winrt::hstring keyChord)

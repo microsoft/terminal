@@ -34,6 +34,7 @@
 #include "AddMarkArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "SaveSnippetArgs.g.cpp"
+#include "NewProfileArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
 #include "SuggestionsArgs.g.cpp"
 #include "NewWindowArgs.g.cpp"
@@ -922,6 +923,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return winrt::hstring{ str };
         }
         return {};
+    }
+
+    winrt::hstring NewProfileArgs::GenerateName(const winrt::WARC::ResourceContext& context) const
+    {
+        auto str = std::wstring{ RS_switchable_(L"NewProfileNamePrefix") };
+        if (!Name().empty())
+        {
+            fmt::format_to(std::back_inserter(str), FMT_COMPILE(L", name: {}"), Name());
+        }
+        if (!Commandline().empty())
+        {
+            fmt::format_to(std::back_inserter(str), FMT_COMPILE(L", commandline: {}"), Commandline());
+        }
+        return winrt::hstring{ str };
     }
 
     static winrt::hstring _FormatColorString(const Control::SelectionColor& selectionColor)

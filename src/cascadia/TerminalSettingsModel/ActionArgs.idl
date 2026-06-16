@@ -394,6 +394,17 @@ namespace Microsoft.Terminal.Settings.Model
         String KeyChord;
     };
 
+    [default_interface] runtimeclass NewProfileArgs : IActionArgs, IActionArgsDescriptorAccess
+    {
+        NewProfileArgs();
+        NewProfileArgs(String Name, String StartingDirectory, String ColorScheme, String Commandline, Boolean RandomColorScheme);
+        String Name;
+        String StartingDirectory;
+        String ColorScheme;
+        String Commandline;
+        Boolean RandomColorScheme;
+    };
+
     [default_interface] runtimeclass NewWindowArgs : IActionArgs, IActionArgsDescriptorAccess
     {
         NewWindowArgs(INewContentArgs contentArgs);

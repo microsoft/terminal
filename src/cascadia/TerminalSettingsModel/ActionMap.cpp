@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::MultipleActions, USES_RESOURCE(L"MultipleActions") },
                 { ShortcutAction::NewTab, USES_RESOURCE(L"NewTabCommandKey") },
                 { ShortcutAction::NewWindow, USES_RESOURCE(L"NewWindowCommandKey") },
+                { ShortcutAction::NewProfile, USES_RESOURCE(L"NewProfileNamePrefix") },
                 { ShortcutAction::NextTab, USES_RESOURCE(L"NextTabCommandKey") },
                 { ShortcutAction::OpenAbout, USES_RESOURCE(L"OpenAboutCommandKey") },
                 { ShortcutAction::OpenCWD, USES_RESOURCE(L"OpenCWDCommandKey") },

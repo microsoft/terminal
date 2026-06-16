@@ -209,6 +209,7 @@ void AppCommandlineArgs::_buildParser()
     _buildSwapPaneParser();
     _buildFocusPaneParser();
     _buildSaveSnippetParser();
+    _buildNewProfileParser();
 }
 
 // Method Description:
@@ -604,6 +605,115 @@ void AppCommandlineArgs::_buildSaveSnippetParser()
 }
 
 // Method Description:
+// - Adds the `new-profile` subcommand and related options to the commandline parser.
+//   This subcommand creates a new profile in the user's settings file, using the
+//   current working directory as the starting directory by default. It does not
+//   open a new tab or window.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildNewProfileParser()
+{
+    _newProfileCommand = _app.add_subcommand("new-profile", RS_A(L"CmdNewProfileDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        subcommand->add_option("--name,-n", _newProfileName, RS_A(L"CmdNewProfileNameArgDesc"));
+        subcommand->add_option("--startingDirectory,-d", _newProfileStartingDirectory, RS_A(L"CmdNewProfileStartingDirArgDesc"));
+        subcommand->add_option("--colorScheme,-c", _newProfileColorScheme, RS_A(L"CmdNewProfileColorSchemeArgDesc"));
+        subcommand->add_flag("--random,-r", _newProfileRandomColorScheme, RS_A(L"CmdNewProfileRandomColorSchemeArgDesc"));
+        subcommand->add_option("command,", _commandline, RS_A(L"CmdCommandArgDesc"));
+        subcommand->positionals_at_end(true);
+
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            ActionAndArgs newProfileAction{};
+            newProfileAction.Action(ShortcutAction::NewProfile);
+            NewProfileArgs args{};
+
+            // Capture the current working directory now, while we're still
+            // running in the spawned wt.exe process. The action will be
+            // delegated to the existing monarch wt.exe process, which will
+            // have a different CWD.
+            std::wstring cwd;
+            try
+            {
+                cwd = wil::GetCurrentDirectoryW<std::wstring>();
+            }
+            CATCH_LOG();
+
+            // Use the --startingDirectory if provided, else use the CWD we captured.
+            std::wstring startingDir;
+            if (!_newProfileStartingDirectory.empty())
+            {
+                startingDir = winrt::to_hstring(_newProfileStartingDirectory).c_str();
+            }
+            else
+            {
+                startingDir = cwd;
+            }
+            args.StartingDirectory(winrt::hstring{ startingDir });
+
+            // Use the --name if provided, else use the leaf of the starting directory.
+            std::wstring name;
+            if (!_newProfileName.empty())
+            {
+                name = winrt::to_hstring(_newProfileName).c_str();
+            }
+            else if (!startingDir.empty())
+            {
+                try
+                {
+                    name = std::filesystem::path{ startingDir }.filename().wstring();
+                    if (name.empty())
+                    {
+                        // path ended in a separator (e.g. "C:\") - try the parent
+                        name = std::filesystem::path{ startingDir }.parent_path().filename().wstring();
+                    }
+                }
+                CATCH_LOG();
+            }
+            args.Name(winrt::hstring{ name });
+
+            if (!_newProfileColorScheme.empty())
+            {
+                args.ColorScheme(winrt::to_hstring(_newProfileColorScheme));
+            }
+            args.RandomColorScheme(_newProfileRandomColorScheme);
+
+            if (!_commandline.empty())
+            {
+                std::ostringstream cmdlineBuffer;
+                for (const auto& arg : _commandline)
+                {
+                    if (cmdlineBuffer.tellp() != 0)
+                    {
+                        cmdlineBuffer << ' ';
+                    }
+                    if (arg.find(" ") != std::string::npos)
+                    {
+                        cmdlineBuffer << '"' << arg << '"';
+                    }
+                    else
+                    {
+                        cmdlineBuffer << arg;
+                    }
+                }
+                args.Commandline(winrt::to_hstring(cmdlineBuffer.str()));
+            }
+
+            newProfileAction.Args(args);
+            _startupActions.push_back(newProfileAction);
+        });
+    };
+
+    setupSubcommand(_newProfileCommand);
+}
+
+// Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
 // Arguments:
@@ -777,7 +887,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand ||
-             *_saveCommand);
+             *_saveCommand ||
+             *_newProfileCommand);
 }
 
 // Method Description:
@@ -814,6 +925,11 @@ void AppCommandlineArgs::_resetStateToDefault()
 
     _focusPaneTarget = -1;
     _loadPersistedLayoutIdx = -1;
+
+    _newProfileName.clear();
+    _newProfileStartingDirectory.clear();
+    _newProfileColorScheme.clear();
+    _newProfileRandomColorScheme = false;
 
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
@@ -1002,21 +1118,23 @@ bool AppCommandlineArgs::ShouldExitEarly() const noexcept
 // - <none>
 void AppCommandlineArgs::ValidateStartupCommands()
 {
-    // If we only have a single x-save command, then set our target to the
-    // current terminal window. This will prevent us from spawning a new
-    // window just to save the commandline.
+    // If we only have a single x-save or new-profile command, then set our
+    // target to the current terminal window. This will prevent us from spawning
+    // a new window just to save the commandline or create a profile.
     if (_startupActions.size() == 1 &&
-        _startupActions.front().Action() == ShortcutAction::SaveSnippet &&
+        (_startupActions.front().Action() == ShortcutAction::SaveSnippet ||
+         _startupActions.front().Action() == ShortcutAction::NewProfile) &&
         _windowTarget.empty())
     {
         _windowTarget = "0";
     }
     // If we parsed no commands, or the first command we've parsed is not a new
     // tab action, prepend a new-tab command to the front of the list.
-    // (also, we don't need to do this if the only action is a x-save)
+    // (also, we don't need to do this if the only action is a x-save or new-profile)
     else if (_startupActions.empty() ||
              (_startupActions.front().Action() != ShortcutAction::NewTab &&
-              _startupActions.front().Action() != ShortcutAction::SaveSnippet))
+              _startupActions.front().Action() != ShortcutAction::SaveSnippet &&
+              _startupActions.front().Action() != ShortcutAction::NewProfile))
     {
         // Build the NewTab action from the values we've parsed on the commandline.
         NewTerminalArgs newTerminalArgs{};
