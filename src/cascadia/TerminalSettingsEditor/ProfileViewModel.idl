@@ -107,6 +107,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean Orphaned { get; };
         String AccessibleStateDescription { get; };
+        Boolean ShowHiddenBadge { get; };
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
