@@ -1291,11 +1291,12 @@ void Pane::_FocusFirstChild()
     }
 }
 
-void Pane::UpdateSettings(const CascadiaSettings& settings)
+void Pane::UpdateSettings(const CascadiaSettings& settings,
+                          const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
 {
     if (_content)
     {
-        _content.UpdateSettings(settings);
+        _content.UpdateSettings(settings, windowSettings);
     }
 }
 

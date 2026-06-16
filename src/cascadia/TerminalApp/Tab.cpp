@@ -362,7 +362,7 @@ namespace winrt::TerminalApp::implementation
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](const auto& pane) {
-            pane->UpdateSettings(settings);
+            pane->UpdateSettings(settings, windowSettings);
             return false;
         });
     }

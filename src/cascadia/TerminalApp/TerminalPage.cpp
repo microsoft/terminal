@@ -271,7 +271,7 @@ namespace winrt::TerminalApp::implementation
         if (_settings == nullptr)
         {
             // Create this only on the first time we load the settings.
-            _terminalSettingsCache = std::make_shared<TerminalSettingsCache>(settings);
+            _terminalSettingsCache = std::make_shared<TerminalSettingsCache>(settings, settings.WindowSettings(_WindowProperties.WindowName()));
         }
         _settings = settings;
 
@@ -1653,7 +1653,7 @@ namespace winrt::TerminalApp::implementation
         {
             // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
             profile = GetClosestProfileForDuplicationOfProfile(profile);
-            controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
+            controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, _currentWindowSettings(), profile);
 
             // Replace the Starting directory with the CWD, if given
             const auto workingDirectory = control.WorkingDirectory();
@@ -3733,7 +3733,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
                 profile = GetClosestProfileForDuplicationOfProfile(profile);
-                controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, profile);
+                controlSettings = Settings::TerminalSettings::CreateWithProfile(_settings, _currentWindowSettings(), profile);
                 const auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
                 if (Utils::IsValidDirectory(workingDirectory.c_str()))
                 {
@@ -3744,7 +3744,7 @@ namespace winrt::TerminalApp::implementation
         if (!profile)
         {
             profile = _settings.GetProfileForArgs(newTerminalArgs);
-            controlSettings = Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs);
+            controlSettings = Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, _currentWindowSettings(), newTerminalArgs);
         }
 
         // Try to handle auto-elevation
@@ -3871,7 +3871,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             const auto& tasksContent{ winrt::make_self<SnippetsPaneContent>() };
-            tasksContent->UpdateSettings(_settings);
+            tasksContent->UpdateSettings(_settings, _currentWindowSettings());
             tasksContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
             tasksContent->DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
             if (const auto& termControl{ _GetActiveControl() })
@@ -3886,7 +3886,7 @@ namespace winrt::TerminalApp::implementation
             if (Feature_MarkdownPane::IsEnabled())
             {
                 const auto& markdownContent{ winrt::make_self<MarkdownPaneContent>(L"") };
-                markdownContent->UpdateSettings(_settings);
+                markdownContent->UpdateSettings(_settings, _currentWindowSettings());
                 markdownContent->GetRoot().KeyDown({ this, &TerminalPage::_KeyDownHandler });
 
                 // This one doesn't use DispatchCommand, because we don't create
@@ -4012,7 +4012,7 @@ namespace winrt::TerminalApp::implementation
         // updating terminal panes, so that we don't have to build a _new_
         // TerminalSettings for every profile we update - we can just look them
         // up the previous ones we built.
-        _terminalSettingsCache->Reset(_settings);
+        _terminalSettingsCache->Reset(_settings, _currentWindowSettings());
 
         const auto windowSettings = _currentWindowSettings();
         for (const auto& tab : _tabs)
@@ -4520,7 +4520,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Create the SUI pane content
-        auto settingsContent{ winrt::make_self<SettingsPaneContent>(_settings) };
+        auto settingsContent{ winrt::make_self<SettingsPaneContent>(_settings, _currentWindowSettings()) };
         auto sui = settingsContent->SettingsUI();
 
         if (_hostingHwnd)

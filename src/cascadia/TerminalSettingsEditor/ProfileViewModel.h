@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> CompleteFontList() noexcept { return _FontList; };
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> MonospaceFontList() noexcept { return _MonospaceFontList; };
 
-        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
+        ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
         void DeleteProfile();
 
@@ -172,6 +172,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Windows::Foundation::Collections::IObservableVector<Editor::Font> _FontList;
 
         Model::CascadiaSettings _appSettings;
+        Model::WindowSettings _windowSettings{ nullptr };
         Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
     };
 

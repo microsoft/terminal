@@ -74,7 +74,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return S_FALSE;
             }
-            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, _currentWindowSettings(), newTerminalArgs) };
 
             // Try to handle auto-elevation
             if (_maybeElevate(newTerminalArgs, settings, profile))

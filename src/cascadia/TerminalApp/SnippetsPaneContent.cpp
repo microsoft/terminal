@@ -44,9 +44,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings)
+    safe_void_coroutine SnippetsPaneContent::UpdateSettings(const CascadiaSettings& settings,
+                                                            const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
     {
         _settings = settings;
+        _windowSettings = windowSettings;
 
         const auto dispatcher = Dispatcher();
         const auto weak = get_weak();
@@ -121,7 +123,7 @@ namespace winrt::TerminalApp::implementation
     {
         static const auto key = winrt::box_value(L"SettingsUiTabBrush");
         return ThemeLookup(WUX::Application::Current().Resources(),
-                           _settings.GlobalSettings().CurrentTheme(_settings.WindowSettingsDefaults()).RequestedTheme(),
+                           _settings.GlobalSettings().CurrentTheme(_windowSettings).RequestedTheme(),
                            key)
             .try_as<winrt::WUX::Media::Brush>();
     }

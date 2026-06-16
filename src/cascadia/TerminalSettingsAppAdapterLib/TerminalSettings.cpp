@@ -50,12 +50,11 @@ namespace winrt::Microsoft::Terminal::Settings
         return { horizAlign, vertAlign };
     }
 
-    winrt::com_ptr<TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    winrt::com_ptr<TerminalSettings> TerminalSettings::_CreateWithProfileCommon(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
 
         const auto globals = appSettings.GlobalSettings();
-        const auto windowSettings = appSettings.WindowSettingsDefaults();
         settings->_ApplyProfileSettings(profile);
         settings->_ApplyGlobalSettings(windowSettings);
         settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
@@ -63,9 +62,9 @@ namespace winrt::Microsoft::Terminal::Settings
         return settings;
     }
 
-    winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreview(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
     {
-        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        const auto settings = _CreateWithProfileCommon(appSettings, windowSettings, profile);
         settings->_UseBackgroundImageForWindow = false;
         return settings;
     }
@@ -81,9 +80,9 @@ namespace winrt::Microsoft::Terminal::Settings
     // Return Value:
     // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
     //   one for when the terminal is focused and the other for when the terminal is unfocused
-    TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Model::Profile& profile)
     {
-        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        const auto settings = _CreateWithProfileCommon(appSettings, windowSettings, profile);
 
         winrt::com_ptr<TerminalSettings> child{ nullptr };
         if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
@@ -91,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings
             const auto globals = appSettings.GlobalSettings();
             child = winrt::make_self<TerminalSettings>();
             child->_parent = settings->get_strong();
-            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme(appSettings.WindowSettingsDefaults()));
+            child->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
         }
 
         return TerminalSettingsCreateResult{ settings.get(), child.get() };
@@ -115,10 +114,11 @@ namespace winrt::Microsoft::Terminal::Settings
     // - A TerminalSettingsCreateResult object, which contains a pair of TerminalSettings
     //   objects. One for when the terminal is focused and one for when the terminal is unfocused.
     TerminalSettingsCreateResult TerminalSettings::CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
+                                                                             const Model::WindowSettings& windowSettings,
                                                                              const Model::NewTerminalArgs& newTerminalArgs)
     {
         const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair{ CreateWithProfile(appSettings, profile) };
+        auto settingsPair{ CreateWithProfile(appSettings, windowSettings, profile) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)

@@ -28,11 +28,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
 
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher) :
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
         _originalProfileGuid{ profile.Guid() },
         _appSettings{ appSettings },
+        _windowSettings{ windowSettings },
         _unfocusedAppearanceViewModel{ nullptr },
         _dispatcher{ dispatcher }
     {
@@ -218,7 +219,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // This may look pricey, but it only resolves resources that have not been visited
         // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
-        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
+        return *Settings::TerminalSettings::CreateForPreview(_appSettings, _windowSettings, _profile);
     }
 
     // Method Description:
@@ -385,7 +386,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     Windows::UI::Color ProfileViewModel::TabThemeColorPreview() const
     {
-        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme(_appSettings.WindowSettingsDefaults());
+        const auto currentTheme = _appSettings.GlobalSettings().CurrentTheme(_windowSettings);
         if (const auto tabTheme = currentTheme.Tab())
         {
             // theme.tab.background: theme color must be evaluated
