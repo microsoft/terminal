@@ -243,6 +243,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::com_ptr<implementation::WindowSettings> _baseWindowSettings = winrt::make_self<implementation::WindowSettings>();
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::WindowSettings> _windows{ winrt::single_threaded_map<winrt::hstring, Model::WindowSettings>() };
+        // The special "_quake" window always exists, even if the user never
+        // defined one in their settings. When that's the case, this holds a
+        // synthesized "fake" WindowSettings initialized for quake mode. It is
+        // deliberately kept out of _windows so it's never written back to disk.
+        winrt::com_ptr<implementation::WindowSettings> _quakeWindowSettings{ nullptr };
 
         winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
         winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();

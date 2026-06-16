@@ -223,6 +223,14 @@ Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& win
         {
             return it;
         }
+
+        // The "_quake" window is special: even if the user never defined a
+        // "_quake" entry, we still hand back a synthesized WindowSettings that's
+        // initialized for quake mode (see the SettingsLoader-consuming ctor).
+        if (_quakeWindowSettings && windowName == L"_quake")
+        {
+            return *_quakeWindowSettings;
+        }
     }
     return *_baseWindowSettings;
 }

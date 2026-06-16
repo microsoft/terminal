@@ -1516,6 +1516,22 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
         _windows.Insert(name, *window);
     }
 
+    // The "_quake" window is always treated specially. Even if the user never
+    // defined a "_quake" entry in their settings, we still want it to behave
+    // like a quake-mode window (docked to the top of the screen, in focus
+    // mode). If we didn't load one, synthesize a "fake" one that inherits from
+    // the base window settings but is initialized for quake mode. We keep it out
+    // of _windows so it isn't serialized back to the user's settings file.
+    if (!_windows.HasKey(L"_quake"))
+    {
+        auto quake{ winrt::make_self<implementation::WindowSettings>() };
+        quake->Name(L"_quake");
+        quake->InitializeForQuakeMode();
+        quake->AddLeastImportantParent(_baseWindowSettings);
+        quake->_FinalizeInheritance();
+        _quakeWindowSettings = std::move(quake);
+    }
+
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
     _validateSettings();
@@ -1777,6 +1793,11 @@ void CascadiaSettings::_resolveDefaultProfile() const
     {
         _resolveDefaultProfileForWindow(window, firstProfileGuid);
     }
+
+    if (_quakeWindowSettings)
+    {
+        _resolveDefaultProfileForWindow(*_quakeWindowSettings, firstProfileGuid);
+    }
 }
 
 bool CascadiaSettings::_resolveDefaultProfileForWindow(const Model::WindowSettings& window,
@@ -1808,6 +1829,11 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     for (const auto& [name, window] : _windows)
     {
         _resolveNewTabMenuProfilesForWindow(window);
+    }
+
+    if (_quakeWindowSettings)
+    {
+        _resolveNewTabMenuProfilesForWindow(*_quakeWindowSettings);
     }
 }
 
