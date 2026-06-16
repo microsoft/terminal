@@ -41,8 +41,6 @@ namespace TerminalApp
 
         String VirtualWorkingDirectory { get; set; };
         String VirtualEnvVars { get; set; };
-
-        Boolean IsQuakeWindow();
     };
 
     runtimeclass LaunchPositionRequest

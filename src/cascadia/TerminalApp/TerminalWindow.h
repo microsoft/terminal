@@ -44,7 +44,6 @@ namespace winrt::TerminalApp::implementation
         void WindowId(const uint64_t& value);
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
-        bool IsQuakeWindow() const noexcept;
 
         til::property_changed_event PropertyChanged;
 
@@ -135,12 +134,12 @@ namespace winrt::TerminalApp::implementation
         void DismissDialog();
 
         Microsoft::Terminal::Settings::Model::Theme Theme();
+        Microsoft::Terminal::Settings::Model::Docking Docking();
         void UpdateSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::SettingsLoadEventArgs& arg);
 
         void WindowName(const winrt::hstring& value);
         void WindowId(const uint64_t& value);
 
-        bool IsQuakeWindow() const noexcept { return _WindowProperties->IsQuakeWindow(); }
         TerminalApp::WindowProperties WindowProperties() { return *_WindowProperties; }
 
         void AttachContent(winrt::hstring content, uint32_t tabIndex);

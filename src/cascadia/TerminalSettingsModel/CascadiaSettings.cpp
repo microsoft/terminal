@@ -111,10 +111,21 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
         }
 
         settings->_globals = _globals->Copy();
-        // temporary: instantiate a new window settings shim
-        // will be removed when we have real per-window settings
-        settings->_windowSettings = winrt::make_self<implementation::WindowSettings>();
-        settings->_windowSettings->Initialize(settings->_globals);
+        settings->_baseWindowSettings = _baseWindowSettings->Copy();
+
+        // Copy the per-window-name settings, otherwise saving from the settings
+        // UI would drop the entire "windows"
+        settings->_windows = winrt::single_threaded_map<winrt::hstring, Model::WindowSettings>();
+        for (const auto& [name, window] : _windows)
+        {
+            const auto windowImpl{ winrt::get_self<implementation::WindowSettings>(window) };
+            settings->_windows.Insert(name, *windowImpl->Copy());
+        }
+        if (_quakeWindowSettings)
+        {
+            settings->_quakeWindowSettings = _quakeWindowSettings->Copy();
+        }
+
         settings->_allProfiles = winrt::single_threaded_observable_vector(std::move(allProfiles));
         settings->_activeProfiles = winrt::single_threaded_observable_vector(std::move(activeProfiles));
 
@@ -215,15 +226,32 @@ Model::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 
 Model::WindowSettings CascadiaSettings::WindowSettingsDefaults() const
 {
-    return *_windowSettings;
+    return *_baseWindowSettings;
 }
 
-Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& /*windowName*/) const
+Model::WindowSettings CascadiaSettings::WindowSettings(const winrt::hstring& windowName) const
 {
-    // In the WIP implementation, we always return the same WindowSettings
-    // object regardless of window name, since per-window settings
-    // storage is not yet implemented.
-    return *_windowSettings;
+    if (!windowName.empty())
+    {
+        if (auto it = _windows.TryLookup(windowName))
+        {
+            return it;
+        }
+
+        // The "_quake" window is special: even if the user never defined a
+        // "_quake" entry, we still hand back a synthesized WindowSettings that's
+        // initialized for quake mode (see the SettingsLoader-consuming ctor).
+        if (_quakeWindowSettings && windowName == L"_quake")
+        {
+            return *_quakeWindowSettings;
+        }
+    }
+    return *_baseWindowSettings;
+}
+
+winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Model::WindowSettings> CascadiaSettings::AllWindowSettings() const noexcept
+{
+    return _windows;
 }
 
 // Method Description:
@@ -726,7 +754,7 @@ static bool _validateNTMEntries(const IVector<Model::NewTabMenuEntry>& entries)
 
 void CascadiaSettings::_validateRegexes()
 {
-    if (!_validateNTMEntries(_globals->NewTabMenu()))
+    if (!_validateNTMEntries(_baseWindowSettings->NewTabMenu()))
     {
         _warnings.Append(SettingsLoadWarnings::InvalidRegex);
     }
@@ -748,7 +776,7 @@ void CascadiaSettings::_validateRegexes()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
+Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs, const Model::WindowSettings& currentWindowSettings) const
 {
     if (newTerminalArgs)
     {
@@ -792,7 +820,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
     // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
     // TODO GH#10952: Detect the profile based on the commandline (add matching support)
     return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-               FindProfile(_globals->DefaultProfile()) :
+               FindProfile(currentWindowSettings.DefaultProfile()) :
                ProfileDefaults();
 }
 
@@ -1252,10 +1280,10 @@ void CascadiaSettings::_validateThemeExists()
         auto newTheme = winrt::make_self<Theme>();
         newTheme->Name(L"system");
         _globals->AddTheme(*newTheme);
-        _globals->Theme(Model::ThemePair{ L"system" });
+        _baseWindowSettings->Theme(Model::ThemePair{ L"system" });
     }
 
-    const auto& theme{ _globals->Theme() };
+    const auto& theme{ _baseWindowSettings->Theme() };
     if (theme.DarkName() == theme.LightName())
     {
         // Only one theme. We'll treat it as such.
@@ -1263,7 +1291,7 @@ void CascadiaSettings::_validateThemeExists()
         {
             _warnings.Append(SettingsLoadWarnings::UnknownTheme);
             // safely fall back to system as the theme.
-            _globals->Theme(*winrt::make_self<ThemePair>(L"system"));
+            _baseWindowSettings->Theme(*winrt::make_self<ThemePair>(L"system"));
         }
     }
     else

@@ -56,7 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings
 
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
-        settings->_ApplyGlobalSettings(windowSettings);
+        settings->_ApplyWindowSettings(windowSettings);
         settings->_ApplyAppearanceSettings(profile.DefaultAppearance(), globals.ColorSchemes(), globals.CurrentTheme(windowSettings));
 
         return settings;
@@ -117,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings
                                                                              const Model::WindowSettings& windowSettings,
                                                                              const Model::NewTerminalArgs& newTerminalArgs)
     {
-        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
+        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs, windowSettings);
         auto settingsPair{ CreateWithProfile(appSettings, windowSettings, profile) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
@@ -363,7 +363,7 @@ namespace winrt::Microsoft::Terminal::Settings
     // - globalSettings: the global property values we're applying.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyGlobalSettings(const Model::WindowSettings& windowSettings) noexcept
+    void TerminalSettings::_ApplyWindowSettings(const Model::WindowSettings& windowSettings) noexcept
     {
         _InitialRows = windowSettings.InitialRows();
         _InitialCols = windowSettings.InitialCols();

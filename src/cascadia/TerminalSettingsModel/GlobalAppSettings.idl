@@ -50,6 +50,23 @@ namespace Microsoft.Terminal.Settings.Model
         AfterCurrentTab,
     };
 
+    enum DockPosition
+    {
+        None,
+        Top,
+        Bottom,
+        Left,
+        Right
+    };
+
+    [default_interface] runtimeclass Docking
+    {
+        Docking();
+        DockPosition Side { get; };
+        Double Width { get; };
+        Double Height { get; };
+    };
+
     enum ConfirmOnClose
     {
         Never = 0,
@@ -58,7 +75,7 @@ namespace Microsoft.Terminal.Settings.Model
     };
 
     [default_interface] runtimeclass GlobalAppSettings {
-        // ---- Global-only settings (not per-window) ----
+
         INHERITABLE_SETTING(String, Language);
         INHERITABLE_SETTING(Boolean, InputServiceWarning);
         INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
@@ -70,7 +87,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableColorSelection);
         INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
 
-        // ---- Color schemes ----
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
         void RemoveColorScheme(String schemeName);
@@ -78,7 +94,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         ActionMap ActionMap { get; };
 
-        // ---- Themes ----
         Windows.Foundation.Collections.IMapView<String, Theme> Themes();
         void AddTheme(Theme theme);
         Theme CurrentTheme(WindowSettings window);
@@ -88,8 +103,6 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass WindowSettings
     {
-        WindowSettings();
-
         String Name { get; };
         Guid DefaultProfile;
 
@@ -139,5 +152,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
         INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
         INHERITABLE_SETTING(ThemePair, Theme);
+        INHERITABLE_SETTING(Docking, DockWindow);
     }
 }

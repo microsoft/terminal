@@ -6,56 +6,118 @@ Module Name:
 - WindowSettings.h
 
 Abstract:
-- This class represents per-window settings. In the current WIP implementation,
-  it delegates all property access to a GlobalAppSettings object, since we
-  haven't yet split the actual storage into per-window instances.
+- This class encapsulates all of the settings that are specific to a single
+  window. Broader than Profile settings (which are more like, per-pane
+  settings). Different windows can have different settings for things like
+  Theme, default profile, launch mode, etc.
 
 Author(s):
-- Mike Griese - April 2026
+- Mike Griese - Sept 2023
 
 --*/
 #pragma once
 
 #include "WindowSettings.g.h"
+#include "Docking.g.h"
+#include "IInheritable.h"
 #include "MTSMSettings.h"
-#include "GlobalAppSettings.h"
+
+#include "TerminalSettingsSerializationHelpers.h"
+#include "ColorScheme.h"
+#include "Theme.h"
+#include "NewTabMenuEntry.h"
+#include "RemainingProfilesEntry.h"
+
+// fwdecl unittest classes
+namespace SettingsModelUnitTests
+{
+    class DeserializationTests;
+    class ColorSchemeTests;
+};
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct WindowSettings : WindowSettingsT<WindowSettings>
+    struct WindowSettings : WindowSettingsT<WindowSettings>, IInheritable<WindowSettings>
     {
     public:
-        // Default constructor required by WinRT activation
-        WindowSettings() = default;
+        void _FinalizeInheritance() override;
+        com_ptr<WindowSettings> Copy() const;
 
-        // Construct a WindowSettings that delegates to the given GlobalAppSettings.
-        void Initialize(const com_ptr<GlobalAppSettings>& globals);
+        static com_ptr<WindowSettings> FromJson(const Json::Value& json);
+        void LayerJson(const Json::Value& json);
 
-        hstring Name() const;
+        Json::Value ToJson();
 
-        winrt::guid DefaultProfile() const;
-        void DefaultProfile(const winrt::guid& value);
+        void InitializeForQuakeMode();
 
-        hstring UnparsedDefaultProfile() const;
-        void UnparsedDefaultProfile(const hstring& value);
-        bool HasUnparsedDefaultProfile() const;
-        void ClearUnparsedDefaultProfile();
+        // This DefaultProfile() setter is called by CascadiaSettings,
+        // when it parses UnparsedDefaultProfile in _finalizeSettings().
+        void DefaultProfile(const guid& defaultProfile) noexcept;
+        guid DefaultProfile() const;
 
-        // Delegate all MTSM_WINDOW_SETTINGS to GlobalAppSettings via inline methods.
-#define WINDOW_SETTINGS_DELEGATE(type, name, ...)                             \
-    type name() const { return _globals->name(); }                            \
-    void name(const type& value) { _globals->name(value); }                  \
-    bool Has##name() const { return _globals->Has##name(); }                  \
-    void Clear##name() { _globals->Clear##name(); }
-        MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_DELEGATE)
-#undef WINDOW_SETTINGS_DELEGATE
+        til::property<winrt::hstring> Name;
+
+        INHERITABLE_SETTING(Model::WindowSettings, hstring, UnparsedDefaultProfile, L"");
+
+#define WINDOW_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_SETTING(Model::WindowSettings, type, name, ##__VA_ARGS__)
+        MTSM_WINDOW_SETTINGS(WINDOW_SETTINGS_INITIALIZE)
+#undef WINDOW_SETTINGS_INITIALIZE
 
     private:
-        com_ptr<GlobalAppSettings> _globals{ nullptr };
+        winrt::guid _defaultProfile;
+    };
+
+    struct Docking : DockingT<Docking>
+    {
+        Docking() = default;
+
+        til::property<Model::DockPosition> Side{ Model::DockPosition::None };
+        til::property<double> Width{ 1.0 };
+        til::property<double> Height{ 1.0 };
+
+        static com_ptr<Docking> FromJson(const Json::Value& json);
+        Json::Value ToJson() const;
+        com_ptr<Docking> Copy() const;
+    };
+}
+
+namespace Microsoft::Terminal::Settings::Model::JsonUtils
+{
+    using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<Docking>
+    {
+        Docking FromJson(const Json::Value& json)
+        {
+            const auto entry = implementation::Docking::FromJson(json);
+            if (entry == nullptr)
+            {
+                return nullptr;
+            }
+
+            return *entry;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return json.isObject();
+        }
+
+        Json::Value ToJson(const Docking& val)
+        {
+            return winrt::get_self<implementation::Docking>(val)->ToJson();
+        }
+
+        std::string TypeDescription() const
+        {
+            return "Docking";
+        }
     };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
-    BASIC_FACTORY(WindowSettings);
+    BASIC_FACTORY(Docking);
 }

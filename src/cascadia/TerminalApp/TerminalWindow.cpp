@@ -238,7 +238,7 @@ namespace winrt::TerminalApp::implementation
         // that the window size is _first_ set up as something sensible, so
         // leaving fullscreen returns to a reasonable size.
         const auto launchMode = this->GetLaunchMode();
-        if (_WindowProperties->IsQuakeWindow() || WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
+        if (WI_IsFlagSet(launchMode, LaunchMode::FocusMode))
         {
             _root->SetFocusMode(true);
         }
@@ -250,7 +250,7 @@ namespace winrt::TerminalApp::implementation
             _root->Maximized(true);
         }
 
-        if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode) && !_WindowProperties->IsQuakeWindow())
+        if (WI_IsFlagSet(launchMode, LaunchMode::FullscreenMode))
         {
             _root->SetFullscreen(true);
         }
@@ -1222,21 +1222,13 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
-        const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
         _WindowProperties->WindowName(name);
         if (!_root)
         {
             return;
         }
-        const auto newIsQuakeMode = _WindowProperties->IsQuakeWindow();
-        if (newIsQuakeMode != oldIsQuakeMode)
-        {
-            // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
-            // If we're entering Quake Mode from Focus Mode, then this will do nothing
-            // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-            _root->SetFocusMode(true);
-            IsQuakeWindowChanged.raise(*this, nullptr);
-        }
+        _root->SetSettings(_settings, true);
+        IsQuakeWindowChanged.raise(*this, nullptr);
     }
     void TerminalWindow::WindowId(const uint64_t& id)
     {
@@ -1382,7 +1374,12 @@ namespace winrt::TerminalApp::implementation
 
     Microsoft::Terminal::Settings::Model::WindowSettings TerminalWindow::_currentWindowSettings() const
     {
-        return _settings.WindowSettingsDefaults();
+        return _settings.WindowSettings(_WindowProperties->WindowName());
+    }
+
+    Microsoft::Terminal::Settings::Model::Docking TerminalWindow::Docking()
+    {
+        return _currentWindowSettings().DockWindow();
     }
 
     winrt::hstring WindowProperties::WindowName() const noexcept
@@ -1437,11 +1434,6 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring WindowProperties::WindowNameForDisplay() const noexcept
     {
         return _WindowName.empty() ? til::hstring_format(FMT_COMPILE(L"<{}>"), RS_(L"UnnamedWindowName")) : _WindowName;
-    }
-
-    bool WindowProperties::IsQuakeWindow() const noexcept
-    {
-        return _WindowName == L"_quake";
     }
 
 };

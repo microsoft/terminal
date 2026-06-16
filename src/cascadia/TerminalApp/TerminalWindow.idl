@@ -73,6 +73,8 @@ namespace TerminalApp
         Boolean AlwaysOnTop { get; };
         Boolean AutoHideWindow { get; };
         Boolean ShowTabsFullscreen { get; };
+        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
+        Microsoft.Terminal.Settings.Model.Docking Docking { get; };
 
         void IdentifyWindow();
         Boolean FocusTab(TerminalApp.Tab tab);
@@ -96,7 +98,6 @@ namespace TerminalApp
         TaskbarState TaskbarState{ get; };
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         Windows.UI.Xaml.Media.Brush FrameBrush { get; };
-        Microsoft.Terminal.Settings.Model.Theme Theme { get; };
         void WindowActivated(Boolean activated);
 
         Boolean GetMinimizeToNotificationArea();
@@ -108,7 +109,6 @@ namespace TerminalApp
         WindowProperties WindowProperties { get; };
         void WindowName(String name);
         void WindowId(UInt64 id);
-        Boolean IsQuakeWindow();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.

@@ -39,6 +39,7 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view ThemesKey{ "themes" };
+static constexpr std::string_view WindowsListKey{ "windows" };
 
 constexpr std::wstring_view systemThemeName{ L"system" };
 constexpr std::wstring_view darkThemeName{ L"dark" };
@@ -103,8 +104,10 @@ void ParsedSettings::clear()
 {
     globals = {};
     baseLayerProfile = {};
+    baseWindowSettings = {};
     profiles.clear();
     profilesByGuid.clear();
+    windowsByName.clear();
     colorSchemes.clear();
     fixupsAppliedDuringLoad = false;
     themesChangeLog.clear();
@@ -291,7 +294,7 @@ void SettingsLoader::ApplyRuntimeInitialSettings()
             }
         }
 
-        userSettings.globals->DefaultProfile(guid);
+        userSettings.baseWindowSettings->DefaultProfile(guid);
     }
 
     // 2.
@@ -481,6 +484,18 @@ void SettingsLoader::FinalizeLayering()
     }
 
     userSettings.globals->_FinalizeInheritance();
+
+    // Layer default window settings -> user window settings
+    userSettings.baseWindowSettings->AddLeastImportantParent(inboxSettings.baseWindowSettings);
+    userSettings.baseWindowSettings->_FinalizeInheritance();
+
+    // Layer user window defaults into named windows
+    for (auto& [name, window] : userSettings.windowsByName)
+    {
+        window->AddLeastImportantParent(userSettings.baseWindowSettings);
+        window->_FinalizeInheritance();
+    }
+
     // Layer default profile defaults -> user profile defaults
     userSettings.baseLayerProfile->AddLeastImportantParent(inboxSettings.baseLayerProfile);
     userSettings.baseLayerProfile->_FinalizeInheritance();
@@ -559,7 +574,7 @@ bool SettingsLoader::AddDynamicProfileFolders()
         folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
 
         // NewTabMenu is guaranteed to exist by FixupUserSettings, which runs before this fixup.
-        userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
+        userSettings.baseWindowSettings->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
         state->SSHFolderGenerated(true);
         return true;
     }
@@ -693,9 +708,9 @@ bool SettingsLoader::FixupUserSettings()
     // Ensure that the user always has a newTabMenu. We used to do this last, after
     // resolving all of the new tab menu entries, but there was no conceivable reason
     // that it should happen so late.
-    if (!userSettings.globals->HasNewTabMenu())
+    if (!userSettings.baseWindowSettings->HasNewTabMenu())
     {
-        userSettings.globals->NewTabMenu(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }));
+        userSettings.baseWindowSettings->NewTabMenu(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }));
         // This one does not need to be written back to the settings file immediately, it can wait until we write one for another reason.
     }
 
@@ -858,6 +873,21 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
     }
 
     {
+        // Parse window defaults from the root JSON (window settings live at the top level)
+        settings.baseWindowSettings = WindowSettings::FromJson(json.root);
+
+        // Parse named windows
+        for (const auto& windowJson : json.windowsList)
+        {
+            auto window = WindowSettings::FromJson(windowJson);
+            if (!window->Name().empty())
+            {
+                settings.windowsByName.insert_or_assign(window->Name(), std::move(window));
+            }
+        }
+    }
+
+    {
         const auto size = json.profilesList.size();
         settings.profiles.reserve(size);
         settings.profilesByGuid.reserve(size);
@@ -1017,7 +1047,9 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
     const auto& profilesObject = _getJSONValue(root, ProfilesKey);
     const auto& profileDefaults = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesList = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
-    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes };
+    const auto& windowDefaults = root; // window settings are at the root level
+    const auto& windowsList = _getJSONValue(root, WindowsListKey);
+    return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList, themes, windowDefaults, windowsList };
 }
 
 // Just a common helper function between _parse and _parseFragment.
@@ -1316,8 +1348,8 @@ void CascadiaSettings::_researchOnLoad()
     {
         // ----------------------------- RE: Themes ----------------------------
         const auto numThemes = GlobalSettings().Themes().Size();
-        const auto themeInUse = GlobalSettings().CurrentTheme(WindowSettingsDefaults()).Name();
-        const auto changedTheme = _globals->HasTheme();
+        const auto themeInUse = GlobalSettings().CurrentTheme(*_baseWindowSettings).Name();
+        const auto changedTheme = _baseWindowSettings->HasTheme();
 
         // system: 0
         // light: 1
@@ -1413,7 +1445,6 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     // but we're going to set these fields in our constructor later on anyways.
     _globals{},
     _baseLayerProfile{},
-    _windowSettings{},
     _allProfiles{},
     _activeProfiles{},
     _warnings{}
@@ -1479,10 +1510,27 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
     _warnings = winrt::single_threaded_vector(std::move(warnings));
     _themesChangeLog = std::move(loader.userSettings.themesChangeLog);
 
-    // Initialize the WindowSettings to delegate to the GlobalAppSettings.
-    // In the future, per-window-name settings will be separate objects.
-    _windowSettings = winrt::make_self<implementation::WindowSettings>();
-    _windowSettings->Initialize(_globals);
+    _baseWindowSettings = loader.userSettings.baseWindowSettings;
+    for (auto& [name, window] : loader.userSettings.windowsByName)
+    {
+        _windows.Insert(name, *window);
+    }
+
+    // The "_quake" window is always treated specially. Even if the user never
+    // defined a "_quake" entry in their settings, we still want it to behave
+    // like a quake-mode window (docked to the top of the screen, in focus
+    // mode). If we didn't load one, synthesize a "fake" one that inherits from
+    // the base window settings but is initialized for quake mode. We keep it out
+    // of _windows so it isn't serialized back to the user's settings file.
+    if (!_windows.HasKey(L"_quake"))
+    {
+        auto quake{ winrt::make_self<implementation::WindowSettings>() };
+        quake->Name(L"_quake");
+        quake->InitializeForQuakeMode();
+        quake->AddLeastImportantParent(_baseWindowSettings);
+        quake->_FinalizeInheritance();
+        _quakeWindowSettings = std::move(quake);
+    }
 
     _resolveDefaultProfile();
     _resolveNewTabMenuProfiles();
@@ -1662,6 +1710,15 @@ Json::Value CascadiaSettings::ToJson() const
 #endif
         ;
 
+    // Merge window settings into the root JSON
+    {
+        const auto windowJson = _baseWindowSettings->ToJson();
+        for (const auto& key : windowJson.getMemberNames())
+        {
+            json[key] = windowJson[key];
+        }
+    }
+
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
     profiles[JsonKey(DefaultSettingsKey)] = _baseLayerProfile ? _baseLayerProfile->ToJson() : Json::ValueType::objectValue;
@@ -1703,27 +1760,81 @@ Json::Value CascadiaSettings::ToJson() const
     }
     json[JsonKey(ThemesKey)] = themes;
 
+    // Serialize named windows
+    if (_windows.Size() > 0)
+    {
+        Json::Value windowsList{ Json::ValueType::arrayValue };
+        for (const auto& [name, window] : _windows)
+        {
+            const auto windowImpl{ winrt::get_self<implementation::WindowSettings>(window) };
+            auto windowJson = windowImpl->ToJson();
+            windowJson["name"] = til::u16u8(name);
+            windowsList.append(windowJson);
+        }
+        json[JsonKey(WindowsListKey)] = windowsList;
+    }
+
     return json;
 }
 
 // Method Description:
 // - Resolves the "defaultProfile", which can be a profile name, to a GUID
-//   and stores it back to the globals.
+//   and stores it back to the window settings.
 void CascadiaSettings::_resolveDefaultProfile() const
 {
-    if (const auto unparsedDefaultProfile = _globals->UnparsedDefaultProfile(); !unparsedDefaultProfile.empty())
-    {
-        if (const auto profile = GetProfileByName(unparsedDefaultProfile))
-        {
-            _globals->DefaultProfile(profile.Guid());
-            return;
-        }
+    const auto firstProfileGuid = _allProfiles.GetAt(0).Guid();
 
+    if (_resolveDefaultProfileForWindow(*_baseWindowSettings, firstProfileGuid))
+    {
         _warnings.Append(SettingsLoadWarnings::MissingDefaultProfile);
     }
 
+    for (const auto& [name, window] : _windows)
+    {
+        _resolveDefaultProfileForWindow(window, firstProfileGuid);
+    }
+
+    if (_quakeWindowSettings)
+    {
+        _resolveDefaultProfileForWindow(*_quakeWindowSettings, firstProfileGuid);
+    }
+}
+
+bool CascadiaSettings::_resolveDefaultProfileForWindow(const Model::WindowSettings& window,
+                                                       const winrt::guid firstProfileGuid) const
+{
+    const auto windowImpl{ winrt::get_self<implementation::WindowSettings>(window) };
+    if (const auto unparsedDefaultProfile = windowImpl->UnparsedDefaultProfile(); !unparsedDefaultProfile.empty())
+    {
+        if (const auto profile = GetProfileByName(unparsedDefaultProfile))
+        {
+            windowImpl->DefaultProfile(profile.Guid());
+            return false;
+        }
+
+        // Use the first profile as the new default.
+        windowImpl->DefaultProfile(firstProfileGuid);
+        return true;
+    }
+
     // Use the first profile as the new default.
-    _globals->DefaultProfile(_allProfiles.GetAt(0).Guid());
+    windowImpl->DefaultProfile(firstProfileGuid);
+    return false;
+}
+
+void CascadiaSettings::_resolveNewTabMenuProfiles() const
+{
+    _resolveNewTabMenuProfilesForWindow(*_baseWindowSettings);
+
+    for (const auto& [name, window] : _windows)
+    {
+        _resolveNewTabMenuProfilesForWindow(window);
+    }
+
+    if (_quakeWindowSettings)
+    {
+        _resolveNewTabMenuProfilesForWindow(*_quakeWindowSettings);
+    }
 }
 
 // Method Description:
@@ -1733,7 +1844,7 @@ void CascadiaSettings::_resolveDefaultProfile() const
 // - Lastly, it finds any "remainingProfiles" entries and stores which profiles they
 //   represent (those that were not resolved before). It adds a warning when
 //   multiple of these entries are found.
-void CascadiaSettings::_resolveNewTabMenuProfiles() const
+void CascadiaSettings::_resolveNewTabMenuProfilesForWindow(const Model::WindowSettings& window) const
 {
     Model::RemainingProfilesEntry remainingProfilesEntry = nullptr;
 
@@ -1752,8 +1863,9 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     // "remainingProfiles" entry
     auto remainingProfiles = single_threaded_map(std::move(remainingProfilesMap));
 
+    const auto windowImpl{ winrt::get_self<implementation::WindowSettings>(window) };
     // We call a recursive helper function to process the entries
-    auto entries = _globals->NewTabMenu();
+    auto entries = windowImpl->NewTabMenu();
     _resolveNewTabMenuProfilesSet(entries, remainingProfiles, remainingProfilesEntry);
 
     // If a "remainingProfiles" entry has been found, assign to it the remaining profiles
