@@ -101,11 +101,11 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean ShouldUsePersistedLayout();
     }
 
-    [default_interface] runtimeclass WindowSettings {
-
+    [default_interface] runtimeclass WindowSettings
+    {
         String Name { get; };
-
         Guid DefaultProfile;
+
         INHERITABLE_SETTING(String, UnparsedDefaultProfile);
 
         INHERITABLE_SETTING(Int32, InitialRows);
@@ -139,7 +139,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
-        INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
         INHERITABLE_SETTING(Boolean, ScrollToZoom);
         INHERITABLE_SETTING(Boolean, ScrollToChangeOpacity);
@@ -151,6 +150,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableShellCompletionMenu);
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
+        INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
         INHERITABLE_SETTING(ThemePair, Theme);
         INHERITABLE_SETTING(Docking, DockWindow);
     }

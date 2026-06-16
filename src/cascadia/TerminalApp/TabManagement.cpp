@@ -74,7 +74,7 @@ namespace winrt::TerminalApp::implementation
             {
                 return S_FALSE;
             }
-            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, _currentWindowSettings()) };
+            const auto settings{ Settings::TerminalSettings::CreateWithNewTerminalArgs(_settings, _currentWindowSettings(), newTerminalArgs) };
 
             // Try to handle auto-elevation
             if (_maybeElevate(newTerminalArgs, settings, profile))
@@ -101,6 +101,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_InitializeTab(winrt::com_ptr<Tab> newTabImpl, uint32_t insertPosition)
     {
         newTabImpl->Initialize();
+
+        // Push the current settings into the tab on when it's initialized.
+        // _RefreshUIForSettingsReload will also do this when settings are hot
+        // reloaded, but we need this here to make sure we pass our current
+        // window settings to the tab too. 
+        newTabImpl->UpdateSettings(_settings, _currentWindowSettings());
 
         // If insert position is not passed, calculate it
         if (insertPosition == -1)

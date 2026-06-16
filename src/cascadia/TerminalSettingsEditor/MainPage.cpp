@@ -75,9 +75,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return icon;
     }
 
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile, appSettings, dispatcher);
+        return winrt::make<implementation::ProfileViewModel>(profile, appSettings, windowSettings, dispatcher);
     }
 
     static ProfileSubPage ProfileSubPageFromBreadcrumb(BreadcrumbSubPage subPage)
@@ -99,9 +99,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    MainPage::MainPage(const CascadiaSettings& settings) :
+    MainPage::MainPage(const CascadiaSettings& settings, const Model::WindowSettings& windowSettings) :
         _settingsSource{ settings },
         _settingsClone{ settings.Copy() },
+        _windowSettingsSource{ windowSettings },
+        _windowSettingsClone{ _settingsClone.WindowSettingsDefaults() },
         _profileVMs{ single_threaded_observable_vector<Editor::ProfileViewModel>() }
     {
         InitializeComponent();
@@ -198,10 +200,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - settings - the new settings source
     // Return value:
     // - <none>
-    void MainPage::UpdateSettings(const Model::CascadiaSettings& settings)
+    void MainPage::UpdateSettings(const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings)
     {
         _settingsSource = settings;
         _settingsClone = settings.Copy();
+        _windowSettingsSource = windowSettings;
+        _windowSettingsClone = _settingsClone.WindowSettingsDefaults();
 
         _UpdateBackgroundForMica();
 
@@ -375,7 +379,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // GH#19927 - Theme the search box's internal popup now that the
         // visual tree is ready and control templates are applied
-        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_settingsSource.WindowSettingsDefaults());
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_windowSettingsSource);
         const auto hasThemeForSettings{ theme.Settings() != nullptr };
         const auto requestedTheme = hasThemeForSettings ? theme.Settings().RequestedTheme() : theme.RequestedTheme();
         _setThemeOnPopups(SettingsSearchBox(), requestedTheme);
@@ -643,7 +647,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // lazy load profile defaults VM
                 if (!_profileDefaultsVM)
                 {
-                    _profileDefaultsVM = _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, Dispatcher());
+                    _profileDefaultsVM = _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone, _windowSettingsClone, Dispatcher());
                     _profileDefaultsVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
                     _profileDefaultsVM.IsBaseLayer(true);
                 }
@@ -671,7 +675,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (*clickedItemTag == globalAppearanceTag)
             {
-                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings(), _settingsClone.WindowSettingsDefaults()), *this, elementToFocus));
+                contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<NavigateToPageArgs>(winrt::make<GlobalAppearanceViewModel>(_settingsClone.GlobalSettings(), _windowSettingsClone), *this, elementToFocus));
                 _breadcrumbs.Append(winrt::make<Breadcrumb>(vm, RS_(L"Nav_Appearance/Content"), BreadcrumbSubPage::None));
             }
             else if (*clickedItemTag == addProfileTag)
@@ -869,7 +873,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::ResetButton_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
     {
-        UpdateSettings(_settingsSource);
+        UpdateSettings(_settingsSource, _windowSettingsSource);
     }
 
     void MainPage::BreadcrumbBar_ItemClicked(const Microsoft::UI::Xaml::Controls::BreadcrumbBar& /*sender*/, const Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs& args)
@@ -903,7 +907,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (!profile.Deleted())
             {
-                auto profileVM = _viewModelForProfile(profile, _settingsClone, Dispatcher());
+                auto profileVM = _viewModelForProfile(profile, _settingsClone, _windowSettingsClone, Dispatcher());
                 profileVM.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
                 auto navItem = _CreateProfileNavViewItem(profileVM);
                 _menuItemSource.Append(navItem);
@@ -961,7 +965,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
         const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
-        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone, Dispatcher()) };
+        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone, _windowSettingsClone, Dispatcher()) };
         profileViewModel.SetupAppearances(_colorSchemesPageVM.AllColorSchemes());
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
 
@@ -1149,7 +1153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_settingsSource.WindowSettingsDefaults());
+        const auto theme = _settingsSource.GlobalSettings().CurrentTheme(_windowSettingsSource);
         const auto hasThemeForSettings{ theme.Settings() != nullptr };
         const auto appTheme = theme.RequestedTheme();
         const auto requestedTheme = (hasThemeForSettings) ? theme.Settings().RequestedTheme() : appTheme;

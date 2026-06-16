@@ -281,7 +281,12 @@ winrt::Microsoft::Terminal::Settings::Model::Theme GlobalAppSettings::CurrentThe
                               winrt::Windows::UI::Xaml::ElementTheme::Dark :
                               winrt::Windows::UI::Xaml::ElementTheme::Light;
 
-    const auto& themePair{ window.Theme() };
+    const auto themePair = window ? window.Theme() : nullptr;
+    if (!themePair)
+    {
+        return nullptr;
+    }
+
     switch (requestedTheme)
     {
     case winrt::Windows::UI::Xaml::ElementTheme::Light:
