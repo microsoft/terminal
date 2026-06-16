@@ -130,7 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"Hidden")
             {
-                _NotifyChanges(L"AccessibleStateDescription");
+                _NotifyChanges(L"AccessibleStateDescription", L"ShowHiddenBadge");
             }
         });
 
@@ -363,6 +363,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
         }
         return {};
+    }
+
+    // Whether the "hidden" badge should be shown for this profile. The orphaned
+    // badge takes precedence, so the hidden badge is suppressed when the profile
+    // is also orphaned. This keeps a single badge visible at a time on the
+    // Profiles landing page.
+    bool ProfileViewModel::ShowHiddenBadge() const
+    {
+        return Hidden() && !Orphaned();
     }
 
     hstring ProfileViewModel::TabTitlePreview() const

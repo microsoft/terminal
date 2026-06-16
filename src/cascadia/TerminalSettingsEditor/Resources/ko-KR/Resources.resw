@@ -117,18 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
-    <value>새 빈 프로필</value>
-    <comment>Button label that creates a new profile with default settings.</comment>
-  </data>
-  <data name="AddProfile_Duplicate.Header" xml:space="preserve">
-    <value>프로필 복제</value>
-    <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
-  </data>
-  <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
-    <value>중복</value>
-    <comment>Button label that duplicates the selected profile and navigates to the duplicate's page.</comment>
-  </data>
   <data name="ColorScheme_InboxSchemeDuplicate.Header" xml:space="preserve">
     <value>이 색 구성표는 기본 제공 설정 또는 설치된 확장의 일부입니다.</value>
   </data>
@@ -1292,10 +1280,6 @@
   <data name="Settings_UnsavedSettingsWarning.Text" xml:space="preserve">
     <value>⚠ 저장되지 않은 변경 내용이 있습니다.</value>
     <comment>{Locked="⚠"} A disclaimer that appears when the unsaved changes to the settings are present.</comment>
-  </data>
-  <data name="Nav_AddNewProfile.Content" xml:space="preserve">
-    <value>새 프로필 추가</value>
-    <comment>Header for the "add new" menu item. This navigates to the page where users can add a new profile.</comment>
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>프로필</value>
