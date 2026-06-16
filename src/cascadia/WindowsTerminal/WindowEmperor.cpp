@@ -297,8 +297,8 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
 }
 
 // Public entry point used by in-process callers (e.g. AppHost reacting to a
-// TerminalPage RequestOpenWindow event) to open or summon a named window —
-// restoring its persisted workspace if one exists — without spawning a second
+// TerminalPage RequestOpenWindow event) to open or summon a named window -
+// restoring its persisted workspace if one exists - without spawning a second
 // wt.exe. Bypasses the commandline parser entirely.
 void WindowEmperor::OpenWindow(const winrt::hstring& name)
 {

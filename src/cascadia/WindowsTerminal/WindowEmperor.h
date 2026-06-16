@@ -47,10 +47,7 @@ public:
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
-
-    // In-process entry point for opening (or summoning) a named window and
-    // restoring its persisted workspace if one exists. Equivalent to
-    // `wt -w <name>` without spawning a new process.
+    // OpenWindow is used for opening a new window or summoning an existing window by name.
     void OpenWindow(const winrt::hstring& name);
 
 private:
