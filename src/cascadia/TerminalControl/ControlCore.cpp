@@ -21,13 +21,13 @@
 #include "ControlCore.g.cpp"
 #include "SelectionColor.g.cpp"
 
-using namespace ::Microsoft::Console;
-using namespace ::Microsoft::Console::Types;
-using namespace ::Microsoft::Console::VirtualTerminal;
-using namespace ::Microsoft::Terminal::Core;
-using namespace winrt::Windows::Graphics::Display;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::ApplicationModel::DataTransfer;
+      namespace ::Microsoft::Console;
+      namespace ::Microsoft::Console::Types;
+      namespace ::Microsoft::Console::VirtualTerminal;
+      namespace ::Microsoft::Terminal::Core;
+      namespace winrt::Windows::Graphics::Display;
+      namespace winrt::Windows::System;
+      namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
