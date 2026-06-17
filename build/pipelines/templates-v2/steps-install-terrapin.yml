@@ -1,6 +1,32 @@
+parameters:
+- name: useNuget
+  type: boolean
+  default: true
+- name: nugetFeed
+  type: string
+  default: unspecified
+
 steps:
+- ${{ if and(eq(parameters.useNuget, true), eq(parameters.nugetFeed, 'unspecified')) }}:
+  - "useNuget=true but nugetFeed was not specified": error
 - pwsh: |-
-    nuget install -source "https://pkgs.dev.azure.com/microsoft/_packaging/WindowsTerminal/nuget/v3/index.json" TerrapinRetrievalTool -Prerelease -OutputDirectory _trt
-    $TerrapinRetrievalToolPath = (Get-Item _trt\TerrapinRetrievalTool.*\win-x64\TerrapinRetrievalTool.exe).FullName
-    Write-Host "##vso[task.setvariable variable=X_VCPKG_ASSET_SOURCES]x-script,${TerrapinRetrievalToolPath} -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u None -p {url} -s {sha512} -d {dst};x-block-origin"
-  displayName: Set up the Terrapin Retrieval Tool (vcpkg cache)
+    Write-Host "##vso[task.setvariable variable=X_VCPKG_ASSET_SOURCES]INVALID"
+    $TerrapinRetrievalTool = Get-ChildItem C:\nugettools\terrapinretrievaltool -Filter TerrapinRetrievalTool.exe -ErrorAction:Ignore -Recurse
+    If ($null -Ne $TerrapinRetrievalTool) {
+      $TerrapinRetrievalToolPath = $TerrapinRetrievalTool.FullName
+      Write-Host "##vso[task.setvariable variable=X_VCPKG_ASSET_SOURCES]x-script,${TerrapinRetrievalToolPath} -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u None -p {url} -s {sha512} -d {dst};x-block-origin"
+    }
+  displayName: Detect installed Terrapin Retrieval Tool
+
+- ${{ if eq(parameters.useNuget, true) }}:
+  - pwsh: |-
+      nuget install -source "${{ parameters.nugetFeed }}" TerrapinRetrievalTool -Prerelease -OutputDirectory _trt
+      $TerrapinRetrievalToolPath = (Get-Item _trt\TerrapinRetrievalTool.*\win-x64\TerrapinRetrievalTool.exe).FullName
+      Write-Host "##vso[task.setvariable variable=X_VCPKG_ASSET_SOURCES]x-script,${TerrapinRetrievalToolPath} -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u None -p {url} -s {sha512} -d {dst};x-block-origin"
+    displayName: Install the Terrapin Retrieval Tool (vcpkg cache)
+    condition: and(succeeded(), eq(variables['X_VCPKG_ASSET_SOURCES'], 'INVALID'))
+
+- script: |-
+    EXIT 1
+  displayName: Fail the build if Terrapin was not found
+  condition: and(succeeded(), eq(variables['X_VCPKG_ASSET_SOURCES'], 'INVALID'))

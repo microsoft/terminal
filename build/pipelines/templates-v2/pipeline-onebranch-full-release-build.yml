@@ -142,6 +142,10 @@ extends:
               beforeBuildSteps: # Right before we build, lay down the universal package and localizations
                 - template: ./build/pipelines/templates-v2/steps-setup-versioning.yml@self
 
+                - template: ./build/pipelines/templates-v2/steps-install-terrapin.yml@self
+                  parameters:
+                    useNuget: false
+
                 - task: UniversalPackages@0
                   displayName: Download terminal-internal Universal Package
                   inputs:
