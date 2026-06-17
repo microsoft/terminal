@@ -28,25 +28,11 @@
             <Style x:Key="ActionRowSubtleButtonStyle"
                    BasedOn="{StaticResource DefaultButtonStyle}"
                    TargetType="Button">
-                <Setter Property="MinWidth" Value="32" />
-                <Setter Property="Width" Value="32" />
-                <Setter Property="Height" Value="32" />
+                <Setter Property="MinWidth" Value="28" />
+                <Setter Property="Width" Value="28" />
+                <Setter Property="Height" Value="28" />
                 <Setter Property="Padding" Value="0" />
                 <Setter Property="VerticalAlignment" Value="Center" />
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="BorderBrush" Value="Transparent" />
-            </Style>
-
-            <!--
-                FlyoutPresenter style with no internal padding so a full-width Border
-                separator inside the flyout can reach the flyout's left/right edges.
-            -->
-            <Style x:Key="EdgeToEdgeFlyoutPresenterStyle"
-                   BasedOn="{StaticResource DefaultFlyoutPresenterStyle}"
-                   TargetType="FlyoutPresenter">
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled" />
-                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
             </Style>
 
             <Style x:Key="ActionRowItemContainerStyle"
@@ -88,15 +74,29 @@
             </Style>
 
             <!--  Templates  -->
-            <DataTemplate x:Key="ViewAllKeyChordsFlyoutSeparatorTemplate">
-                <Border Height="1"
-                        Margin="0,4,0,4"
-                        Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
-            </DataTemplate>
+            <DataTemplate x:Key="KeyChordRowTemplate"
+                          x:DataType="local:KeyChordViewModel">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <!--  key chord  -->
+                        <ColumnDefinition Width="*" />
+                        <!--  pencil (edit) button  -->
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-            <DataTemplate x:Key="ViewAllKeyChordsFlyoutItemTemplate">
-                <local:KeyChordVisual Margin="{ThemeResource MenuFlyoutItemThemePaddingNarrow}"
-                                      HorizontalAlignment="Right" />
+                    <local:KeyChordVisual Grid.Column="0"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          KeyChord="{x:Bind CurrentKeys, Mode=OneWay}" />
+
+                    <Button Grid.Column="1"
+                            AutomationProperties.Name="{x:Bind EditButtonName}"
+                            Click="{x:Bind RequestEdit}"
+                            Style="{StaticResource ActionRowSubtleButtonStyle}">
+                        <FontIcon FontSize="14"
+                                  Glyph="&#xE70F;" />
+                    </Button>
+                </Grid>
             </DataTemplate>
 
             <DataTemplate x:Key="CommandTemplate"
@@ -106,32 +106,30 @@
                     <Grid.ColumnDefinitions>
                         <!--  command name  -->
                         <ColumnDefinition Width="*" />
-                        <!--  key chord  -->
+                        <!--  key chord(s)  -->
                         <ColumnDefinition Width="Auto" />
-                        <!--  "+N" / "..." button  -->
-                        <ColumnDefinition Width="36" />
                     </Grid.ColumnDefinitions>
 
                     <!--  Command Name  -->
                     <TextBlock Grid.Column="0"
+                               VerticalAlignment="{x:Bind NameVerticalAlignment, Mode=OneWay}"
                                Style="{StaticResource ActionRowNameTextStyle}"
                                Text="{x:Bind DisplayName, Mode=OneWay}" />
 
-                    <!--  Key Chord  -->
-                    <local:KeyChordVisual Grid.Column="1"
-                                          HorizontalAlignment="Right"
-                                          KeyChord="{x:Bind FirstKeyChord, Mode=OneWay}" />
-
-                    <!--  "+N" button + flyout listing the additional key chords  -->
-                    <Button x:Uid="Actions_AdditionalKeyChordsButton"
-                            Grid.Column="2"
-                            AutomationProperties.Name="{x:Bind AdditionalKeyChordTooltipText, Mode=OneWay}"
-                            Click="AdditionalKeyChordsButton_Click"
-                            Style="{StaticResource ActionRowSubtleButtonStyle}"
-                            Visibility="{x:Bind HasAdditionalKeyChords, Mode=OneWay}">
-                        <TextBlock FontSize="12"
-                                   Text="{x:Bind AdditionalKeyChordCountText, Mode=OneWay}" />
-                    </Button>
+                    <!--  Key chords, stacked vertically (empty when there are none)  -->
+                    <ItemsControl Grid.Column="1"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  IsTabStop="False"
+                                  ItemTemplate="{StaticResource KeyChordRowTemplate}"
+                                  ItemsSource="{x:Bind KeyChordList, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical"
+                                            Spacing="4" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
                 </Grid>
             </DataTemplate>
         </ResourceDictionary>
@@ -142,11 +140,11 @@
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">
             <HyperlinkButton x:Uid="Actions_Disclaimer"
-                             Margin="-12,0,0,0"
+                             Margin="-10,0,0,0"
                              NavigateUri="https://go.microsoft.com/fwlink/?linkid=2341386" />
             <!--  Add New Button  -->
             <Button x:Name="AddNewButton"
-                    Margin="0,32,0,0"
+                    Margin="2,0,0,0"
                     Click="{x:Bind ViewModel.AddNewCommand}"
                     Style="{StaticResource AccentButtonStyle}">
                 <Button.Content>

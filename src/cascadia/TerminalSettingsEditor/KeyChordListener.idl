@@ -7,6 +7,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         KeyChordListener();
 
+        void FocusInput();
+
         Microsoft.Terminal.Control.KeyChord Keys;
         static Windows.UI.Xaml.DependencyProperty KeysProperty { get; };
     }

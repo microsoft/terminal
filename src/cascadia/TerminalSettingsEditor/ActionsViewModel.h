@@ -76,9 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::hstring FirstKeyChordText() const;
         Control::KeyChord FirstKeyChord() const noexcept;
         bool HasNoKeyChords() const noexcept;
-        bool HasAdditionalKeyChords() const noexcept;
-        winrt::hstring AdditionalKeyChordCountText() const;
-        winrt::hstring AdditionalKeyChordTooltipText() const;
+        Windows::UI::Xaml::VerticalAlignment NameVerticalAlignment() const noexcept;
 
         winrt::hstring ID() const noexcept;
         bool IsUserAction() const noexcept;
@@ -231,6 +229,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Control::KeyChord CurrentKeys() const noexcept;
 
         void ToggleEditMode();
+        void RequestEdit();
         void AcceptChanges();
         void CancelChanges();
         void DeleteKeyChord();
@@ -250,6 +249,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(int32_t, Index, 0);
 
     public:
+        til::typed_event<Editor::KeyChordViewModel, Editor::KeyChordViewModel> EditRequested;
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> AddKeyChordRequested;
         til::typed_event<Editor::KeyChordViewModel, Editor::ModifyKeyChordEventArgs> ModifyKeyChordRequested;
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> DeleteKeyChordRequested;
