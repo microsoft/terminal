@@ -17,12 +17,17 @@ namespace Microsoft.Terminal.Settings.Editor
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AllowHeadless);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DebugFeaturesEnabled);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DisablePartialInvalidation);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
 
         IInspectable CurrentTextMeasurement;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TextMeasurementList { get; };
 
         IInspectable CurrentAmbiguousWidth;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AmbiguousWidthList { get; };
+
+        IInspectable CurrentGraphicsAPI;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> GraphicsAPIList { get; };
     }
 
     [default_interface] runtimeclass Compatibility : Windows.UI.Xaml.Controls.Page

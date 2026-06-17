@@ -24,11 +24,15 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Spacing="2"
-                Style="{StaticResource SettingsStackStyle}">
+    <StackPanel Style="{StaticResource SettingsStackStyle}">
+
         <!--  Allow Headless  -->
         <local:SettingsCard x:Name="AllowHeadless"
-                            x:Uid="Globals_AllowHeadless">
+                            x:Uid="Globals_AllowHeadless"
+                            Margin="0,20,0,0">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE756;" />
+            </local:SettingsCard.HeaderIcon>
             <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingsCard>
@@ -36,6 +40,9 @@
         <!--  Text Measurement  -->
         <local:SettingsCard x:Name="TextMeasurement"
                             x:Uid="Globals_TextMeasurement">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xEB41;" />
+            </local:SettingsCard.HeaderIcon>
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
@@ -46,6 +53,9 @@
         <!--  Ambiguous Width  -->
         <local:SettingsCard x:Name="AmbiguousWidth"
                             x:Uid="Globals_AmbiguousWidth">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE88D;" />
+            </local:SettingsCard.HeaderIcon>
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.AmbiguousWidthList}"
@@ -53,17 +63,43 @@
                       Style="{StaticResource ComboBoxSettingStyle}" />
         </local:SettingsCard>
 
-        <!--  Debug Features  -->
-        <local:SettingsCard x:Name="DebugFeaturesEnabled"
-                            x:Uid="Globals_DebugFeaturesEnabled"
-                            Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
-            <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
+        <!--  Section: Rendering  -->
+        <TextBlock x:Uid="Compatibility_Section_Rendering"
+                   Style="{StaticResource TextBlockSubHeaderStyle}" />
+        <!--  Graphics API  -->
+        <local:SettingsCard x:Name="GraphicsAPI"
+                            x:Uid="Globals_GraphicsAPI">
+            <ComboBox AutomationProperties.AccessibilityView="Content"
+                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                      ItemsSource="{x:Bind ViewModel.GraphicsAPIList}"
+                      SelectedItem="{x:Bind ViewModel.CurrentGraphicsAPI, Mode=TwoWay}"
+                      Style="{StaticResource ComboBoxSettingStyle}" />
+        </local:SettingsCard>
+
+        <!--  Disable Partial Invalidation  -->
+        <local:SettingsCard x:Name="DisablePartialInvalidation"
+                            x:Uid="Globals_DisablePartialInvalidation">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.DisablePartialInvalidation, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
         </local:SettingsCard>
+
+        <!--  Software Rendering  -->
+        <local:SettingsCard x:Name="SoftwareRendering"
+                            x:Uid="Globals_SoftwareRendering">
+            <ToggleSwitch IsOn="{x:Bind ViewModel.SoftwareRendering, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
+
+        <!--  Section: Reset  -->
+        <TextBlock x:Uid="Compatibility_Section_Troubleshooting"
+                   Style="{StaticResource TextBlockSubHeaderStyle}" />
 
         <!--  Reset Application State  -->
         <local:SettingsCard x:Name="ResetApplicationState"
                             x:Uid="Settings_ResetApplicationState">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xEA99;" />
+            </local:SettingsCard.HeaderIcon>
             <Button x:Uid="Settings_ResetApplicationStateButton"
                     Style="{StaticResource DeleteButtonStyle}">
                 <Button.Flyout>
@@ -86,6 +122,9 @@
         <!--  Reset to Default Settings  -->
         <local:SettingsCard x:Name="ResetToDefaultSettings"
                             x:Uid="Settings_ResetToDefaultSettings">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE777;" />
+            </local:SettingsCard.HeaderIcon>
             <Button x:Uid="Settings_ResetToDefaultSettingsButton"
                     Style="{StaticResource DeleteButtonStyle}">
                 <Button.Flyout>
@@ -104,5 +143,15 @@
             </Button>
         </local:SettingsCard>
 
+        <!--  Debug Features  -->
+        <local:SettingsCard x:Name="DebugFeaturesEnabled"
+                            x:Uid="Globals_DebugFeaturesEnabled"
+                            Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xEBE8;" />
+            </local:SettingsCard.HeaderIcon>
+            <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
+                          Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+        </local:SettingsCard>
     </StackPanel>
 </Page>
