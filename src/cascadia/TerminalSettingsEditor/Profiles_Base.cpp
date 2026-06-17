@@ -22,7 +22,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
 
         AppearanceNavigator().Header(box_value(RS_(L"Profile_Appearance/Header")));
+        AppearanceNavigator().Description(box_value(RS_(L"Profile_AppearanceNavigator/Description")));
         TerminalNavigator().Header(box_value(RS_(L"Profile_Terminal/Header")));
+        TerminalNavigator().Description(box_value(RS_(L"Profile_TerminalNavigator/Description")));
         AdvancedNavigator().Header(box_value(RS_(L"Profile_Advanced/Header")));
     }
 

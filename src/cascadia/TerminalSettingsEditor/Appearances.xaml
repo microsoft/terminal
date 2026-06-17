@@ -72,8 +72,7 @@
         <TextBlock x:Uid="Profile_TextHeader"
                    Margin="0,0,0,4"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
-        <StackPanel Spacing="2"
-                    Style="{StaticResource PivotStackStyle}">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Color Scheme  -->
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingsExpander x:Name="ColorScheme"
@@ -267,50 +266,58 @@
                 </local:SettingsExpander.ItemsHeader>
             </local:SettingsExpander>
             <!--  Font Face  -->
-            <local:SettingsCard x:Name="FontFaceContainer"
-                                x:Uid="Profile_FontFace"
-                                Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+            <!--
+                Grouped with its diagnostic cards so collapsed warnings don't add phantom spacing.
+                Manually adding Margin to work around WinUI 2 adding spacing for hidden elements.
+            -->
+            <StackPanel>
+                <local:SettingsCard x:Name="FontFaceContainer"
+                                    x:Uid="Profile_FontFace"
+                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
 
-                <StackPanel Margin="0,8,0,0">
-                    <AutoSuggestBox x:Uid="Profile_FontFaceBox"
-                                    GotFocus="FontFaceBox_GotFocus"
-                                    ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
-                                    ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
-                                    LostFocus="FontFaceBox_LostFocus"
-                                    QuerySubmitted="FontFaceBox_QuerySubmitted"
-                                    Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
-                                    TextBoxStyle="{StaticResource TextBoxSettingStyle}"
-                                    TextChanged="FontFaceBox_TextChanged"
-                                    UpdateTextOnSelect="False" />
-                    <CheckBox x:Name="ShowAllFontsCheckbox"
-                              x:Uid="Profile_FontFaceShowAllFonts"
-                              IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
-                </StackPanel>
-            </local:SettingsCard>
-            <local:SettingsCard x:Name="MissingFontFaces"
-                                x:Uid="Profile_MissingFontFaces"
-                                Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
-                                Description="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
-                                Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.MissingFontFaces), Mode=OneWay}">
-                <local:SettingsCard.HeaderIcon>
-                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                              FontSize="{StaticResource SettingContainerIconFontSize}"
-                              Foreground="{ThemeResource SettingContainerErrorSeverityIconBackground}"
-                              Glyph="{StaticResource SettingContainerErrorIconGlyph}" />
-                </local:SettingsCard.HeaderIcon>
-            </local:SettingsCard>
-            <local:SettingsCard x:Name="ProportionalFontFaces"
-                                x:Uid="Profile_ProportionalFontFaces"
-                                Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
-                                Description="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
-                                Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.ProportionalFontFaces), Mode=OneWay}">
-                <local:SettingsCard.HeaderIcon>
-                    <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                              FontSize="{StaticResource SettingContainerIconFontSize}"
-                              Foreground="{ThemeResource SettingContainerWarningSeverityIconBackground}"
-                              Glyph="{StaticResource SettingContainerWarningIconGlyph}" />
-                </local:SettingsCard.HeaderIcon>
-            </local:SettingsCard>
+                    <StackPanel Margin="0,8,0,0">
+                        <AutoSuggestBox x:Uid="Profile_FontFaceBox"
+                                        GotFocus="FontFaceBox_GotFocus"
+                                        ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                        ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
+                                        LostFocus="FontFaceBox_LostFocus"
+                                        QuerySubmitted="FontFaceBox_QuerySubmitted"
+                                        Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
+                                        TextBoxStyle="{StaticResource TextBoxSettingStyle}"
+                                        TextChanged="FontFaceBox_TextChanged"
+                                        UpdateTextOnSelect="False" />
+                        <CheckBox x:Name="ShowAllFontsCheckbox"
+                                  x:Uid="Profile_FontFaceShowAllFonts"
+                                  IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
+                    </StackPanel>
+                </local:SettingsCard>
+                <local:SettingsCard x:Name="MissingFontFaces"
+                                    x:Uid="Profile_MissingFontFaces"
+                                    Margin="0,6,0,0"
+                                    Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
+                                    Description="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.MissingFontFaces), Mode=OneWay}">
+                    <local:SettingsCard.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="{StaticResource SettingContainerIconFontSize}"
+                                  Foreground="{ThemeResource SettingContainerErrorSeverityIconBackground}"
+                                  Glyph="{StaticResource SettingContainerErrorIconGlyph}" />
+                    </local:SettingsCard.HeaderIcon>
+                </local:SettingsCard>
+                <local:SettingsCard x:Name="ProportionalFontFaces"
+                                    x:Uid="Profile_ProportionalFontFaces"
+                                    Margin="0,6,0,0"
+                                    Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
+                                    Description="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
+                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.ProportionalFontFaces), Mode=OneWay}">
+                    <local:SettingsCard.HeaderIcon>
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                  FontSize="{StaticResource SettingContainerIconFontSize}"
+                                  Foreground="{ThemeResource SettingContainerWarningSeverityIconBackground}"
+                                  Glyph="{StaticResource SettingContainerWarningIconGlyph}" />
+                    </local:SettingsCard.HeaderIcon>
+                </local:SettingsCard>
+            </StackPanel>
 
             <!--  Font Size  -->
             <local:SettingsCard x:Name="FontSize"
@@ -481,8 +488,7 @@
         <!--  Grouping: Cursor  -->
         <TextBlock x:Uid="Profile_CursorHeader"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
-        <StackPanel Spacing="2"
-                    Style="{StaticResource PivotStackStyle}">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Cursor Shape  -->
             <local:SettingsCard x:Name="CursorShape"
                                 x:Uid="Profile_CursorShape">
@@ -496,7 +502,7 @@
             <!--  Cursor Height  -->
             <local:SettingsCard x:Name="CursorHeight"
                                 x:Uid="Profile_CursorHeight"
-                                Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
+                                IsEnabled="{x:Bind IsVintageCursor, Mode=OneWay}">
                 <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -535,13 +541,13 @@
         <!--  Grouping: Background  -->
         <TextBlock x:Uid="Profile_BackgroundHeader"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
-        <StackPanel Spacing="2"
-                    Style="{StaticResource PivotStackStyle}">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Background Image  -->
             <local:SettingsExpander x:Name="BackgroundImageContainer"
                                     x:Uid="Profile_BackgroundImage">
                 <local:SettingsExpander.Content>
-                    <StackPanel Orientation="Vertical">
+                    <StackPanel Margin="0,8,0,0"
+                                Orientation="Vertical">
                         <StackPanel Orientation="Horizontal"
                                     Spacing="8">
                             <TextBox x:Uid="Profile_BackgroundImageBox"
@@ -780,8 +786,7 @@
         <!--  Grouping: Text Formatting  -->
         <TextBlock x:Uid="Appearance_TextFormattingHeader"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
-        <StackPanel Spacing="2"
-                    Style="{StaticResource PivotStackStyle}">
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Intense is bold, bright  -->
             <local:SettingsCard x:Name="IntenseTextStyle"
                                 x:Uid="Appearance_IntenseTextStyle">

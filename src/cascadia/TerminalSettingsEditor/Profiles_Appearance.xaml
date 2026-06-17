@@ -83,8 +83,7 @@
             <!--  Grouping: Transparency  -->
             <TextBlock x:Uid="Profile_TransparencyHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <StackPanel Spacing="2"
-                        Style="{StaticResource PivotStackStyle}">
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Opacity  -->
                 <local:SettingsCard x:Name="Opacity"
                                     x:Uid="Profile_Opacity">
@@ -116,8 +115,7 @@
             <!--  Grouping: Window  -->
             <TextBlock x:Uid="Profile_WindowHeader"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
-            <StackPanel Spacing="2"
-                        Style="{StaticResource PivotStackStyle}">
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Padding  -->
                 <local:SettingsExpander x:Name="Padding"
                                         x:Uid="Profile_Padding">
