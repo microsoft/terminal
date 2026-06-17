@@ -194,6 +194,39 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             File            = $filename
         }
     }
+    elseif ($filename -eq "Profiles_Base.xaml")
+    {
+        # The navigator cards below are special:
+        # - no UID because we want to reuse existing resources to reduce localization burden
+        # - when selected, we want to navigate to the subpage (not focus the navigator)
+        $navigators = @(
+            @{ Resource = "Profile_Appearance/Header"; SubPage = "BreadcrumbSubPage::Profile_Appearance" }
+            @{ Resource = "Profile_Terminal/Header";   SubPage = "BreadcrumbSubPage::Profile_Terminal" }
+            @{ Resource = "Profile_Advanced/Header";   SubPage = "BreadcrumbSubPage::Profile_Advanced" }
+        )
+        foreach ($nav in $navigators)
+        {
+            # Build-time entry: searchable from the profile defaults context
+            $entries += [pscustomobject]@{
+                ResourceName         = $nav.Resource
+                ParentPage           = $pageClass
+                NavigationParam      = $ClassMap[$pageClass].NavigationParam
+                SubPage              = $nav.SubPage
+                ElementName          = ""
+                SecondaryResourceName = "Nav_ProfileDefaults/Content"
+                File                 = $filename
+            }
+            # Partial entry: instantiated per profile at runtime (the navigation arg is the profile VM).
+            $entries += [pscustomobject]@{
+                ResourceName    = $nav.Resource
+                ParentPage      = $pageClass
+                NavigationParam = $null
+                SubPage         = $nav.SubPage
+                ElementName     = ""
+                File            = $filename
+            }
+        }
+    }
 
     # Iterate over all local:SettingsCard and local:SettingsExpander nodes
     foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
@@ -287,8 +320,9 @@ function FormatEntry($e)
     $formattedResourceName = 'USES_RESOURCE(L"{0}")' -f $e.ResourceName
     $formattedNavigationParam = 'L"{0}"' -f $e.NavigationParam # null Navigation param resolves to empty string
     $formattedElementName = 'L"{0}"' -f $e.ElementName
+    $formattedSecondary = $e.SecondaryResourceName ? (', USES_RESOURCE(L"{0}")' -f $e.SecondaryResourceName) : ''
 
-    return "            IndexEntry{{ {0}, {1}, {2}, {3} }}, // {4}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $e.File)
+    return "            IndexEntry{{ {0}, {1}, {2}, {3}{5} }}, // {4}" -f ($formattedResourceName, $formattedNavigationParam, $e.SubPage, $formattedElementName, $e.File, $formattedSecondary)
 }
 
 function FormatEntries($es) {
@@ -352,6 +386,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         
         // x:Name of the SettingContainer to navigate to on the page (i.e. "DefaultProfile")
         wil::zwstring_view ElementName;
+
+        // Optional resource name for a secondary label shown beneath the primary label in
+        // search results (i.e. "Nav_ProfileDefaults/Content" for the profile-defaults page links).
+        // Empty for most entries.
+        // NOTE: wrapped in USES_RESOURCE() (when set) for the same compile-time validation as ResourceName.
+        wil::zwstring_view SecondaryResourceName;
     };
 
     const std::array<IndexEntry, $($buildTimeEntries.Count)>& LoadBuildTimeIndex();

@@ -569,7 +569,7 @@
     <value>Permitir que OSC 777 (Desktop Notification) muestre notificaciones del sistema</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>Cuando se habilita, las aplicaciones pueden enviar la secuencia de escape de OSC 777 para desencadenar una notificación de escritorio con un título y un cuerpo personalizados.</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -930,7 +930,7 @@
     <value>Ejecutable utilizado en el perfil.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Examinar...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1101,21 +1101,13 @@
     <value>La fuente seleccionada no tiene características de fuente.</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>Ocultar perfil de la lista desplegable</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>Si se habilita, el perfil no aparecerá en la lista de perfiles. Se puede usar para ocultar los perfiles predeterminados y los perfiles generados dinámicamente, al dejarlos en el archivo de configuración.</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
-  </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
+  <data name="Profile_Elevate.Content" xml:space="preserve">
     <value>Ejecutar este perfil como Administrador</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>Si se habilita, el perfil se abrirá automáticamente en una ventana de terminal Administración. Si la ventana actual ya se está ejecutando como administrador, se abrirá en esta ventana.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>Tamaño del historial</value>
@@ -1213,11 +1205,7 @@
     <value>Directorio de inicio</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>El directorio en el que se inicia el perfil cuando se carga.</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Examinar...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
