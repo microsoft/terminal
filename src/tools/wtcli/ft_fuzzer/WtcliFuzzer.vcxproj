@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{C5FAE84E-310E-4CBC-8242-5AD6A37FDAA5}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>WtcliFuzzer</RootNamespace>
+    <ProjectName>Wtcli.Fuzzer</ProjectName>
+    <TargetName>WtcliFuzzer</TargetName>
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="..\..\..\common.build.pre.props" />
+  <Import Project="..\..\..\common.nugetversions.props" />
+  <ItemGroup>
+    <ClInclude Include="precomp.h" />
+    <ClInclude Include="..\wtcli_functions.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ClCompile Include="fuzzmain.cpp" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <EnableASAN>true</EnableASAN>
+    <EnableFuzzer>true</EnableFuzzer>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Fuzzing'">
+    <!-- Only link the fuzzer runtime when building for Fuzzing. In non-Fuzzing
+         builds a normal main() is used for manual testing with input files. -->
+    <ClCompile>
+      <PreprocessorDefinitions>_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>clang_rt.fuzzer_MT-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y "$(VCToolsInstallDir)bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll" "$(OutDir)"</Command>
+      <Message>Copy the required ASan runtime DLL to the output directory.</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="WtcliFuzzer-OneFuzzConfig.json" />
+  </ItemGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="..\..\..\common.build.post.props" />
+  <Import Project="..\..\..\common.nugetversions.targets" />
+</Project>

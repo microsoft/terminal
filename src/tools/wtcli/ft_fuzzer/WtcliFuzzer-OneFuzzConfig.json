@@ -1,0 +1,39 @@
+{
+  "configVersion": 3,
+  "entries": [
+    {
+      "Fuzzer": {
+        "$type": "libfuzzer",
+        "FuzzingHarnessExecutableName": "WtcliFuzzer.exe",
+        "FuzzingTargetBinaries": [
+          "WtcliFuzzer.exe"
+        ],
+        "FuzzingEntrypoint": "LLVMFuzzerTestOneInput"
+      },
+      "adoTemplate": {
+        "org": "microsoft",
+        "project": "Dart",
+        "AssignedTo": "yeelam@microsoft.com",
+        "AreaPath": "OS\\Windows Client and Services\\WinPD\\DFX-Developer Fundamentals and Experiences\\DEFT\\SALT",
+        "IterationPath": "OS\\Future"
+      },
+      "jobNotificationEmail": "yeelam@microsoft.com",
+      "skip": false,
+      "rebootAfterSetup": false,
+      "oneFuzzJobs": [
+        {
+          "projectName": "IntelligentTerminal.Wtcli",
+          "targetName": "Wtcli_Fuzzer"
+        }
+      ],
+      "jobDependencies": [
+        "WtcliFuzzer.exe",
+        "WtcliFuzzer.pdb",
+        "WtcliFuzzer.lib",
+        "clang_rt.asan_dynamic-x86_64.dll"
+      ],
+      "SdlWorkItemId": 62007365,
+      "SdlWorkItemProjectUrl": "https://dev.azure.com/microsoft/OS"
+    }
+  ]
+}

@@ -36,10 +36,10 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir)..\OpenConsoleProxy;$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>gdi32.lib;dwmapi.lib;Shcore.lib;UxTheme.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdi32.lib;dwmapi.lib;Shcore.lib;UxTheme.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
@@ -56,6 +56,7 @@
     <ClInclude Include="NonClientIslandWindow.h" />
     <ClInclude Include="VirtualDesktopUtils.h" />
     <ClInclude Include="WindowEmperor.h" />
+    <ClInclude Include="TerminalProtocolComServer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -67,6 +68,7 @@
     <ClCompile Include="NonClientIslandWindow.cpp" />
     <ClCompile Include="VirtualDesktopUtils.cpp" />
     <ClCompile Include="WindowEmperor.cpp" />
+    <ClCompile Include="TerminalProtocolComServer.cpp" />
     <ClCompile Include="icon.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -93,14 +95,18 @@
     </ProjectReference>
   </ItemGroup>
 
-  <!-- Manually add a reference to Core here. We need this so MDMERGE will know
-  where the Core types are defined. However, we need to do it exactly like this,
-  because the Core project is a lib not a dll, so it can't be ProjectReference'd
-  like everything else. It does get built into TerminalControl.dll, so we don't
-  need to worry about that. -->
+  <!-- Manually add references to libs that produce .winmd files. Lib projects
+  can't be ProjectReference'd for WinRT metadata resolution. The .winmd gets
+  resolved by cppwinrt/mdmerge via this HintPath. -->
   <ItemGroup>
     <Reference Include="Microsoft.Terminal.Core">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Protocol">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalProtocol\Microsoft.Terminal.Protocol.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

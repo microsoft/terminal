@@ -10,6 +10,7 @@
 
 #include "VirtualDesktopUtils.h"
 #include "WindowEmperor.h"
+#include "TerminalProtocolComServer.h"
 #include "../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI;
@@ -1192,6 +1193,10 @@ safe_void_coroutine AppHost::_WindowInitializedHandler(const winrt::Windows::Fou
                                                        const winrt::Windows::Foundation::IInspectable& /*arg*/)
 {
     _isWindowInitialized = WindowInitializedState::Initializing;
+
+    // Re-run page-events registration now that the TerminalPage is
+    // actually constructed. Ensures this window's events reach COM clients.
+    TerminalProtocolComServer::s_OnWindowAdded(this);
 
     // GH#11561: We're totally done being initialized. Resize the window to
     // match the initial settings, and then call ShowWindow to finally make us

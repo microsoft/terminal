@@ -18,9 +18,11 @@ Abstract:
 #pragma once
 
 class AppHost;
+struct TerminalProtocolComServer;
 
 class WindowEmperor
 {
+
 public:
     enum UserMessages : UINT
     {
@@ -30,13 +32,20 @@ public:
         WM_NOTIFY_FROM_NOTIFICATION_AREA,
     };
 
+    WindowEmperor();
+    ~WindowEmperor();
+
     HWND GetMainWindow() const noexcept;
     AppHost* GetWindowById(uint64_t id) const noexcept;
     AppHost* GetWindowByName(std::wstring_view name) const noexcept;
-    // CreateNewWindow is used for creating a new window from existing Content
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
     void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
+
+    // Protocol server access
+    const std::wstring& GetComClsid() const noexcept { return _comClsid; }
+    const std::vector<std::shared_ptr<::AppHost>>& GetWindows() const noexcept { return _windows; }
+    AppHost* GetMostRecentWindow() const noexcept { return _mostRecentWindow(); }
 
 private:
     struct SummonWindowSelectionArgs
@@ -75,6 +84,10 @@ private:
     wil::unique_hwnd _window;
     winrt::TerminalApp::App _app{ nullptr };
     std::vector<std::shared_ptr<::AppHost>> _windows;
+
+    // Protocol server for AI CLI integration
+    std::wstring _comClsid; // Stringified CLSID for WT_COM_CLSID env var
+    void _initializeProtocolServer();
     std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
     NOTIFYICONDATA _notificationIcon{};
     UINT WM_TASKBARCREATED = 0;

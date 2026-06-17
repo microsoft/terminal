@@ -1,0 +1,129 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
+// Shared WinRT type definitions for the Terminal Protocol.
+
+namespace Microsoft.Terminal.Protocol
+{
+    struct WindowInfo
+    {
+        UInt64 WindowId;
+        String Title;
+        Boolean IsFocused;
+        UInt32 TabCount;
+    };
+
+    struct TabInfo
+    {
+        UInt32 TabId;
+        UInt64 WindowId;
+        String Title;
+        Boolean IsActive;
+        UInt32 PaneCount;
+    };
+
+    struct PaneInfo
+    {
+        Guid SessionId;
+        UInt32 TabId;
+        UInt64 WindowId;
+        String Title;
+        String Profile;
+        Boolean IsActive;
+        Boolean IsAgentPane;
+        UInt32 Pid;
+        Int32 Rows;
+        Int32 Columns;
+        // Current working directory of the pane's shell. Populated from the
+        // terminal control's working-directory tracking (OSC 9;9 / shell
+        // integration). Empty when not known.
+        String Cwd;
+    };
+
+    struct PaneOutput
+    {
+        Guid SessionId;
+        String Content;
+        Int32 LineCount;
+        Boolean Truncated;
+        // True when the content was sliced from an OSC 133 prompt mark
+        // (i.e., shell integration produced a parseable command boundary).
+        // False when no marks were available — the client should fall
+        // back to a line-count read of the same pane.
+        Boolean HasMarks;
+    };
+
+    struct ProcessStatus
+    {
+        Guid SessionId;
+        String State;
+        UInt32 Pid;
+        Int32 ExitCode;
+        Boolean HasExitCode;
+    };
+
+    struct SessionVariable
+    {
+        Guid SessionId;
+        String Name;
+        String Value;
+        Boolean Exists;
+    };
+
+    struct TabCreationResult
+    {
+        UInt32 TabId;
+        Guid SessionId;
+        UInt64 WindowId;
+        UInt32 Pid;
+    };
+
+    struct AuthResult
+    {
+        Boolean Authenticated;
+        String ProtocolVersion;
+    };
+
+    // Callback interface — implemented by clients (e.g. wtcli) to receive
+    // push-based event notifications from Terminal.
+    interface IProtocolEventCallback
+    {
+        void OnEvent(String eventJson);
+    }
+
+    // Server interface — implemented by WindowsTerminal.exe, consumed by wtcli.exe.
+    // Activated via CoCreateInstance (CLSCTX_LOCAL_SERVER) with a custom class factory.
+    // Marshaled cross-process via MBM (no proxy/stub DLL needed).
+    interface IProtocolServer
+    {
+        // Meta
+        AuthResult Authenticate(String token);
+        String GetCapabilities();
+
+        // Queries
+        PaneInfo GetActivePane();
+        WindowInfo[] ListWindows();
+        TabInfo[] ListTabs(UInt64 windowIdFilter);
+        PaneInfo[] ListPanes(UInt64 windowIdFilter, UInt32 tabIdFilter);
+        PaneOutput ReadPaneOutput(Guid sessionId, String source, Int32 maxLines);
+        ProcessStatus GetProcessStatus(Guid sessionId);
+        SessionVariable GetSessionVariable(Guid sessionId, String name);
+        String GetSettings();
+
+        // Mutations
+        TabCreationResult CreateTab(UInt64 windowId, String profile, String commandline, String title, String startingDirectory, Boolean suppressAppTitle, Boolean background);
+        TabCreationResult SplitPane(Guid sessionId, String direction, Single size, String profile, String commandline, Boolean background);
+        void ClosePane(Guid sessionId);
+        void SendInput(Guid sessionId, String text);
+        void FocusPane(Guid sessionId);
+        void SetSessionVariable(Guid sessionId, String name, String value);
+
+        // Events — push-based via callback
+        void Subscribe(IProtocolEventCallback callback);
+        void Unsubscribe();
+
+        // Client-originated event publishing (agent → WT → listeners)
+        void SendEvent(String eventJson);
+    }
+}
+

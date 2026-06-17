@@ -1,0 +1,79 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
+// Full classic-COM replacement for the WinRT/MBM Microsoft.Terminal.Protocol
+// IProtocolServer. Marshaled by the MIDL proxy/stub in OpenConsoleProxy.dll, so
+// activation/marshaling does NOT go through the WinRT activation catalog
+// (CWinRTActivationStoreCatalog) that crashes on affected combase builds.
+//
+// Design (per-method + JSON payloads): scalar inputs stay typed (GUID / BSTR /
+// integers / float / boolean); every complex result crosses the wire as a JSON
+// string (BSTR). This avoids SAFEARRAY/struct marshaling entirely and reuses the
+// JSON the rest of the system already speaks. The server serializes its existing
+// WinRT result structs to JSON; wtcli parses the JSON back for display.
+
+import "unknwn.idl";
+
+// LOAD BEARING (same discipline as ITerminalHandoff): OpenConsoleProxy.dll is a
+// single shared proxy/stub DLL. Never change or reuse the UUIDs below.
+
+// Event sink — implemented by the CLIENT (wtcli). The server calls back into
+// this cross-process to push events (each event is a JSON string).
+[
+    object,
+    uuid(3D8F4B26-5C7E-4A9B-B1D0-2F5A7C9E1B4D),
+    pointer_default(unique)
+] interface ITerminalProtocolEventSink : IUnknown
+{
+    HRESULT OnEvent([in] BSTR eventJson);
+};
+
+// Terminal protocol — implemented by WindowsTerminal.exe, activated by the
+// client via CoCreateInstance(CLSCTX_LOCAL_SERVER) under the existing
+// per-branding CLSID (discovered through the WT_COM_CLSID env var).
+[
+    object,
+    uuid(9C7E2A14-3B5D-4F8A-A2C9-1E4F6B8D0A3C),
+    pointer_default(unique)
+] interface ITerminalProtocol : IUnknown
+{
+    // ── Meta ──
+    HRESULT Authenticate([in] BSTR token, [out, retval] BSTR* resultJson);
+    HRESULT GetCapabilities([out, retval] BSTR* json);
+
+    // ── Queries (complex results as JSON) ──
+    HRESULT GetActivePane([out, retval] BSTR* json);
+    HRESULT ListWindows([out, retval] BSTR* json);
+    HRESULT ListTabs([in] unsigned hyper windowIdFilter, [out, retval] BSTR* json);
+    HRESULT ListPanes([in] unsigned hyper windowIdFilter, [in] unsigned long tabIdFilter, [out, retval] BSTR* json);
+    HRESULT ReadPaneOutput([in] GUID sessionId, [in] BSTR source, [in] long maxLines, [out, retval] BSTR* json);
+    HRESULT GetProcessStatus([in] GUID sessionId, [out, retval] BSTR* json);
+    HRESULT GetSessionVariable([in] GUID sessionId, [in] BSTR name, [out, retval] BSTR* json);
+    HRESULT GetSettings([out, retval] BSTR* json);
+
+    // ── Mutations ──
+    HRESULT CreateTab([in] unsigned hyper windowId,
+                      [in] BSTR profile,
+                      [in] BSTR commandline,
+                      [in] BSTR title,
+                      [in] BSTR startingDirectory,
+                      [in] boolean suppressAppTitle,
+                      [in] boolean background,
+                      [out, retval] BSTR* json);
+    HRESULT SplitPane([in] GUID sessionId,
+                      [in] BSTR direction,
+                      [in] float size,
+                      [in] BSTR profile,
+                      [in] BSTR commandline,
+                      [in] boolean background,
+                      [out, retval] BSTR* json);
+    HRESULT ClosePane([in] GUID sessionId);
+    HRESULT SendInput([in] GUID sessionId, [in] BSTR text);
+    HRESULT FocusPane([in] GUID sessionId);
+    HRESULT SetSessionVariable([in] GUID sessionId, [in] BSTR name, [in] BSTR value);
+
+    // ── Events ──
+    HRESULT Subscribe([in] ITerminalProtocolEventSink* sink);
+    HRESULT Unsubscribe();
+    HRESULT SendEvent([in] BSTR eventJson);
+};
