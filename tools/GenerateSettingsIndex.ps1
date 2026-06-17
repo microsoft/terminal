@@ -195,6 +195,51 @@ foreach ($xamlFile in Get-ChildItem -Path $SourceDir -Filter *.xaml)
             File            = $filename
         }
     }
+    elseif ($filename -eq "AddProfile.xaml")
+    {
+        # "add new" button
+        $entries += [pscustomobject]@{
+            ResourceName    = "AddProfile_AddNewTextBlock/Text"
+            ParentPage      = $pageClass
+            NavigationParam = $ClassMap[$pageClass].NavigationParam
+            SubPage         = $ClassMap[$pageClass].SubPage
+            ElementName     = "AddNewButton"
+            File            = $filename
+        }
+    }
+    elseif ($filename -eq "Profiles_Base.xaml")
+    {
+        # The navigator cards below are special:
+        # - no UID because we want to reuse existing resources to reduce localization burden
+        # - when selected, we want to navigate to the subpage (not focus the navigator)
+        $navigators = @(
+            @{ Resource = "Profile_Appearance/Header"; SubPage = "BreadcrumbSubPage::Profile_Appearance" }
+            @{ Resource = "Profile_Terminal/Header";   SubPage = "BreadcrumbSubPage::Profile_Terminal" }
+            @{ Resource = "Profile_Advanced/Header";   SubPage = "BreadcrumbSubPage::Profile_Advanced" }
+        )
+        foreach ($nav in $navigators)
+        {
+            # Build-time entry: searchable from the profile defaults context
+            $entries += [pscustomobject]@{
+                ResourceName         = $nav.Resource
+                ParentPage           = $pageClass
+                NavigationParam      = $ClassMap[$pageClass].NavigationParam
+                SubPage              = $nav.SubPage
+                ElementName          = ""
+                SecondaryLabel       = "Nav_ProfileDefaults/Content"
+                File                 = $filename
+            }
+            # Partial entry: instantiated per profile at runtime (the navigation arg is the profile VM).
+            $entries += [pscustomobject]@{
+                ResourceName    = $nav.Resource
+                ParentPage      = $pageClass
+                NavigationParam = $null
+                SubPage         = $nav.SubPage
+                ElementName     = ""
+                File            = $filename
+            }
+        }
+    }
 
     # Iterate over all local:SettingsCard and local:SettingsExpander nodes
     foreach ($settingContainer in ($xml.SelectNodes("//local:SettingsCard", $xm) + $xml.SelectNodes("//local:SettingsExpander", $xm)))
