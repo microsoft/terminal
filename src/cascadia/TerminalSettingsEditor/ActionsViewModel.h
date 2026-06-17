@@ -89,6 +89,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void AddKeybinding_Click();
 
+        void RemoveMatchingKeyChord(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude);
+
         // UIA text
         winrt::hstring ActionNameTextBoxAutomationPropName() const;
         winrt::hstring ShortcutActionComboBoxAutomationPropName() const;
@@ -229,7 +231,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Control::KeyChord CurrentKeys() const noexcept;
 
         void ToggleEditMode();
-        void RequestEdit();
         void AcceptChanges();
         void CancelChanges();
         void DeleteKeyChord();
@@ -240,7 +241,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring CancelButtonName() const noexcept;
         hstring AcceptButtonName() const noexcept;
         hstring DeleteButtonName() const noexcept;
-        hstring EditButtonName() const noexcept;
+        hstring EditButtonName() const;
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
@@ -249,7 +250,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(int32_t, Index, 0);
 
     public:
-        til::typed_event<Editor::KeyChordViewModel, Editor::KeyChordViewModel> EditRequested;
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> AddKeyChordRequested;
         til::typed_event<Editor::KeyChordViewModel, Editor::ModifyKeyChordEventArgs> ModifyKeyChordRequested;
         til::typed_event<Editor::KeyChordViewModel, Terminal::Control::KeyChord> DeleteKeyChordRequested;
@@ -281,6 +281,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMap<Model::ShortcutAction, winrt::hstring> AvailableShortcutActionsAndNames();
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::ShortcutAction> NameToActionMap();
 
+        til::typed_event<Editor::CommandViewModel, Editor::KeyChordViewModel> FocusKeyChordContainerRequested;
+
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::CommandViewModel>, CommandList);
         WINRT_OBSERVABLE_PROPERTY(ActionsSubPage, CurrentPage, _propertyChangedHandlers, ActionsSubPage::Base);
 
@@ -293,6 +295,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _MakeCommandVMsHelper();
         void _RegisterCmdVMEvents(com_ptr<implementation::CommandViewModel>& cmdVM);
+        void _RemoveStaleKeyChordVMs(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude);
 
         void _CmdVMEditRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
         void _CmdVMDeleteRequestedHandler(const Editor::CommandViewModel& senderVM, const IInspectable& args);
