@@ -35,6 +35,33 @@
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
 
+            <Style x:Key="ActionRowAccentButtonStyle"
+                   BasedOn="{StaticResource AccentButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="MinWidth" Value="28" />
+                <Setter Property="Width" Value="28" />
+                <Setter Property="Height" Value="28" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="ActionRowDeleteButtonStyle"
+                   BasedOn="{StaticResource DeleteButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="MinWidth" Value="28" />
+                <Setter Property="Width" Value="28" />
+                <Setter Property="Height" Value="28" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="ActionRowKeyChordEditorStyle"
+                   TargetType="local:KeyChordListener">
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="MinWidth" Value="160" />
+            </Style>
+
             <Style x:Key="ActionRowItemContainerStyle"
                    TargetType="ListViewItem">
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -78,21 +105,78 @@
                           x:DataType="local:KeyChordViewModel">
                 <Grid ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-                        <!--  key chord  -->
+                        <!--  key chord visual / editable key chord group  -->
                         <ColumnDefinition Width="*" />
-                        <!--  pencil (edit) button  -->
+                        <!--  edit button  -->
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
+                    <!--  [Regular mode] key chord visual  -->
                     <local:KeyChordVisual Grid.Column="0"
                                           HorizontalAlignment="Right"
                                           VerticalAlignment="Center"
-                                          KeyChord="{x:Bind CurrentKeys, Mode=OneWay}" />
+                                          KeyChord="{x:Bind CurrentKeys, Mode=OneWay}"
+                                          Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}" />
 
+                    <!--  [Edit mode] Editable key chord group  -->
+                    <StackPanel Grid.Column="0"
+                                Grid.ColumnSpan="2"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                        <!--  Key chord listener  -->
+                        <local:KeyChordListener Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                Style="{StaticResource ActionRowKeyChordEditorStyle}" />
+
+                        <!--  Cancel changes  -->
+                        <Button x:Uid="Actions_CancelButton"
+                                AutomationProperties.Name="{x:Bind CancelButtonName}"
+                                Click="{x:Bind CancelChanges}"
+                                Style="{StaticResource ActionRowSubtleButtonStyle}">
+                            <FontIcon FontSize="14"
+                                      Glyph="&#xE711;" />
+                        </Button>
+
+                        <!--  Accept changes  -->
+                        <Button x:Uid="Actions_AcceptButton"
+                                AutomationProperties.Name="{x:Bind AcceptButtonName}"
+                                Click="{x:Bind AcceptChanges}"
+                                Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
+                                Style="{StaticResource ActionRowAccentButtonStyle}">
+                            <FontIcon FontSize="14"
+                                      Glyph="&#xE8FB;" />
+                        </Button>
+
+                        <!--  Delete  -->
+                        <Button x:Uid="Actions_DeleteButton"
+                                AutomationProperties.Name="{x:Bind DeleteButtonName}"
+                                Style="{StaticResource ActionRowDeleteButtonStyle}">
+                            <Button.Content>
+                                <FontIcon FontSize="14"
+                                          Glyph="&#xE74D;" />
+                            </Button.Content>
+                            <Button.Flyout>
+                                <Flyout>
+                                    <StackPanel>
+                                        <TextBlock x:Uid="Actions_DeleteConfirmationMessage"
+                                                   Style="{StaticResource CustomFlyoutTextStyle}" />
+                                        <Button x:Uid="Actions_DeleteConfirmationButton"
+                                                Click="{x:Bind DeleteKeyChord}" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+
+                    <!--  [Regular mode] Edit button  -->
                     <Button Grid.Column="1"
-                            AutomationProperties.Name="{x:Bind EditButtonName}"
-                            Click="{x:Bind RequestEdit}"
-                            Style="{StaticResource ActionRowSubtleButtonStyle}">
+                            AutomationProperties.Name="{x:Bind EditButtonName, Mode=OneWay}"
+                            Click="{x:Bind ToggleEditMode}"
+                            Style="{StaticResource ActionRowSubtleButtonStyle}"
+                            ToolTipService.ToolTip="{x:Bind EditButtonName, Mode=OneWay}"
+                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
                         <FontIcon FontSize="14"
                                   Glyph="&#xE70F;" />
                     </Button>
