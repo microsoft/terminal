@@ -518,6 +518,10 @@
     <value>Launch at login</value>
     <comment>Label for a checkbox to toggle whether the app should launch when the user logs in to their machine.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
+    <value>Automatically launch Terminal when you log in to Windows.</value>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin_Checkbox.Content". {Locked="Windows"}</comment>
+  </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Centered</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>

@@ -518,6 +518,10 @@
     <value>Lancement au démarrage de l’ordinateur</value>
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
+  <data name="Globals_StartOnUserLogin.Description" xml:space="preserve">
+    <value>Lancez automatiquement Terminal lorsque vous vous connectez à Windows.</value>
+    <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header". {Locked="Windows"}</comment>
+  </data>
   <data name="Globals_CenterOnLaunchCentered" xml:space="preserve">
     <value>Centré</value>
     <comment>Shorthand, explanatory text displayed when the user has enabled the feature indicated by "Globals_CenterOnLaunch.Header".</comment>
