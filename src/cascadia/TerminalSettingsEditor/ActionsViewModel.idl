@@ -147,7 +147,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Int32 Index;
         String DisplayLabel { get; };
         void ToggleEditMode();
-        void RequestEdit();
         void AcceptChanges();
         void CancelChanges();
         void DeleteKeyChord();
@@ -156,7 +155,6 @@ namespace Microsoft.Terminal.Settings.Editor
         String DeleteButtonName { get; };
         String EditButtonName { get; };
 
-        event Windows.Foundation.TypedEventHandler<KeyChordViewModel, KeyChordViewModel> EditRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> AddKeyChordRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyChordRequested;
@@ -187,5 +185,9 @@ namespace Microsoft.Terminal.Settings.Editor
         CommandViewModel CurrentCommand;
         IObservableVector<CommandViewModel> CommandList { get; };
         void CmdListItemClicked(IInspectable sender, Windows.UI.Xaml.Controls.ItemClickEventArgs args);
+
+        // Raised when a key chord row enters or leaves inline edit mode, so the
+        // hosting Actions page can move focus to (or away from) that row's listener.
+        event Windows.Foundation.TypedEventHandler<CommandViewModel, KeyChordViewModel> FocusKeyChordContainerRequested;
     }
 }

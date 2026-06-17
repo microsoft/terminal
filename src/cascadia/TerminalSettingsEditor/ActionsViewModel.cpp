@@ -239,6 +239,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         FocusContainer.raise(*this, *kbdVM);
     }
 
+    void CommandViewModel::RemoveMatchingKeyChord(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude)
+    {
+        if (!keys)
+        {
+            return;
+        }
+
+        const auto matches = [&](const Control::KeyChord& kc) {
+            return kc && kc.Modifiers() == keys.Modifiers() && kc.Vkey() == keys.Vkey();
+        };
+
+        std::erase_if(_keyChordList, matches);
+
+        for (uint32_t i = 0; i < _KeyChordList.Size(); ++i)
+        {
+            const auto kcVM{ _KeyChordList.GetAt(i) };
+            if (kcVM == exclude)
+            {
+                continue;
+            }
+            if (matches(kcVM.CurrentKeys()))
+            {
+                // VectorChanged handler re-indexes the remaining rows and refreshes the
+                // command's first-key-chord/automation text.
+                _KeyChordList.RemoveAt(i);
+                break;
+            }
+        }
+    }
+
     // Reassigns 1-based Index values for every KeyChordViewModel in the list. Called
     // whenever the list changes shape so the per-row "Key Binding #N" label stays in sync.
     void CommandViewModel::_ReindexKeyChordList()
@@ -273,20 +303,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)
     {
         const auto id = ID();
-        kcVM.EditRequested([weakThis{ get_weak() }](const Editor::KeyChordViewModel& sender, const Editor::KeyChordViewModel& /*args*/) {
-            if (const auto self{ weakThis.get() })
-            {
-                // Put the requested key chord into edit mode (this also seeds ProposedKeys),
-                // then navigate to the Edit Action subpage. Since the same KeyChordViewModel
-                // objects are shared with the EditAction page, that row arrives already in
-                // edit mode; EditAction focuses its KeyChordListener on load.
-                if (!sender.IsInEditMode())
-                {
-                    sender.ToggleEditMode();
-                }
-                self->EditRequested.raise(*self, *self);
-            }
-        });
         kcVM.AddKeyChordRequested([actionsPageVMWeakRef = _actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Control::KeyChord& keys) {
             if (const auto actionsPageVM{ actionsPageVMWeakRef.get() })
             {
@@ -325,10 +341,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto propertyName{ args.PropertyName() };
                 if (propertyName == L"IsInEditMode")
                 {
-                    if (!senderVM.IsInEditMode())
-                    {
-                        self->FocusContainer.raise(*self, senderVM);
-                    }
+                    // Raise FocusContainer on both enter (so the hosting page can
+                    // focus the editable KeyChordListener) and leave (so it can
+                    // return focus to the pencil).
+                    self->FocusContainer.raise(*self, senderVM);
                 }
                 else if (propertyName == L"KeyChordText")
                 {
@@ -1158,7 +1174,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _currentKeys = newKeys;
         KeyChordText(Model::KeyChordSerialization::ToString(_currentKeys));
-        _NotifyChanges(L"CurrentKeys");
+        _NotifyChanges(L"CurrentKeys", L"EditButtonName");
     }
 
     Control::KeyChord KeyChordViewModel::CurrentKeys() const noexcept
@@ -1180,14 +1196,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // we have left edit mode but don't have any current keys - delete this view model
             DeleteKeyChord();
         }
-    }
-
-    // Raised when the user clicks the pencil button on a key chord row on the Actions page.
-    // The CommandViewModel handles this by entering edit mode for this chord and navigating
-    // to the Edit Action subpage.
-    void KeyChordViewModel::RequestEdit()
-    {
-        EditRequested.raise(*this, *this);
     }
 
     void KeyChordViewModel::AcceptChanges()
@@ -1222,7 +1230,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring KeyChordViewModel::CancelButtonName() const noexcept { return RS_(L"Actions_CancelButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
     hstring KeyChordViewModel::AcceptButtonName() const noexcept { return RS_(L"Actions_AcceptButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
     hstring KeyChordViewModel::DeleteButtonName() const noexcept { return RS_(L"Actions_DeleteButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
-    hstring KeyChordViewModel::EditButtonName() const noexcept { return RS_(L"Actions_EditButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
+    hstring KeyChordViewModel::EditButtonName() const { return hstring{ RS_fmt(L"Actions_EditButtonNameFormat", _KeyChordText) }; }
 
     winrt::hstring KeyChordViewModel::DisplayLabel() const
     {
@@ -1396,6 +1404,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ActionsViewModel::_RemoveStaleKeyChordVMs(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude)
+    {
+        for (const auto& cmdVM : _CommandList)
+        {
+            get_self<CommandViewModel>(cmdVM)->RemoveMatchingKeyChord(keys, exclude);
+        }
+    }
+
     void ActionsViewModel::AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys)
     {
         auto applyChangesToSettingsModel = [=]() {
@@ -1413,6 +1429,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // update view model
                 auto senderVMImpl{ get_self<KeyChordViewModel>(senderVM) };
                 senderVMImpl->CurrentKeys(newKeys);
+
+                // AddKeyBinding reassigns newKeys to this command, removing it from the
+                // command that previously held it in the settings model.
+                // Mirror that in the view models so the stale row stops showing the chord.
+                // senderVM is excluded so the row the user just edited is preserved.
+                _RemoveStaleKeyChordVMs(newKeys, senderVM);
             }
 
             // reset the flyout if it's there
@@ -1536,6 +1558,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         cmdVM->DeleteRequested({ this, &ActionsViewModel::_CmdVMDeleteRequestedHandler });
         cmdVM->PropagateColorSchemeRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeRequestedHandler });
         cmdVM->PropagateColorSchemeNamesRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeNamesRequestedHandler });
+        cmdVM->FocusContainer([weakThis{ get_weak() }](const IInspectable& sender, const IInspectable& args) {
+            if (const auto self{ weakThis.get() })
+            {
+                // Aggregate each command's per-key-chord FocusContainer event into a
+                // single page-level event so the Actions page only subscribes once.
+                const auto cmdVM{ sender.try_as<Editor::CommandViewModel>() };
+                const auto kcVM{ args.try_as<Editor::KeyChordViewModel>() };
+                if (cmdVM && kcVM)
+                {
+                    self->FocusKeyChordContainerRequested.raise(cmdVM, kcVM);
+                }
+            }
+        });
         cmdVM->PropertyChanged([weakThis{ get_weak() }](const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
             if (const auto self{ weakThis.get() })
             {

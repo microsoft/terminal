@@ -22,6 +22,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         winrt::Windows::UI::Xaml::FrameworkElement::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        Editor::ActionsViewModel::FocusKeyChordContainerRequested_revoker _focusKeyChordContainerRevoker;
+
+        void _FocusKeyChordContainer(const Editor::CommandViewModel& cmdVM, const Editor::KeyChordViewModel& kcVM);
     };
 }
 

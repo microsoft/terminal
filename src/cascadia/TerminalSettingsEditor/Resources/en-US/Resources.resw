@@ -1929,6 +1929,10 @@
     <value>Edit</value>
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
+  <data name="Actions_EditButtonNameFormat" xml:space="preserve">
+    <value>Edit {}</value>
+    <comment>{Locked="{}"} Tooltip and narrator name for the pencil button that begins editing a key binding. {} is replaced with the key chord (e.g. "Edit Ctrl+C").</comment>
+  </data>
   <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
     <value>Add new shortcut</value>
     <comment>Button label that creates a new action on the actions page.</comment>

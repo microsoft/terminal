@@ -147,8 +147,8 @@
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox HorizontalAlignment="Right"
-                                    MinWidth="160"
+                    <muxc:NumberBox MinWidth="160"
+                                    HorizontalAlignment="Right"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="100"
@@ -163,8 +163,8 @@
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox HorizontalAlignment="Right"
-                                    MinWidth="160"
+                    <muxc:NumberBox MinWidth="160"
+                                    HorizontalAlignment="Right"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -179,8 +179,8 @@
             <DataTemplate x:Key="UInt32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox HorizontalAlignment="Right"
-                                    MinWidth="160"
+                    <muxc:NumberBox MinWidth="160"
+                                    HorizontalAlignment="Right"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -195,8 +195,8 @@
             <DataTemplate x:Key="Int32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox HorizontalAlignment="Right"
-                                    MinWidth="160"
+                    <muxc:NumberBox MinWidth="160"
+                                    HorizontalAlignment="Right"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -211,8 +211,8 @@
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox HorizontalAlignment="Right"
-                                    MinWidth="160"
+                    <muxc:NumberBox MinWidth="160"
+                                    HorizontalAlignment="Right"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -227,8 +227,8 @@
             <DataTemplate x:Key="SplitSizeTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox HorizontalAlignment="Right"
-                                    MinWidth="160"
+                    <muxc:NumberBox MinWidth="160"
+                                    HorizontalAlignment="Right"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="0.2"
                                     Maximum="1"
@@ -243,8 +243,8 @@
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <TextBox HorizontalAlignment="Right"
-                             MinWidth="248"
+                    <TextBox MinWidth="248"
+                             HorizontalAlignment="Right"
                              AutomationProperties.Name="{x:Bind Name}"
                              Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
                              TextWrapping="Wrap" />
@@ -255,8 +255,8 @@
             <DataTemplate x:Key="ColorSchemeTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <ComboBox HorizontalAlignment="Right"
-                              MinWidth="248"
+                    <ComboBox MinWidth="248"
+                              HorizontalAlignment="Right"
                               AutomationProperties.Name="{x:Bind Name}"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -342,8 +342,8 @@
             <DataTemplate x:Key="EnumTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <ComboBox HorizontalAlignment="Right"
-                              MinWidth="248"
+                    <ComboBox MinWidth="248"
+                              HorizontalAlignment="Right"
                               AutomationProperties.Name="{x:Bind Name}"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -356,16 +356,15 @@
             <DataTemplate x:Key="FlagItemTemplate"
                           x:DataType="local:FlagEntry">
                 <CheckBox Content="{x:Bind FlagName}"
-                          IsChecked="{x:Bind IsSet, Mode=TwoWay}">
-                </CheckBox>
+                          IsChecked="{x:Bind IsSet, Mode=TwoWay}" />
             </DataTemplate>
 
             <DataTemplate x:Key="FlagTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
                     <ItemsControl HorizontalAlignment="Right"
-                                  IsTabStop="False"
                                   AutomationProperties.Name="{x:Bind Name}"
+                                  IsTabStop="False"
                                   ItemTemplate="{StaticResource FlagItemTemplate}"
                                   ItemsSource="{x:Bind FlagList, Mode=OneWay}" />
                 </local:SettingsCard>
@@ -375,8 +374,8 @@
             <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <local:NullableColorPicker HorizontalAlignment="Right"
-                                               x:Uid="Actions_NullableColorPicker"
+                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                               HorizontalAlignment="Right"
                                                AutomationProperties.Name="{x:Bind Name}"
                                                ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
                                                CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
@@ -388,8 +387,8 @@
             <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <local:NullableColorPicker HorizontalAlignment="Right"
-                                               x:Uid="Actions_NullableColorPicker"
+                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                               HorizontalAlignment="Right"
                                                AutomationProperties.Name="{x:Bind Name}"
                                                ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
                                                CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
