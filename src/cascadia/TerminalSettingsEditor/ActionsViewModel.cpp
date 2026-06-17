@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto self{ weakThis.get() })
             {
                 self->_ReindexKeyChordList();
-                self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"HasAdditionalKeyChords", L"AdditionalKeyChordCountText", L"AdditionalKeyChordTooltipText", L"DisplayNameAndKeyChordAutomationPropName");
+                self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"NameVerticalAlignment", L"DisplayNameAndKeyChordAutomationPropName");
             }
         });
 
@@ -145,13 +145,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
     {
-        auto result = DisplayName() + L", " + FirstKeyChordText();
         const auto size = _KeyChordList.Size();
-        if (size > 1)
+        if (size == 0)
         {
-            result = result + L" " + hstring{ RS_fmt(L"Actions_AdditionalKeyChords", winrt::to_hstring(size - 1)) };
+            return DisplayName();
         }
-        return result;
+
+        // Read out every key chord, with each key spoken separately: replace '+' with ' '
+        // ("ctrl+shift+c" -> "ctrl shift c"). This is safe because no key name contains a
+        // literal '+' (VK_OEM_PLUS serializes as "plus").
+        std::wstring joined;
+        for (uint32_t i = 0; i < size; ++i)
+        {
+            std::wstring chord{ _KeyChordList.GetAt(i).KeyChordText() };
+            for (auto& ch : chord)
+            {
+                if (ch == L'+')
+                {
+                    ch = L' ';
+                }
+            }
+
+            if (i == 0)
+            {
+                joined = chord;
+            }
+            else
+            {
+                joined += L", " + chord;
+            }
+        }
+
+        return DisplayName() + L", " + winrt::hstring{ joined };
     }
 
     winrt::hstring CommandViewModel::FirstKeyChordText() const
@@ -177,38 +202,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _KeyChordList.Size() == 0;
     }
 
-    bool CommandViewModel::HasAdditionalKeyChords() const noexcept
+    // When a command has more than one key chord, the rows stack vertically, so the
+    // command name is top-aligned to line up with the first chord. Otherwise it's centered.
+    Windows::UI::Xaml::VerticalAlignment CommandViewModel::NameVerticalAlignment() const noexcept
     {
-        return _KeyChordList.Size() > 1;
-    }
-
-    winrt::hstring CommandViewModel::AdditionalKeyChordCountText() const
-    {
-        const auto size = _KeyChordList.Size();
-        if (size > 1)
-        {
-            return winrt::hstring{ L"+" + winrt::to_hstring(size - 1) };
-        }
-        return L"";
-    }
-
-    winrt::hstring CommandViewModel::AdditionalKeyChordTooltipText() const
-    {
-        const auto size = _KeyChordList.Size();
-        if (size <= 1)
-        {
-            return L"";
-        }
-        std::wstring result;
-        for (uint32_t i = 1; i < size; ++i)
-        {
-            if (!result.empty())
-            {
-                result += L"\n";
-            }
-            result += std::wstring_view{ _KeyChordList.GetAt(i).KeyChordText() };
-        }
-        return winrt::hstring{ result };
+        return _KeyChordList.Size() > 1 ? Windows::UI::Xaml::VerticalAlignment::Top : Windows::UI::Xaml::VerticalAlignment::Center;
     }
 
     winrt::hstring CommandViewModel::ID() const noexcept
@@ -275,6 +273,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)
     {
         const auto id = ID();
+        kcVM.EditRequested([weakThis{ get_weak() }](const Editor::KeyChordViewModel& sender, const Editor::KeyChordViewModel& /*args*/) {
+            if (const auto self{ weakThis.get() })
+            {
+                // Put the requested key chord into edit mode (this also seeds ProposedKeys),
+                // then navigate to the Edit Action subpage. Since the same KeyChordViewModel
+                // objects are shared with the EditAction page, that row arrives already in
+                // edit mode; EditAction focuses its KeyChordListener on load.
+                if (!sender.IsInEditMode())
+                {
+                    sender.ToggleEditMode();
+                }
+                self->EditRequested.raise(*self, *self);
+            }
+        });
         kcVM.AddKeyChordRequested([actionsPageVMWeakRef = _actionsPageVM, id](const Editor::KeyChordViewModel& sender, const Control::KeyChord& keys) {
             if (const auto actionsPageVM{ actionsPageVMWeakRef.get() })
             {
@@ -320,15 +332,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else if (propertyName == L"KeyChordText")
                 {
-                    // The first chord of the list is what the row visual on the Actions page binds to,
-                    // so propagate the change up so the row updates.
+                    // The row's automation name reads out every chord, so any chord change
+                    // should refresh it. The first chord also feeds the inline FirstKeyChord visual.
                     if (self->_KeyChordList.Size() > 0 && self->_KeyChordList.GetAt(0) == senderVM)
                     {
                         self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"DisplayNameAndKeyChordAutomationPropName");
                     }
                     else
                     {
-                        self->_NotifyChanges(L"AdditionalKeyChordTooltipText");
+                        self->_NotifyChanges(L"DisplayNameAndKeyChordAutomationPropName");
                     }
                 }
             }
@@ -1168,6 +1180,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // we have left edit mode but don't have any current keys - delete this view model
             DeleteKeyChord();
         }
+    }
+
+    // Raised when the user clicks the pencil button on a key chord row on the Actions page.
+    // The CommandViewModel handles this by entering edit mode for this chord and navigating
+    // to the Edit Action subpage.
+    void KeyChordViewModel::RequestEdit()
+    {
+        EditRequested.raise(*this, *this);
     }
 
     void KeyChordViewModel::AcceptChanges()

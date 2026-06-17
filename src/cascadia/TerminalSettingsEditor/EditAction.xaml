@@ -47,22 +47,6 @@
                 <Setter Property="MinWidth" Value="160" />
             </Style>
 
-            <!--
-                Item container for the per-chord ListView. We're hosting a SettingContainer
-                inside each item, so strip the default ListViewItem visuals (padding, border,
-                hover/selection background) so they don't double up.
-            -->
-            <Style x:Key="KeyChordListViewItemStyle"
-                   BasedOn="{StaticResource DefaultListViewItemStyle}"
-                   TargetType="ListViewItem">
-                <Setter Property="Padding" Value="0" />
-                <Setter Property="Margin" Value="0" />
-                <Setter Property="MinHeight" Value="0" />
-                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="BorderThickness" Value="0" />
-            </Style>
-
             <!--  "Key Binding #N" template  -->
             <DataTemplate x:Key="KeyChordTemplate"
                           x:DataType="local:KeyChordViewModel">
@@ -163,7 +147,8 @@
             <DataTemplate x:Key="Int32Template"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox MinWidth="160"
+                    <muxc:NumberBox HorizontalAlignment="Right"
+                                    MinWidth="160"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="100"
@@ -178,7 +163,8 @@
             <DataTemplate x:Key="UInt32Template"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox MinWidth="160"
+                    <muxc:NumberBox HorizontalAlignment="Right"
+                                    MinWidth="160"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -193,7 +179,8 @@
             <DataTemplate x:Key="UInt32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox MinWidth="160"
+                    <muxc:NumberBox HorizontalAlignment="Right"
+                                    MinWidth="160"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -208,7 +195,8 @@
             <DataTemplate x:Key="Int32OptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox MinWidth="160"
+                    <muxc:NumberBox HorizontalAlignment="Right"
+                                    MinWidth="160"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -223,7 +211,8 @@
             <DataTemplate x:Key="FloatTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox MinWidth="160"
+                    <muxc:NumberBox HorizontalAlignment="Right"
+                                    MinWidth="160"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="1"
                                     Maximum="999"
@@ -238,7 +227,8 @@
             <DataTemplate x:Key="SplitSizeTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <muxc:NumberBox MinWidth="160"
+                    <muxc:NumberBox HorizontalAlignment="Right"
+                                    MinWidth="160"
                                     AutomationProperties.Name="{x:Bind Name}"
                                     LargeChange="0.2"
                                     Maximum="1"
@@ -253,7 +243,8 @@
             <DataTemplate x:Key="StringTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <TextBox MinWidth="248"
+                    <TextBox HorizontalAlignment="Right"
+                             MinWidth="248"
                              AutomationProperties.Name="{x:Bind Name}"
                              Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
                              TextWrapping="Wrap" />
@@ -264,7 +255,8 @@
             <DataTemplate x:Key="ColorSchemeTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <ComboBox MinWidth="248"
+                    <ComboBox HorizontalAlignment="Right"
+                              MinWidth="248"
                               AutomationProperties.Name="{x:Bind Name}"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -277,7 +269,8 @@
             <DataTemplate x:Key="FilePickerTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <Grid ColumnSpacing="4">
+                    <Grid HorizontalAlignment="Right"
+                          ColumnSpacing="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"
                                               MinWidth="196" />
@@ -299,7 +292,8 @@
             <DataTemplate x:Key="FolderPickerTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <Grid ColumnSpacing="4">
+                    <Grid HorizontalAlignment="Right"
+                          ColumnSpacing="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"
                                               MinWidth="196" />
@@ -321,7 +315,8 @@
             <DataTemplate x:Key="BoolTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <ToggleSwitch AutomationProperties.Name="{x:Bind Name}"
+                    <ToggleSwitch HorizontalAlignment="Right"
+                                  AutomationProperties.Name="{x:Bind Name}"
                                   IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolBindBack}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingsCard>
@@ -331,7 +326,8 @@
             <DataTemplate x:Key="BoolOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <CheckBox AutomationProperties.Name="{x:Bind Name}"
+                    <CheckBox HorizontalAlignment="Right"
+                              AutomationProperties.Name="{x:Bind Name}"
                               IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
                               IsThreeState="True" />
                 </local:SettingsCard>
@@ -346,7 +342,8 @@
             <DataTemplate x:Key="EnumTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <ComboBox MinWidth="248"
+                    <ComboBox HorizontalAlignment="Right"
+                              MinWidth="248"
                               AutomationProperties.Name="{x:Bind Name}"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                               ItemsSource="{x:Bind EnumList, Mode=OneWay}"
@@ -358,25 +355,17 @@
             <!--  Example shortcut action to test this template: Copy Text  -->
             <DataTemplate x:Key="FlagItemTemplate"
                           x:DataType="local:FlagEntry">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="40" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <CheckBox Grid.Column="0"
-                              AutomationProperties.Name="{x:Bind FlagName}"
-                              IsChecked="{x:Bind IsSet, Mode=TwoWay}" />
-                    <TextBlock Grid.Column="1"
-                               Padding="0,0,0,4"
-                               VerticalAlignment="Center"
-                               Text="{x:Bind FlagName, Mode=OneWay}" />
-                </Grid>
+                <CheckBox Content="{x:Bind FlagName}"
+                          IsChecked="{x:Bind IsSet, Mode=TwoWay}">
+                </CheckBox>
             </DataTemplate>
 
             <DataTemplate x:Key="FlagTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <ItemsControl AutomationProperties.Name="{x:Bind Name}"
+                    <ItemsControl HorizontalAlignment="Right"
+                                  IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind Name}"
                                   ItemTemplate="{StaticResource FlagItemTemplate}"
                                   ItemsSource="{x:Bind FlagList, Mode=OneWay}" />
                 </local:SettingsCard>
@@ -386,7 +375,8 @@
             <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                    <local:NullableColorPicker HorizontalAlignment="Right"
+                                               x:Uid="Actions_NullableColorPicker"
                                                AutomationProperties.Name="{x:Bind Name}"
                                                ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
                                                CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
@@ -398,7 +388,8 @@
             <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
                           x:DataType="local:ArgWrapper">
                 <local:SettingsCard Header="{x:Bind Name}">
-                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                    <local:NullableColorPicker HorizontalAlignment="Right"
+                                               x:Uid="Actions_NullableColorPicker"
                                                AutomationProperties.Name="{x:Bind Name}"
                                                ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
                                                CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
@@ -446,7 +437,7 @@
                                 TextChanged="ShortcutActionBox_TextChanged" />
             </local:SettingsCard>
 
-            <!--  Key bindings expander  -->
+            <!--  Key bindings  -->
             <StackPanel x:Name="KeyBindingsContainer"
                         Spacing="4"
                         Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.HasNoKeyChords), Mode=OneWay}">
@@ -461,16 +452,25 @@
                             Style="{StaticResource AccentButtonStyle}" />
                 </local:SettingsCard>
 
-                <!--  Existing key bindings, one container per chord  -->
-                <ListView x:Name="KeyChordListView"
-                          x:Uid="Actions_KeyBindingsListView"
-                          HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Stretch"
-                          IsItemClickEnabled="False"
-                          ItemContainerStyle="{StaticResource KeyChordListViewItemStyle}"
-                          ItemTemplate="{StaticResource KeyChordTemplate}"
-                          ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
-                          SelectionMode="None" />
+                <!--
+                    Existing key bindings, one container per chord. A plain ItemsControl
+                    (not a ListView) so Tab walks each shortcut's controls in order rather
+                    than treating the whole list as a single tab stop.
+                -->
+                <ItemsControl x:Name="KeyChordItems"
+                              x:Uid="Actions_KeyBindingsListView"
+                              HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch"
+                              IsTabStop="False"
+                              ItemTemplate="{StaticResource KeyChordTemplate}"
+                              ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical"
+                                        Spacing="4" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
             </StackPanel>
 
             <TextBlock x:Uid="EditAction_AdditionalCustomizations"
@@ -478,7 +478,8 @@
 
             <!--  Action name  -->
             <local:SettingsCard x:Name="ActionName"
-                                x:Uid="EditAction_ActionName">
+                                x:Uid="EditAction_ActionName"
+                                Margin="0,0,0,4">
                 <TextBox x:Name="CommandNameTextBox"
                          MinWidth="248"
                          AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
@@ -495,7 +496,8 @@
                           ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel HorizontalAlignment="Stretch" />
+                        <StackPanel HorizontalAlignment="Stretch"
+                                    Spacing="4" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
@@ -504,8 +506,8 @@
             <Button x:Name="DeleteCommand"
                     Margin="0,8,0,0"
                     HorizontalAlignment="Left"
-                    IsEnabled="{x:Bind ViewModel.IsUserAction, Mode=OneWay}"
-                    Style="{StaticResource DeleteButtonStyle}">
+                    Style="{StaticResource DeleteButtonStyle}"
+                    Visibility="{x:Bind ViewModel.IsUserAction, Mode=OneWay}">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon FontSize="{StaticResource StandardIconSize}"

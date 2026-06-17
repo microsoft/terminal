@@ -57,9 +57,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String FirstKeyChordText { get; };
         Microsoft.Terminal.Control.KeyChord FirstKeyChord { get; };
         Boolean HasNoKeyChords { get; };
-        Boolean HasAdditionalKeyChords { get; };
-        String AdditionalKeyChordCountText { get; };
-        String AdditionalKeyChordTooltipText { get; };
+        Windows.UI.Xaml.VerticalAlignment NameVerticalAlignment { get; };
         String DisplayNameAndKeyChordAutomationPropName { get; };
 
         // UI side (command list page)
@@ -149,6 +147,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Int32 Index;
         String DisplayLabel { get; };
         void ToggleEditMode();
+        void RequestEdit();
         void AcceptChanges();
         void CancelChanges();
         void DeleteKeyChord();
@@ -157,6 +156,7 @@ namespace Microsoft.Terminal.Settings.Editor
         String DeleteButtonName { get; };
         String EditButtonName { get; };
 
+        event Windows.Foundation.TypedEventHandler<KeyChordViewModel, KeyChordViewModel> EditRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> AddKeyChordRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, ModifyKeyChordEventArgs> ModifyKeyChordRequested;
         event Windows.Foundation.TypedEventHandler<KeyChordViewModel, Microsoft.Terminal.Control.KeyChord> DeleteKeyChordRequested;

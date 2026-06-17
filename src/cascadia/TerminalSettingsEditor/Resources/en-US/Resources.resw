@@ -694,8 +694,8 @@
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
   </data>
   <data name="Nav_EditAction.Content" xml:space="preserve">
-    <value>Edit Action...</value>
-    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
+    <value>Edit Shortcut</value>
+    <comment>Header for the "edit shortcut" page. This is the page that lets you modify a specific shortcut and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>Extensions</value>
