@@ -88,6 +88,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return ProfileSubPage::Base;
         case BreadcrumbSubPage::Profile_Appearance:
             return ProfileSubPage::Appearance;
+        case BreadcrumbSubPage::Profile_UnfocusedAppearance:
+            return ProfileSubPage::UnfocusedAppearance;
         case BreadcrumbSubPage::Profile_Terminal:
             return ProfileSubPage::Terminal;
         case BreadcrumbSubPage::Profile_Advanced:
@@ -514,6 +516,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
             _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_Appearance/Header"), BreadcrumbSubPage::Profile_Appearance));
+        }
+        else if (page == ProfileSubPage::UnfocusedAppearance)
+        {
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_UnfocusedAppearance>(), winrt::make<NavigateToPageArgs>(profile, *this, elementToFocus));
+            _breadcrumbs.Append(winrt::make<Breadcrumb>(breadcrumbTag, RS_(L"Profile_UnfocusedAppearanceTextBlock/Text"), BreadcrumbSubPage::Profile_UnfocusedAppearance));
         }
         else if (page == ProfileSubPage::Terminal)
         {

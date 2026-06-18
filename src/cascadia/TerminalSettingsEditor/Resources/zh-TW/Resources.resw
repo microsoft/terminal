@@ -1241,10 +1241,6 @@
     <value>非焦點外觀</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>建立外觀</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
-  </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>刪除</value>
     <comment>Button label that deletes the unfocused appearance for this profile.</comment>
@@ -1740,14 +1736,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>如果啟用，顯示上述清單中所有已安裝的字型。否則，僅顯示等寬字型清單。</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>建立外觀</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>立此設定檔的非焦點外觀。這會是設定檔處於非使用中狀態時的外觀。</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>刪除外觀</value>

@@ -1241,10 +1241,6 @@
     <value>포커스되지 않는 모양</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>모양 만들기</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
-  </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>삭제</value>
     <comment>Button label that deletes the unfocused appearance for this profile.</comment>
@@ -1740,14 +1736,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>사용하도록 설정된 경우 위의 목록에 설치된 모든 글꼴을 표시합니다. 그렇지 않으면 고정 폭 글꼴 목록만 표시합니다.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>모양 만들기</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>이 프로필에 대해 할당되지 않은 모양을 만듭니다. 프로필이 비활성 상태인 경우 프로필의 모양이 됩니다.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>모양 삭제</value>

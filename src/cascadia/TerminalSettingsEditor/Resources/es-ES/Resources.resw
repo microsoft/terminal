@@ -1241,10 +1241,6 @@
     <value>Apariencia desenfocada</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Crear apariencia</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
-  </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>Eliminar</value>
     <comment>Button label that deletes the unfocused appearance for this profile.</comment>
@@ -1740,14 +1736,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Si está habilitada, muestra todas las fuentes instaladas en la lista anterior. De lo contrario, mostrar solo la lista de fuentes monoespacios.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Crear apariencia</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Crea una apariencia no centrada para este perfil. Esta será la apariencia del perfil cuando esté inactivo.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Eliminar apariencia</value>

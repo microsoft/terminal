@@ -1241,10 +1241,6 @@
     <value>Внешний вид без фокуса</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Создать внешний вид</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
-  </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>Удалить</value>
     <comment>Button label that deletes the unfocused appearance for this profile.</comment>
@@ -1740,14 +1736,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Если этот параметр включен, отобразятся все установленные шрифты в приведенном выше списке. В противном случае будет показан только список моноширинных шрифтов.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Создать внешний вид</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Добавление настроек внешнего вида профиля, когда он не используется. Эти параметры будут применяться к профилю, когда он не активен.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Удалить внешний вид</value>

@@ -757,6 +757,10 @@
     <value>Appearance</value>
     <comment>Header for a sub-page of profile settings focused on customizing the appearance of the profile.</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceNone" xml:space="preserve">
+    <value>None</value>
+    <comment>Shown on the "Unfocused appearance" navigator card when no unfocused appearance has been defined for the profile.</comment>
+  </data>
   <data name="Profile_BackgroundImageBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Background image path</value>
     <comment>Name for a control to determine the image presented on the background of the app.</comment>
@@ -1241,10 +1245,6 @@
     <value>Unfocused appearance</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
   </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>Create Appearance</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
-  </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>Delete</value>
     <comment>Button label that deletes the unfocused appearance for this profile.</comment>
@@ -1593,6 +1593,10 @@
     <value>Customize the visual appearance of the profile, including colors, fonts, and text styling.</value>
     <comment>Description shown below the "Appearance" navigator card on the profile page.</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceNavigator.Description" xml:space="preserve">
+    <value>Customize the appearance of the profile when it is inactive (unfocused).</value>
+    <comment>Description shown below the "Unfocused appearance" navigator card on the profile page.</comment>
+  </data>
   <data name="Profile_TerminalNavigator.Description" xml:space="preserve">
     <value>Configure how the terminal interprets text and control sequences to behave like a traditional command-line terminal</value>
     <comment>Description shown below the "Terminal Emulation" navigator card on the profile page.</comment>
@@ -1769,14 +1773,6 @@
     <value>If enabled, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Create Appearance</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
-  </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Delete Appearance</value>
     <comment>Name for a control which deletes the unfocused appearance settings for this profile.</comment>
@@ -1784,6 +1780,14 @@
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Delete the unfocused appearance for this profile.</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Header" xml:space="preserve">
+    <value>Delete this unfocused appearance</value>
+    <comment>Header for a settings card that deletes the profile's unfocused appearance.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearance.Description" xml:space="preserve">
+    <value>Removes the unfocused appearance so the profile uses its default appearance when inactive</value>
+    <comment>Description for the delete unfocused appearance settings card.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
     <value>Learn more about actions</value>

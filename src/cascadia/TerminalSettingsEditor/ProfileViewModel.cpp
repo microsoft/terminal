@@ -193,12 +193,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _parsedPadding.Bottom;
     }
+
     Control::IControlSettings ProfileViewModel::TermSettings() const
     {
         // This may look pricey, but it only resolves resources that have not been visited
         // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
         return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
+    }
+
+    Control::IControlSettings ProfileViewModel::TermSettingsUnfocused() const
+    {
+        // This may look pricey, but it only resolves resources that have not been visited
+        // and the preview update is debounced.
+        _appSettings.ResolveMediaResources();
+        return *Settings::TerminalSettings::CreateForPreviewUnfocused(_appSettings, _profile);
     }
 
     // Method Description:
@@ -361,9 +370,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Windows::Foundation::IInspectable ProfileViewModel::SettingOverrideSource(const hstring& name)
     {
         const std::wstring_view n{ name };
-#define HANDLE(Setting)                  \
-    if (n == L## #Setting)               \
-    {                                    \
+#define HANDLE(Setting)                   \
+    if (n == L## #Setting)                \
+    {                                     \
         return Setting##OverrideSource(); \
     }
 #define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
@@ -481,6 +490,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return EditableUnfocusedAppearance() && HasUnfocusedAppearance();
     }
 
+    hstring ProfileViewModel::UnfocusedAppearanceCardValue()
+    {
+        return HasUnfocusedAppearance() ? hstring{} : RS_(L"Profile_UnfocusedAppearanceNone");
+    }
+
     void ProfileViewModel::CreateUnfocusedAppearance()
     {
         _profile.CreateUnfocusedAppearance();
@@ -488,7 +502,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
         _unfocusedAppearanceViewModel.SchemesList(DefaultAppearance().SchemesList());
 
-        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance", L"UnfocusedAppearanceCardValue");
     }
 
     void ProfileViewModel::DeleteUnfocusedAppearance()
@@ -497,7 +511,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _unfocusedAppearanceViewModel = nullptr;
 
-        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance", L"UnfocusedAppearanceCardValue");
     }
 
     Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance() const

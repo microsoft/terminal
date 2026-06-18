@@ -82,26 +82,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _AppearanceViewModelChangedRevoker.revoke();
     }
 
-    void Profiles_Appearance::CreateUnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        TraceLoggingWrite(
-            g_hTerminalSettingsEditorProvider,
-            "CreateUnfocusedAppearance",
-            TraceLoggingDescription("Event emitted when the user creates an unfocused appearance for a profile"),
-            TraceLoggingValue(_Profile.IsBaseLayer(), "IsProfileDefaults", "If the modified profile is the profile.defaults object"),
-            TraceLoggingValue(static_cast<GUID>(_Profile.Guid()), "ProfileGuid", "The guid of the profile that was navigated to"),
-            TraceLoggingValue(_Profile.Source().c_str(), "ProfileSource", "The source of the profile that was navigated to"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-
-        _Profile.CreateUnfocusedAppearance();
-    }
-
-    void Profiles_Appearance::DeleteUnfocusedAppearance_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*e*/)
-    {
-        _Profile.DeleteUnfocusedAppearance();
-    }
-
     void Profiles_Appearance::_onProfilePropertyChanged(const IInspectable&, const PropertyChangedEventArgs&)
     {
         if (!_updatePreviewControl)
