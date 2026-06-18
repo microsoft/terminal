@@ -29,6 +29,7 @@
     <Midl Include="LaunchViewModel.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="SettingsCard.idl" />
+    <Midl Include="SettingResetButton.idl" />
     <Midl Include="SettingsExpander.idl" />
     <Midl Include="SettingsControlsHelpers.idl" />
     <Midl Include="TerminalColorConverters.idl" />
@@ -48,6 +49,7 @@
     <Page Include="Profiles_Base.xaml" />
     <Page Include="Profiles_Advanced.xaml" />
     <Page Include="Profiles_Appearance.xaml" />
+    <Page Include="Profiles_UnfocusedAppearance.xaml" />
     <Page Include="Appearances.xaml" />
     <Page Include="Actions.xaml" />
     <Page Include="EditAction.xaml" />

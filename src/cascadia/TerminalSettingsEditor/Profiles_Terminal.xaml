@@ -29,65 +29,90 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
-                    Spacing="2"
                     Style="{StaticResource SettingsStackStyle}">
 
             <!--  Suppress Application Title  -->
             <local:SettingsCard x:Name="SuppressApplicationTitle"
                                 x:Uid="Profile_SuppressApplicationTitle">
-                <ToggleSwitch IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="SuppressApplicationTitle"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Force VT Input  -->
             <local:SettingsCard x:Name="ForceVTInput"
                                 x:Uid="Profile_ForceVTInput">
-                <ToggleSwitch IsOn="{x:Bind Profile.ForceVTInput, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.ForceVTInput, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="ForceVTInput"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Kitty Keyboard Mode  -->
             <local:SettingsCard x:Name="AllowKittyKeyboardMode"
                                 x:Uid="Profile_AllowKittyKeyboardMode">
-                <ToggleSwitch IsOn="{x:Bind Profile.AllowKittyKeyboardMode, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.AllowKittyKeyboardMode, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="AllowKittyKeyboardMode"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Allow VT Checksum Report  -->
             <local:SettingsCard x:Name="AllowVtChecksumReport"
                                 x:Uid="Profile_AllowVtChecksumReport">
-                <ToggleSwitch IsOn="{x:Bind Profile.AllowVtChecksumReport, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.AllowVtChecksumReport, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="AllowVtChecksumReport"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Allow VT Clipboard Writing  -->
             <local:SettingsCard x:Name="AllowVtClipboardWrite"
                                 x:Uid="Profile_AllowVtClipboardWrite">
-                <ToggleSwitch IsOn="{x:Bind Profile.AllowVtClipboardWrite, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.AllowVtClipboardWrite, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="AllowVtClipboardWrite"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Allow OSC 777 Desktop Notifications  -->
             <local:SettingsCard x:Name="AllowOscNotifications"
                                 x:Uid="Profile_AllowOscNotifications">
-                <ToggleSwitch IsOn="{x:Bind Profile.AllowOscNotifications, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Profile.AllowOscNotifications, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="AllowOscNotifications"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Answerback Message  -->
-            <local:SettingsExpander x:Name="AnswerbackMessage"
-                                    x:Uid="Profile_AnswerbackMessage">
-                <local:SettingsExpander.Content>
-                    <TextBlock Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
-                               Text="{x:Bind Profile.AnswerbackMessagePreview, Mode=OneWay}" />
-                </local:SettingsExpander.Content>
-                <local:SettingsExpander.ItemsHeader>
-                    <ContentPresenter Padding="16,12,16,16">
-                        <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind Profile.AnswerbackMessage, Mode=TwoWay}" />
-                    </ContentPresenter>
-                </local:SettingsExpander.ItemsHeader>
-            </local:SettingsExpander>
+            <local:SettingsCard x:Name="AnswerbackMessage"
+                                x:Uid="Profile_AnswerbackMessage">
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind Profile.AnswerbackMessage, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="AnswerbackMessage"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
+            </local:SettingsCard>
         </StackPanel>
     </Grid>
 </Page>

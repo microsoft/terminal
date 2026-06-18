@@ -70,6 +70,22 @@ namespace winrt::Microsoft::Terminal::Settings
     }
 
     // Method Description:
+    // - Like CreateForPreview, but overlays the profile's unfocused appearance on top of the
+    //   resolved focused settings so the preview reflects the unfocused appearance. If the profile
+    //   has no unfocused appearance, this behaves like CreateForPreview (the focused appearance).
+    winrt::com_ptr<TerminalSettings> TerminalSettings::CreateForPreviewUnfocused(const Model::CascadiaSettings& appSettings, const Model::Profile& profile)
+    {
+        const auto settings = _CreateWithProfileCommon(appSettings, profile);
+        settings->_UseBackgroundImageForWindow = false;
+        if (const auto& unfocusedAppearance{ profile.UnfocusedAppearance() })
+        {
+            const auto globals = appSettings.GlobalSettings();
+            settings->_ApplyAppearanceSettings(unfocusedAppearance, globals.ColorSchemes(), globals.CurrentTheme());
+        }
+        return settings;
+    }
+
+    // Method Description:
     // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
     //   use the guid to look up the profile that should be used to
     //   create these TerminalSettings. Then, we'll apply settings contained in the

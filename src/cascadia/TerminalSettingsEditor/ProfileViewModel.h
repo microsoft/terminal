@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
+        Control::IControlSettings TermSettingsUnfocused() const;
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
@@ -93,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool HasUnfocusedAppearance();
         bool EditableUnfocusedAppearance() const noexcept;
         bool ShowUnfocusedAppearance();
+        hstring UnfocusedAppearanceCardValue();
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
@@ -103,8 +105,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool Orphaned() const;
         hstring AccessibleStateDescription() const;
         bool ShowHiddenBadge() const;
-        hstring TabTitlePreview() const;
-        hstring AnswerbackMessagePreview() const;
+
+        // IInheritableViewModel
+        bool HasSetting(const hstring& name);
+        void ClearSetting(const hstring& name);
+        Windows::Foundation::IInspectable SettingOverrideSource(const hstring& name);
+
         Windows::UI::Color TabColorPreview() const;
         Windows::UI::Color TabThemeColorPreview() const;
 
@@ -115,41 +121,50 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Name);
         OBSERVABLE_PROJECTED_SETTING(_profile, Source);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Hidden);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Icon);
-        OBSERVABLE_PROJECTED_SETTING(_profile, CloseOnExit);
-        OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
-        OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
-        OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Opacity);
-        OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), UseAcrylic);
-        OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
-        OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, BellSound);
-        OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RightClickContextMenu);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ShowMarks);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AutoMarkPrompts);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RepositionCursorWithMouse);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ForceVTInput);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowKittyKeyboardMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtChecksumReport);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowVtClipboardWrite);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AllowOscNotifications);
-        OBSERVABLE_PROJECTED_SETTING(_profile, AnswerbackMessage);
-        OBSERVABLE_PROJECTED_SETTING(_profile, RainbowSuggestions);
-        OBSERVABLE_PROJECTED_SETTING(_profile, PathTranslationStyle);
-        OBSERVABLE_PROJECTED_SETTING(_profile, DragDropDelimiter);
+
+// Settings that expose a reset button.
+// Wired into both the property accessors and the reset dispatch automatically.
+#define PROFILE_INHERITABLE_SETTINGS(X)         \
+    X(_profile, Name)                           \
+    X(_profile, Hidden)                         \
+    X(_profile, Icon)                           \
+    X(_profile, CloseOnExit)                    \
+    X(_profile, TabTitle)                       \
+    X(_profile, TabColor)                       \
+    X(_profile, SuppressApplicationTitle)       \
+    X(_profile, ScrollState)                    \
+    X(_profile, Padding)                        \
+    X(_profile, Commandline)                    \
+    X(_profile, StartingDirectory)              \
+    X(_profile, AntialiasingMode)               \
+    X(_profile.DefaultAppearance(), Opacity)    \
+    X(_profile.DefaultAppearance(), UseAcrylic) \
+    X(_profile, HistorySize)                    \
+    X(_profile, SnapOnInput)                    \
+    X(_profile, AltGrAliasing)                  \
+    X(_profile, BellStyle)                      \
+    X(_profile, BellSound)                      \
+    X(_profile, Elevate)                        \
+    X(_profile, ReloadEnvironmentVariables)     \
+    X(_profile, RightClickContextMenu)          \
+    X(_profile, ShowMarks)                      \
+    X(_profile, AutoMarkPrompts)                \
+    X(_profile, RepositionCursorWithMouse)      \
+    X(_profile, ForceVTInput)                   \
+    X(_profile, AllowKittyKeyboardMode)         \
+    X(_profile, AllowVtChecksumReport)          \
+    X(_profile, AllowVtClipboardWrite)          \
+    X(_profile, AllowOscNotifications)          \
+    X(_profile, AnswerbackMessage)              \
+    X(_profile, RainbowSuggestions)             \
+    X(_profile, PathTranslationStyle)           \
+    X(_profile, DragDropDelimiter)
+
+        // Generate the projected property accessors from the list above.
+#define PROFILE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
+        PROFILE_INHERITABLE_SETTINGS(PROFILE_GEN_PROJECTED)
+#undef PROFILE_GEN_PROJECTED
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
         WINRT_PROPERTY(bool, FocusDeleteButton, false);
