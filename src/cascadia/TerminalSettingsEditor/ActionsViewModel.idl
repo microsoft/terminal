@@ -76,7 +76,6 @@ namespace Microsoft.Terminal.Settings.Editor
         // UI side (edit command page, automation property names)
         String ActionNameTextBoxAutomationPropName { get; };
         String ShortcutActionComboBoxAutomationPropName { get; };
-        String AdditionalArgumentsControlAutomationPropName { get; };
     }
 
     runtimeclass ArgWrapper : Windows.UI.Xaml.Data.INotifyPropertyChanged

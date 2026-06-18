@@ -295,11 +295,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return RS_(L"Actions_ShortcutAction/Text");
     }
 
-    winrt::hstring CommandViewModel::AdditionalArgumentsControlAutomationPropName() const
-    {
-        return RS_(L"Actions_Arguments/Text");
-    }
-
     void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)
     {
         const auto id = ID();

@@ -472,34 +472,36 @@
                 </ItemsControl>
             </StackPanel>
 
-            <TextBlock x:Uid="EditAction_AdditionalCustomizations"
-                       Style="{StaticResource TextBlockSubHeaderStyle}" />
+            <!--  Additional customizations  -->
+            <StackPanel x:Name="AdditionalCustomizationsContainer">
+                <TextBlock x:Uid="EditAction_AdditionalCustomizations"
+                           Style="{StaticResource TextBlockSubHeaderStyle}" />
 
-            <!--  Action name  -->
-            <local:SettingsCard x:Name="ActionName"
-                                x:Uid="EditAction_ActionName"
-                                Margin="0,0,0,4">
-                <TextBox x:Name="CommandNameTextBox"
-                         MinWidth="248"
-                         AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
-                         PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
-                         Text="{x:Bind ViewModel.Name, Mode=TwoWay}" />
-            </local:SettingsCard>
+                <!--  Action name  -->
+                <local:SettingsCard x:Name="ActionName"
+                                    x:Uid="EditAction_ActionName"
+                                    Margin="0,0,0,4">
+                    <TextBox x:Name="CommandNameTextBox"
+                             MinWidth="248"
+                             AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
+                             PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
+                             Text="{x:Bind ViewModel.Name, Mode=TwoWay}" />
+                </local:SettingsCard>
 
-            <!--  Action argument controls  -->
-            <ItemsControl HorizontalAlignment="Stretch"
-                          HorizontalContentAlignment="Stretch"
-                          AutomationProperties.Name="{x:Bind ViewModel.AdditionalArgumentsControlAutomationPropName}"
-                          IsTabStop="False"
-                          ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
-                          ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel HorizontalAlignment="Stretch"
-                                    Spacing="4" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+                <!--  Action argument controls  -->
+                <ItemsControl HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch"
+                              IsTabStop="False"
+                              ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
+                              ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel HorizontalAlignment="Stretch"
+                                        Spacing="4" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
 
             <!--  Delete command button  -->
             <Button x:Name="DeleteCommand"

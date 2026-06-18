@@ -94,7 +94,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // UIA text
         winrt::hstring ActionNameTextBoxAutomationPropName() const;
         winrt::hstring ShortcutActionComboBoxAutomationPropName() const;
-        winrt::hstring AdditionalArgumentsControlAutomationPropName() const;
 
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeRequested;
         til::typed_event<IInspectable, Editor::ArgWrapper> PropagateColorSchemeNamesRequested;
