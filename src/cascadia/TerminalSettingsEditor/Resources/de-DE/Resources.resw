@@ -2649,10 +2649,6 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>Gibt die Software an, die dieses Profil ursprünglich erstellt hat.</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>Keine</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Der automatische Start wurde im Abschnitt "Start-Apps" der einstellungen für Windows deaktiviert.</value>
     <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
@@ -2710,10 +2706,6 @@
   <data name="Appearance_BackgroundImageNone" xml:space="preserve">
     <value>Keine</value>
     <comment>Text displayed when the background image path is not defined.</comment>
-  </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>Keine</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
   </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>Auf Standardeinstellungen zurücksetzen</value>

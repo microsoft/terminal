@@ -1013,6 +1013,80 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _NotifyChanges(L"CurrentColorScheme");
     }
 
+    bool AppearanceViewModel::HasSetting(const hstring& name)
+    {
+        const std::wstring_view n{ name };
+        if (n == L"ColorScheme")
+        {
+            return HasDarkColorSchemeName() || HasLightColorSchemeName();
+        }
+#define HANDLE(Setting)        \
+    if (n == L## #Setting)     \
+    {                          \
+        return Has##Setting(); \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        APPEARANCE_INHERITABLE_SETTINGS(HANDLE_PROJECTED, HANDLE)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return false;
+    }
+
+    void AppearanceViewModel::ClearSetting(const hstring& name)
+    {
+        const std::wstring_view n{ name };
+        if (n == L"ColorScheme")
+        {
+            ClearColorScheme();
+            return;
+        }
+#define HANDLE(Setting)    \
+    if (n == L## #Setting) \
+    {                      \
+        Clear##Setting();  \
+        return;            \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        APPEARANCE_INHERITABLE_SETTINGS(HANDLE_PROJECTED, HANDLE)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+    }
+
+    Windows::Foundation::IInspectable AppearanceViewModel::SettingOverrideSource(const hstring& name)
+    {
+        const std::wstring_view n{ name };
+        if (n == L"ColorScheme")
+        {
+            return DarkColorSchemeNameOverrideSource();
+        }
+#define HANDLE(Setting)                   \
+    if (n == L## #Setting)                \
+    {                                     \
+        return Setting##OverrideSource(); \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        APPEARANCE_INHERITABLE_SETTINGS(HANDLE_PROJECTED, HANDLE)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return nullptr;
+    }
+
+    // Compile-time tripwire. APPEARANCE_INHERITABLE_SETTINGS now generates both the
+    // property accessors and the dispatch above, so those two can no longer drift.
+    // Every inheritable setting must ALSO be projected in Appearances.idl and
+    // given a reset button in the relevant *.xaml - neither of which is
+    // generated from this list. If you add or remove a setting, this count changes and
+    // forces you to revisit those two hand-maintained places before bumping it.
+#define APPEARANCE_COUNT(target, name) +1
+#define APPEARANCE_COUNT_CUSTOM(name) +1
+    static_assert(0 APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_COUNT, APPEARANCE_COUNT_CUSTOM) == 24,
+                  "The set of inheritable appearance settings changed. Update this count, then make "
+                  "sure the new/removed setting is also reflected in Appearances.idl and in the XAML "
+                  "reset buttons.");
+#undef APPEARANCE_COUNT
+#undef APPEARANCE_COUNT_CUSTOM
+#undef APPEARANCE_INHERITABLE_SETTINGS
+
     Editor::ColorSchemeViewModel AppearanceViewModel::CurrentColorScheme() const
     {
         const auto schemeName{ DarkColorSchemeName() };

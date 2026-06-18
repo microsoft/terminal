@@ -16,6 +16,13 @@ namespace Microsoft.Terminal.Settings.Editor
         UInt64 GetHostingWindow();
     }
 
+    interface IInheritableViewModel
+    {
+        Boolean HasSetting(String name);
+        void ClearSetting(String name);
+        Object SettingOverrideSource(String name);
+    }
+
     // This is used to pass data between pages during navigation.
     runtimeclass NavigateToPageArgs
     {

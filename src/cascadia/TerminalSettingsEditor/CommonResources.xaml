@@ -180,6 +180,13 @@
         <Setter Property="Spacing" Value="4" />
     </Style>
 
+    <!--  Used to lay out a setting's control alongside its reset button  -->
+    <Style x:Key="SettingControlStackStyle"
+           TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="Spacing" Value="8" />
+    </Style>
+
     <!--  Combo Box  -->
     <Style x:Key="ComboBoxSettingStyle"
            BasedOn="{StaticResource DefaultComboBoxStyle}"
@@ -271,6 +278,17 @@
     <Style x:Key="BrowseButtonStyle"
            BasedOn="{StaticResource BaseButtonStyle}"
            TargetType="Button">
+        <Setter Property="MinHeight" Value="32" />
+    </Style>
+
+    <!--
+        Implicit style for the per-setting "reset value" button shown next to
+        Profile settings. Matches BrowseButtonStyle (DefaultButtonStyle + centered + 32px
+        min height) so the reset button visually pairs with the adjacent Browse buttons.
+    -->
+    <Style BasedOn="{StaticResource DefaultButtonStyle}"
+           TargetType="local:SettingResetButton">
+        <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="MinHeight" Value="32" />
     </Style>
 

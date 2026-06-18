@@ -79,7 +79,8 @@
                                     x:Uid="Profile_ColorScheme"
                                     AutomationProperties.Name="{x:Bind Appearance.CurrentColorScheme.Name, Mode=OneWay}">
                 <local:SettingsExpander.Content>
-                    <ComboBox Padding="4"
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <ComboBox Padding="4"
                               ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
                               SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
@@ -203,6 +204,9 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
+                        <local:SettingResetButton SettingName="ColorScheme"
+                                                  Target="{x:Bind Appearance}" />
+                    </StackPanel>
                 </local:SettingsExpander.Content>
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
@@ -213,8 +217,13 @@
                                                     x:Uid="Profile_Foreground"
                                                     AutomationProperties.Name="{x:Bind Appearance.ForegroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
                                 <local:SettingsExpander.Content>
-                                    <ContentControl Content="{x:Bind Appearance.ForegroundPreview, Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                                        <ContentControl VerticalAlignment="Center"
+                                                        Content="{x:Bind Appearance.ForegroundPreview, Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                                        <local:SettingResetButton SettingName="Foreground"
+                                                                  Target="{x:Bind Appearance}" />
+                                    </StackPanel>
                                 </local:SettingsExpander.Content>
                                 <local:SettingsExpander.ItemsHeader>
                                     <ContentPresenter Padding="16,12,16,16">
@@ -231,8 +240,13 @@
                                                     x:Uid="Profile_Background"
                                                     AutomationProperties.Name="{x:Bind Appearance.BackgroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
                                 <local:SettingsExpander.Content>
-                                    <ContentControl Content="{x:Bind Appearance.BackgroundPreview, Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                                        <ContentControl VerticalAlignment="Center"
+                                                        Content="{x:Bind Appearance.BackgroundPreview, Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                                        <local:SettingResetButton SettingName="Background"
+                                                                  Target="{x:Bind Appearance}" />
+                                    </StackPanel>
                                 </local:SettingsExpander.Content>
                                 <local:SettingsExpander.ItemsHeader>
                                     <ContentPresenter Padding="16,12,16,16">
@@ -249,8 +263,13 @@
                                                     x:Uid="Profile_SelectionBackground"
                                                     AutomationProperties.Name="{x:Bind Appearance.SelectionBackgroundPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
                                 <local:SettingsExpander.Content>
-                                    <ContentControl Content="{x:Bind Appearance.SelectionBackgroundPreview, Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                                        <ContentControl VerticalAlignment="Center"
+                                                        Content="{x:Bind Appearance.SelectionBackgroundPreview, Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                                        <local:SettingResetButton SettingName="SelectionBackground"
+                                                                  Target="{x:Bind Appearance}" />
+                                    </StackPanel>
                                 </local:SettingsExpander.Content>
                                 <local:SettingsExpander.ItemsHeader>
                                     <ContentPresenter Padding="16,12,16,16">
@@ -276,16 +295,20 @@
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
 
                     <StackPanel Margin="0,8,0,0">
-                        <AutoSuggestBox x:Uid="Profile_FontFaceBox"
-                                        GotFocus="FontFaceBox_GotFocus"
-                                        ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
-                                        ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
-                                        LostFocus="FontFaceBox_LostFocus"
-                                        QuerySubmitted="FontFaceBox_QuerySubmitted"
-                                        Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
-                                        TextBoxStyle="{StaticResource TextBoxSettingStyle}"
-                                        TextChanged="FontFaceBox_TextChanged"
-                                        UpdateTextOnSelect="False" />
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <AutoSuggestBox x:Uid="Profile_FontFaceBox"
+                                            GotFocus="FontFaceBox_GotFocus"
+                                            ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                            ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
+                                            LostFocus="FontFaceBox_LostFocus"
+                                            QuerySubmitted="FontFaceBox_QuerySubmitted"
+                                            Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
+                                            TextBoxStyle="{StaticResource TextBoxSettingStyle}"
+                                            TextChanged="FontFaceBox_TextChanged"
+                                            UpdateTextOnSelect="False" />
+                            <local:SettingResetButton SettingName="FontFace"
+                                                      Target="{x:Bind Appearance}" />
+                        </StackPanel>
                         <CheckBox x:Name="ShowAllFontsCheckbox"
                                   x:Uid="Profile_FontFaceShowAllFonts"
                                   IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
@@ -323,42 +346,54 @@
             <local:SettingsCard x:Name="FontSize"
                                 x:Uid="Profile_FontSize"
                                 Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <muxc:NumberBox x:Name="_fontSizeBox"
-                                x:Uid="Profile_FontSizeBox"
-                                LargeChange="10"
-                                Maximum="128"
-                                Minimum="1"
-                                SmallChange="1"
-                                Style="{StaticResource NumberBoxSettingStyle}"
-                                Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <muxc:NumberBox x:Name="_fontSizeBox"
+                                    x:Uid="Profile_FontSizeBox"
+                                    LargeChange="10"
+                                    Maximum="128"
+                                    Minimum="1"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="FontSize"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Line Height  -->
             <local:SettingsCard x:Name="LineHeight"
                                 x:Uid="Profile_LineHeight"
                                 Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <muxc:NumberBox x:Name="_lineHeightBox"
-                                x:Uid="Profile_LineHeightBox"
-                                LargeChange="0.1"
-                                Maximum="10"
-                                Minimum="0.1"
-                                SmallChange="0.1"
-                                Style="{StaticResource NumberBoxSettingStyle}"
-                                Value="{x:Bind Appearance.LineHeight, Mode=TwoWay}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <muxc:NumberBox x:Name="_lineHeightBox"
+                                    x:Uid="Profile_LineHeightBox"
+                                    LargeChange="0.1"
+                                    Maximum="10"
+                                    Minimum="0.1"
+                                    SmallChange="0.1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind Appearance.LineHeight, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="LineHeight"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Cell Width  -->
             <local:SettingsCard x:Name="CellWidth"
                                 x:Uid="Profile_CellWidth"
                                 Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <muxc:NumberBox x:Name="_cellWidthBox"
-                                x:Uid="Profile_CellWidthBox"
-                                LargeChange="0.1"
-                                Maximum="10"
-                                Minimum="0.1"
-                                SmallChange="0.1"
-                                Style="{StaticResource NumberBoxSettingStyle}"
-                                Value="{x:Bind Appearance.CellWidth, Mode=TwoWay}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <muxc:NumberBox x:Name="_cellWidthBox"
+                                    x:Uid="Profile_CellWidthBox"
+                                    LargeChange="0.1"
+                                    Maximum="10"
+                                    Minimum="0.1"
+                                    SmallChange="0.1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind Appearance.CellWidth, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="CellWidth"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Font Weight  -->
@@ -366,12 +401,16 @@
                                 x:Uid="Profile_FontWeight"
                                 Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <StackPanel>
-                    <ComboBox x:Name="FontWeightComboBox"
-                              x:Uid="Profile_FontWeightComboBox"
-                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                              ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
-                              SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
-                              Style="{StaticResource ComboBoxSettingStyle}" />
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <ComboBox x:Name="FontWeightComboBox"
+                                  x:Uid="Profile_FontWeightComboBox"
+                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                  ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}" />
+                        <local:SettingResetButton SettingName="FontWeight"
+                                                  Target="{x:Bind Appearance}" />
+                    </StackPanel>
 
                     <!--  Custom Font Weight Control  -->
                     <Grid Margin="0,10,0,0"
@@ -398,6 +437,10 @@
             </local:SettingsCard>
             <local:SettingsExpander x:Name="FontAxes"
                                     x:Uid="Profile_FontAxes">
+                <local:SettingsExpander.Content>
+                    <local:SettingResetButton SettingName="FontAxes"
+                                              Target="{x:Bind Appearance}" />
+                </local:SettingsExpander.Content>
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
                         <StackPanel Spacing="16">
@@ -426,6 +469,10 @@
             </local:SettingsExpander>
             <local:SettingsExpander x:Name="FontFeatures"
                                     x:Uid="Profile_FontFeatures">
+                <local:SettingsExpander.Content>
+                    <local:SettingResetButton SettingName="FontFeatures"
+                                              Target="{x:Bind Appearance}" />
+                </local:SettingsExpander.Content>
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
                         <StackPanel Spacing="16">
@@ -456,32 +503,51 @@
             <!--  Builtin Glyphs  -->
             <local:SettingsCard x:Name="EnableBuiltinGlyphs"
                                 x:Uid="Profile_EnableBuiltinGlyphs">
-                <ToggleSwitch IsOn="{x:Bind Appearance.EnableBuiltinGlyphs, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Appearance.EnableBuiltinGlyphs, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="EnableBuiltinGlyphs"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Color Glyphs  -->
             <local:SettingsCard x:Name="EnableColorGlyphs"
                                 x:Uid="Profile_EnableColorGlyphs">
-                <ToggleSwitch IsOn="{x:Bind Appearance.EnableColorGlyphs, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Appearance.EnableColorGlyphs, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="EnableColorGlyphs"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Retro Terminal Effect  -->
             <local:SettingsCard x:Name="RetroTerminalEffect"
                                 x:Uid="Profile_RetroTerminalEffect">
-                <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ToggleSwitch VerticalAlignment="Center"
+                                  IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <local:SettingResetButton SettingName="RetroTerminalEffect"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Adjust Indistinguishable Colors  -->
             <local:SettingsCard x:Name="AdjustIndistinguishableColors"
                                 x:Uid="Profile_AdjustIndistinguishableColors">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind AdjustIndistinguishableColorsList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentAdjustIndistinguishableColors, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind AdjustIndistinguishableColorsList, Mode=OneWay}"
+                              SelectedItem="{x:Bind CurrentAdjustIndistinguishableColors, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                    <local:SettingResetButton SettingName="AdjustIndistinguishableColors"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
         </StackPanel>
 
@@ -492,11 +558,15 @@
             <!--  Cursor Shape  -->
             <local:SettingsCard x:Name="CursorShape"
                                 x:Uid="Profile_CursorShape">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                    <local:SettingResetButton SettingName="CursorShape"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Cursor Height  -->
@@ -507,6 +577,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Slider x:Name="CursorHeightSlider"
                             Grid.Column="0"
@@ -516,6 +587,10 @@
                     <TextBlock Grid.Column="1"
                                Style="{StaticResource SliderValueLabelStyle}"
                                Text="{Binding ElementName=CursorHeightSlider, Path=Value, Mode=OneWay}" />
+                    <local:SettingResetButton Grid.Column="2"
+                                              Margin="8,0,0,0"
+                                              SettingName="CursorHeight"
+                                              Target="{x:Bind Appearance}" />
                 </Grid>
             </local:SettingsCard>
 
@@ -524,8 +599,13 @@
                                     x:Uid="Profile_CursorColor"
                                     AutomationProperties.Name="{x:Bind Appearance.CursorColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
                 <local:SettingsExpander.Content>
-                    <ContentControl Content="{x:Bind Appearance.CursorColorPreview, Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <ContentControl VerticalAlignment="Center"
+                                        Content="{x:Bind Appearance.CursorColorPreview, Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                        <local:SettingResetButton SettingName="CursorColor"
+                                                  Target="{x:Bind Appearance}" />
+                    </StackPanel>
                 </local:SettingsExpander.Content>
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
@@ -548,8 +628,7 @@
                 <local:SettingsExpander.Content>
                     <StackPanel Margin="0,8,0,0"
                                 Orientation="Vertical">
-                        <StackPanel Orientation="Horizontal"
-                                    Spacing="8">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
                             <TextBox x:Uid="Profile_BackgroundImageBox"
                                      IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Appearance.UseDesktopBGImage), Mode=OneWay}"
                                      IsSpellCheckEnabled="False"
@@ -559,6 +638,8 @@
                                     Click="BackgroundImage_Click"
                                     IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Appearance.UseDesktopBGImage), Mode=OneWay}"
                                     Style="{StaticResource BrowseButtonStyle}" />
+                            <local:SettingResetButton SettingName="BackgroundImagePath"
+                                                      Target="{x:Bind Appearance}" />
                         </StackPanel>
                         <CheckBox x:Name="UseDesktopImageCheckBox"
                                   x:Uid="Profile_UseDesktopImage"
@@ -571,11 +652,15 @@
                     <local:SettingsCard x:Name="BackgroundImageStretchMode"
                                         x:Uid="Profile_BackgroundImageStretchMode"
                                         IsEnabled="{x:Bind Appearance.BackgroundImageSettingsEnabled, Mode=OneWay}">
-                        <ComboBox AutomationProperties.AccessibilityView="Content"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <ComboBox AutomationProperties.AccessibilityView="Content"
+                                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                      ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
+                                      SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
+                                      Style="{StaticResource ComboBoxSettingStyle}" />
+                            <local:SettingResetButton SettingName="BackgroundImageStretchMode"
+                                                      Target="{x:Bind Appearance}" />
+                        </StackPanel>
                     </local:SettingsCard>
 
                     <!--  Background Image Alignment  -->
@@ -589,6 +674,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
@@ -759,6 +845,13 @@
                                               Glyph="&#xEA5F;" />
                                 </ToggleButton.Content>
                             </ToggleButton>
+                            <local:SettingResetButton Grid.Row="0"
+                                                      Grid.RowSpan="3"
+                                                      Grid.Column="3"
+                                                      Margin="8,0,0,0"
+                                                      VerticalAlignment="Center"
+                                                      SettingName="BackgroundImageAlignment"
+                                                      Target="{x:Bind Appearance}" />
                         </Grid>
                     </local:SettingsCard>
 
@@ -770,6 +863,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Slider x:Uid="Profile_BackgroundImageOpacitySlider"
                                     Grid.Column="0"
@@ -777,6 +871,10 @@
                             <TextBlock Grid.Column="1"
                                        Style="{StaticResource SliderValueLabelStyle}"
                                        Text="{x:Bind mtu:Converters.PercentageToPercentageString(Appearance.BackgroundImageOpacity), Mode=OneWay}" />
+                            <local:SettingResetButton Grid.Column="2"
+                                                      Margin="8,0,0,0"
+                                                      SettingName="BackgroundImageOpacity"
+                                                      Target="{x:Bind Appearance}" />
                         </Grid>
                     </local:SettingsCard>
                 </local:SettingsExpander.Items>
@@ -790,11 +888,15 @@
             <!--  Intense is bold, bright  -->
             <local:SettingsCard x:Name="IntenseTextStyle"
                                 x:Uid="Appearance_IntenseTextStyle">
-                <ComboBox AutomationProperties.AccessibilityView="Content"
-                          ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                          ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
-                          Style="{StaticResource ComboBoxSettingStyle}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <ComboBox AutomationProperties.AccessibilityView="Content"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
+                              SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                    <local:SettingResetButton SettingName="IntenseTextStyle"
+                                              Target="{x:Bind Appearance}" />
+                </StackPanel>
             </local:SettingsCard>
         </StackPanel>
 

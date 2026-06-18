@@ -36,7 +36,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Advanced = 3
     };
 
-    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged, IInheritableViewModel
     {
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
@@ -97,8 +97,6 @@ namespace Microsoft.Terminal.Settings.Editor
         String IconPath;
         Boolean UsingNoIcon { get; };
 
-        String TabTitlePreview { get; };
-        String AnswerbackMessagePreview { get; };
         Windows.UI.Color TabColorPreview { get; };
         Windows.UI.Color TabThemeColorPreview { get; };
 
