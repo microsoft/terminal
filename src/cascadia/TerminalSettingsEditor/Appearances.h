@@ -79,6 +79,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         AppearanceViewModel(const Model::AppearanceConfig& appearance);
 
+        // IInheritableViewModel
+        bool HasSetting(const hstring& name);
+        void ClearSetting(const hstring& name);
+        Windows::Foundation::IInspectable SettingOverrideSource(const hstring& name);
+
         winrt::hstring FontFace() const;
         void FontFace(const winrt::hstring& value);
         bool HasFontFace() const;
@@ -138,31 +143,50 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(bool, IsDefault, false);
 
-        // These settings are not defined in AppearanceConfig, so we grab them
-        // from the source profile itself. The reason we still want them in the
-        // AppearanceViewModel is so we can continue to have the 'Text' grouping
-        // we currently have in xaml, since that grouping has some settings that
-        // are defined in AppearanceConfig and some that are not.
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontSize);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontWeight);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), EnableBuiltinGlyphs);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), EnableColorGlyphs);
+// Inheritable appearance settings that expose a reset button.
+// Each entry is wired up automatically in two places:
+//   * the projected property accessors generated immediately below, and
+//   * the HasSetting/ClearSetting/SettingOverrideSource dispatch in Appearances.cpp.
+// To add a new inheritable appearance setting, add exactly ONE line here:
+//   * PROJECTED(target, Name) - a standard setting backed by OBSERVABLE_PROJECTED_SETTING.
+//   * CUSTOM(Name)            - a setting whose Name()/Has##Name()/Clear##Name()/
+//                               Name##OverrideSource() accessors are hand-written above
+//                               (e.g. FontFace, FontAxes). It still participates in
+//                               dispatch, but no property is generated for it here.
+// "ColorScheme" is special-cased in the dispatch (it is backed by the Dark/Light
+// scheme names) and so is intentionally not listed here.
+#define APPEARANCE_INHERITABLE_SETTINGS(PROJECTED, CUSTOM)          \
+    CUSTOM(FontFace)                                                \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontSize)     \
+    CUSTOM(LineHeight)                                              \
+    CUSTOM(CellWidth)                                               \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontWeight)   \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), EnableBuiltinGlyphs) \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), EnableColorGlyphs)   \
+    CUSTOM(FontAxes)                                                \
+    CUSTOM(FontFeatures)                                            \
+    PROJECTED(_appearance, RetroTerminalEffect)                    \
+    PROJECTED(_appearance, CursorShape)                            \
+    PROJECTED(_appearance, CursorHeight)                           \
+    PROJECTED(_appearance, DarkColorSchemeName)                    \
+    PROJECTED(_appearance, LightColorSchemeName)                   \
+    PROJECTED(_appearance, BackgroundImagePath)                    \
+    PROJECTED(_appearance, BackgroundImageOpacity)                 \
+    PROJECTED(_appearance, BackgroundImageStretchMode)             \
+    PROJECTED(_appearance, BackgroundImageAlignment)               \
+    PROJECTED(_appearance, IntenseTextStyle)                       \
+    PROJECTED(_appearance, AdjustIndistinguishableColors)          \
+    PROJECTED(_appearance, Foreground)                             \
+    PROJECTED(_appearance, Background)                             \
+    PROJECTED(_appearance, SelectionBackground)                    \
+    PROJECTED(_appearance, CursorColor)
 
-        OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorHeight);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, DarkColorSchemeName);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, LightColorSchemeName);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageOpacity);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageStretchMode);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, AdjustIndistinguishableColors);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, Foreground);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, Background);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, SelectionBackground);
-        OBSERVABLE_PROJECTED_SETTING(_appearance, CursorColor);
+#define APPEARANCE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
+#define APPEARANCE_GEN_CUSTOM(name)
+        APPEARANCE_INHERITABLE_SETTINGS(APPEARANCE_GEN_PROJECTED, APPEARANCE_GEN_CUSTOM)
+#undef APPEARANCE_GEN_PROJECTED
+#undef APPEARANCE_GEN_CUSTOM
+
         WINRT_OBSERVABLE_PROPERTY(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel>, SchemesList, _propertyChangedHandlers, nullptr);
 
     private:
