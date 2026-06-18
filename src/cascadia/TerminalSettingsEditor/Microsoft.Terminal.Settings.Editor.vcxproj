@@ -160,6 +160,10 @@
       <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Profiles_UnfocusedAppearance.h">
+      <DependentUpon>Profiles_UnfocusedAppearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Profiles_Terminal.h">
       <DependentUpon>Profiles_Terminal.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -248,6 +252,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles_Appearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles_UnfocusedAppearance.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles_Terminal.xaml">
@@ -385,6 +392,10 @@
       <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Profiles_UnfocusedAppearance.cpp">
+      <DependentUpon>Profiles_UnfocusedAppearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Profiles_Terminal.cpp">
       <DependentUpon>Profiles_Terminal.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -502,6 +513,10 @@
     </Midl>
     <Midl Include="Profiles_Appearance.idl">
       <DependentUpon>Profiles_Appearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Profiles_UnfocusedAppearance.idl">
+      <DependentUpon>Profiles_UnfocusedAppearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Profiles_Terminal.idl">

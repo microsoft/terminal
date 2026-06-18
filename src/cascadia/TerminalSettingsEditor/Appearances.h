@@ -155,30 +155,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 //                               dispatch, but no property is generated for it here.
 // "ColorScheme" is special-cased in the dispatch (it is backed by the Dark/Light
 // scheme names) and so is intentionally not listed here.
-#define APPEARANCE_INHERITABLE_SETTINGS(PROJECTED, CUSTOM)          \
-    CUSTOM(FontFace)                                                \
-    PROJECTED(_appearance.SourceProfile().FontInfo(), FontSize)     \
-    CUSTOM(LineHeight)                                              \
-    CUSTOM(CellWidth)                                               \
-    PROJECTED(_appearance.SourceProfile().FontInfo(), FontWeight)   \
+#define APPEARANCE_INHERITABLE_SETTINGS(PROJECTED, CUSTOM)                 \
+    CUSTOM(FontFace)                                                       \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontSize)            \
+    CUSTOM(LineHeight)                                                     \
+    CUSTOM(CellWidth)                                                      \
+    PROJECTED(_appearance.SourceProfile().FontInfo(), FontWeight)          \
     PROJECTED(_appearance.SourceProfile().FontInfo(), EnableBuiltinGlyphs) \
     PROJECTED(_appearance.SourceProfile().FontInfo(), EnableColorGlyphs)   \
-    CUSTOM(FontAxes)                                                \
-    CUSTOM(FontFeatures)                                            \
-    PROJECTED(_appearance, RetroTerminalEffect)                    \
-    PROJECTED(_appearance, CursorShape)                            \
-    PROJECTED(_appearance, CursorHeight)                           \
-    PROJECTED(_appearance, DarkColorSchemeName)                    \
-    PROJECTED(_appearance, LightColorSchemeName)                   \
-    PROJECTED(_appearance, BackgroundImagePath)                    \
-    PROJECTED(_appearance, BackgroundImageOpacity)                 \
-    PROJECTED(_appearance, BackgroundImageStretchMode)             \
-    PROJECTED(_appearance, BackgroundImageAlignment)               \
-    PROJECTED(_appearance, IntenseTextStyle)                       \
-    PROJECTED(_appearance, AdjustIndistinguishableColors)          \
-    PROJECTED(_appearance, Foreground)                             \
-    PROJECTED(_appearance, Background)                             \
-    PROJECTED(_appearance, SelectionBackground)                    \
+    CUSTOM(FontAxes)                                                       \
+    CUSTOM(FontFeatures)                                                   \
+    PROJECTED(_appearance, RetroTerminalEffect)                            \
+    PROJECTED(_appearance, CursorShape)                                    \
+    PROJECTED(_appearance, CursorHeight)                                   \
+    PROJECTED(_appearance, DarkColorSchemeName)                            \
+    PROJECTED(_appearance, LightColorSchemeName)                           \
+    PROJECTED(_appearance, BackgroundImagePath)                            \
+    PROJECTED(_appearance, BackgroundImageOpacity)                         \
+    PROJECTED(_appearance, BackgroundImageStretchMode)                     \
+    PROJECTED(_appearance, BackgroundImageAlignment)                       \
+    PROJECTED(_appearance, IntenseTextStyle)                               \
+    PROJECTED(_appearance, AdjustIndistinguishableColors)                  \
+    PROJECTED(_appearance, Foreground)                                     \
+    PROJECTED(_appearance, Background)                                     \
+    PROJECTED(_appearance, SelectionBackground)                            \
     PROJECTED(_appearance, CursorColor)
 
 #define APPEARANCE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);
