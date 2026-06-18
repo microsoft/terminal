@@ -1151,7 +1151,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto& controlToFocus{ strongThis->FindName(elementToFocus).try_as<Controls::Control>() })
                 {
-                    winrt::Microsoft::Terminal::Settings::ExpandAncestorsAndBringIntoView(strongThis.as<FrameworkElement>(), controlToFocus);
+                    const auto& target{ winrt::Microsoft::Terminal::Settings::ResolveFocusTarget(controlToFocus) };
+                    winrt::Microsoft::Terminal::Settings::ExpandAncestorsAndBringIntoView(strongThis.as<FrameworkElement>(), target);
                 }
                 strongThis->_loadedRevoker.revoke();
             }
