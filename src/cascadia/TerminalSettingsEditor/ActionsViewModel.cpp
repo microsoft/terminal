@@ -57,13 +57,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return;
         }
         std::vector<Editor::KeyChordViewModel> keyChordVMs;
+        int32_t idx = 1;
         for (const auto keys : _keyChordList)
         {
-            auto kcVM{ make<KeyChordViewModel>(keys) };
-            _RegisterKeyChordVMEvents(kcVM);
-            keyChordVMs.push_back(kcVM);
+            auto kcVM{ make_self<KeyChordViewModel>(keys) };
+            kcVM->Index(idx++);
+            _RegisterKeyChordVMEvents(*kcVM);
+            keyChordVMs.push_back(*kcVM);
         }
         _KeyChordList = single_threaded_observable_vector(std::move(keyChordVMs));
+        _KeyChordList.VectorChanged([weakThis{ get_weak() }](const auto& /*sender*/, const auto& /*args*/) {
+            if (auto self{ weakThis.get() })
+            {
+                self->_ReindexKeyChordList();
+                self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"NameVerticalAlignment", L"DisplayNameAndKeyChordAutomationPropName");
+            }
+        });
 
         std::vector<hstring> shortcutActions;
         for (const auto [action, name] : _availableActionsAndNamesMap)
@@ -119,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _cachedDisplayName;
     }
 
-    winrt::hstring CommandViewModel::Name()
+    winrt::hstring CommandViewModel::Name() const noexcept
     {
         return _command.HasName() ? _command.Name() : L"";
     }
@@ -136,16 +145,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::hstring CommandViewModel::DisplayNameAndKeyChordAutomationPropName()
     {
-        auto result = DisplayName() + L", " + FirstKeyChordText();
         const auto size = _KeyChordList.Size();
-        if (size > 1)
+        if (size == 0)
         {
-            result = result + L" " + hstring{ RS_fmt(L"Actions_AdditionalKeyChords", winrt::to_hstring(size - 1)) };
+            return DisplayName();
         }
-        return result;
+
+        // Read out every key chord, with each key spoken separately: replace '+' with ' '
+        // ("ctrl+shift+c" -> "ctrl shift c"). This is safe because no key name contains a
+        // literal '+' (VK_OEM_PLUS serializes as "plus").
+        std::wstring joined;
+        for (uint32_t i = 0; i < size; ++i)
+        {
+            std::wstring chord{ _KeyChordList.GetAt(i).KeyChordText() };
+            for (auto& ch : chord)
+            {
+                if (ch == L'+')
+                {
+                    ch = L' ';
+                }
+            }
+
+            if (i == 0)
+            {
+                joined = chord;
+            }
+            else
+            {
+                joined += L", " + chord;
+            }
+        }
+
+        return DisplayName() + L", " + winrt::hstring{ joined };
     }
 
-    winrt::hstring CommandViewModel::FirstKeyChordText()
+    winrt::hstring CommandViewModel::FirstKeyChordText() const
     {
         if (_KeyChordList.Size() != 0)
         {
@@ -154,41 +188,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return L"";
     }
 
-    winrt::hstring CommandViewModel::AdditionalKeyChordCountText()
+    Control::KeyChord CommandViewModel::FirstKeyChord() const noexcept
     {
-        const auto size = _KeyChordList.Size();
-        if (size > 1)
+        if (_KeyChordList.Size() != 0)
         {
-            return winrt::hstring{ L"+" + winrt::to_hstring(size - 1) };
+            return _KeyChordList.GetAt(0).CurrentKeys();
         }
-        return L"";
+        return nullptr;
     }
 
-    winrt::hstring CommandViewModel::AdditionalKeyChordTooltipText()
+    bool CommandViewModel::HasNoKeyChords() const noexcept
     {
-        const auto size = _KeyChordList.Size();
-        if (size <= 1)
-        {
-            return L"";
-        }
-        std::wstring result;
-        for (uint32_t i = 1; i < size; ++i)
-        {
-            if (!result.empty())
-            {
-                result += L"\n";
-            }
-            result += std::wstring_view{ _KeyChordList.GetAt(i).KeyChordText() };
-        }
-        return winrt::hstring{ result };
+        return _KeyChordList.Size() == 0;
     }
 
-    winrt::hstring CommandViewModel::ID()
+    // When a command has more than one key chord, the rows stack vertically, so the
+    // command name is top-aligned to line up with the first chord. Otherwise it's centered.
+    Windows::UI::Xaml::VerticalAlignment CommandViewModel::NameVerticalAlignment() const noexcept
+    {
+        return _KeyChordList.Size() > 1 ? Windows::UI::Xaml::VerticalAlignment::Top : Windows::UI::Xaml::VerticalAlignment::Center;
+    }
+
+    winrt::hstring CommandViewModel::ID() const noexcept
     {
         return _command.ID();
     }
 
-    bool CommandViewModel::IsUserAction()
+    bool CommandViewModel::IsUserAction() const noexcept
     {
         return _command.Origin() == OriginTag::User;
     }
@@ -206,25 +232,67 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void CommandViewModel::AddKeybinding_Click()
     {
         auto kbdVM{ make_self<KeyChordViewModel>(nullptr) };
+        kbdVM->Index(gsl::narrow_cast<int32_t>(_KeyChordList.Size()) + 1);
         kbdVM->IsInEditMode(true);
         _RegisterKeyChordVMEvents(*kbdVM);
         KeyChordList().Append(*kbdVM);
         FocusContainer.raise(*this, *kbdVM);
     }
 
-    winrt::hstring CommandViewModel::ActionNameTextBoxAutomationPropName()
+    void CommandViewModel::RemoveMatchingKeyChord(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude)
+    {
+        if (!keys)
+        {
+            return;
+        }
+
+        const auto matches = [&](const Control::KeyChord& kc) {
+            return kc && kc.Modifiers() == keys.Modifiers() && kc.Vkey() == keys.Vkey();
+        };
+
+        std::erase_if(_keyChordList, matches);
+
+        for (uint32_t i = 0; i < _KeyChordList.Size(); ++i)
+        {
+            const auto kcVM{ _KeyChordList.GetAt(i) };
+            if (kcVM == exclude)
+            {
+                continue;
+            }
+            if (matches(kcVM.CurrentKeys()))
+            {
+                // VectorChanged handler re-indexes the remaining rows and refreshes the
+                // command's first-key-chord/automation text.
+                _KeyChordList.RemoveAt(i);
+                break;
+            }
+        }
+    }
+
+    // Reassigns 1-based Index values for every KeyChordViewModel in the list. Called
+    // whenever the list changes shape so the per-row "Key Binding #N" label stays in sync.
+    void CommandViewModel::_ReindexKeyChordList()
+    {
+        const auto size = _KeyChordList.Size();
+        for (uint32_t i = 0; i < size; ++i)
+        {
+            auto kcVM{ _KeyChordList.GetAt(i) };
+            const auto newIdx = gsl::narrow_cast<int32_t>(i) + 1;
+            if (kcVM.Index() != newIdx)
+            {
+                kcVM.Index(newIdx);
+            }
+        }
+    }
+
+    winrt::hstring CommandViewModel::ActionNameTextBoxAutomationPropName() const
     {
         return RS_(L"Actions_Name/Text");
     }
 
-    winrt::hstring CommandViewModel::ShortcutActionComboBoxAutomationPropName()
+    winrt::hstring CommandViewModel::ShortcutActionComboBoxAutomationPropName() const
     {
         return RS_(L"Actions_ShortcutAction/Text");
-    }
-
-    winrt::hstring CommandViewModel::AdditionalArgumentsControlAutomationPropName()
-    {
-        return RS_(L"Actions_Arguments/Text");
     }
 
     void CommandViewModel::_RegisterKeyChordVMEvents(Editor::KeyChordViewModel kcVM)
@@ -268,9 +336,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 const auto propertyName{ args.PropertyName() };
                 if (propertyName == L"IsInEditMode")
                 {
-                    if (!senderVM.IsInEditMode())
+                    // Raise FocusContainer on both enter (so the hosting page can
+                    // focus the editable KeyChordListener) and leave (so it can
+                    // return focus to the pencil).
+                    self->FocusContainer.raise(*self, senderVM);
+                }
+                else if (propertyName == L"KeyChordText")
+                {
+                    // The row's automation name reads out every chord, so any chord change
+                    // should refresh it. The first chord also feeds the inline FirstKeyChord visual.
+                    if (self->_KeyChordList.Size() > 0 && self->_KeyChordList.GetAt(0) == senderVM)
                     {
-                        self->FocusContainer.raise(*self, senderVM);
+                        self->_NotifyChanges(L"FirstKeyChord", L"FirstKeyChordText", L"DisplayNameAndKeyChordAutomationPropName");
+                    }
+                    else
+                    {
+                        self->_NotifyChanges(L"DisplayNameAndKeyChordAutomationPropName");
                     }
                 }
             }
@@ -758,6 +839,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ArgWrapper::BoolBindBack(bool newValue)
+    {
+        const auto currentValue = UnboxBool(_Value);
+        if (currentValue != newValue)
+        {
+            Value(box_value(newValue));
+        }
+    }
+
     void ArgWrapper::BoolOptionalBindBack(const Windows::Foundation::IReference<bool> newValue)
     {
         if (newValue)
@@ -1065,12 +1155,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     KeyChordViewModel::KeyChordViewModel(Control::KeyChord currentKeys)
     {
         CurrentKeys(currentKeys);
+
+        // DisplayLabel is derived from Index, so re-fire the change for it whenever Index changes.
+        PropertyChanged([this](const auto& /*sender*/, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
+            if (args.PropertyName() == L"Index")
+            {
+                _NotifyChanges(L"DisplayLabel");
+            }
+        });
     }
 
     void KeyChordViewModel::CurrentKeys(const Control::KeyChord& newKeys)
     {
         _currentKeys = newKeys;
         KeyChordText(Model::KeyChordSerialization::ToString(_currentKeys));
+        _NotifyChanges(L"CurrentKeys", L"EditButtonName");
     }
 
     Control::KeyChord KeyChordViewModel::CurrentKeys() const noexcept
@@ -1126,6 +1225,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     hstring KeyChordViewModel::CancelButtonName() const noexcept { return RS_(L"Actions_CancelButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
     hstring KeyChordViewModel::AcceptButtonName() const noexcept { return RS_(L"Actions_AcceptButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
     hstring KeyChordViewModel::DeleteButtonName() const noexcept { return RS_(L"Actions_DeleteButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"); }
+    hstring KeyChordViewModel::EditButtonName() const { return hstring{ RS_fmt(L"Actions_EditButtonNameFormat", _KeyChordText) }; }
+
+    winrt::hstring KeyChordViewModel::DisplayLabel() const
+    {
+        return hstring{ RS_fmt(L"EditAction_KeyBindingNumberFormat", _Index) };
+    }
 
     ActionsViewModel::ActionsViewModel(Model::CascadiaSettings settings) :
         _Settings{ settings }
@@ -1294,6 +1399,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void ActionsViewModel::_RemoveStaleKeyChordVMs(const Control::KeyChord& keys, const Editor::KeyChordViewModel& exclude)
+    {
+        for (const auto& cmdVM : _CommandList)
+        {
+            get_self<CommandViewModel>(cmdVM)->RemoveMatchingKeyChord(keys, exclude);
+        }
+    }
+
     void ActionsViewModel::AttemptAddOrModifyKeyChord(const Editor::KeyChordViewModel& senderVM, winrt::hstring commandID, const Control::KeyChord& newKeys, const Control::KeyChord& oldKeys)
     {
         auto applyChangesToSettingsModel = [=]() {
@@ -1311,6 +1424,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // update view model
                 auto senderVMImpl{ get_self<KeyChordViewModel>(senderVM) };
                 senderVMImpl->CurrentKeys(newKeys);
+
+                // AddKeyBinding reassigns newKeys to this command, removing it from the
+                // command that previously held it in the settings model.
+                // Mirror that in the view models so the stale row stops showing the chord.
+                // senderVM is excluded so the row the user just edited is preserved.
+                _RemoveStaleKeyChordVMs(newKeys, senderVM);
             }
 
             // reset the flyout if it's there
@@ -1334,7 +1453,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto conflictingCmdName{ conflictingCmd.Name() };
             TextBlock conflictingCommandNameTB{};
             conflictingCommandNameTB.Text(fmt::format(L"\"{}\"", conflictingCmdName.empty() ? RS_(L"Actions_UnnamedCommandName") : conflictingCmdName));
-            conflictingCommandNameTB.FontStyle(Windows::UI::Text::FontStyle::Italic);
 
             TextBlock confirmationQuestionTB{};
             confirmationQuestionTB.Text(RS_(L"Actions_RenameConflictConfirmationQuestion"));
@@ -1435,6 +1553,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         cmdVM->DeleteRequested({ this, &ActionsViewModel::_CmdVMDeleteRequestedHandler });
         cmdVM->PropagateColorSchemeRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeRequestedHandler });
         cmdVM->PropagateColorSchemeNamesRequested({ this, &ActionsViewModel::_CmdVMPropagateColorSchemeNamesRequestedHandler });
+        cmdVM->FocusContainer([weakThis{ get_weak() }](const IInspectable& sender, const IInspectable& args) {
+            if (const auto self{ weakThis.get() })
+            {
+                // Aggregate each command's per-key-chord FocusContainer event into a
+                // single page-level event so the Actions page only subscribes once.
+                const auto cmdVM{ sender.try_as<Editor::CommandViewModel>() };
+                const auto kcVM{ args.try_as<Editor::KeyChordViewModel>() };
+                if (cmdVM && kcVM)
+                {
+                    self->FocusKeyChordContainerRequested.raise(cmdVM, kcVM);
+                }
+            }
+        });
         cmdVM->PropertyChanged([weakThis{ get_weak() }](const IInspectable& sender, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
             if (const auto self{ weakThis.get() })
             {

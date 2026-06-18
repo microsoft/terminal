@@ -675,12 +675,12 @@
     <comment>Header for the "rendering" menu item. This navigates to a page that lets you see and modify settings related to the app's rendering of text in the terminal.</comment>
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
-    <value>Actions</value>
+    <value>Shortcuts</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
   </data>
   <data name="Nav_EditAction.Content" xml:space="preserve">
-    <value>Edit Action...</value>
-    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
+    <value>Edit Shortcut</value>
+    <comment>Header for the "edit shortcut" page. This is the page that lets you modify a specific shortcut and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>Extensions</value>
@@ -1763,28 +1763,60 @@
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
   <data name="Actions_Disclaimer.Content" xml:space="preserve">
-    <value>Learn more about actions</value>
+    <value>Learn more about shortcuts</value>
     <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
   </data>
   <data name="Actions_DeleteButton2.Text" xml:space="preserve">
-    <value>Delete action</value>
+    <value>Delete shortcut</value>
     <comment>Button label that deletes the selected action.</comment>
   </data>
   <data name="Actions_Name.Text" xml:space="preserve">
-    <value>Action name</value>
+    <value>Shortcut name</value>
     <comment>Label for the text box that edits the action name.</comment>
   </data>
   <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
-    <value>Action name</value>
+    <value>Shortcut name</value>
     <comment>Placeholder text for the text box where the user can edit the action name.</comment>
   </data>
   <data name="Actions_ShortcutAction.Text" xml:space="preserve">
-    <value>Action type</value>
+    <value>Shortcut type</value>
     <comment>Label for the combo box that edits the action type.</comment>
   </data>
   <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Keybindings</value>
+    <value>Shortcuts</value>
     <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_AdditionalKeyChordsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>View additional key bindings</value>
+    <comment>Tooltip for a "+N" badge button on each row of the Shortcuts page that opens a flyout listing every additional keyboard shortcut registered for that action (beyond the one already displayed inline on the row).</comment>
+  </data>
+  <data name="EditAction_ActionType.Header" xml:space="preserve">
+    <value>Shortcut type</value>
+    <comment>Header for the shortcut-type setting on the Edit Shortcut page (lets the user pick which action runs when this shortcut is invoked).</comment>
+  </data>
+  <data name="EditAction_ActionName.Header" xml:space="preserve">
+    <value>Shortcut name</value>
+    <comment>Header for the shortcut-name setting on the Edit Shortcut page (lets the user provide a friendly name for this shortcut).</comment>
+  </data>
+  <data name="EditAction_KeyBindings.Text" xml:space="preserve">
+    <value>Key bindings</value>
+    <comment>Header for the shortcuts expander on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_NewKeyBinding.Header" xml:space="preserve">
+    <value>New keybinding</value>
+    <comment>Header for the "add a new shortcut" row on the Edit Shortcut page.</comment>
+  </data>
+  <data name="EditAction_AddKeyBinding.Content" xml:space="preserve">
+    <value>Add</value>
+    <comment>Label for the accent button that appends a new keyboard shortcut to the current action.</comment>
+  </data>
+  <data name="EditAction_AdditionalCustomizations.Text" xml:space="preserve">
+    <value>Additional customizations</value>
+    <comment>Header for the additional customizations expander on the Edit Action page (contains action name and per-action argument settings).</comment>
+  </data>
+  <data name="EditAction_KeyBindingNumberFormat" xml:space="preserve">
+    <value>Shortcut #{}</value>
+    <comment>{Locked="#{}"} Header label for an individual keyboard shortcut inside the "Shortcuts" expander on the Edit Shortcut page. {} is replaced with the 1-based index of the shortcut (e.g. "Shortcut #1").</comment>
   </data>
   <data name="Actions_CommandDetails.Text" xml:space="preserve">
     <value>Command details</value>
@@ -1795,11 +1827,11 @@
     <comment>Label for the list of editable arguments for the currently selected action.</comment>
   </data>
   <data name="Actions_Keybindings.Text" xml:space="preserve">
-    <value>Keybindings</value>
+    <value>Shortcuts</value>
     <comment>Label for the list of editable keybindings for the current command.</comment>
   </data>
   <data name="Actions_AddKeyChord.Text" xml:space="preserve">
-    <value>Add keybinding</value>
+    <value>Add shortcut</value>
     <comment>Button label that adds a keybinding to the current action.</comment>
   </data>
   <data name="Actions_AdditionalKeyChords" xml:space="preserve">
@@ -1807,23 +1839,23 @@
     <comment>Text that will be read out by a screen reader indicating that additional keybindings exist for this command. {} will be replaced by the number of additional keybindings.</comment>
   </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
-    <value>Yes, delete key binding</value>
+    <value>Yes, delete shortcut</value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>
   </data>
   <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>Are you sure you want to delete this key binding?</value>
+    <value>Are you sure you want to delete this shortcut?</value>
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
-    <value>Yes, delete action</value>
+    <value>Yes, delete shortcut</value>
     <comment>Button label that confirms deletion of an action.</comment>
   </data>
   <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
-    <value>Are you sure you want to delete this action?</value>
+    <value>Are you sure you want to delete this shortcut?</value>
     <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
-    <value>Invalid key chord. Please enter a valid key chord.</value>
+    <value>Invalid shortcut. Please enter a valid keyboard shortcut.</value>
     <comment>Error message displayed when an invalid key chord is input by the user.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationAcceptButton" xml:space="preserve">
@@ -1831,7 +1863,7 @@
     <comment>Button label that confirms the deletion of a conflicting key binding to allow the current key binding to be registered.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationMessage" xml:space="preserve">
-    <value>The provided key chord is already being used by the following action:</value>
+    <value>The provided shortcut is already being used by the following action:</value>
     <comment>Error message displayed when a key chord that is already in use is input by the user. The name of the conflicting key chord is displayed after this message.</comment>
   </data>
   <data name="Actions_RenameConflictConfirmationQuestion" xml:space="preserve">
@@ -1858,8 +1890,12 @@
     <value>Edit</value>
     <comment>Text label for a button that can be used to begin making changes to a key binding entry.</comment>
   </data>
+  <data name="Actions_EditButtonNameFormat" xml:space="preserve">
+    <value>Edit {}</value>
+    <comment>{Locked="{}"} Tooltip and narrator name for the pencil button that begins editing a key binding. {} is replaced with the key chord (e.g. "Edit Ctrl+C").</comment>
+  </data>
   <data name="Actions_AddNewTextBlock.Text" xml:space="preserve">
-    <value>Add new</value>
+    <value>Add new shortcut</value>
     <comment>Button label that creates a new action on the actions page.</comment>
   </data>
   <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
