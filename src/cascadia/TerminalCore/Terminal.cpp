@@ -218,16 +218,42 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     _defaultCursorShape = cursorShape;
 
-    UpdateColorScheme(appearance);
+    // Apply the new color scheme, and find out whether the palette actually
+    // changed as a result.
+    const auto paletteChanged = UpdateColorScheme(appearance);
+
+    // Inform the dispatcher of the resolved dark/light color mode (for CSI ? 996 n)
+    // and whether the palette changed. If either the mode or the palette changed,
+    // and an application enabled color theme update notifications (DECSET 2031), an
+    // unsolicited report is emitted. This rides the settings/appearance update,
+    // which WT re-runs both when the user changes the theme and when the OS
+    // appearance preference changes.
+    if (_stateMachine)
+    {
+        auto& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
+        engine.Dispatch().ColorSchemeUpdated(appearance.DarkMode(), paletteChanged);
+    }
 }
 
-void Terminal::UpdateColorScheme(const ICoreScheme& scheme)
+bool Terminal::UpdateColorScheme(const ICoreScheme& scheme)
 {
     auto& renderSettings = GetRenderSettings();
 
+    // Track whether the color palette actually changes, so callers can decide
+    // whether to emit an unsolicited dark/light mode report (DECSET 2031). Per
+    // the spec, the report is only sent when the terminal's color palette has
+    // actually been updated:
+    // https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
+    auto paletteChanged = false;
+    const auto trackChange = [&](const size_t tableIndex, const til::color newColor) {
+        paletteChanged = paletteChanged || renderSettings.GetColorTableEntry(tableIndex) != static_cast<COLORREF>(newColor);
+    };
+
     const til::color newBackgroundColor{ scheme.DefaultBackground() };
+    trackChange(TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
     renderSettings.SetColorAlias(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND, newBackgroundColor);
     const til::color newForegroundColor{ scheme.DefaultForeground() };
+    trackChange(TextColor::DEFAULT_FOREGROUND, newForegroundColor);
     renderSettings.SetColorAlias(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND, newForegroundColor);
     const til::color newCursorColor{ scheme.CursorColor() };
     renderSettings.SetColorTableEntry(TextColor::CURSOR_COLOR, newCursorColor);
@@ -241,13 +267,17 @@ void Terminal::UpdateColorScheme(const ICoreScheme& scheme)
 
     for (auto i = 0; i < 16; i++)
     {
-        renderSettings.SetColorTableEntry(i, til::color{ til::at(colors, i) });
+        const til::color newColor{ til::at(colors, i) };
+        trackChange(i, newColor);
+        renderSettings.SetColorTableEntry(i, newColor);
     }
 
     // Tell the control that the scrollbar has somehow changed. Used as a
     // workaround to force the control to redraw any scrollbar marks whose color
     // may have changed.
     _NotifyScrollEvent();
+
+    return paletteChanged;
 }
 
 void Terminal::SetHighContrastMode(bool hc) noexcept

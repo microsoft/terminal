@@ -211,6 +211,11 @@ namespace winrt::Microsoft::Terminal::Settings
                                  winrt::Windows::UI::Xaml::ElementTheme::Light;
         }
 
+        // Record the resolved dark/light color mode so the terminal can report it
+        // to applications (DECSET 2031 / CSI ? 996 n). This is the OS/app theme
+        // preference, not the color scheme.
+        _DarkMode = requestedTheme != winrt::Windows::UI::Xaml::ElementTheme::Light;
+
         switch (requestedTheme)
         {
         case winrt::Windows::UI::Xaml::ElementTheme::Light:
