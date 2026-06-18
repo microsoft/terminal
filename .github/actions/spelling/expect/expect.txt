@@ -244,6 +244,7 @@ consrv
 consteval
 constexprable
 contentfiles
+contentproperty
 conterm
 contsf
 contypes
@@ -1599,6 +1600,7 @@ STDMETHODCALLTYPE
 STDMETHODIMP
 STGM
 stl
+storyboards
 STRINGTABLE
 STRSAFE
 STUBHEAD
@@ -1844,6 +1846,7 @@ wcs
 WCSHELPER
 wcsrev
 wcswidth
+WCT
 wddm
 wddmcon
 WDDMCONSOLECONTEXT

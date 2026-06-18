@@ -24,45 +24,46 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Style="{StaticResource SettingsStackStyle}">
+    <StackPanel Spacing="2"
+                Style="{StaticResource SettingsStackStyle}">
         <!--  Allow Headless  -->
-        <local:SettingContainer x:Name="AllowHeadless"
-                                x:Uid="Globals_AllowHeadless">
+        <local:SettingsCard x:Name="AllowHeadless"
+                            x:Uid="Globals_AllowHeadless">
             <ToggleSwitch IsOn="{x:Bind ViewModel.AllowHeadless, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+        </local:SettingsCard>
 
         <!--  Text Measurement  -->
-        <local:SettingContainer x:Name="TextMeasurement"
-                                x:Uid="Globals_TextMeasurement">
+        <local:SettingsCard x:Name="TextMeasurement"
+                            x:Uid="Globals_TextMeasurement">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.TextMeasurementList}"
                       SelectedItem="{x:Bind ViewModel.CurrentTextMeasurement, Mode=TwoWay}"
                       Style="{StaticResource ComboBoxSettingStyle}" />
-        </local:SettingContainer>
+        </local:SettingsCard>
 
         <!--  Ambiguous Width  -->
-        <local:SettingContainer x:Name="AmbiguousWidth"
-                                x:Uid="Globals_AmbiguousWidth">
+        <local:SettingsCard x:Name="AmbiguousWidth"
+                            x:Uid="Globals_AmbiguousWidth">
             <ComboBox AutomationProperties.AccessibilityView="Content"
                       ItemTemplate="{StaticResource EnumComboBoxTemplate}"
                       ItemsSource="{x:Bind ViewModel.AmbiguousWidthList}"
                       SelectedItem="{x:Bind ViewModel.CurrentAmbiguousWidth, Mode=TwoWay}"
                       Style="{StaticResource ComboBoxSettingStyle}" />
-        </local:SettingContainer>
+        </local:SettingsCard>
 
         <!--  Debug Features  -->
-        <local:SettingContainer x:Name="DebugFeaturesEnabled"
-                                x:Uid="Globals_DebugFeaturesEnabled"
-                                Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
+        <local:SettingsCard x:Name="DebugFeaturesEnabled"
+                            x:Uid="Globals_DebugFeaturesEnabled"
+                            Visibility="{x:Bind ViewModel.DebugFeaturesAvailable}">
             <ToggleSwitch IsOn="{x:Bind ViewModel.DebugFeaturesEnabled, Mode=TwoWay}"
                           Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-        </local:SettingContainer>
+        </local:SettingsCard>
 
         <!--  Reset Application State  -->
-        <local:SettingContainer x:Name="ResetApplicationState"
-                                x:Uid="Settings_ResetApplicationState">
+        <local:SettingsCard x:Name="ResetApplicationState"
+                            x:Uid="Settings_ResetApplicationState">
             <Button x:Uid="Settings_ResetApplicationStateButton"
                     Style="{StaticResource DeleteButtonStyle}">
                 <Button.Flyout>
@@ -80,11 +81,11 @@
                     </Flyout>
                 </Button.Flyout>
             </Button>
-        </local:SettingContainer>
+        </local:SettingsCard>
 
         <!--  Reset to Default Settings  -->
-        <local:SettingContainer x:Name="ResetToDefaultSettings"
-                                x:Uid="Settings_ResetToDefaultSettings">
+        <local:SettingsCard x:Name="ResetToDefaultSettings"
+                            x:Uid="Settings_ResetToDefaultSettings">
             <Button x:Uid="Settings_ResetToDefaultSettingsButton"
                     Style="{StaticResource DeleteButtonStyle}">
                 <Button.Flyout>
@@ -101,7 +102,7 @@
                     </Flyout>
                 </Button.Flyout>
             </Button>
-        </local:SettingContainer>
+        </local:SettingsCard>
 
     </StackPanel>
 </Page>

@@ -8,13 +8,27 @@
                     xmlns:mtu="using:Microsoft.Terminal.UI"
                     xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
 
-    <!--  Merge SettingContainerStyle here to give every page access to the SettingContainer  -->
+    <!--  Merge SettingsControls styles here to give every page access to them  -->
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="SettingContainerStyle.xaml" />
+        <ResourceDictionary Source="SettingsControlsStyle.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondary}" />
+            </Style>
+            <SolidColorBrush x:Key="SubgroupHeaderBrush"
+                             Color="{StaticResource TextFillColorSecondary}" />
+            <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCriticalBackgroundBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCautionBackgroundBrush" />
+            <StaticResource x:Key="SettingContainerErrorSeverityIconBackground"
+                            ResourceKey="SystemFillColorCriticalBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
+                            ResourceKey="SystemFillColorCautionBrush" />
             <SolidColorBrush x:Key="DeleteButtonBackground"
                              Color="{ThemeResource DeleteButtonColor}" />
             <SolidColorBrush x:Key="DeleteButtonBackgroundPointerOver"
@@ -31,6 +45,20 @@
                              Color="#B3FFFFFF" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondary}" />
+            </Style>
+            <SolidColorBrush x:Key="SubgroupHeaderBrush"
+                             Color="{StaticResource TextFillColorSecondary}" />
+            <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCriticalBackgroundBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityBackgroundBrush"
+                            ResourceKey="SystemFillColorCautionBackgroundBrush" />
+            <StaticResource x:Key="SettingContainerErrorSeverityIconBackground"
+                            ResourceKey="SystemFillColorCriticalBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
+                            ResourceKey="SystemFillColorCautionBrush" />
             <SolidColorBrush x:Key="DeleteButtonBackground"
                              Color="{ThemeResource DeleteButtonColor}" />
             <SolidColorBrush x:Key="DeleteButtonBackgroundPointerOver"
@@ -47,6 +75,18 @@
                              Color="#B3FFFFFF" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
+            <Style x:Key="SecondaryTextBlockStyle"
+                   TargetType="TextBlock" />
+            <SolidColorBrush x:Key="SubgroupHeaderBrush"
+                             Color="{ThemeResource SystemColorWindowTextColor}" />
+            <StaticResource x:Key="SettingContainerErrorSeverityBackgroundBrush"
+                            ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityBackgroundBrush"
+                            ResourceKey="SystemColorWindowColorBrush" />
+            <StaticResource x:Key="SettingContainerErrorSeverityIconBackground"
+                            ResourceKey="SystemColorHighlightColorBrush" />
+            <StaticResource x:Key="SettingContainerWarningSeverityIconBackground"
+                            ResourceKey="SystemColorHighlightColorBrush" />
             <SolidColorBrush x:Key="DeleteButtonBackground"
                              Color="{ThemeResource SystemColorButtonFaceColor}" />
             <SolidColorBrush x:Key="DeleteButtonBackgroundPointerOver"
@@ -61,6 +101,31 @@
                              Color="{ThemeResource SystemColorHighlightTextColor}" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
+
+    <!--  Glyphs / sizing for the inline error & warning severity badges (e.g. on Appearances).  -->
+    <x:String x:Key="SettingContainerErrorIconGlyph">&#xF13D;</x:String>
+    <x:String x:Key="SettingContainerWarningIconGlyph">&#xF13C;</x:String>
+    <x:Double x:Key="SettingContainerIconFontSize">16</x:Double>
+
+    <Style x:Key="SettingsPageItemDescriptionStyle"
+           BasedOn="{StaticResource CaptionTextBlockStyle}"
+           TargetType="TextBlock">
+        <Setter Property="Margin" Value="0,0,24,0" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Foreground" Value="{ThemeResource SubgroupHeaderBrush}" />
+        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+        <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
+    </Style>
+
+    <Style x:Key="SettingContainerCurrentValueTextBlockStyle"
+           BasedOn="{StaticResource SettingsPageItemDescriptionStyle}"
+           TargetType="TextBlock">
+        <Setter Property="MaxWidth" Value="248" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets" />
+    </Style>
 
     <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
     <local:ColorToStringConverter x:Key="ColorToStringConverter" />
@@ -139,7 +204,9 @@
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}" />
         <Setter Property="MaxWidth" Value="400" />
         <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <!--  Value is set below to appease the compiler. The localized resource is used instead.  -->
+        <Setter x:Uid="TextBoxSettingStyle_PlaceholderText" Property="PlaceholderText" Value="None" />
     </Style>
 
     <!--  Text Block  -->
@@ -209,7 +276,6 @@
     <Style x:Key="BrowseButtonStyle"
            BasedOn="{StaticResource BaseButtonStyle}"
            TargetType="Button">
-        <Setter Property="Margin" Value="8,0,0,0" />
         <Setter Property="MinHeight" Value="32" />
     </Style>
 
@@ -1193,87 +1259,6 @@
 
                             </VisualStateGroup>
 
-                        </VisualStateManager.VisualStateGroups>
-                    </Grid>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="NavigatorButtonStyle"
-           TargetType="Button">
-        <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
-        <Setter Property="MinWidth" Value="{ThemeResource FlyoutThemeMinWidth}" />
-        <Setter Property="MinHeight" Value="64" />
-        <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
-        <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
-        <Setter Property="Padding" Value="16,0,8,0" />
-        <Setter Property="Margin" Value="0,4,0,0" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-        <Setter Property="VerticalAlignment" Value="Stretch" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Grid x:Name="Grid"
-                          Padding="{TemplateBinding Padding}"
-                          AutomationProperties.AccessibilityView="Raw"
-                          Background="{TemplateBinding Background}"
-                          BorderBrush="{TemplateBinding BorderBrush}"
-                          BorderThickness="{TemplateBinding BorderThickness}"
-                          CornerRadius="{TemplateBinding CornerRadius}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ContentPresenter x:Name="ContentPresenter"
-                                          Grid.Column="0"
-                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          Content="{TemplateBinding Content}"
-                                          ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          ContentTransitions="{TemplateBinding ContentTransitions}" />
-                        <FontIcon Grid.Column="1"
-                                  Margin="20,0,8,0"
-                                  HorizontalAlignment="Right"
-                                  FontSize="10"
-                                  FontWeight="Black"
-                                  Glyph="&#xE76C;" />
-
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="CommonStates">
-                                <VisualState x:Name="Normal" />
-                                <VisualState x:Name="PointerOver">
-                                    <Storyboard>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
-                                                                       Storyboard.TargetProperty="Background">
-                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{ThemeResource ToggleButtonBackgroundPointerOver}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{ThemeResource ToggleButtonBorderBrushPointerOver}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </VisualState>
-                                <VisualState x:Name="Pressed">
-                                    <Storyboard>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
-                                                                       Storyboard.TargetProperty="Background">
-                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{ThemeResource ToggleButtonBackgroundPressed}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Grid"
-                                                                       Storyboard.TargetProperty="BorderBrush">
-                                            <DiscreteObjectKeyFrame KeyTime="0"
-                                                                    Value="{ThemeResource ToggleButtonBorderBrushPressed}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </VisualState>
-                            </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
                     </Grid>
                 </ControlTemplate>
