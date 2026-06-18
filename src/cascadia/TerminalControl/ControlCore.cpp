@@ -449,6 +449,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetGraphicsAPI(parseGraphicsAPI(_settings.GraphicsAPI()));
             _renderEngine->SetDisablePartialInvalidation(_settings.DisablePartialInvalidation());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            _renderEngine->SetCursorSmear(_settings.CursorSmear(), _settings.CursorAnimationLength(), _settings.CursorTrailSize());
 
             _updateAntiAliasingMode();
 
@@ -979,6 +980,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
             _renderEngine->SetPixelShaderImagePath(newAppearance.PixelShaderImagePath());
+            _renderEngine->SetCursorSmear(newAppearance.CursorSmear(), newAppearance.CursorAnimationLength(), newAppearance.CursorTrailSize());
 
             // Incase EnableUnfocusedAcrylic is disabled and Focused Acrylic is set to true,
             // the terminal should ignore the unfocused opacity from settings.

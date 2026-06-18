@@ -18,6 +18,7 @@ namespace Microsoft::Console::Render::Atlas
         void ReleaseResources() noexcept override;
         void Render(RenderingPayload& payload) override;
         bool RequiresContinuousRedraw() noexcept override;
+        void SetCursorSmear(bool enabled, float animLength, float trailSize) noexcept;
 
         // NOTE: D3D constant buffers sizes must be a multiple of 16 bytes.
         struct alignas(16) VSConstBuffer
@@ -76,6 +77,7 @@ namespace Microsoft::Console::Render::Atlas
             SolidLine,
 
             Cursor,
+            SmearCursor,
             FilledRect,
 
             TextDrawingFirst = TextGrayscale,
@@ -260,6 +262,8 @@ namespace Microsoft::Console::Render::Atlas
         void _drawCursorBackground(const RenderingPayload& p);
         ATLAS_ATTR_COLD void _drawCursorForeground();
         ATLAS_ATTR_COLD size_t _drawCursorForegroundSlowPath(const CursorRect& c, size_t offset);
+        void _drawCursorSmear(const RenderingPayload& p);
+        void _tickCursorAnimation(const RenderingPayload& p);
         void _drawSelection(const RenderingPayload& p);
         void _executeCustomShader(RenderingPayload& p);
 
@@ -318,6 +322,7 @@ namespace Microsoft::Console::Render::Atlas
 
         til::generation_t _generation;
         til::generation_t _fontGeneration;
+        til::generation_t _cursorGeneration;
         til::generation_t _miscGeneration;
         u16x2 _targetSize{};
         u16x2 _viewportCellCount{};
@@ -332,6 +337,21 @@ namespace Microsoft::Console::Render::Atlas
         f32 _curlyLineHalfHeight = 0.0f;
         FontDecorationPosition _curlyUnderline;
 
+        // ---- Cursor Smear State ----
+        struct SmearState
+        {
+            i16 prevLeft = -1;
+            i16 prevTop = -1;
+            float animX = 0.0f;
+            float animY = 0.0f;
+            float animLength = 0.15f;
+            float trailSize = 1.0f;
+            bool smearEnabled = false;
+            bool active = false;
+            u64 armTime = 0;
+        } _smearState;
+
+        u64 _qpcFreq = 0;
         bool _requiresContinuousRedraw = false;
 
 #if ATLAS_DEBUG_SHOW_DIRTY

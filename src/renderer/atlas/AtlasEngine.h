@@ -72,6 +72,7 @@ namespace Microsoft::Console::Render::Atlas
         void SetPixelShaderImagePath(std::wstring_view value) noexcept;
         void SetRetroTerminalEffect(bool enable) noexcept;
         void SetSoftwareRendering(bool enable) noexcept;
+        void SetCursorSmear(bool enabled, float animLength, float trailSize) noexcept;
         void SetDisablePartialInvalidation(bool enable) noexcept;
         void SetGraphicsAPI(GraphicsAPI graphicsAPI) noexcept;
         void SetWarningCallback(std::function<void(HRESULT, wil::zwstring_view)> pfn) noexcept;

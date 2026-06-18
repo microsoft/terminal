@@ -14,7 +14,10 @@
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                \
     X(bool, IntenseIsBold)                                                                                                \
     X(bool, IntenseIsBright, true)                                                                                        \
-    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Automatic)
+    X(winrt::Microsoft::Terminal::Core::AdjustTextMode, AdjustIndistinguishableColors, winrt::Microsoft::Terminal::Core::AdjustTextMode::Automatic) \
+    X(bool, CursorSmear)                                                                                                  \
+    X(float, CursorAnimationLength, 0.15f)                                                                                \
+    X(float, CursorTrailSize, 1.0f)
 
 // --------------------------- Control Appearance ---------------------------
 //  All of these settings are defined in IControlAppearance.

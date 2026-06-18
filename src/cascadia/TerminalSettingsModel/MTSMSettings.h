@@ -145,7 +145,10 @@ Author(s):
     X(IMediaResource, BackgroundImagePath, "backgroundImage", implementation::MediaResource::Empty())                                                              \
     X(Model::IntenseStyle, IntenseTextStyle, "intenseTextStyle", Model::IntenseStyle::Bright)                                                                      \
     X(Core::AdjustTextMode, AdjustIndistinguishableColors, "adjustIndistinguishableColors", Core::AdjustTextMode::Automatic)                                       \
-    X(bool, UseAcrylic, "useAcrylic", false)
+    X(bool, UseAcrylic, "useAcrylic", false)                                                                                                                       \
+    X(bool, CursorSmear, "cursorSmear", false)                                                                                                                     \
+    X(float, CursorAnimationLength, "cursorAnimationLength", 0.15f)                                                                                                \
+    X(float, CursorTrailSize, "cursorTrailSize", 1.0f)
 
 // Intentionally omitted Appearance settings:
 // * ForegroundKey, BackgroundKey, SelectionBackgroundKey, CursorColorKey: all optional colors

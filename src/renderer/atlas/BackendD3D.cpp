@@ -14,7 +14,11 @@
 #include <shader_ps.h>
 #include <shader_vs.h>
 
+#include <algorithm>
+#include <cmath>
+
 #include "BuiltinGlyphs.h"
+#include "CursorAnimationState.h"
 #include "dwrite_helpers.h"
 #include "wic.h"
 #include "../../types/inc/ColorFix.hpp"
@@ -187,6 +191,12 @@ BackendD3D::BackendD3D(const RenderingPayload& p)
         }
     });
 #endif
+
+    {
+        LARGE_INTEGER freq;
+        QueryPerformanceFrequency(&freq);
+        _qpcFreq = std::bit_cast<u64>(freq.QuadPart);
+    }
 }
 
 #pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
@@ -198,6 +208,18 @@ BackendD3D::~BackendD3D()
     {
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
         LOG_IF_FAILED(_d2dRenderTarget->EndDraw());
+    }
+}
+
+void BackendD3D::SetCursorSmear(bool enabled, float animLength, float trailSize) noexcept
+{
+    _smearState.smearEnabled = enabled;
+    _smearState.animLength = std::max(0.016f, animLength);
+    _smearState.trailSize = std::max(0.0f, std::min(1.0f, trailSize));
+    if (!enabled)
+    {
+        _smearState.active = false;
+        _requiresContinuousRedraw = false;
     }
 }
 
@@ -230,6 +252,13 @@ void BackendD3D::Render(RenderingPayload& p)
 #endif
 
     _drawBackground(p);
+
+    _tickCursorAnimation(p);
+    if (_smearState.active)
+    {
+        _drawCursorSmear(p);
+    }
+
     _drawCursorBackground(p);
     _drawText(p);
     _debugShowDirty(p);
@@ -258,12 +287,17 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
     }
 
     const auto fontChanged = _fontGeneration != p.s->font.generation();
+    const auto cursorChanged = _cursorGeneration != p.s->cursor.generation();
     const auto miscChanged = _miscGeneration != p.s->misc.generation();
     const auto cellCountChanged = _viewportCellCount != p.s->viewportCellCount;
 
     if (fontChanged)
     {
         _updateFontDependents(p);
+    }
+    if (cursorChanged)
+    {
+        SetCursorSmear(p.s->cursor->smearEnabled, p.s->cursor->cursorAnimationLength, p.s->cursor->cursorTrailSize);
     }
     if (miscChanged)
     {
@@ -286,6 +320,7 @@ void BackendD3D::_handleSettingsUpdate(const RenderingPayload& p)
 
     _generation = p.s.generation();
     _fontGeneration = p.s->font.generation();
+    _cursorGeneration = p.s->cursor.generation();
     _miscGeneration = p.s->misc.generation();
     _targetSize = p.s->targetSize;
     _viewportCellCount = p.s->viewportCellCount;
@@ -2060,6 +2095,167 @@ void BackendD3D::_drawCursorBackground(const RenderingPayload& p)
             .position = c.position,
             .size = c.size,
             .color = c.background,
+        };
+    }
+}
+
+void BackendD3D::_tickCursorAnimation(const RenderingPayload& p)
+{
+    if (!_smearState.smearEnabled)
+    {
+        _smearState.active = false;
+        _requiresContinuousRedraw = false;
+        return;
+    }
+
+    const auto& cr = p.cursorRect;
+    if (cr.empty())
+    {
+        _smearState.active = false;
+        _requiresContinuousRedraw = false;
+        return;
+    }
+
+    const i16 curLeft = static_cast<i16>(cr.left);
+    const i16 curTop = static_cast<i16>(cr.top);
+
+    const bool moved = curLeft != _smearState.prevLeft || curTop != _smearState.prevTop;
+
+    if (moved)
+    {
+        const float oldCellX = _smearState.prevLeft >= 0
+            ? static_cast<float>(_smearState.prevLeft) + 0.5f
+            : static_cast<float>(curLeft) + 0.5f;
+        const float oldCellY = _smearState.prevTop >= 0
+            ? static_cast<float>(_smearState.prevTop) + 0.5f
+            : static_cast<float>(curTop) + 0.5f;
+        const float newCellX = static_cast<float>(curLeft) + 0.5f;
+        const float newCellY = static_cast<float>(curTop) + 0.5f;
+        const float dist = fabsf(newCellX - oldCellX) + fabsf(newCellY - oldCellY);
+
+        if (dist > 1.5f)
+        {
+            const auto cellW = static_cast<float>(p.s->font->cellSize.x);
+            const auto cellH = static_cast<float>(p.s->font->cellSize.y);
+            _smearState.animX = oldCellX * cellW;
+            _smearState.animY = oldCellY * cellH;
+            _smearState.active = true;
+            LARGE_INTEGER now;
+            QueryPerformanceCounter(&now);
+            _smearState.armTime = std::bit_cast<u64>(now.QuadPart);
+        }
+        else
+        {
+            const auto cellW = static_cast<float>(p.s->font->cellSize.x);
+            const auto cellH = static_cast<float>(p.s->font->cellSize.y);
+            _smearState.animX = newCellX * cellW;
+            _smearState.animY = newCellY * cellH;
+            _smearState.active = false;
+            _requiresContinuousRedraw = false;
+        }
+    }
+
+    if (_smearState.active)
+    {
+        const float targetX = (static_cast<float>(curLeft) + 0.5f) * static_cast<float>(p.s->font->cellSize.x);
+        const float targetY = (static_cast<float>(curTop) + 0.5f) * static_cast<float>(p.s->font->cellSize.y);
+
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        const double elapsed = static_cast<double>(std::bit_cast<u64>(now.QuadPart) - _smearState.armTime) /
+                                static_cast<double>(_qpcFreq);
+        const float t = std::min(static_cast<float>(elapsed) / std::max(_smearState.animLength, 0.016f), 1.0f);
+        const float eased = 1.0f - expf(-5.0f * t);
+
+        _smearState.animX = targetX + (_smearState.animX - targetX) * (1.0f - eased);
+        _smearState.animY = targetY + (_smearState.animY - targetY) * (1.0f - eased);
+
+        if (t >= 1.0f ||
+            (fabsf(_smearState.animX - targetX) < 1.0f && fabsf(_smearState.animY - targetY) < 1.0f))
+        {
+            _smearState.animX = targetX;
+            _smearState.animY = targetY;
+            _smearState.active = false;
+            _requiresContinuousRedraw = false;
+        }
+        else
+        {
+            _requiresContinuousRedraw = true;
+        }
+    }
+
+    _smearState.prevLeft = curLeft;
+    _smearState.prevTop = curTop;
+}
+
+void BackendD3D::_drawCursorSmear(const RenderingPayload& p)
+{
+    const auto cellW = static_cast<i16>(p.s->font->cellSize.x);
+    const auto cellH = static_cast<i16>(p.s->font->cellSize.y);
+
+    const i16 curPxX = static_cast<i16>(p.cursorRect.left * cellW);
+    const i16 curPxY = static_cast<i16>(p.cursorRect.top * cellH);
+    const i16 trailPxX = static_cast<i16>(lrintf(_smearState.animX));
+    const i16 trailPxY = static_cast<i16>(lrintf(_smearState.animY));
+
+    if (abs(trailPxX - curPxX) <= cellW / 2 && abs(trailPxY - curPxY) <= cellH / 2)
+    {
+        return;
+    }
+
+    u32 smearColor = p.s->cursor->cursorColor;
+    if (smearColor == 0xffffffff)
+    {
+        const auto offset = static_cast<size_t>(p.cursorRect.top) * p.colorBitmapRowStride;
+        const u32 bgColor = (offset < p.backgroundBitmap.size())
+            ? (p.backgroundBitmap[offset + p.cursorRect.left] | 0xff000000)
+            : 0xff000000;
+        smearColor = bgColor ^ 0x404040;
+    }
+
+    // Body quad
+    const i16 minX = std::min(trailPxX, curPxX);
+    const i16 maxX = std::max(trailPxX, curPxX) + cellW;
+    const i16 minY = std::min(trailPxY, curPxY);
+    const i16 maxY = std::max(trailPxY, curPxY) + cellH;
+
+    if (maxX > minX && maxY > minY)
+    {
+        _appendQuad() = {
+            .shadingType = static_cast<u16>(ShadingType::Cursor),
+            .position = { minX, minY },
+            .size = { static_cast<u16>(maxX - minX), static_cast<u16>(maxY - minY) },
+            .color = (smearColor & 0x00ffffff) | 0x44000000,
+        };
+    }
+
+    // Trail head ghost
+    {
+        _appendQuad() = {
+            .shadingType = static_cast<u16>(ShadingType::Cursor),
+            .position = { trailPxX, trailPxY },
+            .size = { static_cast<u16>(cellW), static_cast<u16>(cellH) },
+            .color = (smearColor & 0x00ffffff) | 0x33000000,
+        };
+    }
+
+    // Intermediate quads
+    const int segments = 4;
+    const float ddx = static_cast<float>(curPxX - trailPxX);
+    const float ddy = static_cast<float>(curPxY - trailPxY);
+    for (int i = 1; i < segments; ++i)
+    {
+        const float t = static_cast<float>(i) / static_cast<float>(segments);
+        const i16 sx = static_cast<i16>(lrintf(trailPxX + ddx * t));
+        const i16 sy = static_cast<i16>(lrintf(trailPxY + ddy * t));
+        const int alphaInt = static_cast<int>(80.0f * (1.0f - t));
+        const u32 alpha = (static_cast<u32>(std::clamp(alphaInt, 0, 255)) << 24);
+
+        _appendQuad() = {
+            .shadingType = static_cast<u16>(ShadingType::Cursor),
+            .position = { sx, sy },
+            .size = { static_cast<u16>(cellW), static_cast<u16>(cellH) },
+            .color = (smearColor & 0x00ffffff) | alpha,
         };
     }
 }

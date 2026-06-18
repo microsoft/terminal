@@ -42,6 +42,9 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
         INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
         INHERITABLE_APPEARANCE_SETTING(UInt32, CursorHeight);
+        INHERITABLE_APPEARANCE_SETTING(Boolean, CursorSmear);
+        INHERITABLE_APPEARANCE_SETTING(Single, CursorAnimationLength);
+        INHERITABLE_APPEARANCE_SETTING(Single, CursorTrailSize);
 
         INHERITABLE_APPEARANCE_SETTING(IMediaResource, BackgroundImagePath);
 

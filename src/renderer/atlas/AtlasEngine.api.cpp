@@ -432,6 +432,24 @@ void AtlasEngine::SetSoftwareRendering(bool enable) noexcept
     }
 }
 
+void AtlasEngine::SetCursorSmear(bool enabled, float animLength, float trailSize) noexcept
+{
+    if (_api.s->cursor->smearEnabled != enabled ||
+        _api.s->cursor->cursorAnimationLength != animLength ||
+        _api.s->cursor->cursorTrailSize != trailSize)
+    {
+        auto cursor = _api.s.write()->cursor.write();
+        cursor->smearEnabled = enabled;
+        cursor->cursorAnimationLength = animLength;
+        cursor->cursorTrailSize = trailSize;
+
+        auto pcursor = _p.s.write()->cursor.write();
+        pcursor->smearEnabled = enabled;
+        pcursor->cursorAnimationLength = animLength;
+        pcursor->cursorTrailSize = trailSize;
+    }
+}
+
 void AtlasEngine::SetDisablePartialInvalidation(bool enable) noexcept
 {
     if (_api.s->target->disablePresent1 != enable)

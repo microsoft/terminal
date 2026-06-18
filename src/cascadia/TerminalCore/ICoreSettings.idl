@@ -98,6 +98,9 @@ namespace Microsoft.Terminal.Core
     {
         CursorStyle CursorShape { get; };
         UInt32 CursorHeight { get; };
+        Boolean CursorSmear { get; };
+        Single CursorAnimationLength { get; };
+        Single CursorTrailSize { get; };
         Boolean IntenseIsBold { get; };
         Boolean IntenseIsBright { get; };
         AdjustTextMode AdjustIndistinguishableColors { get; };

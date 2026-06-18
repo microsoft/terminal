@@ -388,6 +388,9 @@ namespace Microsoft::Console::Render::Atlas
         u32 cursorColor = 0xffffffff;
         u16 cursorType = 0;
         u16 heightPercentage = 20;
+        bool smearEnabled = false;
+        f32 cursorAnimationLength = 0.15f;
+        f32 cursorTrailSize = 1.0f;
     };
 
     struct MiscellaneousSettings
