@@ -71,6 +71,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void EditAction::OnNavigatedTo(const NavigationEventArgs& e)
     {
+        Automation::AutomationProperties::SetName(KeyBindingsContainer(), RS_(L"EditAction_KeyBindings/Text"));
+        Automation::AutomationProperties::SetName(AdditionalCustomizationsContainer(), RS_(L"EditAction_AdditionalCustomizations/Text"));
+        Automation::AutomationProperties::SetName(NewKeyBinding(), RS_(L"EditAction_NewKeyBinding/Header"));
+
         const auto args = e.Parameter().as<Editor::NavigateToPageArgs>();
         _ViewModel = args.ViewModel().as<Editor::CommandViewModel>();
         _propagateWindowRootRevoker = _ViewModel.PropagateWindowRootRequested(
