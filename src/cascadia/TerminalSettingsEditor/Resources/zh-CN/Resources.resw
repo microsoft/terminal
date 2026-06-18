@@ -569,7 +569,7 @@
     <value>允许 OSC 777 (Desktop Notification)显示 toast 通知</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>启用后，应用程序可以发送 OSC 777 转义序列以触发具有自定义标题和正文的桌面通知。</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -930,7 +930,7 @@
     <value>在配置文件中所使用的可执行文件。</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>浏览……</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1101,21 +1101,13 @@
     <value>所选字体没有字体功能。</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>从下拉菜单中隐藏</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>如果启用，配置文件将不会显示在配置文件列表中。这可用于隐藏默认配置文件和动态生成的配置文件，同时将它们保留在设置文件中。</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
-  </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
+  <data name="Profile_Elevate.Content" xml:space="preserve">
     <value>以管理员身份运行此配置文件</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>如果启用，配置文件将在管理员终端窗口中自动打开。如果当前窗口已以管理员身份运行，它将在此窗口中打开。</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>历史记录大小</value>
@@ -1213,11 +1205,7 @@
     <value>正在启动目录</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>加载配置文件时启动的目录。</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>浏览……</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1252,10 +1240,6 @@
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
     <value>无焦点外观</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
-  </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>创建外观</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>删除</value>
@@ -1752,14 +1736,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>如果启用，则在上面的列表中显示所有已安装的字体。否则，仅显示等宽字体列表。</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>创建外观</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>创建此配置文件的无焦点外观。这将是配置文件处于非活动状态时的外观。</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>删除外观</value>
@@ -2661,10 +2637,6 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>指示最初创建此配置文件的软件。</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>无</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>已在 Windows 设置的“启动应用”部分禁用自动启动。</value>
     <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
@@ -2722,10 +2694,6 @@
   <data name="Appearance_BackgroundImageNone" xml:space="preserve">
     <value>无</value>
     <comment>Text displayed when the background image path is not defined.</comment>
-  </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>无</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
   </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>重置为默认设置</value>

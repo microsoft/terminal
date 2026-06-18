@@ -19,9 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        void CreateUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-        void DeleteUnfocusedAppearance_Click(const Windows::Foundation::IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& e);
-
         Editor::IHostedInWindow WindowRoot() const noexcept { return _weakWindowRoot.get(); };
 
         til::property_changed_event PropertyChanged;

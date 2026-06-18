@@ -569,7 +569,7 @@
     <value>OSC 777(Desktop Notification)이 토스트 알림을 표시하도록 허용</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>사용하도록 설정하면 애플리케이션이 OSC 777 이스케이프 시퀀스를 전송하여 사용자 지정 제목 및 본문을 사용하여 데스크톱 알림을 트리거할 수 있습니다.</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -930,7 +930,7 @@
     <value>프로필에 사용된 실행 파일입니다.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>찾아보기...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1101,21 +1101,13 @@
     <value>선택한 글꼴에 글꼴 기능이 없습니다.</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>드롭다운에서 프로필 숨기기</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 프로필이 프로필 목록에 나타나지 않습니다. 기본 프로필 및 동적으로 생성된 프로필을 설정 파일에 그대로 두는 데 사용할 수 있습니다.</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
-  </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
+  <data name="Profile_Elevate.Content" xml:space="preserve">
     <value>이 프로필을 관리자 권한으로 실행</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>사용하도록 설정하면 프로필이 관리 터미널 창에서 자동으로 열립니다. 현재 창이 관리자 권한으로 이미 실행되고 있는 경우 이 창에서 열립니다.</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>기록 크기</value>
@@ -1213,11 +1205,7 @@
     <value>시작 디렉터리</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>프로필이 로드될 때 시작됩니다.</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>찾아보기...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1252,10 +1240,6 @@
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
     <value>포커스되지 않는 모양</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
-  </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>모양 만들기</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>삭제</value>
@@ -1752,14 +1736,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>사용하도록 설정된 경우 위의 목록에 설치된 모든 글꼴을 표시합니다. 그렇지 않으면 고정 폭 글꼴 목록만 표시합니다.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>모양 만들기</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>이 프로필에 대해 할당되지 않은 모양을 만듭니다. 프로필이 비활성 상태인 경우 프로필의 모양이 됩니다.</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>모양 삭제</value>
@@ -2661,10 +2637,6 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>이 프로필을 원래 만든 소프트웨어를 나타냅니다.</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>없음</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>Windows 설정의 Startup Apps 섹션에서 자동 시작을 사용하지 않도록 설정했습니다.</value>
     <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
@@ -2722,10 +2694,6 @@
   <data name="Appearance_BackgroundImageNone" xml:space="preserve">
     <value>없음</value>
     <comment>Text displayed when the background image path is not defined.</comment>
-  </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>없음</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
   </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>기본 설정으로 초기화</value>

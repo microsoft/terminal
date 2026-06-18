@@ -254,6 +254,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 LocalizedIndexEntry localizedEntry;
                 localizedEntry.Entry = &entry;
                 localizedEntry.DisplayTextLocalized = GetLibraryResourceString(entry.ResourceName);
+                if (!entry.SecondaryResourceName.empty())
+                {
+                    localizedEntry.SecondaryLabelLocalized = GetLibraryResourceString(entry.SecondaryResourceName);
+                }
                 if (shouldIncludeLanguageNeutralResources)
                 {
                     localizedEntry.DisplayTextNeutral = EnglishOnlyResourceLoader().GetLocalizedString(entry.ResourceName);
@@ -342,7 +346,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (bestScore >= MinimumMatchScore)
             {
-                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(index, &entry));
+                scoredResults.emplace_back(bestScore, winrt::make<FilteredSearchResult>(index, &entry, nullptr, std::nullopt, entry.SecondaryLabelLocalized));
             }
         }
 

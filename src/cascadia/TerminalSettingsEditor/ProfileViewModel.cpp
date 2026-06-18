@@ -112,19 +112,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _parsedPadding = StringToXamlThickness(_profile.Padding());
                 _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding");
             }
-            else if (viewModelProperty == L"TabTitle")
-            {
-                _NotifyChanges(L"TabTitlePreview");
-            }
-            else if (viewModelProperty == L"AnswerbackMessage")
-            {
-                _NotifyChanges(L"AnswerbackMessagePreview");
-            }
-            else if (viewModelProperty == L"TabColor")
-            {
-                _NotifyChanges(L"TabColorPreview");
-            }
-            else if (viewModelProperty == L"TabThemeColorPreview")
+            else if (viewModelProperty == L"TabColor" || viewModelProperty == L"TabThemeColorPreview")
             {
                 _NotifyChanges(L"TabColorPreview");
             }
@@ -205,12 +193,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _parsedPadding.Bottom;
     }
+
     Control::IControlSettings ProfileViewModel::TermSettings() const
     {
         // This may look pricey, but it only resolves resources that have not been visited
         // and the preview update is debounced.
         _appSettings.ResolveMediaResources();
         return *Settings::TerminalSettings::CreateForPreview(_appSettings, _profile);
+    }
+
+    Control::IControlSettings ProfileViewModel::TermSettingsUnfocused() const
+    {
+        // This may look pricey, but it only resolves resources that have not been visited
+        // and the preview update is debounced.
+        _appSettings.ResolveMediaResources();
+        return *Settings::TerminalSettings::CreateForPreviewUnfocused(_appSettings, _profile);
     }
 
     // Method Description:
@@ -340,23 +337,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _profile.Orphaned();
     }
 
-    hstring ProfileViewModel::TabTitlePreview() const
+    bool ProfileViewModel::HasSetting(const hstring& name)
     {
-        if (const auto tabTitle{ TabTitle() }; !tabTitle.empty())
-        {
-            return tabTitle;
-        }
-        return RS_(L"Profile_TabTitleNone");
+        const std::wstring_view n{ name };
+#define HANDLE(Setting)        \
+    if (n == L## #Setting)     \
+    {                          \
+        return Has##Setting(); \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return false;
     }
 
-    hstring ProfileViewModel::AnswerbackMessagePreview() const
+    void ProfileViewModel::ClearSetting(const hstring& name)
     {
-        if (const auto answerbackMessage{ AnswerbackMessage() }; !answerbackMessage.empty())
-        {
-            return answerbackMessage;
-        }
-        return RS_(L"Profile_AnswerbackMessageNone");
+        const std::wstring_view n{ name };
+#define HANDLE(Setting)    \
+    if (n == L## #Setting) \
+    {                      \
+        Clear##Setting();  \
+        return;            \
     }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+    }
+
+    Windows::Foundation::IInspectable ProfileViewModel::SettingOverrideSource(const hstring& name)
+    {
+        const std::wstring_view n{ name };
+#define HANDLE(Setting)                   \
+    if (n == L## #Setting)                \
+    {                                     \
+        return Setting##OverrideSource(); \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return nullptr;
+    }
+
+    // Compile-time tripwire. PROFILE_INHERITABLE_SETTINGS now generates both the
+    // property accessors and the dispatch above, so those two can no longer drift.
+#define PROFILE_COUNT(target, name) +1
+    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 34,
+                  "The set of inheritable profile settings changed. Update this count, then make "
+                  "sure the new/removed setting is also reflected in ProfileViewModel.idl and in the "
+                  "XAML reset buttons.");
+#undef PROFILE_COUNT
+#undef PROFILE_INHERITABLE_SETTINGS
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
     {
@@ -456,6 +490,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return EditableUnfocusedAppearance() && HasUnfocusedAppearance();
     }
 
+    hstring ProfileViewModel::UnfocusedAppearanceCardValue()
+    {
+        return HasUnfocusedAppearance() ? hstring{} : RS_(L"Profile_UnfocusedAppearanceNone");
+    }
+
     void ProfileViewModel::CreateUnfocusedAppearance()
     {
         _profile.CreateUnfocusedAppearance();
@@ -463,7 +502,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
         _unfocusedAppearanceViewModel.SchemesList(DefaultAppearance().SchemesList());
 
-        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance", L"UnfocusedAppearanceCardValue");
     }
 
     void ProfileViewModel::DeleteUnfocusedAppearance()
@@ -472,7 +511,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _unfocusedAppearanceViewModel = nullptr;
 
-        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance", L"UnfocusedAppearanceCardValue");
     }
 
     Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance() const

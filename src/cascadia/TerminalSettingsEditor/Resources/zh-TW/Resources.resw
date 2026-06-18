@@ -569,7 +569,7 @@
     <value>允許 OSC 777 (Desktop Notification) 顯示快顯通知</value>
     <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
   </data>
-  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+  <data name="Profile_AllowOscNotifications.Description" xml:space="preserve">
     <value>啟用時，應用程式可以傳送 OSC 777 逸出序列，以觸發具有自訂標題和本文的桌面通知。</value>
     <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
@@ -930,7 +930,7 @@
     <value>用於設定檔中的可執行檔。</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
   </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
+  <data name="Profile_CommandlineBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>瀏覽...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1101,21 +1101,13 @@
     <value>選取的字型沒有字型功能。</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_Hidden.Header" xml:space="preserve">
+  <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>在下拉式清單中隱藏設定檔</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
-  <data name="Profile_Hidden.Description" xml:space="preserve">
-    <value>如果啟用，設定檔將不會顯示在設定檔清單中。這可用來隱藏預設設定檔和動態產生的設定檔，同時將它們留在您的設定檔案中。</value>
-    <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
-  </data>
-  <data name="Profile_Elevate.Header" xml:space="preserve">
+  <data name="Profile_Elevate.Content" xml:space="preserve">
     <value>以系統管理員身分執行此設定檔</value>
     <comment>Header for a control to toggle whether the profile should always open elevated (in an admin window)</comment>
-  </data>
-  <data name="Profile_Elevate.Description" xml:space="preserve">
-    <value>如果啟用，配置檔將會自動在 管理員 終端機視窗中開啟。如果目前的視窗已以系統管理員身分執行，則會在此視窗中開啟。</value>
-    <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>歷史大小</value>
@@ -1213,11 +1205,7 @@
     <value>起始目錄</value>
     <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
-  <data name="Profile_StartingDirectory.Description" xml:space="preserve">
-    <value>載入時，設定檔起始的目錄。</value>
-    <comment>A description for what the "starting directory" setting does. Presented near "Profile_StartingDirectory".</comment>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
+  <data name="Profile_StartingDirectoryBrowse.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>瀏覽...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
   </data>
@@ -1252,10 +1240,6 @@
   <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
     <value>非焦點外觀</value>
     <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
-  </data>
-  <data name="Profile_AddAppearanceButton.Text" xml:space="preserve">
-    <value>建立外觀</value>
-    <comment>Button label that adds an unfocused appearance for this profile.</comment>
   </data>
   <data name="Profile_DeleteAppearanceButton.Text" xml:space="preserve">
     <value>刪除</value>
@@ -1752,14 +1736,6 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>如果啟用，顯示上述清單中所有已安裝的字型。否則，僅顯示等寬字型清單。</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>建立外觀</value>
-    <comment>Name for a control which creates the unfocused appearance settings for this profile. Text must match that of "Profile_AddAppearanceButton.Text".</comment>
-  </data>
-  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>立此設定檔的非焦點外觀。這會是設定檔處於非使用中狀態時的外觀。</value>
-    <comment>A description for what the create unfocused appearance button does.</comment>
   </data>
   <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>刪除外觀</value>
@@ -2661,10 +2637,6 @@
   <data name="Profile_Source_Orphaned.Description" xml:space="preserve">
     <value>指示原始建立此配置檔的軟體。</value>
   </data>
-  <data name="Profile_TabTitleNone" xml:space="preserve">
-    <value>無</value>
-    <comment>Text displayed when the tab title is not defined.</comment>
-  </data>
   <data name="Globals_StartOnUserLogin_DisabledByUser" xml:space="preserve">
     <value>已在 Windows 設定的 [啟動應用程式] 區段中停用自動啟動。</value>
     <comment>{Locked="Windows"}This is displayed in concordance with Globals_StartOnUserLogin if the user has disabled the setting outside of the application.</comment>
@@ -2722,10 +2694,6 @@
   <data name="Appearance_BackgroundImageNone" xml:space="preserve">
     <value>無</value>
     <comment>Text displayed when the background image path is not defined.</comment>
-  </data>
-  <data name="Profile_AnswerbackMessageNone" xml:space="preserve">
-    <value>無</value>
-    <comment>Text displayed when the answerback message is not defined.</comment>
   </data>
   <data name="Settings_ResetToDefaultSettings.Header" xml:space="preserve">
     <value>重設至預設設定</value>

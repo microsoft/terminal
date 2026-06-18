@@ -32,90 +32,133 @@
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind Profile.IsBaseLayer}" />
         <StackPanel Grid.Row="1"
-                    Spacing="2"
                     Style="{StaticResource SettingsStackStyle}">
 
             <!--  Name  -->
-            <local:SettingsCard x:Name="Name"
-                                x:Uid="Profile_Name"
-                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
-                <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                         Text="{x:Bind Profile.Name, Mode=TwoWay}" />
-            </local:SettingsCard>
-
-            <!--  Commandline  -->
-            <local:SettingsCard x:Name="Commandline"
-                                x:Uid="Profile_Commandline"
-                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
-                <StackPanel Orientation="Horizontal"
-                            Spacing="8">
-                    <TextBox x:Uid="Profile_CommandlineBox"
-                             IsSpellCheckEnabled="False"
+            <local:SettingsExpander x:Name="Name"
+                                    x:Uid="Profile_Name"
+                                    IsExpanded="True">
+                <StackPanel Style="{StaticResource SettingControlStackStyle}"
+                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                    <TextBox x:Uid="Profile_NameBox"
                              Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
-                    <Button x:Uid="Profile_CommandlineBrowse"
-                            Click="Commandline_Click"
-                            Style="{StaticResource BrowseButtonStyle}" />
+                             Text="{x:Bind Profile.Name, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="Name"
+                                              Target="{x:Bind Profile}" />
                 </StackPanel>
-            </local:SettingsCard>
+                <local:SettingsExpander.HeaderIcon>
+                    <FontIcon Glyph="&#xE8D4;" />
+                </local:SettingsExpander.HeaderIcon>
+                <local:SettingsExpander.Items>
 
-            <!--  Starting Directory  -->
-            <local:SettingsCard x:Name="StartingDirectory"
-                                x:Uid="Profile_StartingDirectory">
-                <StackPanel Orientation="Vertical">
-                    <StackPanel Orientation="Horizontal"
-                                Spacing="8">
-                        <TextBox x:Uid="Profile_StartingDirectoryBox"
-                                 IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
-                                 IsSpellCheckEnabled="False"
-                                 Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
-                        <Button x:Name="StartingDirectoryBrowse"
-                                x:Uid="Profile_StartingDirectoryBrowse"
-                                Click="StartingDirectory_Click"
-                                IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}"
-                                Style="{StaticResource BrowseButtonStyle}" />
-                    </StackPanel>
-                    <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
-                              x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                              Margin="0,4,0,0"
-                              IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
-                </StackPanel>
-            </local:SettingsCard>
+                    <!--  Commandline  -->
+                    <local:SettingsCard x:Name="Commandline"
+                                        x:Uid="Profile_Commandline"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <TextBox x:Uid="Profile_CommandlineBox"
+                                     IsSpellCheckEnabled="False"
+                                     Style="{StaticResource TextBoxSettingStyle}"
+                                     Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
+                            <Button x:Uid="Profile_CommandlineBrowse"
+                                    Click="Commandline_Click"
+                                    Style="{StaticResource BrowseButtonStyle}">
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE838;" />
+                            </Button>
+                            <local:SettingResetButton SettingName="Commandline"
+                                                      Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
 
-            <!--  Icon  -->
-            <local:SettingsExpander x:Name="Icon"
-                                    x:Uid="Profile_Icon"
-                                    AutomationProperties.Name="{x:Bind Profile.LocalizedIcon, Mode=OneWay}">
-                <local:SettingsExpander.Content>
-                    <Grid>
-                        <ContentControl Width="16"
-                                        Height="16"
-                                        Content="{x:Bind Profile.IconPreview, Mode=OneWay}"
-                                        IsTabStop="False"
-                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.UsingNoIcon), Mode=OneWay}" />
-                        <TextBlock Margin="0,0,0,0"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center"
-                                   FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
-                                   Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                   Text="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
-                                   Visibility="{x:Bind Profile.UsingNoIcon, Mode=OneWay}" />
-                    </Grid>
-                </local:SettingsExpander.Content>
-                <local:SettingsExpander.ItemsHeader>
-                    <ContentPresenter Padding="16,12,16,16">
-                        <local:IconPicker CurrentIconPath="{x:Bind Profile.IconPath, Mode=TwoWay}"
-                                          WindowRoot="{x:Bind WindowRoot, Mode=OneWay}" />
-                    </ContentPresenter>
-                </local:SettingsExpander.ItemsHeader>
+                    <!--  Starting Directory  -->
+                    <local:SettingsCard x:Uid="Profile_StartingDirectory"
+                                        IsEnabled="{x:Bind mtu:Converters.InvertBoolean(Profile.UseParentProcessDirectory), Mode=OneWay}">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <TextBox x:Uid="Profile_StartingDirectoryBox"
+                                     IsSpellCheckEnabled="False"
+                                     Style="{StaticResource TextBoxSettingStyle}"
+                                     Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
+                            <Button x:Name="StartingDirectoryBrowse"
+                                    x:Uid="Profile_StartingDirectoryBrowse"
+                                    Click="StartingDirectory_Click"
+                                    Style="{StaticResource BrowseButtonStyle}">
+                                <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                          Glyph="&#xE838;" />
+                            </Button>
+                            <local:SettingResetButton SettingName="StartingDirectory"
+                                                      Target="{x:Bind Profile}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+
+                    <local:SettingsCard x:Name="StartingDirectory"
+                                        ContentAlignment="Left">
+                        <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
+                                  x:Uid="Profile_StartingDirectoryUseParentCheckbox"
+                                  IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
+                    </local:SettingsCard>
+
+                    <!--  Elevate  -->
+                    <local:SettingsCard x:Name="Elevate"
+                                        ContentAlignment="Left">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <local:SettingResetButton SettingName="Elevate"
+                                                      Target="{x:Bind Profile}" />
+                            <CheckBox x:Uid="Profile_Elevate"
+                                      VerticalAlignment="Center"
+                                      IsChecked="{x:Bind Profile.Elevate, Mode=TwoWay}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+
+                    <!--  Hidden  -->
+                    <local:SettingsCard x:Name="Hidden"
+                                        ContentAlignment="Left"
+                                        Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <local:SettingResetButton SettingName="Hidden"
+                                                      Target="{x:Bind Profile}" />
+                            <CheckBox x:Uid="Profile_Hidden"
+                                      VerticalAlignment="Center"
+                                      IsChecked="{x:Bind Profile.Hidden, Mode=TwoWay}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+
+                    <!--  Delete Profile  -->
+                    <local:SettingsCard x:Name="DeleteProfile"
+                                        x:Uid="Profile_DeleteProfile"
+                                        Visibility="{x:Bind Profile.CanDeleteProfile}">
+                        <Button x:Name="DeleteProfileButton"
+                                x:Uid="Profile_DeleteProfileButton"
+                                Style="{StaticResource DeleteButtonStyle}">
+                            <Button.Flyout>
+                                <Flyout>
+                                    <StackPanel>
+                                        <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
+                                                   Style="{StaticResource CustomFlyoutTextStyle}" />
+                                        <Button x:Uid="Profile_DeleteConfirmationButton"
+                                                Click="DeleteConfirmation_Click" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </local:SettingsCard>
+
+                </local:SettingsExpander.Items>
             </local:SettingsExpander>
+
+            <!--  Section: Visual/UI Affordance  -->
+            <TextBlock x:Uid="Profile_Section_VisualUI"
+                       Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <!--  Tab Title  -->
             <local:SettingsCard x:Name="TabTitle"
                                 x:Uid="Profile_TabTitle">
-                <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                         Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
+                <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                    <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                             Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
+                    <local:SettingResetButton SettingName="TabTitle"
+                                              Target="{x:Bind Profile}" />
+                </StackPanel>
             </local:SettingsCard>
 
             <!--  Tab Color  -->
@@ -123,8 +166,13 @@
                                     x:Uid="Profile_TabColor"
                                     AutomationProperties.Name="{x:Bind Profile.TabColorPreview, Converter={StaticResource ColorToStringConverter}, Mode=OneWay}">
                 <local:SettingsExpander.Content>
-                    <ContentControl Content="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
-                                    ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <ContentControl VerticalAlignment="Center"
+                                        Content="{x:Bind Profile.TabColorPreview, Mode=OneWay}"
+                                        ContentTemplate="{StaticResource ColorPreviewTemplate}" />
+                        <local:SettingResetButton SettingName="TabColor"
+                                                  Target="{x:Bind Profile}" />
+                    </StackPanel>
                 </local:SettingsExpander.Content>
                 <local:SettingsExpander.ItemsHeader>
                     <ContentPresenter Padding="16,12,16,16">
@@ -136,54 +184,75 @@
                 </local:SettingsExpander.ItemsHeader>
             </local:SettingsExpander>
 
-            <!--  Elevate  -->
-            <local:SettingsCard x:Name="Elevate"
-                                x:Uid="Profile_Elevate">
-                <ToggleSwitch IsOn="{x:Bind Profile.Elevate, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingsCard>
+            <!--  Icon  -->
+            <local:SettingsExpander x:Name="Icon"
+                                    x:Uid="Profile_Icon"
+                                    AutomationProperties.Name="{x:Bind Profile.LocalizedIcon, Mode=OneWay}">
+                <local:SettingsExpander.Content>
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <Grid>
+                            <ContentControl Width="16"
+                                            Height="16"
+                                            Content="{x:Bind Profile.IconPreview, Mode=OneWay}"
+                                            IsTabStop="False"
+                                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.UsingNoIcon), Mode=OneWay}" />
+                            <TextBlock Margin="0,0,0,0"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       FontFamily="Segoe UI, Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{x:Bind Profile.LocalizedIcon, Mode=OneWay}"
+                                       Visibility="{x:Bind Profile.UsingNoIcon, Mode=OneWay}" />
+                        </Grid>
+                        <local:SettingResetButton SettingName="Icon"
+                                                  Target="{x:Bind Profile}" />
+                    </StackPanel>
+                </local:SettingsExpander.Content>
+                <local:SettingsExpander.ItemsHeader>
+                    <ContentPresenter Padding="16,12,16,16">
+                        <local:IconPicker CurrentIconPath="{x:Bind Profile.IconPath, Mode=TwoWay}"
+                                          WindowRoot="{x:Bind WindowRoot, Mode=OneWay}" />
+                    </ContentPresenter>
+                </local:SettingsExpander.ItemsHeader>
+            </local:SettingsExpander>
 
-            <!--  Hidden  -->
-            <local:SettingsCard x:Name="Hidden"
-                                x:Uid="Profile_Hidden"
-                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Profile.Hidden, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
-            </local:SettingsCard>
-
-            <!--  Delete Profile  -->
-            <local:SettingsCard x:Name="DeleteProfile"
-                                x:Uid="Profile_DeleteProfile"
-                                Visibility="{x:Bind Profile.CanDeleteProfile}">
-                <Button x:Name="DeleteProfileButton"
-                        x:Uid="Profile_DeleteProfileButton"
-                        Style="{StaticResource DeleteButtonStyle}">
-                    <Button.Flyout>
-                        <Flyout>
-                            <StackPanel>
-                                <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
-                                           Style="{StaticResource CustomFlyoutTextStyle}" />
-                                <Button x:Uid="Profile_DeleteConfirmationButton"
-                                        Click="DeleteConfirmation_Click" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-            </local:SettingsCard>
-
+            <!--  Additional settings  -->
             <TextBlock x:Uid="Profile_AdditionalSettingsHeader"
                        Margin="0,32,0,4"
                        Style="{StaticResource TextBlockSubHeaderStyle}" />
 
             <local:SettingsCard x:Name="AppearanceNavigator"
                                 Click="Appearance_Click"
-                                IsClickEnabled="True" />
+                                IsClickEnabled="True">
+                <local:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE790;" />
+                </local:SettingsCard.HeaderIcon>
+            </local:SettingsCard>
+            <local:SettingsCard x:Name="UnfocusedAppearanceNavigator"
+                                Click="UnfocusedAppearance_Click"
+                                IsClickEnabled="True"
+                                Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
+                <local:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE7B3;" />
+                </local:SettingsCard.HeaderIcon>
+                <TextBlock VerticalAlignment="Center"
+                           Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                           Text="{x:Bind Profile.UnfocusedAppearanceCardValue, Mode=OneWay}" />
+            </local:SettingsCard>
             <local:SettingsCard x:Name="TerminalNavigator"
                                 Click="Terminal_Click"
-                                IsClickEnabled="True" />
+                                IsClickEnabled="True">
+                <local:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE950;" />
+                </local:SettingsCard.HeaderIcon>
+            </local:SettingsCard>
             <local:SettingsCard x:Name="AdvancedNavigator"
                                 Click="Advanced_Click"
-                                IsClickEnabled="True" />
+                                IsClickEnabled="True">
+                <local:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE9F5;" />
+                </local:SettingsCard.HeaderIcon>
+            </local:SettingsCard>
         </StackPanel>
     </Grid>
 </Page>
