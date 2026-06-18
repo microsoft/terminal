@@ -173,6 +173,9 @@
     <ClInclude Include="SettingsCard.h">
       <DependentUpon>SettingsCard.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingResetButton.h">
+      <DependentUpon>SettingResetButton.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SettingsExpander.h">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClInclude>
@@ -394,6 +397,9 @@
     <ClCompile Include="SettingsCard.cpp">
       <DependentUpon>SettingsCard.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="SettingResetButton.cpp">
+      <DependentUpon>SettingResetButton.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="SettingsExpander.cpp">
       <DependentUpon>SettingsExpander.idl</DependentUpon>
     </ClCompile>
@@ -505,6 +511,9 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingsCard.idl">
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingResetButton.idl">
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingsExpander.idl">
