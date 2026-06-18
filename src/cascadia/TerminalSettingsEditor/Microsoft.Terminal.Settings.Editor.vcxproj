@@ -52,9 +52,6 @@
     <ClInclude Include="EditAction.h">
       <DependentUpon>EditAction.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="AddProfile.h">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
-    </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
     </ClInclude>
@@ -120,6 +117,10 @@
     </ClInclude>
     <ClInclude Include="ColorSchemesPageViewModel.h">
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Profiles.h">
+      <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="InteractionViewModel.h">
@@ -188,9 +189,6 @@
     <Page Include="EditAction.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="AddProfile.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -236,6 +234,9 @@
     <Page Include="Profiles_Base.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Profiles_Base_Orphaned.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -270,9 +271,6 @@
     </ClCompile>
     <ClCompile Include="EditAction.cpp">
       <DependentUpon>EditAction.xaml</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="AddProfile.cpp">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -337,6 +335,10 @@
     </ClCompile>
     <ClCompile Include="ColorSchemesPageViewModel.cpp">
       <DependentUpon>ColorSchemesPageViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Profiles.cpp">
+      <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="InteractionViewModel.cpp">
@@ -405,10 +407,6 @@
       <DependentUpon>Actions.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="AddProfile.idl">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -463,6 +461,10 @@
     <Midl Include="TerminalColorConverters.idl" />
     <Midl Include="ColorSchemeViewModel.idl" />
     <Midl Include="ColorSchemesPageViewModel.idl" />
+    <Midl Include="Profiles.idl">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="InteractionViewModel.idl" />
     <Midl Include="GlobalAppearanceViewModel.idl" />
     <Midl Include="LaunchViewModel.idl" />

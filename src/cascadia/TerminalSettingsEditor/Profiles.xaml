@@ -1,0 +1,189 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.Profiles"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:model="using:Microsoft.Terminal.Settings.Model"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <StackPanel Spacing="2"
+                Style="{StaticResource SettingsStackStyle}"
+                XYFocusKeyboardNavigation="Enabled">
+
+        <!--  Defaults navigator  -->
+        <local:SettingsCard x:Name="DefaultsNavigator"
+                            x:Uid="Profiles_DefaultsNavigator"
+                            Click="Defaults_Click"
+                            IsClickEnabled="True">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xECAA;" />
+            </local:SettingsCard.HeaderIcon>
+        </local:SettingsCard>
+
+        <!--  Color schemes navigator  -->
+        <local:SettingsCard x:Name="ColorSchemesNavigator"
+                            x:Uid="Profiles_ColorSchemesNavigator"
+                            Click="ColorSchemes_Click"
+                            IsClickEnabled="True">
+            <local:SettingsCard.HeaderIcon>
+                <FontIcon Glyph="&#xE790;" />
+            </local:SettingsCard.HeaderIcon>
+        </local:SettingsCard>
+
+        <!--  Terminal profiles section  -->
+        <local:SettingsExpander x:Uid="Profiles_TerminalProfilesHeader"
+                                IsExpanded="True"
+                                ItemsSource="{x:Bind ViewModel.Profiles, Mode=OneWay}">
+            <local:SettingsExpander.HeaderIcon>
+                <FontIcon Glyph="&#xE7EE;" />
+            </local:SettingsExpander.HeaderIcon>
+            <!--  Add Profile split button: primary click adds an empty profile; flyout has "New empty profile" + a separator + one entry per existing profile (which duplicates that profile).  -->
+            <muxc:SplitButton x:Name="AddProfileButton"
+                              x:Uid="Profiles_AddProfileButton"
+                              Click="AddProfile_Click">
+                <muxc:SplitButton.Resources>
+                    <ResourceDictionary>
+                        <ResourceDictionary.ThemeDictionaries>
+                            <ResourceDictionary x:Key="Light">
+                                <StaticResource x:Key="SplitButtonBackground"
+                                                ResourceKey="AccentButtonBackground" />
+                                <StaticResource x:Key="SplitButtonForeground"
+                                                ResourceKey="AccentButtonForeground" />
+                                <StaticResource x:Key="SplitButtonForegroundSecondary"
+                                                ResourceKey="AccentButtonForeground" />
+                                <StaticResource x:Key="SplitButtonBackgroundPointerOver"
+                                                ResourceKey="AccentButtonBackgroundPointerOver" />
+                                <StaticResource x:Key="SplitButtonForegroundPointerOver"
+                                                ResourceKey="AccentButtonForegroundPointerOver" />
+                                <StaticResource x:Key="SplitButtonBackgroundPressed"
+                                                ResourceKey="AccentButtonBackgroundPressed" />
+                                <StaticResource x:Key="SplitButtonForegroundPressed"
+                                                ResourceKey="AccentButtonForegroundPressed" />
+                                <StaticResource x:Key="SplitButtonForegroundSecondaryPressed"
+                                                ResourceKey="AccentButtonForegroundPressed" />
+                                <StaticResource x:Key="SplitButtonBorderBrush"
+                                                ResourceKey="AccentButtonBorderBrush" />
+                                <StaticResource x:Key="SplitButtonBorderBrushPointerOver"
+                                                ResourceKey="AccentButtonBorderBrushPointerOver" />
+                                <StaticResource x:Key="SplitButtonBorderBrushPressed"
+                                                ResourceKey="AccentButtonBorderBrushPressed" />
+                            </ResourceDictionary>
+                            <ResourceDictionary x:Key="Dark">
+                                <StaticResource x:Key="SplitButtonBackground"
+                                                ResourceKey="AccentButtonBackground" />
+                                <StaticResource x:Key="SplitButtonForeground"
+                                                ResourceKey="AccentButtonForeground" />
+                                <StaticResource x:Key="SplitButtonForegroundSecondary"
+                                                ResourceKey="AccentButtonForeground" />
+                                <StaticResource x:Key="SplitButtonBackgroundPointerOver"
+                                                ResourceKey="AccentButtonBackgroundPointerOver" />
+                                <StaticResource x:Key="SplitButtonForegroundPointerOver"
+                                                ResourceKey="AccentButtonForegroundPointerOver" />
+                                <StaticResource x:Key="SplitButtonBackgroundPressed"
+                                                ResourceKey="AccentButtonBackgroundPressed" />
+                                <StaticResource x:Key="SplitButtonForegroundPressed"
+                                                ResourceKey="AccentButtonForegroundPressed" />
+                                <StaticResource x:Key="SplitButtonForegroundSecondaryPressed"
+                                                ResourceKey="AccentButtonForegroundPressed" />
+                                <StaticResource x:Key="SplitButtonBorderBrush"
+                                                ResourceKey="AccentButtonBorderBrush" />
+                                <StaticResource x:Key="SplitButtonBorderBrushPointerOver"
+                                                ResourceKey="AccentButtonBorderBrushPointerOver" />
+                                <StaticResource x:Key="SplitButtonBorderBrushPressed"
+                                                ResourceKey="AccentButtonBorderBrushPressed" />
+                            </ResourceDictionary>
+                            <ResourceDictionary x:Key="HighContrast">
+                                <StaticResource x:Key="SplitButtonBackground"
+                                                ResourceKey="AccentButtonBackground" />
+                                <StaticResource x:Key="SplitButtonForeground"
+                                                ResourceKey="AccentButtonForeground" />
+                                <StaticResource x:Key="SplitButtonForegroundSecondary"
+                                                ResourceKey="AccentButtonForeground" />
+                                <StaticResource x:Key="SplitButtonBackgroundPointerOver"
+                                                ResourceKey="AccentButtonBackgroundPointerOver" />
+                                <StaticResource x:Key="SplitButtonForegroundPointerOver"
+                                                ResourceKey="AccentButtonForegroundPointerOver" />
+                                <StaticResource x:Key="SplitButtonBackgroundPressed"
+                                                ResourceKey="AccentButtonBackgroundPressed" />
+                                <StaticResource x:Key="SplitButtonForegroundPressed"
+                                                ResourceKey="AccentButtonForegroundPressed" />
+                                <StaticResource x:Key="SplitButtonForegroundSecondaryPressed"
+                                                ResourceKey="AccentButtonForegroundPressed" />
+                                <StaticResource x:Key="SplitButtonBorderBrush"
+                                                ResourceKey="AccentButtonBorderBrush" />
+                                <StaticResource x:Key="SplitButtonBorderBrushPointerOver"
+                                                ResourceKey="AccentButtonBorderBrushPointerOver" />
+                                <StaticResource x:Key="SplitButtonBorderBrushPressed"
+                                                ResourceKey="AccentButtonBorderBrushPressed" />
+                            </ResourceDictionary>
+                        </ResourceDictionary.ThemeDictionaries>
+                    </ResourceDictionary>
+                </muxc:SplitButton.Resources>
+                <StackPanel VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                    <FontIcon FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                              FontSize="{StaticResource StandardIconSize}"
+                              Glyph="&#xE710;" />
+                    <ContentControl VerticalAlignment="Center"
+                                    Content="{x:Bind ViewModel.SelectedSourceProfileIcon, Mode=OneWay}"
+                                    IsTabStop="False"
+                                    Visibility="{x:Bind ViewModel.HasSelectedSourceProfile, Mode=OneWay}" />
+                    <TextBlock VerticalAlignment="Center"
+                               Text="{x:Bind ViewModel.SelectedSourceProfileLabel, Mode=OneWay}" />
+                </StackPanel>
+                <muxc:SplitButton.Flyout>
+                    <MenuFlyout Opening="AddProfileFlyout_Opening"
+                                Placement="BottomEdgeAlignedLeft" />
+                </muxc:SplitButton.Flyout>
+            </muxc:SplitButton>
+            <local:SettingsExpander.ItemTemplate>
+                <DataTemplate x:DataType="local:ProfileViewModel">
+                    <local:SettingsCard AutomationProperties.HelpText="{x:Bind AccessibleStateDescription, Mode=OneWay}"
+                                        AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
+                                        Click="Profile_Click"
+                                        Header="{x:Bind Name, Mode=OneWay}"
+                                        HeaderIcon="{x:Bind IconPreview, Mode=OneWay}"
+                                        IsClickEnabled="True"
+                                        Style="{StaticResource ClickableSettingsExpanderItemStyle}">
+                        <Grid>
+                            <muxc:InfoBadge x:Uid="Profile_HiddenBadge"
+                                            VerticalAlignment="Center"
+                                            Visibility="{x:Bind ShowHiddenBadge, Mode=OneWay}">
+                                <muxc:InfoBadge.IconSource>
+                                    <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                         FontSize="12"
+                                                         Glyph="&#xED1A;" />
+                                </muxc:InfoBadge.IconSource>
+                            </muxc:InfoBadge>
+                            <muxc:InfoBadge x:Uid="Profile_OrphanedBadge"
+                                            VerticalAlignment="Center"
+                                            Visibility="{x:Bind Orphaned, Mode=OneWay}">
+                                <muxc:InfoBadge.IconSource>
+                                    <muxc:FontIconSource FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                         FontSize="12"
+                                                         Glyph="&#xE7BA;" />
+                                </muxc:InfoBadge.IconSource>
+                            </muxc:InfoBadge>
+                        </Grid>
+                    </local:SettingsCard>
+                </DataTemplate>
+            </local:SettingsExpander.ItemTemplate>
+        </local:SettingsExpander>
+    </StackPanel>
+</Page>
