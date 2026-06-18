@@ -120,23 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _parsedPadding = StringToXamlThickness(_profile.Padding());
                 _NotifyChanges(L"LeftPadding", L"TopPadding", L"RightPadding", L"BottomPadding", L"PaddingAccessibleName");
             }
-            else if (viewModelProperty == L"TabTitle")
-            {
-                _NotifyChanges(L"TabTitlePreview");
-            }
-            else if (viewModelProperty == L"AnswerbackMessage")
-            {
-                _NotifyChanges(L"AnswerbackMessagePreview");
-            }
-            else if (viewModelProperty == L"AnswerbackMessagePreview")
-            {
-                _NotifyChanges(L"AnswerbackMessageAccessibleName");
-            }
-            else if (viewModelProperty == L"TabColor")
-            {
-                _NotifyChanges(L"TabColorPreview");
-            }
-            else if (viewModelProperty == L"TabThemeColorPreview")
+            else if (viewModelProperty == L"TabColor" || viewModelProperty == L"TabThemeColorPreview")
             {
                 _NotifyChanges(L"TabColorPreview");
             }
@@ -153,7 +137,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _NotifyChanges(L"TabThemeColorPreview");
             }
         });
-
         // Do the same for the starting directory
         if (!StartingDirectory().empty())
         {
@@ -401,28 +384,60 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return Hidden() && !Orphaned();
     }
 
-    hstring ProfileViewModel::TabTitlePreview() const
+    bool ProfileViewModel::HasSetting(const hstring& name)
     {
-        if (const auto tabTitle{ TabTitle() }; !tabTitle.empty())
-        {
-            return tabTitle;
-        }
-        return RS_(L"Profile_TabTitleNone");
+        const std::wstring_view n{ name };
+#define HANDLE(Setting)        \
+    if (n == L## #Setting)     \
+    {                          \
+        return Has##Setting(); \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return false;
     }
 
-    hstring ProfileViewModel::AnswerbackMessagePreview() const
+    void ProfileViewModel::ClearSetting(const hstring& name)
     {
-        if (const auto answerbackMessage{ AnswerbackMessage() }; !answerbackMessage.empty())
-        {
-            return answerbackMessage;
-        }
-        return RS_(L"Profile_AnswerbackMessageNone");
+        const std::wstring_view n{ name };
+#define HANDLE(Setting)    \
+    if (n == L## #Setting) \
+    {                      \
+        Clear##Setting();  \
+        return;            \
+    }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+#undef HANDLE_PROJECTED
+#undef HANDLE
     }
 
-    hstring ProfileViewModel::AnswerbackMessageAccessibleName() const
+    Windows::Foundation::IInspectable ProfileViewModel::SettingOverrideSource(const hstring& name)
     {
-        return til::hstring_format(FMT_COMPILE(L"{}: {}"), RS_(L"Profile_AnswerbackMessage/Header"), AnswerbackMessagePreview());
+        const std::wstring_view n{ name };
+#define HANDLE(Setting)                  \
+    if (n == L## #Setting)               \
+    {                                    \
+        return Setting##OverrideSource(); \
     }
+#define HANDLE_PROJECTED(target, Setting) HANDLE(Setting)
+        PROFILE_INHERITABLE_SETTINGS(HANDLE_PROJECTED)
+#undef HANDLE_PROJECTED
+#undef HANDLE
+        return nullptr;
+    }
+
+    // Compile-time tripwire. PROFILE_INHERITABLE_SETTINGS now generates both the
+    // property accessors and the dispatch above, so those two can no longer drift.
+#define PROFILE_COUNT(target, name) +1
+    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 34,
+                  "The set of inheritable profile settings changed. Update this count, then make "
+                  "sure the new/removed setting is also reflected in ProfileViewModel.idl and in the "
+                  "XAML reset buttons.");
+#undef PROFILE_COUNT
+#undef PROFILE_INHERITABLE_SETTINGS
 
     Windows::UI::Color ProfileViewModel::TabColorPreview() const
     {

@@ -1,0 +1,20 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "MainPage.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass SettingResetButton : Windows.UI.Xaml.Controls.Button
+    {
+        SettingResetButton();
+
+        // The view model that owns the setting (e.g. ProfileViewModel / AppearanceViewModel).
+        IInheritableViewModel Target;
+        static Windows.UI.Xaml.DependencyProperty TargetProperty { get; };
+
+        // The name of the inheritable setting this button resets (e.g. "Commandline").
+        String SettingName;
+        static Windows.UI.Xaml.DependencyProperty SettingNameProperty { get; };
+    }
+}
