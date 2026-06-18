@@ -216,59 +216,6 @@
                     </StackPanel>
                 </local:SettingsCard>
             </StackPanel>
-            <StackPanel MaxWidth="{StaticResource StandardControlMaxWidth}">
-                <StackPanel Orientation="Horizontal"
-                            Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
-                    <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
-                               Style="{StaticResource TextBlockSubtitleStyle}" />
-
-                    <!--  Create Unfocused Appearance  -->
-                    <Button x:Name="CreateUnfocusedAppearance"
-                            x:Uid="Profile_CreateUnfocusedAppearanceButton"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Bottom"
-                            Click="CreateUnfocusedAppearance_Click"
-                            Style="{StaticResource BaseButtonStyle}"
-                            Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(Profile.HasUnfocusedAppearance), Mode=OneWay}">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon Margin="0,4,0,0"
-                                          FontSize="{StaticResource StandardIconSize}"
-                                          Glyph="&#xE710;" />
-                                <TextBlock x:Uid="Profile_AddAppearanceButton"
-                                           Margin="8,0,0,0"
-                                           FontSize="{StaticResource StandardIconSize}" />
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-
-                    <!--  Delete Unfocused Appearance  -->
-                    <Button x:Name="DeleteUnfocusedAppearance"
-                            x:Uid="Profile_DeleteUnfocusedAppearanceButton"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Bottom"
-                            Click="DeleteUnfocusedAppearance_Click"
-                            Style="{StaticResource DeleteButtonStyle}"
-                            Visibility="{x:Bind Profile.HasUnfocusedAppearance, Mode=OneWay}">
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon FontSize="{StaticResource StandardIconSize}"
-                                          Glyph="&#xE74D;" />
-                                <TextBlock x:Uid="Profile_DeleteAppearanceButton"
-                                           Margin="8,0,0,0"
-                                           FontSize="{StaticResource StandardIconSize}" />
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
-                </StackPanel>
-
-                <!--  Unfocused Appearance  -->
-                <local:Appearances x:Name="UnfocusedAppearanceView"
-                                   Appearance="{x:Bind Profile.UnfocusedAppearance, Mode=OneWay}"
-                                   SourceProfile="{x:Bind Profile, Mode=OneWay}"
-                                   Visibility="{x:Bind Profile.ShowUnfocusedAppearance, Mode=OneWay}"
-                                   WindowRoot="{x:Bind WindowRoot, Mode=OneTime}" />
-            </StackPanel>
         </StackPanel>
     </Grid>
 </Page>

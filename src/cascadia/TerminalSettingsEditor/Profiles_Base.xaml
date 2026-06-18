@@ -228,6 +228,17 @@
                     <FontIcon Glyph="&#xE790;" />
                 </local:SettingsCard.HeaderIcon>
             </local:SettingsCard>
+            <local:SettingsCard x:Name="UnfocusedAppearanceNavigator"
+                                Click="UnfocusedAppearance_Click"
+                                IsClickEnabled="True"
+                                Visibility="{x:Bind Profile.EditableUnfocusedAppearance, Mode=OneWay}">
+                <local:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE7B3;" />
+                </local:SettingsCard.HeaderIcon>
+                <TextBlock VerticalAlignment="Center"
+                           Style="{StaticResource SettingContainerCurrentValueTextBlockStyle}"
+                           Text="{x:Bind Profile.UnfocusedAppearanceCardValue, Mode=OneWay}" />
+            </local:SettingsCard>
             <local:SettingsCard x:Name="TerminalNavigator"
                                 Click="Terminal_Click"
                                 IsClickEnabled="True">

@@ -247,7 +247,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"DarkColorSchemeName" || viewModelProperty == L"LightColorSchemeName")
             {
-                _NotifyChanges(L"CurrentColorScheme");
+                _NotifyChanges(L"CurrentColorScheme", L"ColorScheme", L"HasColorScheme");
             }
             else if (viewModelProperty == L"CurrentColorScheme")
             {
@@ -1010,6 +1010,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AppearanceViewModel::ClearColorScheme()
     {
         ClearDarkColorSchemeName();
+        ClearLightColorSchemeName();
         _NotifyChanges(L"CurrentColorScheme");
     }
 
