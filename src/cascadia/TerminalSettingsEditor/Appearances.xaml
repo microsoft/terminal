@@ -72,7 +72,12 @@
         <TextBlock x:Uid="Profile_TextHeader"
                    Margin="0,0,0,4"
                    Style="{StaticResource TextBlockSubHeaderStyle}" />
-        <StackPanel Style="{StaticResource SettingsStackStyle}">
+        <!--
+            Spacing is intentionally 0 to work around WinUI 2's StackPanel.Spacing reserving space for
+            hidden items. Instead apply a margin to each item.
+        -->
+        <StackPanel Spacing="0"
+                    Style="{StaticResource SettingsStackStyle}">
             <!--  Color Scheme  -->
             <!--  This currently only display the Dark color scheme, even if the user has a pair of schemes set.  -->
             <local:SettingsExpander x:Name="ColorScheme"
@@ -81,129 +86,129 @@
                 <local:SettingsExpander.Content>
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
                         <ComboBox Padding="4"
-                              ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
-                              SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
-                              Style="{StaticResource ComboBoxSettingStyle}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="local:ColorSchemeViewModel">
-                                <Grid Grid.Column="0"
-                                      Padding="8"
-                                      VerticalAlignment="Center"
-                                      Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
-                                      ColumnSpacing="1"
-                                      CornerRadius="2"
-                                      RowSpacing="1">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="0"
-                                                    Content="{x:Bind ColorEntryAt(0), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="1"
-                                                    Content="{x:Bind ColorEntryAt(1), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="2"
-                                                    Content="{x:Bind ColorEntryAt(2), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="3"
-                                                    Content="{x:Bind ColorEntryAt(3), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="4"
-                                                    Content="{x:Bind ColorEntryAt(4), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="5"
-                                                    Content="{x:Bind ColorEntryAt(5), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="6"
-                                                    Content="{x:Bind ColorEntryAt(6), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="0"
-                                                    Grid.Column="7"
-                                                    Content="{x:Bind ColorEntryAt(7), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="0"
-                                                    Content="{x:Bind ColorEntryAt(8), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="1"
-                                                    Content="{x:Bind ColorEntryAt(9), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="2"
-                                                    Content="{x:Bind ColorEntryAt(10), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="3"
-                                                    Content="{x:Bind ColorEntryAt(11), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="4"
-                                                    Content="{x:Bind ColorEntryAt(12), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="5"
-                                                    Content="{x:Bind ColorEntryAt(13), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="6"
-                                                    Content="{x:Bind ColorEntryAt(14), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <ContentControl Grid.Row="1"
-                                                    Grid.Column="7"
-                                                    Content="{x:Bind ColorEntryAt(15), Mode=OneWay}"
-                                                    ContentTemplate="{StaticResource ColorChipTemplate}"
-                                                    IsTabStop="False" />
-                                    <TextBlock Grid.RowSpan="2"
-                                               Grid.Column="8"
-                                               MaxWidth="192"
-                                               Margin="4,0,4,0"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               AutomationProperties.AccessibilityView="Raw"
-                                               FontFamily="Cascadia Code"
-                                               Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
-                                               Text="{x:Bind Name, Mode=OneWay}"
-                                               TextTrimming="WordEllipsis"
-                                               ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
+                                  ItemsSource="{x:Bind Appearance.SchemesList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind Appearance.CurrentColorScheme, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="local:ColorSchemeViewModel">
+                                    <Grid Grid.Column="0"
+                                          Padding="8"
+                                          VerticalAlignment="Center"
+                                          Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
+                                          ColumnSpacing="1"
+                                          CornerRadius="2"
+                                          RowSpacing="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="0"
+                                                        Content="{x:Bind ColorEntryAt(0), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="1"
+                                                        Content="{x:Bind ColorEntryAt(1), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="2"
+                                                        Content="{x:Bind ColorEntryAt(2), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="3"
+                                                        Content="{x:Bind ColorEntryAt(3), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="4"
+                                                        Content="{x:Bind ColorEntryAt(4), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="5"
+                                                        Content="{x:Bind ColorEntryAt(5), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="6"
+                                                        Content="{x:Bind ColorEntryAt(6), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="0"
+                                                        Grid.Column="7"
+                                                        Content="{x:Bind ColorEntryAt(7), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="0"
+                                                        Content="{x:Bind ColorEntryAt(8), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Content="{x:Bind ColorEntryAt(9), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="2"
+                                                        Content="{x:Bind ColorEntryAt(10), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="3"
+                                                        Content="{x:Bind ColorEntryAt(11), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="4"
+                                                        Content="{x:Bind ColorEntryAt(12), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="5"
+                                                        Content="{x:Bind ColorEntryAt(13), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="6"
+                                                        Content="{x:Bind ColorEntryAt(14), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <ContentControl Grid.Row="1"
+                                                        Grid.Column="7"
+                                                        Content="{x:Bind ColorEntryAt(15), Mode=OneWay}"
+                                                        ContentTemplate="{StaticResource ColorChipTemplate}"
+                                                        IsTabStop="False" />
+                                        <TextBlock Grid.RowSpan="2"
+                                                   Grid.Column="8"
+                                                   MaxWidth="192"
+                                                   Margin="4,0,4,0"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   AutomationProperties.AccessibilityView="Raw"
+                                                   FontFamily="Cascadia Code"
+                                                   Foreground="{x:Bind mtu:Converters.ColorToBrush(ForegroundColor.Color), Mode=OneWay}"
+                                                   Text="{x:Bind Name, Mode=OneWay}"
+                                                   TextTrimming="WordEllipsis"
+                                                   ToolTipService.ToolTip="{x:Bind Name, Mode=OneWay}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <local:SettingResetButton SettingName="ColorScheme"
                                                   Target="{x:Bind Appearance}" />
                     </StackPanel>
@@ -284,159 +289,163 @@
                     </ContentPresenter>
                 </local:SettingsExpander.ItemsHeader>
             </local:SettingsExpander>
-            <!--  Font Face  -->
             <!--
-                Grouped with its diagnostic cards so collapsed warnings don't add phantom spacing.
-                Manually adding Margin to work around WinUI 2 adding spacing for hidden elements.
+                The cards below only apply to the default appearance.
+                Group them in a single visibility-gated group to avoid phantom spacing when collapsed.
             -->
-            <StackPanel>
-                <local:SettingsCard x:Name="FontFaceContainer"
-                                    x:Uid="Profile_FontFace"
-                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-
-                    <StackPanel Margin="0,8,0,0">
-                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                            <AutoSuggestBox x:Uid="Profile_FontFaceBox"
-                                            GotFocus="FontFaceBox_GotFocus"
-                                            ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
-                                            ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
-                                            LostFocus="FontFaceBox_LostFocus"
-                                            QuerySubmitted="FontFaceBox_QuerySubmitted"
-                                            Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
-                                            TextBoxStyle="{StaticResource TextBoxSettingStyle}"
-                                            TextChanged="FontFaceBox_TextChanged"
-                                            UpdateTextOnSelect="False" />
-                            <local:SettingResetButton SettingName="FontFace"
-                                                      Target="{x:Bind Appearance}" />
-                        </StackPanel>
-                        <CheckBox x:Name="ShowAllFontsCheckbox"
-                                  x:Uid="Profile_FontFaceShowAllFonts"
-                                  IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
-                    </StackPanel>
-                </local:SettingsCard>
-                <local:SettingsCard x:Name="MissingFontFaces"
-                                    x:Uid="Profile_MissingFontFaces"
-                                    Margin="0,6,0,0"
-                                    Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
-                                    Description="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
-                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.MissingFontFaces), Mode=OneWay}">
-                    <local:SettingsCard.HeaderIcon>
-                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                  FontSize="{StaticResource SettingContainerIconFontSize}"
-                                  Foreground="{ThemeResource SettingContainerErrorSeverityIconBackground}"
-                                  Glyph="{StaticResource SettingContainerErrorIconGlyph}" />
-                    </local:SettingsCard.HeaderIcon>
-                </local:SettingsCard>
-                <local:SettingsCard x:Name="ProportionalFontFaces"
-                                    x:Uid="Profile_ProportionalFontFaces"
-                                    Margin="0,6,0,0"
-                                    Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
-                                    Description="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
-                                    Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.ProportionalFontFaces), Mode=OneWay}">
-                    <local:SettingsCard.HeaderIcon>
-                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                                  FontSize="{StaticResource SettingContainerIconFontSize}"
-                                  Foreground="{ThemeResource SettingContainerWarningSeverityIconBackground}"
-                                  Glyph="{StaticResource SettingContainerWarningIconGlyph}" />
-                    </local:SettingsCard.HeaderIcon>
-                </local:SettingsCard>
-            </StackPanel>
-
-            <!--  Font Size  -->
-            <local:SettingsCard x:Name="FontSize"
-                                x:Uid="Profile_FontSize"
-                                Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                    <muxc:NumberBox x:Name="_fontSizeBox"
-                                    x:Uid="Profile_FontSizeBox"
-                                    LargeChange="10"
-                                    Maximum="128"
-                                    Minimum="1"
-                                    SmallChange="1"
-                                    Style="{StaticResource NumberBoxSettingStyle}"
-                                    Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
-                    <local:SettingResetButton SettingName="FontSize"
-                                              Target="{x:Bind Appearance}" />
-                </StackPanel>
-            </local:SettingsCard>
-
-            <!--  Line Height  -->
-            <local:SettingsCard x:Name="LineHeight"
-                                x:Uid="Profile_LineHeight"
-                                Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                    <muxc:NumberBox x:Name="_lineHeightBox"
-                                    x:Uid="Profile_LineHeightBox"
-                                    LargeChange="0.1"
-                                    Maximum="10"
-                                    Minimum="0.1"
-                                    SmallChange="0.1"
-                                    Style="{StaticResource NumberBoxSettingStyle}"
-                                    Value="{x:Bind Appearance.LineHeight, Mode=TwoWay}" />
-                    <local:SettingResetButton SettingName="LineHeight"
-                                              Target="{x:Bind Appearance}" />
-                </StackPanel>
-            </local:SettingsCard>
-
-            <!--  Cell Width  -->
-            <local:SettingsCard x:Name="CellWidth"
-                                x:Uid="Profile_CellWidth"
-                                Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                    <muxc:NumberBox x:Name="_cellWidthBox"
-                                    x:Uid="Profile_CellWidthBox"
-                                    LargeChange="0.1"
-                                    Maximum="10"
-                                    Minimum="0.1"
-                                    SmallChange="0.1"
-                                    Style="{StaticResource NumberBoxSettingStyle}"
-                                    Value="{x:Bind Appearance.CellWidth, Mode=TwoWay}" />
-                    <local:SettingResetButton SettingName="CellWidth"
-                                              Target="{x:Bind Appearance}" />
-                </StackPanel>
-            </local:SettingsCard>
-
-            <!--  Font Weight  -->
-            <local:SettingsCard x:Name="FontWeight"
-                                x:Uid="Profile_FontWeight"
-                                Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+            <StackPanel Margin="0,4,0,0"
+                        Style="{StaticResource SettingsStackStyle}"
+                        Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
+                <!--  Font Face  -->
+                <!--
+                    Grouped with its diagnostic cards so collapsed warnings don't add phantom spacing.
+                    Manually adding Margin to work around WinUI 2 adding spacing for hidden elements.
+                -->
                 <StackPanel>
+                    <local:SettingsCard x:Name="FontFaceContainer"
+                                        x:Uid="Profile_FontFace">
+
+                        <StackPanel Margin="0,8,0,0">
+                            <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                                <AutoSuggestBox x:Uid="Profile_FontFaceBox"
+                                                GotFocus="FontFaceBox_GotFocus"
+                                                ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                                                ItemsSource="{x:Bind FilteredFontList, Mode=OneWay}"
+                                                LostFocus="FontFaceBox_LostFocus"
+                                                QuerySubmitted="FontFaceBox_QuerySubmitted"
+                                                Text="{x:Bind Appearance.FontFace, Mode=OneWay}"
+                                                TextBoxStyle="{StaticResource TextBoxSettingStyle}"
+                                                TextChanged="FontFaceBox_TextChanged"
+                                                UpdateTextOnSelect="False" />
+                                <local:SettingResetButton SettingName="FontFace"
+                                                          Target="{x:Bind Appearance}" />
+                            </StackPanel>
+                            <CheckBox x:Name="ShowAllFontsCheckbox"
+                                      x:Uid="Profile_FontFaceShowAllFonts"
+                                      IsChecked="{x:Bind ShowAllFonts, Mode=TwoWay}" />
+                        </StackPanel>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="MissingFontFaces"
+                                        x:Uid="Profile_MissingFontFaces"
+                                        Margin="0,6,0,0"
+                                        Background="{ThemeResource SettingContainerErrorSeverityBackgroundBrush}"
+                                        Description="{x:Bind Appearance.MissingFontFaces, Mode=OneWay}"
+                                        Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.MissingFontFaces), Mode=OneWay}">
+                        <local:SettingsCard.HeaderIcon>
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                      FontSize="{StaticResource SettingContainerIconFontSize}"
+                                      Foreground="{ThemeResource SettingContainerErrorSeverityIconBackground}"
+                                      Glyph="{StaticResource SettingContainerErrorIconGlyph}" />
+                        </local:SettingsCard.HeaderIcon>
+                    </local:SettingsCard>
+                    <local:SettingsCard x:Name="ProportionalFontFaces"
+                                        x:Uid="Profile_ProportionalFontFaces"
+                                        Margin="0,6,0,0"
+                                        Background="{ThemeResource SettingContainerWarningSeverityBackgroundBrush}"
+                                        Description="{x:Bind Appearance.ProportionalFontFaces, Mode=OneWay}"
+                                        Visibility="{x:Bind mtu:Converters.StringNotEmptyToVisibility(Appearance.ProportionalFontFaces), Mode=OneWay}">
+                        <local:SettingsCard.HeaderIcon>
+                            <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                                      FontSize="{StaticResource SettingContainerIconFontSize}"
+                                      Foreground="{ThemeResource SettingContainerWarningSeverityIconBackground}"
+                                      Glyph="{StaticResource SettingContainerWarningIconGlyph}" />
+                        </local:SettingsCard.HeaderIcon>
+                    </local:SettingsCard>
+                </StackPanel>
+
+                <!--  Font Size  -->
+                <local:SettingsCard x:Name="FontSize"
+                                    x:Uid="Profile_FontSize">
                     <StackPanel Style="{StaticResource SettingControlStackStyle}">
-                        <ComboBox x:Name="FontWeightComboBox"
-                                  x:Uid="Profile_FontWeightComboBox"
-                                  ItemTemplate="{StaticResource EnumComboBoxTemplate}"
-                                  ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}" />
-                        <local:SettingResetButton SettingName="FontWeight"
+                        <muxc:NumberBox x:Name="_fontSizeBox"
+                                        x:Uid="Profile_FontSizeBox"
+                                        LargeChange="10"
+                                        Maximum="128"
+                                        Minimum="1"
+                                        SmallChange="1"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Value="{x:Bind Appearance.FontSize, Mode=TwoWay}" />
+                        <local:SettingResetButton SettingName="FontSize"
                                                   Target="{x:Bind Appearance}" />
                     </StackPanel>
+                </local:SettingsCard>
 
-                    <!--  Custom Font Weight Control  -->
-                    <Grid Margin="0,10,0,0"
-                          Style="{StaticResource CustomSliderControlGridStyle}"
-                          Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Slider x:Name="FontWeightSlider"
-                                x:Uid="Profile_FontWeightSlider"
-                                Grid.Column="0"
-                                Maximum="1000"
-                                Minimum="0"
-                                TickFrequency="50"
-                                TickPlacement="Outside"
-                                Value="{x:Bind mtu:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
-                        <TextBlock Grid.Column="1"
-                                   Margin="10,0,0,0"
-                                   Style="{StaticResource SliderValueLabelStyle}"
-                                   Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}" />
-                    </Grid>
-                </StackPanel>
-            </local:SettingsCard>
+                <!--  Line Height  -->
+                <local:SettingsCard x:Name="LineHeight"
+                                    x:Uid="Profile_LineHeight">
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <muxc:NumberBox x:Name="_lineHeightBox"
+                                        x:Uid="Profile_LineHeightBox"
+                                        LargeChange="0.1"
+                                        Maximum="10"
+                                        Minimum="0.1"
+                                        SmallChange="0.1"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Value="{x:Bind Appearance.LineHeight, Mode=TwoWay}" />
+                        <local:SettingResetButton SettingName="LineHeight"
+                                                  Target="{x:Bind Appearance}" />
+                    </StackPanel>
+                </local:SettingsCard>
+
+                <!--  Cell Width  -->
+                <local:SettingsCard x:Name="CellWidth"
+                                    x:Uid="Profile_CellWidth">
+                    <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                        <muxc:NumberBox x:Name="_cellWidthBox"
+                                        x:Uid="Profile_CellWidthBox"
+                                        LargeChange="0.1"
+                                        Maximum="10"
+                                        Minimum="0.1"
+                                        SmallChange="0.1"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
+                                        Value="{x:Bind Appearance.CellWidth, Mode=TwoWay}" />
+                        <local:SettingResetButton SettingName="CellWidth"
+                                                  Target="{x:Bind Appearance}" />
+                    </StackPanel>
+                </local:SettingsCard>
+
+                <!--  Font Weight  -->
+                <local:SettingsCard x:Name="FontWeight"
+                                    x:Uid="Profile_FontWeight">
+                    <StackPanel>
+                        <StackPanel Style="{StaticResource SettingControlStackStyle}">
+                            <ComboBox x:Name="FontWeightComboBox"
+                                      x:Uid="Profile_FontWeightComboBox"
+                                      ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                                      ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
+                                      SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
+                                      Style="{StaticResource ComboBoxSettingStyle}" />
+                            <local:SettingResetButton SettingName="FontWeight"
+                                                      Target="{x:Bind Appearance}" />
+                        </StackPanel>
+
+                        <!--  Custom Font Weight Control  -->
+                        <Grid Margin="0,10,0,0"
+                              Style="{StaticResource CustomSliderControlGridStyle}"
+                              Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="FontWeightSlider"
+                                    x:Uid="Profile_FontWeightSlider"
+                                    Grid.Column="0"
+                                    Maximum="1000"
+                                    Minimum="0"
+                                    TickFrequency="50"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind mtu:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="1"
+                                       Margin="10,0,0,0"
+                                       Style="{StaticResource SliderValueLabelStyle}"
+                                       Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}" />
+                        </Grid>
+                    </StackPanel>
+                </local:SettingsCard>
+            </StackPanel>
             <local:SettingsExpander x:Name="FontAxes"
-                                    x:Uid="Profile_FontAxes">
+                                    x:Uid="Profile_FontAxes"
+                                    Margin="0,4,0,0">
                 <local:SettingsExpander.Content>
                     <local:SettingResetButton SettingName="FontAxes"
                                               Target="{x:Bind Appearance}" />
@@ -468,7 +477,8 @@
                 </local:SettingsExpander.ItemsHeader>
             </local:SettingsExpander>
             <local:SettingsExpander x:Name="FontFeatures"
-                                    x:Uid="Profile_FontFeatures">
+                                    x:Uid="Profile_FontFeatures"
+                                    Margin="0,4,0,0">
                 <local:SettingsExpander.Content>
                     <local:SettingResetButton SettingName="FontFeatures"
                                               Target="{x:Bind Appearance}" />
@@ -502,7 +512,8 @@
 
             <!--  Builtin Glyphs  -->
             <local:SettingsCard x:Name="EnableBuiltinGlyphs"
-                                x:Uid="Profile_EnableBuiltinGlyphs">
+                                x:Uid="Profile_EnableBuiltinGlyphs"
+                                Margin="0,4,0,0">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Appearance.EnableBuiltinGlyphs, Mode=TwoWay}"
@@ -514,7 +525,8 @@
 
             <!--  Color Glyphs  -->
             <local:SettingsCard x:Name="EnableColorGlyphs"
-                                x:Uid="Profile_EnableColorGlyphs">
+                                x:Uid="Profile_EnableColorGlyphs"
+                                Margin="0,4,0,0">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Appearance.EnableColorGlyphs, Mode=TwoWay}"
@@ -526,7 +538,8 @@
 
             <!--  Retro Terminal Effect  -->
             <local:SettingsCard x:Name="RetroTerminalEffect"
-                                x:Uid="Profile_RetroTerminalEffect">
+                                x:Uid="Profile_RetroTerminalEffect"
+                                Margin="0,4,0,0">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ToggleSwitch VerticalAlignment="Center"
                                   IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}"
@@ -538,7 +551,8 @@
 
             <!--  Adjust Indistinguishable Colors  -->
             <local:SettingsCard x:Name="AdjustIndistinguishableColors"
-                                x:Uid="Profile_AdjustIndistinguishableColors">
+                                x:Uid="Profile_AdjustIndistinguishableColors"
+                                Margin="0,4,0,0">
                 <StackPanel Style="{StaticResource SettingControlStackStyle}">
                     <ComboBox AutomationProperties.AccessibilityView="Content"
                               ItemTemplate="{StaticResource EnumComboBoxTemplate}"

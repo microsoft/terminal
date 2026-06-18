@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& settings, const Model::WindowSettings& windowSettings, const Windows::UI::Core::CoreDispatcher& dispatcher);
         Control::IControlSettings TermSettings() const;
+        Control::IControlSettings TermSettingsUnfocused() const;
         void DeleteProfile();
 
         void SetupAppearances(Windows::Foundation::Collections::IObservableVector<Editor::ColorSchemeViewModel> schemesList);
@@ -96,6 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool HasUnfocusedAppearance();
         bool EditableUnfocusedAppearance() const noexcept;
         bool ShowUnfocusedAppearance();
+        hstring UnfocusedAppearanceCardValue();
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
 
@@ -126,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
 // Settings that expose a reset button.
 // Wired into both the property accessors and the reset dispatch automatically.
-#define PROFILE_INHERITABLE_SETTINGS(X) \
+#define PROFILE_INHERITABLE_SETTINGS(X)         \
     X(_profile, Name)                           \
     X(_profile, Hidden)                         \
     X(_profile, Icon)                           \
