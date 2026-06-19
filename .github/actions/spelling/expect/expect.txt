@@ -291,8 +291,13 @@ curated
 CURRENTFONT
 currentmode
 CURRENTPAGE
+cursortrail
+CursorAnimationLength
 CURSORCOLOR
+CursorSettings
+CursorSmear
 CURSORSIZE
+CursorTrailSize
 CURSORTYPE
 CUsers
 CUU
@@ -1561,6 +1566,8 @@ slpit
 SManifest
 SMARTQUOTE
 SMTO
+SmearState
+smearEnabled
 snapcx
 snapcy
 SND
@@ -1651,6 +1658,7 @@ teraflop
 terminalcore
 terminalinput
 terminalrenderdata
+TerminalThemeHelpers
 TERMINALSCROLLING
 terminfo
 testcon
