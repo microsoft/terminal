@@ -107,6 +107,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"CurrentPathTranslationStyle");
             }
+            else if (viewModelProperty == L"NotifyOnActivity")
+            {
+                _NotifyChanges(L"IsNotifyOnActivityFlagSet", L"NotifyOnActivityPreview");
+            }
+            else if (viewModelProperty == L"NotifyOnNextPrompt")
+            {
+                _NotifyChanges(L"IsNotifyOnNextPromptFlagSet", L"NotifyOnNextPromptPreview");
+            }
             else if (viewModelProperty == L"Padding")
             {
                 _parsedPadding = StringToXamlThickness(_profile.Padding());
@@ -419,7 +427,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // Compile-time tripwire. PROFILE_INHERITABLE_SETTINGS now generates both the
     // property accessors and the dispatch above, so those two can no longer drift.
 #define PROFILE_COUNT(target, name) +1
-    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 34,
+    static_assert(0 PROFILE_INHERITABLE_SETTINGS(PROFILE_COUNT) == 39,
                   "The set of inheritable profile settings changed. Update this count, then make "
                   "sure the new/removed setting is also reflected in ProfileViewModel.idl and in the "
                   "XAML reset buttons.");
@@ -636,6 +644,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return iconPath.empty() || iconPath == IconPicker::HideIconValue;
     }
 
+#pragma region BellStyle
     hstring ProfileViewModel::BellStylePreview() const
     {
         const auto bellStyle = BellStyle();
@@ -715,6 +724,147 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WI_UpdateFlag(currentStyle, Model::BellStyle::Notification, winrt::unbox_value<bool>(on));
         BellStyle(currentStyle);
     }
+#pragma endregion
+
+#pragma region NotifyOnActivity
+    hstring ProfileViewModel::NotifyOnActivityPreview() const
+    {
+        using Ons = Control::OutputNotificationStyle;
+        const auto style = NotifyOnActivity();
+        if (WI_AreAllFlagsSet(style, Ons::Taskbar | Ons::Audible | Ons::Tab | Ons::Notification))
+        {
+            return RS_(L"Profile_OutputNotificationStyleAll/Content");
+        }
+        else if (style == Ons::None)
+        {
+            return RS_(L"Profile_OutputNotificationStyleNone/Content");
+        }
+
+        std::wstring result;
+        const auto appendIfFlagSet = [&](Ons flag, std::wstring_view resource) {
+            // WI_IsFlagSet requires a compile-time constant flag; `flag` is a runtime parameter here.
+            if ((WI_EnumValue(style) & WI_EnumValue(flag)) != 0)
+            {
+                if (!result.empty())
+                {
+                    result.append(L", ");
+                }
+                result.append(resource);
+            }
+        };
+
+        appendIfFlagSet(Ons::Taskbar, RS_(L"Profile_OutputNotificationStyleTaskbar/Content"));
+        appendIfFlagSet(Ons::Audible, RS_(L"Profile_OutputNotificationStyleAudible/Content"));
+        appendIfFlagSet(Ons::Tab, RS_(L"Profile_OutputNotificationStyleTab/Content"));
+        appendIfFlagSet(Ons::Notification, RS_(L"Profile_OutputNotificationStyleNotification/Content"));
+
+        return hstring{ result };
+    }
+
+    bool ProfileViewModel::IsNotifyOnActivityFlagSet(const uint32_t flag)
+    {
+        return (WI_EnumValue(NotifyOnActivity()) & flag) == flag;
+    }
+
+    void ProfileViewModel::SetNotifyOnActivityTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnActivity();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Taskbar, winrt::unbox_value<bool>(on));
+        NotifyOnActivity(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnActivityAudible(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnActivity();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Audible, winrt::unbox_value<bool>(on));
+        NotifyOnActivity(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnActivityTab(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnActivity();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Tab, winrt::unbox_value<bool>(on));
+        NotifyOnActivity(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnActivityNotification(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnActivity();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Notification, winrt::unbox_value<bool>(on));
+        NotifyOnActivity(currentStyle);
+    }
+#pragma endregion
+
+#pragma region NotifyOnNextPrompt
+    hstring ProfileViewModel::NotifyOnNextPromptPreview() const
+    {
+        using Ons = Control::OutputNotificationStyle;
+        const auto style = NotifyOnNextPrompt();
+        if (WI_AreAllFlagsSet(style, Ons::Taskbar | Ons::Audible | Ons::Tab | Ons::Notification))
+        {
+            return RS_(L"Profile_OutputNotificationStyleAll/Content");
+        }
+        else if (style == Ons::None)
+        {
+            return RS_(L"Profile_OutputNotificationStyleNone/Content");
+        }
+
+        std::wstring result;
+        const auto appendIfFlagSet = [&](Ons flag, std::wstring_view resource) {
+            // WI_IsFlagSet requires a compile-time constant flag; `flag` is a runtime parameter here.
+            if ((WI_EnumValue(style) & WI_EnumValue(flag)) != 0)
+            {
+                if (!result.empty())
+                {
+                    result.append(L", ");
+                }
+                result.append(resource);
+            }
+        };
+
+        appendIfFlagSet(Ons::Taskbar, RS_(L"Profile_OutputNotificationStyleTaskbar/Content"));
+        appendIfFlagSet(Ons::Audible, RS_(L"Profile_OutputNotificationStyleAudible/Content"));
+        appendIfFlagSet(Ons::Tab, RS_(L"Profile_OutputNotificationStyleTab/Content"));
+        appendIfFlagSet(Ons::Notification, RS_(L"Profile_OutputNotificationStyleNotification/Content"));
+
+        return hstring{ result };
+    }
+
+    bool ProfileViewModel::IsNotifyOnNextPromptFlagSet(const uint32_t flag)
+    {
+        return (WI_EnumValue(NotifyOnNextPrompt()) & flag) == flag;
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Taskbar, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptAudible(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Audible, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptTab(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Tab, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
+    }
+
+    void ProfileViewModel::SetNotifyOnNextPromptNotification(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = NotifyOnNextPrompt();
+        WI_UpdateFlag(currentStyle, Control::OutputNotificationStyle::Notification, winrt::unbox_value<bool>(on));
+        NotifyOnNextPrompt(currentStyle);
+    }
+#pragma endregion
+
+#pragma region BellSound
 
     // Method Description:
     // - Construct _CurrentBellSounds by importing the _inherited_ value from the model
@@ -853,6 +1003,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _NotifyChanges(L"CurrentBellSounds");
         }
     }
+#pragma endregion
 
     void ProfileViewModel::_RefreshDefaultAppearanceViewModel()
     {

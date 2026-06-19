@@ -371,6 +371,11 @@ namespace winrt::Microsoft::Terminal::Settings
         _AllowOscNotifications = profile.AllowOscNotifications();
         _PathTranslationStyle = profile.PathTranslationStyle();
         _DragDropDelimiter = profile.DragDropDelimiter();
+        _NotifyOnActivity = profile.NotifyOnActivity();
+        _NotifyOnNextPrompt = profile.NotifyOnNextPrompt();
+        _NotifyOnActivityThreshold = profile.NotifyOnActivityThreshold();
+        _NotifyOnNextPromptThreshold = profile.NotifyOnNextPromptThreshold();
+        _AutoDetectRunningCommand = profile.AutoDetectRunningCommand();
     }
 
     // Method Description:

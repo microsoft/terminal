@@ -49,6 +49,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
         void SetBellStyleNotification(winrt::Windows::Foundation::IReference<bool> on);
 
+        // notify on activity bits
+        hstring NotifyOnActivityPreview() const;
+        bool IsNotifyOnActivityFlagSet(const uint32_t flag);
+        void SetNotifyOnActivityTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnActivityAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnActivityTab(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnActivityNotification(winrt::Windows::Foundation::IReference<bool> on);
+
+        // notify on next prompt bits
+        hstring NotifyOnNextPromptPreview() const;
+        bool IsNotifyOnNextPromptFlagSet(const uint32_t flag);
+        void SetNotifyOnNextPromptTaskbar(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptAudible(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptTab(winrt::Windows::Foundation::IReference<bool> on);
+        void SetNotifyOnNextPromptNotification(winrt::Windows::Foundation::IReference<bool> on);
+
         hstring BellSoundPreview();
         void RequestAddBellSound(hstring path);
         void RequestDeleteBellSound(const Editor::BellSoundViewModel& vm);
@@ -159,7 +175,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     X(_profile, AnswerbackMessage)              \
     X(_profile, RainbowSuggestions)             \
     X(_profile, PathTranslationStyle)           \
-    X(_profile, DragDropDelimiter)
+    X(_profile, DragDropDelimiter)              \
+    X(_profile, NotifyOnActivity)               \
+    X(_profile, NotifyOnNextPrompt)             \
+    X(_profile, NotifyOnActivityThreshold)      \
+    X(_profile, NotifyOnNextPromptThreshold)    \
+    X(_profile, AutoDetectRunningCommand)
 
         // Generate the projected property accessors from the list above.
 #define PROFILE_GEN_PROJECTED(target, name) OBSERVABLE_PROJECTED_SETTING(target, name);

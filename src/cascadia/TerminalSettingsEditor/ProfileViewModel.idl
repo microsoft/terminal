@@ -52,6 +52,20 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleNotification(Windows.Foundation.IReference<Boolean> on);
 
+        String NotifyOnActivityPreview { get; };
+        Boolean IsNotifyOnActivityFlagSet(UInt32 flag);
+        void SetNotifyOnActivityTaskbar(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnActivityAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnActivityTab(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnActivityNotification(Windows.Foundation.IReference<Boolean> on);
+
+        String NotifyOnNextPromptPreview { get; };
+        Boolean IsNotifyOnNextPromptFlagSet(UInt32 flag);
+        void SetNotifyOnNextPromptTaskbar(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnNextPromptAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnNextPromptTab(Windows.Foundation.IReference<Boolean> on);
+        void SetNotifyOnNextPromptNotification(Windows.Foundation.IReference<Boolean> on);
+
         String BellSoundPreview { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
         void RequestAddBellSound(String path);
@@ -145,5 +159,10 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, DragDropDelimiter);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowOscNotifications);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnActivity);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnNextPrompt);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, NotifyOnActivityThreshold);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, NotifyOnNextPromptThreshold);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AutoDetectRunningCommand);
     }
 }
