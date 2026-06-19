@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>ウィンドウの名前をリセットする</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>ワークスペース "{0}" を開く</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>ワークスペースを開く</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>ウィンドウの名前を変更...</value>
   </data>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>現在の作業ディレクトリを開く</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>ワークスペース...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>タブを閉じる</value>
