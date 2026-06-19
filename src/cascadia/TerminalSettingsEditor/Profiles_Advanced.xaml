@@ -96,6 +96,16 @@
                           Style="{StaticResource ComboBoxSettingStyle}" />
             </local:SettingContainer>
 
+            <!--  Confirm On Close  -->
+            <local:SettingContainer x:Name="ConfirmOnClose"
+                                    x:Uid="Profile_ConfirmOnClose"
+                                    ClearSettingValue="{x:Bind Profile.ClearConfirmOnClose}"
+                                    HasSettingValue="{x:Bind Profile.HasConfirmOnClose, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Profile.ConfirmOnCloseOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Profile.ConfirmOnClose, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+            </local:SettingContainer>
+
             <!--  Bell Style  -->
             <local:SettingContainer x:Name="BellStyle"
                                     x:Uid="Profile_BellStyle"

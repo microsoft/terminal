@@ -1125,6 +1125,14 @@
     <value>If enabled, the profile will open in an Admin terminal window automatically. If the current window is already running as admin, it will open in this window.</value>
     <comment>A description for what the "elevate" setting does. Presented near "Profile_Elevate".</comment>
   </data>
+  <data name="Profile_ConfirmOnClose.Header" xml:space="preserve">
+    <value>Confirm before closing</value>
+    <comment>Header for a toggle that, when enabled, asks for confirmation before closing this profile's tab.</comment>
+  </data>
+  <data name="Profile_ConfirmOnClose.HelpText" xml:space="preserve">
+    <value>When enabled, closing a tab running this profile will show a confirmation dialog.</value>
+    <comment>Help text for the Profile_ConfirmOnClose toggle.</comment>
+  </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>History size</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>

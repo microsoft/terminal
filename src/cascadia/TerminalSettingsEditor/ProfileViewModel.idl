@@ -129,6 +129,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.IMediaResource>, BellSound);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ConfirmOnClose);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RightClickContextMenu);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ShowMarks);

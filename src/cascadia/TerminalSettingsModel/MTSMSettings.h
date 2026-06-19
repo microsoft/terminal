@@ -111,7 +111,8 @@ Author(s):
     X(bool, AllowOscNotifications, "compatibility.allowOSC777", false)                                                                                         \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
     X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
-    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
+    X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None) \
+    X(bool, ConfirmOnClose, "confirmOnClose", false)
 
 // Intentionally omitted Profile settings:
 // * Name

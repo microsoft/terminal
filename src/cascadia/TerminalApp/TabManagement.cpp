@@ -453,7 +453,25 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto weak = get_weak();
 
-                auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::Tab);
+                // If the dialog fires because of the per-profile setting (not because
+                // global is Always), pass the profile so "Don't ask again" disables
+                // the profile flag rather than setting global to Never.
+                const auto globalSetting = _settings.GlobalSettings().ConfirmOnClose();
+                const auto profile = tabImpl->GetFocusedProfile();
+                // profileTriggered is true when the profile flag caused the dialog and
+                // global didn't already fully explain it:
+                //   - Always -> global triggered, not profile
+                //   - Automatic + multi-pane -> multi-pane triggered, not profile
+                //   - Automatic + single-pane + profile -> profile triggered
+                //   - Never + profile -> profile triggered
+                const auto profileTriggered = profile && profile.ConfirmOnClose() &&
+                                              globalSetting != ConfirmOnClose::Always &&
+                                              !(globalSetting == ConfirmOnClose::Automatic && tabImpl->GetLeafPaneCount() > 1);
+                std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> profilesToDisable;
+                if (profileTriggered)
+                    profilesToDisable.push_back(profile);
+
+                auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::Tab, std::move(profilesToDisable));
                 strong = weak.get();
                 if (!strong || warningResult != ContentDialogResult::Primary)
                 {
@@ -862,15 +880,32 @@ namespace winrt::TerminalApp::implementation
             {
                 const auto weak = get_weak();
 
-                // Check if we should warn before closing a single pane
-                // (only triggers on Always — Automatic doesn't warn for single pane)
+                // Check if we should warn before closing a pane.
                 const auto setting = _settings.GlobalSettings().ConfirmOnClose();
-                if (setting == ConfirmOnClose::Always)
+                const auto isLastPane = activeTab->GetLeafPaneCount() == 1;
+
+                if (isLastPane && _ShouldWarnOnCloseTab(activeTab))
                 {
-                    // If this is the last pane, closing it closes the tab,
-                    // so use the tab dialog text instead.
-                    const auto kind = activeTab->GetLeafPaneCount() == 1 ? ConfirmCloseDialogKind::Tab : ConfirmCloseDialogKind::Pane;
-                    auto warningResult = co_await _ShowConfirmCloseDialog(kind);
+                    // Closing the last pane closes the tab; apply tab-close confirmation logic.
+                    const auto profile = activeTab->GetFocusedProfile();
+                    std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> profilesToDisable;
+                    if (profile && profile.ConfirmOnClose() && setting != ConfirmOnClose::Always)
+                        profilesToDisable.push_back(profile);
+
+                    auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::Tab, std::move(profilesToDisable));
+
+                    // Hold a strong reference to `this` for the rest of the
+                    // method; we may be the last holder after `co_await`.
+                    auto strong = weak.get();
+                    if (!strong || warningResult != ContentDialogResult::Primary)
+                    {
+                        co_return;
+                    }
+                }
+                else if (!isLastPane && setting == ConfirmOnClose::Always)
+                {
+                    // Non-last pane: only warn when global is Always.
+                    auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::Pane);
 
                     // Hold a strong reference to `this` for the rest of the
                     // method; we may be the last holder after `co_await`.
@@ -901,10 +936,43 @@ namespace winrt::TerminalApp::implementation
     safe_void_coroutine TerminalPage::_ClosePanes(weak_ref<Tab> weakTab, std::vector<uint32_t> paneIds)
     {
         // Show a single aggregate confirmation for closing multiple panes.
-        if (_settings.GlobalSettings().ConfirmOnClose() != ConfirmOnClose::Never)
+        const auto globalSetting = _settings.GlobalSettings().ConfirmOnClose();
+
+        // Collect the profiles of the panes actually being closed.
+        // GetRootPane()->FindPane(id) locates each pane; Pane::GetProfile() returns its profile.
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> closingProfiles;
+        if (const auto strongTab = weakTab.get())
+        {
+            const auto root = strongTab->GetRootPane();
+            for (const auto id : paneIds)
+            {
+                if (const auto pane = root->FindPane(id))
+                {
+                    if (const auto profile = pane->GetProfile())
+                        closingProfiles.push_back(profile);
+                }
+            }
+        }
+
+        bool anyProfileConfirm = false;
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> profilesToDisable;
+        if (globalSetting != ConfirmOnClose::Always)
+        {
+            for (const auto& p : closingProfiles)
+            {
+                if (p.ConfirmOnClose())
+                {
+                    anyProfileConfirm = true;
+                    if (globalSetting == ConfirmOnClose::Never)
+                        profilesToDisable.push_back(p);
+                }
+            }
+        }
+
+        if (globalSetting != ConfirmOnClose::Never || anyProfileConfirm)
         {
             const auto weak = get_weak();
-            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultiplePanes);
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultiplePanes, std::move(profilesToDisable));
 
             // Hold a strong reference to `this` after the co_await; we may
             // be the last holder if the page was being torn down.
@@ -978,9 +1046,30 @@ namespace winrt::TerminalApp::implementation
 
         // Show a single aggregate confirmation instead of per-tab dialogs.
         const auto weak = get_weak();
-        if (_settings.GlobalSettings().ConfirmOnClose() != ConfirmOnClose::Never)
+        const auto globalSetting = _settings.GlobalSettings().ConfirmOnClose();
+
+        bool anyProfileConfirm = false;
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> profilesToDisable;
+        if (globalSetting != ConfirmOnClose::Always)
         {
-            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultipleTabs);
+            for (const auto& tab : tabs)
+            {
+                if (const auto tabImpl = _GetTabImpl(tab))
+                {
+                    const auto profile = tabImpl->GetFocusedProfile();
+                    if (profile && profile.ConfirmOnClose())
+                    {
+                        anyProfileConfirm = true;
+                        if (globalSetting == ConfirmOnClose::Never)
+                            profilesToDisable.push_back(profile);
+                    }
+                }
+            }
+        }
+
+        if (globalSetting != ConfirmOnClose::Never || anyProfileConfirm)
+        {
+            auto warningResult = co_await _ShowConfirmCloseDialog(ConfirmCloseDialogKind::MultipleTabs, std::move(profilesToDisable));
 
             // Hold a strong reference to `this` after the co_await so that
             // the for-loop below can safely dispatch on us.

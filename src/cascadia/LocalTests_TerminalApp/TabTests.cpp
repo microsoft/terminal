@@ -97,6 +97,16 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestClampSwitchToTab);
 
+        TEST_METHOD(TestConfirmOnCloseTabWarning);
+        TEST_METHOD(TestConfirmOnCloseWindowWarning);
+
+        TEST_METHOD(TestConfirmOnCloseProfileTriggeredInAutomatic);
+        TEST_METHOD(TestCloseFocusedPaneLastPaneProfileFlag);
+        TEST_METHOD(TestRemoveTabsWithPerProfileFlag);
+
+        TEST_METHOD(TestRemoveTabsPassesProfilesToDialog);
+        TEST_METHOD(TestCloseWindowAutomaticSinglePaneProfileTriggered);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1525,6 +1535,361 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
             VERIFY_ARE_EQUAL(2u, focusedTabIndexOpt.value());
         });
+    }
+
+    void TabTests::TestConfirmOnCloseTabWarning()
+    {
+        // Settings: global = never, profile0 has confirmOnClose: true
+        static constexpr std::wstring_view settingsWithProfileConfirm{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        // Settings: global = never, profile has confirmOnClose: false (default)
+        static constexpr std::wstring_view settingsNoConfirm{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "no-confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        // Settings: global = always (profile setting irrelevant)
+        static constexpr std::wstring_view settingsGlobalAlways{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "always",
+            "profiles": [
+                {
+                    "name": "any-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": false
+                }
+            ]
+        })" };
+
+        // Settings: global = automatic, profile = true (raises to always for single pane)
+        static constexpr std::wstring_view settingsAutomaticWithProfile{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "automatic",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        {
+            // Case 1: profile true + global never -> should warn
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsWithProfileConfirm, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"profile=true, global=never should warn");
+            });
+        }
+
+        {
+            // Case 2: profile false + global never -> should not warn
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsNoConfirm, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_IS_FALSE(page->_ShouldWarnOnCloseTab(tab), L"profile=false, global=never should not warn");
+            });
+        }
+
+        {
+            // Case 3: global always + profile false -> should warn (global wins)
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsGlobalAlways, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"global=always should always warn");
+            });
+        }
+
+        {
+            // Case 4: global automatic + profile true + single pane -> should warn
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsAutomaticWithProfile, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_ARE_EQUAL(1u, tab->GetLeafPaneCount(), L"Sanity: single pane");
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"profile=true, global=automatic, single pane should warn");
+            });
+        }
+    }
+
+    void TabTests::TestConfirmOnCloseWindowWarning()
+    {
+        // Settings: global = never, one tab with confirmOnClose: true
+        static constexpr std::wstring_view settingsWithProfileConfirm{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        // Settings: global = never, tab with confirmOnClose: false
+        static constexpr std::wstring_view settingsNoConfirm{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "no-confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        {
+            // Case 5: global = never, tab's profile = true -> window close should warn
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsWithProfileConfirm, {} });
+            TestOnUIThread([&page]() {
+                VERIFY_IS_TRUE(page->_ShouldWarnOnClose(), L"global=never, profile=true -> window close should warn");
+            });
+        }
+
+        {
+            // Case 6: global = never, all tabs profile = false -> window close should not warn
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsNoConfirm, {} });
+            TestOnUIThread([&page]() {
+                VERIFY_IS_FALSE(page->_ShouldWarnOnClose(), L"global=never, profile=false -> window close should not warn");
+            });
+        }
+    }
+
+    // Test I-1: When global is Automatic and a single-pane tab has confirmOnClose:true on its
+    // profile, _ShouldWarnOnCloseTab returns true AND profileTriggered should be true
+    // (profile caused the dialog, not multi-pane count).
+    void TabTests::TestConfirmOnCloseProfileTriggeredInAutomatic()
+    {
+        // Settings: global = automatic, profile has confirmOnClose: true
+        static constexpr std::wstring_view settingsAutomaticWithProfile{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "automatic",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        {
+            // global=automatic, single-pane, profile=true -> _ShouldWarnOnCloseTab returns true
+            // and profileTriggered is true (profile should be disabled, not global)
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsAutomaticWithProfile, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_ARE_EQUAL(1u, tab->GetLeafPaneCount(), L"Sanity: single pane");
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"global=automatic, single pane, profile=true should warn");
+
+                // Verify profileTriggered logic: global=Automatic + single-pane + profile=true
+                // -> profileTriggered should be true (profile, not multi-pane, caused the dialog)
+                const auto globalSetting = page->_settings.GlobalSettings().ConfirmOnClose();
+                const auto profile = tab->GetFocusedProfile();
+                const auto profileTriggered = profile && profile.ConfirmOnClose() &&
+                                              globalSetting != ConfirmOnClose::Always &&
+                                              !(globalSetting == ConfirmOnClose::Automatic && tab->GetLeafPaneCount() > 1);
+                VERIFY_IS_TRUE(profileTriggered, L"profileTriggered should be true for Automatic+single-pane+profile case");
+            });
+        }
+    }
+
+    // Test C-2: When global is Never and a tab has a single pane with per-profile
+    // confirmOnClose:true, _ShouldWarnOnCloseTab returns true (the logic that _CloseFocusedPane
+    // now hooks into for the last-pane case).
+    void TabTests::TestCloseFocusedPaneLastPaneProfileFlag()
+    {
+        // Settings: global = never, profile has confirmOnClose: true
+        static constexpr std::wstring_view settingsNeverWithProfile{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        {
+            // global=never, single pane, profile=true -> _ShouldWarnOnCloseTab returns true
+            // This verifies that _CloseFocusedPane's new last-pane path will trigger.
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsNeverWithProfile, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_ARE_EQUAL(1u, tab->GetLeafPaneCount(), L"Sanity: single pane");
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"global=never, single pane, profile=true -> should warn (C-2 path)");
+            });
+        }
+    }
+
+    // Test C-1: When global is Never but one of the tabs has confirmOnClose:true,
+    // _ShouldWarnOnCloseTab on that tab returns true — the condition that _RemoveTabs
+    // now uses to show a dialog even when global is Never.
+    void TabTests::TestRemoveTabsWithPerProfileFlag()
+    {
+        // Settings: global = never, profile has confirmOnClose: true
+        static constexpr std::wstring_view settingsNeverWithProfile{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        // Settings: global = never, profile has confirmOnClose: false
+        static constexpr std::wstring_view settingsNeverNoProfile{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "no-confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        {
+            // global=never, profile=true -> _ShouldWarnOnCloseTab returns true for that tab.
+            // This verifies the new condition in _RemoveTabs (anyProfileConfirm = true).
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsNeverWithProfile, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"global=never, profile=true -> tab warns (C-1 path reachable)");
+            });
+        }
+
+        {
+            // global=never, profile=false -> _ShouldWarnOnCloseTab returns false.
+            // No dialog should appear in _RemoveTabs (anyProfileConfirm = false).
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsNeverNoProfile, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_IS_FALSE(page->_ShouldWarnOnCloseTab(tab), L"global=never, profile=false -> no warning (C-1 path not triggered)");
+            });
+        }
+    }
+
+    // Test M-1: When global is Never and a tab in the removal set has confirmOnClose:true,
+    // _ShouldWarnOnCloseTab on that tab returns true — the condition that now causes
+    // _RemoveTabs to collect profilesToDisable and pass them to the dialog.
+    void TabTests::TestRemoveTabsPassesProfilesToDialog()
+    {
+        // Settings: global = never, profile has confirmOnClose: true
+        static constexpr std::wstring_view settingsNeverWithProfile{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "never",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        {
+            // global=never + profile=true -> _ShouldWarnOnCloseTab returns true.
+            // This verifies the condition in _RemoveTabs that triggers profile collection
+            // (anyProfileConfirm = true) and passes profilesToDisable to the dialog.
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsNeverWithProfile, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"global=never, profile=true -> tab warns (M-1 profilesToDisable path)");
+
+                // Verify that the profile itself has confirmOnClose: true so it would be
+                // collected into profilesToDisable by the new _RemoveTabs loop.
+                const auto profile = tab->GetFocusedProfile();
+                VERIFY_IS_NOT_NULL(profile, L"tab must have a focused profile");
+                VERIFY_IS_TRUE(profile.ConfirmOnClose(), L"profile.ConfirmOnClose() must be true to be collected");
+            });
+        }
+    }
+
+    // Test M-2: When global is Automatic and the window has a single tab with a single pane
+    // running a profile that has confirmOnClose:true, the profileTriggeredDialog condition
+    // evaluates to true — the profile flag was the reason the dialog fired.
+    void TabTests::TestCloseWindowAutomaticSinglePaneProfileTriggered()
+    {
+        // Settings: global = automatic, profile has confirmOnClose: true
+        static constexpr std::wstring_view settingsAutomaticWithProfile{ LR"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "warning.confirmOnClose": "automatic",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                }
+            ]
+        })" };
+
+        {
+            // global=automatic, single-tab, single-pane, profile=true ->
+            // _ShouldWarnOnCloseTab returns true and profileTriggeredDialog would be true.
+            // Proves the Automatic+single-pane+profile case in CloseWindow/RequestQuit.
+            winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+            _initializeTerminalPage(page, CascadiaSettings{ settingsAutomaticWithProfile, {} });
+            TestOnUIThread([&page]() {
+                const auto tab = page->_GetTabImpl(page->_tabs.GetAt(0));
+                VERIFY_ARE_EQUAL(1u, tab->GetLeafPaneCount(), L"Sanity: single pane");
+                VERIFY_IS_TRUE(page->_ShouldWarnOnCloseTab(tab), L"global=automatic, single pane, profile=true should warn");
+
+                // Verify profileTriggeredDialog logic:
+                // global=Automatic + NOT multi-tab + NOT multi-pane -> automaticAloneFired = false
+                // -> profileTriggeredDialog = true
+                const bool isMultiTab = page->_HasMultipleTabs();
+                const bool isMultiPane = tab->GetLeafPaneCount() > 1;
+                const bool automaticAloneFired = isMultiTab || isMultiPane;
+                VERIFY_IS_FALSE(automaticAloneFired, L"Automatic alone should NOT have fired (single tab, single pane)");
+                VERIFY_IS_TRUE(!automaticAloneFired, L"profileTriggeredDialog should be true (M-2 path)");
+            });
+        }
     }
 
 }

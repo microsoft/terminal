@@ -35,6 +35,7 @@ namespace SettingsModelUnitTests
         TEST_METHOD(SettingInheritanceFallback);
         TEST_METHOD(ClearSettingRestoresInheritance);
         TEST_METHOD(HasSettingAtSpecificLayer);
+        TEST_METHOD(TestConfirmOnCloseProfileSetting);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -661,5 +662,34 @@ namespace SettingsModelUnitTests
         // ProfileDefaults: historySize is set
         VERIFY_IS_TRUE(settings->ProfileDefaults().HasHistorySize());
         VERIFY_ARE_EQUAL(5000, settings->ProfileDefaults().HistorySize());
+    }
+
+    void ProfileTests::TestConfirmOnCloseProfileSetting()
+    {
+        // Verify the setting round-trips through JSON.
+        static constexpr std::string_view settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "confirm-profile",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "confirmOnClose": true
+                },
+                {
+                    "name": "no-confirm-profile",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+        const auto allProfiles = settings->AllProfiles();
+
+        VERIFY_ARE_EQUAL(2u, allProfiles.Size());
+        // profile0 explicitly sets confirmOnClose: true
+        VERIFY_ARE_EQUAL(true, allProfiles.GetAt(0).ConfirmOnClose());
+        // profile1 omits the setting; should default to false
+        VERIFY_ARE_EQUAL(false, allProfiles.GetAt(1).ConfirmOnClose());
     }
 }

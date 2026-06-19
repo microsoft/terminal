@@ -134,6 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellSound);
         OBSERVABLE_PROJECTED_SETTING(_profile, Elevate);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ConfirmOnClose);
         OBSERVABLE_PROJECTED_SETTING(_profile, ReloadEnvironmentVariables);
         OBSERVABLE_PROJECTED_SETTING(_profile, RightClickContextMenu);
         OBSERVABLE_PROJECTED_SETTING(_profile, ShowMarks);
