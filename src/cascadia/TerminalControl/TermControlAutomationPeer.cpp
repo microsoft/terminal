@@ -211,6 +211,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControlAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
     {
+        if (auto control{ _termControl.get() })
+        {
+            if (control->ScrollOffset() > 0)
+            {
+                return;
+            }
+        }
+
         auto sanitized{ Sanitize(newOutput) };
         // Try to suppress any events (or event data)
         // that are just the keypresses that the user made
