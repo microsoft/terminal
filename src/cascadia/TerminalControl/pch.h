@@ -74,6 +74,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 
 #include "til.h"
 #include <til/mutex.h>
+#include <til/rand.h>
 #include <til/winrt.h>
 
 #include <SafeDispatcherTimer.h>

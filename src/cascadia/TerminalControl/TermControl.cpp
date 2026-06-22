@@ -1020,10 +1020,59 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        auto imagePath = newAppearance.BackgroundImage();
+
+        // If the background image path is a directory, pick a random image from it.
+        // This allows users to set "backgroundImage" to a folder in settings.json
+        // and get a random image each time (including per split pane).
+        try
+        {
+            std::filesystem::path fsPath{ imagePath };
+            if (std::filesystem::is_directory(fsPath))
+            {
+                static constexpr std::wstring_view imageExtensions[] = {
+                    L".jpg", L".jpeg", L".png", L".bmp", L".gif", L".tiff", L".ico"
+                };
+                std::vector<std::wstring> imageFiles;
+                for (const auto& entry : std::filesystem::directory_iterator(fsPath))
+                {
+                    if (entry.is_regular_file())
+                    {
+                        auto ext = entry.path().extension().wstring();
+                        std::transform(ext.begin(), ext.end(), ext.begin(), ::towlower);
+                        for (const auto& validExt : imageExtensions)
+                        {
+                            if (ext == validExt)
+                            {
+                                imageFiles.push_back(entry.path().wstring());
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!imageFiles.empty())
+                {
+                    const auto idx = til::gen_random<size_t>() % imageFiles.size();
+                    imagePath = imageFiles[idx];
+                }
+                else
+                {
+                    BackgroundImage().Source(nullptr);
+                    return;
+                }
+            }
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            BackgroundImage().Source(nullptr);
+            return;
+        }
+
         Windows::Foundation::Uri imageUri{ nullptr };
         try
         {
-            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImage() };
+            imageUri = Windows::Foundation::Uri{ imagePath };
         }
         catch (...)
         {

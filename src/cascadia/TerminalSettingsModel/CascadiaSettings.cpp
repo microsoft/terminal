@@ -612,6 +612,9 @@ static void _resolveSingleMediaResourceInner(Model::OriginTag origin, std::wstri
             return;
         }
 
+        // If the path is a directory, resolve to the directory path itself.
+        // The rendering layer (TermControl::_SetBackgroundImage) will handle
+        // picking a random image from the directory.
         resource.Resolve(winrt::hstring{ resourceAsFilesystemPath.lexically_normal().native() });
         return;
     }
