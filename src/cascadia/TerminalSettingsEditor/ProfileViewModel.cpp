@@ -128,6 +128,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _NotifyChanges(L"TabColorPreview");
             }
+            else if (viewModelProperty == L"Hidden")
+            {
+                _NotifyChanges(L"AccessibleStateDescription", L"ShowHiddenBadge");
+            }
         });
 
         // Do the same for the starting directory
@@ -338,6 +342,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool ProfileViewModel::Orphaned() const
     {
         return _profile.Orphaned();
+    }
+
+    hstring ProfileViewModel::AccessibleStateDescription() const
+    {
+        const auto hidden = Hidden();
+        const auto orphaned = Orphaned();
+        if (hidden && orphaned)
+        {
+            return til::hstring_format(FMT_COMPILE(L"{}, {}"),
+                                       RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"),
+                                       RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+        }
+        if (hidden)
+        {
+            return RS_(L"Profile_HiddenBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        if (orphaned)
+        {
+            return RS_(L"Profile_OrphanedBadge/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
+        }
+        return {};
+    }
+
+    // Whether the "hidden" badge should be shown for this profile. The orphaned
+    // badge takes precedence, so the hidden badge is suppressed when the profile
+    // is also orphaned. This keeps a single badge visible at a time on the
+    // Profiles landing page.
+    bool ProfileViewModel::ShowHiddenBadge() const
+    {
+        return Hidden() && !Orphaned();
     }
 
     hstring ProfileViewModel::TabTitlePreview() const

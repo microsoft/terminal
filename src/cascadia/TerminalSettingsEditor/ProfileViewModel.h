@@ -101,6 +101,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool RepositionCursorWithMouseAvailable() const noexcept;
 
         bool Orphaned() const;
+        hstring AccessibleStateDescription() const;
+        bool ShowHiddenBadge() const;
         hstring TabTitlePreview() const;
         hstring AnswerbackMessagePreview() const;
         Windows::UI::Color TabColorPreview() const;
