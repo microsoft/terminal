@@ -545,40 +545,9 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     }
 
     // !! LOAD BEARING !!
-    // Resolve the settings folder path *before* we construct the XAML App, while
-    // this thread is still the only one touching the Known Folders machinery.
-    // GetBaseSettingsPath() caches its result, but the very first call goes through
-    // SHGetKnownFolderPath(), which has to delay-load
-    // api-ms-win-shlwapi-winrt-storage and populate the shell's Known Folders cache
-    // (taking that cache's lock as it does so).
-    //
-    // Constructing TerminalApp::App{} below brings up XAML, which spins up a
-    // graphics-device-init thread that creates a D3D device and loads the GPU's
-    // user-mode driver. On some machines (observed with NVIDIA's UMD) that driver's
-    // DllMain itself calls SHGetKnownFolderPath while holding the loader lock. If
-    // our first SHGetKnownFolderPath - which today happens later, in the AppLogic
-    // ctor's _setupFolderPathEnvVar - runs concurrently with that, we deadlock:
-    //   * our thread holds the Known Folders cache lock and is blocked in the loader
-    //     waiting for the delay-load to finish, while
-    //   * the driver's DllMain holds the loader lock and is blocked waiting for the
-    //     Known Folders cache lock.
-    // The process then hangs before any window is shown. Because that hung process
-    // is the monarch, it silently swallows every subsequent launch until it is
-    // killed, which is why "Open in Terminal" intermittently does nothing after a
-    // cold boot. See GH#20348.
-    //
-    // Warming the path here resolves the delay-load and populates the cache before
-    // that graphics thread can exist, so the lock-ordering inversion can't form.
-    // Both effects are permanent and process-wide - LdrResolveDelayLoadedAPI patches
-    // the IAT thunk exactly once, and the Known Folders definition-cache load is
-    // FOLDERID-independent and runs once - so no later SHGetKnownFolderPath (on any
-    // thread, for any folder) re-enters the loader while holding the cache lock.
-    // This call is therefore NOT dead code; please don't "clean it up."
-    //
-    // Caveat: in portable mode GetBaseSettingsPath() returns without calling
-    // SHGetKnownFolderPath at all, so this is a no-op there. The reported repro is a
-    // default, non-portable install; a portable + buggy-driver combo would need the
-    // warm-up routed through a path that always hits SHGetKnownFolderPath.
+    // This prevents loader lock contention with some versions of the nvidia
+    // driver, which calls SHGetKnownFolderPath triggering a delay load while
+    // under lock during application startup. See GH#20348.
     std::ignore = CascadiaSettings::SettingsPath();
 
     _app = winrt::TerminalApp::App{};
