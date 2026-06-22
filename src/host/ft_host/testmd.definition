@@ -30,7 +30,7 @@
   "Plugins": [
     {
         "Type": "Microsoft.TestInfrastructure.UniversalTest.TestMD.Plugins.Etw.EtwPlugin",
-        "Name": "Collecting conhost logs during FTs",
+        "Name": "Collecting conhost logs during feature tests",
         "Parameters": {
             "$schema": "Microsoft.TestInfrastructure.UniversalTest.TestMD.Plugins.Etw.EtwPlugin-1.json",
             "Profiles": [
