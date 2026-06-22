@@ -39,16 +39,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
 
-    void Profiles::Defaults_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
-    {
-        _ViewModel.RequestOpenDefaults();
-    }
-
-    void Profiles::ColorSchemes_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*args*/)
-    {
-        _ViewModel.RequestOpenColorSchemes();
-    }
-
     // The primary "+" half of the SplitButton — adds either a new empty
     // profile or a duplicate of the currently selected source profile,
     // depending on what the user picked from the flyout.

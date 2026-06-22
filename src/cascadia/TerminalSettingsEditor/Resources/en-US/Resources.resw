@@ -1307,7 +1307,7 @@
   </data>
   <data name="Profiles_ColorSchemesNavigator.Header" xml:space="preserve">
     <value>Color schemes</value>
-    <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the same page reachable from the top-level Color schemes nav item.</comment>
+    <comment>Title for the "Color schemes" navigator on the Profiles landing page. Clicking this opens the the color schemes page.</comment>
   </data>
   <data name="Profiles_ColorSchemesNavigator.Description" xml:space="preserve">
     <value>Add, edit, or remove the color schemes that your profiles can use.</value>

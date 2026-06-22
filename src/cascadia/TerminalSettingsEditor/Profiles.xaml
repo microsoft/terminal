@@ -28,7 +28,7 @@
         <!--  Defaults navigator  -->
         <local:SettingsCard x:Name="DefaultsNavigator"
                             x:Uid="Profiles_DefaultsNavigator"
-                            Click="Defaults_Click"
+                            Click="{x:Bind ViewModel.RequestOpenDefaults}"
                             IsClickEnabled="True">
             <local:SettingsCard.HeaderIcon>
                 <FontIcon Glyph="&#xECAA;" />
@@ -38,7 +38,7 @@
         <!--  Color schemes navigator  -->
         <local:SettingsCard x:Name="ColorSchemesNavigator"
                             x:Uid="Profiles_ColorSchemesNavigator"
-                            Click="ColorSchemes_Click"
+                            Click="{x:Bind ViewModel.RequestOpenColorSchemes}"
                             IsClickEnabled="True">
             <local:SettingsCard.HeaderIcon>
                 <FontIcon Glyph="&#xE790;" />
