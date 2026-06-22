@@ -467,7 +467,7 @@ namespace winrt::TerminalApp::implementation
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
 
         // Apply the ShowWorkspacesButton theme setting.
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
         {
             _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
         }
@@ -4130,7 +4130,7 @@ namespace winrt::TerminalApp::implementation
         _tabRow.ShowElevationShield(IsRunningElevated() && _currentWindowSettings().ShowAdminShield());
 
         // Apply the ShowWorkspacesButton theme setting.
-        if (const auto theme = _settings.GlobalSettings().CurrentTheme())
+        if (const auto theme = _settings.GlobalSettings().CurrentTheme(_currentWindowSettings()))
         {
             _tabRow.ShowWorkspacesButton(theme.Window() ? theme.Window().ShowWorkspacesButton() : true);
         }
