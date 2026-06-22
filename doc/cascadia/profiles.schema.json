@@ -441,6 +441,7 @@
         "openTabColorPicker",
         "openTabRenamer",
         "openWindowRenamer",
+        "openWorkspace",
         "paste",
         "prevTab",
         "quakeMode",
@@ -479,6 +480,7 @@
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "toggleSplitOrientation",
+        "workspaces",
         "wt",
         "unbound"
       ],
@@ -1721,6 +1723,28 @@
         }
       ]
     },
+    "OpenWorkspaceAction": {
+      "description": "Arguments corresponding to an openWorkspace Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "openWorkspace"
+            },
+            "name": {
+              "type": "string",
+              "default": "",
+              "description": "The name of the workspace to open. If omitted, the workspaces UI will be shown so the user can pick one."
+            }
+          }
+        }
+      ]
+    },
     "FocusPaneAction": {
       "description": "Arguments corresponding to a focusPane Action",
       "allOf": [
@@ -2040,6 +2064,11 @@
         "unfocusedFrame": {
           "description": "The color of the window frame when the window is inactive. This only works on Windows 11",
           "$ref": "#/$defs/ThemeColor"
+        },
+        "showWorkspacesButton": {
+          "description": "When set to true, the workspaces button will be shown in the tab row.",
+          "type": "boolean",
+          "default": true
         }
       }
     },
@@ -2207,6 +2236,9 @@
             },
             {
               "$ref": "#/$defs/RenameWindowAction"
+            },
+            {
+              "$ref": "#/$defs/OpenWorkspaceAction"
             },
             {
               "$ref": "#/$defs/FocusPaneAction"
@@ -2792,6 +2824,11 @@
         "compatibility.allowOSC52": {
           "default": true,
           "description": "When set to true, VT applications will be allowed to set the contents of the local clipboard using OSC 52 (Manipulate Selection Data).",
+          "type": "boolean"
+        },
+        "compatibility.allowOSC777": {
+          "default": false,
+          "description": "When set to true, applications can send OSC 777 escape sequences to trigger desktop toast notifications with a custom title and body.",
           "type": "boolean"
         },
         "unfocusedAppearance": {

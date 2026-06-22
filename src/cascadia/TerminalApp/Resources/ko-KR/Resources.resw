@@ -743,6 +743,42 @@
     <value>이름 없는 창</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NameThisWindowMenuItem" xml:space="preserve">
+    <value>이 창의 이름 지정...</value>
+    <comment>Menu item text shown when the current window has no name assigned</comment>
+  </data>
+  <data name="RenameThisWindowMenuItem" xml:space="preserve">
+    <value>이 창의 이름 바꾸기...</value>
+    <comment>Menu item text shown when the current window already has a name</comment>
+  </data>
+  <data name="WindowListUnnamedEntry" xml:space="preserve">
+    <value>#{0}(이름 없음)</value>
+    <comment>{locked="{0}"}{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
+  </data>
+  <data name="DeleteWorkspaceMenuItem" xml:space="preserve">
+    <value>작업 영역을 삭제하시겠습니까?</value>
+    <comment>Menu item text shown in the right-click context menu on a saved workspace</comment>
+  </data>
+  <data name="OpenWorkspaceMenuItem" xml:space="preserve">
+    <value>작업 영역 열기</value>
+    <comment>Menu item text for opening a saved workspace</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceTitle" xml:space="preserve">
+    <value>“{0}”을(를) 삭제할까요?</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Shown as the title of a confirmation dialog when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceBody" xml:space="preserve">
+    <value>"{0}" 삭제하시겠습니까? 이 작업 영역과 연결된 세션도 삭제됩니다.</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Body text of the confirmation dialog shown when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceDelete" xml:space="preserve">
+    <value>삭제</value>
+    <comment>Primary button text on the delete workspace confirmation dialog</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceCancel" xml:space="preserve">
+    <value>취소</value>
+    <comment>Cancel button text on the delete workspace confirmation dialog</comment>
+  </data>
   <data name="WindowRenamer.Subtitle" xml:space="preserve">
     <value>새 이름 입력:</value>
   </data>
@@ -800,6 +836,9 @@
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>이 터미널 창이 관리자 권한으로 실행되고 있습니다.</value>
+  </data>
+  <data name="WorkspaceDropdown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>작업 영역</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>찾은 제안: {0}</value>

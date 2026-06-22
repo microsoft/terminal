@@ -118,6 +118,7 @@ Author(s):
     X(bool, AllowKittyKeyboardMode, "compatibility.kittyKeyboardMode", true)                                                                                   \
     X(bool, AllowVtChecksumReport, "compatibility.allowDECRQCRA", false)                                                                                       \
     X(bool, AllowVtClipboardWrite, "compatibility.allowOSC52", true)                                                                                           \
+    X(bool, AllowOscNotifications, "compatibility.allowOSC777", false)                                                                                         \
     X(bool, AllowKeypadMode, "compatibility.allowDECNKM", false)                                                                                               \
     X(hstring, DragDropDelimiter, "dragDropDelimiter", L" ")                                                                                                   \
     X(Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, "pathTranslationStyle", Microsoft::Terminal::Control::PathTranslationStyle::None)
@@ -171,7 +172,8 @@ Author(s):
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, Frame, "frame", nullptr)                                            \
     X(winrt::Microsoft::Terminal::Settings::Model::ThemeColor, UnfocusedFrame, "unfocusedFrame", nullptr)                          \
     X(bool, RainbowFrame, "experimental.rainbowFrame", false)                                                                      \
-    X(bool, UseMica, "useMica", false)
+    X(bool, UseMica, "useMica", false)                                                                                             \
+    X(bool, ShowWorkspacesButton, "showWorkspacesButton", true)
 
 #define MTSM_THEME_SETTINGS_SETTINGS(X) \
     X(winrt::Windows::UI::Xaml::ElementTheme, RequestedTheme, "theme", winrt::Windows::UI::Xaml::ElementTheme::Default)

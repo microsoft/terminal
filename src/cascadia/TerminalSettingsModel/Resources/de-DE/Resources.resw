@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Fensternamen zurücksetzen</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Arbeitsbereich „{0}“ öffnen</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Arbeitsbereich öffnen</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Fenster umbenennen...</value>
   </data>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Aktuelles Arbeitsverzeichnis öffnen</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Arbeitsbereiche...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Registerkarte schließen</value>

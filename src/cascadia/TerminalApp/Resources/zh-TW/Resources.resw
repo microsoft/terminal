@@ -743,6 +743,42 @@
     <value>未命名的視窗</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NameThisWindowMenuItem" xml:space="preserve">
+    <value>命名此視窗...</value>
+    <comment>Menu item text shown when the current window has no name assigned</comment>
+  </data>
+  <data name="RenameThisWindowMenuItem" xml:space="preserve">
+    <value>重新命名此視窗...</value>
+    <comment>Menu item text shown when the current window already has a name</comment>
+  </data>
+  <data name="WindowListUnnamedEntry" xml:space="preserve">
+    <value>#{0} (未命名)</value>
+    <comment>{locked="{0}"}{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
+  </data>
+  <data name="DeleteWorkspaceMenuItem" xml:space="preserve">
+    <value>是否要刪除工作區?</value>
+    <comment>Menu item text shown in the right-click context menu on a saved workspace</comment>
+  </data>
+  <data name="OpenWorkspaceMenuItem" xml:space="preserve">
+    <value>開啟工作區</value>
+    <comment>Menu item text for opening a saved workspace</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceTitle" xml:space="preserve">
+    <value>是否要刪除「{0}」?</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Shown as the title of a confirmation dialog when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceBody" xml:space="preserve">
+    <value>確定要刪除 "{0}" 嗎？與此工作區相關聯的工作階段也會一併刪除。</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Body text of the confirmation dialog shown when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceDelete" xml:space="preserve">
+    <value>刪除</value>
+    <comment>Primary button text on the delete workspace confirmation dialog</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceCancel" xml:space="preserve">
+    <value>取消</value>
+    <comment>Cancel button text on the delete workspace confirmation dialog</comment>
+  </data>
   <data name="WindowRenamer.Subtitle" xml:space="preserve">
     <value>輸入新名稱：</value>
   </data>
@@ -800,6 +836,9 @@
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>此終端機視窗目前以系統管理員身分執行</value>
+  </data>
+  <data name="WorkspaceDropdown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>工作區</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>找到的建議: {0}</value>
