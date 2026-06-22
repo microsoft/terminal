@@ -544,6 +544,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         __assume(false);
     }
 
+    // !! LOAD BEARING !!
+    // This prevents loader lock contention with some versions of the nvidia
+    // driver, which calls SHGetKnownFolderPath triggering a delay load while
+    // under lock during application startup. See GH#20348.
+    {
+        wil::unique_cotaskmem_string localAppDataFolder;
+        SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder);
+    }
+
     _app = winrt::TerminalApp::App{};
     _app.Logic().ReloadSettings();
 
