@@ -244,6 +244,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()](const auto& update) {
                 if (auto core{ weakThis.get() }; core && !core->_IsClosing())
                 {
+                    // GH#20219: re-evaluate if we're hovering over a hyperlink after scrolling
+                    core->_refreshHoveredCell();
                     core->ScrollPositionChanged.raise(*core, update);
                 }
             });
@@ -746,6 +748,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->UserScrollViewport(viewTop);
         }
 
+        // GH#20219: re-evaluate if we're hovering over a hyperlink after scrolling
+        _refreshHoveredCell();
+
         const auto shared = _shared.lock_shared();
         if (shared->outputIdle)
         {
@@ -835,6 +840,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::ClearHoveredCell()
     {
         _updateHoveredCell(std::nullopt);
+    }
+
+    void ControlCore::_refreshHoveredCell()
+    {
+        if (_lastHoveredCell)
+        {
+            const auto cell = *_lastHoveredCell;
+            _lastHoveredCell.reset();
+            _updateHoveredCell(cell);
+        }
     }
 
     void ControlCore::_updateHoveredCell(const std::optional<til::point> terminalPosition)
