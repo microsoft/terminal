@@ -395,7 +395,14 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
     try
     {
         const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
-        extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+        if (auto catalog2{ catalog.try_as<IAppExtensionCatalog2> })
+        {
+            extensions = catalog2.FindAll();
+        }
+        else
+        {
+            extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+        }
     }
     CATCH_LOG();
 
