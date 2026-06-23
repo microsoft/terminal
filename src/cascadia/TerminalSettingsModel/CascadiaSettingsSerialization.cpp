@@ -446,16 +446,15 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
                 continue;
             }
 
+            // the StorageFolder class has its own methods for obtaining the files within the folder
+            // however, all those methods are Async methods
+            // you may have noticed that we need to resort to clunky implementations for async operations
+            // (they are in extractValueFromTaskWithoutMainThreadAwait)
+            // so for now we will just take the folder path and access the files that way
             publicFolderPath = foundFolder.Path();
         }
 
-        // the StorageFolder class has its own methods for obtaining the files within the folder
-        // however, all those methods are Async methods
-        // you may have noticed that we need to resort to clunky implementations for async operations
-        // (they are in extractValueFromTaskWithoutMainThreadAwait)
-        // so for now we will just take the folder path and access the files that way
         const auto path = buildPath(publicFolderPath, FragmentsSubDirectory);
-
         if (std::filesystem::is_directory(path))
         {
             // MSIX does not support machine-wide scope
