@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Сбросить имя окна</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Открыть рабочую область "{0}"</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Открыть рабочую область</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Переименовать окно...</value>
   </data>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Открыть текущую рабочую папку</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Рабочие области...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Закрыть вкладку</value>
