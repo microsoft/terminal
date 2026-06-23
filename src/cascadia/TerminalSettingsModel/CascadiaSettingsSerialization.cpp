@@ -395,7 +395,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
     try
     {
         const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
-        if (auto catalog2{ catalog.try_as<IAppExtensionCatalog2> })
+        if (auto catalog2{ catalog.try_as<IAppExtensionCatalog2>() })
         {
             extensions = catalog2.FindAll();
         }
