@@ -430,7 +430,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
             // Windows 11 24H2 and above support a much faster, much less
             // Windows.Storage-y API.
             publicFolderPath = ext3.GetPublicPath();
-            if (!publicFolderPath)
+            if (publicFolderPath.empty())
             {
                 // No point in falling through to GetPublicFolderAsync;
                 // it won't work.
