@@ -514,7 +514,6 @@ namespace winrt::TerminalApp::implementation
             const auto newSelectedTab = _mruTabs.GetAt(0);
             _UpdatedSelectedTab(newSelectedTab);
             _tabView.SelectedItem(newSelectedTab.TabViewItem());
-
         }
 
         // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
