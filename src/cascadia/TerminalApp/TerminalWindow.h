@@ -71,6 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout() const;
         void PersistState();
 
         void UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
@@ -79,6 +80,8 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(TerminalApp::CommandlineArgs args);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
+        void SetStartupActions(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        void SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout);
         int32_t ExecuteCommandline(TerminalApp::CommandlineArgs args);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
 
@@ -224,6 +227,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
         FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
+        FORWARDED_TYPED_EVENT(SummonWindowByIdRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::SummonWindowByIdRequestedArgs, _root, SummonWindowByIdRequested);
         FORWARDED_TYPED_EVENT(FocusTabRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::Tab, _root, FocusTabRequested);
         FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
         FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
@@ -233,6 +237,9 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs, _root, RequestReceiveContent);
 
         FORWARDED_TYPED_EVENT(RequestLaunchPosition, Windows::Foundation::IInspectable, winrt::TerminalApp::LaunchPositionRequest, _root, RequestLaunchPosition);
+        FORWARDED_TYPED_EVENT(RequestWindowList, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowListRequest, _root, RequestWindowList);
+        FORWARDED_TYPED_EVENT(RequestOpenWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::OpenWindowRequestedArgs, _root, RequestOpenWindow);
+        FORWARDED_TYPED_EVENT(RequestNewWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowRequestedArgs, _root, RequestNewWindow);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

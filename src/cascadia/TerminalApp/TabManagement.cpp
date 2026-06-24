@@ -410,6 +410,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - If this window has a name, persist its current workspace layout to
+    //   ApplicationState. Intended to be called from the close-pane / close-tab
+    //   paths while tab/pane content is still alive (before it gets torn down).
+    void TerminalPage::_SaveWorkspaceIfNeeded()
+    {
+        const auto& windowName = _WindowProperties.WindowName();
+        if (!windowName.empty())
+        {
+            if (const auto layout = GetWindowLayout())
+            {
+                ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
+            }
+        }
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
@@ -456,6 +472,14 @@ namespace winrt::TerminalApp::implementation
         auto actions = t->BuildStartupActions(BuildStartupKind::None);
         _AddPreviouslyClosedPaneOrTab(std::move(actions));
 
+        // If this is the last tab in a named window, persist the workspace
+        // layout now while tab content is still alive. After tab.Close()
+        // the pane content will be torn down by the time _RemoveTab runs.
+        if (_tabs.Size() == 1)
+        {
+            _SaveWorkspaceIfNeeded();
+        }
+
         tab.Close();
     }
 
@@ -476,6 +500,13 @@ namespace winrt::TerminalApp::implementation
         auto unsetRemoving = wil::scope_exit([&]() noexcept { _removing = false; });
 
         const auto focusedTabIndex{ _GetFocusedTabIndex() };
+
+        // NOTE: Workspace persistence for named windows used to live here,
+        // but by the time _RemoveTab runs the pane content may already be
+        // torn down (e.g. from the close-pane path). Instead, workspace
+        // saves are handled earlier:
+        //  - Close-pane (last pane): in _HandleClosePaneRequested
+        //  - Close-tab: in _HandleCloseTabRequested
 
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
@@ -516,40 +547,10 @@ namespace winrt::TerminalApp::implementation
             // 1. We want to customize this behavior (e.g., use MRU logic)
             // 2. In fullscreen (GH#5799) and focus (GH#7916) modes the _OnTabItemsChanged is not fired
             // 3. When rearranging tabs (GH#7916) _OnTabItemsChanged is suppressed
-            const auto tabSwitchMode = _currentWindowSettings().TabSwitcherMode();
 
-            if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed)
-            {
-                const auto newSelectedTab = _mruTabs.GetAt(0);
-                _UpdatedSelectedTab(newSelectedTab);
-                _tabView.SelectedItem(newSelectedTab.TabViewItem());
-            }
-            else
-            {
-                // We can't use
-                //   auto selectedIndex = _tabView.SelectedIndex();
-                // Because this will always return -1 in this scenario unfortunately.
-                //
-                // So, what we're going to try to do is move the focus to the tab
-                // to the right, within the bounds of how many tabs we have.
-                //
-                // EX: we have 4 tabs: [A, B, C, D]. If we close:
-                // * A (tabIndex=0): We'll want to focus tab B (now in index 0)
-                // * B (tabIndex=1): We'll want to focus tab C (now in index 1)
-                // * C (tabIndex=2): We'll want to focus tab D (now in index 2)
-                // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
-                const auto newSelectedIndex = std::clamp<int32_t>(tabIndex, 0, _tabs.Size() - 1);
-                // _UpdatedSelectedTab will do the work of setting up the new tab as
-                // the focused one, and unfocusing all the others.
-                auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
-                _UpdatedSelectedTab(newSelectedTab);
-
-                // Also, we need to _manually_ set the SelectedItem of the tabView
-                // here. If we don't, then the TabView will technically not have a
-                // selected item at all, which can make things like ClosePane not
-                // work correctly.
-                _tabView.SelectedItem(newSelectedTab.TabViewItem());
-            }
+            const auto newSelectedTab = _mruTabs.GetAt(0);
+            _UpdatedSelectedTab(newSelectedTab);
+            _tabView.SelectedItem(newSelectedTab.TabViewItem());
         }
 
         // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
@@ -803,6 +804,21 @@ namespace winrt::TerminalApp::implementation
             state.args.emplace(state.args.begin(), std::move(splitPaneAction));
         }
         _AddPreviouslyClosedPaneOrTab(std::move(state.args));
+
+        // If this is the last pane on the last tab of a named window, persist
+        // the workspace layout now while the pane content is still alive.
+        // We can't wait until _RemoveTab, because pane->Close() below will
+        // destroy the content before _RemoveTab is reached.
+        if (_tabs.Size() == 1)
+        {
+            if (const auto activeTab{ _GetFocusedTabImpl() })
+            {
+                if (activeTab->GetLeafPaneCount() == 1)
+                {
+                    _SaveWorkspaceIfNeeded();
+                }
+            }
+        }
 
         // If specified, detach before closing to directly update the pane structure
         pane->Close();
@@ -1359,7 +1375,11 @@ namespace winrt::TerminalApp::implementation
         // Use the Tab object's identity hash as a stable toast tag.
         // This survives tab reordering and cross-window moves.
         const auto tabHash = std::hash<winrt::Windows::Foundation::IUnknown>{}(*tab);
+#ifdef _WIN64
         const hstring tabTag{ fmt::format(FMT_COMPILE(L"wt-tab-{:016x}"), tabHash) };
+#else
+        const hstring tabTag{ fmt::format(FMT_COMPILE(L"wt-tab-{:08x}"), tabHash) };
+#endif
 
         const implementation::DesktopNotificationArgs args{
             .Title = notificationTitle,

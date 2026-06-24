@@ -459,3 +459,7 @@ void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingComm
 {
     // Not implemented for conhost.
 }
+void ConhostInternalGetSet::ShowNotification(std::wstring_view /*title*/, std::wstring_view /*body*/)
+{
+    // Not implemented for conhost.
+}

@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>Restablecer el nombre de la ventana</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>Abrir área de trabajo "{0}"</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>Abrir área de trabajo</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>Cambiar el nombre de la ventana...</value>
   </data>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>Abrir directorio de trabajo actual</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>Áreas de trabajo...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>Cerrar pestaña</value>

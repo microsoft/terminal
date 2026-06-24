@@ -25,7 +25,7 @@ Param(
     [Parameter(HelpMessage="Path to makeappx.exe", ParameterSetName='Layout')]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\MakeAppx.exe",
+    $MakeAppxPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\MakeAppx.exe",
 
     [Parameter(HelpMessage="Include the portable mode marker file by default", ParameterSetName='AppX')]
     [Parameter(HelpMessage="Include the portable mode marker file by default", ParameterSetName='Layout')]
