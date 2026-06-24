@@ -1,0 +1,35 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "NewTabMenuEntry.idl";
+import "ISettingsModelObject.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    runtimeclass NewTabMenu
+    {
+        Windows.Foundation.Collections.IVectorView<NewTabMenuEntry> Entries { get; };
+        UInt32 Size { get; };
+        NewTabMenuEntry GetAt(UInt32 index);
+
+        // Mutations
+        void InsertEntryAt(UInt32 index, NewTabMenuEntry entry);
+        void RemoveEntryAt(UInt32 index);
+        void SetEntryAt(UInt32 index, NewTabMenuEntry entry);
+        void ReplaceAll(Windows.Foundation.Collections.IVector<NewTabMenuEntry> entries);
+
+        // Folder-targeted mutations
+        void InsertEntryInFolder(FolderEntry folder, UInt32 index, NewTabMenuEntry entry);
+        void RemoveEntryFromFolder(FolderEntry folder, UInt32 index);
+        void SetEntryInFolder(FolderEntry folder, UInt32 index, NewTabMenuEntry entry);
+        void ReplaceFolderEntries(FolderEntry folder, Windows.Foundation.Collections.IVector<NewTabMenuEntry> entries);
+
+        // Folder property updates
+        void UpdateFolderName(FolderEntry folder, String name);
+        void UpdateFolderIcon(FolderEntry folder, IMediaResource icon);
+        void UpdateFolderAllowEmpty(FolderEntry folder, Boolean value);
+        void UpdateFolderInlining(FolderEntry folder, FolderEntryInlining value);
+
+        void RemapActionIds(String oldID, String newID);
+    }
+}

@@ -894,18 +894,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!fontSettingsUser)
         {
-            fontSettingsUser = winrt::single_threaded_map<hstring, float>();
+            // Setting was absent. Create the map, insert the new entry, THEN call the
+            // whole-replace setter so the populated map (not an empty one) lands in _json.
+            auto fresh = winrt::single_threaded_map<hstring, float>();
+            std::ignore = fresh.Insert(std::wstring_view{ tagString }, value);
             if (kvImpl->IsFontFeature())
             {
-                fontInfo.FontFeatures(fontSettingsUser);
+                fontInfo.FontFeatures(fresh);
             }
             else
             {
-                fontInfo.FontAxes(fontSettingsUser);
+                fontInfo.FontAxes(fresh);
             }
         }
-
-        std::ignore = fontSettingsUser.Insert(std::wstring_view{ tagString }, value);
+        else
+        {
+            std::ignore = fontSettingsUser.Insert(std::wstring_view{ tagString }, value);
+        }
         // Pwease call Profiles_Appearance::_onProfilePropertyChanged to make the pweview connyection wewoad. Thanks!! uwu
         // ...I hate this.
         _NotifyChanges(L"uwu");

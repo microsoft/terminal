@@ -18,12 +18,14 @@ Author(s):
 #include "GlobalAppSettings.g.h"
 #include "IInheritable.h"
 #include "MTSMSettings.h"
+#include "TerminalSettingsSerializationHelpers.h"
 
 #include "ActionMap.h"
 #include "Command.h"
 #include "ColorScheme.h"
 #include "Theme.h"
 #include "NewTabMenuEntry.h"
+#include "NewTabMenu.h"
 #include "RemainingProfilesEntry.h"
 
 // fwdecl unittest classes
@@ -56,6 +58,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson();
         bool FixupsAppliedDuringLoad();
 
+        // Generic setting access via SettingKey
+        bool HasSetting(GlobalSettingKey key) const;
+        void ClearSetting(GlobalSettingKey key);
+        std::vector<GlobalSettingKey> CurrentSettings() const;
+
         const std::vector<SettingsLoadWarnings>& KeybindingsWarnings() const;
 
         // This DefaultProfile() setter is called by CascadiaSettings,
@@ -67,6 +74,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddTheme(const Model::Theme& theme);
         Model::Theme CurrentTheme() noexcept;
         bool ShouldUsePersistedLayout() const;
+
+        Model::NewTabMenu NewTabMenu() const noexcept { return *_newTabMenu; }
+        bool HasNewTabMenu() const noexcept { return _newTabMenu->HasUserOverride(); }
+        void ClearNewTabMenu() { _newTabMenu->ClearUserOverride(); }
 
         void ExpandCommands(const Windows::Foundation::Collections::IVectorView<Model::Profile>& profiles,
                             const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::ColorScheme>& schemes);
@@ -80,12 +91,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring SourceBasePath;
 
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
+        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, "defaultProfile", L"");
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING_WITH_LOGGING(Model::GlobalAppSettings, type, name, jsonKey, ##__VA_ARGS__)
-        MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+        MTSM_GLOBAL_SETTINGS_SCALARS(GLOBAL_SETTINGS_INITIALIZE)
 #undef GLOBAL_SETTINGS_INITIALIZE
+
+#define GLOBAL_COLLECTION_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_JSON_BACKED_VECTOR_SETTING(Model::GlobalAppSettings, type, name, jsonKey, ##__VA_ARGS__)
+        MTSM_GLOBAL_SETTINGS_COLLECTIONS(GLOBAL_COLLECTION_INITIALIZE)
+#undef GLOBAL_COLLECTION_INITIALIZE
 
     private:
 #ifdef NDEBUG
@@ -94,11 +110,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static constexpr bool debugFeaturesDefault{ true };
 #endif
 
+        // Raw JSON for this layer. Populated by LayerJson(), will become the
+        // source of truth for settings once the JSON-backed refactor is complete.
+        Json::Value _json{ Json::ValueType::objectValue };
+
         winrt::guid _defaultProfile{};
         bool _fixupsAppliedDuringLoad{ false };
         bool _legacyReloadEnvironmentVariables{ true };
         bool _legacyForceVTInput{ false };
         winrt::com_ptr<implementation::ActionMap> _actionMap{ winrt::make_self<implementation::ActionMap>() };
+        winrt::com_ptr<implementation::NewTabMenu> _newTabMenu{ winrt::make_self<implementation::NewTabMenu>() };
         std::set<std::string> _changeLog;
 
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
@@ -107,5 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
+
+        void _ValidateThisLayer() const override;
     };
 }
