@@ -299,4 +299,36 @@ class KittyKeyboardProtocolTests
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[98u"), process(input, true, 'B', 0x30, L'b', 0)); // different key
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x1E, L'a', 0)); // not repeat
     }
+
+    // AltGr (RightAlt acting as a level-3 shift) composes characters such as '@'
+    // (AltGr+Q) or '{' (AltGr+7) on non-US layouts. Under the Kitty keyboard
+    // protocol these must be emitted as plain text, not mis-encoded as an
+    // "alt+<key>" CSI u sequence (which dropped the composed character entirely
+    // and broke e.g. typing '@' on a German keyboard). Windows delivers AltGr as
+    // a synthesized LeftCtrl followed by an enhanced RightAlt, so we replay that
+    // exact sequence before the character key.
+    TEST_METHOD(AltGrComposedTextIsText)
+    {
+        const auto pressAltGrChar = [](TerminalInput& input, uint16_t vk, uint16_t sc, wchar_t ch) {
+            process(input, true, VK_CONTROL, 0x1D, 0, LEFT_CTRL_PRESSED);
+            process(input, true, VK_MENU, 0x38, 0, LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED | ENHANCED_KEY);
+            return process(input, true, vk, sc, ch, LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED);
+        };
+
+        // DisambiguateEscapeCodes alone is what a line-editor style TUI typically
+        // enables; this is the case that used to turn AltGr+Q into "\x1b[113;3u".
+        {
+            auto input = createInput(D);
+            VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"@"), pressAltGrChar(input, 'Q', 0x10, L'@'));
+        }
+        {
+            auto input = createInput(D);
+            VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"{"), pressAltGrChar(input, '7', 0x08, L'{'));
+        }
+        // Still correct when event-type and alternate-key reporting are also on.
+        {
+            auto input = createInput(D | E | A);
+            VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"@"), pressAltGrChar(input, 'Q', 0x10, L'@'));
+        }
+    }
 };

@@ -341,8 +341,25 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
 
     KeyboardHelper kbd;
     EncodingHelper enc;
+
+    // A genuine AltGr keypress (RightAlt acting as a level-3 shift) composes a
+    // character and must be reported as text, not as an Alt-modified key. Windows
+    // signals AltGr as RightAlt plus a *synthesized* LeftCtrl, which we already
+    // distinguish from a real Ctrl via leftCtrlIsReallyPressed. Without this guard,
+    // e.g. AltGr+Q on a German layout (= '@') gets re-encoded as a "CSI 113;3u"
+    // (alt+q) sequence under the Kitty keyboard protocol and the composed '@' is
+    // dropped. We only suppress the Alt modifier when RightAlt actually produced a
+    // printable codepoint and no real LeftAlt/LeftCtrl is held, so plain Alt+key and
+    // Ctrl+Alt+key combinations are left untouched. This mirrors how the legacy
+    // (_formatFallback) path already treats AltGr-composed characters.
+    const auto altGrComposedText =
+        WI_IsFlagSet(key.controlKeyState, RIGHT_ALT_PRESSED) &&
+        !WI_IsFlagSet(key.controlKeyState, LEFT_ALT_PRESSED) &&
+        !key.leftCtrlIsReallyPressed &&
+        key.codepoint > 0x1f && key.codepoint != 0x7f && key.codepoint < InvalidCodepoint;
+
     WI_SetFlagIf(enc.csiModifier, CSI_CTRL, key.leftCtrlIsReallyPressed || WI_IsFlagSet(key.controlKeyState, RIGHT_CTRL_PRESSED));
-    WI_SetFlagIf(enc.csiModifier, CSI_ALT, WI_IsAnyFlagSet(key.controlKeyState, ALT_PRESSED));
+    WI_SetFlagIf(enc.csiModifier, CSI_ALT, WI_IsAnyFlagSet(key.controlKeyState, ALT_PRESSED) && !altGrComposedText);
     WI_SetFlagIf(enc.csiModifier, CSI_SHIFT, WI_IsFlagSet(key.controlKeyState, SHIFT_PRESSED));
 
     if (_kittyFlags == 0 || !_encodeKitty(kbd, enc, key))
