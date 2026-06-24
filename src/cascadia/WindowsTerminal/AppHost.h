@@ -55,6 +55,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
     void _HandleCreateWindow(HWND hwnd, const til::rect& proposedRect);
+    bool _SelectTabRangeForTesting(uint32_t startIndex, uint32_t endIndex);
 
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);

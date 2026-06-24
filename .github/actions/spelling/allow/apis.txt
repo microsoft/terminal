@@ -21,7 +21,9 @@ commandlinetoargv
 COPYFROMRESOURCE
 cstdint
 CXICON
+CXSCREEN
 CYICON
+CYSCREEN
 dataobject
 debugbreak
 delayimp
@@ -65,11 +67,13 @@ IAppearance
 ICONINFO
 IDirect
 IInheritable
+INPUTUNION
 imm
 iosfwd
 isa
 isspace
 istream
+keybd
 KEYSELECT
 LCID
 LINEBREAK
@@ -86,6 +90,7 @@ MENUDATA
 MENUINFO
 MENUITEMINFOW
 MINIMIZEBOX
+MOUSEINPUT
 MOUSELEAVE
 mov
 MULTIPLEUSE
@@ -135,6 +140,7 @@ RSHIFT
 rvrn
 SACL
 schandle
+schtasks
 SEH
 semver
 serializer
