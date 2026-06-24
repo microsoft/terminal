@@ -108,49 +108,13 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdOut) :
     _commandline(commandline),
     _vtInHandle(hStdIn),
-    _vtOutHandle(hStdOut)
+    _vtOutHandle(hStdOut) 
 {
-    _clientCommandline = L"";
-    _headless = false;
-    _runAsComServer = false;
-    _createServerHandle = true;
-    _serverHandle = 0;
-    _signalHandle = 0;
-    _forceV1 = false;
-    _forceNoHandoff = false;
-    _width = 0;
-    _height = 0;
-    _inheritCursor = false;
 }
 
 ConsoleArguments::ConsoleArguments() :
     ConsoleArguments(L"", nullptr, nullptr)
 {
-}
-
-ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
-{
-    if (this != &other)
-    {
-        _commandline = other._commandline;
-        _clientCommandline = other._clientCommandline;
-        _vtInHandle = other._vtInHandle;
-        _vtOutHandle = other._vtOutHandle;
-        _headless = other._headless;
-        _textMeasurement = other._textMeasurement;
-        _ambiguousIsWide = other._ambiguousIsWide;
-        _createServerHandle = other._createServerHandle;
-        _serverHandle = other._serverHandle;
-        _signalHandle = other._signalHandle;
-        _forceV1 = other._forceV1;
-        _width = other._width;
-        _height = other._height;
-        _inheritCursor = other._inheritCursor;
-        _runAsComServer = other._runAsComServer;
-        _forceNoHandoff = other._forceNoHandoff;
-    }
-
-    return *this;
 }
 
 // Routine Description:
