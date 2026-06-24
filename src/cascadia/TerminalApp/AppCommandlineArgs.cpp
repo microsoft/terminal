@@ -210,6 +210,11 @@ void AppCommandlineArgs::_buildParser()
     _buildSwapPaneParser();
     _buildFocusPaneParser();
     _buildSaveSnippetParser();
+
+    for (auto* subcommand : _app.get_subcommands({}))
+    {
+        subcommand->footer("");
+    }
 }
 
 // Method Description:

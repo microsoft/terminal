@@ -211,7 +211,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(0, result);
             VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
             VERIFY_ARE_NOT_EQUAL(std::string::npos, appArgs._exitMessage.find("new-tab"));
-            VERIFY_ARE_NOT_EQUAL(std::string::npos, appArgs._exitMessage.find("wt new-tab --help"));
+            VERIFY_ARE_NOT_EQUAL(std::string::npos, appArgs._exitMessage.find("If no command is specified"));
+            VERIFY_ARE_NOT_EQUAL(std::string::npos, appArgs._exitMessage.find("wt new-tab"));
+            VERIFY_ARE_NOT_EQUAL(std::string::npos, appArgs._exitMessage.find("--help"));
             VERIFY_ARE_NOT_EQUAL(std::string::npos, appArgs._exitMessage.find("-d,--startingDirectory"));
         }
     }
@@ -280,6 +282,8 @@ namespace TerminalAppLocalTests
                 appArgs._exitMessage.c_str()));
             VERIFY_ARE_EQUAL(0, result);
             VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
+            VERIFY_ARE_EQUAL(std::string::npos, appArgs._exitMessage.find("If no command is specified"));
+            VERIFY_ARE_EQUAL(std::string::npos, appArgs._exitMessage.find("assumed by default"));
         }
     }
 
