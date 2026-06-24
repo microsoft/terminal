@@ -248,6 +248,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -313,6 +314,15 @@
                                   Grid.Row="2"
                                   Grid.Column="1"
                                   IsOn="{x:Bind ViewModel.CenterOnLaunch, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchInExpanderStyle}" />
+                    <TextBlock x:Uid="Globals_RestoreWindowPosition"
+                               Grid.Row="3"
+                               Grid.Column="0"
+                               VerticalAlignment="Center" />
+                    <ToggleSwitch x:Name="RestoreWindowPositionToggle"
+                                  Grid.Row="3"
+                                  Grid.Column="1"
+                                  IsOn="{x:Bind ViewModel.RestoreWindowPosition, Mode=TwoWay}"
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </Grid>
             </local:SettingContainer>
