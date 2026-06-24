@@ -2387,6 +2387,40 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return hstring{ str };
     }
 
+    hstring ControlCore::ReadLastPrompt() const
+    {
+        const auto lock = _terminal->LockForReading();
+        const auto& marks = _terminal->GetMarkExtents();
+        if (marks.empty())
+        {
+            return {};
+        }
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        for (auto it = marks.rbegin(); it != marks.rend(); ++it)
+        {
+            if (!it->HasCommand())
+            {
+                continue;
+            }
+
+            // Skip until we find a finished command (saw FTCS CommandEnd).
+            if (!it->data.exitCode.has_value())
+            {
+                continue;
+            }
+
+            // Finished. Prefer [B..D]; if no output region was ever produced
+            // (e.g. `cd`), outputEnd is unset → fall back to [B..C] for the
+            // command text only.
+            const auto endPoint = it->outputEnd.value_or(*it->commandEnd);
+            return hstring{ textBuffer.GetPlainText(it->end, endPoint) };
+        }
+
+        return {};
+    }
+
     // Get all of our recent commands. This will only really work if the user has enabled shell integration.
     Control::CommandHistoryContext ControlCore::CommandHistory() const
     {

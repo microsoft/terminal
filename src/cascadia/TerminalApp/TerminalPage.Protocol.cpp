@@ -473,7 +473,7 @@ namespace winrt::TerminalApp::implementation
         if (!pane)
             co_return result;
 
-        _CreateNewTabFromPane(pane, -1, /*openInBackground=*/background);
+        _CreateNewTabFromPane(pane, static_cast<uint32_t>(-1));
         _tabContent.UpdateLayout(); // Force synchronous terminal initialization
 
         if (_tabs.Size() == 0)
@@ -533,7 +533,7 @@ namespace winrt::TerminalApp::implementation
             const auto newPanePid = _getPidFromPane(newPane);
             auto newPaneRef = newPane; // copy shared_ptr before move
 
-            _SplitPane(tabImpl, direction, size, std::move(newPane), /*focusNewPane=*/!background);
+            _SplitPane(tabImpl, direction, size, std::move(newPane));
             _tabContent.UpdateLayout(); // Force synchronous terminal initialization
 
             result.TabId = tabIdx;

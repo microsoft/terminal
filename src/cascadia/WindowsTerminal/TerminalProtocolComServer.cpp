@@ -516,7 +516,9 @@ try
         info.WindowId = props.WindowId();
         info.Title = props.WindowNameForDisplay();
         info.IsFocused = (host.get() == mostRecent);
-        info.TabCount = logic.TabCount();
+
+        const auto page = _getPage(host.get());
+        info.TabCount = page ? page.TabCount() : 0;
         arr.append(_toJson(info));
     }
 
