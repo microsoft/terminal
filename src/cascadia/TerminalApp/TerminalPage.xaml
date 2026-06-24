@@ -65,6 +65,97 @@
             </Grid.Background>
         </Grid>
 
+        <Grid x:Name="TabDragSplitOverlay"
+              Grid.Row="2"
+              AllowDrop="True"
+              Background="Transparent"
+              DragLeave="_onTabContentDragLeave"
+              DragOver="_onTabContentDragOver"
+              Drop="_onTabContentDrop"
+              Visibility="Collapsed">
+            <Border Background="Black"
+                    Opacity="0.12" />
+
+            <Grid x:Name="TabDragSplitSurface"
+                  Margin="40">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1.15*" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="1.15*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.15*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1.15*" />
+                </Grid.ColumnDefinitions>
+
+                <Border x:Name="TabDragSplitPreview"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="2"
+                        CornerRadius="14"
+                        IsHitTestVisible="False"
+                        Opacity="0.72" />
+
+                <Border x:Name="TabDragSplitZoneUp"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Margin="10"
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        IsHitTestVisible="False"
+                        Opacity="0.32" />
+
+                <Border x:Name="TabDragSplitZoneRight"
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Margin="10"
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        IsHitTestVisible="False"
+                        Opacity="0.32" />
+
+                <Border x:Name="TabDragSplitZoneDown"
+                        Grid.Row="2"
+                        Grid.Column="1"
+                        Margin="10"
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        IsHitTestVisible="False"
+                        Opacity="0.32" />
+
+                <Border x:Name="TabDragSplitZoneLeft"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Margin="10"
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        IsHitTestVisible="False"
+                        Opacity="0.32" />
+
+                <Border x:Name="TabDragSplitZoneCenter"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="42"
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        IsHitTestVisible="False"
+                        Opacity="0.22" />
+            </Grid>
+        </Grid>
+
         <!--
             GH#12775 et. al: After switching to ControlsV2, it seems that
             delay-loading a dialog causes the ContentDialog to be assigned a
