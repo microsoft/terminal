@@ -296,6 +296,60 @@ void WindowEmperor::CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args
     }
 }
 
+// Public entry point used by in-process callers (e.g. AppHost reacting to a
+// TerminalPage RequestOpenWindow event) to open or summon a named window -
+// restoring its persisted workspace if one exists - without spawning a second
+// wt.exe. Bypasses the commandline parser entirely.
+void WindowEmperor::OpenWindow(const winrt::hstring& name)
+{
+    _assertIsMainThread();
+
+    if (name.empty())
+    {
+        return;
+    }
+
+    // If a window with this name is already live, just summon it.
+    // This mirrors the summon behavior in AppHost::DispatchCommandline (which is
+    // what the old `wt -w <name>` ShellExecute path effectively triggered).
+    if (const auto window = GetWindowByName(name))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summon{};
+        summon.MoveToCurrentDesktop(false);
+        summon.DropdownDuration(0);
+        summon.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summon.ToggleVisibility(false);
+        window->HandleSummon(std::move(summon));
+        return;
+    }
+
+    // Otherwise, create a new window under that name. A default-constructed
+    // CommandlineArgs is supplied as the launch fallback for the case where
+    // no persisted workspace exists; AppHost ignores it when PersistedLayout
+    // is set.
+    _createWindowMaybeRestoringWorkspace(0, name, winrt::TerminalApp::CommandlineArgs{});
+}
+
+// Shared tail used by both the commandline dispatch path and OpenWindow():
+// build a WindowRequestedArgs for a new window and, if the request carries a
+// name, atomically claim any persisted workspace stored under that name so
+// it's restored here and no subsequent caller can pick up the same entry.
+void WindowEmperor::_createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args)
+{
+    winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
+    request.WindowName(windowName);
+
+    if (!windowName.empty())
+    {
+        if (const auto layout = ApplicationState::SharedInstance().TakeWorkspace(windowName))
+        {
+            request.PersistedLayout(layout);
+        }
+    }
+
+    CreateNewWindow(std::move(request));
+}
+
 AppHost* WindowEmperor::_mostRecentWindow() const noexcept
 {
     int64_t max = INT64_MIN;
@@ -488,6 +542,15 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
         // We do it with TerminateProcess() primarily to avoid WinUI shutdown issues.
         TerminateProcess(GetCurrentProcess(), gsl::narrow_cast<UINT>(0));
         __assume(false);
+    }
+
+    // !! LOAD BEARING !!
+    // This prevents loader lock contention with some versions of the nvidia
+    // driver, which calls SHGetKnownFolderPath triggering a delay load while
+    // under lock during application startup. See GH#20348.
+    {
+        wil::unique_cotaskmem_string localAppDataFolder;
+        SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder);
     }
 
     _app = winrt::TerminalApp::App{};
@@ -801,9 +864,7 @@ void WindowEmperor::_dispatchCommandline(winrt::TerminalApp::CommandlineArgs arg
     }
     else
     {
-        winrt::TerminalApp::WindowRequestedArgs request{ windowId, std::move(args) };
-        request.WindowName(std::move(windowName));
-        CreateNewWindow(std::move(request));
+        _createWindowMaybeRestoringWorkspace(windowId, windowName, std::move(args));
     }
 }
 
@@ -1087,6 +1148,22 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                         // anyway (since we threw and exited this message handler) so this at least gives back our
                         // deterministic window count management.
                         const auto strong = *it;
+
+                        // Before destroying a named window, persist its full
+                        // tab/buffer state as a workspace so it can be restored later.
+                        try
+                        {
+                            const auto windowName = strong->Logic().WindowProperties().WindowName();
+                            if (!windowName.empty())
+                            {
+                                if (const auto layout = strong->Logic().GetWindowLayout())
+                                {
+                                    ApplicationState::SharedInstance().SaveWorkspace(windowName, layout);
+                                }
+                            }
+                        }
+                        CATCH_LOG();
+
                         _windows.erase(it);
                         try
                         {
@@ -1114,6 +1191,19 @@ LRESULT WindowEmperor::_messageHandler(HWND window, UINT const message, WPARAM c
                 host->Logic().IdentifyWindow();
             }
             return 0;
+        case WM_GET_WINDOW_LIST:
+        {
+            auto* result = reinterpret_cast<std::vector<WindowListEntry>*>(lParam);
+            if (result)
+            {
+                for (const auto& host : _windows)
+                {
+                    const auto props = host->Logic().WindowProperties();
+                    result->emplace_back(WindowListEntry{ props.WindowId(), std::wstring{ props.WindowName() } });
+                }
+            }
+            return 0;
+        }
         case WM_NOTIFY_FROM_NOTIFICATION_AREA:
             switch (LOWORD(lParam))
             {

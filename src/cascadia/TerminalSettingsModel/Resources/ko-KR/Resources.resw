@@ -518,6 +518,13 @@
   <data name="ResetWindowNameCommandKey" xml:space="preserve">
     <value>창 이름 다시 설정</value>
   </data>
+  <data name="OpenWorkspaceCommandKey" xml:space="preserve">
+    <value>작업 영역 "{0}" 열기</value>
+    <comment>{0} will be replaced with the workspace name</comment>
+  </data>
+  <data name="OpenWorkspaceDefaultCommandKey" xml:space="preserve">
+    <value>작업 영역 열기</value>
+  </data>
   <data name="OpenWindowRenamerCommandKey" xml:space="preserve">
     <value>창 이름 바꾸기...</value>
   </data>
@@ -739,6 +746,9 @@
   </data>
   <data name="OpenCWDCommandKey" xml:space="preserve">
     <value>현재 작업 디렉터리 열기</value>
+  </data>
+  <data name="WorkspacesCommandKey" xml:space="preserve">
+    <value>작업 영역...</value>
   </data>
   <data name="CloseTab" xml:space="preserve">
     <value>탭 닫기</value>

@@ -1139,7 +1139,7 @@ nullopts
 NUMSCROLL
 NUnit
 nupkg
-NVIDIA
+nvidia
 NVT
 OACR
 ocolor
@@ -1555,6 +1555,7 @@ SLGP
 SLIST
 slmult
 sln
+slnf
 slnx
 slpit
 SManifest
@@ -1757,6 +1758,7 @@ UPKEY
 upss
 uregex
 URegular
+urxvt
 usebackq
 USECALLBACK
 USECOLOR

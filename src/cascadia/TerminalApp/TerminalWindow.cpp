@@ -258,6 +258,15 @@ namespace winrt::TerminalApp::implementation
         AppLogic::Current()->NotifyRootInitialized();
     }
 
+    WindowLayout TerminalWindow::GetWindowLayout() const
+    {
+        if (_root)
+        {
+            return _root->GetWindowLayout();
+        }
+        return nullptr;
+    }
+
     void TerminalWindow::PersistState()
     {
         if (_root)
@@ -1104,6 +1113,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Provide a pre-built list of startup actions for this window. Used by
+    //   the in-proc OpenNewWindow event (see TerminalPage::_OpenNewWindow ->
+    //   TerminalWindow -> AppHost -> WindowEmperor::OpenNewWindow)
+    void TerminalWindow::SetStartupActions(const IVector<ActionAndArgs>& actions)
+    {
+        _initialContentArgs = wil::to_vector(actions);
+    }
+
+    void TerminalWindow::SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout)
+    {
+        _cachedLayout = layout;
+    }
+
+    // Method Description:
     // - Parse the provided commandline arguments into actions, and try to
     //   perform them immediately.
     // - This function returns 0, unless a there was a non-zero result from
@@ -1223,7 +1246,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalWindow::WindowName(const winrt::hstring& name)
     {
         const auto oldIsQuakeMode = _WindowProperties->IsQuakeWindow();
+        const auto oldName = _WindowProperties->WindowName();
         _WindowProperties->WindowName(name);
+        // If this window had a persisted workspace under the old name, rename
+        // that entry too so we don't leave a stale copy behind.
+        if (!oldName.empty() && !name.empty() && oldName != name)
+        {
+            ApplicationState::SharedInstance().RenameWorkspace(oldName, name);
+        }
         if (!_root)
         {
             return;

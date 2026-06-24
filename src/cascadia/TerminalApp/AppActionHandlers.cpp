@@ -872,70 +872,37 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Function Description:
-    // - Helper to launch a new WT instance. It can either launch the instance
-    //   elevated or unelevated.
-    // - To launch elevated, it will as the shell to elevate the process for us.
-    //   This might cause a UAC prompt. The elevation is performed on a
-    //   background thread, as to not block the UI thread.
-    // Arguments:
-    // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
-    //   that should be spawned. The Profile should be filled in with the GUID
-    //   of the profile we want to launch.
-    // Return Value:
-    // - <none>
-    // Important: Don't take the param by reference, since we'll be doing work
-    // on another thread.
-    safe_void_coroutine TerminalPage::_OpenNewWindow(const INewContentArgs newContentArgs)
+    // Ask the WindowEmperor (in-process) to create a brand-new window whose
+    // first tab is described by `contentArgs`. This will bubble up to AppHost,
+    // who will call WindowEmperor::CreateNewWindow.
+    void TerminalPage::_OpenNewWindow(const INewContentArgs& contentArgs)
     {
-        auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() };
-
-        // Do nothing for non-terminal panes.
-        //
-        // Theoretically, we could define a `IHasCommandline` interface, and
-        // stick `ToCommandline` on that interface, for any kind of pane that
-        // wants to be convertable to a wt commandline.
-        //
-        // Another idea we're thinking about is just `wt do {literal json for an
-        // action}`, which might be less leaky
-        if (terminalArgs == nullptr)
+        if (!contentArgs)
         {
-            co_return;
+            return;
         }
 
-        // ShellExecuteExW may block, so do it on a background thread.
-        //
-        // NOTE: All remaining code of this function doesn't touch `this`, so we don't need weak/strong_ref.
-        // NOTE NOTE: Don't touch `this` when you make changes here.
-        co_await winrt::resume_background();
+        ActionAndArgs newTabAction{};
+        newTabAction.Action(ShortcutAction::NewTab);
+        newTabAction.Args(NewTabArgs{ contentArgs });
 
-        // This will get us the correct exe for dev/preview/release. If you
-        // don't stick this in a local, it'll get mangled by ShellExecute. I
-        // have no idea why.
-        const auto exePath{ GetWtExePath() };
+        auto actions = winrt::single_threaded_vector<ActionAndArgs>({ std::move(newTabAction) });
 
-        // Build the commandline to pass to wt for this set of NewTerminalArgs
-        // `-w -1` will ensure a new window is created.
-        const auto commandline = terminalArgs.ToCommandline();
-        const auto cmdline = fmt::format(FMT_COMPILE(L"-w -1 new-tab {}"), commandline);
+        // It's fine to pass `0` as the window ID, since this event path will
+        // always land in CreateNewWindow, which will just ignore it.
+        winrt::TerminalApp::WindowRequestedArgs request{ 0, winrt::TerminalApp::CommandlineArgs{} };
+        request.StartupActions(std::move(actions));
+        RequestNewWindow.raise(*this, request);
+    }
 
-        // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
-        // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
-        // call this on the background thread, and have ShellExecute _not_ call
-        // back to us on the main thread. Without this, if you close the
-        // Terminal quickly after the UAC prompt, the elevated WT will never
-        // actually spawn.
-        SHELLEXECUTEINFOW seInfo{ 0 };
-        seInfo.cbSize = sizeof(seInfo);
-        seInfo.fMask = SEE_MASK_NOASYNC;
-        // `open` will just run the executable normally.
-        seInfo.lpVerb = L"open";
-        seInfo.lpFile = exePath.c_str();
-        seInfo.lpParameters = cmdline.c_str();
-        seInfo.nShow = SW_SHOWNORMAL;
-        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
-
-        co_return;
+    // Ask the WindowEmperor (in-process) to open or summon a named window,
+    // restoring its persisted workspace if one exists. The event bubbles up
+    // through TerminalWindow to AppHost, which calls into the WindowEmperor
+    // directly — no second wt.exe process is launched.
+    void TerminalPage::_OpenWorkspaceWindow(const winrt::hstring name)
+    {
+        const auto args = winrt::make<implementation::OpenWindowRequestedArgs>(name);
+        RequestOpenWindow.raise(*this, args);
     }
 
     void TerminalPage::_HandleNewWindow(const IInspectable& /*sender*/,
@@ -959,13 +926,16 @@ namespace winrt::TerminalApp::implementation
             newContentArgs = NewTerminalArgs{};
         }
 
-        if (const auto& terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
+        // If this is a NewTerminalArgs, resolve its profile up-front so the
+        // spawned window doesn't need to re-resolve it. Other content types
+        // (e.g. scratchpad) don't have profiles to evaluate — they get passed
+        // through as-is.
+        if (const auto terminalArgs{ newContentArgs.try_as<NewTerminalArgs>() })
         {
             const auto profile{ _settings.GetProfileForArgs(terminalArgs) };
             terminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
         }
 
-        // Manually fill in the evaluated profile.
         _OpenNewWindow(newContentArgs);
         actionArgs.Handled(true);
     }
@@ -1058,6 +1028,7 @@ namespace winrt::TerminalApp::implementation
         // Fun!
         // WindowRenamerTextBox().Focus(FocusState::Programmatic);
         _renamerLayoutUpdatedRevoker.revoke();
+        _renamerLayoutCount = 0;
         _renamerLayoutUpdatedRevoker = WindowRenamerTextBox().LayoutUpdated(winrt::auto_revoke, [weakThis = get_weak()](auto&&, auto&&) {
             if (auto self{ weakThis.get() })
             {
@@ -1633,4 +1604,35 @@ namespace winrt::TerminalApp::implementation
             args.Handled(handled);
         }
     }
+
+    void TerminalPage::_HandleOpenWorkspace(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        // Open (or summon) a named window.  We launch a new `wt -w <name>`
+        // process which the monarch will route to the correct live window or
+        // restore from a persisted workspace.
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<OpenWorkspaceArgs>())
+            {
+                const auto name = realArgs.Name();
+                if (!name.empty())
+                {
+                    _OpenWorkspaceWindow(name);
+                }
+                args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleWorkspaces(const IInspectable& /*sender*/,
+                                         const ActionEventArgs& args)
+    {
+        if (_workspaceFlyout && _workspaceDropdown)
+        {
+            _workspaceFlyout.ShowAt(_workspaceDropdown);
+        }
+        args.Handled(true);
+    }
+
 }
