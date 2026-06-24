@@ -45,10 +45,9 @@ public:
     void InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo);
     void Validate();
 
-    CONSOLE_STATE_INFO CreateConsoleStateInfo() const;
+    CONSOLE_STATE_INFO CreateConsoleStateInfo();
 
-    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
-    const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
+    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; }
 
     DWORD GetDefaultVirtTermLevel() const;
     void SetDefaultVirtTermLevel(const DWORD dwVirtTermLevel);
@@ -161,9 +160,9 @@ public:
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
     void SetColorTableEntry(const size_t index, const COLORREF color);
-    COLORREF GetColorTableEntry(const size_t index) const;
+    COLORREF GetColorTableEntry(const size_t index);
     void SetLegacyColorTableEntry(const size_t index, const COLORREF color);
-    COLORREF GetLegacyColorTableEntry(const size_t index) const;
+    COLORREF GetLegacyColorTableEntry(const size_t index);
 
     CursorType GetCursorType() const noexcept;
     void SetCursorType(const CursorType cursorType) noexcept;
