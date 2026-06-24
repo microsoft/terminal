@@ -12,6 +12,7 @@
 #include "Appearances.g.cpp"
 
 using namespace winrt::Windows::UI::Text;
+using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Data;
@@ -1188,13 +1189,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Appearances::FontFaceBox_GotFocus(const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&)
     {
+        const auto box = sender.as<AutoSuggestBox>();
         _updateFontNameFilter({});
-        sender.as<AutoSuggestBox>().IsSuggestionListOpen(true);
+        box.IsSuggestionListOpen(true);
+        _fontFaceBoxHasUserInput = false;
     }
 
     void Appearances::FontFaceBox_LostFocus(const IInspectable& sender, const RoutedEventArgs&)
     {
-        _updateFontName(sender.as<AutoSuggestBox>().Text());
+        const auto box = sender.as<AutoSuggestBox>();
+        if (_fontFaceBoxHasUserInput)
+        {
+            _updateFontName(box.Text());
+        }
+        else
+        {
+            // AutoSuggestBox restores its cached user query when Tab closes the suggestion list.
+            // Programmatic Text updates don't synchronize that cache, so restore the committed value.
+            box.Text(Appearance().FontFace());
+        }
     }
 
     void Appearances::FontFaceBox_QuerySubmitted(const AutoSuggestBox& sender, const AutoSuggestBoxQuerySubmittedEventArgs& args)
@@ -1221,8 +1234,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             fontSpec = fontName;
         }
 
-        sender.Text(fontSpec);
-
         // Normally we'd just update the model property in LostFocus above, but because WinUI is the Ralph Wiggum
         // among the UI frameworks, it raises the LostFocus event _before_ the QuerySubmitted event.
         // So, when you press Save, the model will have the wrong font face string, because LostFocus was raised too early.
@@ -1233,11 +1244,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // You can't just do IsSuggestionListOpen(false) either, because you can show the list with that property but not hide it.
         // So, we update the model manually and assign focus to the parent container.
         //
-        // BUT you can't just focus the parent container, because of a weird interaction with AutoSuggestBox where it'll refuse to lose
-        // focus if you picked a suggestion that matches the current fontSpec. So, we unfocus it first and then focus the parent container.
-        _updateFontName(fontSpec);
-        sender.Focus(FocusState::Unfocused);
-        FontFaceContainer().Focus(FocusState::Programmatic);
+        // Queue the selected-suggestion commit so AutoSuggestBox can finish processing Enter before we change its text/model.
+        // Do not manually unfocus the AutoSuggestBox here. Its Focus(FocusState::Unfocused) path crashes during keyboard commits.
+        Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, weakSender{ winrt::make_weak(sender) }, fontSpec{ std::move(fontSpec) }]() {
+            if (const auto self{ weakThis.get() })
+            {
+                self->_fontFaceBoxHasUserInput = false;
+
+                const auto box{ weakSender.get() };
+                if (box)
+                {
+                    box.Text(fontSpec);
+                }
+
+                self->_updateFontName(fontSpec);
+                self->FontFaceContainer().Focus(FocusState::Programmatic);
+            }
+        });
     }
 
     void Appearances::FontFaceBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
@@ -1246,6 +1269,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return;
         }
+
+        _fontFaceBoxHasUserInput = true;
 
         const auto fontSpec = sender.Text();
         std::wstring_view filter{ fontSpec };
