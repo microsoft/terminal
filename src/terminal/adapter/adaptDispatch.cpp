@@ -1422,6 +1422,9 @@ void AdaptDispatch::DeviceStatusReport(const DispatchTypes::StatusType statusTyp
     case DispatchTypes::StatusType::MultipleSessionStatus:
         _DeviceStatusReport(MultipleSessionsNotSupported);
         break;
+    case DispatchTypes::StatusType::ColorSchemeReport:
+        _ReportColorScheme();
+        break;
     default:
         break;
     }
@@ -1537,6 +1540,45 @@ void AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPerm
 void AdaptDispatch::_DeviceStatusReport(const wchar_t* parameters) const
 {
     _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"{}n"), parameters));
+}
+
+// Routine Description:
+// - Reports whether the terminal is currently using a dark or light color
+//   scheme. This is the DSR reply to a `CSI ? 996 n` query, and is also the
+//   unsolicited notification sent when the appearance is updated while the
+//   color theme update mode (DECSET 2031) is enabled.
+//   See https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
+// Return Value:
+// - <none>
+void AdaptDispatch::_ReportColorScheme() const
+{
+    // A value of 1 indicates a dark color scheme, and 2 indicates a light one.
+    const auto colorScheme = _colorSchemeIsDark ? 1 : 2;
+    _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"?997;{}n"), colorScheme));
+}
+
+// Routine Description:
+// - Notifies the dispatcher that the terminal's appearance has been updated due
+//   to a change in the terminal emulator's configuration (e.g. the user changed
+//   the profile/color scheme, directly or indirectly by changing the operating
+//   system theme). The current dark/light value is recorded for the `CSI ? 996 n`
+//   query, and if either the dark/light mode or the color palette actually
+//   changed, an unsolicited report is emitted while the color theme update mode
+//   (DECSET 2031) is enabled.
+//   See https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
+// Arguments:
+// - isDark - True if the resolved appearance is dark, false if it is light.
+// - paletteChanged - True if the color palette values actually changed.
+// Return Value:
+// - <none>
+void AdaptDispatch::ColorSchemeUpdated(const bool isDark, const bool paletteChanged)
+{
+    const auto modeChanged = isDark != _colorSchemeIsDark;
+    _colorSchemeIsDark = isDark;
+    if ((modeChanged || paletteChanged) && _modes.test(Mode::ColorThemeUpdates))
+    {
+        _ReportColorScheme();
+    }
 }
 
 // Routine Description:
@@ -1888,6 +1930,9 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
             _renderer->SynchronizedOutputChanged();
         }
         break;
+    case DispatchTypes::ModeParams::ColorThemeUpdates:
+        _modes.set(Mode::ColorThemeUpdates, enable);
+        break;
     case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
@@ -2028,6 +2073,9 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         break;
     case DispatchTypes::ModeParams::SO_SynchronizedOutput:
         state = mapTemp(_renderSettings.GetRenderMode(RenderSettings::Mode::SynchronizedOutput));
+        break;
+    case DispatchTypes::ModeParams::ColorThemeUpdates:
+        state = mapTemp(_modes.test(Mode::ColorThemeUpdates));
         break;
     case DispatchTypes::ModeParams::GCM_GraphemeClusterMode:
         state = mapPerm(CodepointWidthDetector::Singleton().GetMode() == TextMeasurementMode::Graphemes);

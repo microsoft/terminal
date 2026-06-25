@@ -187,6 +187,8 @@ public:
     void PlaySounds(const VTParameters /*parameters*/) override {}; // DECPS
 
     void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override {};
+
+    void ColorSchemeUpdated(const bool /*isDark*/, const bool /*paletteChanged*/) override {}
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning

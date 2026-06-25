@@ -102,6 +102,12 @@ namespace Microsoft.Terminal.Core
         Boolean IntenseIsBright { get; };
         AdjustTextMode AdjustIndistinguishableColors { get; };
 
+        // The resolved dark/light color *mode* (the OS/app appearance preference,
+        // with "use Windows theme" resolved from the OS), used for the dark/light
+        // mode reports (DECSET 2031 and the CSI ? 996 n query). This is NOT the
+        // terminal's color scheme.
+        Boolean DarkMode { get; };
+
         // NOTE! When adding something here, make sure to update ControlProperties.h too!
     };
 

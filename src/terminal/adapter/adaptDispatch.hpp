@@ -198,6 +198,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
 
+        void ColorSchemeUpdated(const bool isDark, const bool paletteChanged) override;
+
     private:
         enum class Mode
         {
@@ -209,7 +211,8 @@ namespace Microsoft::Console::VirtualTerminal
             SixelDisplay,
             EraseColor,
             RectangularChangeExtent,
-            PageCursorCoupling
+            PageCursorCoupling,
+            ColorThemeUpdates
         };
         enum class ScrollDirection
         {
@@ -277,6 +280,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _CursorPositionReport(const bool extendedReport);
         void _MacroSpaceReport() const;
         void _MacroChecksumReport(const VTParameter id) const;
+        void _ReportColorScheme() const;
 
         void _SetColumnMode(const bool enable);
         void _SetAlternateScreenBufferMode(const bool enable);
@@ -333,6 +337,12 @@ namespace Microsoft::Console::VirtualTerminal
         til::inclusive_rect _scrollMargins;
 
         til::enumset<Mode> _modes{ Mode::PageCursorCoupling };
+
+        // Whether the terminal's effective appearance is currently a dark theme.
+        // This drives the dark/light mode reports (DECSET 2031 / CSI ? 996 n) and
+        // is set explicitly from the resolved application/OS theme, not derived
+        // from the color palette. Defaults to dark, the historical terminal default.
+        bool _colorSchemeIsDark = true;
 
         SgrStack _sgrStack;
 
