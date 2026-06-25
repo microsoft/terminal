@@ -7,8 +7,9 @@
 #include "SettingsPaneContent.h"
 #include "Tab.g.cpp"
 #include "Utils.h"
-#include "AppLogic.h"
 #include "../../types/inc/ColorFix.hpp"
+
+#include <ThrottledFunc.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -106,8 +107,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        _UpdateHeaderControlMaxWidth();
-
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -200,14 +199,13 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
-    void Tab::_UpdateHeaderControlMaxWidth()
+    void Tab::_UpdateHeaderControlMaxWidth(const WindowSettings& windowSettings)
     {
         try
         {
             // Make sure to try/catch this, because the LocalTests won't be
             // able to use this helper.
-            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            if (windowSettings.TabWidthMode() == MUX::Controls::TabViewWidthMode::SizeToContent)
             {
                 _headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
             }
@@ -388,16 +386,17 @@ namespace winrt::TerminalApp::implementation
     //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void Tab::UpdateSettings(const CascadiaSettings& settings)
+    void Tab::UpdateSettings(const CascadiaSettings& settings,
+                             const winrt::Microsoft::Terminal::Settings::Model::WindowSettings& windowSettings)
     {
         ASSERT_UI_THREAD();
 
         // The tabWidthMode may have changed, update the header control accordingly
-        _UpdateHeaderControlMaxWidth();
+        _UpdateHeaderControlMaxWidth(windowSettings);
 
         // Update the settings on all our panes.
         _rootPane->WalkTree([&](const auto& pane) {
-            pane->UpdateSettings(settings);
+            pane->UpdateSettings(settings, windowSettings);
             return false;
         });
     }

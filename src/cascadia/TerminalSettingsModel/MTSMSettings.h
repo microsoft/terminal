@@ -18,7 +18,20 @@ Author(s):
 // Macro format (defaultArgs are optional):
 // (type, name, jsonKey, defaultArgs)
 
-#define MTSM_GLOBAL_SETTINGS(X)                                                                                                                                                                       \
+// Settings that are truly app-global (not per-window)
+#define MTSM_GLOBAL_ONLY_SETTINGS(X)                                                                                                                                                                  \
+    X(hstring, Language, "language")                                                                                                                                                                  \
+    X(bool, InputServiceWarning, "warning.inputService", true)                                                                                                                                        \
+    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
+    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                              \
+    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                                                                     \
+    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
+    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                                                                    \
+    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
+    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)
+
+// Settings that are per-window (may vary by window name in the future)
+#define MTSM_WINDOW_SETTINGS(X)                                                                                                                                                                       \
     X(int32_t, InitialRows, "initialRows", 30)                                                                                                                                                        \
     X(int32_t, InitialCols, "initialCols", 80)                                                                                                                                                        \
     X(hstring, WordDelimiters, "wordDelimiters", DEFAULT_WORD_DELIMITERS)                                                                                                                             \
@@ -40,39 +53,36 @@ Author(s):
     X(bool, ShowTitleInTitlebar, "showTerminalTitleInTitlebar", true)                                                                                                                                 \
     X(Model::ConfirmOnClose, ConfirmOnClose, "warning.confirmOnClose", Model::ConfirmOnClose::Automatic)                                                                                              \
     X(Model::ThemePair, Theme, "theme")                                                                                                                                                               \
-    X(hstring, Language, "language")                                                                                                                                                                  \
     X(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, "tabWidthMode", winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal)                                            \
     X(bool, UseAcrylicInTabRow, "useAcrylicInTabRow", false)                                                                                                                                          \
     X(bool, ShowTabsInTitlebar, "showTabsInTitlebar", true)                                                                                                                                           \
-    X(bool, InputServiceWarning, "warning.inputService", true)                                                                                                                                        \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, "copyFormatting", 0)                                                                                                           \
     X(bool, WarnAboutLargePaste, "warning.largePaste", true)                                                                                                                                          \
     X(winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste, WarnAboutMultiLinePaste, "warning.multiLinePaste", winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste::Automatic)       \
     X(Model::LaunchPosition, InitialPosition, "initialPosition", nullptr, nullptr)                                                                                                                    \
     X(bool, CenterOnLaunch, "centerOnLaunch", false)                                                                                                                                                  \
-    X(Model::FirstWindowPreference, FirstWindowPreference, "firstWindowPreference", FirstWindowPreference::DefaultProfile)                                                                            \
     X(Model::LaunchMode, LaunchMode, "launchMode", LaunchMode::DefaultMode)                                                                                                                           \
     X(bool, SnapToGridOnResize, "snapToGridOnResize", true)                                                                                                                                           \
-    X(bool, DebugFeaturesEnabled, "debugFeatures", debugFeaturesDefault)                                                                                                                              \
     X(bool, AlwaysOnTop, "alwaysOnTop", false)                                                                                                                                                        \
     X(bool, AutoHideWindow, "autoHideWindow", false)                                                                                                                                                  \
     X(Model::TabSwitcherMode, TabSwitcherMode, "tabSwitcherMode", Model::TabSwitcherMode::InOrder)                                                                                                    \
     X(bool, DisableAnimations, "disableAnimations", false)                                                                                                                                            \
     X(hstring, StartupActions, "startupActions", L"")                                                                                                                                                 \
-    X(Model::WindowingMode, WindowingBehavior, "windowingBehavior", Model::WindowingMode::UseNew)                                                                                                     \
     X(bool, MinimizeToNotificationArea, "minimizeToNotificationArea", false)                                                                                                                          \
-    X(bool, AlwaysShowNotificationIcon, "alwaysShowNotificationIcon", false)                                                                                                                          \
-    X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, "disabledProfileSources", nullptr)                                                                    \
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, SafeUriSchemes, "safeUriSchemes", nullptr)                                                                                    \
     X(bool, ShowAdminShield, "showAdminShield", true)                                                                                                                                                 \
     X(bool, TrimPaste, "trimPaste", true)                                                                                                                                                             \
-    X(bool, EnableColorSelection, "experimental.enableColorSelection", false)                                                                                                                         \
     X(bool, EnableShellCompletionMenu, "experimental.enableShellCompletionMenu", false)                                                                                                               \
     X(bool, EnableUnfocusedAcrylic, "compatibility.enableUnfocusedAcrylic", true)                                                                                                                     \
     X(winrt::Windows::Foundation::Collections::IVector<Model::NewTabMenuEntry>, NewTabMenu, "newTabMenu", winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} })) \
-    X(bool, AllowHeadless, "compatibility.allowHeadless", false)                                                                                                                                      \
     X(hstring, SearchWebDefaultQueryUrl, "searchWebDefaultQueryUrl", L"https://www.bing.com/search?q=%22%s%22")                                                                                       \
     X(bool, ShowTabsFullscreen, "showTabsFullscreen", false)
+
+// MTSM_GLOBAL_SETTINGS is the union of global-only and window settings.
+// GlobalAppSettings uses this to keep all settings on one object (for now).
+#define MTSM_GLOBAL_SETTINGS(X) \
+    MTSM_GLOBAL_ONLY_SETTINGS(X) \
+    MTSM_WINDOW_SETTINGS(X)
 
 // Also add these settings to:
 // * Profile.idl
