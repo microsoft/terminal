@@ -23,6 +23,10 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
+// The special token used to indicate that a random color scheme should be
+// selected each time a new tab or pane is created. GH#9422
+static constexpr std::wstring_view RandomSchemeToken{ L"_random" };
+
 // Creating a child of a profile requires us to copy certain
 // required attributes. This method handles those attributes.
 //
@@ -466,13 +470,20 @@ void CascadiaSettings::_validateAllSchemesExist()
     {
         for (const auto& appearance : std::array{ profile.DefaultAppearance(), profile.UnfocusedAppearance() })
         {
-            if (appearance && !colorSchemes.HasKey(appearance.DarkColorSchemeName()))
+            // GH#9422: Don't clear the color scheme name if it's set to
+            // "_random". This special token is handled during runtime
+            // resolution to pick a random scheme from available ones.
+            if (appearance &&
+                appearance.DarkColorSchemeName() != RandomSchemeToken &&
+                !colorSchemes.HasKey(appearance.DarkColorSchemeName()))
             {
                 // Clear the user set dark color scheme. We'll just fallback instead.
                 appearance.ClearDarkColorSchemeName();
                 foundInvalidDarkScheme = true;
             }
-            if (appearance && !colorSchemes.HasKey(appearance.LightColorSchemeName()))
+            if (appearance &&
+                appearance.LightColorSchemeName() != RandomSchemeToken &&
+                !colorSchemes.HasKey(appearance.LightColorSchemeName()))
             {
                 // Clear the user set light color scheme. We'll just fallback instead.
                 appearance.ClearLightColorSchemeName();
