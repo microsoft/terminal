@@ -17,27 +17,32 @@
   "overrides": [
     {
       "name": "fmt",
-      "version": "11.1.4"
+      "version": "12.1.0"
     },
     {
       "name": "ms-gsl",
-      "version": "3.1.0"
+      "version": "4.2.2"
     },
     {
       "name": "jsoncpp",
-      "version": "1.9.5"
+      "version": "1.9.6"
     },
     {
       "name": "cli11",
-      "version": "2.4.2"
+      "version": "2.6.1"
     },
     {
       "name": "cmark",
-      "version": "0.30.3"
+      "version": "0.31.1"
     }
   ],
-  "builtin-baseline": "fe1cde61e971d53c9687cf9a46308f8f55da19fa",
+  "builtin-baseline": "927f62e4b8838bd7e441e9c45103a16ffd75007e",
   "vcpkg-configuration": {
-    "overlay-ports": [ "./dep/vcpkg-overlay-ports" ]
+    "overlay-triplets": [
+      "./dep/vcpkg-overlay-triplets"
+    ],
+    "overlay-ports": [
+      "./dep/vcpkg-overlay-ports"
+    ]
   }
 }

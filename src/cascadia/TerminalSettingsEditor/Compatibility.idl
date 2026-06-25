@@ -20,6 +20,9 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentTextMeasurement;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TextMeasurementList { get; };
+
+        IInspectable CurrentAmbiguousWidth;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AmbiguousWidthList { get; };
     }
 
     [default_interface] runtimeclass Compatibility : Windows.UI.Xaml.Controls.Page

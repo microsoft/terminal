@@ -13,7 +13,7 @@ This spec is for feature request #605 "Search". It goes over the details of a ne
 
 ## Inspiration
 
-One of the superior features of iTerm2 is it's content search. The search comes in two variants: search from active tab and search from all tabs. In almost any editor, there is an roughly equivalent string search. We also want to realize search experience in Terminal. There will be two variants, search within one tab or from multiple tabs. We will start with one-tab search implementation.
+One of the superior features of iTerm2 is it's content search. The search comes in two variants: search from active tab and search from all tabs. In almost any editor, there is a roughly equivalent string search. We also want to realize search experience in Terminal. There will be two variants, search within one tab or from multiple tabs. We will start with one-tab search implementation.
 
 ## Solution Design
 
@@ -30,7 +30,7 @@ Conhost already has a module for search. It implements case-sensitive or insensi
 
 We will create a `SearchBoxControl` Xaml `UserControl` element. When a search process begins, a `SearchBoxControl` object will be created and attached to `TermControl` root grid. In other words, one SearchBox is added for each `TermControl`. The reasons for this design is:
 
-1. Each `TermControl` object is a Terminal Window and has a individual text buffer. In phase 1 we are going to search within the current terminal text buffer.
+1. Each `TermControl` object is a Terminal Window and has an individual text buffer. In phase 1 we are going to search within the current terminal text buffer.
 2. If we put the search box under TerminalApp, then the search can only happen on the current focused Terminal.
 3. If the community does not like the current design, we can lift SearchBox to a higher level.
 
@@ -55,7 +55,7 @@ Above is the `SearchBoxControl` in dark theme and light theme.
 
 ![SearchBox mockup, arrow button clicked](images/SearchBoxUpSelected.png)
 
-The search box defaults to be on the top right corner of the Terminal window. If the current tab is split into panes, each pane will have a individual searchbox.
+The search box defaults to the top right corner of the Terminal window. If the current tab is split into panes, each pane will have an individual searchbox.
 
 #### Search process
 1. The user presses <kbd>ctrl+shift+f</kbd> (or user's custom key binding) to open the search box. Focus will move to the TextBox.

@@ -14,6 +14,11 @@
 class ROW;
 class TextBuffer;
 
+// Because MarkKind::Output gets set only on the actually written text,
+// most rows will end up having at least 2 runs: The start of the line
+// with MarkKind::Output and the rest of the line with MarkKind::None.
+using RowAttributes = til::small_rle<TextAttribute, uint16_t, 2>;
+
 enum class DelimiterClass
 {
     ControlChar,
@@ -149,8 +154,8 @@ public:
     void ReplaceText(RowWriteState& state);
     void CopyTextFrom(RowCopyTextFromState& state);
 
-    til::small_rle<TextAttribute, uint16_t, 1>& Attributes() noexcept;
-    const til::small_rle<TextAttribute, uint16_t, 1>& Attributes() const noexcept;
+    RowAttributes& Attributes() noexcept;
+    const RowAttributes& Attributes() const noexcept;
     TextAttribute GetAttrByColumn(til::CoordType column) const;
     std::vector<uint16_t> GetHyperlinks() const;
     ImageSlice* SetImageSlice(ImageSlice::Pointer imageSlice) noexcept;
@@ -167,6 +172,7 @@ public:
     std::wstring_view GetText(til::CoordType columnBegin, til::CoordType columnEnd) const noexcept;
     til::CoordType GetLeadingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
     til::CoordType GetTrailingColumnAtCharOffset(ptrdiff_t offset) const noexcept;
+    uint16_t GetCharOffset(til::CoordType col) const noexcept;
     DelimiterClass DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept;
 
     auto AttrBegin() const noexcept { return _attr.begin(); }
@@ -298,7 +304,7 @@ private:
     std::span<uint16_t> _charOffsets;
     // _attr is a run-length-encoded vector of TextAttribute with a decompressed
     // length equal to _columnCount (= 1 TextAttribute per column).
-    til::small_rle<TextAttribute, uint16_t, 1> _attr;
+    RowAttributes _attr;
     // The width of the row in visual columns.
     uint16_t _columnCount = 0;
     // Stores double-width/height (DECSWL/DECDWL/DECDHL) attributes.

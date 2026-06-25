@@ -117,9 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddProfile_AddNewButton.Tag" xml:space="preserve">
-    <value>[新規作成] ボタン</value>
-  </data>
   <data name="AddProfile_AddNewTextBlock.Text" xml:space="preserve">
     <value>新しい空のプロファイル</value>
     <comment>Button label that creates a new profile with default settings.</comment>
@@ -127,9 +124,6 @@
   <data name="AddProfile_Duplicate.Header" xml:space="preserve">
     <value>プロファイルを複製する</value>
     <comment>This is the header for a control that lets the user duplicate one of their existing profiles.</comment>
-  </data>
-  <data name="AddProfile_DuplicateButton.Tag" xml:space="preserve">
-    <value>[複製] ボタン</value>
   </data>
   <data name="AddProfile_DuplicateTextBlock.Text" xml:space="preserve">
     <value>複製</value>
@@ -310,10 +304,6 @@
     <value>貼り付けるときに末尾の空白を削除する</value>
     <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
-  <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
-    <value>以下は現在バインドされているキーです。JSON 設定ファイルを編集して変更できます。</value>
-    <comment>A disclaimer located at the top of the actions page that presents the list of keybindings.</comment>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>既定のプロファイル</value>
     <comment>Header for a control to select your default profile from the list of profiles you've created.</comment>
@@ -371,7 +361,7 @@
     <value>入力したテキストをセルにグループ化する方法を変更します。"Grapheme clusters" オプションは最も新しく Unicode で正しい方法ですが、UNIX では "wcswidth" は一般的な方法であり、"Windows コンソール" は Windows での動作方法をレプリケートします。この設定を変更するには、Windows ターミナルの再起動が必要です。この設定は、その中から起動されたアプリケーションにのみ適用されます。</value>
   </data>
   <data name="Globals_TextMeasurement_Graphemes.Text" xml:space="preserve">
-    <value>Grapheme クラスター</value>
+    <value>書記素クラスター</value>
     <comment>The default choice between multiple graphics APIs.</comment>
   </data>
   <data name="Globals_TextMeasurement_Wcswidth.Text" xml:space="preserve">
@@ -380,6 +370,21 @@
   </data>
   <data name="Globals_TextMeasurement_Console.Text" xml:space="preserve">
     <value>Windows コンソール</value>
+  </data>
+  <data name="Globals_AmbiguousWidth.Header" xml:space="preserve">
+    <value>あいまいな文字の幅</value>
+    <comment>A label for a drop down selector, referring to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth.HelpText" xml:space="preserve">
+    <value>東アジアのあいまいな文字に使用する幅を設定します。[幅を狭くする] (既定) は互換性を優先し、[幅を広くする] は多くの CJK フォントでの読みやすさを優先します。[幅を広くする] モードでは、一部のアプリケーションが正しく動作せず、カーソルの動きが不安定になることがあります。この設定を変更するには、Windows ターミナルの再起動が必要で、Windows ターミナル内から起動したアプリケーションにのみ適用されます。</value>
+  </data>
+  <data name="Globals_AmbiguousWidth_Narrow.Text" xml:space="preserve">
+    <value>狭い</value>
+    <comment>As in "narrow width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
+  </data>
+  <data name="Globals_AmbiguousWidth_Wide.Text" xml:space="preserve">
+    <value>広い</value>
+    <comment>As in "wide width". Refers to the East Asian Ambiguous Width Unicode specification.</comment>
   </data>
   <data name="Globals_InitialCols.Text" xml:space="preserve">
     <value>列</value>
@@ -396,14 +401,6 @@
   <data name="Globals_InitialRowsBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>最初の行</value>
     <comment>Name for a control to choose the number of rows in the terminal's text grid.</comment>
-  </data>
-  <data name="Globals_InitialPosX.Text" xml:space="preserve">
-    <value>X 方向の位置</value>
-    <comment>Header for a control to choose the X coordinate of the terminal's starting position.</comment>
-  </data>
-  <data name="Globals_InitialPosY.Text" xml:space="preserve">
-    <value>Y 方向の位置</value>
-    <comment>Header for a control to choose the Y coordinate of the terminal's starting position.</comment>
   </data>
   <data name="Globals_InitialPosXBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>X 方向の位置</value>
@@ -452,13 +449,13 @@
     <value>前のセッションからウィンドウを開く</value>
     <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
-  <data name="Globals_LaunchMode.Header" xml:space="preserve">
-    <value>起動モード</value>
-    <comment>Header for a control to select what mode to launch the terminal in.</comment>
+  <data name="Globals_FirstWindowPreferencePersistedLayoutAndContent.Content" xml:space="preserve">
+    <value>ウィンドウのレイアウトとコンテンツを復元</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session and preserve the content.</comment>
   </data>
-  <data name="Globals_LaunchMode.HelpText" xml:space="preserve">
-    <value>ターミナルが起動時にどのように表示されるか。フォーカスすると、タブとタイトル バーが非表示になります。</value>
-    <comment>'Focus' must match &lt;Globals_LaunchModeFocus.Content&gt;.</comment>
+  <data name="Globals_FirstWindowPreferencePersistedLayout.Content" xml:space="preserve">
+    <value>ウィンドウのレイアウトを復元</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session, but don't preserve the content.</comment>
   </data>
   <data name="Globals_LaunchParameters.Header" xml:space="preserve">
     <value>起動パラメーター</value>
@@ -510,7 +507,7 @@
   </data>
   <data name="Globals_ShowTitlebar.Header" xml:space="preserve">
     <value>タイトル バーを非表示にする (再起動が必要)</value>
-    <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
+    <comment>Header for a control to toggle whether or not the title bar should be shown. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
     <value>無効にすると、タイトル バーがタブの上に表示されます。</value>
@@ -564,6 +561,10 @@
     <value>レガシ入力エンコードを使用する</value>
     <comment>Header for a control to toggle legacy input encoding for the terminal.</comment>
   </data>
+  <data name="Profile_AllowKittyKeyboardMode.Header" xml:space="preserve">
+    <value>Kitty キーボード プロトコルを許可</value>
+    <comment>{Locked="Kitty"}Kitty is a moniker and its Keyboard Protocol is a protocol specification.</comment>
+  </data>
   <data name="Profile_AllowVtChecksumReport.Header" xml:space="preserve">
     <value>DECRQCRA を許可する (Request Checksum of Rectangular Area)</value>
     <comment>{Locked="DECRQCRA"}{Locked="Request Checksum of Rectangular Area"}Header for a control to toggle support for the DECRQCRA control sequence.</comment>
@@ -571,6 +572,14 @@
   <data name="Profile_AllowVtClipboardWrite.Header" xml:space="preserve">
     <value>OSC 52 (Manipulate Selection Data) を使用したクリップボードへの書き込みを許可する</value>
     <comment>{Locked="OSC 52"}{Locked="Manipulate Selection Data"}Header for a control to toggle support for applications to change the contents of the Windows system clipboard.</comment>
+  </data>
+  <data name="Profile_AllowOscNotifications.Header" xml:space="preserve">
+    <value>OSC 777 (Desktop Notification) でトースト通知の表示を許可する</value>
+    <comment>{Locked="OSC 777"}{Locked="Desktop Notification"}Header for a control to toggle support for applications to display desktop toast notifications via the OSC 777 escape sequence.</comment>
+  </data>
+  <data name="Profile_AllowOscNotifications.HelpText" xml:space="preserve">
+    <value>有効にすると、アプリケーションは OSC 777 エスケープ シーケンスを送信して、カスタム タイトルと本文を含むデスクトップ通知をトリガーできます。</value>
+    <comment>{Locked="OSC 777"}Help text for the OSC 777 desktop notification toggle.</comment>
   </data>
   <data name="Globals_AllowHeadless.Header" xml:space="preserve">
     <value>Windows ターミナルのバックグラウンドでの実行を許可する</value>
@@ -668,6 +677,14 @@
     <value>スタートアップ</value>
     <comment>Header for the "startup" menu item. This navigates to a page that lets you see and modify settings related to the app's launch experience (i.e. screen position, mode, etc.)</comment>
   </data>
+  <data name="Nav_PaneOpenedAnnouncement" xml:space="preserve">
+    <value>ナビゲーション ウィンドウを開きました</value>
+    <comment>Screen reader announcement made when the user activates the toggle button that opens the settings navigation pane.</comment>
+  </data>
+  <data name="Nav_PaneClosedAnnouncement" xml:space="preserve">
+    <value>ナビゲーション ウィンドウを閉じました</value>
+    <comment>Screen reader announcement made when the user activates the toggle button that closes the settings navigation pane.</comment>
+  </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>JSON ファイルを開く</value>
     <comment>Header for a menu item. This opens the JSON file that is used to log the app's settings.</comment>
@@ -682,7 +699,11 @@
   </data>
   <data name="Nav_Actions.Content" xml:space="preserve">
     <value>操作</value>
-    <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
+    <comment>Header for the "actions" menu item. This navigates to a page that lets you see the available commands in the app.</comment>
+  </data>
+  <data name="Nav_EditAction.Content" xml:space="preserve">
+    <value>アクションの編集...</value>
+    <comment>Header for the "edit action" page. This is the page that lets you modify a specific command and its key bindings.</comment>
   </data>
   <data name="Nav_Extensions.Content" xml:space="preserve">
     <value>拡張機能</value>
@@ -822,6 +843,9 @@
   <data name="Profile_AddFontFeatureButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>新しいフォント機能の追加</value>
   </data>
+  <data name="Profile_DeleteFontKeyValuePairButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>削除</value>
+  </data>
   <data name="Profile_AddNewFontFeature.Text" xml:space="preserve">
     <value>新規追加</value>
     <comment>Button label that adds a new font feature for the current font.</comment>
@@ -946,6 +970,10 @@
     <value>常時</value>
     <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility.</comment>
   </data>
+  <data name="Profile_AdjustIndistinguishableColorsAutomatic.Content" xml:space="preserve">
+    <value>自動</value>
+    <comment>An option to choose from for the "adjust indistinguishable colors" setting. When selected, we will adjust the text colors for visibility only when the colors are part of this profile's color scheme's color table if and only if high contrast mode is enabled.</comment>
+  </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
     <value>バー ( ┃ )</value>
     <comment>{Locked="┃"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a vertical bar. The character in the parentheses is used to show what it looks like.</comment>
@@ -971,11 +999,11 @@
     <comment>{Locked="‗"} An option to choose from for the "cursor shape" setting. When selected, the cursor will look like a stacked set of two underscores. The character in the parentheses is used to show what it looks like.</comment>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
-    <value>フォント フェイス</value>
+    <value>フォント スタイル</value>
     <comment>Header for a control to select the font for text in the app.</comment>
   </data>
   <data name="Profile_FontFaceBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>フォント フェイス</value>
+    <value>フォント スタイル</value>
     <comment>Name for a control to select the font for text in the app.</comment>
   </data>
   <data name="Profile_FontFace.HelpText" xml:space="preserve">
@@ -1081,10 +1109,6 @@
     <value>選択したフォントにはフォント機能がありません。</value>
     <comment>A description provided when the font features setting is disabled. Presented near "Profile_FontFeatures".</comment>
   </data>
-  <data name="Profile_General.Header" xml:space="preserve">
-    <value>全般</value>
-    <comment>Header for a sub-page of profile settings focused on more general scenarios.</comment>
-  </data>
   <data name="Profile_Hidden.Header" xml:space="preserve">
     <value>ドロップダウンからプロファイルを非表示にする</value>
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
@@ -1121,11 +1145,11 @@
     <value>アイコン</value>
     <comment>Header for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
   </data>
-  <data name="Profile_IconBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_ImagePathBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>アイコン</value>
-    <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+    <comment>Name for a control to determine what icon can be used. This is not necessarily a file path, but can be one. It's usually used for images.</comment>
   </data>
-  <data name="Profile_IconEmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_EmojiBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>アイコン</value>
     <comment>Name for a control to determine what icon can be used to represent this profile.</comment>
   </data>
@@ -1133,13 +1157,9 @@
     <value>プロファイルで使用されるアイコンの絵文字またはイメージ ファイルの場所です。</value>
     <comment>A description for what the "icon" setting does. Presented near "Profile_Icon".</comment>
   </data>
-  <data name="Profile_IconBrowse.Content" xml:space="preserve">
+  <data name="IconPicker_IconBrowse.Content" xml:space="preserve">
     <value>参照...</value>
     <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
-  </data>
-  <data name="Profile_PaddingSlider.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>パディング</value>
-    <comment>Name for a control to determine the amount of space between text in a terminal and the edge of the window.</comment>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>パディング</value>
@@ -1191,15 +1211,15 @@
   </data>
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>開始ディレクトリ</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>開始ディレクトリ</value>
-    <comment>Header for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Header for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>開始ディレクトリ</value>
-    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+    <comment>Name for a control to determine the session's initial directory. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
     <value>プロファイルが読み込まれたときに開始されるディレクトリです。</value>
@@ -1216,14 +1236,6 @@
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>有効にすると、このプロファイルはターミナルが起動されたディレクトリに生成されます。</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.Content" xml:space="preserve">
-    <value>アイコンを非表示にする</value>
-    <comment>A supplementary setting to the "icon" setting.</comment>
-  </data>
-  <data name="Profile_HideIconCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>有効にした場合、このプロファイルにはアイコンはありません。</value>
-    <comment>A description for what the supplementary "Hide icon" setting does. Presented near "Profile_HideIconCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
     <value>タイトルの変更を表示しない</value>
@@ -1334,7 +1346,7 @@
     <comment>"environment variables" are user-definable values that can affect the way running processes will behave on a computer</comment>
   </data>
   <data name="Profile_ReloadEnvVars.HelpText" xml:space="preserve">
-    <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはウィンドウを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
+    <value>有効にすると、ターミナルは、このプロファイルで新しいタブまたはペインを作成するときに新しい環境ブロックを生成します。無効にすると、代わりにタブ/ペインはターミナルが開始された変数を継承します。</value>
     <comment>A description for what the "Reload environment variables" setting does. Presented near "Profile_ReloadEnvVars".</comment>
   </data>
   <data name="Profile_RightClickContextMenu.Header" xml:space="preserve">
@@ -1376,10 +1388,6 @@
   <data name="Profile_BellStyleNone.Content" xml:space="preserve">
     <value>なし</value>
     <comment>An option to choose from for the "bell style" setting. When selected, notifications are silenced.</comment>
-  </data>
-  <data name="Globals_DisableAnimations.Header" xml:space="preserve">
-    <value>ウィンドウのアニメーションを無効にする</value>
-    <comment>Header for a control to toggle animations on panes. "Enabled" value disables the animations.</comment>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>黒</value>
@@ -1553,9 +1561,6 @@
     <value>すべて</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a combination of the other bell styles is used to notify the user.</comment>
   </data>
-  <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
-    <value>ビジュアル (フラッシュ タスク バー)</value>
-  </data>
   <data name="Profile_BellStyleTaskbar.Content" xml:space="preserve">
     <value>フラッシュ タスク バー</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the taskbar is flashed.</comment>
@@ -1564,20 +1569,16 @@
     <value>フラッシュ ウィンドウ</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
   </data>
+  <data name="Profile_BellStyleNotification.Content" xml:space="preserve">
+    <value>デスクトップ通知</value>
+    <comment>An option to choose from for the "bell style" setting. When selected, a Windows desktop notification (toast) is sent to notify the user.</comment>
+  </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>新規追加</value>
     <comment>Button label that creates a new color scheme.</comment>
   </data>
   <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
     <value>配色の削除</value>
-    <comment>Button label that deletes the selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_EditButton.Text" xml:space="preserve">
-    <value>編集</value>
-    <comment>Button label that edits the currently selected color scheme.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButton2.Text" xml:space="preserve">
-    <value>削除</value>
     <comment>Button label that deletes the selected color scheme.</comment>
   </data>
   <data name="ColorScheme_Name.Header" xml:space="preserve">
@@ -1635,14 +1636,6 @@
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>settings.json ファイルを開きます。Alt+クリック して defaults.json ファイルを開きます。</value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
-  </data>
-  <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>名前の変更</value>
-    <comment>Text label for a button that can be used to begin the renaming process.</comment>
-  </data>
-  <data name="ColorScheme_DeleteButtonDisclaimerInBox.Text" xml:space="preserve">
-    <value>この配色は既定で含まれているため、削除したり名前を変更したりすることはできません。</value>
-    <comment>Disclaimer presented next to the delete button when it is disabled.</comment>
   </data>
   <data name="ColorScheme_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>はい、配色を削除します</value>
@@ -1729,11 +1722,19 @@
     <comment>An error message that appears when the user attempts to rename a color scheme to something invalid. This appears as the title, and explains the issue.</comment>
   </data>
   <data name="Globals_FocusFollowMouse.Header" xml:space="preserve">
-    <value>マウスをポイントしたときにフォーカス ウィンドウを自動的に表示する</value>
+    <value>マウスをポイントしたときにフォーカス ペインを自動的に表示する</value>
     <comment>Header for a control to toggle the "focus follow mouse" setting. When enabled, hovering over a pane puts it in focus.</comment>
   </data>
+  <data name="Globals_ScrollToZoom.Header" xml:space="preserve">
+    <value>Ctrl キーを押しながらスクロールして、ターミナルのフォント サイズを調整します</value>
+    <comment>Header for a control to toggle font size changes with scrolling. When enabled, holding the Ctrl key while scrolling will increase or decrease the terminal font size.</comment>
+  </data>
+  <data name="Globals_ScrollToChangeOpacity.Header" xml:space="preserve">
+    <value>Ctrl キーと Shift キーを押しながらスクロールして、ターミナルの不透明度を調整します</value>
+    <comment>Header for a control to toggle opacity changes with scrolling. When enabled, holding the Ctrl and Shift keys while scrolling will increase or decrease the window opacity.</comment>
+  </data>
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
-    <value>ウィンドウのアニメーション</value>
+    <value>ペインのアニメーション</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
   <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
@@ -1747,14 +1748,6 @@
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>継承された値にリセットします。</value>
     <comment>This button will remove a user's customization from a given setting, restoring it to the value that the profile inherited. This is a text label on a button.</comment>
-  </data>
-  <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
-    <value>ターミナルの色</value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for basic parts of the terminal.</comment>
-  </data>
-  <data name="ColorScheme_SystemColorsHeader.Text" xml:space="preserve">
-    <value>システム カラー</value>
-    <comment>A header for a grouping of colors in the color scheme. These colors are used for functional parts of the terminal.</comment>
   </data>
   <data name="ColorScheme_ColorsHeader.Header" xml:space="preserve">
     <value>色</value>
@@ -1788,6 +1781,50 @@
     <value>このプロファイルのフォーカスされていない外観を削除します。</value>
     <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
+  <data name="Actions_Disclaimer.Content" xml:space="preserve">
+    <value>操作の詳細を表示します</value>
+    <comment>Disclaimer presented at the top of the actions page to redirect the user to documentation regarding actions.</comment>
+  </data>
+  <data name="Actions_DeleteButton2.Text" xml:space="preserve">
+    <value>アクションの削除</value>
+    <comment>Button label that deletes the selected action.</comment>
+  </data>
+  <data name="Actions_Name.Text" xml:space="preserve">
+    <value>操作名</value>
+    <comment>Label for the text box that edits the action name.</comment>
+  </data>
+  <data name="Actions_NameEntryBox.PlaceholderText" xml:space="preserve">
+    <value>操作名</value>
+    <comment>Placeholder text for the text box where the user can edit the action name.</comment>
+  </data>
+  <data name="Actions_ShortcutAction.Text" xml:space="preserve">
+    <value>操作の種類</value>
+    <comment>Label for the combo box that edits the action type.</comment>
+  </data>
+  <data name="Actions_KeyBindingsListView.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>キー バインド</value>
+    <comment>Name for a control which contains the list of keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_CommandDetails.Text" xml:space="preserve">
+    <value>コマンドの詳細</value>
+    <comment>Label for the list of editable command details for the current command. This includes the command name and the shortcut action type.</comment>
+  </data>
+  <data name="Actions_Arguments.Text" xml:space="preserve">
+    <value>追加の引数</value>
+    <comment>Label for the list of editable arguments for the currently selected action.</comment>
+  </data>
+  <data name="Actions_Keybindings.Text" xml:space="preserve">
+    <value>キー バインド</value>
+    <comment>Label for the list of editable keybindings for the current command.</comment>
+  </data>
+  <data name="Actions_AddKeyChord.Text" xml:space="preserve">
+    <value>キー バインドの追加</value>
+    <comment>Button label that adds a keybinding to the current action.</comment>
+  </data>
+  <data name="Actions_AdditionalKeyChords" xml:space="preserve">
+    <value>その他 {}</value>
+    <comment>Text that will be read out by a screen reader indicating that additional keybindings exist for this command. {} will be replaced by the number of additional keybindings.</comment>
+  </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>はい、キーのバインドを削除します</value>
     <comment>Button label that confirms deletion of a key binding entry.</comment>
@@ -1795,6 +1832,14 @@
   <data name="Actions_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>このキーのバインドを削除してもいいですか?</value>
     <comment>Confirmation message displayed when the user attempts to delete a key binding entry.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationButton.Content" xml:space="preserve">
+    <value>はい、アクションを削除します</value>
+    <comment>Button label that confirms deletion of an action.</comment>
+  </data>
+  <data name="Actions_CommandDeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>このアクションを削除してよろしいですか?</value>
+    <comment>Confirmation message displayed when the user attempts to delete an action.</comment>
   </data>
   <data name="Actions_InvalidKeyChordMessage" xml:space="preserve">
     <value>無効なキーコードです。有効なキーコードを入力してください。</value>
@@ -1840,6 +1885,278 @@
     <value>アクション</value>
     <comment>Label for a control that sets the action of a key binding.</comment>
   </data>
+  <data name="Actions_NullEnumValue" xml:space="preserve">
+    <value>グローバル設定を使用する</value>
+    <comment>An option to choose from for nullable enums. Clears the enum value.</comment>
+  </data>
+  <data name="Actions_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+    <comment>An option to choose from for the "copy format". Copies content in HTML format.</comment>
+  </data>
+  <data name="Actions_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+    <comment>An option to choose from for the "copy format". Copies content in Rich Text Format (RTF).</comment>
+  </data>
+  <data name="Actions_SplitDirectionAuto.Content" xml:space="preserve">
+    <value>自動</value>
+    <comment>An option to choose from for the "split direction". Automatically determines the split direction.</comment>
+  </data>
+  <data name="Actions_SplitDirectionUp.Content" xml:space="preserve">
+    <value>稼働中</value>
+    <comment>An option to choose from for the "split direction". Splits upward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionRight.Content" xml:space="preserve">
+    <value>右</value>
+    <comment>An option to choose from for the "split direction". Splits to the right.</comment>
+  </data>
+  <data name="Actions_SplitDirectionDown.Content" xml:space="preserve">
+    <value>停止中</value>
+    <comment>An option to choose from for the "split direction". Splits downward.</comment>
+  </data>
+  <data name="Actions_SplitDirectionLeft.Content" xml:space="preserve">
+    <value>左</value>
+    <comment>An option to choose from for the "split direction". Splits to the left.</comment>
+  </data>
+  <data name="Actions_SplitDirectionVertical.Content" xml:space="preserve">
+    <value>垂直</value>
+    <comment>An option to choose from for the "split direction". Splits vertically.</comment>
+  </data>
+  <data name="Actions_SplitDirectionHorizontal.Content" xml:space="preserve">
+    <value>水平</value>
+    <comment>An option to choose from for the "split direction". Splits horizontally.</comment>
+  </data>
+  <data name="Actions_SplitTypeManual.Content" xml:space="preserve">
+    <value>手動</value>
+    <comment>An option to choose from for the "split type". Creates a manual split.</comment>
+  </data>
+  <data name="Actions_SplitTypeDuplicate.Content" xml:space="preserve">
+    <value>複製</value>
+    <comment>An option to choose from for the "split type". Creates a split by duplicating the current session.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionNone.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>An option to choose from for the "resize direction". None option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionLeft.Content" xml:space="preserve">
+    <value>左</value>
+    <comment>An option to choose from for the "resize direction". Left option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionRight.Content" xml:space="preserve">
+    <value>右</value>
+    <comment>An option to choose from for the "resize direction". Right option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionUp.Content" xml:space="preserve">
+    <value>稼働中</value>
+    <comment>An option to choose from for the "resize direction". Up option.</comment>
+  </data>
+  <data name="Actions_ResizeDirectionDown.Content" xml:space="preserve">
+    <value>停止中</value>
+    <comment>An option to choose from for the "resize direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNone.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>An option to choose from for the "focus direction". None option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionLeft.Content" xml:space="preserve">
+    <value>左</value>
+    <comment>An option to choose from for the "focus direction". Left option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionRight.Content" xml:space="preserve">
+    <value>右</value>
+    <comment>An option to choose from for the "focus direction". Right option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionUp.Content" xml:space="preserve">
+    <value>稼働中</value>
+    <comment>An option to choose from for the "focus direction". Up option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionDown.Content" xml:space="preserve">
+    <value>停止中</value>
+    <comment>An option to choose from for the "focus direction". Down option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPrevious.Content" xml:space="preserve">
+    <value>前へ</value>
+    <comment>An option to choose from for the "focus direction". Previous option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionPreviousInOrder.Content" xml:space="preserve">
+    <value>前の順</value>
+    <comment>An option to choose from for the "focus direction". Previous in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionNextInOrder.Content" xml:space="preserve">
+    <value>次の順</value>
+    <comment>An option to choose from for the "focus direction". Next in order option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionFirst.Content" xml:space="preserve">
+    <value>第 1 週</value>
+    <comment>An option to choose from for the "focus direction". First option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionParent.Content" xml:space="preserve">
+    <value>親</value>
+    <comment>An option to choose from for the "focus direction". Parent option.</comment>
+  </data>
+  <data name="Actions_FocusDirectionChild.Content" xml:space="preserve">
+    <value>子供</value>
+    <comment>An option to choose from for the "focus direction". Child option.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsFile.Content" xml:space="preserve">
+    <value>設定ファイル</value>
+    <comment>An option to choose from for the "settings target". Targets the settings file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDefaultsFile.Content" xml:space="preserve">
+    <value>既定のファイル</value>
+    <comment>An option to choose from for the "settings target". Targets the defaults file.</comment>
+  </data>
+  <data name="Actions_SettingsTargetAllFiles.Content" xml:space="preserve">
+    <value>すべてのファイル</value>
+    <comment>An option to choose from for the "settings target". Targets all files.</comment>
+  </data>
+  <data name="Actions_SettingsTargetSettingsUI.Content" xml:space="preserve">
+    <value>設定 UI</value>
+    <comment>An option to choose from for the "settings target". Targets the settings UI.</comment>
+  </data>
+  <data name="Actions_SettingsTargetDirectory.Content" xml:space="preserve">
+    <value>ディレクトリ</value>
+    <comment>An option to choose from for the "settings target". Targets the directory.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionNone.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>An option to choose from for the "move tab direction". No movement.</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionForward.Content" xml:space="preserve">
+    <value>前方 (右)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab forward (right).</comment>
+  </data>
+  <data name="Actions_MoveTabDirectionBackward.Content" xml:space="preserve">
+    <value>後方 (左)</value>
+    <comment>An option to choose from for the "move tab direction". Moves the tab backward (left).</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionPrevious.Content" xml:space="preserve">
+    <value>前へ</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the previous mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionNext.Content" xml:space="preserve">
+    <value>次へ</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the next mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionFirst.Content" xml:space="preserve">
+    <value>第 1 週</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the first mark.</comment>
+  </data>
+  <data name="Actions_ScrollToMarkDirectionLast.Content" xml:space="preserve">
+    <value>末日</value>
+    <comment>An option to choose from for the "scroll to mark direction". Scrolls to the last mark.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeAction.Content" xml:space="preserve">
+    <value>アクション</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in action mode.</comment>
+  </data>
+  <data name="Actions_CommandPaletteLaunchModeCommandLine.Content" xml:space="preserve">
+    <value>コマンド ライン</value>
+    <comment>An option to choose from for the "command palette launch mode". Launches in command line mode.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceNone.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>An option to choose from for the "suggestions source". No suggestions source.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceTasks.Content" xml:space="preserve">
+    <value>タスク</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from tasks.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceSnippets.Content" xml:space="preserve">
+    <value>スニペット</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from snippets.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceCommandHistory.Content" xml:space="preserve">
+    <value>コマンドの履歴</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from command history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceDirectoryHistory.Content" xml:space="preserve">
+    <value>ディレクトリ履歴</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from directory history.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceQuickFix.Content" xml:space="preserve">
+    <value>クイック修正</value>
+    <comment>An option to choose from for the "suggestions source". Suggestions come from quick fixes.</comment>
+  </data>
+  <data name="Actions_SuggestionsSourceAll.Content" xml:space="preserve">
+    <value>すべて</value>
+    <comment>An option to choose from for the "suggestions source". Includes all suggestion sources.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNone.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>An option to choose from for the "find match direction". No direction selected.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionNext.Content" xml:space="preserve">
+    <value>次へ</value>
+    <comment>An option to choose from for the "find match direction". Finds the next match.</comment>
+  </data>
+  <data name="Actions_FindMatchDirectionPrev.Content" xml:space="preserve">
+    <value>前へ</value>
+    <comment>An option to choose from for the "find match direction". Finds the previous match.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorAny.Content" xml:space="preserve">
+    <value>すべて</value>
+    <comment>An option to choose from for the "desktop behavior". Applies to any desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorToCurrent.Content" xml:space="preserve">
+    <value>現在の状態へ</value>
+    <comment>An option to choose from for the "desktop behavior". Moves to the current desktop.</comment>
+  </data>
+  <data name="Actions_DesktopBehaviorOnCurrent.Content" xml:space="preserve">
+    <value>現在の状態で</value>
+    <comment>An option to choose from for the "desktop behavior". Stays on the current desktop.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorAny.Content" xml:space="preserve">
+    <value>すべて</value>
+    <comment>An option to choose from for the "monitor behavior". Applies to any monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToCurrent.Content" xml:space="preserve">
+    <value>現在の状態へ</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the current monitor.</comment>
+  </data>
+  <data name="Actions_MonitorBehaviorToMouse.Content" xml:space="preserve">
+    <value>マウスへ</value>
+    <comment>An option to choose from for the "monitor behavior". Moves to the monitor where the mouse is located.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScreen.Content" xml:space="preserve">
+    <value>画面</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the screen.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeScrollback.Content" xml:space="preserve">
+    <value>スクロールバック</value>
+    <comment>An option to choose from for the "clear buffer type". Clears only the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_ClearBufferTypeAll.Content" xml:space="preserve">
+    <value>すべて</value>
+    <comment>An option to choose from for the "clear buffer type". Clears both the screen and the scrollback buffer.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionPrev.Content" xml:space="preserve">
+    <value>前へ</value>
+    <comment>An option to choose from for the "select output direction". Selects the previous output.</comment>
+  </data>
+  <data name="Actions_SelectOutputDirectionNext.Content" xml:space="preserve">
+    <value>次へ</value>
+    <comment>An option to choose from for the "select output direction". Selects the next output.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>最近使用した</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs based on most recently used order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>順番に</value>
+    <comment>An option to choose from for the "tab switcher mode". Switches tabs in sequential order.</comment>
+  </data>
+  <data name="Actions_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>無効</value>
+    <comment>An option to choose from for the "tab switcher mode". Disables tab switching.</comment>
+  </data>
+  <data name="Actions_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>色なし</value>
+    <comment>Label for a button directing the user to opt out of choosing a color.</comment>
+  </data>
+  <data name="Actions_Browse.Content" xml:space="preserve">
+    <value>参照...</value>
+    <comment>Button label that opens a file picker in a new window. The "..." is standard to mean it will open a new window.</comment>
+  </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>必要なキーボード ショートカットを入力します。</value>
     <comment>Help text directing users how to use the "KeyChordListener" control. Pressing a keyboard shortcut will be recorded by this control.</comment>
@@ -1850,7 +2167,7 @@
   </data>
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>ショートカット</value>
-    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+    <comment>The label for a "key chord listener" control that sets the keys to which a key binding is bound.</comment>
   </data>
   <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>テキストの​​書式設定</value>
@@ -1888,14 +2205,6 @@
     <value>有効にすると、別のウィンドウに切り替えるとすぐにターミナルが非表示になります。</value>
     <comment>A description for what the "Automatically hide window" setting does.</comment>
   </data>
-  <data name="ColorScheme_DeleteDisclaimerInBox" xml:space="preserve">
-    <value>この配色は既定で含まれているため、削除することはできません。</value>
-    <comment>Disclaimer presented near the controls to delete the selected color scheme when that functionality is disabled.</comment>
-  </data>
-  <data name="ColorScheme_RenameDisclaimerInBox" xml:space="preserve">
-    <value>この配色は既定で含まれているため、名前を変更できません。</value>
-    <comment>Disclaimer presented near the controls to rename the color scheme when that functionality is disabled.</comment>
-  </data>
   <data name="ColorScheme_DefaultTag.Text" xml:space="preserve">
     <value>既定</value>
     <comment>Text label displayed adjacent to a "color scheme" entry signifying that it is currently set as the default color scheme to be used.</comment>
@@ -1908,14 +2217,50 @@
     <value>複数のタブを閉じるときに警告する</value>
     <comment>Header for a control to toggle whether to show a confirm dialog box when closing the application with multiple tabs open.</comment>
   </data>
+  <data name="Globals_ConfirmOnClose.Header" xml:space="preserve">
+    <value>閉じるときに警告する</value>
+    <comment>Header for a dropdown controlling when to show a confirmation dialog before closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnClose.HelpText" xml:space="preserve">
+    <value>タブまたはウィンドウを閉じる前に確認ダイアログを表示するタイミングを制御します。[常に] を選択すると、ウィンドウを閉じるときにダイアログが表示されます。</value>
+    <comment>Help text associated with Globals_ConfirmOnClose. "Always" refers to Globals_ConfirmOnCloseAlways.Content.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseNever.Content" xml:space="preserve">
+    <value>しない</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Never" means that the system will never display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAlways.Content" xml:space="preserve">
+    <value>常に</value>
+    <comment>Option associated with Globals_ConfirmOnClose. "Always" means that the system will always display a warning when closing.</comment>
+  </data>
+  <data name="Globals_ConfirmOnCloseAutomatic.Content" xml:space="preserve">
+    <value>複数のタブまたはウィンドウ</value>
+    <comment>Option associated with Globals_ConfirmOnClose. The system will display a warning when multiple tabs or panes are present.</comment>
+  </data>
   <data name="Globals_InputServiceWarning.Header" xml:space="preserve">
     <value>[タッチ キーボードと手書きパネル サービス] が無効になっている場合に警告する</value>
   </data>
   <data name="Globals_WarnAboutLargePaste.Header" xml:space="preserve">
-    <value>5 KiB を超える文字を貼り付けようとしたときに警告する</value>
+    <value>5 KiB を超える貼り付け時に警告する</value>
   </data>
   <data name="Globals_WarnAboutMultiLinePaste.Header" xml:space="preserve">
-    <value>"改行" 文字を貼り付けようとしたときに警告する</value>
+    <value>改行を貼り付ける際に警告する</value>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePaste.HelpText" xml:space="preserve">
+    <value>シェルが ”角かっこで囲まれた貼り付け” モードをサポートしていない場合は、セキュリティ上の理由からこれを [常に] に設定することをお勧めします。</value>
+    <comment>"bracketed paste" is a technical term referring to escape sequences. "Always" is a setting, as in "Always VS Never".</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAutomatic.Content" xml:space="preserve">
+    <value>"角かっこで囲まれた貼り付け" が無効になっている場合のみ</value>
+    <comment>"bracketed paste" is a technical term referring to terminal escape sequences.</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteAlways.Content" xml:space="preserve">
+    <value>常時</value>
+    <comment>As in: Always VS Never</comment>
+  </data>
+  <data name="Globals_WarnAboutMultiLinePasteNever.Content" xml:space="preserve">
+    <value>なし</value>
+    <comment>As in: Always VS Never</comment>
   </data>
   <data name="Settings_PortableModeNote.Text" xml:space="preserve">
     <value>Windows ターミナルはポータブル モードで実行されています。</value>
@@ -1952,10 +2297,6 @@
   <data name="Profile_AddBellSound.Text" xml:space="preserve">
     <value>サウンドを追加する</value>
     <comment>Text label for a button that adds a sound to the bell sound list. Presented near "Profile_BellSound"</comment>
-  </data>
-  <data name="Profile_BellSoundBrowse.Content" xml:space="preserve">
-    <value>参照...</value>
-    <comment>Text label for a button that opens a file picker to select a sound file to use for the bell sound. Presented near "Profile_BellSound".</comment>
   </data>
   <data name="Profile_BellSoundInfo.Text" xml:space="preserve">
     <value>複数のサウンドが定義されている場合、BEL 文字を受信したときにランダムに 1 つ選択されます。</value>
@@ -2020,18 +2361,6 @@
     <value>その他の色...</value>
     <comment>Text label for a button that allows the user to select from more colors in a new window. {Locked="..."}</comment>
   </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.Title" xml:space="preserve">
-    <value>色を選択</value>
-    <comment>Title displayed on a content dialog directing the user to pick a color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.PrimaryButtonText" xml:space="preserve">
-    <value>OK</value>
-    <comment>Button label for the color picker content dialog. Used as confirmation to apply the selected color.</comment>
-  </data>
-  <data name="NullableColorPicker_ColorPickerContentDialog.SecondaryButtonText" xml:space="preserve">
-    <value>キャンセル</value>
-    <comment>Text label for secondary button the color picker content dialog. When clicked, the operation of selecting a color is cancelled by the user.</comment>
-  </data>
   <data name="Profile_CursorColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
     <value>配色を使用</value>
     <comment>Label for a button directing the user to use the cursor color defined in the terminal's current color scheme.</comment>
@@ -2048,37 +2377,41 @@
     <value>配色を使用</value>
     <comment>Label for a button directing the user to use the selection background color defined in the terminal's current color scheme.</comment>
   </data>
-  <data name="Profile_IconTypeNone" xml:space="preserve">
+  <data name="Profile_TabColor_NullableColorPicker.NullColorButtonLabel" xml:space="preserve">
+    <value>テーマの色を使用します</value>
+    <comment>Label for a button directing the user to use the tab color defined in the terminal's current theme.</comment>
+  </data>
+  <data name="IconPicker_IconTypeNone" xml:space="preserve">
     <value>なし</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon for the profile.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, there will be no icon set.</comment>
   </data>
-  <data name="Profile_IconTypeImage" xml:space="preserve">
+  <data name="IconPicker_IconTypeImage" xml:space="preserve">
     <value>ファイル</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set for the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, a custom image can set as the icon.</comment>
   </data>
-  <data name="Profile_IconTypeEmoji" xml:space="preserve">
+  <data name="IconPicker_IconTypeEmoji" xml:space="preserve">
     <value>絵文字</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set for the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, an emoji can be set as the  icon.</comment>
   </data>
-  <data name="Profile_IconTypeFontIcon" xml:space="preserve">
+  <data name="IconPicker_IconTypeFontIcon" xml:space="preserve">
     <value>組み込みアイコン</value>
-    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set the profile's icon.</comment>
+    <comment>An option to choose from for the "icon style" dropdown. When selected, the user can choose from several preselected options to set as the icon.</comment>
   </data>
-  <data name="Profile_IconEmojiBox.PlaceholderText" xml:space="preserve">
-    <value>絵文字ピッカーを開くには、"Win + ピリオド" を使用します</value>
+  <data name="IconPicker_EmojiBox.PlaceholderText" xml:space="preserve">
+    <value>"Win + ピリオド" で絵文字ピッカーを開きます</value>
     <comment>"Win + period" refers to the OS key binding to open the emoji picker.</comment>
   </data>
-  <data name="Profile_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_IconType.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>アイコンの種類</value>
     <comment>Accessible name for a control allowing the user to select the type of icon they would like to use.</comment>
   </data>
-  <data name="Profile_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+  <data name="IconPicker_BuiltInIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>アイコン</value>
     <comment>Accessible name for a control allowing the user to select the icon from a list of built in icons.</comment>
   </data>
   <data name="Nav_NewTabMenu.Content" xml:space="preserve">
-    <value>新しいタブ メニュー</value>
-    <comment>Header for the "new tab menu" menu item. This navigates to a page that lets you see and modify settings related to the app's new tab menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
+    <value>ドロップダウン メニュー</value>
+    <comment>Header for the "dropdown menu" menu item (formerly "new tab menu"). This navigates to a page that lets you see and modify settings related to the app's dropdown menu (i.e. profile ordering, nested folders, dividers, etc.)</comment>
   </data>
   <data name="NewTabMenuEntry_Separator.Text" xml:space="preserve">
     <value>&lt;区切り&gt;</value>
@@ -2175,6 +2508,14 @@
   <data name="NewTabMenu_CurrentFolderName.Header" xml:space="preserve">
     <value>フォルダー名</value>
     <comment>Header for a control that allows the user to modify the name of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.Header" xml:space="preserve">
+    <value>フォルダー アイコン</value>
+    <comment>Header for a control that allows the user to modify the icon of the current folder entry.</comment>
+  </data>
+  <data name="NewTabMenu_CurrentFolderIcon.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>フォルダー アイコン</value>
+    <comment>Name for a control to that allows the user to modify the icon of the current folder entry.</comment>
   </data>
   <data name="NewTabMenu_CurrentFolderInlining.Header" xml:space="preserve">
     <value>インライン化を許可する</value>
@@ -2305,19 +2646,19 @@
     <comment>An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleWsl.Content" xml:space="preserve">
-    <value>WSL (C:\ -&gt; /mnt/c)</value>
+    <value>WSL (C:\ 🡒 /mnt/c)</value>
     <comment>{Locked="WSL","C:\","/mnt/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleCygwin.Content" xml:space="preserve">
-    <value>Cygwin (C:\ -&gt; /cygdrive/c)</value>
+    <value>Cygwin (C:\ 🡒 /cygdrive/c)</value>
     <comment>{Locked="Cygwin","C:\","/cygdrive/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMsys2.Content" xml:space="preserve">
-    <value>MSYS2 (C:\ -&gt; /c)</value>
+    <value>MSYS2 (C:\ 🡒 /c)</value>
     <comment>{Locked="MSYS2","C:\","/c"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_PathTranslationStyleMinGW.Content" xml:space="preserve">
-    <value>MinGW (C:\ -&gt; C:/)</value>
+    <value>MinGW (C:\ 🡒 C:/)</value>
     <comment>{Locked="MinGW","C:\","C:/"} An option to choose from for the "path translation" setting.</comment>
   </data>
   <data name="Profile_Delete_Orphaned.Header" xml:space="preserve">
@@ -2430,5 +2771,25 @@
   </data>
   <data name="Settings_ResetApplicationStateConfirmationButton.Content" xml:space="preserve">
     <value>はい、キャッシュをクリアします</value>
+  </data>
+  <data name="Nav_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>設定の検索</value>
+    <comment>Placeholder text for the main search box in the settings editor.</comment>
+  </data>
+  <data name="Search_NoResults" xml:space="preserve">
+    <value>"{}" についての結果はありません</value>
+    <comment>{Locked="{}"} Displayed when no results were found for a given query. "{}" will be replaced with the query.</comment>
+  </data>
+  <data name="IconPicker_BuiltInIcon.PlaceholderText" xml:space="preserve">
+    <value>入力してアイコンをフィルター処理します</value>
+    <comment>Placeholder text for a text box to filter and select an icon.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.Header" xml:space="preserve">
+    <value>ドラッグ アンド ドロップ区切り記号</value>
+    <comment>Header for a control to set the delimiter used when dragging multiple files into the terminal.</comment>
+  </data>
+  <data name="Profile_DragDropDelimiter.HelpText" xml:space="preserve">
+    <value>このテキストは、ターミナルにドロップされた複数のファイルのパスの間に挿入されます。</value>
+    <comment>A description for what the "drag drop delimiter" setting does.</comment>
   </data>
 </root>

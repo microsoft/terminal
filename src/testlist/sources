@@ -8,6 +8,7 @@ TESTLIST_SOURCES=\
     Microsoft.Console.TestLab.Desktop.testlist \
     Microsoft.Console.TestLab.OneCoreUap.testlist \
     Microsoft.Console.TestLab.Performance.testlist \
+    Microsoft.Console.TestLab.Win3.testlist \
 
 TESTLIST_REFERENCE_DIRS=\
     $(OBJ_PATH)\..\interactivity\win32\ut_interactivity_win32\$O \

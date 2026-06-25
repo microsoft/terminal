@@ -25,7 +25,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\AccessibilityNotifier.cpp" />
     <ClCompile Include="..\BgfxEngine.cpp" />
     <ClCompile Include="..\ConIoSrvComm.cpp" />
     <ClCompile Include="..\ConsoleControl.cpp" />
@@ -38,7 +37,6 @@
     <ClCompile Include="..\WindowMetrics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\AccessibilityNotifier.hpp" />
     <ClInclude Include="..\BgfxEngine.hpp" />
     <ClInclude Include="..\ConIoSrvComm.hpp" />
     <ClInclude Include="..\ConsoleControl.hpp" />

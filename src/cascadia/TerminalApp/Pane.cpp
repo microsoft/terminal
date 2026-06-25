@@ -92,6 +92,10 @@ INewContentArgs Pane::GetTerminalArgsForPane(BuildStartupKind kind) const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
+    if (!_content)
+    {
+        return nullptr;
+    }
     return _content.GetNewTerminalArgs(kind);
 }
 
@@ -136,7 +140,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
         const auto terminalArgs{ newPane->GetTerminalArgsForPane(kind) };
-        // When creating a pane the split size is the size of the new pane
+        // When creating a pane, the split size is the size of the new pane
         // and not position.
         const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
         const auto splitSize = (kind != BuildStartupKind::None && _IsLeaf() ? 0.5f : 1.0f - _desiredSplitPosition);
@@ -1052,7 +1056,7 @@ std::shared_ptr<Pane> Pane::GetActivePane()
 // Arguments:
 // - <none>
 // Return Value:
-// - nullptr if this Pane is an unfocused parent, otherwise the TermControl of this Pane.
+// - nullptr if this Pane is an unfocused parent; otherwise, the TermControl of this Pane.
 TermControl Pane::GetLastFocusedTerminalControl()
 {
     if (!_IsLeaf())
@@ -1105,7 +1109,7 @@ IPaneContent Pane::GetLastFocusedContent()
 // Arguments:
 // - <none>
 // Return Value:
-// - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
+// - nullptr if this Pane is a parent; otherwise, the TermControl of this Pane.
 TermControl Pane::GetTerminalControl() const
 {
     if (const auto& terminalPane{ _getTerminalContent() })
@@ -1161,10 +1165,12 @@ void Pane::SetActive()
 //   focused, else the profile of the last control to be focused
 Profile Pane::GetFocusedProfile()
 {
-    auto lastFocused = GetActivePane();
-    if (const auto& terminalPane{ lastFocused->_getTerminalContent() })
+    if (auto lastFocused{ GetActivePane() })
     {
-        return terminalPane.GetProfile();
+        if (const auto& terminalPane{ lastFocused->_getTerminalContent() })
+        {
+            return terminalPane.GetProfile();
+        }
     }
     return nullptr;
 }
@@ -1414,6 +1420,13 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // take the control, profile, id and isDefTermSession of the pane that _wasn't_ closed.
         _setPaneContent(remainingChild->_takePaneContent());
+        if (!_content)
+        {
+            // GH#18071: our content is still null after taking the other pane's content,
+            //           so just notify our parent that we're closed.
+            Closed.raise(nullptr, nullptr);
+            return;
+        }
         _id = remainingChild->Id();
 
         // Revoke the old event handlers. Remove both the handlers for the panes
@@ -1597,7 +1610,7 @@ void Pane::_CloseChildRoutine(const bool closeFirst)
         return;
     }
 
-    // Setup the animation
+    // Set up the animation
 
     auto removedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
@@ -1998,7 +2011,7 @@ void Pane::_SetupEntranceAnimation()
         if (splitWidth)
         {
             // If we're animating the first child, then stick to the top/left of
-            // the parent pane, otherwise use the bottom/right. This is always
+            // the parent pane; otherwise, use the bottom/right. This is always
             // the "outside" of the parent pane.
             childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
             if (control)
@@ -2023,7 +2036,7 @@ void Pane::_SetupEntranceAnimation()
         else
         {
             // If we're animating the first child, then stick to the top/left of
-            // the parent pane, otherwise use the bottom/right. This is always
+            // the parent pane; otherwise, use the bottom/right. This is always
             // the "outside" of the parent pane.
             childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
             if (control)
@@ -2255,7 +2268,7 @@ SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitDirection& 
 //   creates a new Pane to host the control, registers event handlers.
 // Arguments:
 // - splitType: what type of split we should create.
-// - splitSize: what fraction of the pane the new pane should get
+// - splitSize: the fraction of the pane that the new pane should get
 // - newPane: the pane to add as a child
 // Return Value:
 // - The two newly created Panes, with the original pane as the first pane.
@@ -2422,7 +2435,7 @@ std::optional<uint32_t> Pane::Id() noexcept
 
 // Method Description:
 // - Sets this pane's ID
-// - Panes are given IDs upon creation by TerminalTab
+// - Panes are given IDs upon creation by Tab
 // Arguments:
 // - The number to set this pane's ID to
 void Pane::Id(uint32_t id) noexcept
@@ -2538,7 +2551,7 @@ std::pair<float, float> Pane::_CalcChildrenSizes(const float fullSize) const
 //   user doesn't get any pane shrank when they actually expand the window or parent pane.
 //   That is also required by the layout algorithm.
 // Arguments:
-// - widthOrHeight: if true, operates on width, otherwise on height.
+// - widthOrHeight: if true, operates on width; otherwise, on height.
 // - fullSize: the amount of space in pixels that should be filled by our children and
 //   their separator. Can be arbitrarily low.
 // Return Value:
@@ -2600,7 +2613,7 @@ Pane::SnapChildrenSizeResult Pane::_CalcSnappedChildrenSizes(const bool widthOrH
 //   align with their character grids as close as possible. Snaps to closes match
 //   (either upward or downward). Also makes sure to fit in minimal sizes of the panes.
 // Arguments:
-// - widthOrHeight: if true operates on width, otherwise on height
+// - widthOrHeight: if true operates on width; otherwise, on height
 // - dimension: a dimension (width or height) to snap
 // Return Value:
 // - A value corresponding to the next closest snap size for this Pane, either upward or downward
@@ -2615,7 +2628,7 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 //   align with their character grids as close as possible. Also makes sure to
 //   fit in minimal sizes of the panes.
 // Arguments:
-// - widthOrHeight: if true operates on width, otherwise on height
+// - widthOrHeight: if true operates on width; otherwise, on height
 // - dimension: a dimension (width or height) to be snapped
 // Return Value:
 // - pair of floats, where first value is the size snapped downward (not greater than
@@ -2702,11 +2715,11 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
 
 // Method Description:
 // - Increases size of given LayoutSizeNode to match next possible 'snap'. In case of leaf
-//   pane this means the next cell of the terminal. Otherwise it means that one of its children
+//   pane this means the next cell of the terminal. Otherwise, it means that one of its children
 //   advances (recursively). It expects the given node and its descendants to have either
 //   already snapped or minimum size.
 // Arguments:
-// - widthOrHeight: if true operates on width, otherwise on height.
+// - widthOrHeight: if true operates on width; otherwise, on height.
 // - sizeNode: a layout size node that corresponds to this pane.
 // Return Value:
 // - <none>
@@ -2877,7 +2890,7 @@ Size Pane::_GetMinSize() const
 // - Builds a tree of LayoutSizeNode that matches the tree of panes. Each node
 //   has minimum size that the corresponding pane can have.
 // Arguments:
-// - widthOrHeight: if true operates on width, otherwise on height
+// - widthOrHeight: if true operates on width; otherwise, on height
 // Return Value:
 // - Root node of built tree that matches this pane.
 Pane::LayoutSizeNode Pane::_CreateMinSizeTree(const bool widthOrHeight) const
@@ -2897,7 +2910,7 @@ Pane::LayoutSizeNode Pane::_CreateMinSizeTree(const bool widthOrHeight) const
 // - Adjusts split position so that no child pane is smaller then its
 //   minimum size
 // Arguments:
-// - widthOrHeight: if true, operates on width, otherwise on height.
+// - widthOrHeight: if true, operates on width; otherwise, on height.
 // - requestedValue: split position value to be clamped
 // - totalSize: size (width or height) of the parent pane
 // Return Value:

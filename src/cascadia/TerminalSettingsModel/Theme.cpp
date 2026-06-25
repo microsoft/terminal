@@ -162,7 +162,7 @@ winrt::WUX::Media::Brush ThemeColor::Evaluate(const winrt::WUX::ResourceDictiona
 // Method Description:
 // - This is not an actual property on a theme color setting, but rather
 //   something derived from the value itself. This is "the opacity we should use
-//   for this ThemeColor should it be used as a unfocusedTab color". Basically,
+//   for this ThemeColor should it be used as an unfocusedTab color". Basically,
 //   terminalBackground and accent use 30% opacity when set, to match the how
 //   inactive tabs were colored before themes existed.
 // Arguments:
@@ -372,7 +372,7 @@ winrt::hstring Theme::ToString()
 //   RequestedTheme, this saves some hassle. If there wasn't a `window` defined
 //   for this theme, this'll quickly just return `system`, to use the OS theme.
 // Return Value:
-// - the set applicationTheme for this Theme, otherwise the system theme.
+// - the set applicationTheme for this Theme; otherwise, the system theme.
 winrt::WUX::ElementTheme Theme::RequestedTheme() const noexcept
 {
     return _Window ? _Window.RequestedTheme() : winrt::WUX::ElementTheme::Default;

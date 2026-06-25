@@ -28,13 +28,27 @@ public:
         WM_MESSAGE_BOX_CLOSED,
         WM_IDENTIFY_ALL_WINDOWS,
         WM_NOTIFY_FROM_NOTIFICATION_AREA,
+        WM_GET_WINDOW_LIST,
+    };
+
+    // Used by WM_GET_WINDOW_LIST.  Callers allocate a vector on their
+    // stack and pass a pointer through LPARAM; the emperor fills it in
+    // synchronously via SendMessage.
+    struct WindowListEntry
+    {
+        uint64_t Id;
+        std::wstring Name;
     };
 
     HWND GetMainWindow() const noexcept;
     AppHost* GetWindowById(uint64_t id) const noexcept;
     AppHost* GetWindowByName(std::wstring_view name) const noexcept;
+    // CreateNewWindow is used for creating a new window from existing Content
     void CreateNewWindow(winrt::TerminalApp::WindowRequestedArgs args);
     void HandleCommandlineArgs(int nCmdShow);
+    void FocusTabInAnyWindow(const winrt::TerminalApp::Tab& tab) const;
+    // OpenWindow is used for opening a new window or summoning an existing window by name.
+    void OpenWindow(const winrt::hstring& name);
 
 private:
     struct SummonWindowSelectionArgs
@@ -48,14 +62,15 @@ private:
     [[nodiscard]] static LRESULT __stdcall _wndProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
     AppHost* _mostRecentWindow() const noexcept;
+    void _createWindowMaybeRestoringWorkspace(uint64_t windowId, const winrt::hstring& windowName, winrt::TerminalApp::CommandlineArgs args);
     bool _summonWindow(const SummonWindowSelectionArgs& args) const;
     void _summonAllWindows() const;
     void _dispatchSpecialKey(const MSG& msg) const;
     void _dispatchCommandline(winrt::TerminalApp::CommandlineArgs args);
+    void _dispatchCommandlineCommon(winrt::array_view<const winrt::hstring> args, wil::zwstring_view currentDirectory, wil::zwstring_view envString, uint32_t showWindowCommand);
     safe_void_coroutine _dispatchCommandlineCurrentDesktop(winrt::TerminalApp::CommandlineArgs args);
     LRESULT _messageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) noexcept;
     void _createMessageWindow(const wchar_t* className);
-    bool _shouldSkipClosingWindows() const;
     void _postQuitMessageIfNeeded() const;
     safe_void_coroutine _showMessageBox(winrt::hstring message, bool error);
     void _notificationAreaMenuRequested(WPARAM wParam);
@@ -65,9 +80,10 @@ private:
     void _unregisterHotKey(int index) noexcept;
     void _setupGlobalHotkeys();
     void _setupSessionPersistence(bool enabled);
-    void _persistState(const winrt::Microsoft::Terminal::Settings::Model::ApplicationState& state, bool serializeBuffer) const;
+    void _persistState(const winrt::Microsoft::Terminal::Settings::Model::ApplicationState& state) const;
     void _finalizeSessionPersistence() const;
     void _checkWindowsForNotificationIcon();
+    void _setupAumid(const std::wstring& aumid);
 
     wil::unique_hwnd _window;
     winrt::TerminalApp::App _app{ nullptr };
@@ -83,15 +99,17 @@ private:
     std::optional<bool> _currentSystemThemeIsDark;
     int32_t _windowCount = 0;
     int32_t _messageBoxCount = 0;
+    std::wstring _pendingAumidLnkPath;
+    std::wstring _pendingAumid;
 
-#ifdef NDEBUG
+#if 0 // #ifdef NDEBUG
     static constexpr void _assertIsMainThread() noexcept
     {
     }
 #else
     void _assertIsMainThread() const noexcept
     {
-        assert(_mainThreadId == GetCurrentThreadId());
+        WI_ASSERT_MSG(_mainThreadId == GetCurrentThreadId(), "This part of WindowEmperor must be accessed from the UI thread");
     }
     DWORD _mainThreadId = GetCurrentThreadId();
 #endif

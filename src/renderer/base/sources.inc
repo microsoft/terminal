@@ -32,7 +32,6 @@ SOURCES = \
     ..\RenderEngineBase.cpp \
     ..\RenderSettings.cpp \
     ..\renderer.cpp \
-    ..\thread.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

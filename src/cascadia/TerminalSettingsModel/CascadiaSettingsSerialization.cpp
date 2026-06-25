@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "CascadiaSettings.h"
 
-#include <LibraryResources.h>
 #include <fmt/chrono.h>
 #include <shlobj.h>
 #include <til/latch.h>
@@ -16,9 +15,7 @@
 #include "PowershellCoreProfileGenerator.h"
 #include "VisualStudioGenerator.h"
 #include "WslDistroGenerator.h"
-#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
 #include "SshHostGenerator.h"
-#endif
 
 #include "ApplicationState.h"
 #include "DefaultTerminal.h"
@@ -213,8 +210,11 @@ void SettingsLoader::GenerateProfiles()
     auto generateProfiles = [&](const IDynamicProfileGenerator& generator) {
         if (!_ignoredNamespaces.contains(generator.GetNamespace()))
         {
+            const auto oldProfileCount = inboxSettings.profiles.size();
             _executeGenerator(generator, inboxSettings.profiles);
+            return oldProfileCount != inboxSettings.profiles.size();
         }
+        return false;
     };
 
     // Generate profiles for each generator and add them to the inbox settings.
@@ -223,9 +223,10 @@ void SettingsLoader::GenerateProfiles()
     generateProfiles(WslDistroGenerator{});
     generateProfiles(AzureCloudShellGenerator{});
     generateProfiles(VisualStudioGenerator{});
-#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateProfiles(SshHostGenerator{});
-#endif
+    if constexpr (Feature_DynamicSSHProfiles::IsEnabled())
+    {
+        sshProfilesGenerated = generateProfiles(SshHostGenerator{});
+    }
 }
 
 // Generate ExtensionPackage objects from the profile generators.
@@ -264,9 +265,10 @@ void SettingsLoader::GenerateExtensionPackagesFromProfileGenerators()
     generateExtensionPackages(WslDistroGenerator{});
     generateExtensionPackages(AzureCloudShellGenerator{});
     generateExtensionPackages(VisualStudioGenerator{});
-#if TIL_FEATURE_DYNAMICSSHPROFILES_ENABLED
-    generateExtensionPackages(SshHostGenerator{});
-#endif
+    if constexpr (Feature_DynamicSSHProfiles::IsEnabled())
+    {
+        generateExtensionPackages(SshHostGenerator{});
+    }
 }
 
 // A new settings.json gets a special treatment:
@@ -329,6 +331,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
     ParsedSettings fragmentSettings;
 
     const auto parseAndLayerFragmentFiles = [&](const std::filesystem::path& path, const winrt::hstring& source, FragmentScope scope) {
+        const winrt::hstring sourceBasePath{ path.native() };
         for (const auto& fragmentExt : std::filesystem::directory_iterator{ path })
         {
             const auto fragExtPath = fragmentExt.path();
@@ -340,6 +343,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
                     if (!content.empty())
                     {
                         _parseFragment(source,
+                                       sourceBasePath,
                                        content,
                                        fragmentSettings,
                                        generateExtensionPackages ?
@@ -391,7 +395,14 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
     try
     {
         const auto catalog = AppExtensionCatalog::Open(AppExtensionHostName);
-        extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+        if (auto catalog2{ catalog.try_as<IAppExtensionCatalog2>() })
+        {
+            extensions = catalog2.FindAll();
+        }
+        else
+        {
+            extensions = extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+        }
     }
     CATCH_LOG();
 
@@ -413,20 +424,37 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
             continue;
         }
 
-        // Likewise, getting the public folder from an extension is an async operation.
-        auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
-        if (!foundFolder)
+        winrt::hstring publicFolderPath;
+        if (auto ext3{ ext.try_as<IAppExtension3>() })
         {
-            continue;
+            // Windows 11 24H2 and above support a much faster, much less
+            // Windows.Storage-y API.
+            publicFolderPath = ext3.GetPublicPath();
+            if (publicFolderPath.empty())
+            {
+                // No point in falling through to GetPublicFolderAsync;
+                // it won't work.
+                continue;
+            }
+        }
+        else
+        {
+            // Likewise, getting the public folder from an extension is an async operation.
+            auto foundFolder = extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
+            if (!foundFolder)
+            {
+                continue;
+            }
+
+            // the StorageFolder class has its own methods for obtaining the files within the folder
+            // however, all those methods are Async methods
+            // you may have noticed that we need to resort to clunky implementations for async operations
+            // (they are in extractValueFromTaskWithoutMainThreadAwait)
+            // so for now we will just take the folder path and access the files that way
+            publicFolderPath = foundFolder.Path();
         }
 
-        // the StorageFolder class has its own methods for obtaining the files within the folder
-        // however, all those methods are Async methods
-        // you may have noticed that we need to resort to clunky implementations for async operations
-        // (they are in extractValueFromTaskWithoutMainThreadAwait)
-        // so for now we will just take the folder path and access the files that way
-        const auto path = buildPath(foundFolder.Path(), FragmentsSubDirectory);
-
+        const auto path = buildPath(publicFolderPath, FragmentsSubDirectory);
         if (std::filesystem::is_directory(path))
         {
             // MSIX does not support machine-wide scope
@@ -448,10 +476,10 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings(bool generateExtensio
 // See FindFragmentsAndMergeIntoUserSettings.
 // This function does the same, but for a single given JSON blob and source
 // and at the time of writing is used for unit tests only.
-void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content)
+void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source, const winrt::hstring& basePath, const std::string_view& content)
 {
     ParsedSettings fragmentSettings;
-    _parseFragment(source, content, fragmentSettings, std::nullopt);
+    _parseFragment(source, basePath, content, fragmentSettings, std::nullopt);
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
@@ -532,6 +560,34 @@ bool SettingsLoader::DisableDeletedProfiles()
     }
 
     return newGeneratedProfiles;
+}
+
+// Returns true if something got changed and
+// the settings need to be saved to disk.
+bool SettingsLoader::AddDynamicProfileFolders()
+{
+    // Keep track of generated folders to avoid regenerating them
+    const auto state = get_self<ApplicationState>(ApplicationState::SharedInstance());
+
+    // If the SSH generator is enabled, try to create an "SSH" folder with all the generated profiles
+    if (sshProfilesGenerated && !state->SSHFolderGenerated())
+    {
+        SshHostGenerator sshGenerator;
+        auto matchProfilesEntry = make_self<implementation::MatchProfilesEntry>();
+        matchProfilesEntry->Source(hstring{ sshGenerator.GetNamespace() });
+
+        auto folderEntry = make_self<implementation::FolderEntry>();
+        folderEntry->Name(L"SSH");
+        folderEntry->Icon(MediaResource::FromString(hstring{ sshGenerator.GetIcon() }));
+        folderEntry->Inlining(FolderEntryInlining::Auto);
+        folderEntry->RawEntries(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ *matchProfilesEntry }));
+
+        // NewTabMenu is guaranteed to exist by FixupUserSettings, which runs before this fixup.
+        userSettings.globals->NewTabMenu().Append(folderEntry.as<Model::NewTabMenuEntry>());
+        state->SSHFolderGenerated(true);
+        return true;
+    }
+    return false;
 }
 
 bool winrt::Microsoft::Terminal::Settings::Model::implementation::SettingsLoader::RemapColorSchemeForProfile(const winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>& profile)
@@ -627,7 +683,7 @@ bool SettingsLoader::FixupUserSettings()
         {
             for (auto&& icon : iconsToClearFromVisualStudioProfiles)
             {
-                if (profile->Icon() == icon)
+                if (profile->Icon().Path() == icon)
                 {
                     profile->ClearIcon();
                     fixedUp = true;
@@ -655,6 +711,16 @@ bool SettingsLoader::FixupUserSettings()
         // migrate the user's opt-out to the profiles.defaults
         userSettings.baseLayerProfile->ForceVTInput(true);
         fixedUp = true;
+    }
+
+    // Terminal 1.24
+    // Ensure that the user always has a newTabMenu. We used to do this last, after
+    // resolving all of the new tab menu entries, but there was no conceivable reason
+    // that it should happen so late.
+    if (!userSettings.globals->HasNewTabMenu())
+    {
+        userSettings.globals->NewTabMenu(winrt::single_threaded_vector<Model::NewTabMenuEntry>({ Model::RemainingProfilesEntry{} }));
+        // This one does not need to be written back to the settings file immediately, it can wait until we write one for another reason.
     }
 
     return fixedUp;
@@ -807,7 +873,11 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         settings.baseLayerProfile = Profile::FromJson(json.profileDefaults);
         // Remove the `guid` member from the default settings.
         // That will hyper-explode, so just don't let them do that.
+        // Also remove name, source, and commandline; those are not valid for the profiles defaults object.
         settings.baseLayerProfile->ClearGuid();
+        settings.baseLayerProfile->ClearName();
+        settings.baseLayerProfile->ClearSource();
+        settings.baseLayerProfile->ClearCommandline();
         settings.baseLayerProfile->Origin(OriginTag::ProfilesDefaults);
     }
 
@@ -832,7 +902,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 // schemes and profiles. Additionally this function supports profiles which specify an "updates" key.
 // - fragmentMeta: If set, construct and register FragmentSettings objects. Provides metadata necessary for doing so.
 //                 Otherwise, completely skip over that extra work and apply parsed settings to the user settings, if allowed by disabledProfileSources ("_ignoredNamespaces").
-void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta)
+void SettingsLoader::_parseFragment(const winrt::hstring& source, const winrt::hstring& sourceBasePath, const std::string_view& content, ParsedSettings& settings, const std::optional<ParseFragmentMetadata>& fragmentMeta)
 {
     auto json = _parseJson(content);
 
@@ -880,6 +950,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             // parsing - fragments shouldn't be allowed to bind actions to keys
             // directly. We may want to revisit circa GH#2205
             settings.globals = winrt::make_self<GlobalAppSettings>();
+            settings.globals->SourceBasePath = sourceBasePath;
             settings.globals->LayerActionsFrom(json.root, OriginTag::Fragment, false);
         }
     }
@@ -908,6 +979,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
                 auto destinationSet = profile->HasGuid() ? &newProfiles : &modifiedProfiles;
                 if (guid != winrt::guid{})
                 {
+                    profile->SourceBasePath = sourceBasePath;
                     if (buildFragmentSettings)
                     {
                         destinationSet->emplace_back(winrt::make<FragmentProfileEntry>(guid, hstring{ til::u8u16(Json::writeString(_getJsonStyledWriter(), profileJson)) }));
@@ -1014,7 +1086,7 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, const win
 }
 
 // If the given ParsedSettings instance contains a profile with the given profile's GUID,
-// the profile is added as a parent. Otherwise a new child profile is created.
+// the profile is added as a parent. Otherwise, a new child profile is created.
 void SettingsLoader::_addUserProfileParent(const winrt::com_ptr<implementation::Profile>& profile)
 {
     if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), nullptr); !inserted)
@@ -1074,11 +1146,11 @@ bool SettingsLoader::_addOrMergeUserColorScheme(const winrt::com_ptr<implementat
             userSettings.fixupsAppliedDuringLoad = true; // Make sure we save the settings.
             if (!existingScheme->IsEquivalentForSettingsMergePurposes(newScheme))
             {
-                hstring newName{ fmt::format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name()) };
+                auto newName = til::hstring_format(FMT_COMPILE(L"{} (modified)"), existingScheme->Name());
                 int differentiator = 2;
                 while (userSettings.colorSchemes.contains(newName))
                 {
-                    newName = hstring{ fmt::format(FMT_COMPILE(L"{} (modified {})"), existingScheme->Name(), differentiator++) };
+                    newName = til::hstring_format(FMT_COMPILE(L"{} (modified {})"), existingScheme->Name(), differentiator++);
                 }
                 // Rename the user's scheme.
                 existingScheme->Name(newName);
@@ -1196,6 +1268,14 @@ try
 
     SettingsLoader loader{ settingsStringView, LoadStringResource(IDR_DEFAULTS) };
 
+    winrt::hstring baseUserSettingsPath{ GetBaseSettingsPath().native() };
+    loader.userSettings.baseLayerProfile->SourceBasePath = baseUserSettingsPath;
+    loader.userSettings.globals->SourceBasePath = baseUserSettingsPath;
+    for (auto&& userProfile : loader.userSettings.profiles)
+    {
+        userProfile->SourceBasePath = baseUserSettingsPath;
+    }
+
     // Generate dynamic profiles and add them as parents of user profiles.
     // That way the user profiles will get appropriate defaults from the generators (like icons and such).
     loader.GenerateProfiles();
@@ -1218,6 +1298,7 @@ try
     // Similarly FixupUserSettings returns true, when it encountered settings that were patched up.
     mustWriteToDisk |= loader.DisableDeletedProfiles();
     mustWriteToDisk |= loader.FixupUserSettings();
+    mustWriteToDisk |= loader.AddDynamicProfileFolders();
 
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
@@ -1226,15 +1307,7 @@ try
     // settings string back to the file.
     if (mustWriteToDisk)
     {
-        try
-        {
-            settings->WriteSettingsToDisk();
-        }
-        catch (...)
-        {
-            LOG_CAUGHT_EXCEPTION();
-            settings->_warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
-        }
+        settings->WriteSettingsToDisk();
     }
     else
     {
@@ -1289,9 +1362,9 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "ThemesInUse",
             TraceLoggingDescription("Data about the themes in use"),
-            TraceLoggingBool(themeChoice, "Identifier for the theme chosen. 0 is system, 1 is light, 2 is dark, and 3 indicates any custom theme."),
-            TraceLoggingBool(changedTheme, "True if the user actually changed the theme from the default theme"),
-            TraceLoggingInt32(numThemes, "Number of themes in the user's settings"),
+            TraceLoggingInt32(themeChoice, "ThemeClass", "Identifier for the theme chosen. 0 is system (legacySystem = 6), 1 is light (legacyLight = 5), 2 is dark (legacyDark = 4), and 3 indicates any custom theme."),
+            TraceLoggingBool(changedTheme, "ChangedTheme", "True if the user actually changed the theme from the default theme"),
+            TraceLoggingInt32(numThemes, "NumberOfThemes", "Number of themes in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
@@ -1313,7 +1386,7 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "SendInputUsage",
             TraceLoggingDescription("Event emitted upon settings load, containing the number of sendInput actions a user has"),
-            TraceLoggingInt32(collectSendInput(), "Number of sendInput actions in the user's settings"),
+            TraceLoggingInt32(collectSendInput(), "NumberOfSendInputActions", "Number of sendInput actions in the user's settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
@@ -1330,8 +1403,8 @@ void CascadiaSettings::_researchOnLoad()
             g_hSettingsModelProvider,
             "MarksProfilesUsage",
             TraceLoggingDescription("Event emitted upon settings load, containing the number of profiles opted-in to scrollbar marks"),
-            TraceLoggingInt32(totalAutoMark, "Number of profiles for which AutoMarkPrompts is enabled"),
-            TraceLoggingInt32(totalShowMarks, "Number of profiles for which ShowMarks is enabled"),
+            TraceLoggingInt32(totalAutoMark, "NumberOfAutoMarkPromptsProfiles", "Number of profiles for which AutoMarkPrompts is enabled"),
+            TraceLoggingInt32(totalShowMarks, "NumberOfShowMarksProfiles", "Number of profiles for which ShowMarks is enabled"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
     }
@@ -1539,7 +1612,7 @@ void CascadiaSettings::ResetToDefaultSettings()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::WriteSettingsToDisk()
+bool CascadiaSettings::WriteSettingsToDisk()
 {
     // write current settings to current settings file
     Json::StreamWriterBuilder wbuilder;
@@ -1547,7 +1620,17 @@ void CascadiaSettings::WriteSettingsToDisk()
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["precision"] = 6; // prevent values like 1.1000000000000001
 
-    _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
+    try
+    {
+        _writeSettingsToDisk(Json::writeString(wbuilder, ToJson()));
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        _warnings.Append(SettingsLoadWarnings::FailedToWriteToSettings);
+        return false;
+    }
+    return true;
 }
 
 void CascadiaSettings::_writeSettingsToDisk(std::string_view contents)
@@ -1695,16 +1778,6 @@ void CascadiaSettings::_resolveNewTabMenuProfiles() const
     if (remainingProfilesEntry != nullptr)
     {
         remainingProfilesEntry.Profiles(remainingProfiles);
-    }
-
-    // If the configuration does not have a "newTabMenu" field, GlobalAppSettings
-    // will return a default value containing just a "remainingProfiles" entry. However,
-    // this value is regenerated on every "get" operation, so the effect of setting
-    // the remaining profiles above will be undone. So only in the case that no custom
-    // value is present in GlobalAppSettings, we will store the modified default value.
-    if (!_globals->HasNewTabMenu())
-    {
-        _globals->NewTabMenu(entries);
     }
 }
 

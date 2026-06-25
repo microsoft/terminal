@@ -42,6 +42,10 @@ public:
     IWaitRoutine& operator=(const IWaitRoutine&) & = delete;
     IWaitRoutine& operator=(IWaitRoutine&&) & = delete;
 
+    virtual const SCREEN_INFORMATION* GetScreenBuffer() const noexcept
+    {
+        return nullptr;
+    }
     virtual void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) = 0;
 
     virtual bool Notify(const WaitTerminationReason TerminationReason,

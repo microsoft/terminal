@@ -22,7 +22,7 @@ Note: Existing profiles will disappear from Windows Terminal after adding their 
       <string id="DefaultTerminalApplication">Default terminal application</string>
       <string id="DefaultTerminalApplicationText">Select the default terminal application used in Windows.
 
-If you select Windows Terminal Preview and it is not installed the system will fallback to the legacy Windows Console Host. (Please note that the settings interfaces showing "Let windows decide" in this case as configuration.)</string>
+If you select Windows Terminal Preview and it is not installed the system will fall back to the legacy Windows Console Host. (Please note that the settings interfaces showing "Let windows decide" in this case as configuration.)</string>
       <string id="TermAppAutomatic">Automatic selection (Windows Terminal, if available)</string>
       <string id="TermAppConsoleHost">Windows Console Host (legacy)</string>
       <string id="TermAppWindowsTerminal">Windows Terminal</string>

@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
-    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Resources\en-US\Resources.resw" />
@@ -20,34 +19,20 @@
     </ClCompile>
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
-    <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
-    <ClCompile Include="ActionPaletteItem.cpp">
+    <ClCompile Include="CommandPaletteItems.cpp">
       <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="PaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="TabPaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="CommandLinePaletteItem.cpp">
-      <Filter>commandPalette</Filter>
-    </ClCompile>
-    <ClCompile Include="HighlightedText.cpp">
-      <Filter>highlightedText</Filter>
     </ClCompile>
     <ClCompile Include="fzf/fzf.cpp">
       <Filter>fzf</Filter>
     </ClCompile>
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
-    <ClCompile Include="Monarch.cpp" />
-    <ClCompile Include="Peasant.cpp" />
+    <ClCompile Include="TerminalSettingsCache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -60,37 +45,23 @@
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="DebugTapConnection.h" />
-    <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="FilteredCommand.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="ActionPaletteItem.h">
+    <ClInclude Include="CommandPaletteItems.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
-    <ClInclude Include="PaletteItem.h">
+    <ClInclude Include="BasePaletteItem.h">
       <Filter>commandPalette</Filter>
-    </ClInclude>
-    <ClInclude Include="TabPaletteItem.h">
-      <Filter>commandPalette</Filter>
-    </ClInclude>
-    <ClInclude Include="CommandLinePaletteItem.h">
-      <Filter>commandPalette</Filter>
-    </ClInclude>
-    <ClInclude Include="HighlightedText.h">
-      <Filter>highlightedText</Filter>
     </ClInclude>
     <ClInclude Include="fzf/fzf.h">
-      <Filter>fzf</Filter>
-    </ClInclude>
-    <ClInclude Include="fzf/LICENSE">
       <Filter>fzf</Filter>
     </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="WindowsPackageManagerFactory.h" />
-    <ClInclude Include="Monarch.h" />
-    <ClInclude Include="Peasant.h" />
+    <ClInclude Include="TerminalSettingsCache.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
@@ -102,25 +73,19 @@
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="TerminalTab.idl">
-      <Filter>tab</Filter>
-    </Midl>
     <Midl Include="FilteredCommand.idl">
       <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="HighlightedText.idl">
-      <Filter>highlightedText</Filter>
     </Midl>
     <Midl Include="TerminalTabStatus.idl">
       <Filter>tab</Filter>
     </Midl>
     <Midl Include="PaletteItemTemplateSelector.idl" />
-    <Midl Include="TabBase.idl" />
+    <Midl Include="Tab.idl" />
     <Midl Include="TerminalWindow.idl" />
     <Midl Include="TaskbarState.idl" />
     <Midl Include="IPaneContent.idl" />
-    <Midl Include="TerminalSettingsCache.idl" />
-    <Midl Include="Monarch.idl" />
+    <Midl Include="Remoting.idl" />
+    <Midl Include="HighlightedTextControl.idl" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MinMaxCloseControl.xaml">
@@ -144,24 +109,16 @@
     <Page Include="CommandPalette.xaml">
       <Filter>commandPalette</Filter>
     </Page>
-    <Midl Include="PaletteItem.idl">
+    <Midl Include="IPaletteItem.idl">
       <Filter>commandPalette</Filter>
     </Midl>
-    <Midl Include="TabPaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="ActionPaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="CommandLinePaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Page Include="HighlightedTextControl.xaml">
+    <Page Include="HighlightedTextControlStyle.xaml">
       <Filter>highlightedText</Filter>
     </Page>
     <Page Include="AboutDialog.xaml" />
     <Page Include="SuggestionsControl.xaml" />
     <Page Include="SnippetsPaneContent.xaml" />
+    <Page Include="MarkdownPaneContent.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="app">

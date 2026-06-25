@@ -40,13 +40,21 @@ namespace Microsoft.Terminal.Settings.Model
     enum FirstWindowPreference
     {
         DefaultProfile,
-        PersistedWindowLayout,
+        PersistedLayout,
+        PersistedLayoutAndContent,
     };
 
     enum NewTabPosition
     {
         AfterLastTab,
         AfterCurrentTab,
+    };
+
+    enum ConfirmOnClose
+    {
+        Never = 0,
+        Automatic = 1,
+        Always = 2,
     };
 
     [default_interface] runtimeclass GlobalAppSettings {
@@ -60,7 +68,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ShowTabsFullscreen);
         INHERITABLE_SETTING(NewTabPosition, NewTabPosition);
         INHERITABLE_SETTING(Boolean, ShowTitleInTitlebar);
-        INHERITABLE_SETTING(Boolean, ConfirmCloseAllTabs);
+        INHERITABLE_SETTING(ConfirmOnClose, ConfirmOnClose);
         INHERITABLE_SETTING(String, Language);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
         INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
@@ -70,7 +78,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, InputServiceWarning);
         INHERITABLE_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
         INHERITABLE_SETTING(Boolean, WarnAboutLargePaste);
-        INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.WarnAboutMultiLinePaste, WarnAboutMultiLinePaste);
         INHERITABLE_SETTING(Boolean, TrimPaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
@@ -82,6 +90,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, DisablePartialInvalidation);
         INHERITABLE_SETTING(Boolean, SoftwareRendering);
         INHERITABLE_SETTING(Microsoft.Terminal.Control.TextMeasurement, TextMeasurement);
+        INHERITABLE_SETTING(Microsoft.Terminal.Control.AmbiguousWidth, AmbiguousWidth);
         INHERITABLE_SETTING(Boolean, UseBackgroundImageForWindow);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, AlwaysOnTop);
@@ -90,6 +99,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, DisableAnimations);
         INHERITABLE_SETTING(String, StartupActions);
         INHERITABLE_SETTING(Boolean, FocusFollowMouse);
+        INHERITABLE_SETTING(Boolean, ScrollToZoom);
+        INHERITABLE_SETTING(Boolean, ScrollToChangeOpacity);
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);
@@ -103,6 +114,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, EnableUnfocusedAcrylic);
         INHERITABLE_SETTING(Boolean, AllowHeadless);
         INHERITABLE_SETTING(String, SearchWebDefaultQueryUrl);
+        INHERITABLE_SETTING(IVector<String>, SafeUriSchemes);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

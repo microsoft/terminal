@@ -4,22 +4,19 @@
 
 ```mermaid
 graph TD
-    RenderThread["RenderThread (base/thread.cpp)\n<small>calls Renderer::PaintFrame() x times per sec</small>"]
-    Renderer["Renderer (base/renderer.cpp)\n<small>breaks the text buffer down into GDI-oriented graphics\nprimitives (#quot;change brush to color X#quot;, #quot;draw string Y#quot;, ...)</small>"]
-    RenderEngineBase[/"RenderEngineBase\n(base/RenderEngineBase.cpp)\n<small>abstracts 24 LOC 👻</small>"\]
+    Renderer["Renderer (base/renderer.cpp)<br><small>breaks the text buffer down into GDI-oriented graphics<br>primitives (#quot;change brush to color X#quot;, #quot;draw string Y#quot;, ...)</small>"]
+    RenderEngineBase[/"RenderEngineBase<br>(base/RenderEngineBase.cpp)<br><small>abstracts 24 LOC 👻</small>"\]
     GdiEngine["GdiEngine (gdi/...)"]
 
     subgraph AtlasEngine["AtlasEngine (atlas/...)"]
-        AtlasEngine.cpp["AtlasEngine.cpp\n<small>Implements IRenderEngine text rendering API\nbreaks GDI graphics primitives down into DWRITE_GLYPH_RUNs</small>"]
-        AtlasEngine.api.cpp["AtlasEngine.api.cpp\n<small>Implements the parts run inside the console\nlock (many IRenderEngine setters)<small>"]
-        AtlasEngine.r.cpp["AtlasEngine.r.cpp\n<small>Implements the parts run\noutside of the console lock<small>"]
-        Backend.cpp["Backend.cpp\n<small>Implements common functionality/helpers</small>"]
-        BackendD2D.cpp["BackendD2D.cpp\n<small>Pure Direct2D text renderer (for low latency\nremote desktop and older/no GPUs)</small>"]
-        BackendD3D.cpp["BackendD3D.cpp\n<small>Custom, performant text renderer\nwith our own glyph cache</small>"]
+        AtlasEngine.cpp["AtlasEngine.cpp<br><small>Implements IRenderEngine text rendering API<br>breaks GDI graphics primitives down into DWRITE_GLYPH_RUNs</small>"]
+        AtlasEngine.api.cpp["AtlasEngine.api.cpp<br><small>Implements the parts run inside the console<br>lock (many IRenderEngine setters)<small>"]
+        AtlasEngine.r.cpp["AtlasEngine.r.cpp<br><small>Implements the parts run<br>outside of the console lock<small>"]
+        Backend.cpp["Backend.cpp<br><small>Implements common functionality/helpers</small>"]
+        BackendD2D.cpp["BackendD2D.cpp<br><small>Pure Direct2D text renderer (for low latency<br>remote desktop and older/no GPUs)</small>"]
+        BackendD3D.cpp["BackendD3D.cpp<br><small>Custom, performant text renderer<br>with our own glyph cache</small>"]
     end
 
-    RenderThread --> Renderer
-    Renderer -->|owns| RenderThread
     Renderer -.-> RenderEngineBase
     %% Mermaid.js has no support for backwards arrow at the moment
     RenderEngineBase <-.->|extends| GdiEngine
@@ -63,8 +60,8 @@ graph TD
 
 ```mermaid
 graph TD
-    Render --> _drawCursorPart1["_drawCursorPart1\nruns before _drawText\ndraws cursors that are behind the text"]
-    Render --> _drawCursorPart2["_drawCursorPart2\nruns after _drawText\ndraws inverted cursors"]
+    Render --> _drawCursorPart1["_drawCursorPart1<br>runs before _drawText<br>draws cursors that are behind the text"]
+    Render --> _drawCursorPart2["_drawCursorPart2<br>runs after _drawText<br>draws inverted cursors"]
     _drawCursorPart1 -.->|_cursorRects| _drawCursorPart2
 ```
 
@@ -81,26 +78,26 @@ graph TD
     foreachFont --> foreachGlyph(("for each glyph"))
     foreachGlyph --> foreachGlyph
 
-    foreachGlyph --> _glyphAtlasMap[("font/glyph-pair lookup in\nglyph cache hashmap")]
+    foreachGlyph --> _glyphAtlasMap[("font/glyph-pair lookup in<br>glyph cache hashmap")]
     _glyphAtlasMap --> drawGlyph
-    drawGlyph --> _appendQuad["_appendQuad\n<small>stages the glyph for later drawing</small>"]
+    drawGlyph --> _appendQuad["_appendQuad<br><small>stages the glyph for later drawing</small>"]
     _glyphAtlasMap --> _appendQuad
 
     subgraph drawGlyph["if glyph is missing"]
-        _drawGlyph["_drawGlyph\n<small>(defers to _drawSoftFontGlyph for soft fonts)</small>"]
+        _drawGlyph["_drawGlyph<br><small>(defers to _drawSoftFontGlyph for soft fonts)</small>"]
 
         _drawGlyph -.->|if glpyh cache is full| _drawGlyphPrepareRetry
-        _drawGlyphPrepareRetry --> _flushQuads["_flushQuads\n<small>draws the current state\ninto the render target</small>"]
-        _flushQuads --> _recreateInstanceBuffers["_recreateInstanceBuffers\n<small>allocates a GPU buffer\nfor our glyph instances</small>"]
-        _drawGlyphPrepareRetry --> _resetGlyphAtlas["_resetGlyphAtlas\n<small>clears the glyph texture</small>"]
-        _resetGlyphAtlas --> _resizeGlyphAtlas["_resizeGlyphAtlas\n<small>resizes the glyph texture if it's still small</small>"]
+        _drawGlyphPrepareRetry --> _flushQuads["_flushQuads<br><small>draws the current state<br>into the render target</small>"]
+        _flushQuads --> _recreateInstanceBuffers["_recreateInstanceBuffers<br><small>allocates a GPU buffer<br>for our glyph instances</small>"]
+        _drawGlyphPrepareRetry --> _resetGlyphAtlas["_resetGlyphAtlas<br><small>clears the glyph texture</small>"]
+        _resetGlyphAtlas --> _resizeGlyphAtlas["_resizeGlyphAtlas<br><small>resizes the glyph texture if it's still small</small>"]
 
-        _drawGlyph -.->|if it's a DECDHL glyph| _splitDoubleHeightGlyph["_splitDoubleHeightGlyph\n<small>DECDHL glyphs are split up into their\ntop/bottom halves to emulate clip rects</small>"]
+        _drawGlyph -.->|if it's a DECDHL glyph| _splitDoubleHeightGlyph["_splitDoubleHeightGlyph<br><small>DECDHL glyphs are split up into their<br>top/bottom halves to emulate clip rects</small>"]
     end
 
-    foreachGlyph -.-> _drawTextOverlapSplit["_drawTextOverlapSplit\n<small>splits overly wide glyphs up into smaller chunks to support\nforeground color changes within the ligature</small>"]
+    foreachGlyph -.-> _drawTextOverlapSplit["_drawTextOverlapSplit<br><small>splits overly wide glyphs up into smaller chunks to support<br>foreground color changes within the ligature</small>"]
 
-    foreachRow -.->|if gridlines exist| _drawGridlineRow["_drawGridlineRow\n<small>draws underlines, etc.</small>"]
+    foreachRow -.->|if gridlines exist| _drawGridlineRow["_drawGridlineRow<br><small>draws underlines, etc.</small>"]
 ```
 
 ### `_drawSelection`

@@ -46,6 +46,7 @@
     <ClInclude Include="MatchProfilesEntry.h">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="MediaResourceSupport.h" />
     <ClInclude Include="VisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
@@ -103,9 +104,6 @@
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
-    <ClInclude Include="TerminalSettings.h">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
@@ -176,9 +174,6 @@
     <ClCompile Include="FontConfig.cpp">
       <DependentUpon>FontConfig.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TerminalSettings.cpp">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
@@ -206,11 +201,13 @@
     <ClCompile Include="MatchProfilesEntry.cpp">
       <DependentUpon>NewTabMenuEntry.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="MediaResourceSupport.cpp" />
     <ClCompile Include="VsDevCmdGenerator.cpp" />
     <ClCompile Include="VsDevShellGenerator.cpp" />
     <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
     <ClCompile Include="SshHostGenerator.cpp" />
+    <ClCompile Include="TestHooks.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
@@ -227,7 +224,6 @@
     <Midl Include="GlobalAppSettings.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
-    <Midl Include="TerminalSettings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="AppearanceConfig.idl" />

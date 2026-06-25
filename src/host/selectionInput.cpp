@@ -4,9 +4,7 @@
 #include "precomp.h"
 
 #include "../buffer/out/search.h"
-
 #include "../interactivity/inc/ServiceLocator.hpp"
-#include "../types/inc/convert.hpp"
 
 using namespace Microsoft::Console::Types;
 using Microsoft::Console::Interactivity::ServiceLocator;
@@ -698,7 +696,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
             for (auto&& sp : selection)
             {
                 sp.iterate_rows(textBuffer.GetSize().Width(), [&](til::CoordType row, til::CoordType beg, til::CoordType end) {
-                    ColorSelection({ beg, row, end, row }, selectionAttr);
+                    ColorSelection({ beg, row, end, row + 1 }, selectionAttr);
                 });
             }
             ClearSelection();
@@ -903,11 +901,13 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
                 d->fUseAlternateSelection = false;
             }
 
-            cursor.SetHasMoved(true);
             d->coordSelectionAnchor = textBuffer.GetCursor().GetPosition();
             ScreenInfo.MakeCursorVisible(d->coordSelectionAnchor);
             d->srSelectionRect.left = d->srSelectionRect.right = d->coordSelectionAnchor.x;
             d->srSelectionRect.top = d->srSelectionRect.bottom = d->coordSelectionAnchor.y;
+
+            auto& an = ServiceLocator::LocateGlobals().accessibilityNotifier;
+            an.CursorChanged(d->coordSelectionAnchor, true);
         }
         return true;
     }

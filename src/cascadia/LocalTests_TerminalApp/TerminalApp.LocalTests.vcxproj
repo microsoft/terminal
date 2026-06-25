@@ -24,6 +24,7 @@
   <PropertyGroup Label="NuGet Dependencies">
     <!-- TerminalCppWinrt is intentionally not set -->
     <TerminalMUX>true</TerminalMUX>
+    <TerminalThemeHelpers>true</TerminalThemeHelpers>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -59,6 +60,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\dll\TerminalApp.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsAppAdapterLib\TerminalSettingsAppAdapterLib.vcxproj">
+      <Project>{3c46e2b0-ae6c-4132-9122-6772fb411959}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->

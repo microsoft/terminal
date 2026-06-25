@@ -57,7 +57,7 @@ u8state::u8state() noexcept :
                 {
                     // If the Lead Byte indicates that the last bytes in the string is a partial UTF-8 code point then cache them:
                     //  Use the bitmask at index `sequenceLen`. Compare the result with the operand having the same index. If they
-                    //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise the
+                    //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise, the
                     //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion to hstring.
                     if ((*backIter & _cmpMasks.at(sequenceLen)) != _cmpOperands.at(sequenceLen))
                     {

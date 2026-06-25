@@ -8,13 +8,19 @@ namespace TerminalApp
         None,
         Content,
         MovePane,
-        PersistLayout,
-        PersistAll
+        Persist,
     };
 
     runtimeclass BellEventArgs
     {
         Boolean FlashTaskbar { get; };
+        Boolean SendNotification { get; };
+    };
+
+    runtimeclass NotificationEventArgs
+    {
+        String Title { get; };
+        String Body { get; };
     };
 
     interface IPaneContent
@@ -47,6 +53,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> TaskbarProgressChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> ReadOnlyChanged;
         event Windows.Foundation.TypedEventHandler<IPaneContent, Object> FocusRequested;
+        event Windows.Foundation.TypedEventHandler<IPaneContent, NotificationEventArgs> NotificationRequested;
     };
 
 

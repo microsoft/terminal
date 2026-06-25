@@ -63,7 +63,7 @@ RECT HwndTerminal::TsfDataProvider::GetCursorPosition()
     til::size fontSize;
     {
         const auto lock = _terminal->_terminal->LockForReading();
-        cursorPos = _terminal->_terminal->GetCursorPosition(); // measured in terminal cells
+        cursorPos = _terminal->_terminal->GetTextBuffer().GetCursor().GetPosition(); // measured in terminal cells
         fontSize = _terminal->_actualFont.GetSize(); // measured in pixels, not DIP
     }
     POINT ptSuggestion = {
@@ -462,6 +462,11 @@ void HwndTerminal::SendOutput(std::wstring_view data)
     _terminal->Write(data);
 }
 
+void _stdcall AvoidBuggyTSFConsoleFlags()
+{
+    Microsoft::Console::TSF::Handle::AvoidBuggyTSFConsoleFlags();
+}
+
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
     auto publicTerminal = std::make_unique<HwndTerminal>(parentHwnd);
@@ -705,15 +710,6 @@ void HwndTerminal::_ClearSelection()
     _terminal->ClearSelection();
     _renderer->TriggerSelection();
 }
-
-void _stdcall TerminalClearSelection(void* terminal)
-try
-{
-    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    const auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_ClearSelection();
-}
-CATCH_LOG()
 
 bool _stdcall TerminalIsSelectionActive(void* terminal)
 try
@@ -962,7 +958,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            GSL_SUPPRESS(bounds .3)
+            GSL_SUPPRESS(bounds.3)
             renderSettings.SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
 
@@ -986,60 +982,52 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     publicTerminal->Refresh(windowSize, &dimensions);
 }
 
-void _stdcall TerminalBlinkCursor(void* terminal)
-try
+void __stdcall TerminalSetFocused(void* terminal, bool focused)
 {
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    if (!publicTerminal || !publicTerminal->_terminal)
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    publicTerminal->_setFocused(focused);
+}
+
+void HwndTerminal::_setFocused(bool focused) noexcept
+{
+    if (_focused == focused)
     {
         return;
     }
 
-    const auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->BlinkCursor();
-}
-CATCH_LOG()
-
-void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible)
-try
-{
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    if (!publicTerminal || !publicTerminal->_terminal)
+    TerminalInput::OutputType out;
     {
-        return;
+        const auto lock = _terminal->LockForWriting();
+
+        _focused = focused;
+
+        if (focused)
+        {
+            if (!_tsfHandle)
+            {
+                _tsfHandle = Microsoft::Console::TSF::Handle::Create();
+                _tsfHandle.AssociateFocus(&_tsfDataProvider);
+            }
+
+            if (const auto uiaEngine = _uiaEngine.get())
+            {
+                LOG_IF_FAILED(uiaEngine->Enable());
+            }
+        }
+        else
+        {
+            if (const auto uiaEngine = _uiaEngine.get())
+            {
+                LOG_IF_FAILED(uiaEngine->Disable());
+            }
+        }
+
+        _renderer->AllowCursorVisibility(Microsoft::Console::Render::InhibitionSource::Host, focused);
+        out = _terminal->FocusChanged(focused);
     }
-    const auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->SetCursorOn(visible);
-}
-CATCH_LOG()
-
-void __stdcall TerminalSetFocus(void* terminal)
-{
-    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_focused = true;
-    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
+    if (out)
     {
-        LOG_IF_FAILED(uiaEngine->Enable());
-    }
-    publicTerminal->_FocusTSF();
-}
-
-void HwndTerminal::_FocusTSF() noexcept
-{
-    if (!_tsfHandle)
-    {
-        _tsfHandle = Microsoft::Console::TSF::Handle::Create();
-        _tsfHandle.AssociateFocus(&_tsfDataProvider);
-    }
-}
-
-void __stdcall TerminalKillFocus(void* terminal)
-{
-    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    publicTerminal->_focused = false;
-    if (auto uiaEngine = publicTerminal->_uiaEngine.get())
-    {
-        LOG_IF_FAILED(uiaEngine->Disable());
+        _WriteTextToConnection(*out);
     }
 }
 

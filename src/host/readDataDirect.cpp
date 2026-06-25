@@ -36,7 +36,7 @@ DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
 // Arguments:
 // - TerminationReason - if this routine is called because a ctrl-c or
 // ctrl-break was seen, this argument contains CtrlC or CtrlBreak. If
-// the owning thread is exiting, it will have ThreadDying. Otherwise 0.
+// the owning thread is exiting, it will have ThreadDying. Otherwise, 0.
 // - fIsUnicode - Should we return UCS-2 unicode data, or should we
 // run the final data through the current Input Codepage before
 // returning?

@@ -6,8 +6,6 @@
 #include "GlobalAppearanceViewModel.g.cpp"
 #include "EnumEntry.h"
 
-#include <LibraryResources.h>
-
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;

@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <LibraryResources.h>
 #include <WilErrorReporting.h>
 
 // For g_hCTerminalCoreProvider

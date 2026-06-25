@@ -60,10 +60,14 @@ Author(s):
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 
 #include <winrt/Microsoft.Terminal.Core.h>
+#include <winrt/Microsoft.Terminal.Control.h>
+#include <winrt/Microsoft.Terminal.Settings.Model.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
 #include <til/winrt.h>
+#include <til/mutex.h>
+#include <til/throttled_func.h>
 
 // Common includes for most tests:
 #include "../../inc/conattrs.hpp"

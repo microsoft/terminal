@@ -1,4 +1,4 @@
-![terminal-logos](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
+![Windows Terminal project logos and branding image](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
 
 [![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)
 
@@ -15,7 +15,6 @@
     - [Via Chocolatey (unofficial)](#via-chocolatey-unofficial)
     - [Via Scoop (unofficial)](#via-scoop-unofficial)
 - [Installing Windows Terminal Canary](#installing-windows-terminal-canary)
-- [Windows Terminal Roadmap](#windows-terminal-roadmap)
 - [Terminal \& Console Overview](#terminal--console-overview)
   - [Windows Terminal](#windows-terminal)
   - [The Windows Console Host](#the-windows-console-host)
@@ -169,19 +168,14 @@ The Portable ZIP distribution is a portable application. It will not automatical
 
 | Distribution  | Architecture    | Link                                                 |
 |---------------|:---------------:|------------------------------------------------------|
-| App Installer | x64, arm64, x86 | [download](https://aka.ms/terminal-canary-installer) |
-| Portable ZIP  | x64             | [download](https://aka.ms/terminal-canary-zip-x64)   |
-| Portable ZIP  | ARM64           | [download](https://aka.ms/terminal-canary-zip-arm64) |
-| Portable ZIP  | x86             | [download](https://aka.ms/terminal-canary-zip-x86)   |
+| App Installer | x64, arm64, x86 | [Download](https://aka.ms/terminal-canary-installer) |
+| Portable ZIP  | x64             | [Download](https://aka.ms/terminal-canary-zip-x64)   |
+| Portable ZIP  | ARM64           | [Download](https://aka.ms/terminal-canary-zip-arm64) |
+| Portable ZIP  | x86             | [Download](https://aka.ms/terminal-canary-zip-x86)   |
 
 _Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
 
 ---
-
-## Windows Terminal Roadmap
-
-The plan for the Windows Terminal [is described here](/doc/roadmap-2023.md) and
-will be updated as the project proceeds.
 
 ## Terminal & Console Overview
 
@@ -273,7 +267,7 @@ resources useful and interesting:
   Session](https://www.youtube.com/watch?v=KMudkRcwjCw)
 * Run As Radio: [Show 645 - Windows Terminal with Richard
   Turner](https://www.runasradio.com/Shows/Show/645)
-* Azure Devops Podcast: [Episode 54 - Kayla Cinnamon and Rich Turner on DevOps
+* Azure DevOps Podcast: [Episode 54 - Kayla Cinnamon and Rich Turner on DevOps
   on the Windows
   Terminal](http://azuredevopspodcast.clear-measure.com/kayla-cinnamon-and-rich-turner-on-devops-on-the-windows-terminal-team-episode-54)
 * Microsoft Ignite 2019 Session: [The Modern Windows Command Line: Windows
@@ -345,7 +339,7 @@ You can configure your environment to build Terminal in one of two ways:
 ### Using WinGet configuration file
 
 After cloning the repository, you can use a [WinGet configuration file](https://learn.microsoft.com/en-us/windows/package-manager/configuration/#use-a-winget-configuration-file-to-configure-your-machine)
-to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2022 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2022. To run the default configuration file, you can either double-click the file from explorer or run the following command:
+to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2026 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2026. To run the default configuration file, you can either double-click the file from explorer or run the following command:
 
 ```powershell
 winget configure .config\configuration.winget
@@ -359,23 +353,17 @@ winget configure .config\configuration.winget
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
 * You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
-* You must have the [Windows 11 (10.0.22621.0)
-  SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
-  installed
-* You must have at least [VS
-  2022](https://visualstudio.microsoft.com/downloads/) installed
+* You must have the [Windows 11 (10.0.26100) SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) installed at version 10.0.26100.8249 or greater.
+* You must have at least [VS 2026](https://visualstudio.microsoft.com/downloads/) version 18.6 installed
 * You must install the following Workloads via the VS Installer. Note: Opening
-  the solution in VS 2022 will [prompt you to install missing components
-  automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
+  the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
   * Desktop Development with C++
-  * Universal Windows Platform Development
-  * **The following Individual Components**
-    * C++ (v143) Universal Windows Platform Tools
-* You must install the [.NET Framework Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
+  * WinUI application development
+* You must install the [.NET Framework 4.7.2 Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
 
 ## Building the Code
 
-OpenConsole.sln may be built from within Visual Studio or from the command-line
+OpenConsole.slnx may be built from within Visual Studio or from the command-line
 using a set of convenience scripts & tools in the **/tools** directory:
 
 ### Building in PowerShell

@@ -156,7 +156,7 @@ then this is the pane with the currently focused terminal control. When the user
 brings the tab into focus, the last focused pane is the pane that should become
 focused again.
 
-The tab's state will be updated to reflect the state of it's focused pane. The
+The tab's state will be updated to reflect the state of its focused pane. The
 title text and icon of the tab will reflect that of the focused pane. Should the
 focus switch from one pane to another, the tab's text and icon should update to
 reflect the newly focused control. Any additional state that the tab would
@@ -172,7 +172,7 @@ match.
 A pane can either be closed by the user manually, or when the terminal it's
 attached to raises its ConnectionClosed event. When this happens, we should
 remove this pane from the tree. The parent of the closing pane will have to
-remove the pane as one of it's children. If the sibling of the closing pane is a
+remove the pane as one of its children. If the sibling of the closing pane is a
 leaf, then the parent should just take all of the state from the remaining pane.
 This will cause the remaining pane's content to expand to take the entire
 boundaries of the parent's pane. If the remaining child was a parent itself,
@@ -182,7 +182,7 @@ replaced by the remaining child.
 
 ## Future considerations
 
-The Pane implementation isn't complete in it's current form. There are many
+The Pane implementation isn't complete in its current form. There are many
 additional things that could be done to improve the user experience. This is by
 no means a comprehensive list.
 

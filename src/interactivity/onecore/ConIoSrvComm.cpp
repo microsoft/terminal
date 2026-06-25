@@ -82,7 +82,7 @@ ConIoSrvComm::~ConIoSrvComm()
 
 #pragma region Communication
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::Connect()
+[[nodiscard]] NTSTATUS ConIoSrvComm::Connect() noexcept
 {
     // Port handle and name.
     HANDLE PortHandle;
@@ -220,7 +220,7 @@ ConIoSrvComm::~ConIoSrvComm()
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::EnsureConnection()
+[[nodiscard]] NTSTATUS ConIoSrvComm::EnsureConnection() noexcept
 {
     NTSTATUS Status;
 
@@ -289,7 +289,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
     }
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const
+[[nodiscard]] NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const noexcept
 {
     Message->AlpcHeader.MessageId = 0;
     Message->AlpcHeader.u2.ZeroInit = 0;
@@ -444,7 +444,15 @@ VOID ConIoSrvComm::HandleFocusEvent(const CIS_EVENT* const Event)
                 // TODO: MSFT: 11833883 - Determine action when wait on paint operation via
                 //       DirectX on OneCoreUAP times out while switching console
                 //       applications.
+
+                UnlockConsole();
+                // Teardown may need to wait for an entire frame to finish, but it will not be
+                // able to do so while we are holding the console lock. Relinquish the lock
+                // for as long as it takes to quiesce the render thread, and then take it back
+                // afterwards. This is globally safe because ConIoSrv will not process any other
+                // requests while the focus event is outstanding.
                 Renderer->TriggerTeardown();
+                LockConsole();
 
                 // Relinquish control of the graphics device (only one
                 // DirectX application may control the device at any one
@@ -508,7 +516,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
 
 #pragma region Request Methods
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const noexcept
 {
     CIS_MSG Message{};
     Message.Type = CIS_MSG_TYPE_GETDISPLAYSIZE;
@@ -523,7 +531,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const noexcept
 {
     CIS_MSG Message{};
     Message.Type = CIS_MSG_TYPE_GETFONTSIZE;
@@ -538,7 +546,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestSetCursor(_In_ const CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestSetCursor(_In_ const CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const noexcept
 {
     CIS_MSG Message{};
     Message.Type = CIS_MSG_TYPE_SETCURSOR;
@@ -553,7 +561,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestUpdateDisplay(_In_ til::CoordType RowIndex) const
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestUpdateDisplay(_In_ til::CoordType RowIndex) const noexcept
 {
     CIS_MSG Message{};
     Message.Type = CIS_MSG_TYPE_UPDATEDISPLAY;
@@ -568,7 +576,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue)
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue) noexcept
 {
     NTSTATUS Status;
 
@@ -590,7 +598,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue)
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue) noexcept
 {
     NTSTATUS Status;
 
@@ -611,7 +619,7 @@ VOID ConIoSrvComm::CleanupForHeadless(const NTSTATUS status)
     return Status;
 }
 
-[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT* psReturnValue)
+[[nodiscard]] NTSTATUS ConIoSrvComm::RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT* psReturnValue) noexcept
 {
     NTSTATUS Status;
 
@@ -646,7 +654,7 @@ PVOID ConIoSrvComm::GetSharedViewBase() const noexcept
 
 #pragma region IInputServices Members
 
-UINT ConIoSrvComm::ConIoMapVirtualKeyW(UINT uCode, UINT uMapType)
+UINT ConIoSrvComm::ConIoMapVirtualKeyW(UINT uCode, UINT uMapType) noexcept
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -662,7 +670,7 @@ UINT ConIoSrvComm::ConIoMapVirtualKeyW(UINT uCode, UINT uMapType)
     return ReturnValue;
 }
 
-SHORT ConIoSrvComm::ConIoVkKeyScanW(WCHAR ch)
+SHORT ConIoSrvComm::ConIoVkKeyScanW(WCHAR ch) noexcept
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -678,7 +686,7 @@ SHORT ConIoSrvComm::ConIoVkKeyScanW(WCHAR ch)
     return ReturnValue;
 }
 
-SHORT ConIoSrvComm::ConIoGetKeyState(int nVirtKey)
+SHORT ConIoSrvComm::ConIoGetKeyState(int nVirtKey) noexcept
 {
     NTSTATUS Status = STATUS_SUCCESS;
 

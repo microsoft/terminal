@@ -28,6 +28,11 @@ void Terminal::ReturnResponse(const std::wstring_view response)
     }
 }
 
+bool Terminal::IsConPTY() const noexcept
+{
+    return false;
+}
+
 Microsoft::Console::VirtualTerminal::StateMachine& Terminal::GetStateMachine() noexcept
 {
     return *_stateMachine;
@@ -86,8 +91,12 @@ void Terminal::SetWindowTitle(const std::wstring_view title)
     _assertLocked();
     if (!_suppressApplicationTitle)
     {
-        _title.emplace(title.empty() ? _startingTitle : title);
-        _pfnTitleChanged(_title.value());
+        _title.reset();
+        if (!title.empty())
+        {
+            _title.emplace(title);
+        }
+        _pfnTitleChanged(GetConsoleTitle());
     }
 }
 
@@ -103,6 +112,13 @@ bool Terminal::ResizeWindow(const til::CoordType width, const til::CoordType hei
     _assertLocked();
 
     if (width <= 0 || height <= 0 || width > SHRT_MAX || height > SHRT_MAX)
+    {
+        return false;
+    }
+
+    const auto currentDimensions = _GetMutableViewport().Dimensions();
+
+    if (width == currentDimensions.width && height == currentDimensions.height)
     {
         return false;
     }
@@ -140,7 +156,7 @@ unsigned int Terminal::GetInputCodePage() const noexcept
 
 void Terminal::CopyToClipboard(wil::zwstring_view content)
 {
-    if (_clipboardOperationsAllowed)
+    if (_clipboardOperationsAllowed && _focused)
     {
         _pfnCopyToClipboard(content);
     }
@@ -249,7 +265,7 @@ void Terminal::UseAlternateScreenBuffer(const TextAttribute& attrs)
         auto& tgtCursor = _altBuffer->GetCursor();
         tgtCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         tgtCursor.SetIsVisible(myCursor.IsVisible());
-        tgtCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        tgtCursor.SetIsBlinking(myCursor.IsBlinking());
 
         // The new position should match the viewport-relative position of the main buffer.
         auto tgtCursorPos = myCursor.GetPosition();
@@ -307,7 +323,7 @@ void Terminal::UseMainScreenBuffer()
 
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
-        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+        mainCursor.SetIsBlinking(altCursor.IsBlinking());
 
         auto tgtCursorPos = altCursor.GetPosition();
         tgtCursorPos.y += _mutableViewport.Top();
@@ -347,11 +363,6 @@ bool Terminal::IsVtInputEnabled() const noexcept
     return false;
 }
 
-void Terminal::NotifyAccessibilityChange(const til::rect& /*changedRect*/) noexcept
-{
-    // This is only needed in conhost. Terminal handles accessibility in another way.
-}
-
 void Terminal::InvokeCompletions(std::wstring_view menuJson, unsigned int replaceLength)
 {
     if (_pfnCompletionsChanged)
@@ -364,8 +375,16 @@ void Terminal::SearchMissingCommand(const std::wstring_view command)
 {
     if (_pfnSearchMissingCommand)
     {
-        const auto bufferRow = GetCursorPosition().y;
+        const auto bufferRow = _activeBuffer().GetCursor().GetPosition().y;
         _pfnSearchMissingCommand(command, bufferRow);
+    }
+}
+
+void Terminal::ShowNotification(const std::wstring_view title, const std::wstring_view body)
+{
+    if (_pfnShowNotification)
+    {
+        _pfnShowNotification(title, body);
     }
 }
 
@@ -377,7 +396,7 @@ void Terminal::NotifyBufferRotation(const int delta)
         auto selection{ _selection.write() };
         wil::hide_name _selection;
         // If the end of the selection will be out of range after the move, we just
-        // clear the selection. Otherwise we move both the start and end points up
+        // clear the selection. Otherwise, we move both the start and end points up
         // by the given delta and clamp to the first row.
         if (selection->end.y < delta)
         {
@@ -403,4 +422,10 @@ void Terminal::NotifyBufferRotation(const int delta)
     {
         _NotifyScrollEvent();
     }
+}
+
+void Terminal::NotifyShellIntegrationMark()
+{
+    // Notify the scrollbar that marks have been added so it can refresh the mark indicators
+    _NotifyScrollEvent();
 }

@@ -33,6 +33,7 @@ namespace Microsoft::Console::TSF
     struct Handle
     {
         static Handle Create();
+        static void AvoidBuggyTSFConsoleFlags();
         static void SetDefaultScopeAlphanumericHalfWidth(bool enable);
 
         Handle() = default;
@@ -50,6 +51,8 @@ namespace Microsoft::Console::TSF
         bool HasActiveComposition() const noexcept;
 
     private:
+        void _destroy() noexcept;
+
         Implementation* _impl = nullptr;
     };
 }

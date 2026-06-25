@@ -14,12 +14,6 @@ import "ColorSchemesPageViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass NavigateToProfileArgs
-    {
-        ProfileViewModel Profile { get; };
-        IHostedInWindow WindowRoot { get; };
-    }
-
     runtimeclass DeleteProfileEventArgs
     {
         Guid ProfileGuid { get; };
@@ -27,7 +21,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass BellSoundViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        String Path;
+        String Path { get; };
         String DisplayPath { get; };
         String SubText { get; };
         Boolean ShowDirectory { get; };
@@ -42,18 +36,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Advanced = 3
     };
 
-    enum IconType
-    {
-        None = 0,
-        FontIcon,
-        Image,
-        Emoji
-    };
-
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
-
         event Windows.Foundation.TypedEventHandler<ProfileViewModel, DeleteProfileEventArgs> DeleteProfileRequested;
 
         void SetupAppearances(Windows.Foundation.Collections.IObservableVector<ColorSchemeViewModel> schemesList);
@@ -65,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleNotification(Windows.Foundation.IReference<Boolean> on);
 
         String BellSoundPreview { get; };
         Windows.Foundation.Collections.IObservableVector<BellSoundViewModel> CurrentBellSounds { get; };
@@ -109,19 +94,13 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.UI.Xaml.Controls.IconElement IconPreview { get; };
         String EvaluatedIcon { get; };
         String LocalizedIcon { get; };
-        String CurrentEmojiIcon;
-        IInspectable CurrentIconType;
-        Windows.Foundation.Collections.IVector<IInspectable> IconTypes { get; };
+        String IconPath;
         Boolean UsingNoIcon { get; };
-        Boolean UsingBuiltInIcon { get; };
-        Boolean UsingEmojiIcon { get; };
-        Boolean UsingImageIcon { get; };
-
-        IInspectable CurrentBuiltInIcon;
-        Windows.Foundation.Collections.IVector<IInspectable> BuiltInIcons { get; };
 
         String TabTitlePreview { get; };
         String AnswerbackMessagePreview { get; };
+        Windows.UI.Color TabColorPreview { get; };
+        Windows.UI.Color TabThemeColorPreview { get; };
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -132,7 +111,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Hidden);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Icon);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.IMediaResource, Icon);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, TabTitle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
@@ -148,7 +127,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.Collections.IVector<String>, BellSound);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.IMediaResource>, BellSound);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Elevate);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ReloadEnvironmentVariables);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RightClickContextMenu);
@@ -156,10 +135,13 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AutoMarkPrompts);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RepositionCursorWithMouse);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceVTInput);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowKittyKeyboardMode);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtChecksumReport);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, AnswerbackMessage);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RainbowSuggestions);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, DragDropDelimiter);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowVtClipboardWrite);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AllowOscNotifications);
     }
 }

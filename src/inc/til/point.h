@@ -9,6 +9,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     inline constexpr CoordType CoordTypeMin = INT32_MIN;
     inline constexpr CoordType CoordTypeMax = INT32_MAX;
 
+    using HugeCoordType = int64_t;
+    inline constexpr HugeCoordType HugeCoordTypeMin = INT64_MIN;
+    inline constexpr HugeCoordType HugeCoordTypeMax = INT64_MAX;
+
     namespace details
     {
         template<typename T, typename U = T>
@@ -247,6 +251,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             gsl::narrow<short>(pt.x),
             gsl::narrow<short>(pt.y),
         };
+    }
+
+    constexpr COORD unwrap_coord_clamped(const point pt) noexcept
+    {
+        constexpr short min = -32768;
+        constexpr short max = 32767;
+        const auto x = pt.x < min ? min : (pt.x > max ? max : gsl::narrow_cast<short>(pt.x));
+        const auto y = pt.y < min ? min : (pt.y > max ? max : gsl::narrow_cast<short>(pt.y));
+        return { x, y };
     }
 
     constexpr HRESULT unwrap_coord_hr(const point pt, COORD& out) noexcept

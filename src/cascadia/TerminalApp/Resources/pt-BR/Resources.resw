@@ -149,12 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Erros encontrados durante o carregamento das configurações do usuário</value>
   </data>
-  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
-    <value>OK</value>
-  </data>
-  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
-    <value>Aviso:</value>
-  </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
     <value>O "{0}" não está sendo executado no seu computador. Isso pode impedir que o terminal receba entrada de teclado.</value>
     <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
@@ -168,20 +162,8 @@
   <data name="AboutMenuItem" xml:space="preserve">
     <value>Sobre</value>
   </data>
-  <data name="FeedbackMenuItem" xml:space="preserve">
-    <value>Comentários</value>
-  </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Configurações</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancelar</value>
-  </data>
-  <data name="CloseAll" xml:space="preserve">
-    <value>Fechar tudo</value>
-  </data>
-  <data name="Quit" xml:space="preserve">
-    <value>Encerrar</value>
   </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>Vários painéis</value>
@@ -267,13 +249,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>Duplicar guia</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>Foi encontrado um perfil com um "backgroundImage" inválido. O perfil deve ser o padrão para que não haja nenhuma imagem de tela de fundo. Certifique-se de que, ao definir um "backgroundImage", o valor é um caminho de arquivo válido para uma imagem.</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>Foi encontrado um perfil com um "icon" inválido. Padronize esse perfil para ele não ter ícone. Certifique-se de que, ao definir um "icon", o valor seja um caminho de arquivo válido para uma imagem.</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>Um ou mais recursos (como icon ou backgroundImage) especificados em suas configurações não foram encontrados.</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>Os avisos foram encontrados durante a análise das suas ligações de teclas:</value>
@@ -292,13 +270,6 @@
   <data name="UnknownTheme" xml:space="preserve">
     <value>• O "tema" especificado não foi encontrado na lista de temas. Voltando temporariamente para o valor padrão.</value>
     <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
-  </data>
-  <data name="LegacyGlobalsProperty" xml:space="preserve">
-    <value>A propriedade "globals" foi preterida - talvez suas configurações precisem ser atualizadas. </value>
-    <comment>{Locked="\"globals\""} </comment>
-  </data>
-  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
-    <value>Para saber mais, confira esta página da Web.</value>
   </data>
   <data name="FailedToParseCommandJson" xml:space="preserve">
     <value>Falha ao expandir um comando com conjunto de "iterateOn". Este comando será ignorado.</value>
@@ -480,20 +451,11 @@
   <data name="ElevatedRun.Text" xml:space="preserve">
     <value>Ctrl+Clique para abrir como administrador</value>
   </data>
-  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Fechar</value>
-  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Fechar</value>
   </data>
   <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
     <value>Fechar</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Maximizar</value>
-  </data>
-  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>Minimizar</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Minimizar</value>
@@ -513,10 +475,6 @@
   <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
     <value>Versão:</value>
     <comment>This is the heading for a version number label</comment>
-  </data>
-  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>Introdução</value>
-    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
     <value>Código-fonte</value>
@@ -538,23 +496,47 @@
     <value>Avisos de Terceiros</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
-  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_Cancel" xml:space="preserve">
     <value>Cancelar</value>
   </data>
-  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Fechar tudo</value>
-  </data>
-  <data name="QuitDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllTitle" xml:space="preserve">
     <value>Deseja fechar todas as janelas?</value>
   </data>
-  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
-    <value>Cancelar</value>
-  </data>
-  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllPrimary" xml:space="preserve">
     <value>Fechar tudo</value>
   </data>
-  <data name="CloseAllDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_WindowTitle" xml:space="preserve">
     <value>Deseja fechar todas as guias?</value>
+  </data>
+  <data name="ConfirmCloseDialog_WindowPrimary" xml:space="preserve">
+    <value>Fechar tudo</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabTitle" xml:space="preserve">
+    <value>Deseja fechar esta guia?</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabPrimary" xml:space="preserve">
+    <value>Fechar guia</value>
+  </data>
+  <data name="ConfirmCloseDialog_PaneTitle" xml:space="preserve">
+    <value>Deseja fechar este painel?</value>
+  </data>
+  <data name="ConfirmCloseDialog_PanePrimary" xml:space="preserve">
+    <value>Fechar painel</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsTitle" xml:space="preserve">
+    <value>Deseja fechar estas guias?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsPrimary" xml:space="preserve">
+    <value>Fechar guias</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesTitle" xml:space="preserve">
+    <value>Deseja fechar estes painéis?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesPrimary" xml:space="preserve">
+    <value>Fechar painéis</value>
+  </data>
+  <data name="DontAskAgainCheckBox.Content" xml:space="preserve">
+    <value>Não me pergunte novamente</value>
   </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
     <value>Cancelar</value>
@@ -711,8 +693,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>Não há suporte para este tipo de link no momento:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>Cancelar</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>Este link pode levar a um local não seguro. Hiperlinks podem ser prejudiciais ao computador e aos dados. Para proteger o computador, clique somente em links de fontes confiáveis.</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>Abrir mesmo assim</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>Configurações</value>
@@ -755,6 +743,42 @@
     <value>Janela sem nome</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NameThisWindowMenuItem" xml:space="preserve">
+    <value>Nomear esta janela...</value>
+    <comment>Menu item text shown when the current window has no name assigned</comment>
+  </data>
+  <data name="RenameThisWindowMenuItem" xml:space="preserve">
+    <value>Renomear esta janela...</value>
+    <comment>Menu item text shown when the current window already has a name</comment>
+  </data>
+  <data name="WindowListUnnamedEntry" xml:space="preserve">
+    <value>#{0} (sem nome)</value>
+    <comment>{locked="{0}"}{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
+  </data>
+  <data name="DeleteWorkspaceMenuItem" xml:space="preserve">
+    <value>Excluir workspace?</value>
+    <comment>Menu item text shown in the right-click context menu on a saved workspace</comment>
+  </data>
+  <data name="OpenWorkspaceMenuItem" xml:space="preserve">
+    <value>Abrir workspace</value>
+    <comment>Menu item text for opening a saved workspace</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceTitle" xml:space="preserve">
+    <value>Excluir "{0}"?</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Shown as the title of a confirmation dialog when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceBody" xml:space="preserve">
+    <value>Tem certeza de que deseja excluir "{0}"? As sessões associadas a este espaço de trabalho também serão excluídas.</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Body text of the confirmation dialog shown when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceDelete" xml:space="preserve">
+    <value>Excluir</value>
+    <comment>Primary button text on the delete workspace confirmation dialog</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceCancel" xml:space="preserve">
+    <value>Cancelar</value>
+    <comment>Cancel button text on the delete workspace confirmation dialog</comment>
+  </data>
   <data name="WindowRenamer.Subtitle" xml:space="preserve">
     <value>Insira um novo nome:</value>
   </data>
@@ -781,6 +805,14 @@
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>Atividade na aba "{0}"</value>
+    <comment>{0} is the tab title. Shown as the body of a desktop notification when tab activity is detected.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>Atividade na aba "{0}" (janela "{1}")</value>
+    <comment>{0} is the tab title, {1} is the window name. Shown as the body of a desktop notification when tab activity is detected and the window has a name.</comment>
+  </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Abrir uma nova guia no diretório inicial fornecido</value>
   </data>
@@ -793,17 +825,8 @@
   <data name="ExportTabText" xml:space="preserve">
     <value>Exportar texto</value>
   </data>
-  <data name="ExportFailure" xml:space="preserve">
-    <value>Falha ao exportar o conteúdo do terminal</value>
-  </data>
-  <data name="ExportSuccess" xml:space="preserve">
-    <value>Conteúdo do terminal exportado com êxito</value>
-  </data>
   <data name="FindText" xml:space="preserve">
     <value>Localizar</value>
-  </data>
-  <data name="PlainText" xml:space="preserve">
-    <value>Texto sem formatação</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>O comportamento de término pode ser configurado nas configurações avançadas do perfil.</value>
@@ -813,6 +836,9 @@
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Esta janela do Terminal está sendo executada como administrador</value>
+  </data>
+  <data name="WorkspaceDropdown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Workspaces</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>Sugestões encontradas: {0}</value>
@@ -896,11 +922,11 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
     <value>Painel ativo movido para a guia "{0}"</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
     <value>Guia "{0}" movida para janela "{1}"</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window to which the tab was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>Guia "{0}" movida para nova janela</value>
@@ -910,13 +936,9 @@
     <value>Guia "{0}" movida para posição "{1}"</value>
     <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
   </data>
-  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
-    <value>Painel ativo movido para "{0}" guia na "{1}" janela</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
-  </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
     <value>Painel ativo movido para a janela "{0}"</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>Painel ativo movido para nova janela</value>
@@ -930,10 +952,10 @@
     <value>Se definido, o comando será acrescentado ao comando padrão do perfil em vez de substituí-lo.</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>Reiniciar conexão</value>
+    <value>Reiniciar sessão</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
-    <value>Reiniciar a conexão do painel ativo</value>
+    <value>Reinicie a sessão no painel ativo</value>
   </data>
   <data name="SnippetPaneTitle.Text" xml:space="preserve">
     <value>Trechos</value>

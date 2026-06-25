@@ -9,6 +9,8 @@
 
 #include "inc/colorTable.hpp"
 
+#include <icu.h>
+
 using namespace Microsoft::Console;
 
 // Routine Description:
@@ -170,7 +172,7 @@ std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view str
 //      spec2: a color in the following format:
 //          "#<red><green><blue>"
 //
-//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
+//   In both specs, <color> is a value contains up to 4 hex digits, uppercase or lowercase.
 // Arguments:
 // - string - The string containing the color spec string to parse.
 // Return Value:
@@ -542,7 +544,7 @@ bool Utils::HexToUint(const wchar_t wch,
 // - wstr - String to convert.
 // - value - receives the int value of the string
 // Return Value:
-// - true iff the string is a unsigned integer string.
+// - true iff the string is an unsigned integer string.
 bool Utils::StringToUint(const std::wstring_view wstr,
                          unsigned int& value)
 {
@@ -1198,7 +1200,7 @@ const wchar_t* Utils::FindActionableControlCharacter(const wchar_t* beg, const s
             goto plainSearch;
         }
 
-        const auto wch = vld1q_u16(it);
+        const auto wch = vld1q_u16(reinterpret_cast<const uint16_t*>(it));
         const auto a = vcleq_u16(wch, vdupq_n_u16(0x1f));
         const auto b = vcleq_u16(vsubq_u16(wch, vdupq_n_u16(0x7f)), vdupq_n_u16(0x20));
         const auto c = vorrq_u16(a, b);
@@ -1233,6 +1235,19 @@ plainSearch:
     }
 
     return it;
+}
+
+// Returns true if it's a valid path to a directory.
+bool Utils::IsValidDirectory(const wchar_t* path) noexcept
+{
+    if (path == nullptr || *path == L'\0')
+    {
+        return false;
+    }
+
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    const auto ok = GetFileAttributesExW(path, GetFileExInfoStandard, &data);
+    return ok && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
 #pragma warning(pop)
@@ -1278,4 +1293,38 @@ bool Utils::IsWindows11() noexcept
         return false;
     }();
     return isWindows11;
+}
+
+bool Utils::IsLikelyToBeEmojiOrSymbolIcon(std::wstring_view text) noexcept
+{
+    if (text.size() == 1 && !IS_HIGH_SURROGATE(til::at(text, 0)))
+    {
+        // If it's a single code unit, it's definitely either zero or one grapheme clusters.
+        // If it turns out to be illegal Unicode, we don't really care.
+        return true;
+    }
+
+    if (text.size() >= 2 && til::at(text, 0) <= 0x7F && til::at(text, 1) <= 0x7F)
+    {
+        // Two adjacent ASCII characters (as seen in most file paths) aren't a single
+        // grapheme cluster.
+        return false;
+    }
+
+    // Use ICU to determine whether text is composed of a single grapheme cluster.
+    int32_t off{ 0 };
+    UErrorCode status{ U_ZERO_ERROR };
+
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+    const auto b{ ubrk_open(UBRK_CHARACTER,
+                            nullptr,
+                            reinterpret_cast<const UChar*>(text.data()),
+                            gsl::narrow_cast<int32_t>(text.size()),
+                            &status) };
+    if (status <= U_ZERO_ERROR)
+    {
+        off = ubrk_next(b);
+        ubrk_close(b);
+    }
+    return off == gsl::narrow_cast<int32_t>(text.size());
 }

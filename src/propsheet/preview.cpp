@@ -422,7 +422,7 @@ VOID PreviewPaint(
  *          return = n1 * m / n2
  *      This can be used to make an aspect ration calculation where n1/n2
  *      is the aspect ratio and m is a known value.  The return value will
- *      be the value that corresponds to m with the correct apsect ratio.
+ *      be the value that corresponds to m with the correct aspect ratio.
  */
 
 LONG AspectScale(

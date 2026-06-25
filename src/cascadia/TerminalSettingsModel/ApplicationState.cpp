@@ -96,7 +96,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ApplicationState::ApplicationState(const std::filesystem::path& stateRoot) noexcept :
         _sharedPath{ stateRoot / stateFileName },
         _elevatedPath{ stateRoot / elevatedStateFileName },
-        _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
+        _throttler{
+            til::throttled_func_options{
+                .delay = std::chrono::seconds{ 1 },
+                .debounce = true,
+                .trailing = true,
+            },
+            [this]() { _write(); }
+        }
     {
         _read();
     }
@@ -246,6 +253,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return *state;
     }
 
+// Need the COMMA macro hack for IMap template arguments in the macros
+#define COMMA ,
+
     // Method Description:
     // - Loads data from the given json blob. Will only read the data that's in
     //   the specified parseSource - so if we're reading the Local state file,
@@ -295,6 +305,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return root;
     }
 
+#undef COMMA
+
     void ApplicationState::AppendPersistedWindowLayout(Model::WindowLayout layout)
     {
         {
@@ -334,6 +346,120 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return false;
     }
 
+    void ApplicationState::SaveWorkspace(const hstring& name, const Model::WindowLayout& layout)
+    {
+        {
+            const auto state = _state.lock();
+            if (!state->PersistedWorkspaces || !*state->PersistedWorkspaces)
+            {
+                state->PersistedWorkspaces = winrt::single_threaded_map<hstring, Model::WindowLayout>();
+            }
+            (*state->PersistedWorkspaces).Insert(name, layout);
+        }
+        _throttler();
+    }
+
+    bool ApplicationState::RemoveWorkspace(const hstring& name)
+    {
+        bool removed{ false };
+        {
+            const auto state = _state.lock();
+            if (state->PersistedWorkspaces && *state->PersistedWorkspaces)
+            {
+                auto map = *state->PersistedWorkspaces;
+                if (map.HasKey(name))
+                {
+                    map.Remove(name);
+                    removed = true;
+                }
+            }
+        }
+        if (removed)
+        {
+            _throttler();
+        }
+        return removed;
+    }
+
+    // Method Description:
+    // - Rename a persisted workspace entry from oldName to newName. If there
+    //   was no entry for oldName, this is a no-op. If an entry for newName
+    //   already exists, it will be overwritten with the layout from oldName.
+    // - If newName is empty, the entry under oldName is simply removed (the
+    //   old name no longer points at a valid window, so the persisted layout
+    //   would otherwise be left stranded).
+    // Return Value:
+    // - true if the persisted state was modified, false otherwise.
+    bool ApplicationState::RenameWorkspace(const hstring& oldName, const hstring& newName)
+    {
+        if (oldName == newName || oldName.empty())
+        {
+            return false;
+        }
+
+        bool changed{ false };
+        {
+            const auto state = _state.lock();
+            if (state->PersistedWorkspaces && *state->PersistedWorkspaces)
+            {
+                auto map = *state->PersistedWorkspaces;
+                if (map.HasKey(oldName))
+                {
+                    if (!newName.empty())
+                    {
+                        const auto layout = map.Lookup(oldName);
+                        map.Insert(newName, layout);
+                    }
+                    map.Remove(oldName);
+                    changed = true;
+                }
+            }
+        }
+        if (changed)
+        {
+            _throttler();
+        }
+        return changed;
+    }
+
+    // Method Description:
+    // - Atomically remove and return a persisted workspace entry. This is the
+    //   intended API for the startup path that restores a named workspace,
+    //   because it guarantees only one caller can claim a given workspace.
+    // Return Value:
+    // - The layout that was stored under `name`, or nullptr if there was none.
+    Model::WindowLayout ApplicationState::TakeWorkspace(const hstring& name)
+    {
+        Model::WindowLayout result{ nullptr };
+        {
+            const auto state = _state.lock();
+            if (state->PersistedWorkspaces && *state->PersistedWorkspaces)
+            {
+                auto map = *state->PersistedWorkspaces;
+                if (map.HasKey(name))
+                {
+                    result = map.Lookup(name);
+                    map.Remove(name);
+                }
+            }
+        }
+        if (result)
+        {
+            _throttler();
+        }
+        return result;
+    }
+
+    Windows::Foundation::Collections::IMapView<hstring, Model::WindowLayout> ApplicationState::AllPersistedWorkspaces()
+    {
+        const auto state = _state.lock_shared();
+        if (state->PersistedWorkspaces && *state->PersistedWorkspaces)
+        {
+            return (*state->PersistedWorkspaces).GetView();
+        }
+        return nullptr;
+    }
+
     // Generate all getter/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     type ApplicationState::name() const noexcept                 \
@@ -352,7 +478,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                  \
         _throttler();                                            \
     }
+#define COMMA ,
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
+#undef COMMA
 #undef MTSM_APPLICATION_STATE_GEN
 
     // Method Description:

@@ -17,9 +17,9 @@
         g_hConhostV2EventTraceProvider,                              \
         "API_" ApiName,                                              \
         TraceLoggingPid(TraceGetProcessId(m), "OriginatingProcess"), \
-        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread"),   \
-        __VA_ARGS__ __VA_OPT__(, )                                   \
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),               \
+        TraceLoggingTid(TraceGetThreadId(m), "OriginatingThread")    \
+            __VA_OPT__(, ) __VA_ARGS__,                              \
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),                   \
         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
 static DWORD TraceGetProcessId(CONSOLE_API_MSG* const m)
@@ -269,6 +269,16 @@ constexpr T saturate(auto val)
         }
     }
     CATCH_RETURN();
+
+    if (a->ProcessControlZ)
+    {
+        // ProcessControlZ is only set for CONSOLE_IO_RAW_READ. To restore
+        // the behavior from Windows 7 (see filehops.c:123) we need to honor
+        // ^Z only if PROCESSED_INPUT is enabled.
+        ULONG InputMode{ 0 };
+        m->_pApiRoutines->GetConsoleInputModeImpl(*pInputBuffer, InputMode);
+        a->ProcessControlZ = (InputMode & ENABLE_PROCESSED_INPUT) != 0;
+    }
 
     TraceConsoleAPICallWithOrigin(
         "ReadConsole",
@@ -583,6 +593,15 @@ constexpr T saturate(auto val)
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
+
+    // See ConptyCursorPositionMayBeWrong() for details.
+    auto& activeBuffer = pObj->GetActiveBuffer();
+    // GetConsoleScreenBufferInfoExImpl uses GetActiveBuffer internally, but
+    // under the console lock.
+    if (activeBuffer.ConptyCursorPositionMayBeWrong())
+    {
+        activeBuffer.WaitForConptyCursorPositionToBeSynchronized();
+    }
 
     m->_pApiRoutines->GetConsoleScreenBufferInfoExImpl(*pObj, ex);
 

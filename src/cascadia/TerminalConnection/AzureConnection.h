@@ -67,6 +67,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::optional<::Microsoft::Terminal::Azure::Tenant> _currentTenant;
 
         void _writeInput(const std::wstring_view str);
+        void _WriteStringWithNewline(std::wstring str);
         void _WriteStringWithNewline(const std::wstring_view str);
         void _WriteCaughtExceptionRecord();
         winrt::Windows::Data::Json::JsonObject _SendRequestReturningJson(std::wstring_view uri, const winrt::Windows::Web::Http::IHttpContent& content = nullptr, winrt::Windows::Web::Http::HttpMethod method = nullptr, const winrt::Windows::Foundation::Uri referer = nullptr);

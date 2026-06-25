@@ -71,7 +71,8 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        void PersistState(bool serializeBuffer);
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout() const;
+        void PersistState();
 
         void UpdateSettings(winrt::TerminalApp::SettingsLoadEventArgs args);
 
@@ -79,6 +80,8 @@ namespace winrt::TerminalApp::implementation
 
         int32_t SetStartupCommandline(TerminalApp::CommandlineArgs args);
         void SetStartupContent(const winrt::hstring& content, const Windows::Foundation::IReference<Windows::Foundation::Rect>& contentBounds);
+        void SetStartupActions(const Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        void SetPersistedLayout(const winrt::Microsoft::Terminal::Settings::Model::WindowLayout& layout);
         int32_t ExecuteCommandline(TerminalApp::CommandlineArgs args);
         void SetSettingsStartupArgs(const std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
 
@@ -92,6 +95,7 @@ namespace winrt::TerminalApp::implementation
         bool ShowTabsFullscreen() const;
         bool AutoHideWindow();
         void IdentifyWindow();
+        bool FocusTab(const winrt::TerminalApp::Tab& tab);
 
         std::optional<uint32_t> LoadPersistedLayoutIdx() const;
         winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout();
@@ -111,6 +115,7 @@ namespace winrt::TerminalApp::implementation
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        winrt::Windows::Foundation::Collections::IVector<IPaneContent> Panes() const;
 
         hstring Title();
         void TitlebarClicked();
@@ -169,6 +174,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         wil::com_ptr<CommandlineArgs> _appArgs{ nullptr };
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _startupConnection{ nullptr };
         bool _hasCommandLineArguments{ false };
         bool _gotSettingsStartupActions{ false };
         std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _settingsStartupArgs{};
@@ -189,7 +195,7 @@ namespace winrt::TerminalApp::implementation
                                    const winrt::hstring& contentKey,
                                    HRESULT settingsLoadedResult,
                                    const winrt::hstring& exceptionText);
-        void _ShowLoadWarningsDialog(const Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+        void _ShowLoadWarningsDialog(const IInspectable& sender, const Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
 
         bool _IsKeyboardServiceEnabled();
 
@@ -209,7 +215,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, Initialized);
 
         FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement, _root, SetTitleBarContent);
-        FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
+        FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, TitleChanged);
         FORWARDED_TYPED_EVENT(CloseWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, CloseWindowRequested);
         FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
         FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
@@ -219,6 +225,8 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
         FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
+        FORWARDED_TYPED_EVENT(SummonWindowByIdRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::SummonWindowByIdRequestedArgs, _root, SummonWindowByIdRequested);
+        FORWARDED_TYPED_EVENT(FocusTabRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::Tab, _root, FocusTabRequested);
         FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
         FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
         FORWARDED_TYPED_EVENT(ShowWindowChanged, Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs, _root, ShowWindowChanged);
@@ -227,6 +235,9 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RequestReceiveContent, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestReceiveContentArgs, _root, RequestReceiveContent);
 
         FORWARDED_TYPED_EVENT(RequestLaunchPosition, Windows::Foundation::IInspectable, winrt::TerminalApp::LaunchPositionRequest, _root, RequestLaunchPosition);
+        FORWARDED_TYPED_EVENT(RequestWindowList, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowListRequest, _root, RequestWindowList);
+        FORWARDED_TYPED_EVENT(RequestOpenWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::OpenWindowRequestedArgs, _root, RequestOpenWindow);
+        FORWARDED_TYPED_EVENT(RequestNewWindow, Windows::Foundation::IInspectable, winrt::TerminalApp::WindowRequestedArgs, _root, RequestNewWindow);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

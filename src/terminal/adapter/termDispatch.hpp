@@ -22,6 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
 class Microsoft::Console::VirtualTerminal::TermDispatch : public Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
+    void UnknownSequence() noexcept override {}
     void Print(const wchar_t wchPrintable) override = 0;
     void PrintString(const std::wstring_view string) override = 0;
 
@@ -54,6 +55,10 @@ public:
     void DeleteColumn(const VTInt /*distance*/) override {} // DECDC
     void SetKeypadMode(const bool /*applicationMode*/) override {} // DECKPAM, DECKPNM
     void SetAnsiMode(const bool /*ansiMode*/) override {} // DECANM
+    void SetKittyKeyboardProtocol(const VTParameter /*flags*/, const VTParameter /*mode*/) noexcept override {} // KKP
+    void QueryKittyKeyboardProtocol() override {} // KKP
+    void PushKittyKeyboardProtocol(const VTParameter /*flags*/) override {} // KKP
+    void PopKittyKeyboardProtocol(const VTParameter /*count*/) override {} // KKP
     void SetTopBottomScrollingMargins(const VTInt /*topMargin*/, const VTInt /*bottomMargin*/) override {} // DECSTBM
     void SetLeftRightScrollingMargins(const VTInt /*leftMargin*/, const VTInt /*rightMargin*/) override {} // DECSLRM
     void EnquireAnswerback() override {} // ENQ
@@ -64,6 +69,7 @@ public:
     void BackIndex() override {} // DECBI
     void ForwardIndex() override {} // DECFI
     void SetWindowTitle(std::wstring_view /*title*/) override {} // DECSWT, OscWindowTitle
+    void SetCurrentWorkingDirectory(std::wstring_view /*uri*/) override {} // OSC 7
     void HorizontalTabSet() override {} // HTS
     void ForwardTab(const VTInt /*numTabs*/) override {} // CHT, HT
     void BackwardsTab(const VTInt /*numTabs*/) override {} // CBT
@@ -122,7 +128,7 @@ public:
     void AnnounceCodeStructure(const VTInt /*ansiLevel*/) override {} // ACS
 
     void SoftReset() override {} // DECSTR
-    void HardReset() override {} // RIS
+    void HardReset(bool /*erase*/) override {} // RIS
     void ScreenAlignmentPattern() override {} // DECALN
 
     void SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override {} // DECSCUSR
@@ -146,6 +152,8 @@ public:
     void DoVsCodeAction(const std::wstring_view /*string*/) override {}
 
     void DoWTAction(const std::wstring_view /*string*/) override {}
+
+    void DoUrxvtAction(const std::wstring_view /*string*/) override {}
 
     StringHandler DefineSixelImage(const VTInt /*macroParameter*/,
                                    const DispatchTypes::SixelBackground /*backgroundSelect*/,
@@ -176,9 +184,9 @@ public:
     void RequestPresentationStateReport(const DispatchTypes::PresentationReportFormat /*format*/) override {} // DECRQPSR
     StringHandler RestorePresentationState(const DispatchTypes::PresentationReportFormat /*format*/) override { return nullptr; } // DECRSPS
 
-    void PlaySounds(const VTParameters /*parameters*/) override{}; // DECPS
+    void PlaySounds(const VTParameters /*parameters*/) override {}; // DECPS
 
-    void SetVtChecksumReportSupport(const bool /*enabled*/) override{};
+    void SetOptionalFeatures(const til::enumset<OptionalFeature> /*features*/) override {};
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning

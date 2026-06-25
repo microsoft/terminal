@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Converters.h"
+
+#include <til/winrt.h>
+
 #include "Converters.g.cpp"
 
 #pragma warning(disable : 26497) // We will make these functions constexpr, as they are part of an ABI boundary.
@@ -31,7 +34,7 @@ namespace winrt::Microsoft::Terminal::UI::implementation
 
     winrt::hstring Converters::PercentageToPercentageString(double value)
     {
-        return winrt::hstring{ fmt::format(FMT_COMPILE(L"{:.0f}%"), value * 100.0) };
+        return til::hstring_format(FMT_COMPILE(L"{:.0f}%"), value * 100.0);
     }
 
     // Strings

@@ -65,7 +65,7 @@ ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
 }
 
 // Routine Description:
-// - Destroys a ConsolewaitBlock
+// - Destroys a ConsoleWaitBlock
 // - On deletion, ConsoleWaitBlocks will erase themselves from the process and object queues in
 //   constant time with the iterator acquired on construction.
 ConsoleWaitBlock::~ConsoleWaitBlock()
@@ -73,6 +73,11 @@ ConsoleWaitBlock::~ConsoleWaitBlock()
     _pProcessQueue->_blocks.erase(_itProcessQueue);
     _pObjectQueue->_blocks.erase(_itObjectQueue);
     delete _pWaiter;
+}
+
+const SCREEN_INFORMATION* ConsoleWaitBlock::GetScreenBuffer() const noexcept
+{
+    return _pWaiter->GetScreenBuffer();
 }
 
 // Routine Description:

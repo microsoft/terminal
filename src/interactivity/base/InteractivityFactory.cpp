@@ -8,7 +8,6 @@
 #include "../inc/ServiceLocator.hpp"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\onecore\AccessibilityNotifier.hpp"
 #include "..\onecore\ConsoleControl.hpp"
 #include "..\onecore\ConsoleInputThread.hpp"
 #include "..\onecore\ConsoleWindow.hpp"
@@ -17,7 +16,6 @@
 #include "..\onecore\WindowMetrics.hpp"
 #endif
 
-#include "../win32/AccessibilityNotifier.hpp"
 #include "../win32/ConsoleControl.hpp"
 #include "../win32/ConsoleInputThread.hpp"
 #include "../win32/WindowDpiApi.hpp"
@@ -199,48 +197,6 @@ using namespace Microsoft::Console::Interactivity;
     return status;
 }
 
-[[nodiscard]] NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier)
-{
-    auto status = STATUS_SUCCESS;
-
-    ApiLevel level;
-    status = ApiDetector::DetectNtUserWindow(&level);
-
-    if (SUCCEEDED_NTSTATUS(status))
-    {
-        std::unique_ptr<IAccessibilityNotifier> newNotifier;
-        try
-        {
-            switch (level)
-            {
-            case ApiLevel::Win32:
-                newNotifier = std::make_unique<Microsoft::Console::Interactivity::Win32::AccessibilityNotifier>();
-                break;
-
-#ifdef BUILD_ONECORE_INTERACTIVITY
-            case ApiLevel::OneCore:
-                newNotifier = std::make_unique<Microsoft::Console::Interactivity::OneCore::AccessibilityNotifier>();
-                break;
-#endif
-            default:
-                status = STATUS_INVALID_LEVEL;
-                break;
-            }
-        }
-        catch (...)
-        {
-            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
-
-        if (SUCCEEDED_NTSTATUS(status))
-        {
-            notifier.swap(newNotifier);
-        }
-    }
-
-    return status;
-}
-
 [[nodiscard]] NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider)
 {
     auto status = STATUS_SUCCESS;
@@ -293,7 +249,7 @@ using namespace Microsoft::Console::Interactivity;
 // - hwnd: Receives the value of the newly created window's HWND.
 // - owner: the HWND that should be the initial owner of the pseudo window.
 // Return Value:
-// - STATUS_SUCCESS on success, otherwise an appropriate error.
+// - STATUS_SUCCESS on success; otherwise, an appropriate error.
 [[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)
 {
     hwnd = nullptr;

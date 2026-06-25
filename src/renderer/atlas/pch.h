@@ -3,8 +3,13 @@
 
 #pragma once
 
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 
 #include <filesystem>
 #include <functional>
@@ -25,7 +30,8 @@
 #include <VersionHelpers.h>
 #include <wincodec.h>
 
-#include <gsl/gsl_util>
+#include <gsl/narrow>
+#include <gsl/util>
 #include <gsl/pointers>
 #include <wil/com.h>
 #include <wil/filesystem.h>
@@ -41,8 +47,18 @@
 // {fmt}, a C++20-compatible formatting library
 #pragma warning(push)
 #pragma warning(disable : 4702) // unreachable code
+// Workaround: clang-cl advertises consteval support but fmt's use of it in
+// color.h triggers "call to consteval function is not a constant expression".
+// Hide __cpp_lib_is_constant_evaluated so fmt falls back to the non-consteval path.
+#ifdef __clang__
+#pragma push_macro("__cpp_lib_is_constant_evaluated")
+#undef __cpp_lib_is_constant_evaluated
+#endif
 #include <fmt/compile.h>
 #include <fmt/xchar.h>
+#ifdef __clang__
+#pragma pop_macro("__cpp_lib_is_constant_evaluated")
+#endif
 #pragma warning(pop)
 
 #include <til.h>

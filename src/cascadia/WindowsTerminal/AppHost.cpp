@@ -77,6 +77,11 @@ AppHost::AppHost(WindowEmperor* manager, const winrt::TerminalApp::AppLogic& log
     _windowCallbacks.ShouldExitFullscreen = _window->ShouldExitFullscreen({ &_windowLogic, &winrt::TerminalApp::TerminalWindow::RequestExitFullscreen });
 
     _window->MakeWindow();
+
+    // Does window creation mean the window was activated (WM_ACTIVATE)? No.
+    // But it simplifies `WindowEmperor::_mostRecentWindow()`, because now the creation of a
+    // new window marks it as the most recent one immediately, even before it becomes active.
+    QueryPerformanceCounter(&_lastActivatedTime);
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
@@ -127,9 +132,19 @@ void AppHost::_HandleCommandlineArgs(const winrt::TerminalApp::WindowRequestedAr
     // We don't have XAML yet, but we do have other stuff.
     _windowLogic = _appLogic.CreateNewWindow();
 
-    if (const auto content = windowArgs.Content(); !content.empty())
+    if (const auto layout = windowArgs.PersistedLayout())
+    {
+        _windowLogic.SetPersistedLayout(layout);
+        _launchShowWindowCommand = SW_NORMAL;
+    }
+    else if (const auto content = windowArgs.Content(); !content.empty())
     {
         _windowLogic.SetStartupContent(content, windowArgs.InitialBounds());
+        _launchShowWindowCommand = SW_NORMAL;
+    }
+    else if (const auto actions = windowArgs.StartupActions(); actions && actions.Size() > 0)
+    {
+        _windowLogic.SetStartupActions(actions);
         _launchShowWindowCommand = SW_NORMAL;
     }
     else
@@ -260,11 +275,16 @@ void AppHost::Initialize()
 
     _revokers.IsQuakeWindowChanged = _windowLogic.IsQuakeWindowChanged(winrt::auto_revoke, { this, &AppHost::_IsQuakeWindowChanged });
     _revokers.SummonWindowRequested = _windowLogic.SummonWindowRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowRequested });
+    _revokers.SummonWindowByIdRequested = _windowLogic.SummonWindowByIdRequested(winrt::auto_revoke, { this, &AppHost::_SummonWindowByIdRequested });
+    _revokers.FocusTabRequested = _windowLogic.FocusTabRequested(winrt::auto_revoke, { this, &AppHost::_FocusTabRequested });
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
     _revokers.RequestMoveContent = _windowLogic.RequestMoveContent(winrt::auto_revoke, { this, &AppHost::_handleMoveContent });
     _revokers.RequestReceiveContent = _windowLogic.RequestReceiveContent(winrt::auto_revoke, { this, &AppHost::_handleReceiveContent });
+    _revokers.RequestWindowList = _windowLogic.RequestWindowList(winrt::auto_revoke, { this, &AppHost::_HandleRequestWindowList });
+    _revokers.RequestOpenWindow = _windowLogic.RequestOpenWindow(winrt::auto_revoke, { this, &AppHost::_HandleOpenWindowRequested });
+    _revokers.RequestNewWindow = _windowLogic.RequestNewWindow(winrt::auto_revoke, { this, &AppHost::_HandleNewWindowRequested });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -283,9 +303,12 @@ void AppHost::Initialize()
     // the PTY requesting a change to the window state and the Terminal
     // realizing it, but should mitigate issues where the Terminal and PTY get
     // de-sync'd.
-    _showHideWindowThrottler = std::make_shared<ThrottledFuncTrailing<bool>>(
+    _showHideWindowThrottler = std::make_shared<ThrottledFunc<bool>>(
         winrt::Windows::System::DispatcherQueue::GetForCurrentThread(),
-        std::chrono::milliseconds(200),
+        til::throttled_func_options{
+            .delay = std::chrono::milliseconds{ 200 },
+            .trailing = true,
+        },
         [this](const bool show) {
             _window->ShowWindowChanged(show);
         });
@@ -387,19 +410,10 @@ void AppHost::_revokeWindowCallbacks()
 
 // Method Description:
 // - Called every time when the active tab's title changes. We'll also fire off
-//   a window message so we can update the window's title on the main thread,
-//   though we'll only do so if the settings are configured for that.
-// Arguments:
-// - sender: unused
-// - newTitle: the string to use as the new window title
-// Return Value:
-// - <none>
-void AppHost::_AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
+//   a window message so we can update the window's title on the main thread.
+void AppHost::_AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    if (_windowLogic.GetShowTitleInTitlebar())
-    {
-        _window->UpdateTitle(newTitle);
-    }
+    _window->UpdateTitle(_windowLogic.Title());
 }
 
 // The terminal page is responsible for persisting its own state, but it does
@@ -408,6 +422,52 @@ void AppHost::_HandleRequestLaunchPosition(const winrt::Windows::Foundation::IIn
                                            winrt::TerminalApp::LaunchPositionRequest args)
 {
     args.Position(_GetWindowLaunchPosition());
+}
+
+void AppHost::_HandleRequestWindowList(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                       winrt::TerminalApp::WindowListRequest args)
+{
+    // Ask the Emperor (on the main thread) for the current window list.
+    // SendMessage blocks until the message is processed, so this is
+    // synchronous and the results vector is filled in-place.
+    std::vector<WindowEmperor::WindowListEntry> entries;
+    SendMessage(_windowManager->GetMainWindow(),
+                WindowEmperor::WM_GET_WINDOW_LIST,
+                0,
+                reinterpret_cast<LPARAM>(&entries));
+
+    auto windowEntries = args.Entries();
+    for (const auto& entry : entries)
+    {
+        winrt::TerminalApp::WindowListEntry w;
+        w.Id(entry.Id);
+        w.Name(winrt::hstring{ entry.Name });
+        windowEntries.Append(w);
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w ...")` dance.
+// Asks the WindowEmperor to summon a named window or restore its persisted
+// workspace, without launching a second wt.exe.
+void AppHost::_HandleOpenWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                         const winrt::TerminalApp::OpenWindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->OpenWindow(args.Name());
+    }
+}
+
+// In-process replacement for the old `ShellExecute("wt -w -1 new-tab ...")`
+// dance. The page hands us a pre-built WindowRequestedArgs (with its
+// StartupActions already populated); we just forward it to the WindowEmperor.
+void AppHost::_HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable&,
+                                        const winrt::TerminalApp::WindowRequestedArgs& args)
+{
+    if (_windowManager && args)
+    {
+        _windowManager->CreateNewWindow(args);
+    }
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
@@ -746,7 +806,7 @@ void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
 // - delta: the wheel delta that triggered this event.
 // Return Value:
 // - <none>
-void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const int32_t delta)
+void AppHost::_WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const winrt::Microsoft::Terminal::Core::Point delta)
 {
     if (_windowLogic)
     {
@@ -951,7 +1011,7 @@ void AppHost::_updateTheme()
     _window->UseDarkTheme(_isActuallyDarkTheme(theme.RequestedTheme()));
 
     // Update the window frame. If `rainbowFrame:true` is enabled, then that
-    // will be used. Otherwise we'll try to use the `FrameBrush` set in the
+    // will be used. Otherwise, we'll try to use the `FrameBrush` set in the
     // terminal window, as that will have the right color for the ThemeColor for
     // this setting. If that value is null, then revert to the default frame
     // color.
@@ -1063,6 +1123,31 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     HandleSummon(std::move(summonArgs));
+}
+
+void AppHost::_SummonWindowByIdRequested(const winrt::Windows::Foundation::IInspectable&,
+                                         const winrt::TerminalApp::SummonWindowByIdRequestedArgs& args)
+{
+    // Summon the window by its ID without creating a new tab.
+    // We look up the target window in WindowEmperor and call HandleSummon directly.
+    const auto targetId = args.WindowId();
+    if (auto* targetWindow = _windowManager->GetWindowById(targetId))
+    {
+        winrt::TerminalApp::SummonWindowBehavior summonBehavior;
+        summonBehavior.MoveToCurrentDesktop(false);
+        summonBehavior.DropdownDuration(0);
+        summonBehavior.ToMonitor(winrt::TerminalApp::MonitorBehavior::InPlace);
+        summonBehavior.ToggleVisibility(false); // Do not toggle, just make visible.
+        targetWindow->HandleSummon(std::move(summonBehavior));
+    }
+}
+
+void AppHost::_FocusTabRequested(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::TerminalApp::Tab& tab)
+{
+    // The tab may have moved to another window. Ask the emperor to
+    // search all windows and focus the tab wherever it currently lives.
+    _windowManager->FocusTabInAnyWindow(tab);
 }
 
 void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,

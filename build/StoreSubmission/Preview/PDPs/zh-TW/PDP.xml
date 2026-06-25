@@ -54,13 +54,14 @@
     
   </DevStudio>
   <ReleaseNotes>
-    版本 __VERSION_NUMBER__
+    Version __VERSION_NUMBER__
 
-- 我們已新增數十個只存在於 JSON 檔案中的設定到 UI，包括自定義 [新索引標籤] 功能表版面配置的新頁面！
-- 我們已重新設定視窗管理，以改善可靠性;請提出您在 wt.exe 別名遇到的任何錯誤
-- 設定文件現在會在隱藏或參照已卸載的程式時顯示圖示。
+- 終於，提供可搜尋任何設定的功能!
+- 全新原生編輯器，支援按鍵繫結、動作及命令選擇區項目。
+- 新增社群本地語系化，包含塞爾維亞語與烏克蘭語
+- 支援高保真度輸入編碼的「Kitty」鍵盤通訊協定
 
-如需詳細數據，請參閱我們的 GitHub 版本頁面。
+如需更多詳細資料，請參閱我們的 GitHub 發行版本頁面。
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

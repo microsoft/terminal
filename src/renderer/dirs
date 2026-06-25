@@ -2,3 +2,4 @@ DIRS= \
      base \
      gdi \
      wddmcon \
+     atlas \

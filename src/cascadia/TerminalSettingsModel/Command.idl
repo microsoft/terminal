@@ -21,7 +21,7 @@ namespace Microsoft.Terminal.Settings.Model
         #undef ON_ALL_ACTIONS
     };
 
-    [default_interface] runtimeclass ActionAndArgs {
+    runtimeclass ActionAndArgs {
         ActionAndArgs();
         ActionAndArgs(ShortcutAction action, IActionArgs args);
 
@@ -32,24 +32,28 @@ namespace Microsoft.Terminal.Settings.Model
         ShortcutAction Action;
     };
 
-    [default_interface] runtimeclass Command : ISettingsModelObject
+    runtimeclass Command : ISettingsModelObject
     {
         Command();
+        static Command NewUserCommand();
+        static Command CopyAsUserCommand(Command originalCmd);
 
-        String Name { get; };
+        String Name;
+        Boolean HasName();
+        String LanguageNeutralName { get; };
         String ID { get; };
+        void GenerateID();
 
         String Description { get; };
 
-        ActionAndArgs ActionAndArgs { get; };
+        ActionAndArgs ActionAndArgs;
 
-        String IconPath;
+        IMediaResource Icon;
 
         Boolean HasNestedCommands { get; };
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
 
         static IVector<Command> ParsePowerShellMenuComplete(String json, Int32 replaceLength);
         static IVector<Command> HistoryToCommands(IVector<String> commandHistory, String commandline, Boolean directories, String iconPath);
-
     }
 }

@@ -16,7 +16,7 @@ Abstract:
 #include "WindowLayout.g.h"
 
 #include <inc/cppwinrt_utils.h>
-#include <JsonUtils.h>
+#include "JsonUtils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
 //   (source, type, function name, JSON key, ...variadic construction arguments)
+// Note: we're using the COMMA macro hack for the template arguments as used elsewhere.
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                                  \
     X(FileSource::Shared, winrt::hstring, SettingsHash, "settingsHash")                                                                                                   \
     X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
@@ -41,7 +42,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
     X(FileSource::Shared, Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
     X(FileSource::Local, Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")                                                  \
-    X(FileSource::Local, std::unordered_set<hstring>, DismissedBadges, "dismissedBadges")
+    X(FileSource::Local, std::unordered_set<hstring>, DismissedBadges, "dismissedBadges")                                                                                 \
+    X(FileSource::Local, Windows::Foundation::Collections::IMap<hstring COMMA Model::WindowLayout>, PersistedWorkspaces, "persistedWorkspaces")                           \
+    X(FileSource::Shared, bool, SSHFolderGenerated, "sshFolderGenerated", false)
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
@@ -55,6 +58,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
     };
+
+#define COMMA ,
 
     struct ApplicationState : public ApplicationStateT<ApplicationState>
     {
@@ -74,6 +79,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool DismissBadge(const hstring& badgeId);
         bool BadgeDismissed(const hstring& badgeId) const;
 
+        void SaveWorkspace(const hstring& name, const Model::WindowLayout& layout);
+        bool RemoveWorkspace(const hstring& name);
+        bool RenameWorkspace(const hstring& oldName, const hstring& newName);
+        Model::WindowLayout TakeWorkspace(const hstring& name);
+        Windows::Foundation::Collections::IMapView<hstring, Model::WindowLayout> AllPersistedWorkspaces();
+
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     type name() const noexcept;                                  \
@@ -91,7 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         til::shared_mutex<state_t> _state;
         std::filesystem::path _sharedPath;
         std::filesystem::path _elevatedPath;
-        til::throttled_func_trailing<> _throttler;
+        til::throttled_func<> _throttler;
 
         void _write() const noexcept;
         void _read() const noexcept;
@@ -103,6 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::string _readLocalContents() const;
         void _writeLocalContents(const std::string_view content) const;
     };
+#undef COMMA
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation

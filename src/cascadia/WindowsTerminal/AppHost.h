@@ -39,7 +39,7 @@ private:
     std::unique_ptr<IslandWindow> _window;
     winrt::TerminalApp::AppLogic _appLogic{ nullptr };
     winrt::TerminalApp::TerminalWindow _windowLogic{ nullptr };
-    std::shared_ptr<ThrottledFuncTrailing<bool>> _showHideWindowThrottler;
+    std::shared_ptr<ThrottledFunc<bool>> _showHideWindowThrottler;
     SafeDispatcherTimer _frameTimer;
     LARGE_INTEGER _lastActivatedTime{};
     winrt::guid _virtualDesktopId{};
@@ -73,7 +73,7 @@ private:
 
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
-    void _WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const int32_t delta);
+    void _WindowMouseWheeled(const winrt::Windows::Foundation::Point coord, const winrt::Microsoft::Terminal::Core::Point delta);
     void _WindowActivated(bool activated);
     void _WindowMoved();
 
@@ -91,8 +91,20 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
+    void _SummonWindowByIdRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                    const winrt::TerminalApp::SummonWindowByIdRequestedArgs& args);
+
+    void _FocusTabRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                            const winrt::TerminalApp::Tab& tab);
+
     void _OpenSystemMenu(const winrt::Windows::Foundation::IInspectable& sender,
                          const winrt::Windows::Foundation::IInspectable& args);
+
+    void _HandleOpenWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                    const winrt::TerminalApp::OpenWindowRequestedArgs& args);
+
+    void _HandleNewWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                   const winrt::TerminalApp::WindowRequestedArgs& args);
 
     void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                     const winrt::TerminalApp::SystemMenuChangeArgs& args);
@@ -127,9 +139,11 @@ private:
     void _stopFrameTimer();
     void _updateFrameColor(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
 
-    void _AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
+    void _AppTitleChanged(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::Foundation::IInspectable&);
     void _HandleRequestLaunchPosition(const winrt::Windows::Foundation::IInspectable& sender,
                                       winrt::TerminalApp::LaunchPositionRequest args);
+    void _HandleRequestWindowList(const winrt::Windows::Foundation::IInspectable& sender,
+                                  winrt::TerminalApp::WindowListRequest args);
 
     // Helper struct. By putting these all into one struct, we can revoke them
     // all at once, by assigning _revokers to a fresh Revokers instance. That'll
@@ -151,12 +165,17 @@ private:
         winrt::TerminalApp::TerminalWindow::IdentifyWindowsRequested_revoker IdentifyWindowsRequested;
         winrt::TerminalApp::TerminalWindow::IsQuakeWindowChanged_revoker IsQuakeWindowChanged;
         winrt::TerminalApp::TerminalWindow::SummonWindowRequested_revoker SummonWindowRequested;
+        winrt::TerminalApp::TerminalWindow::SummonWindowByIdRequested_revoker SummonWindowByIdRequested;
+        winrt::TerminalApp::TerminalWindow::FocusTabRequested_revoker FocusTabRequested;
         winrt::TerminalApp::TerminalWindow::OpenSystemMenu_revoker OpenSystemMenu;
         winrt::TerminalApp::TerminalWindow::QuitRequested_revoker QuitRequested;
         winrt::TerminalApp::TerminalWindow::ShowWindowChanged_revoker ShowWindowChanged;
         winrt::TerminalApp::TerminalWindow::RequestMoveContent_revoker RequestMoveContent;
         winrt::TerminalApp::TerminalWindow::RequestReceiveContent_revoker RequestReceiveContent;
         winrt::TerminalApp::TerminalWindow::RequestLaunchPosition_revoker RequestLaunchPosition;
+        winrt::TerminalApp::TerminalWindow::RequestNewWindow_revoker RequestNewWindow;
+        winrt::TerminalApp::TerminalWindow::RequestWindowList_revoker RequestWindowList;
+        winrt::TerminalApp::TerminalWindow::RequestOpenWindow_revoker RequestOpenWindow;
         winrt::TerminalApp::TerminalWindow::PropertyChanged_revoker PropertyChanged;
         winrt::TerminalApp::TerminalWindow::SettingsChanged_revoker SettingsChanged;
         winrt::TerminalApp::TerminalWindow::WindowSizeChanged_revoker WindowSizeChanged;

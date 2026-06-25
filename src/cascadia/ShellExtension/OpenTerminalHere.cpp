@@ -21,7 +21,7 @@ static constexpr std::wstring_view VerbName{ L"WindowsTerminalOpenHere" };
 // Arguments:
 // - psiItemArray: a IShellItemArray which contains the item that's selected.
 // Return Value:
-// - S_OK if we successfully attempted to launch the Terminal, otherwise a
+// - S_OK if we successfully attempted to launch the Terminal; otherwise, a
 //   failure from an earlier HRESULT.
 HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
                                  IBindCtx* /*pBindContext*/)

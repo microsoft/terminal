@@ -37,7 +37,8 @@
             </Button>
         </Border>
         <StackPanel Margin="{StaticResource StandardControlMargin}">
-            <local:SettingContainer x:Uid="AddProfile_Duplicate">
+            <local:SettingContainer x:Name="DuplicateProfile"
+                                    x:Uid="AddProfile_Duplicate">
                 <ComboBox x:Name="Profiles"
                           AutomationProperties.AccessibilityView="Content"
                           ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
@@ -59,7 +60,7 @@
                                 <IconSourceElement Grid.Column="0"
                                                    Width="16"
                                                    Height="16"
-                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(EvaluatedIcon), Mode=OneTime}" />
+                                                   IconSource="{x:Bind mtu:IconPathConverter.IconSourceWUX(Icon.Resolved), Mode=OneTime}" />
 
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind Name}" />

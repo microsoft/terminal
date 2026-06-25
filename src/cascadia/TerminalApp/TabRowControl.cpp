@@ -5,7 +5,6 @@
 #include "TabRowControl.h"
 
 #include "TabRowControl.g.cpp"
-#include <LibraryResources.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 

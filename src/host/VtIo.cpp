@@ -50,6 +50,11 @@ using namespace Microsoft::Console::Interactivity;
             CodepointWidthDetector::Singleton().Reset(mode);
         }
 
+        if (pArgs->GetAmbiguousIsWide())
+        {
+            CodepointWidthDetector::Singleton().SetAmbiguousWidth(2);
+        }
+
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
@@ -73,7 +78,7 @@ using namespace Microsoft::Console::Interactivity;
 //  SignalHandle: an optional file handle that will be used to send signals into the console.
 //      This represents the ability to send signals to a *nix tty/pty.
 // Return Value:
-//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
+//  S_OK if we initialized successfully; otherwise, an appropriate HRESULT
 //      indicating failure.
 [[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
                                         const HANDLE OutHandle,
@@ -117,6 +122,14 @@ using namespace Microsoft::Console::Interactivity;
         CATCH_RETURN();
     }
 
+    // TODO GH#19847: Avoid translating win32im sequences to Kitty Keyboard Protocol temporarily.
+    // This is because as of this writing, our implementation is brand new, and Windows Terminal
+    // needs a toggle to disable it. That only works if ConPTY then doesn't do it anyway.
+    if (const auto inputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().pInputBuffer)
+    {
+        inputBuffer->GetTerminalInput().ForceDisableKittyKeyboardProtocol(true);
+    }
+
     // The only way we're initialized is if the args said we're in conpty mode.
     // If the args say so, then at least one of in, out, or signal was specified
     _state = State::Initialized;
@@ -136,7 +149,7 @@ bool VtIo::IsUsingVt() const
 // Arguments:
 //  <none>
 // Return Value:
-//  S_OK if we started successfully or had nothing to start, otherwise an
+//  S_OK if we started successfully or had nothing to start; otherwise, an
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
@@ -155,7 +168,7 @@ bool VtIo::IsUsingVt() const
     {
         if (IsValidHandle(_hInput.get()))
         {
-            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _lookingForCursorPosition);
+            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput));
         }
     }
     CATCH_RETURN();
@@ -177,7 +190,7 @@ bool VtIo::IsUsingVt() const
             // wait for the DA1 response below and effectively wait for both.
             if (_lookingForCursorPosition)
             {
-                writer.WriteUTF8("\x1b[6n"); // Cursor Position Report (DSR CPR)
+                writer.WriteDSRCPR();
             }
 
             // GH#4999 - Send a sequence to the connected terminal to request
@@ -224,6 +237,28 @@ bool VtIo::IsUsingVt() const
 
     _state = State::Running;
     return S_OK;
+}
+
+void VtIo::Shutdown() noexcept
+{
+    if (_state != State::Running)
+    {
+        return;
+    }
+
+    // The reverse of what we did in StartIfNeeded.
+    try
+    {
+        Writer writer{ this };
+
+        writer.WriteUTF8(
+            "\x1b[?1004l" // Focus Event Mode
+            "\x1b[?9001l" // Win32 Input Mode
+        );
+
+        writer.Submit();
+    }
+    CATCH_LOG();
 }
 
 void VtIo::SetDeviceAttributes(const til::enumset<DeviceAttribute, uint64_t> attributes) noexcept
@@ -361,7 +396,7 @@ void VtIo::FormatAttributes(std::wstring& target, const TextAttribute& attribute
 wchar_t VtIo::SanitizeUCS2(wchar_t ch)
 {
     // If any of the values in the buffer are C0 or C1 controls, we need to
-    // convert them to printable codepoints, otherwise they'll end up being
+    // convert them to printable codepoints; otherwise, they'll end up being
     // evaluated as control characters by the receiving terminal. We use the
     // DOS 437 code page for the C0 controls and DEL, and just a `?` for the
     // C1 controls, since that's what you would most likely have seen in the
@@ -696,6 +731,19 @@ void VtIo::Writer::WriteASB(bool enabled) const
     char buf[] = "\x1b[?1049h";
     buf[std::size(buf) - 2] = enabled ? 'h' : 'l';
     _io->_back.append(&buf[0], std::size(buf) - 1);
+}
+
+// DSR CPR: Cursor Position Report
+bool VtIo::Writer::WriteDSRCPR() const
+{
+    if (!_io->_pVtInputThread)
+    {
+        return false;
+    }
+
+    _io->_back.append("\x1b[6n");
+    _io->_pVtInputThread->CaptureNextCursorPositionReport();
+    return true;
 }
 
 void VtIo::Writer::WriteWindowVisibility(bool visible) const

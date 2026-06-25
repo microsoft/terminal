@@ -1,7 +1,7 @@
 jobs:
 - job: CodeFormatCheck
   displayName: Check Code Format
-  pool: { vmImage: windows-2022 }
+  pool: { vmImage: windows-latest }
 
   steps:
   - checkout: self

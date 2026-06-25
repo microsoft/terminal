@@ -9,7 +9,7 @@
 
 #include "GlobalAppSettings.g.cpp"
 
-#include <LibraryResources.h>
+#include "MediaResourceSupport.h"
 
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
@@ -21,6 +21,7 @@ static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
+static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreference" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view LegacyReloadEnvironmentVariablesKey{ "compatibility.reloadEnvironmentVariables" };
 static constexpr std::string_view LegacyForceVTInputKey{ "experimental.input.forceVT" };
@@ -28,6 +29,7 @@ static constexpr std::string_view LegacyInputServiceWarningKey{ "inputServiceWar
 static constexpr std::string_view LegacyWarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view LegacyWarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
 static constexpr std::string_view LegacyConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
+static constexpr std::string_view LegacyPersistedWindowLayout{ "persistedWindowLayout" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -100,6 +102,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
             globals->_DisabledProfileSources->Append(src);
         }
     }
+    if (_SafeUriSchemes)
+    {
+        globals->_SafeUriSchemes = winrt::single_threaded_vector<hstring>();
+        for (const auto& src : *_SafeUriSchemes)
+        {
+            globals->_SafeUriSchemes->Append(src);
+        }
+    }
 
     for (const auto& parent : _parents)
     {
@@ -158,7 +168,16 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyInputServiceWarningKey, _InputServiceWarning) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutLargePasteKey, _WarnAboutLargePaste) || _fixupsAppliedDuringLoad;
     _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyWarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste) || _fixupsAppliedDuringLoad;
-    _fixupsAppliedDuringLoad = JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, _ConfirmCloseAllTabs) || _fixupsAppliedDuringLoad;
+    // GH#6549 - Migrate legacy "confirmCloseAllTabs" boolean to the new
+    // "confirmOnClose" enum. true -> Automatic, false -> Never.
+    {
+        std::optional<bool> legacyConfirmClose;
+        if (JsonUtils::GetValueForKey(json, LegacyConfirmCloseAllTabsKey, legacyConfirmClose))
+        {
+            _ConfirmOnClose = legacyConfirmClose.value() ? ConfirmOnClose::Automatic : ConfirmOnClose::Never;
+            _fixupsAppliedDuringLoad = true;
+        }
+    }
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);       \
@@ -192,6 +211,13 @@ void GlobalAppSettings::LayerJson(const Json::Value& json, const OriginTag origi
     if (json[LegacyForceVTInputKey.data()])
     {
         _logSettingSet(LegacyForceVTInputKey);
+    }
+
+    // GLOBAL_SETTINGS_LAYER_JSON above should have already loaded this value properly.
+    // We just need to detect if the legacy value was used and mark it for fixup, if so.
+    if (const auto firstWindowPreferenceValue = json[FirstWindowPreferenceKey.data()])
+    {
+        _fixupsAppliedDuringLoad |= firstWindowPreferenceValue == LegacyPersistedWindowLayout.data();
     }
 
     // Remove settings included in userDefaults
@@ -303,6 +329,10 @@ Json::Value GlobalAppSettings::ToJson()
     {
         _TextMeasurement.reset();
     }
+    if (_AmbiguousWidth == Control::AmbiguousWidth::Narrow)
+    {
+        _AmbiguousWidth.reset();
+    }
     if (_DefaultInputScope == Control::DefaultInputScope::Default)
     {
         _DefaultInputScope.reset();
@@ -375,7 +405,26 @@ void GlobalAppSettings::ExpandCommands(const winrt::Windows::Foundation::Collect
 
 bool GlobalAppSettings::ShouldUsePersistedLayout() const
 {
-    return FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    return FirstWindowPreference() != FirstWindowPreference::DefaultProfile;
+}
+
+void GlobalAppSettings::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    _actionMap->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+    if (_NewTabMenu)
+    {
+        for (const auto& entry : *_NewTabMenu)
+        {
+            if (const auto resolvable{ entry.try_as<IPathlessMediaResourceContainer>() })
+            {
+                resolvable->ResolveMediaResourcesWithBasePath(SourceBasePath, resolver);
+            }
+        }
+    }
+    for (auto& parent : _parents)
+    {
+        parent->ResolveMediaResources(resolver);
+    }
 }
 
 void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
@@ -435,6 +484,46 @@ void GlobalAppSettings::_logSettingSet(const std::string_view& setting)
     else
     {
         _changeLog.emplace(setting);
+    }
+}
+
+void GlobalAppSettings::UpdateCommandID(const Model::Command& cmd, winrt::hstring newID)
+{
+    const auto oldID = cmd.ID();
+    _actionMap->UpdateCommandID(cmd, newID);
+    // newID might have been empty when this function was called, if so actionMap would have generated a new ID, use that
+    newID = cmd.ID();
+    if (_NewTabMenu)
+    {
+        // Recursive lambda function to look through all the new tab menu entries and update IDs accordingly
+        std::function<void(const Model::NewTabMenuEntry&)> recursiveEntryIdUpdate;
+        recursiveEntryIdUpdate = [&](const Model::NewTabMenuEntry& entry) {
+            if (entry.Type() == NewTabMenuEntryType::Action)
+            {
+                if (const auto actionEntry{ entry.try_as<ActionEntry>() })
+                {
+                    if (actionEntry.ActionId() == oldID)
+                    {
+                        actionEntry.ActionId(newID);
+                    }
+                }
+            }
+            else if (entry.Type() == NewTabMenuEntryType::Folder)
+            {
+                if (const auto folderEntry{ entry.try_as<FolderEntry>() })
+                {
+                    for (const auto& nestedEntry : folderEntry.RawEntries())
+                    {
+                        recursiveEntryIdUpdate(nestedEntry);
+                    }
+                }
+            }
+        };
+
+        for (const auto& entry : *_NewTabMenu)
+        {
+            recursiveEntryIdUpdate(entry);
+        }
     }
 }
 

@@ -41,6 +41,11 @@ namespace Microsoft.Terminal.Settings.Editor
         String ProfileMatcherCommandline;
         String AddFolderName;
 
+        Windows.UI.Xaml.Controls.IconElement CurrentFolderIconPreview { get; };
+        String CurrentFolderLocalizedIcon { get; };
+        String CurrentFolderIconPath;
+        Boolean CurrentFolderUsingNoIcon { get; };
+
         void RequestReorderEntry(NewTabMenuEntryViewModel vm, Boolean goingUp);
         void RequestDeleteEntry(NewTabMenuEntryViewModel vm);
         void RequestMoveEntriesToFolder(IVector<NewTabMenuEntryViewModel> entries, FolderEntryViewModel folderEntry);

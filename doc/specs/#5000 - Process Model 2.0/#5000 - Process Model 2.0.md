@@ -362,7 +362,7 @@ Essentially, the probabilistic elective monarchy will work in the following way:
     register.
 3. After registering as a server for `Monarch`s, attempt to create a `Monarch`
    using `winrt::create_instance`.
-4. Using that `Monarch`, ask it for it's PID.
+4. Using that `Monarch`, ask it for its PID.
    - If that PID is the same as the PID of the current process, then the window
      process knows that it is the monarch.
    - If that PID is some other process, then we know that we're not currently
@@ -886,7 +886,7 @@ Here, we've got two tabs that have been serialized.
   - The second pane is also a `TermControl`, takes up 70% of the parent, and is
     attached to the content process `{2-2-2-2}`
 * The second tab has a single pane, with a SettingsPage. The settings page has
-  also specified in it's `payload` that its current page is the "globals" page.
+  also specified in its `payload` that its current page is the "globals" page.
 
 When we send this serialized state to another window, it can use the content
 GUIDs to initialize new `TermControl`s connected to the appropriate content
@@ -983,7 +983,7 @@ of each other.
    all the logic concerning input. The core will expose these methods that the
    UI layer calls as projected methods
 
-8. (Dependent on 7): Expose the methods the UI layer calls on the core as
+8. (Dependent on 7): Expose the methods that the UI layer calls on the core as
    projected methods. The control is still fundamentally in-proc, and the UI
    layer calls directly into the implementation of the control core, but the
    methods _could_ be used x-proc.
@@ -1102,7 +1102,7 @@ launch to use seems like an obvious next step. See also [#961].
     - `true` or `"always"`: always glom to the most recent window, regardless of
       desktop
     - `"sameDesktop"`: Only glom if there's an existing window on this virtual
-      desktop, otherwise create a new window
+      desktop; otherwise, create a new window
     - `false` or `"never"`: Never glom, always create a new window.
 
 
@@ -1132,7 +1132,7 @@ prompt the user for permission, but that's an acceptable user experience.
 
 ## TODOs
 
-* [x] Experimentally prove that a elevated window can host an unelevated content
+* [x] Experimentally prove that an elevated window can host an unelevated content
   - Research proved the opposite actually.
 * [ ] Experimentally prove that I can toss content process IDs from one window
   to another
@@ -1155,7 +1155,7 @@ prompt the user for permission, but that's an acceptable user experience.
 ## Addenda
 
 This spec also has a follow-up spec which introduces further changes upon this
-original draft. Please also refer to:
+original draft. Please refer to:
 
 * November 2020: Windows Terminal Window Management
 

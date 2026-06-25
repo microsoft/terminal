@@ -16,6 +16,16 @@
 #else
 #include "device.h"
 #include <filesystem>
+
+static constexpr DWORD SystemConsoleInformation = 132;
+
+typedef struct _SYSTEM_CONSOLE_INFORMATION
+{
+    ULONG DriverLoaded : 1;
+    ULONG Spare : 31;
+} SYSTEM_CONSOLE_INFORMATION;
+
+NTSYSCALLAPI NTSTATUS NTAPI NtSetSystemInformation(SYSTEM_INFORMATION_CLASS Class, PVOID Info, ULONG Length);
 #endif // __INSIDE_WINDOWS
 
 #pragma warning(push)
@@ -88,6 +98,19 @@ static wchar_t* _ConsoleHostPath()
     return consoleHostPath.get();
 }
 
+static void _EnsureDriverIsLoaded() noexcept
+{
+#ifndef __INSIDE_WINDOWS
+    HMODULE ntdll{ LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+    if (auto setSystemInformation{ GetProcAddressByFunctionDeclaration(ntdll, NtSetSystemInformation) })
+    {
+        SYSTEM_CONSOLE_INFORMATION ConsoleInformation{};
+        ConsoleInformation.DriverLoaded = TRUE;
+        std::ignore = setSystemInformation(static_cast<SYSTEM_INFORMATION_CLASS>(SystemConsoleInformation), &ConsoleInformation, sizeof(ConsoleInformation));
+    }
+#endif // !__INSIDE_WINDOWS
+}
+
 static bool _HandleIsValid(HANDLE h) noexcept
 {
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
@@ -116,7 +139,12 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     }
 
     wil::unique_handle serverHandle;
-    RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
+    if (FAILED(CreateServerHandle(serverHandle.addressof(), TRUE)))
+    {
+        // Try again after loading ConDrv.
+        _EnsureDriverIsLoaded();
+        RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
+    }
 
     // The hPtyReference we create here is used when the PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE attribute is processed.
     // This ensures that conhost's client processes inherit the correct (= our) console handle.
@@ -138,7 +166,8 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
+    const auto inheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) ? L"--inheritcursor " : L"";
+    const auto ambiguousIsWide = (dwFlags & PSEUDOCONSOLE_AMBIGUOUS_IS_WIDE) ? L"--ambiguousIsWide " : L"";
 
     const wchar_t* textMeasurement;
     switch (dwFlags & PSEUDOCONSOLE_GLYPH_WIDTH__MASK)
@@ -164,9 +193,10 @@ HRESULT _CreatePseudoConsole(HANDLE hToken,
     wil::unique_process_heap_string cmd;
     RETURN_IF_FAILED(wil::str_printf_nothrow(
         cmd,
-        L"\"%s\" --headless %s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
+        L"\"%s\" --headless %s%s%s--width %hd --height %hd --signal 0x%tx --server 0x%tx",
         conhostPath,
-        bInheritCursor ? L"--inheritcursor " : L"",
+        inheritCursor,
+        ambiguousIsWide,
         textMeasurement,
         size.X,
         size.Y,
@@ -278,15 +308,16 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the clear message to the pty.
-HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
+static HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty, BOOL keepCursorRow) noexcept
 {
     if (pPty == nullptr)
     {
         return E_INVALIDARG;
     }
 
-    unsigned short signalPacket[1];
+    unsigned short signalPacket[2];
     signalPacket[0] = PTY_SIGNAL_CLEAR_WINDOW;
+    signalPacket[1] = keepCursorRow ? 1 : 0;
 
     const auto fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
@@ -301,7 +332,7 @@ HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
 // Return Value:
 // - S_OK if the call succeeded, else an appropriate HRESULT for failing to
 //      write the clear message to the pty.
-HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool show)
+HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const BOOL show) noexcept
 {
     if (pPty == nullptr)
     {
@@ -309,7 +340,7 @@ HRESULT _ShowHidePseudoConsole(_In_ const PseudoConsole* const pPty, const bool 
     }
     unsigned short signalPacket[2];
     signalPacket[0] = PTY_SIGNAL_SHOWHIDE_WINDOW;
-    signalPacket[1] = show;
+    signalPacket[1] = show ? 1 : 0;
 
     const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
@@ -417,7 +448,7 @@ static void _ClosePseudoConsole(_In_ PseudoConsole* pPty) noexcept
 //  INHERIT_CURSOR: This will cause the created conpty to attempt to inherit the
 //      cursor position of the parent terminal application. This can be useful
 //      for applications like `ssh`, where ssh (currently running in a terminal)
-//      might want to create a pseudoterminal session for an child application
+//      might want to create a pseudoterminal session for a child application
 //      and the child inherit the cursor position of ssh.
 //      The created conpty will immediately emit a "Device Status Request" VT
 //      sequence to hOutput, that should be replied to on hInput in the format
@@ -492,13 +523,13 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
 // - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
 //   a terminal to clear the contents of the ConPTY buffer, which is important
 //   if the user would like to be able to clear the terminal-side buffer.
-extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
+extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC, BOOL keepCursorRow)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;
     auto hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
-        hr = _ClearPseudoConsole(pPty);
+        hr = _ClearPseudoConsole(pPty, keepCursorRow);
     }
     return hr;
 }
@@ -508,7 +539,7 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 //   to keep ConPTY's internal HWND state in sync with the state of whatever the
 //   hosting window is.
 // - For more information, refer to GH#12515.
-extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, bool show)
+extern "C" HRESULT WINAPI ConptyShowHidePseudoConsole(_In_ HPCON hPC, BOOL show)
 {
     // _ShowHidePseudoConsole will return E_INVALIDARG for us if the hPC is nullptr.
     return _ShowHidePseudoConsole((PseudoConsole*)hPC, show);

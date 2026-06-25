@@ -77,7 +77,8 @@
     </ClCompile>
     <Link>
       <SubSystem Condition="'%(SubSystem)'==''">Console</SubSystem>
-      <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
+      <GenerateWindowsMetadata>$(CppWinRTGenerateWindowsMetadata)</GenerateWindowsMetadata>
+      <GenerateWindowsMetadata Condition="'%(GenerateWindowsMetadata)'==''">true</GenerateWindowsMetadata>
     </Link>
   </ItemDefinitionGroup>
 

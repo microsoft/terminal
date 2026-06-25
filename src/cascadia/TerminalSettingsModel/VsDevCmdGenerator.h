@@ -26,12 +26,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         void GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
 
     private:
-        bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance&) const
+        bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance& instance) const
         {
             // We only support version of VS from 15.0.
             // Per heaths: The [ISetupConfiguration] COM server only supports Visual Studio 15.0 and newer anyway.
             // Eliding the version range will improve the discovery performance by not having to parse or compare the versions.
-            return true;
+            std::error_code ec;
+            return std::filesystem::exists(GetDevCmdScriptPath(instance), ec) && !ec;
         }
 
         std::wstring GetProfileGuidSeed(const VsSetupConfiguration::VsSetupInstance& instance) const

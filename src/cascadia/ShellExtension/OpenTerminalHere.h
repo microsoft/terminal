@@ -34,7 +34,7 @@ struct
 #else // DEV
     __declspec(uuid("52065414-e077-47ec-a3ac-1cc5455e1b54"))
 #endif
-        OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand, IObjectWithSite>
+    OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand, IObjectWithSite>
 {
 #pragma region IExplorerCommand
     STDMETHODIMP Invoke(IShellItemArray* psiItemArray,

@@ -13,7 +13,7 @@ using namespace winrt::Microsoft::Terminal::Core;
 
 namespace TerminalCoreUnitTests
 {
-    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings, ICoreAppearance>
+    class MockTermSettings : public winrt::implements<MockTermSettings, ICoreSettings, ICoreAppearance, ICoreScheme>
     {
         // Color Table is special because it's an array
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
@@ -32,14 +32,14 @@ namespace TerminalCoreUnitTests
         {
         }
 
-        winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+        void SetColorTable(const std::array<winrt::Microsoft::Terminal::Core::Color, 16>& colors)
         {
-            return _ColorTable.at(index);
+            _ColorTable = colors;
         }
-        void SetColorTableEntry(int32_t index,
-                                winrt::Microsoft::Terminal::Core::Color color) noexcept
+
+        void GetColorTable(winrt::com_array<winrt::Microsoft::Terminal::Core::Color>& table) noexcept
         {
-            _ColorTable.at(index) = color;
+            table = winrt::com_array(_ColorTable.begin(), _ColorTable.end());
         }
     };
 }

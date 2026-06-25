@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
-#include <LibraryResources.h>
 #include "TermControlAutomationPeer.h"
 #include "TermControl.h"
 #include "TermControlAutomationPeer.g.cpp"
@@ -52,7 +51,7 @@ static std::wstring Sanitize(std::wstring_view text)
 // Arguments:
 // - text: the string we're validating
 // Return Value:
-// - true, if the text is readable. false, otherwise.
+// - true, if the text is readable; otherwise, false.
 static constexpr bool IsReadable(std::wstring_view text)
 {
     for (const auto c : text)
@@ -122,6 +121,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#13978: If the TermControl has already been removed from the UI tree, XAML might run into weird bugs.
         // This will prevent the `dispatcher.RunAsync` calls below from raising UIA events on the main thread.
         _termControl = {};
+
+        // Solve the circular reference between us and the content automation peer.
+        _contentAutomationPeer.ParentProvider(nullptr);
     }
 
     // Method Description:
@@ -211,7 +213,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto sanitized{ Sanitize(newOutput) };
         // Try to suppress any events (or event data)
-        // that are just the keypresses the user made
+        // that are just the keypresses that the user made
         {
             auto keyEvents = _keyEvents.lock();
             while (!keyEvents->empty() && IsReadable(sanitized))
@@ -305,17 +307,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetNameCore() const
     {
-        // fallback to title if profile name is empty
+        // fall back to title if profile name is empty
         if (auto control{ _termControl.get() })
         {
-            const auto profileName = control->GetProfileName();
-            if (profileName.empty())
+            const auto originalName = control->GetStartingTitle();
+            if (originalName.empty())
             {
                 return control->Title();
             }
             else
             {
-                return profileName;
+                return originalName;
             }
         }
 

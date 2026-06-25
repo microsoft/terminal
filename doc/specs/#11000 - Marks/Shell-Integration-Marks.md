@@ -68,7 +68,7 @@ allows the terminal to expose quick actions for:
 
 ### User Stories
 
-This is a bit of a unusual section, as this feature was already partially
+This is a bit of an unusual section, as this feature was already partially
 implemented when this spec was written.
 
 Story |  Size | Description
@@ -111,7 +111,7 @@ not understanding these sequences originally.
 The relevant FinalTerm sequences for marking up the prompt are as follows.
 
 
-![image](FTCS-diagram.png)
+![image](ftcs-diagram.png)
 
 * **FTCS_PROMPT**: `OSC 133 ; A ST`
   - The start of a prompt. Internally, this sets a marker in the buffer

@@ -4,23 +4,37 @@
 #pragma once
 #include "TerminalPaneContent.g.h"
 #include "BellEventArgs.g.h"
+#include "NotificationEventArgs.g.h"
 #include "BasicPaneEvents.h"
 
 namespace winrt::TerminalApp::implementation
 {
+    struct TerminalSettingsCache;
+
     struct BellEventArgs : public BellEventArgsT<BellEventArgs>
     {
     public:
-        BellEventArgs(bool flashTaskbar) :
-            FlashTaskbar(flashTaskbar) {}
+        BellEventArgs(bool flashTaskbar, bool sendNotification) :
+            FlashTaskbar(flashTaskbar), SendNotification(sendNotification) {}
 
         til::property<bool> FlashTaskbar;
+        til::property<bool> SendNotification;
+    };
+
+    struct NotificationEventArgs : public NotificationEventArgsT<NotificationEventArgs>
+    {
+    public:
+        NotificationEventArgs(const winrt::hstring& title = {}, const winrt::hstring& body = {}) :
+            Title(title), Body(body) {}
+
+        til::property<winrt::hstring> Title;
+        til::property<winrt::hstring> Body;
     };
 
     struct TerminalPaneContent : TerminalPaneContentT<TerminalPaneContent>, BasicPaneEvents
     {
         TerminalPaneContent(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                            const TerminalApp::TerminalSettingsCache& cache,
+                            const std::shared_ptr<TerminalSettingsCache>& cache,
                             const winrt::Microsoft::Terminal::Control::TermControl& control);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
@@ -59,11 +73,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
-        TerminalApp::TerminalSettingsCache _cache{ nullptr };
+        std::shared_ptr<TerminalSettingsCache> _cache{};
         bool _isDefTermSession{ false };
-
-        winrt::Windows::Media::Playback::MediaPlayer _bellPlayer{ nullptr };
-        bool _bellPlayerCreated{ false };
 
         struct ControlEventTokens
         {
@@ -77,12 +88,11 @@ namespace winrt::TerminalApp::implementation
             winrt::Microsoft::Terminal::Control::TermControl::SetTaskbarProgress_revoker _SetTaskbarProgress;
             winrt::Microsoft::Terminal::Control::TermControl::ReadOnlyChanged_revoker _ReadOnlyChanged;
             winrt::Microsoft::Terminal::Control::TermControl::FocusFollowMouseRequested_revoker _FocusFollowMouseRequested;
+            winrt::Microsoft::Terminal::Control::TermControl::ShowNotification_revoker _ShowNotification;
 
         } _controlEvents;
         void _setupControlEvents();
         void _removeControlEvents();
-
-        safe_void_coroutine _playBellSound(winrt::Windows::Foundation::Uri uri);
 
         safe_void_coroutine _controlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _controlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& sender,
@@ -94,6 +104,7 @@ namespace winrt::TerminalApp::implementation
         void _controlSetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _controlReadOnlyChanged(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         void _controlFocusFollowMouseRequested(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
+        void _controlShowNotification(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Microsoft::Terminal::Control::ShowNotificationEventArgs& args);
 
         void _closeTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
         void _restartTerminalRequestedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);

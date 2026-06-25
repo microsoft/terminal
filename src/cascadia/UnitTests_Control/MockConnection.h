@@ -14,11 +14,11 @@ namespace ControlUnitTests
     public:
         MockConnection() noexcept = default;
 
-        void Initialize(const winrt::Windows::Foundation::Collections::ValueSet& /*settings*/){};
+        void Initialize(const winrt::Windows::Foundation::Collections::ValueSet& /*settings*/) {};
         void Start() noexcept {};
         void WriteInput(const winrt::array_view<const char16_t> data)
         {
-            TerminalOutput.raise(winrt_array_to_wstring_view(data));
+            TerminalOutput.raise(data);
         }
         void Resize(uint32_t /*rows*/, uint32_t /*columns*/) noexcept {}
         void Close() noexcept {}

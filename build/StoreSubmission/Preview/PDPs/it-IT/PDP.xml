@@ -56,11 +56,12 @@ Si tratta di un progetto open source e la partecipazione della community è molt
   <ReleaseNotes>
     Versione __VERSION_NUMBER__
 
-- Sono state aggiunte decine di impostazioni all'interfaccia utente che una volta esisteva solo nel file JSON, inclusa una nuova pagina per personalizzare il layout del menu Nuova scheda.
-- È stata riattivata la gestione delle finestre per migliorare l'affidabilità; inserire eventuali bug riscontrati con l'alias wt.exe
-- I profili ora mostrano un'icona se sono stati nascosti o fanno riferimento ai programmi che sono stati disinstallati.
+- Finalmente è possibile cercare qualsiasi impostazione
+- Nuovo editor nativo per le associazioni di tasti, le azioni e le voci del riquadro comandi.
+- Nuove localizzazioni della community in serbo e ucraino
+- Supporto per il protocollo di tastiera "Kitty" per una codifica dell'input ad alta fedeltà
 
-Per altri dettagli, vedere la pagina delle versioni di GitHub.
+Per altri dettagli, vedi la pagina delle release di GitHub.
   </ReleaseNotes>
   <ScreenshotCaptions>
     <!-- Valid length: 200 character limit, up to 9 elements per platform -->

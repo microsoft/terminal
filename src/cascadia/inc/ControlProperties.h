@@ -42,23 +42,26 @@
     X(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS)                                                    \
     X(bool, CopyOnSelect, false)                                                                                  \
     X(bool, FocusFollowMouse, false)                                                                              \
+    X(bool, ScrollToZoom, true)                                                                                   \
+    X(bool, ScrollToChangeOpacity, true)                                                                          \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr) \
     X(bool, TrimBlockSelection, true)                                                                             \
     X(bool, SuppressApplicationTitle)                                                                             \
     X(bool, ForceVTInput, false)                                                                                  \
+    X(bool, AllowKittyKeyboardMode, true)                                                                         \
     X(winrt::hstring, StartingTitle)                                                                              \
     X(bool, DetectURLs, true)                                                                                     \
     X(bool, AutoMarkPrompts)                                                                                      \
     X(bool, RepositionCursorWithMouse, false)                                                                     \
     X(bool, RainbowSuggestions)                                                                                   \
     X(bool, AllowVtChecksumReport)                                                                                \
-    X(bool, AllowVtClipboardWrite)
+    X(bool, AllowVtClipboardWrite, true)                                                                          \
+    X(bool, AllowOscNotifications, false)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
 #define CONTROL_SETTINGS(X)                                                                                                                              \
-    X(winrt::hstring, ProfileName)                                                                                                                       \
     X(winrt::guid, SessionId)                                                                                                                            \
     X(bool, EnableUnfocusedAcrylic, false)                                                                                                               \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
@@ -71,7 +74,6 @@
     X(bool, EnableColorGlyphs, true)                                                                                                                     \
     X(winrt::hstring, CellWidth)                                                                                                                         \
     X(winrt::hstring, CellHeight)                                                                                                                        \
-    X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
     X(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
@@ -80,9 +82,11 @@
     X(bool, DisablePartialInvalidation, false)                                                                                                           \
     X(bool, SoftwareRendering, false)                                                                                                                    \
     X(winrt::Microsoft::Terminal::Control::TextMeasurement, TextMeasurement)                                                                             \
+    X(winrt::Microsoft::Terminal::Control::AmbiguousWidth, AmbiguousWidth, winrt::Microsoft::Terminal::Control::AmbiguousWidth::Narrow)                  \
     X(winrt::Microsoft::Terminal::Control::DefaultInputScope, DefaultInputScope, winrt::Microsoft::Terminal::Control::DefaultInputScope::Default)        \
     X(bool, UseBackgroundImageForWindow, false)                                                                                                          \
     X(bool, ShowMarks, false)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0)                                                                                \
     X(bool, RightClickContextMenu, false)                                                                                                                \
-    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)
+    X(winrt::Microsoft::Terminal::Control::PathTranslationStyle, PathTranslationStyle, winrt::Microsoft::Terminal::Control::PathTranslationStyle::None)  \
+    X(winrt::hstring, DragDropDelimiter, L" ")

@@ -94,7 +94,7 @@ configurations:
 
 - `"useExisting"`: always glom to the most recent window, regardless of desktop.
 - `"useExistingOnSameDesktop"`: Only glom if there's an existing window on this
-  virtual desktop, otherwise create a new window. This will be the new default
+  virtual desktop; otherwise, create a new window. This will be the new default
   value.
 - `"useNew"`: Never glom, always create a new window. This is technically the
   current behavior of the Terminal.
@@ -469,7 +469,7 @@ This is a list of actionable tasks generated as described by this spec:
   commandline
 * [ ] Add a `NameWindow` action, subcommand that allows the user to set the name
   for the window.
-* [ ] Add an action that will cause all windows to briefly display a overlay
+* [ ] Add an action that will cause all windows to briefly display an overlay
   with the current window ID and name. This would be something like the
   "identify" feature of the Windows "Display" settings.
 

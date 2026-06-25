@@ -36,6 +36,7 @@ namespace winrt::TerminalApp::implementation
         bool IsRunningElevated() const noexcept;
         bool CanDragDrop() const noexcept;
         void ReloadSettings();
+        void ReloadSettingsThrottled();
         void NotifyRootInitialized();
 
         bool HasSettingsStartupActions() const noexcept;
@@ -64,7 +65,7 @@ namespace winrt::TerminalApp::implementation
         bool _hasSettingsStartupActions{ false };
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
 
-        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
+        std::shared_ptr<ThrottledFunc<>> _reloadSettings;
 
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings{};
 
@@ -80,7 +81,6 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _ProcessLazySettingsChanges();
         void _RegisterSettingsChange();
-        safe_void_coroutine _DispatchReloadSettings();
 
         void _setupFolderPathEnvVar();
 

@@ -29,7 +29,6 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\AccessibilityNotifier.cpp \
     ..\BgfxEngine.cpp \
     ..\ConIoSrvComm.cpp \
     ..\ConsoleControl.cpp \

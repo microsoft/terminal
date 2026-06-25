@@ -75,13 +75,30 @@ jobs:
       }
     displayName: "Wrangle Unpackaged builds into place, rename"
 
-  - task: AzurePowerShell@5
+  - task: PowerShell@2
+    displayName: Install Azure Modules from custom PowerShell Gallery Repo
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    inputs:
+      pwsh: false # We are preparing modules for AzureFileCopy, which uses PowerShell 5.1
+      targetType: inline
+      script: |-
+        $MachineToken = $env:SYSTEM_ACCESSTOKEN | ConvertTo-SecureString -AsPlainText -Force
+        $Credential = [PSCredential]::new("ONEBRANCH_TOKEN", $MachineToken)
+        $MachineToken = $null
+        $Feed = "https://pkgs.dev.azure.com/shine-oss/terminal/_packaging/TerminalDependencies%40Local/nuget/v3/index.json"
+        Register-PSResourceRepository -Name "PSGalleryUpstream" -Uri $Feed -Trusted
+        Get-PSResourceRepository
+
+        Install-PSResource -Name Az.Accounts, Az.Storage, Az.Network, Az.Resources, Az.Compute -Repository "PSGalleryUpstream" -Credential $Credential
+
+  - task: AzureFileCopy@6
     displayName: Publish to Storage Account
     inputs:
+      sourcePath: _out/*
+      Destination: AzureBlob
       azureSubscription: ${{ parameters.subscription }}
-      azurePowerShellVersion: LatestVersion
-      pwsh: true
-      ScriptType: InlineScript
-      Inline: |-
-        $Env:AZCOPY_AUTO_LOGIN_TYPE="PSCRED"
-        & AzCopy copy "_out\*" "https://${{ parameters.storageAccount }}.blob.core.windows.net/${{ parameters.storageContainer }}/" --content-type application/octet-stream
+      storage: ${{ parameters.storageAccount }}
+      ContainerName: ${{ parameters.storageContainer }}
+      AdditionalArgumentsForBlobCopy: "--content-type application/octet-stream"
+

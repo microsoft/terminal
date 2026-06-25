@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Appearances.h"
 
-#include <LibraryResources.h>
 #include "../WinRTUtils/inc/Utils.h"
 
 #include "EnumEntry.h"
@@ -13,6 +12,7 @@
 #include "Appearances.g.cpp"
 
 using namespace winrt::Windows::UI::Text;
+using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Data;
@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     };
 
     // Turns a DWRITE_MAKE_OPENTYPE_TAG into a string_view...
-    // (...buffer holder because someone needs to hold onto the data the view refers to.)
+    // (...buffer holder because someone needs to hold onto the data to which the view refers.)
     static TagToStringImpl tagToString(uint32_t tag) noexcept
     {
         return TagToStringImpl{ tag };
@@ -160,7 +160,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (HasLibraryResourceWithName(key))
             {
                 displayString = GetLibraryResourceString(key);
-                displayString = hstring{ fmt::format(FMT_COMPILE(L"{} ({})"), displayString, std::wstring_view{ tagString }) };
+                displayString = til::hstring_format(FMT_COMPILE(L"{} ({})"), displayString, std::wstring_view{ tagString });
             }
         }
 
@@ -201,6 +201,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool FontKeyValuePair::IsFontFeature() const noexcept
     {
         return _isFontFeature;
+    }
+
+    winrt::hstring FontKeyValuePair::AutomationName()
+    {
+        return til::hstring_format(FMT_COMPILE(L"{}: {}"), KeyDisplayStringRef(), _value);
     }
 
     AppearanceViewModel::AppearanceViewModel(const Model::AppearanceConfig& appearance) :
@@ -254,9 +259,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Cache the original BG image path. If the user clicks "Use desktop
         // wallpaper", then un-checks it, this is the string we'll restore to
         // them.
-        if (BackgroundImagePath() != L"desktopWallpaper")
+        if (BackgroundImagePath().Path() != L"desktopWallpaper")
         {
-            _lastBgImagePath = BackgroundImagePath();
+            _lastBgImagePath = BackgroundImagePath().Path();
         }
     }
 
@@ -511,7 +516,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto idx = getLocalizedStringIndex(names.get(), localeName, 0);
             const auto localizedName = getLocalizedStringByIndex(names.get(), idx);
             const auto tagString = tagToString(tag);
-            hstring displayString{ fmt::format(FMT_COMPILE(L"{} ({})"), localizedName, std::wstring_view{ tagString }) };
+            const auto displayString = til::hstring_format(FMT_COMPILE(L"{} ({})"), localizedName, std::wstring_view{ tagString });
 
             const auto value = axesVector[i].value;
 
@@ -913,7 +918,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void AppearanceViewModel::SetBackgroundImagePath(winrt::hstring path)
     {
-        BackgroundImagePath(path);
+        _appearance.BackgroundImagePath(Model::MediaResourceHelper::FromString(path));
+        _NotifyChanges(L"BackgroundImagePath");
     }
 
     hstring AppearanceViewModel::BackgroundImageAlignmentCurrentValue() const
@@ -956,7 +962,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring AppearanceViewModel::CurrentBackgroundImagePath() const
     {
-        const auto bgImagePath = BackgroundImagePath();
+        const auto bgImagePath = BackgroundImagePath().Path();
         if (bgImagePath.empty())
         {
             return RS_(L"Appearance_BackgroundImageNone");
@@ -970,7 +976,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool AppearanceViewModel::UseDesktopBGImage() const
     {
-        return BackgroundImagePath() == L"desktopWallpaper";
+        return BackgroundImagePath().Path() == L"desktopWallpaper";
     }
 
     void AppearanceViewModel::UseDesktopBGImage(const bool useDesktop)
@@ -983,23 +989,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             //
             // Only stash this value if it's not the special "desktopWallpaper"
             // value.
-            if (BackgroundImagePath() != L"desktopWallpaper")
+            if (BackgroundImagePath().Path() != L"desktopWallpaper")
             {
-                _lastBgImagePath = BackgroundImagePath();
+                _lastBgImagePath = BackgroundImagePath().Path();
             }
-            BackgroundImagePath(L"desktopWallpaper");
+            SetBackgroundImagePath(L"desktopWallpaper");
         }
         else
         {
             // Restore the path we had previously cached. This might be the
             // empty string.
-            BackgroundImagePath(_lastBgImagePath);
+            SetBackgroundImagePath(_lastBgImagePath);
         }
     }
 
     bool AppearanceViewModel::BackgroundImageSettingsVisible() const
     {
-        return !BackgroundImagePath().empty();
+        return !BackgroundImagePath().Path().empty();
     }
 
     void AppearanceViewModel::ClearColorScheme()
@@ -1133,6 +1139,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
+    // Appearances doesn't implement HasScrollViewer<T> which normally adds this function.
+    void Appearances::BringIntoViewWhenLoaded(hstring elementToFocus)
+    {
+        if (elementToFocus.empty())
+        {
+            return;
+        }
+
+        _loadedRevoker = this->Loaded(winrt::auto_revoke, [weakThis{ get_weak() }, elementToFocus](auto&&, auto&&) {
+            if (const auto strongThis = weakThis.get())
+            {
+                if (const auto& controlToFocus{ strongThis->FindName(elementToFocus).try_as<Controls::Control>() })
+                {
+                    controlToFocus.as<FrameworkElement>().StartBringIntoView();
+                    controlToFocus.Focus(FocusState::Programmatic);
+                }
+                strongThis->_loadedRevoker.revoke();
+            }
+        });
+    }
+
     IObservableVector<Editor::Font> Appearances::FilteredFontList()
     {
         if (!_filteredFonts)
@@ -1188,14 +1215,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto prefix = fontSpecView.substr(0, idx);
             const auto suffix = std::wstring_view{ fontName };
-            fontSpec = winrt::hstring{ fmt::format(FMT_COMPILE(L"{}, {}"), prefix, suffix) };
+            fontSpec = til::hstring_format(FMT_COMPILE(L"{}, {}"), prefix, suffix);
         }
         else
         {
             fontSpec = fontName;
         }
-
-        sender.Text(fontSpec);
 
         // Normally we'd just update the model property in LostFocus above, but because WinUI is the Ralph Wiggum
         // among the UI frameworks, it raises the LostFocus event _before_ the QuerySubmitted event.
@@ -1207,11 +1232,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // You can't just do IsSuggestionListOpen(false) either, because you can show the list with that property but not hide it.
         // So, we update the model manually and assign focus to the parent container.
         //
-        // BUT you can't just focus the parent container, because of a weird interaction with AutoSuggestBox where it'll refuse to lose
-        // focus if you picked a suggestion that matches the current fontSpec. So, we unfocus it first and then focus the parent container.
-        _updateFontName(fontSpec);
-        sender.Focus(FocusState::Unfocused);
-        FontFaceContainer().Focus(FocusState::Programmatic);
+        // Queue the selected-suggestion commit so AutoSuggestBox can finish processing Enter before we change its text/model.
+        // Do not manually unfocus the AutoSuggestBox here. Its Focus(FocusState::Unfocused) path crashes during keyboard commits.
+        Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis{ get_weak() }, weakSender{ winrt::make_weak(sender) }, fontSpec{ std::move(fontSpec) }]() {
+            if (const auto self{ weakThis.get() })
+            {
+                if (const auto box{ weakSender.get() })
+                {
+                    box.Text(fontSpec);
+                }
+
+                self->_updateFontName(fontSpec);
+                self->FontFaceContainer().Focus(FocusState::Programmatic);
+            }
+        });
     }
 
     void Appearances::FontFaceBox_TextChanged(const AutoSuggestBox& sender, const AutoSuggestBoxTextChangedEventArgs& args)
@@ -1399,9 +1433,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // button won't work right.
             });
 
-            // make sure to send all the property changed events once here
-            // we do this in the case an old appearance was deleted and then a new one is created,
-            // the old settings need to be updated in xaml
+            // make sure to send all the property changed events once here.
+            // we do this so that if an old appearance was deleted and then a new one created,
+            // the old settings are updated in xaml
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
             PropertyChanged.raise(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
@@ -1418,13 +1452,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     safe_void_coroutine Appearances::BackgroundImage_Click(const IInspectable&, const RoutedEventArgs&)
     {
-        auto lifetime = get_strong();
+        const auto lifetime = get_strong();
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(WindowRoot().GetHostingWindow()) };
-        auto file = co_await OpenImagePicker(parentHwnd);
+        const auto windowRoot = WindowRoot();
+        if (!windowRoot)
+        {
+            co_return;
+        }
+        const auto parentHwnd{ reinterpret_cast<HWND>(windowRoot.GetHostingWindow()) };
+        const auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
-            Appearance().BackgroundImagePath(file);
+            Appearance().SetBackgroundImagePath(file);
         }
     }
 

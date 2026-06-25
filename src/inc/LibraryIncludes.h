@@ -63,9 +63,8 @@
 #include <wil/nt_result_macros.h>
 
 // GSL
-// Block GSL Multi Span include because it both has C++17 deprecated iterators
-// and uses the C-namespaced "max" which conflicts with Windows definitions.
-#include <gsl/gsl_util>
+#include <gsl/narrow>
+#include <gsl/util>
 #include <gsl/pointers>
 
 // CppCoreCheck
@@ -84,8 +83,18 @@
 // {fmt}, a C++20-compatible formatting library
 #pragma warning(push)
 #pragma warning(disable: 4702) // unreachable code
+// Workaround: clang-cl advertises consteval support but fmt's use of it in
+// color.h triggers "call to consteval function is not a constant expression".
+// Hide __cpp_lib_is_constant_evaluated so fmt falls back to the non-consteval path.
+#ifdef __clang__
+#pragma push_macro("__cpp_lib_is_constant_evaluated")
+#undef __cpp_lib_is_constant_evaluated
+#endif
 #include <fmt/compile.h>
 #include <fmt/xchar.h>
+#ifdef __clang__
+#pragma pop_macro("__cpp_lib_is_constant_evaluated")
+#endif
 #pragma warning(pop)
 
 #define USE_INTERVAL_TREE_NAMESPACE
@@ -101,6 +110,8 @@
 // The compiler doesn't like that. --> Suppress the warning.
 #pragma warning(push)
 #pragma warning(disable: 4324) // structure was padded due to alignment specifier
+// undefine BUILD_WINDOWS so that wrl/event.h doesn't include wrl/internalevent.h
+#undef BUILD_WINDOWS
 #include <wrl.h>
 #pragma warning(pop)
 

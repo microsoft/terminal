@@ -23,7 +23,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Arguments:
             // - handle: a HANDLE to the file to check
             // Return Value:
-            // - true if it had the expected permissions. False otherwise.
+            // - true if it had the expected permissions; otherwise, false.
             _TIL_INLINEPREFIX bool isOwnedByAdministrators(const HANDLE& handle)
             {
                 // If the file is owned by the administrators group, trust the
@@ -256,7 +256,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // renaming one is (supposed to be) atomic.
             // Wait... "supposed to be"!? Well it's technically not always atomic,
             // but it's pretty darn close to it, so... better than nothing.
-            std::filesystem::rename(tmpPath, resolvedPath);
+            std::filesystem::rename(tmpPath, resolvedPath, ec);
+            if (ec)
+            {
+                THROW_WIN32_MSG(ec.value(), "failed to write to file");
+            }
         }
     } // io
 } // til

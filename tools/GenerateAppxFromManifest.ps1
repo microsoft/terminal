@@ -21,7 +21,7 @@ param (
 [xml]$appxPrototypeData = Get-Content $AppxManifestPrototype
 
 # You need to make sure each element we add is part of the same namespace as the
-# Package, otherwise powershell will append a bunch of `xmlns=""` properties
+# Package; otherwise, powershell will append a bunch of `xmlns=""` properties
 # that will make the appx deployment reject the manifest.
 $rootNS = $appxPrototypeData.Package.NamespaceURI
 
@@ -38,7 +38,7 @@ $files | ForEach-Object {
     $InProcessServer = $appxPrototypeData.CreateNode("element", "InProcessServer", $rootNS)
     $Path = $appxPrototypeData.CreateNode("element", "Path", $rootNS)
 
-    # You need to stash the result here, otherwise a blank line will be echoed to
+    # You need to stash the result here; otherwise, a blank line will be echoed to
     # the console.
     $placeholder = $Path.InnerText = $_.name
 

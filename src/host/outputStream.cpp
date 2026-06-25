@@ -24,6 +24,22 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 {
 }
 
+void ConhostInternalGetSet::UnknownSequence() noexcept
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // VT sequences unknown to us may cause the cursor position to change in a way that
+    // we don't know about. In this case, we need to mark the cursor position as "dirty".
+    //
+    // The worst offender is likely PowerShell. It uses VT sequences but also calls
+    // GetConsoleScreenBufferInfoEx for *every single line of output* (!!!). This prevents
+    // us from using a more conservative solution (e.g. always fetching the cursor position).
+    if (gci.IsInVtIoMode())
+    {
+        gci.GetActiveOutputBuffer().GetActiveBuffer().SetConptyCursorPositionMayBeWrong();
+    }
+}
+
 // - Sends a string response to the input stream of the console.
 // - Used by various commands where the program attached would like a reply to one of the commands issued.
 // - This will generate two "key presses" (one down, one up) for every character in the string and place them into the head of the console's input stream.
@@ -46,6 +62,12 @@ void ConhostInternalGetSet::ReturnResponse(const std::wstring_view response)
     // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
     // could collide with each other.
     _io.GetActiveInputBuffer()->WriteString(response);
+}
+
+bool ConhostInternalGetSet::IsConPTY() const noexcept
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.IsInVtIoMode();
 }
 
 // Routine Description:
@@ -84,7 +106,7 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
     THROW_IF_FAILED(info.SetViewportOrigin(true, position, true));
     // SetViewportOrigin() only updates the virtual bottom (the bottom coordinate of the area
     // in the text buffer a VT client writes its output into) when it's moving downwards.
-    // But this function is meant to truly move the viewport no matter what. Otherwise `tput reset` breaks.
+    // But this function is meant to truly move the viewport no matter what. Otherwise, `tput reset` breaks.
     info.UpdateBottom();
 }
 
@@ -170,7 +192,7 @@ void ConhostInternalGetSet::SetWindowTitle(std::wstring_view title)
 //     screen buffer and an alternate. This creates a new alternate, and switches to it.
 //     If there is an already existing alternate, it is discarded.
 // Arguments:
-// - attrs - the attributes the buffer is initialized with.
+// - attrs - the attributes for initializing the buffer.
 // Return Value:
 // - <none>
 void ConhostInternalGetSet::UseAlternateScreenBuffer(const TextAttribute& attrs)
@@ -282,7 +304,13 @@ unsigned int ConhostInternalGetSet::GetInputCodePage() const
 // - <none>
 void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 {
-    ServiceLocator::LocateGlobals().getConsoleInformation().CopyTextToClipboard(content);
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    // Only allow VT clipboard writes when the console has focus
+    if (WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
+    {
+        gci.CopyTextToClipboard(content);
+    }
 }
 
 // Routine Description:
@@ -409,41 +437,18 @@ bool ConhostInternalGetSet::IsVtInputEnabled() const
 }
 
 // Routine Description:
-// - Lets accessibility apps know when an area of the screen has changed.
-// Arguments:
-// - changedRect - the area that has changed.
-// Return value:
-// - <none>
-void ConhostInternalGetSet::NotifyAccessibilityChange(const til::rect& changedRect)
-{
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.HasAccessibilityEventing() && changedRect)
-    {
-        screenInfo.NotifyAccessibilityEventing(
-            changedRect.left,
-            changedRect.top,
-            changedRect.right - 1,
-            changedRect.bottom - 1);
-    }
-}
-
-// Routine Description:
 // - Implements conhost-specific behavior when the buffer is rotated.
 // Arguments:
 // - delta - the number of cycles that the buffer has rotated.
 // Return value:
 // - <none>
-void ConhostInternalGetSet::NotifyBufferRotation(const int delta)
+void ConhostInternalGetSet::NotifyBufferRotation(const int)
 {
-    auto& screenInfo = _io.GetActiveOutputBuffer();
-    if (screenInfo.IsActiveScreenBuffer())
-    {
-        auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        if (pNotifier)
-        {
-            pNotifier->NotifyConsoleUpdateScrollEvent(0, -delta);
-        }
-    }
+}
+
+void ConhostInternalGetSet::NotifyShellIntegrationMark()
+{
+    // Not implemented for conhost - shell integration marks are a Terminal app feature.
 }
 
 void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, unsigned int /*replaceLength*/)
@@ -451,6 +456,10 @@ void ConhostInternalGetSet::InvokeCompletions(std::wstring_view /*menuJson*/, un
     // Not implemented for conhost.
 }
 void ConhostInternalGetSet::SearchMissingCommand(std::wstring_view /*missingCommand*/)
+{
+    // Not implemented for conhost.
+}
+void ConhostInternalGetSet::ShowNotification(std::wstring_view /*title*/, std::wstring_view /*body*/)
 {
     // Not implemented for conhost.
 }

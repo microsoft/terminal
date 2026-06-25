@@ -41,7 +41,7 @@ $ErrorActionPreference = 'Stop'
 
 If (-not $MakeAppxPath) {
   $winSdk10Root = $(Get-ItemPropertyValue -Path "HKLM:\Software\Microsoft\Windows Kits\Installed Roots" -Name "KitsRoot10")
-  $MakeAppxPath = "$winSdk10Root\bin\10.0.22621.0\x64\MakeAppx.exe"
+  $MakeAppxPath = "$winSdk10Root\bin\10.0.26100.0\x64\MakeAppx.exe"
 }
 
 If ($null -Eq (Get-Item $MakeAppxPath -EA:SilentlyContinue)) {

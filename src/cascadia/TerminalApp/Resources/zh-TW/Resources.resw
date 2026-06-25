@@ -149,12 +149,6 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>載入使用者設定時發生錯誤</value>
   </data>
-  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
-    <value>確定</value>
-  </data>
-  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
-    <value>警告:</value>
-  </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
     <value>"{0}" 未在您的電腦上執行。這可能會讓終端機無法接收鍵盤輸入。</value>
     <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
@@ -168,20 +162,8 @@
   <data name="AboutMenuItem" xml:space="preserve">
     <value>關於</value>
   </data>
-  <data name="FeedbackMenuItem" xml:space="preserve">
-    <value>意見反應</value>
-  </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>設定</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>取消</value>
-  </data>
-  <data name="CloseAll" xml:space="preserve">
-    <value>全部關閉</value>
-  </data>
-  <data name="Quit" xml:space="preserve">
-    <value>結束</value>
   </data>
   <data name="MultiplePanes" xml:space="preserve">
     <value>多個窗格</value>
@@ -267,13 +249,9 @@
   <data name="DuplicateTabText" xml:space="preserve">
     <value>複製索引標籤</value>
   </data>
-  <data name="InvalidBackgroundImage" xml:space="preserve">
-    <value>找到具有無效 "backgroundImage" 的設定檔。將該設定檔的預設值設為沒有背景影像。請確定設定 "backgroundImage" 時，該值是影像的有效檔案路徑。</value>
-    <comment>{Locked="\"backgroundImage\""}</comment>
-  </data>
-  <data name="InvalidIcon" xml:space="preserve">
-    <value>已發現具有無效 "icon" 的設定檔。將該設定檔預設為無圖示。設定 "icon" 時，請確認值是有效的影像檔案路徑。</value>
-    <comment>{Locked="\"icon\""} The word "icon" in quotes is locked, the word icon OUTSIDE of quotes should be localized.</comment>
+  <data name="InvalidMediaResource" xml:space="preserve">
+    <value>找不到一或多個資源 (，例如在您的設定中指定的 icon 或 backgroundImage)。</value>
+    <comment>{Locked="icon","backgroundImage"} Indicates that something has gone wrong while reading a user's settings.</comment>
   </data>
   <data name="AtLeastOneKeybindingWarning" xml:space="preserve">
     <value>剖析金鑰繫結時發現警告:</value>
@@ -292,13 +270,6 @@
   <data name="UnknownTheme" xml:space="preserve">
     <value>• 主題清單中找不到指定的「主題」。暫時回到預設值。</value>
     <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
-  </data>
-  <data name="LegacyGlobalsProperty" xml:space="preserve">
-    <value>["globals"] 屬性受到取代 - 您的設定可能需要更新。</value>
-    <comment>{Locked="\"globals\""} </comment>
-  </data>
-  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
-    <value>如需詳細資訊，請參閱此網頁。</value>
   </data>
   <data name="FailedToParseCommandJson" xml:space="preserve">
     <value>無法在設定 "iterateOn" 的情況下展開命令。將忽略此命令。</value>
@@ -480,20 +451,11 @@
   <data name="ElevatedRun.Text" xml:space="preserve">
     <value>Ctrl+按一下以系統管理員身分開啟</value>
   </data>
-  <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>關閉</value>
-  </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>關閉</value>
   </data>
   <data name="WindowCloseButtonToolTip.Text" xml:space="preserve">
     <value>關閉</value>
-  </data>
-  <data name="WindowMaximizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>最大化</value>
-  </data>
-  <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
-    <value>最小化</value>
   </data>
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>最小化</value>
@@ -513,10 +475,6 @@
   <data name="AboutDialog_VersionLabel.Text" xml:space="preserve">
     <value>版本:</value>
     <comment>This is the heading for a version number label</comment>
-  </data>
-  <data name="AboutDialog_GettingStartedLink.Content" xml:space="preserve">
-    <value>開始使用</value>
-    <comment>A hyperlink name for a guide on how to get started using Terminal</comment>
   </data>
   <data name="AboutDialog_SourceCodeLink.Content" xml:space="preserve">
     <value>原始碼</value>
@@ -538,23 +496,47 @@
     <value>第三方注意事項</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
-  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_Cancel" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
-    <value>全部關閉</value>
-  </data>
-  <data name="QuitDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllTitle" xml:space="preserve">
     <value>您要關閉所有視窗嗎?</value>
   </data>
-  <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
-    <value>取消</value>
-  </data>
-  <data name="CloseAllDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="ConfirmCloseDialog_CloseAllPrimary" xml:space="preserve">
     <value>全部關閉</value>
   </data>
-  <data name="CloseAllDialog.Title" xml:space="preserve">
+  <data name="ConfirmCloseDialog_WindowTitle" xml:space="preserve">
     <value>您要關閉所有索引標籤嗎?</value>
+  </data>
+  <data name="ConfirmCloseDialog_WindowPrimary" xml:space="preserve">
+    <value>全部關閉</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabTitle" xml:space="preserve">
+    <value>是否要關閉此索引標籤?</value>
+  </data>
+  <data name="ConfirmCloseDialog_TabPrimary" xml:space="preserve">
+    <value>關閉索引標籤</value>
+  </data>
+  <data name="ConfirmCloseDialog_PaneTitle" xml:space="preserve">
+    <value>是否要關閉此窗格?</value>
+  </data>
+  <data name="ConfirmCloseDialog_PanePrimary" xml:space="preserve">
+    <value>關閉窗格</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsTitle" xml:space="preserve">
+    <value>是否要關閉這些索引標籤?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultipleTabsPrimary" xml:space="preserve">
+    <value>關閉索引標籤</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesTitle" xml:space="preserve">
+    <value>是否要關閉這些窗格?</value>
+  </data>
+  <data name="ConfirmCloseDialog_MultiplePanesPrimary" xml:space="preserve">
+    <value>關閉窗格</value>
+  </data>
+  <data name="DontAskAgainCheckBox.Content" xml:space="preserve">
+    <value>不要再問我</value>
   </data>
   <data name="CloseReadOnlyDialog.CloseButtonText" xml:space="preserve">
     <value>取消</value>
@@ -711,8 +693,14 @@
   <data name="UnsupportedSchemeText" xml:space="preserve">
     <value>目前不支援此連結類型:</value>
   </data>
-  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UriErrorDialog.CloseButtonText" xml:space="preserve">
     <value>取消</value>
+  </data>
+  <data name="UnsafeUrlConfirmText" xml:space="preserve">
+    <value>此連結可能通往不安全地點。超連結可能對你的電腦和資料造成傷害。為了保護你的電腦，只點擊來自可信來源的連結。</value>
+  </data>
+  <data name="UnsafeUrlConfirmAllowAction" xml:space="preserve">
+    <value>一律開啟</value>
   </data>
   <data name="SettingsTab" xml:space="preserve">
     <value>設定</value>
@@ -755,6 +743,42 @@
     <value>未命名的視窗</value>
     <comment>text used to identify when a window hasn't been assigned a name by the user</comment>
   </data>
+  <data name="NameThisWindowMenuItem" xml:space="preserve">
+    <value>命名此視窗...</value>
+    <comment>Menu item text shown when the current window has no name assigned</comment>
+  </data>
+  <data name="RenameThisWindowMenuItem" xml:space="preserve">
+    <value>重新命名此視窗...</value>
+    <comment>Menu item text shown when the current window already has a name</comment>
+  </data>
+  <data name="WindowListUnnamedEntry" xml:space="preserve">
+    <value>#{0} (未命名)</value>
+    <comment>{locked="{0}"}{0} is the window ID number. Shown in the workspace flyout for windows that have no name assigned.</comment>
+  </data>
+  <data name="DeleteWorkspaceMenuItem" xml:space="preserve">
+    <value>是否要刪除工作區?</value>
+    <comment>Menu item text shown in the right-click context menu on a saved workspace</comment>
+  </data>
+  <data name="OpenWorkspaceMenuItem" xml:space="preserve">
+    <value>開啟工作區</value>
+    <comment>Menu item text for opening a saved workspace</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceTitle" xml:space="preserve">
+    <value>是否要刪除「{0}」?</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Shown as the title of a confirmation dialog when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceBody" xml:space="preserve">
+    <value>確定要刪除 "{0}" 嗎？與此工作區相關聯的工作階段也會一併刪除。</value>
+    <comment>{locked="{0}"}{0} is the workspace name. Body text of the confirmation dialog shown when the user tries to delete a saved workspace.</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceDelete" xml:space="preserve">
+    <value>刪除</value>
+    <comment>Primary button text on the delete workspace confirmation dialog</comment>
+  </data>
+  <data name="ConfirmDeleteWorkspaceCancel" xml:space="preserve">
+    <value>取消</value>
+    <comment>Cancel button text on the delete workspace confirmation dialog</comment>
+  </data>
   <data name="WindowRenamer.Subtitle" xml:space="preserve">
     <value>輸入新名稱：</value>
   </data>
@@ -781,6 +805,14 @@
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
+  <data name="NotificationMessage_TabActivity" xml:space="preserve">
+    <value>索引標籤「{0}」中的活動</value>
+    <comment>{0} is the tab title. Shown as the body of a desktop notification when tab activity is detected.</comment>
+  </data>
+  <data name="NotificationMessage_TabActivityInWindow" xml:space="preserve">
+    <value>索引標籤「{0}」(視窗「{1}」) 中的活動</value>
+    <comment>{0} is the tab title, {1} is the window name. Shown as the body of a desktop notification when tab activity is detected and the window has a name.</comment>
+  </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>開啟指定起始目錄中的新索引標籤</value>
   </data>
@@ -793,17 +825,8 @@
   <data name="ExportTabText" xml:space="preserve">
     <value>匯出文字</value>
   </data>
-  <data name="ExportFailure" xml:space="preserve">
-    <value>無法匯出終端機內容</value>
-  </data>
-  <data name="ExportSuccess" xml:space="preserve">
-    <value>已成功匯出終端機內容</value>
-  </data>
   <data name="FindText" xml:space="preserve">
     <value>尋找</value>
-  </data>
-  <data name="PlainText" xml:space="preserve">
-    <value>純文字</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>您可以在進階設定檔設定中設定終止行為。</value>
@@ -813,6 +836,9 @@
   </data>
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>此終端機視窗目前以系統管理員身分執行</value>
+  </data>
+  <data name="WorkspaceDropdown.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>工作區</value>
   </data>
   <data name="CommandPalette_MatchesAvailable" xml:space="preserve">
     <value>找到的建議: {0}</value>
@@ -896,11 +922,11 @@
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingTab" xml:space="preserve">
     <value>活動窗格已移動至「{0}」索引標籤</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_Default" xml:space="preserve">
     <value>「{0}」索引標籤已移至「{1}」視窗</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window the tab was moved to.</comment>
+    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the name of the window to which the tab was moved.</comment>
   </data>
   <data name="TerminalPage_TabMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>「{0}」索引標籤已移至新視窗</value>
@@ -910,13 +936,9 @@
     <value>「{0}」索引標籤已移至位置「{1}」</value>
     <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful tab movement. {0} is the name of the tab. {1} is the new tab index in the tab row.</comment>
   </data>
-  <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow" xml:space="preserve">
-    <value>活動窗格已移至 "{1}" 視窗中的 "{0}" 索引標籤</value>
-    <comment>{Locked="{0}"}{Locked="{1}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the tab the pane was moved to. {1} is the name of the window the pane was moved to. Replaced in 1.19 by TerminalPage_PaneMovedAnnouncement_ExistingWindow2</comment>
-  </data>
   <data name="TerminalPage_PaneMovedAnnouncement_ExistingWindow2" xml:space="preserve">
     <value>活動窗格已移動至「{0}」視窗</value>
-    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window the pane was moved to.</comment>
+    <comment>{Locked="{0}"}This text is read out by screen readers upon a successful pane movement. {0} is the name of the window to which the pane was moved.</comment>
   </data>
   <data name="TerminalPage_PaneMovedAnnouncement_NewWindow" xml:space="preserve">
     <value>活動窗格已移至新視窗</value>
@@ -930,10 +952,10 @@
     <value>如果設定，命令會附加到設定檔的預設命令，而不是取代命令。</value>
   </data>
   <data name="RestartConnectionText" xml:space="preserve">
-    <value>重新啟動連線</value>
+    <value>重新啟動工作模式</value>
   </data>
   <data name="RestartConnectionToolTip" xml:space="preserve">
-    <value>重新啟動使用中的窗格連線</value>
+    <value>在使用中窗格重新啟動工作階段</value>
   </data>
   <data name="SnippetPaneTitle.Text" xml:space="preserve">
     <value>片斷</value>

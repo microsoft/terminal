@@ -179,6 +179,8 @@ public:
 
     std::wstring_view GetAnswerbackMessage() const noexcept;
 
+    DWORD GetMSAADelay() const noexcept;
+    DWORD GetUIADelay() const noexcept;
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
     SettingsTextMeasurementMode GetTextMeasurementMode() const noexcept;
@@ -225,6 +227,8 @@ private:
     std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
+    DWORD _msaaDelay = 100;
+    DWORD _uiaDelay = 25;
     SettingsTextMeasurementMode _textMeasurement = SettingsTextMeasurementMode::Graphemes;
     bool _fUseDx;
     bool _fCopyColor;
@@ -238,7 +242,7 @@ private:
 
     bool _fInterceptCopyPaste;
 
-    bool _TerminalScrolling;
+    bool _TerminalScrolling = true;
     WCHAR _answerbackMessage[32] = {};
     friend class RegistrySerialization;
 };

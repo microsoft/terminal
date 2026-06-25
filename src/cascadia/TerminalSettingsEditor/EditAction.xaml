@@ -1,0 +1,776 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="Microsoft.Terminal.Settings.Editor.EditAction"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mtu="using:Microsoft.Terminal.UI"
+      xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <!--  Theme Dictionary  -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <!--  Override visual states  -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <!--  Define the appearance of the button  -->
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="{TemplateBinding CornerRadius}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal" />
+                                                <VisualState x:Name="PointerOver">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="border"
+                                                                                       Storyboard.TargetProperty="Background">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="{ThemeResource SystemControlHighlightAccentRevealBackgroundBrush}" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed" />
+                                                <VisualState x:Name="Disabled" />
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <!--  KeyChordText styles  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                        <!--  Override visual states  -->
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <!--  Define the appearance of the button  -->
+                                        <Border x:Name="border"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="{TemplateBinding CornerRadius}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup x:Name="CommonStates">
+                                                <VisualState x:Name="Normal" />
+                                                <VisualState x:Name="PointerOver">
+                                                    <Storyboard>
+                                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="border"
+                                                                                       Storyboard.TargetProperty="Background">
+                                                            <DiscreteObjectKeyFrame KeyTime="0"
+                                                                                    Value="{ThemeResource SystemControlHighlightAccentRevealBackgroundBrush}" />
+                                                        </ObjectAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </VisualState>
+                                                <VisualState x:Name="Pressed" />
+                                                <VisualState x:Name="Disabled" />
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <!--  KeyChordText styles (use XAML defaults for High Contrast theme)  -->
+                    <Style x:Key="KeyChordBorderStyle"
+                           TargetType="Button" />
+                    <Style x:Key="KeyChordTextBlockStyle"
+                           TargetType="TextBlock" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <GridLength x:Key="ArgumentNameWidth">148</GridLength>
+
+            <!--  Styles  -->
+            <Style x:Key="KeyBindingContainerStyle"
+                   BasedOn="{StaticResource DefaultListViewItemStyle}"
+                   TargetType="ListViewItem">
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="XYFocusKeyboardNavigation" Value="Enabled" />
+            </Style>
+            <Style x:Key="KeyChordEditorStyle"
+                   TargetType="local:KeyChordListener">
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+            <x:Int32 x:Key="EditButtonSize">32</x:Int32>
+            <x:Double x:Key="EditButtonIconSize">14</x:Double>
+            <Style x:Key="EditButtonStyle"
+                   BasedOn="{StaticResource DefaultButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
+                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
+            </Style>
+            <Style x:Key="AccentEditButtonStyle"
+                   BasedOn="{StaticResource AccentButtonStyle}"
+                   TargetType="Button">
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Height" Value="{StaticResource EditButtonSize}" />
+                <Setter Property="Width" Value="{StaticResource EditButtonSize}" />
+            </Style>
+            <Style x:Key="TextBlockGroupingStyle"
+                   BasedOn="{StaticResource BodyStrongTextBlockStyle}"
+                   TargetType="TextBlock">
+                <Setter Property="MaxWidth" Value="{StaticResource StandardControlMaxWidth}" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+
+            <!--  Templates  -->
+            <DataTemplate x:Key="KeyChordTemplate"
+                          x:DataType="local:KeyChordViewModel">
+                <ListViewItem IsTabStop="False"
+                              Style="{StaticResource KeyBindingContainerStyle}">
+                    <Grid Padding="-4,0,0,0"
+                          VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Background="{ThemeResource AppBarItemBackgroundThemeBrush}"
+                                Click="{x:Bind ToggleEditMode}"
+                                Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(IsInEditMode), Mode=OneWay}">
+                            <TextBlock FontSize="14"
+                                       Text="{x:Bind KeyChordText, Mode=OneWay}"
+                                       TextWrapping="WrapWholeWords" />
+                        </Button>
+                        <local:KeyChordListener Grid.Column="0"
+                                                Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                Style="{StaticResource KeyChordEditorStyle}"
+                                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
+                        <Button x:Uid="Actions_CancelButton"
+                                Grid.Column="1"
+                                Margin="8,0,0,0"
+                                AutomationProperties.Name="{x:Bind CancelButtonName}"
+                                Click="{x:Bind CancelChanges}"
+                                Style="{StaticResource EditButtonStyle}"
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                      Glyph="&#xE711;" />
+                        </Button>
+
+                        <Button x:Uid="Actions_AcceptButton"
+                                Grid.Column="2"
+                                Margin="8,0,8,0"
+                                AutomationProperties.Name="{x:Bind AcceptButtonName}"
+                                Click="{x:Bind AcceptChanges}"
+                                Flyout="{x:Bind AcceptChangesFlyout, Mode=OneWay}"
+                                Style="{StaticResource AccentEditButtonStyle}"
+                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}">
+                            <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                      Glyph="&#xE8FB;" />
+                        </Button>
+
+                        <Button Grid.Column="3"
+                                HorizontalAlignment="Left"
+                                AutomationProperties.Name="{x:Bind DeleteButtonName}"
+                                Style="{StaticResource DeleteSmallButtonStyle}">
+                            <Button.Content>
+                                <FontIcon FontSize="{StaticResource EditButtonIconSize}"
+                                          Glyph="&#xE74D;" />
+                            </Button.Content>
+                            <Button.Flyout>
+                                <Flyout>
+                                    <StackPanel>
+                                        <TextBlock x:Uid="Actions_DeleteConfirmationMessage"
+                                                   Style="{StaticResource CustomFlyoutTextStyle}" />
+                                        <Button x:Uid="Actions_DeleteConfirmationButton"
+                                                Click="{x:Bind DeleteKeyChord}" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </Grid>
+                </ListViewItem>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Adjust Opacity  -->
+            <!--  Currently that is the only Int32 arg, so just clamp the min/max values according to that  -->
+            <DataTemplate x:Key="Int32Template"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    SmallChange="10"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxInt32(Value), Mode=TwoWay, BindBack=Int32BindBack}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Switch To Tab  -->
+            <DataTemplate x:Key="UInt32Template"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxUInt32(Value), Mode=TwoWay, BindBack=UInt32BindBack}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Close Other Tabs  -->
+            <DataTemplate x:Key="UInt32OptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxUInt32Optional(Value), Mode=TwoWay, BindBack=UInt32OptionalBindBack}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Split Pane  -->
+            <DataTemplate x:Key="Int32OptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="0"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxInt32Optional(Value), Mode=TwoWay, BindBack=Int32OptionalBindBack}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Adjust Font Size  -->
+            <DataTemplate x:Key="FloatTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="1"
+                                    Maximum="999"
+                                    Minimum="-999"
+                                    SmallChange="1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Split Pane  -->
+            <DataTemplate x:Key="SplitSizeTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <muxc:NumberBox Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    LargeChange="0.2"
+                                    Maximum="1"
+                                    Minimum="0"
+                                    SmallChange="0.1"
+                                    Style="{StaticResource NumberBoxSettingStyle}"
+                                    Value="{x:Bind UnboxFloat(Value), Mode=TwoWay, BindBack=FloatBindBack}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Send Input  -->
+            <DataTemplate x:Key="StringTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*"
+                                          MinWidth="196" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <TextBox Grid.Column="1"
+                             AutomationProperties.Name="{x:Bind Name}"
+                             Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                             TextWrapping="Wrap" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Set Color Scheme  -->
+            <DataTemplate x:Key="ColorSchemeTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ComboBox Grid.Column="1"
+                              HorizontalAlignment="Stretch"
+                              AutomationProperties.Name="{x:Bind Name}"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                              SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Export Buffer  -->
+            <DataTemplate x:Key="FilePickerTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*"
+                                          MinWidth="196" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <TextBox Grid.Column="1"
+                             AutomationProperties.Name="{x:Bind Name}"
+                             Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                             TextWrapping="Wrap" />
+                    <Button x:Uid="Actions_Browse"
+                            Grid.Column="2"
+                            Click="{x:Bind BrowseForFile_Click}"
+                            Style="{StaticResource BrowseButtonStyle}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: New Tab  -->
+            <DataTemplate x:Key="FolderPickerTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*"
+                                          MinWidth="196" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <TextBox Grid.Column="1"
+                             AutomationProperties.Name="{x:Bind Name}"
+                             Text="{x:Bind UnboxString(Value), Mode=TwoWay, BindBack=StringBindBack}"
+                             TextWrapping="Wrap" />
+                    <Button x:Uid="Actions_Browse"
+                            Grid.Column="2"
+                            Click="{x:Bind BrowseForFolder_Click}"
+                            Style="{StaticResource BrowseButtonStyle}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Set Focus Mode  -->
+            <DataTemplate x:Key="BoolTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ToggleSwitch Grid.Column="1"
+                                  HorizontalAlignment="Left"
+                                  AutomationProperties.Name="{x:Bind Name}"
+                                  IsOn="{x:Bind UnboxBool(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Split Pane  -->
+            <DataTemplate x:Key="BoolOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <CheckBox Grid.Column="1"
+                              HorizontalAlignment="Left"
+                              AutomationProperties.Name="{x:Bind Name}"
+                              IsChecked="{x:Bind UnboxBoolOptional(Value), Mode=TwoWay, BindBack=BoolOptionalBindBack}"
+                              IsThreeState="True" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Resize Pane  -->
+            <DataTemplate x:Key="EnumComboBoxTemplate"
+                          x:DataType="local:EnumEntry">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" />
+            </DataTemplate>
+
+            <DataTemplate x:Key="EnumTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ComboBox Grid.Column="1"
+                              HorizontalAlignment="Stretch"
+                              AutomationProperties.Name="{x:Bind Name}"
+                              ItemTemplate="{StaticResource EnumComboBoxTemplate}"
+                              ItemsSource="{x:Bind EnumList, Mode=OneWay}"
+                              SelectedItem="{x:Bind EnumValue, Mode=TwoWay}"
+                              Style="{StaticResource ComboBoxSettingStyle}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Copy Text  -->
+            <DataTemplate x:Key="FlagItemTemplate"
+                          x:DataType="local:FlagEntry">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="40" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="0"
+                              AutomationProperties.Name="{x:Bind FlagName}"
+                              IsChecked="{x:Bind IsSet, Mode=TwoWay}" />
+                    <TextBlock Grid.Column="1"
+                               Padding="0,0,0,4"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind FlagName, Mode=OneWay}" />
+                </Grid>
+            </DataTemplate>
+
+            <DataTemplate x:Key="FlagTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <ItemsControl Grid.Column="1"
+                                  Margin="0"
+                                  HorizontalAlignment="Left"
+                                  AutomationProperties.Name="{x:Bind Name}"
+                                  ItemTemplate="{StaticResource FlagItemTemplate}"
+                                  ItemsSource="{x:Bind FlagList, Mode=OneWay}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Add Mark  -->
+            <DataTemplate x:Key="TerminalCoreColorOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                               Grid.Column="1"
+                                               AutomationProperties.Name="{x:Bind Name}"
+                                               ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                               CurrentColor="{x:Bind UnboxTerminalCoreColorOptional(Value), Mode=TwoWay, BindBack=TerminalCoreColorBindBack}"
+                                               NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}" />
+                </Grid>
+            </DataTemplate>
+
+            <!--  Example shortcut action to test this template: Set Tab Color  -->
+            <DataTemplate x:Key="WindowsUIColorOptionalTemplate"
+                          x:DataType="local:ArgWrapper">
+                <Grid Margin="0,4,0,4"
+                      ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="{x:Bind Name}"
+                               TextWrapping="WrapWholeWords" />
+                    <local:NullableColorPicker x:Uid="Actions_NullableColorPicker"
+                                               Grid.Column="1"
+                                               AutomationProperties.Name="{x:Bind Name}"
+                                               ColorSchemeVM="{x:Bind DefaultColorScheme, Mode=OneWay}"
+                                               CurrentColor="{x:Bind UnboxWindowsUIColorOptional(Value), Mode=TwoWay, BindBack=WindowsUIColorBindBack}"
+                                               NullColorPreview="{x:Bind DefaultColorScheme.ForegroundColor.Color, Mode=OneWay}" />
+                </Grid>
+            </DataTemplate>
+
+            <local:ArgsTemplateSelectors x:Key="ArgsTemplateSelector"
+                                         BoolOptionalTemplate="{StaticResource BoolOptionalTemplate}"
+                                         BoolTemplate="{StaticResource BoolTemplate}"
+                                         ColorSchemeTemplate="{StaticResource ColorSchemeTemplate}"
+                                         EnumTemplate="{StaticResource EnumTemplate}"
+                                         FilePickerTemplate="{StaticResource FilePickerTemplate}"
+                                         FlagTemplate="{StaticResource FlagTemplate}"
+                                         FloatTemplate="{StaticResource FloatTemplate}"
+                                         FolderPickerTemplate="{StaticResource FolderPickerTemplate}"
+                                         Int32OptionalTemplate="{StaticResource Int32OptionalTemplate}"
+                                         Int32Template="{StaticResource Int32Template}"
+                                         SplitSizeTemplate="{StaticResource SplitSizeTemplate}"
+                                         StringTemplate="{StaticResource StringTemplate}"
+                                         TerminalCoreColorOptionalTemplate="{StaticResource TerminalCoreColorOptionalTemplate}"
+                                         UInt32OptionalTemplate="{StaticResource UInt32OptionalTemplate}"
+                                         UInt32Template="{StaticResource UInt32Template}"
+                                         WindowsUIColorOptionalTemplate="{StaticResource WindowsUIColorOptionalTemplate}" />
+
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
+            Margin="{StaticResource SettingStackMargin}">
+        <Grid Margin="{StaticResource SettingStackMargin}"
+              HorizontalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{StaticResource ArgumentNameWidth}" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Uid="Actions_CommandDetails"
+                       Grid.Row="0"
+                       Grid.Column="0"
+                       Grid.ColumnSpan="2"
+                       Margin="0,0,0,12"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource TextBlockGroupingStyle}" />
+            <TextBlock x:Uid="Actions_Name"
+                       Grid.Row="1"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
+                       VerticalAlignment="Center" />
+            <TextBox x:Name="CommandNameTextBox"
+                     Grid.Row="1"
+                     Grid.Column="1"
+                     Margin="0,0,0,8"
+                     HorizontalAlignment="Stretch"
+                     AutomationProperties.Name="{x:Bind ViewModel.ActionNameTextBoxAutomationPropName}"
+                     PlaceholderText="{x:Bind ViewModel.DisplayName, Mode=OneWay}"
+                     Text="{x:Bind ViewModel.Name, Mode=TwoWay}" />
+            <TextBlock x:Uid="Actions_ShortcutAction"
+                       Grid.Row="2"
+                       Grid.Column="0"
+                       Margin="0,0,0,12"
+                       VerticalAlignment="Center" />
+            <AutoSuggestBox x:Name="ShortcutActionBox"
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="0,0,0,12"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind ViewModel.ShortcutActionComboBoxAutomationPropName}"
+                            GotFocus="ShortcutActionBox_GotFocus"
+                            LostFocus="ShortcutActionBox_LostFocus"
+                            QuerySubmitted="ShortcutActionBox_QuerySubmitted"
+                            TextChanged="ShortcutActionBox_TextChanged" />
+            <TextBlock x:Uid="Actions_Keybindings"
+                       Grid.Row="3"
+                       Grid.Column="0"
+                       Grid.ColumnSpan="2"
+                       Margin="0,0,0,12"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource TextBlockGroupingStyle}" />
+            <ListView x:Name="KeyChordListView"
+                      x:Uid="Actions_KeyBindingsListView"
+                      Grid.Row="4"
+                      Grid.Column="0"
+                      Grid.ColumnSpan="2"
+                      Margin="0,0,0,12"
+                      ItemTemplate="{StaticResource KeyChordTemplate}"
+                      ItemsSource="{x:Bind ViewModel.KeyChordList, Mode=OneWay}"
+                      SelectionMode="None">
+                <ListView.Footer>
+                    <Button Margin="0,4,0,0"
+                            Click="{x:Bind ViewModel.AddKeybinding_Click}">
+                        <TextBlock x:Uid="Actions_AddKeyChord" />
+                    </Button>
+                </ListView.Footer>
+            </ListView>
+            <TextBlock x:Uid="Actions_Arguments"
+                       Grid.Row="5"
+                       Grid.Column="0"
+                       Grid.ColumnSpan="2"
+                       Margin="0,0,0,12"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource TextBlockGroupingStyle}"
+                       Visibility="{x:Bind ViewModel.ActionArgsVM.HasArgs, Mode=OneWay}" />
+            <ItemsControl Grid.Row="6"
+                          Grid.Column="0"
+                          Grid.ColumnSpan="2"
+                          Margin="0,0,0,12"
+                          HorizontalAlignment="Stretch"
+                          AutomationProperties.Name="{x:Bind ViewModel.AdditionalArgumentsControlAutomationPropName}"
+                          IsTabStop="False"
+                          ItemTemplateSelector="{StaticResource ArgsTemplateSelector}"
+                          ItemsSource="{x:Bind ViewModel.ActionArgsVM.ArgValues, Mode=OneWay}" />
+            <Button Grid.Row="7"
+                    Grid.Column="0"
+                    IsEnabled="{x:Bind ViewModel.IsUserAction, Mode=OneWay}"
+                    Style="{StaticResource DeleteButtonStyle}">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                  Glyph="&#xE74D;" />
+                        <TextBlock x:Uid="Actions_DeleteButton2"
+                                   Style="{StaticResource IconButtonTextBlockStyle}" />
+                    </StackPanel>
+                </Button.Content>
+                <Button.Flyout>
+                    <Flyout>
+                        <StackPanel>
+                            <TextBlock x:Uid="Actions_CommandDeleteConfirmationMessage"
+                                       Style="{StaticResource CustomFlyoutTextStyle}" />
+                            <Button x:Uid="Actions_CommandDeleteConfirmationButton"
+                                    Click="{x:Bind ViewModel.Delete_Click}" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+        </Grid>
+    </Border>
+</Page>

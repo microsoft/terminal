@@ -27,32 +27,71 @@ static void TfPropertyvalClose(TF_PROPERTYVAL* val)
 }
 using unique_tf_propertyval = wil::unique_struct<TF_PROPERTYVAL, decltype(&TfPropertyvalClose), &TfPropertyvalClose>;
 
-void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
+// The flags passed to ActivateEx don't replace the flags during previous calls.
+// Instead, they're additive. So, if we pass flags that some concurrently running
+// TSF clients don't expect we may blow them up accidentally.
+//
+// Such is the case with WPF (and TSF, which is actually at fault there).
+// If you pass TF_TMAE_CONSOLE it'll instantly crash on Windows 10 on first text input.
+// On Windows 11 it'll at least not crash but still make emoji input completely non-functional.
+//
+// --------
+//
+// In any case, we pass the same flags as conhost v1:
+// - TF_TMAE_NOACTIVATEKEYBOARDLAYOUT: TSF does not sync the current keyboard layout
+//   while this method is called. The keyboard layout will be adjusted when the
+//   calling thread gets focus. This flag must be used with TF_TMAE_NOACTIVATETIP.
+// - TF_TMAE_CONSOLE: A text service is activated for console usage.
+//   Some IMEs are known to use this as a hint. Particularly a Korean IME can benefit
+//   from this, because Korean relies on "recomposing" previously finished compositions.
+//   That can't work in a terminal, since we submit composed text to the shell immediately.
+//
+// ...with the exception of, for the following reason:
+// - TF_TMAE_UIELEMENTENABLEDONLY: This flag tells TSF that the caller wants to render its
+//   own candidate "window". The required interface for that is `UIElement` and so it only works
+//   with TIPs (Text Input Panel) that flag themselves as `GUID_TFCAT_TIPCAP_UIELEMENTENABLED`.
+//   We don't support an "UILess" mode (= don't render our own TIP) and so we should not set this flag.
+//   See: https://learn.microsoft.com/en-us/windows/win32/tsf/uiless-mode-overview
+//
+// For TF_TMAE_NOACTIVATEKEYBOARDLAYOUT, I'm 99% sure it doesn't do anything, including in
+// conhost v1. This is because IMM will be initialized on WM_ACTIVATE, which calls ActivateEx(0).
+// Any subsequent ActivateEx() calls will update the flags, _except_ for this one and
+// TF_TMAE_NOACTIVATETIP which are explicitly filtered out.
+//
+// TF_TMAE_NOACTIVATETIP however is important. Without it, TIPs are immediately initialized.
+static std::atomic<DWORD> s_activationFlags{ TF_TMAE_NOACTIVATETIP | TF_TMAE_NOACTIVATEKEYBOARDLAYOUT | TF_TMAE_CONSOLE };
+void Implementation::AvoidBuggyTSFConsoleFlags() noexcept
 {
-    _wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
+    s_activationFlags.fetch_and(~static_cast<DWORD>(TF_TMAE_CONSOLE), std::memory_order_relaxed);
 }
 
-void Implementation::Initialize()
+static std::atomic<bool> s_wantsAnsiInputScope{ false };
+void Implementation::SetDefaultScopeAlphanumericHalfWidth(bool enable) noexcept
 {
-    _categoryMgr = wil::CoCreateInstance<ITfCategoryMgr>(CLSID_TF_CategoryMgr, CLSCTX_INPROC_SERVER);
-    _displayAttributeMgr = wil::CoCreateInstance<ITfDisplayAttributeMgr>(CLSID_TF_DisplayAttributeMgr);
+    s_wantsAnsiInputScope.store(enable, std::memory_order_relaxed);
+}
 
+HRESULT Implementation::Initialize()
+{
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_CategoryMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_categoryMgr.addressof())));
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_DisplayAttributeMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_displayAttributeMgr.addressof())));
     // There's no point in calling TF_GetThreadMgr. ITfThreadMgr is a per-thread singleton.
-    _threadMgrEx = wil::CoCreateInstance<ITfThreadMgrEx>(CLSID_TF_ThreadMgr, CLSCTX_INPROC_SERVER);
+    RETURN_IF_FAILED_EXPECTED(CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(_threadMgrEx.addressof())));
 
-    THROW_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, TF_TMAE_CONSOLE));
-    THROW_IF_FAILED(_threadMgrEx->CreateDocumentMgr(_documentMgr.addressof()));
+    RETURN_IF_FAILED(_threadMgrEx->ActivateEx(&_clientId, s_activationFlags.load(std::memory_order_relaxed)));
+    RETURN_IF_FAILED(_threadMgrEx->CreateDocumentMgr(_documentMgr.addressof()));
 
     TfEditCookie ecTextStore;
-    THROW_IF_FAILED(_documentMgr->CreateContext(_clientId, 0, static_cast<ITfContextOwnerCompositionSink*>(this), _context.addressof(), &ecTextStore));
+    RETURN_IF_FAILED(_documentMgr->CreateContext(_clientId, 0, static_cast<ITfContextOwnerCompositionSink*>(this), _context.addressof(), &ecTextStore));
 
     _ownerCompositionServices = _context.try_query<ITfContextOwnerCompositionServices>();
 
     _contextSource = _context.query<ITfSource>();
-    THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_cookieContextOwner));
-    THROW_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
+    RETURN_IF_FAILED(_contextSource->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_cookieContextOwner));
+    RETURN_IF_FAILED(_contextSource->AdviseSink(IID_ITfTextEditSink, static_cast<ITfTextEditSink*>(this), &_cookieTextEditSink));
 
-    THROW_IF_FAILED(_documentMgr->Push(_context.get()));
+    RETURN_IF_FAILED(_documentMgr->Push(_context.get()));
+    return S_OK;
 }
 
 void Implementation::Uninitialize() noexcept
@@ -319,7 +358,7 @@ STDMETHODIMP Implementation::GetWnd(HWND* phwnd) noexcept
 
 STDMETHODIMP Implementation::GetAttribute(REFGUID rguidAttribute, VARIANT* pvarValue) noexcept
 {
-    if (_wantsAnsiInputScope.load(std::memory_order_relaxed) && IsEqualGUID(rguidAttribute, GUID_PROP_INPUTSCOPE))
+    if (s_wantsAnsiInputScope.load(std::memory_order_relaxed) && IsEqualGUID(rguidAttribute, GUID_PROP_INPUTSCOPE))
     {
         _ansiInputScope.AddRef();
         pvarValue->vt = VT_UNKNOWN;
@@ -711,13 +750,23 @@ TextAttribute Implementation::_textAttributeFromAtom(TfGuidAtom atom) const
     TF_DISPLAYATTRIBUTE da;
     THROW_IF_FAILED(dai->GetAttributeInfo(&da));
 
-    if (da.crText.type != TF_CT_NONE)
+    // The Tencent QQPinyin IME creates TF_CT_COLORREF attributes with a color of 0x000000 (black).
+    // We respect their wish, which results in the preview text being invisible.
+    // (Note that sending this COLORREF is incorrect, and not a bug in our handling.)
+    //
+    // After some discussion, we realized that an IME which sets only one color but not
+    // the others is likely not properly tested anyway, so we reject those cases.
+    // After all, what behavior do we expect, if the IME sends e.g. foreground=blue,
+    // without knowing whether our terminal theme already uses a blue background?
+    if (da.crText.type != TF_CT_NONE && da.crText.type == da.crBk.type)
     {
         attr.SetForeground(_colorFromDisplayAttribute(da.crText));
-    }
-    if (da.crBk.type != TF_CT_NONE)
-    {
         attr.SetBackground(_colorFromDisplayAttribute(da.crBk));
+        // I'm not sure what the best way to handle this is.
+        if (da.crText.type == da.crLine.type)
+        {
+            attr.SetUnderlineColor(_colorFromDisplayAttribute(da.crLine));
+        }
     }
     if (da.lsStyle >= TF_LS_NONE && da.lsStyle <= TF_LS_SQUIGGLE)
     {
@@ -736,10 +785,6 @@ TextAttribute Implementation::_textAttributeFromAtom(TfGuidAtom atom) const
     if (da.fBoldLine)
     {
         attr.SetUnderlineStyle(UnderlineStyle::DoublyUnderlined);
-    }
-    if (da.crLine.type != TF_CT_NONE)
-    {
-        attr.SetUnderlineColor(_colorFromDisplayAttribute(da.crLine));
     }
 
     return attr;

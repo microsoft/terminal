@@ -82,18 +82,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 command->LogSettingChanges(_changeLog);
                 AddAction(*command, keys);
 
-                if (jsonBlock.isMember(JsonKey(KeysKey)))
-                {
-                    // there are keys in this command block meaning this is the legacy style -
-                    // inform the loader that fixups are needed
-                    _fixupsAppliedDuringLoad = true;
-                }
-
-                if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)) && origin == OriginTag::User && !jsonBlock.isMember(JsonKey(IDKey)))
+                if (jsonBlock.isMember(JsonKey(ActionKey)) && !jsonBlock.isMember(JsonKey(IterateOnKey)) && origin == OriginTag::User &&
+                    (!jsonBlock.isMember(JsonKey(IDKey)) || jsonBlock.isMember(JsonKey(KeysKey))))
                 {
                     // for non-nested non-iterable commands,
-                    // if there's no ID in the command block we will generate one for the user -
-                    // inform the loader that the ID needs to be written into the json
+                    // if there's no ID in the command block we will generate one for the user,
+                    // or if there are keys in this command block that means this is the legacy style -
+                    // in either case, inform the loader that fixups are needed
                     _fixupsAppliedDuringLoad = true;
                 }
             }

@@ -15,19 +15,6 @@ using namespace winrt::Windows::Foundation;
 
 namespace winrt::TerminalApp::implementation
 {
-    CommandlineArgs::CommandlineArgs(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory, uint32_t showWindowCommand, winrt::hstring envString) :
-        _args{ args.begin(), args.end() },
-        CurrentDirectory{ std::move(currentDirectory) },
-        ShowWindowCommand{ showWindowCommand },
-        CurrentEnvironment{ std::move(envString) }
-    {
-        _parseResult = _parsed.ParseArgs(_args);
-        if (_parseResult == 0)
-        {
-            _parsed.ValidateStartupCommands();
-        }
-    }
-
     ::TerminalApp::AppCommandlineArgs& CommandlineArgs::ParsedArgs() noexcept
     {
         return _parsed;
@@ -56,6 +43,7 @@ namespace winrt::TerminalApp::implementation
     void CommandlineArgs::Commandline(const winrt::array_view<const winrt::hstring>& value)
     {
         _args = { value.begin(), value.end() };
+        _parseResult = _parsed.ParseArgs(_args);
     }
 
     winrt::com_array<winrt::hstring> CommandlineArgs::Commandline()

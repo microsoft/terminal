@@ -188,7 +188,7 @@ namespace Conhost.UIA.Tests
             Log.Comment("---Status Request Commands---");
             Globals.WaitForTimeout();
             app.UIRoot.SendKeys("c");
-            string expectedTitle = string.Format("Response Received: {0}", "\x1b[?1;0c");
+            string expectedTitle = string.Format("Response Received: {0}", "\x1b[?61;4;6;7;14;21;22;23;24;28;32;42;52c");
 
             Globals.WaitForTimeout();
             string title = app.GetWindowTitle();

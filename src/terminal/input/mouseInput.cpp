@@ -163,8 +163,10 @@ static constexpr wchar_t _windowsButtonToXEncoding(const unsigned int button,
         xvalue = 1;
         break;
     case WM_MOUSEWHEEL:
-    case WM_MOUSEHWHEEL:
         xvalue = delta > 0 ? 0x40 : 0x41;
+        break;
+    case WM_MOUSEHWHEEL:
+        xvalue = delta > 0 ? 0x43 : 0x42;
         break;
     default:
         xvalue = 0;
@@ -221,8 +223,10 @@ static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
         xvalue = 3;
         break;
     case WM_MOUSEWHEEL:
-    case WM_MOUSEHWHEEL:
         xvalue = delta > 0 ? 0x40 : 0x41;
+        break;
+    case WM_MOUSEHWHEEL:
+        xvalue = delta > 0 ? 0x43 : 0x42;
         break;
     default:
         xvalue = 0;
@@ -269,7 +273,7 @@ static constexpr wchar_t _encodeDefaultCoordinate(const til::CoordType sCoordina
 // Parameters:
 // - <none>
 // Return value:
-// - true, if we are tracking mouse input. False, otherwise
+// - true, if we are tracking mouse input; otherwise, false.
 bool TerminalInput::IsTrackingMouseInput() const noexcept
 {
     return _inputMode.any(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);
@@ -378,7 +382,7 @@ TerminalInput::OutputType TerminalInput::HandleMouse(const til::point position, 
 
     if (ShouldSendAlternateScroll(button, delta))
     {
-        return _makeAlternateScrollOutput(delta);
+        return _makeAlternateScrollOutput(button, delta);
     }
 
     return {};
@@ -483,7 +487,7 @@ TerminalInput::OutputType TerminalInput::_GenerateSGRSequence(const til::point p
 // True if the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
 bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
-    const auto inAltBuffer{ _mouseInputState.inAlternateBuffer };
+    const auto inAltBuffer{ _inAlternateBuffer };
     const auto inAltScroll{ _inputMode.test(Mode::AlternateScroll) };
     const auto wasMouseWheel{ (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0 };
     return inAltBuffer && inAltScroll && wasMouseWheel;
@@ -493,14 +497,30 @@ bool TerminalInput::ShouldSendAlternateScroll(const unsigned int button, const s
 // - Sends a sequence to the input corresponding to cursor up / down depending on the sScrollDelta.
 // Parameters:
 // - delta: The scroll wheel delta of the input event
-TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const short delta) const
+TerminalInput::OutputType TerminalInput::_makeAlternateScrollOutput(const unsigned int button, const short delta) const
 {
-    if (delta > 0)
+    uint16_t vkey = 0;
+
+    if (button == WM_MOUSEWHEEL)
     {
-        return MakeOutput(_keyMap.at(VK_UP));
+        vkey = delta > 0 ? VK_UP : VK_DOWN;
+    }
+    else if (button == WM_MOUSEHWHEEL)
+    {
+        vkey = delta > 0 ? VK_RIGHT : VK_LEFT;
     }
     else
     {
-        return MakeOutput(_keyMap.at(VK_DOWN));
+        return {};
     }
+
+    const SanitizedKeyEvent key{
+        .virtualKey = vkey,
+    };
+    EncodingHelper enc;
+    _encodeRegular(enc, key);
+
+    std::wstring str;
+    _formatEncodingHelper(enc, str);
+    return str;
 }

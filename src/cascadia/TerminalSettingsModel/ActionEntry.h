@@ -16,10 +16,11 @@ Author(s):
 
 #include "NewTabMenuEntry.h"
 #include "ActionEntry.g.h"
+#include "MediaResourceSupport.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct ActionEntry : ActionEntryT<ActionEntry, NewTabMenuEntry>
+    struct ActionEntry : ActionEntryT<ActionEntry, NewTabMenuEntry, IPathlessMediaResourceContainer>
     {
     public:
         ActionEntry() noexcept;
@@ -29,8 +30,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const override;
         static com_ptr<NewTabMenuEntry> FromJson(const Json::Value& json);
 
+        void ResolveMediaResourcesWithBasePath(const winrt::hstring& basePath, const Model::MediaResourceResolver& resolver) override;
+
+        IMediaResource Icon() const noexcept
+        {
+            return _icon ? _icon : MediaResource::Empty();
+        }
+
+        void Icon(const IMediaResource& val)
+        {
+            _icon = val;
+        }
+
         WINRT_PROPERTY(winrt::hstring, ActionId);
-        WINRT_PROPERTY(winrt::hstring, Icon);
+
+    private:
+        IMediaResource _icon;
     };
 }
 

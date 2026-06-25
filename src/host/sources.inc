@@ -45,7 +45,6 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
-    ..\CursorBlinker.cpp   \
     ..\alias.cpp   \
     ..\history.cpp   \
     ..\VtIo.cpp   \
@@ -82,6 +81,7 @@ SOURCES = \
     ..\writeData.cpp \
     ..\renderData.cpp \
     ..\renderFontDefaults.cpp \
+    ..\AccessibilityNotifier.cpp \
     ..\ConsoleArguments.cpp \
 
 
@@ -89,10 +89,12 @@ SOURCES = \
 # Sources, Headers, and Libraries
 # -------------------------------------
 
+!if "$(USE_CLANG)" != "1"
 PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 PRECOMPILED_PCH         = precomp.pch
 PRECOMPILED_OBJ         = precomp.obj
+!endif
 
 INCLUDES = \
     $(INCLUDES); \
@@ -180,6 +182,7 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\atlas\$(O)\ConRenderAtlas.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\server\lib\$(O)\ConServer.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\win32\lib\$(O)\ConInteractivityWin32Lib.lib \

@@ -30,6 +30,7 @@ class ConsoleWaitBlock
 public:
     ~ConsoleWaitBlock();
 
+    const SCREEN_INFORMATION* GetScreenBuffer() const noexcept;
     bool Notify(const WaitTerminationReason TerminationReason);
 
     [[nodiscard]] static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplymessage,

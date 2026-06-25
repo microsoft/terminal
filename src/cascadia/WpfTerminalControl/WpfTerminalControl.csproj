@@ -1,8 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    
-    <TargetFrameworks>net472;net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
     <RootNamespace>Microsoft.Terminal.Wpf</RootNamespace>
     <AssemblyName>Microsoft.Terminal.Wpf</AssemblyName>
     <UseWpf>true</UseWpf>

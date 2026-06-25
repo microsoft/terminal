@@ -32,25 +32,24 @@
                 <!--  Loosely based on NonExpanderGrid style  -->
                 <Setter Property="MinWidth" Value="{ThemeResource FlyoutThemeMinWidth}" />
                 <Setter Property="MinHeight" Value="64" />
-                <Setter Property="Padding" Value="16,0,8,0" />
+                <Setter Property="Padding" Value="0,0,8,0" />
             </Style>
         </ResourceDictionary>
     </Page.Resources>
 
-    <Grid Margin="0,0,0,8"
+    <Grid MaxWidth="{StaticResource StandardControlMaxWidth}"
+          Margin="0,0,0,8"
           RowSpacing="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0"
-                    MaxWidth="{StaticResource StandardControlMaxWidth}"
                     Spacing="8">
             <TextBlock x:Uid="ColorSchemesDisclaimer"
                        Style="{StaticResource DisclaimerStyle}" />
-
             <Button x:Name="AddNewButton"
-                    Margin="4,0,0,0"
+                    Margin="0"
                     Click="AddNew_Click"
                     Style="{StaticResource BrowseButtonStyle}">
                 <StackPanel Orientation="Horizontal">
@@ -65,6 +64,7 @@
         <ListView x:Name="ColorSchemeListView"
                   Grid.Row="1"
                   MaxWidth="{StaticResource StandardControlMaxWidth}"
+                  Margin="-16,0,0,0"
                   IsItemClickEnabled="True"
                   ItemClick="{x:Bind ViewModel.SchemeListItemClicked}"
                   ItemsSource="{x:Bind ViewModel.AllColorSchemes, Mode=OneWay}"
@@ -88,11 +88,11 @@
                         <!--  Set the height of the inner grid as 48 to be 3/4 of the ListViewItem height  -->
                         <Grid Grid.Column="0"
                               Height="48"
-                              Padding="12,11,8,8"
+                              Padding="12,12,8,8"
                               VerticalAlignment="Center"
                               Background="{x:Bind mtu:Converters.ColorToBrush(BackgroundColor.Color), Mode=OneWay}"
                               ColumnSpacing="2"
-                              CornerRadius="4"
+                              CornerRadius="{StaticResource ControlCornerRadius}"
                               RowSpacing="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -200,19 +200,19 @@
                                        Text="{x:Bind Name, Mode=OneWay}" />
                         </Grid>
                         <Border Grid.Column="1"
-                                Margin="10,0,0,0"
-                                Padding="2,0,2,0"
+                                Margin="12,0,0,0"
+                                Padding="8,4"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Background="{ThemeResource SystemAltMediumLowColor}"
-                                BorderBrush="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"
                                 BorderThickness="1"
-                                CornerRadius="1"
+                                CornerRadius="{StaticResource ControlCornerRadius}"
                                 Visibility="{x:Bind IsDefaultScheme, Mode=OneWay}">
                             <TextBlock x:Uid="ColorScheme_DefaultTag"
                                        Grid.Column="1"
                                        AutomationProperties.AccessibilityView="Raw"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </Border>
                     </Grid>
                 </DataTemplate>

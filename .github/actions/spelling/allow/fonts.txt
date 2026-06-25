@@ -1,8 +1,8 @@
 Consolas
 emoji
 emojis
+Emojis
 Extralight
-Gabriola
 Iosevka
 MDL
 Monofur

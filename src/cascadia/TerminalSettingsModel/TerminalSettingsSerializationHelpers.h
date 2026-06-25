@@ -18,6 +18,7 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 #include "ModelSerializationHelpers.h"
+#include "MediaResourceSupport.h"
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 {
@@ -87,14 +88,34 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::MatchMode)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConfirmOnClose)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "never", ValueType::Never },
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "always", ValueType::Always },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        return BaseEnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseEnumMapper::CanConvert(json);
+    }
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 6> mappings = {
+    static constexpr std::array<pair_type, 7> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "audible", ValueType::Audible },
         pair_type{ "visual", ValueType::Window | ValueType::Taskbar },
         pair_type{ "window", ValueType::Window },
         pair_type{ "taskbar", ValueType::Taskbar },
+        pair_type{ "notification", ValueType::Notification },
         pair_type{ "all", AllSet },
     };
 
@@ -259,9 +280,13 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::NewTabPosition)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
 {
-    JSON_MAPPINGS(2) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "defaultProfile", ValueType::DefaultProfile },
-        pair_type{ "persistedWindowLayout", ValueType::PersistedWindowLayout },
+        pair_type{ "persistedLayoutAndContent", ValueType::PersistedLayoutAndContent },
+        pair_type{ "persistedLayout", ValueType::PersistedLayout },
+
+        // Keep deprecated keys last, so when they get serialized again they aren't written out
+        pair_type{ "persistedWindowLayout", ValueType::PersistedLayoutAndContent },
     };
 };
 
@@ -767,6 +792,43 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
+template<>
+struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Microsoft::Terminal::Settings::Model::IMediaResource>
+{
+    ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource FromJson(const Json::Value& json)
+    {
+        if (json.isNull()) [[unlikely]]
+        {
+            // Do not use Empty here, as Empty is shared across all instances.
+            return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(L"");
+        }
+
+        winrt::hstring string{ til::u8u16(Detail::GetStringView(json)) };
+        return ::winrt::Microsoft::Terminal::Settings::Model::implementation::MediaResource::FromString(string);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return json.isString() || json.isNull();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::IMediaResource& val)
+    {
+        if (!val || val.Path() == winrt::hstring{})
+        {
+            // empty string becomes null (is this correct?)
+            return Json::Value::nullSingleton();
+        }
+
+        return til::u16u8(val.Path());
+    }
+
+    std::string TypeDescription() const
+    {
+        return "file path";
+    }
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::GraphicsAPI)
 {
     JSON_MAPPINGS(3) = {
@@ -782,6 +844,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextMeasurement)
         pair_type{ "graphemes", ValueType::Graphemes },
         pair_type{ "wcswidth", ValueType::Wcswidth },
         pair_type{ "console", ValueType::Console },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::AmbiguousWidth)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "narrow", ValueType::Narrow },
+        pair_type{ "wide", ValueType::Wide },
     };
 };
 
@@ -802,4 +872,30 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::PathTranslationStyle)
         pair_type{ "msys2", ValueType::MSYS2 },
         pair_type{ "mingw", ValueType::MinGW },
     };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "automatic", ValueType::Automatic },
+        pair_type{ "always", ValueType::Always },
+        pair_type{ "never", ValueType::Never },
+    };
+
+    // Override mapping parser to add boolean parsing
+    ::winrt::Microsoft::Terminal::Control::WarnAboutMultiLinePaste FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::Automatic : ValueType::Never;
+        }
+        return EnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return EnumMapper::CanConvert(json) || json.isBool();
+    }
+
+    using EnumMapper::TypeDescription;
 };

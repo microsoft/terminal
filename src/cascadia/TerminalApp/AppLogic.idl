@@ -25,6 +25,7 @@ namespace TerminalApp
         Boolean HasSettingsStartupActions();
 
         void ReloadSettings();
+        void ReloadSettingsThrottled();
         Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
 
         TerminalWindow CreateNewWindow();

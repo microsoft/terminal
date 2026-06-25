@@ -84,16 +84,18 @@
     </Page.Resources>
 
     <StackPanel Style="{StaticResource SettingsStackStyle}">
-        <Border MaxWidth="{StaticResource StandardControlMaxWidth}">
+        <Border MaxWidth="{StaticResource StandardControlMaxWidth}"
+                CornerRadius="{StaticResource ControlCornerRadius}">
             <!--  Preview of the selected scheme  -->
-            <Grid Width="350"
-                  Height="160"
+            <Grid Width="348"
                   MaxWidth="{StaticResource StandardControlMaxWidth}"
-                  Margin="4"
+                  Margin="0,12"
+                  Padding="8"
                   HorizontalAlignment="Left"
                   Background="{x:Bind mtu:Converters.ColorToBrush(ViewModel.BackgroundColor.Color), Mode=OneWay}"
-                  BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                  BorderThickness="1">
+                  BorderBrush="{ThemeResource ControlStrongStrokeColorDefaultBrush}"
+                  BorderThickness="1"
+                  CornerRadius="{StaticResource ControlCornerRadius}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -198,7 +200,8 @@
             </Grid>
         </Border>
 
-        <local:SettingContainer x:Uid="ColorScheme_InboxSchemeDuplicate"
+        <local:SettingContainer x:Name="InboxSchemeDuplicate"
+                                x:Uid="ColorScheme_InboxSchemeDuplicate"
                                 Visibility="{x:Bind mtu:Converters.InvertedBooleanToVisibility(ViewModel.IsEditable), Mode=OneWay}">
             <Button x:Name="DuplicateSchemeButton"
                     x:Uid="ColorScheme_DuplicateButton"
@@ -206,7 +209,8 @@
                     Style="{StaticResource BrowseButtonStyle}" />
         </local:SettingContainer>
 
-        <local:SettingContainer x:Uid="ColorScheme_ColorsHeader"
+        <local:SettingContainer x:Name="ColorsHeader"
+                                x:Uid="ColorScheme_ColorsHeader"
                                 StartExpanded="True"
                                 Style="{StaticResource ExpanderSettingContainerStyle}"
                                 Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
@@ -468,8 +472,7 @@
             </StackPanel>
         </local:SettingContainer>
 
-        <Grid MaxWidth="1000"
-              Margin="2,6,0,0"
+        <Grid Margin="2,6,0,0"
               ColumnSpacing="4"
               Visibility="{x:Bind ViewModel.IsEditable, Mode=OneWay}">
             <Grid.ColumnDefinitions>

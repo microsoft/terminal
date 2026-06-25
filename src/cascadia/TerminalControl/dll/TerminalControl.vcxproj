@@ -21,6 +21,7 @@
          projects compile properly when they depend on this "Microsoft.winmd."
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
+    <VersionInfoFileDescription>Windows Terminal Control Library</VersionInfoFileDescription>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet Dependencies">

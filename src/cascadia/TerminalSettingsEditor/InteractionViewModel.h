@@ -19,16 +19,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_BINDABLE_ENUM_SETTING(TabSwitcherMode, Model::TabSwitcherMode, _GlobalSettings.TabSwitcherMode);
         GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, _GlobalSettings.CopyFormatting);
+        GETSET_BINDABLE_ENUM_SETTING(ConfirmOnClose, Model::ConfirmOnClose, _GlobalSettings.ConfirmOnClose);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, CopyOnSelect);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TrimBlockSelection);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, TrimPaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SnapToGridOnResize);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, FocusFollowMouse);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ScrollToZoom);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ScrollToChangeOpacity);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, DetectURLs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, SearchWebDefaultQueryUrl);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WordDelimiters);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, ConfirmCloseAllTabs);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, InputServiceWarning);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WarnAboutLargePaste);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_GlobalSettings, WarnAboutMultiLinePaste);

@@ -336,7 +336,7 @@ void ROW::_init() noexcept
 
     do
     {
-        vst1q_u16(chars, whitespace);
+        vst1q_u16(reinterpret_cast<uint16_t*>(chars), whitespace);
         vst1q_u16(charOffsets, offsets);
         offsets = vaddq_u16(offsets, increment);
         chars += 8;
@@ -350,7 +350,7 @@ void ROW::_init() noexcept
     std::iota(_charOffsets.begin(), _charOffsets.end(), uint16_t{ 0 });
 #endif
 
-#pragma warning(push)
+#pragma warning(pop)
 }
 
 void ROW::CopyFrom(const ROW& source)
@@ -942,12 +942,12 @@ void ROW::_resizeChars(uint16_t colEndDirty, uint16_t chBegDirty, size_t chEndDi
     }
 }
 
-til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() noexcept
+RowAttributes& ROW::Attributes() noexcept
 {
     return _attr;
 }
 
-const til::small_rle<TextAttribute, uint16_t, 1>& ROW::Attributes() const noexcept
+const RowAttributes& ROW::Attributes() const noexcept
 {
     return _attr;
 }
@@ -1141,6 +1141,13 @@ til::CoordType ROW::GetLeadingColumnAtCharOffset(const ptrdiff_t offset) const n
 til::CoordType ROW::GetTrailingColumnAtCharOffset(const ptrdiff_t offset) const noexcept
 {
     return _createCharToColumnMapper(offset).GetTrailingColumnAt(offset);
+}
+
+uint16_t ROW::GetCharOffset(til::CoordType col) const noexcept
+{
+    const auto columns = GetReadableColumnCount();
+    const auto colBeg = clamp(col, 0, columns);
+    return _uncheckedCharOffset(gsl::narrow_cast<size_t>(colBeg));
 }
 
 DelimiterClass ROW::DelimiterClassAt(til::CoordType column, const std::wstring_view& wordDelimiters) const noexcept

@@ -164,33 +164,6 @@ void ColorScheme::SetColorTableEntry(uint8_t index, const Core::Color& value) no
     _table[index] = value;
 }
 
-winrt::Microsoft::Terminal::Core::Scheme ColorScheme::ToCoreScheme() const noexcept
-{
-    winrt::Microsoft::Terminal::Core::Scheme coreScheme{};
-
-    coreScheme.Foreground = Foreground();
-    coreScheme.Background = Background();
-    coreScheme.CursorColor = CursorColor();
-    coreScheme.SelectionBackground = SelectionBackground();
-    coreScheme.Black = Table()[0];
-    coreScheme.Red = Table()[1];
-    coreScheme.Green = Table()[2];
-    coreScheme.Yellow = Table()[3];
-    coreScheme.Blue = Table()[4];
-    coreScheme.Purple = Table()[5];
-    coreScheme.Cyan = Table()[6];
-    coreScheme.White = Table()[7];
-    coreScheme.BrightBlack = Table()[8];
-    coreScheme.BrightRed = Table()[9];
-    coreScheme.BrightGreen = Table()[10];
-    coreScheme.BrightYellow = Table()[11];
-    coreScheme.BrightBlue = Table()[12];
-    coreScheme.BrightPurple = Table()[13];
-    coreScheme.BrightCyan = Table()[14];
-    coreScheme.BrightWhite = Table()[15];
-    return coreScheme;
-}
-
 bool ColorScheme::IsEquivalentForSettingsMergePurposes(const winrt::com_ptr<ColorScheme>& other) noexcept
 {
     // The caller likely only got here if the names were the same, so skip checking that one.

@@ -7,7 +7,7 @@ This repository uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-S
 git submodule update --init --recursive
 ```
 
-OpenConsole.sln may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
+OpenConsole.slnx may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
 When using Visual Studio, be sure to set up the path for code formatting. To download the required clang-format.exe file, follow one of the building instructions below and run:
 ```powershell
@@ -103,7 +103,7 @@ If you want to use .nupkg files instead of the downloaded Nuget package, you can
 The Terminal is bundled as an `.msix`, which is produced by the `CascadiaPackage.wapproj` project. To build that project from the commandline, you can run the following (from a window you've already run `tools\razzle.cmd` in):
 
 ```cmd
-"%msbuild%" "%OPENCON%\OpenConsole.sln" /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% /p:AppxSymbolPackageEnabled=false /t:Terminal\CascadiaPackage /m
+"%msbuild%" "%OPENCON%\OpenConsole.slnx" /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% /p:AppxSymbolPackageEnabled=false /t:Terminal\CascadiaPackage /m
 ```
 
 This takes quite some time, and only generates an `msix`. It does not install the msix. To deploy the package:

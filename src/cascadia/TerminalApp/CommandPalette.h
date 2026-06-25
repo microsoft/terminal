@@ -31,7 +31,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
 
-        void SetTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& tabs, const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& mruTabs);
+        void SetTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab>& tabs, const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab>& mruTabs);
         void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
@@ -48,7 +48,7 @@ namespace winrt::TerminalApp::implementation
         void EnableTabSearchMode();
 
         til::property_changed_event PropertyChanged;
-        til::typed_event<winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase> SwitchToTabRequested;
+        til::typed_event<winrt::TerminalApp::CommandPalette, winrt::TerminalApp::Tab> SwitchToTabRequested;
         til::typed_event<winrt::TerminalApp::CommandPalette, winrt::hstring> CommandLineExecutionRequested;
         til::typed_event<winrt::TerminalApp::CommandPalette, Microsoft::Terminal::Settings::Model::Command> DispatchCommandRequested;
         til::typed_event<Windows::Foundation::IInspectable, Microsoft::Terminal::Settings::Model::Command> PreviewAction;
@@ -135,7 +135,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitcherMode;
         uint32_t _switcherStartIdx;
 
-        void _bindTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase>& source, const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target);
+        void _bindTabs(const Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Tab>& source, const Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand>& target);
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;

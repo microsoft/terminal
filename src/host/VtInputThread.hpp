@@ -26,9 +26,10 @@ namespace Microsoft::Console
     class VtInputThread
     {
     public:
-        VtInputThread(_In_ wil::unique_hfile hPipe, const bool inheritCursor);
+        explicit VtInputThread(_In_ wil::unique_hfile hPipe);
 
         [[nodiscard]] HRESULT Start();
+        void CaptureNextCursorPositionReport() const noexcept;
         til::enumset<VirtualTerminal::DeviceAttribute, uint64_t> WaitUntilDA1(DWORD timeout) const noexcept;
 
     private:

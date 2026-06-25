@@ -17,7 +17,6 @@
             "PackageContents/WindowsTerminalShellExt.dll",
 
             // The rest
-            "PackageContents/TerminalAzBridge.exe",
             "PackageContents/wt.exe",
             "PackageContents/WindowsTerminal.exe",
             "PackageContents/elevate-shim.exe"

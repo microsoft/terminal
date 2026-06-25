@@ -71,9 +71,16 @@ parameters:
   - name: enableCaching
     type: boolean
     default: false
+  - name: afterBuildSteps
+    type: stepList
+    default: []
+  - name: outerTemplateContext
+    type: object
+    default: {}
 
 jobs:
 - job: ${{ parameters.jobName }}
+  templateContext: ${{ parameters.outerTemplateContext }}
   ${{ if ne(length(parameters.pool), 0) }}:
     pool: ${{ parameters.pool }}
   strategy:
@@ -90,7 +97,7 @@ jobs:
             ${{ else }}:
               OutputBuildPlatform: ${{ platform }}
   variables:
-    MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x86\MakeAppx.exe'
+    MakeAppxPath: 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x86\MakeAppx.exe'
     Terminal.BinDir: $(Build.SourcesDirectory)/bin/$(OutputBuildPlatform)/$(BuildConfiguration)
     # Azure DevOps abhors a vacuum
     # If these are blank, expansion will fail later on... which will result in direct substitution of the variable *names*
@@ -130,11 +137,11 @@ jobs:
           $SignFragments += "wpfdotnet"
         }
         If ([bool]::Parse("${{ parameters.buildWPF }}")) {
-          $BuildTargets += "Terminal\Control\Microsoft_Terminal_Control"
+          $BuildTargets += "Terminal\Control\TerminalControl"
           $SignFragments += "wpf"
         }
         If ([bool]::Parse("${{ parameters.buildConPTY }}")) {
-          $BuildTargets += "Conhost\Host_EXE;Conhost\winconpty_DLL"
+          $BuildTargets += "Conhost\Host_EXE;Conhost\winconptydll"
           $SignFragments += "conpty"
         }
         Write-Host "Targets: $($BuildTargets -Join ";")"
@@ -170,9 +177,9 @@ jobs:
   - ${{ parameters.beforeBuildSteps }}
 
   - task: VSBuild@1
-    displayName: Build OpenConsole.sln
+    displayName: Build OpenConsole.slnx
     inputs:
-      solution: 'OpenConsole.sln'
+      solution: 'OpenConsole.slnx'
       msbuildArgs: >-
         /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }}
         ${{ parameters.additionalBuildOptions }}
@@ -209,6 +216,8 @@ jobs:
         inputs:
           contents: $(Build.SourcesDirectory)/MSBuildCacheLogs/**
           TargetFolder: $(Terminal.BinDir)/MSBuildCacheLogs
+
+  - ${{ parameters.afterBuildSteps }}
 
   # This saves ~2GiB per architecture. We won't need these later.
   # Removes:

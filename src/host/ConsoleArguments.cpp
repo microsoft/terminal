@@ -22,6 +22,7 @@ const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 const std::wstring_view ConsoleArguments::COM_SERVER_ARG = L"-Embedding";
 static constexpr std::wstring_view GLYPH_WIDTH{ L"--textMeasurement" };
+static constexpr std::wstring_view AMBIGUOUS_IS_WIDE{ L"--ambiguousIsWide" };
 // NOTE: Thinking about adding more commandline args that control conpty, for
 // the Terminal? Make sure you add them to the commandline in
 // ConsoleEstablishHandoff. We use that to initialize the ConsoleArguments for a
@@ -136,6 +137,8 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments& other)
         _vtInHandle = other._vtInHandle;
         _vtOutHandle = other._vtOutHandle;
         _headless = other._headless;
+        _textMeasurement = other._textMeasurement;
+        _ambiguousIsWide = other._ambiguousIsWide;
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
         _signalHandle = other._signalHandle;
@@ -182,7 +185,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: receives the string at index+1
 // Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the string successfully; otherwise, E_INVALIDARG indicating
 //      failure.
 [[nodiscard]] HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                                            _Inout_ size_t& index,
@@ -213,7 +216,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: receives the string at index+1
 // Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the string successfully; otherwise, E_INVALIDARG indicating
 //      failure.
 [[nodiscard]] HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index)
 {
@@ -243,7 +246,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      should be at (index+1). index will be decremented by one on success.
 //  pSetting: receives the short at index+1
 // Return Value:
-//  S_OK if we parsed the short successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the short successfully; otherwise, E_INVALIDARG indicating
 //      failure. This could be the case for non-numeric arguments, or for >SHORT_MAX args.
 [[nodiscard]] HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
                                                            _Inout_ size_t& index,
@@ -312,7 +315,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     }
     else
     {
-        // If we're trying to set the handle a second time, invalid.
+        // If we're trying to set the handle again, invalid.
         hr = E_INVALIDARG;
     }
 
@@ -332,7 +335,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //  index: the index of the argument of which to start the commandline from.
 //  skipFirst: if true, omit the arg at index (which should be "--")
 // Return Value:
-//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//  S_OK if we parsed the string successfully; otherwise, E_INVALIDARG indicating
 //       failure.
 [[nodiscard]] HRESULT ConsoleArguments::_GetClientCommandline(_Inout_ std::vector<std::wstring>& args, const size_t index, const bool skipFirst)
 {
@@ -369,7 +372,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 // Arguments:
 //  <none>
 // Return Value:
-//  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG
+//  S_OK if we parsed our _commandline successfully; otherwise, E_INVALIDARG
 //      indicating failure.
 [[nodiscard]] HRESULT ConsoleArguments::ParseCommandline()
 {
@@ -498,6 +501,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         {
             hr = s_GetArgumentValue(args, i, &_textMeasurement);
         }
+        else if (arg == AMBIGUOUS_IS_WIDE)
+        {
+            _ambiguousIsWide = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
@@ -619,6 +628,11 @@ std::wstring ConsoleArguments::GetClientCommandline() const
 const std::wstring& ConsoleArguments::GetTextMeasurement() const
 {
     return _textMeasurement;
+}
+
+bool ConsoleArguments::GetAmbiguousIsWide() const
+{
+    return _ambiguousIsWide;
 }
 
 bool ConsoleArguments::GetForceV1() const

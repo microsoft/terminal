@@ -59,6 +59,7 @@ stages:
                 name: SHINE-INT-L
               ${{ else }}:
                 name: SHINE-OSS-L
+              demands: ImageOverride -equals SHINE-VS18-Latest
             buildPlatforms: [x64]
             buildConfigurations: [AuditMode]
             buildEverything: true
@@ -82,11 +83,19 @@ stages:
                 name: SHINE-INT-L
               ${{ else }}:
                 name: SHINE-OSS-L
+              demands: ImageOverride -equals SHINE-VS18-Latest
             buildPlatforms:
               - ${{ platform }}
             buildConfigurations: [Release]
             buildEverything: true
             keepAllExpensiveBuildOutputs: false
+            ${{ if eq(parameters.runTests, true) }}:
+              # Copy the appx files into the bin drop because the LocalTests need them
+              afterBuildSteps:
+                - pwsh: |-
+                    $deps = ./build/scripts/Get-DependenciesFromAppxRecipe.ps1 -Path "$(Terminal.BinDir)/TestHostApp/TestHostApp.build.appxrecipe"
+                    $dir = New-Item -Type Directory "$(Terminal.BinDir)/_testDeps"
+                    $deps | Copy-Item -Destination $dir -Verbose
 
     - ${{ if eq(parameters.runTests, true) }}:
       - stage: Test_${{ platform }}

@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::ColorScheme DuplicateColorScheme(const Model::ColorScheme& scheme);
 
         Model::ActionMap ActionMap() const noexcept;
+        void UpdateCommandID(const Model::Command& cmd, winrt::hstring newID);
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json, const OriginTag origin = OriginTag::None);
         void LayerJson(const Json::Value& json, const OriginTag origin);
@@ -74,6 +75,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool LegacyForceVTInput() const noexcept { return _legacyForceVTInput; }
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
+
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
+
+        winrt::hstring SourceBasePath;
 
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 

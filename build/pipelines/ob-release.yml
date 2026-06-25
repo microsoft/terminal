@@ -53,8 +53,12 @@ parameters:
     displayName: "Publish Symbols to MSDL"
     type: boolean
     default: true
+  - name: createVpack
+    displayName: "Create a VPack for Windows"
+    type: boolean
+    default: false
   - name: publishVpackToWindows
-    displayName: "Publish VPack to Windows"
+    displayName: "Publish above VPack to Windows"
     type: boolean
     default: false
 
@@ -89,6 +93,7 @@ extends:
       clientId: $(SigningOriginalClientId)
     terminalInternalPackageVersion: ${{ parameters.terminalInternalPackageVersion }}
     publishSymbolsToPublic: ${{ parameters.publishSymbolsToPublic }}
+    createVpack: ${{ parameters.createVpack }}
     publishVpackToWindows: ${{ parameters.publishVpackToWindows }}
     symbolPublishingSubscription: $(SymbolPublishingServiceConnection)
     symbolPublishingProject: $(SymbolPublishingProject)

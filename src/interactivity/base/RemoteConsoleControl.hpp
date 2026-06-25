@@ -24,10 +24,12 @@ namespace Microsoft::Console::Interactivity
         RemoteConsoleControl(HANDLE signalPipe);
 
         // IConsoleControl Members
-        [[nodiscard]] NTSTATUS NotifyConsoleApplication(_In_ DWORD dwProcessId);
-        [[nodiscard]] NTSTATUS SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground);
-        [[nodiscard]] NTSTATUS EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags);
-        [[nodiscard]] NTSTATUS SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId);
+        void Control(ControlType command, PVOID ptr, DWORD len) noexcept override;
+        void NotifyWinEvent(DWORD event, HWND hwnd, LONG idObject, LONG idChild) noexcept override;
+        void NotifyConsoleApplication(_In_ DWORD dwProcessId) noexcept override;
+        void SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground) noexcept override;
+        void EndTask(_In_ DWORD dwProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags) noexcept override;
+        void SetWindowOwner(HWND hwnd, DWORD processId, DWORD threadId) noexcept override;
 
     private:
         wil::unique_handle _pipe;

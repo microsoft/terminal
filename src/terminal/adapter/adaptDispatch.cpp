@@ -48,6 +48,11 @@ AdaptDispatch::AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettin
 {
 }
 
+void AdaptDispatch::UnknownSequence() noexcept
+{
+    _api.UnknownSequence();
+}
+
 // Routine Description:
 // - Translates and displays a single character
 // Arguments:
@@ -110,9 +115,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         lineWidth = std::min(lineWidth, rightMargin + 1);
     }
 
-    // Turn off the cursor until we're done, so it isn't refreshed unnecessarily.
-    cursor.SetIsOn(false);
-
     RowWriteState state{
         .text = string,
         .columnLimit = lineWidth,
@@ -120,9 +122,8 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
 
     while (!state.text.empty())
     {
-        if (cursor.IsDelayedEOLWrap() && wrapAtEOL)
+        if (const auto delayedCursorPosition = cursor.GetDelayEOLWrap(); delayedCursorPosition && wrapAtEOL)
         {
-            const auto delayedCursorPosition = cursor.GetDelayedAtPosition();
             cursor.ResetDelayEOLWrap();
             // Only act on a delayed EOL if we didn't move the cursor to a
             // different position from where the EOL was marked.
@@ -160,12 +161,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
         }
         const auto textPositionAfter = state.text.data();
 
-        if (state.columnBeginDirty != state.columnEndDirty)
-        {
-            const til::rect changedRect{ state.columnBeginDirty, cursorPosition.y, state.columnEndDirty, cursorPosition.y + 1 };
-            _api.NotifyAccessibilityChange(changedRect);
-        }
-
         // If we're past the end of the line, we need to clamp the cursor
         // back into range, and if wrapping is enabled, set the delayed wrap
         // flag. The wrapping only occurs once another character is output.
@@ -197,8 +192,6 @@ void AdaptDispatch::_WriteToBuffer(const std::wstring_view string)
             }
         }
     }
-
-    _ApplyCursorMovementFlags(cursor);
 
     // Notify terminal and UIA of new text.
     // It's important to do this here instead of in TextBuffer, because here you
@@ -406,24 +399,6 @@ void AdaptDispatch::_CursorMovePosition(const Offset rowOffset, const Offset col
 
     // Finally, attempt to set the adjusted cursor position back into the console.
     cursor.SetPosition(page.Buffer().ClampPositionWithinLine({ col, row }));
-    _ApplyCursorMovementFlags(cursor);
-}
-
-// Routine Description:
-// - Helper method which applies a bunch of flags that are typically set whenever
-//   the cursor is moved. The IsOn flag is set to true, and the Delay flag to false,
-//   to force a blinking cursor to be visible, so the user can immediately see the
-//   new position. The HasMoved flag is set to let the accessibility notifier know
-//   that there was movement that needs to be reported.
-// Arguments:
-// - cursor - The cursor instance to be updated
-// Return Value:
-// - <none>
-void AdaptDispatch::_ApplyCursorMovementFlags(Cursor& cursor) noexcept
-{
-    cursor.SetDelay(false);
-    cursor.SetIsOn(true);
-    cursor.SetHasMoved(true);
 }
 
 // Routine Description:
@@ -502,7 +477,7 @@ void AdaptDispatch::CursorSaveState()
     savedCursorState.Column = cursorPosition.x + 1;
     savedCursorState.Row = cursorPosition.y + 1;
     savedCursorState.Page = page.Number();
-    savedCursorState.IsDelayedEOLWrap = page.Cursor().IsDelayedEOLWrap();
+    savedCursorState.IsDelayedEOLWrap = page.Cursor().GetDelayEOLWrap().has_value();
     savedCursorState.IsOriginModeRelative = _modes.test(Mode::Origin);
     savedCursorState.Attributes = page.Attributes();
     savedCursorState.TermOutput = _termOutput;
@@ -726,7 +701,6 @@ void AdaptDispatch::DeleteCharacter(const VTInt count)
 void AdaptDispatch::_FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const
 {
     page.Buffer().FillRect(fillRect, fillChar, fillAttrs);
-    _api.NotifyAccessibilityChange(fillRect);
 }
 
 // Routine Description:
@@ -870,7 +844,6 @@ void AdaptDispatch::_SelectiveEraseRect(const Page& page, const til::rect& erase
                 }
             }
         }
-        _api.NotifyAccessibilityChange(eraseRect);
     }
 }
 
@@ -980,7 +953,6 @@ void AdaptDispatch::_ChangeRectAttributes(const Page& page, const til::rect& cha
             }
         }
         page.Buffer().TriggerRedraw(Viewport::FromExclusive(changeRect));
-        _api.NotifyAccessibilityChange(changeRect);
     }
 }
 
@@ -1009,7 +981,7 @@ void AdaptDispatch::_ChangeRectOrStreamAttributes(const til::rect& changeArea, c
     // top line is altered from the left offset up to the end of the line. The
     // bottom line is altered from the start up to the right offset. All the
     // lines in-between have their entire length altered. The right coordinate
-    // must be greater than the left, otherwise the operation is ignored.
+    // must be greater than the left; otherwise, the operation is ignored.
     else if (lineCount > 1 && changeRect.right > changeRect.left)
     {
         const auto pageWidth = page.Width();
@@ -1212,7 +1184,6 @@ void AdaptDispatch::CopyRectangularArea(const VTInt top, const VTInt left, const
         } while (dstView.WalkInBounds(dstPos, walkDirection));
         // Copy any image content in the affected area.
         ImageSlice::CopyBlock(src.Buffer(), srcView.ToExclusive(), dst.Buffer(), dstView.ToExclusive());
-        _api.NotifyAccessibilityChange(dstRect);
     }
 }
 
@@ -1297,11 +1268,6 @@ void AdaptDispatch::SelectAttributeChangeExtent(const DispatchTypes::ChangeExten
     }
 }
 
-void AdaptDispatch::SetVtChecksumReportSupport(const bool enabled) noexcept
-{
-    _vtChecksumReportEnabled = enabled;
-}
-
 // Routine Description:
 // - DECRQCRA - Computes and reports a checksum of the specified area of
 //   the buffer memory.
@@ -1318,7 +1284,7 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
     // If this feature is not enabled, we'll just report a zero checksum.
     if constexpr (Feature_VtChecksumReport::IsEnabled())
     {
-        if (_vtChecksumReportEnabled)
+        if (_optionalFeatures.test(OptionalFeature::ChecksumReport))
         {
             // If the page number is 0, then we're meant to return a checksum of all
             // of the pages, but we have no need for that, so we'll just return 0.
@@ -1327,7 +1293,7 @@ void AdaptDispatch::RequestChecksumRectangularArea(const VTInt id, const VTInt p
                 // As part of the checksum, we need to include the color indices of each
                 // cell, and in the case of default colors, those indices come from the
                 // color alias table. But if they're not in the bottom 16 range, we just
-                // fallback to using white on black (7 and 0).
+                // fall back to using white on black (7 and 0).
                 auto defaultFgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultForeground);
                 auto defaultBgIndex = _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground);
                 defaultFgIndex = defaultFgIndex < 16 ? defaultFgIndex : 7;
@@ -1483,8 +1449,16 @@ void AdaptDispatch::DeviceAttributes()
     // 28 = Rectangular area operations
     // 32 = Text macros
     // 42 = ISO Latin-2 character set
+    // 52 = Clipboard access
 
-    _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42c");
+    if (_optionalFeatures.test(OptionalFeature::ClipboardWrite))
+    {
+        _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42;52c");
+    }
+    else
+    {
+        _ReturnCsiResponse(L"?61;4;6;7;14;21;22;23;24;28;32;42c");
+    }
 }
 
 // Routine Description:
@@ -1834,7 +1808,7 @@ void AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
         _terminalInput.SetInputMode(TerminalInput::Mode::AutoRepeat, enable);
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        _pages.ActivePage().Cursor().SetBlinkingAllowed(enable);
+        _pages.ActivePage().Cursor().SetIsBlinking(enable);
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         _pages.ActivePage().Cursor().SetIsVisible(enable);
@@ -1999,7 +1973,7 @@ void AdaptDispatch::RequestMode(const DispatchTypes::ModeParams param)
         state = mapTemp(_terminalInput.GetInputMode(TerminalInput::Mode::AutoRepeat));
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
-        state = mapTemp(_pages.ActivePage().Cursor().IsBlinkingAllowed());
+        state = mapTemp(_pages.ActivePage().Cursor().IsBlinking());
         break;
     case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         state = mapTemp(_pages.ActivePage().Cursor().IsVisible());
@@ -2085,6 +2059,73 @@ void AdaptDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
     _terminalInput.SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
 }
 
+// - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
+// Arguments:
+// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+void AdaptDispatch::SetAnsiMode(const bool ansiMode)
+{
+    // When an attempt is made to update the mode, the designated character sets
+    // need to be reset to defaults, even if the mode doesn't actually change.
+    _termOutput.SoftReset();
+
+    _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+
+    // While input mode changes are often forwarded over conpty, we never want
+    // to do that for the DECANM mode.
+}
+
+// CSI = flags ; mode u - Sets kitty keyboard protocol flags
+void AdaptDispatch::SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept
+{
+    // Avoid setting KKP flags in `_terminalInput` when we're ConPTY. Otherwise, we'd be translating
+    // W32IM to KKP, even when KKP is not supported by the hosting terminal (possibly intentionally).
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
+    const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
+    const auto KittyKeyboardProtocol = static_cast<TerminalInput::KittyKeyboardProtocolMode>(mode.value_or(1));
+    _terminalInput.SetKittyKeyboardProtocol(kittyFlags, KittyKeyboardProtocol);
+}
+
+// CSI ? u - Queries current kitty keyboard protocol flags
+void AdaptDispatch::QueryKittyKeyboardProtocol()
+{
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
+    const auto flags = static_cast<VTInt>(_terminalInput.GetKittyFlags());
+    _ReturnCsiResponse(fmt::format(FMT_COMPILE(L"?{}u"), flags));
+}
+
+// CSI > flags u - Pushes current kitty keyboard flags onto the stack and sets new flags
+void AdaptDispatch::PushKittyKeyboardProtocol(const VTParameter flags)
+{
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
+    const auto kittyFlags = gsl::narrow_cast<uint8_t>(flags.value_or(0));
+    _terminalInput.PushKittyFlags(kittyFlags);
+}
+
+// CSI < count u - Pops one or more entries from the kitty keyboard stack
+void AdaptDispatch::PopKittyKeyboardProtocol(const VTParameter count)
+{
+    if (_api.IsConPTY())
+    {
+        return;
+    }
+
+    const auto popCount = static_cast<size_t>(count.value_or(1));
+    _terminalInput.PopKittyFlags(popCount);
+}
+
 // Routine Description:
 // - Internal logic for adding or removing lines in the active screen buffer.
 //   This also moves the cursor to the left margin, which is expected behavior for IL and DL.
@@ -2108,7 +2149,6 @@ void AdaptDispatch::_InsertDeleteLineHelper(const VTInt delta)
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         cursor.SetXPosition(leftMargin);
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2178,22 +2218,6 @@ void AdaptDispatch::InsertColumn(const VTInt distance)
 void AdaptDispatch::DeleteColumn(const VTInt distance)
 {
     _InsertDeleteColumnHelper(-distance);
-}
-
-// - DECANM - Sets the terminal emulation mode to either ANSI-compatible or VT52.
-// Arguments:
-// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
-void AdaptDispatch::SetAnsiMode(const bool ansiMode)
-{
-    // When an attempt is made to update the mode, the designated character sets
-    // need to be reset to defaults, even if the mode doesn't actually change.
-    _termOutput.SoftReset();
-
-    _api.GetStateMachine().SetParserMode(StateMachine::Mode::Ansi, ansiMode);
-    _terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
-
-    // While input mode changes are often forwarded over conpty, we never want
-    // to do that for the DECANM mode.
 }
 
 // Routine Description:
@@ -2389,7 +2413,9 @@ void AdaptDispatch::CarriageReturn()
 // Arguments:
 // - page - Target page on which the line feed is executed.
 // - withReturn - Set to true if a carriage return should be performed as well.
-// - wrapForced - Set to true is the line feed was the result of the line wrapping. if the viewport panned down. False if not.
+// - wrapForced - Set to true if the line feed was the result of the line wrapping.
+// Return Value:
+// - true if the viewport panned down; otherwise, false.
 bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const bool wrapForced)
 {
     auto& textBuffer = page.Buffer();
@@ -2464,10 +2490,7 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
         textBuffer.IncrementCircularBuffer(eraseAttributes);
         _api.NotifyBufferRotation(1);
 
-        // We trigger a scroll rather than a redraw, since that's more efficient,
-        // but we need to turn the cursor off before doing so, otherwise a ghost
-        // cursor can be left behind in the previous position.
-        cursor.SetIsOn(false);
+        // We trigger a scroll rather than a redraw, since that's more efficient.
         textBuffer.TriggerScroll({ 0, -1 });
 
         // And again, if the bottom margin didn't cover the full page, we
@@ -2479,7 +2502,6 @@ bool AdaptDispatch::_DoLineFeed(const Page& page, const bool withReturn, const b
     }
 
     cursor.SetPosition(newPosition);
-    _ApplyCursorMovementFlags(cursor);
     return viewportMoved;
 }
 
@@ -2531,7 +2553,6 @@ void AdaptDispatch::ReverseLineFeed()
     {
         // Otherwise we move the cursor up, but not past the top of the page.
         cursor.SetPosition(textBuffer.ClampPositionWithinLine({ cursorPosition.x, cursorPosition.y - 1 }));
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2557,7 +2578,6 @@ void AdaptDispatch::BackIndex()
     else if (cursorPosition.x > 0)
     {
         cursor.SetXPosition(cursorPosition.x - 1);
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2583,7 +2603,6 @@ void AdaptDispatch::ForwardIndex()
     else if (cursorPosition.x < page.Buffer().GetLineWidth(cursorPosition.y) - 1)
     {
         cursor.SetXPosition(cursorPosition.x + 1);
-        _ApplyCursorMovementFlags(cursor);
     }
 }
 
@@ -2594,6 +2613,27 @@ void AdaptDispatch::ForwardIndex()
 void AdaptDispatch::SetWindowTitle(std::wstring_view title)
 {
     _api.SetWindowTitle(title);
+}
+
+// OSC 7 - Set Current Working Directory
+// While ConEmu's OSC 9;9 works well for native Windows paths,
+// OSC 7 uses file URIs, which may not always work.
+void AdaptDispatch::SetCurrentWorkingDirectory(std::wstring_view uri)
+{
+    // Ensure that the URI has a null terminator.
+    std::wstring path{ uri };
+
+    // PathCreateFromUrlW supports writing to the input pointer,
+    // and the resulting path can never be longer than the URI.
+    const auto ptr = path.data();
+    auto len = gsl::narrow<DWORD>(path.size());
+    THROW_IF_FAILED(PathCreateFromUrlW(ptr, ptr, &len, 0));
+    path.resize(len);
+
+    if (til::is_legal_path(path))
+    {
+        _api.SetWorkingDirectory(path);
+    }
 }
 
 //Routine Description:
@@ -2646,9 +2686,8 @@ void AdaptDispatch::ForwardTab(const VTInt numTabs)
     // approach (i.e. they don't reset). For us this is a bit messy, since all
     // cursor movement resets the flag automatically, so we need to save the
     // original state here, and potentially reapply it after the move.
-    const auto delayedWrapOriginallySet = cursor.IsDelayedEOLWrap();
+    const auto delayedWrapOriginallySet = cursor.GetDelayEOLWrap().has_value();
     cursor.SetXPosition(column);
-    _ApplyCursorMovementFlags(cursor);
     if (delayedWrapOriginallySet)
     {
         cursor.DelayEOLWrap();
@@ -2685,7 +2724,6 @@ void AdaptDispatch::BackwardsTab(const VTInt numTabs)
     }
 
     cursor.SetXPosition(column);
-    _ApplyCursorMovementFlags(cursor);
 }
 
 //Routine Description:
@@ -2879,7 +2917,7 @@ void AdaptDispatch::AcceptC1Controls(const bool enabled)
 void AdaptDispatch::SendC1Controls(const bool enabled)
 {
     // If this is an attempt to enable C1 controls, the input code page must be
-    // one of the DOCS choices (UTF-8 or ISO-8859-1), otherwise there's a risk
+    // one of the DOCS choices (UTF-8 or ISO-8859-1); otherwise, there's a risk
     // that those controls won't have a valid encoding.
     const auto codepage = _api.GetInputCodePage();
     if (enabled == false || codepage == CP_UTF8 || codepage == 28591)
@@ -2964,17 +3002,15 @@ void AdaptDispatch::SoftReset()
     SetGraphicsRendition({}); // Normal rendition.
     SetCharacterProtectionAttribute({}); // Default (unprotected)
 
-    // Reset the saved cursor state.
-    // Note that XTerm only resets the main buffer state, but that
-    // seems likely to be a bug. Most other terminals reset both.
-    _savedCursorState.at(0) = {}; // Main buffer
-    _savedCursorState.at(1) = {}; // Alt buffer
+    // Reset only the active saved cursor state.
+    // This matches xterm behavior when DECSTR is processed while using
+    // the alternate screen buffer (GH#19918).
+    _savedCursorState.at(_usingAltBuffer ? 1 : 0) = {};
 
-    // The TerminalOutput state in these buffers must be reset to
+    // The TerminalOutput state in this buffer must be reset to
     // the same state as the _termOutput instance, which is not
     // necessarily equivalent to a full reset.
-    _savedCursorState.at(0).TermOutput = _termOutput;
-    _savedCursorState.at(1).TermOutput = _termOutput;
+    _savedCursorState.at(_usingAltBuffer ? 1 : 0).TermOutput = _termOutput;
 
     // Soft reset the Sixel parser if in use.
     if (_sixelParser)
@@ -2992,7 +3028,7 @@ void AdaptDispatch::SoftReset()
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
 //      * The soft font is reset in the renderer and the font buffer is deleted.
-//   - Clears the screen.
+//   - Clears the screen. (if erase=true)
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
 //      * CUP(1;1)
@@ -3002,8 +3038,8 @@ void AdaptDispatch::SoftReset()
 //   - Sets all character sets to the default.
 //      * G0(USASCII)
 //Arguments:
-// <none>
-void AdaptDispatch::HardReset()
+// - erase: if true, erase the screen and scrollback
+void AdaptDispatch::HardReset(bool erase)
 {
     // If in the alt buffer, switch back to main before doing anything else.
     if (_usingAltBuffer)
@@ -3030,9 +3066,12 @@ void AdaptDispatch::HardReset()
     //      to ensure that it clears with the default background color.
     SoftReset();
 
-    // Clears the screen - Needs to be done in two operations.
-    EraseInDisplay(DispatchTypes::EraseType::All);
-    EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    if (erase)
+    {
+        // Clears the screen - Needs to be done in two operations.
+        EraseInDisplay(DispatchTypes::EraseType::All);
+        EraseInDisplay(DispatchTypes::EraseType::Scrollback);
+    }
 
     // Set the color table and render modes back to their initial startup values.
     _renderSettings.RestoreDefaultSettings();
@@ -3043,8 +3082,14 @@ void AdaptDispatch::HardReset()
         _renderer->SynchronizedOutputChanged();
     }
 
-    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
-    CursorPosition(1, 1);
+    if (erase)
+    {
+        // Cursor to 1,1 - the Soft Reset guarantees this is absolute.
+        // Only done when clearing buffers, because when preserving content
+        // the cursor should stay where the previous shell left it so the
+        // new shell prompt appears in the right place.
+        CursorPosition(1, 1);
+    }
 
     // We only reset the system line feed mode if the input mode is set. If it
     // isn't set, that either means they're both reset, and there's nothing for
@@ -3062,7 +3107,7 @@ void AdaptDispatch::HardReset()
     _api.SetSystemMode(ITerminalApi::Mode::BracketedPaste, false);
 
     // Restore cursor blinking mode.
-    _pages.ActivePage().Cursor().SetBlinkingAllowed(true);
+    _pages.ActivePage().Cursor().SetIsBlinking(true);
 
     // Delete all current tab stops and reapply
     TabSet(DispatchTypes::TabSetType::SetEvery8Columns);
@@ -3137,7 +3182,6 @@ void AdaptDispatch::_EraseScrollback()
     _api.SetViewportPosition({ page.XPanOffset(), 0 });
     // Move the cursor to the same relative location.
     cursor.SetYPosition(row - page.Top());
-    cursor.SetHasMoved(true);
 }
 
 //Routine Description:
@@ -3189,7 +3233,6 @@ void AdaptDispatch::_EraseAll()
     }
     // Restore the relative cursor position
     cursor.SetYPosition(row + newPageTop);
-    cursor.SetHasMoved(true);
 
     // Erase all the rows in the current page.
     const auto eraseAttributes = _GetEraseAttributes(page);
@@ -3249,7 +3292,7 @@ void AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     auto& cursor = _pages.ActivePage().Cursor();
     cursor.SetType(actualType);
-    cursor.SetBlinkingAllowed(fEnableBlinking);
+    cursor.SetIsBlinking(fEnableBlinking);
 }
 
 // Routine Description:
@@ -3351,7 +3394,7 @@ void AdaptDispatch::SetXtermColorResource(const size_t resource, const DWORD col
 // Method Description:
 // - Reports the value of one Xterm Color Resource, if it is set.
 // Return Value:
-// True if handled successfully. False otherwise.
+// - true if handled successfully; otherwise, false.
 void AdaptDispatch::RequestXtermColorResource(const size_t resource)
 {
     assert(resource >= 10);
@@ -3595,11 +3638,16 @@ void AdaptDispatch::DoConEmuAction(const std::wstring_view string)
     else if (subParam == 12)
     {
         _pages.ActivePage().Buffer().StartCommand();
+        _api.NotifyShellIntegrationMark();
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 }
 
 // Method Description:
-// - Performs a iTerm2 action
+// - Performs an iTerm2 action
 // - Ascribes to the ITermDispatch interface
 // - Currently, the actions we support are:
 //   * `OSC1337;SetMark`: mark a line as a prompt line
@@ -3625,6 +3673,11 @@ void AdaptDispatch::DoITerm2Action(const std::wstring_view string)
     if (action == L"SetMark")
     {
         _pages.ActivePage().Buffer().StartPrompt();
+        _api.NotifyShellIntegrationMark();
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 }
 
@@ -3658,16 +3711,19 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
         case L'A': // FTCS_PROMPT
         {
             _pages.ActivePage().Buffer().StartPrompt();
+            _api.NotifyShellIntegrationMark();
             break;
         }
         case L'B': // FTCS_COMMAND_START
         {
             _pages.ActivePage().Buffer().StartCommand();
+            _api.NotifyShellIntegrationMark();
             break;
         }
         case L'C': // FTCS_COMMAND_EXECUTED
         {
             _pages.ActivePage().Buffer().StartOutput();
+            _api.NotifyShellIntegrationMark();
             break;
         }
         case L'D': // FTCS_COMMAND_FINISHED
@@ -3688,12 +3744,18 @@ void AdaptDispatch::DoFinalTermAction(const std::wstring_view string)
             }
 
             _pages.ActivePage().Buffer().EndCurrentCommand(error);
+            _api.NotifyShellIntegrationMark();
 
             break;
         }
         default:
+            _api.UnknownSequence();
             break;
         }
+    }
+    else
+    {
+        _api.UnknownSequence();
     }
 
     // When we add the rest of the FTCS sequences (GH#11000), we should add a
@@ -3769,6 +3831,10 @@ void AdaptDispatch::DoVsCodeAction(const std::wstring_view string)
 
         // If it's poorly formatted, just eat it
     }
+    else
+    {
+        _api.UnknownSequence();
+    }
 }
 
 // Method Description:
@@ -3807,10 +3873,45 @@ void AdaptDispatch::DoWTAction(const std::wstring_view string)
 }
 
 // Method Description:
+// - OSC 777 - Handles urxvt requests. Currently, the only supported request is for desktop notifications.
+//   The format is: OSC 777;notify;title;body ST
+// Arguments:
+// - string: contains the parameters that define the notification
+void AdaptDispatch::DoUrxvtAction(const std::wstring_view string)
+{
+    if (!_optionalFeatures.test(OptionalFeature::DesktopNotification))
+    {
+        return;
+    }
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    if (parts.size() < 1)
+    {
+        return;
+    }
+
+    til::split_iterator split{ string, L';' };
+    const auto action = split.next();
+    if (action == L"notify")
+    {
+        // The body is everything after "notify;title;". We can't just use
+        // parts[2] because the body itself may contain semicolons.
+        const auto title = split.next();
+        const auto body = split.remaining();
+        _api.ShowNotification(title, body);
+    }
+    else
+    {
+        _api.UnknownSequence();
+    }
+}
+
+// Method Description:
 // - SIXEL - Defines an image transmitted in sixel format via the returned
 //   StringHandler function.
 // Arguments:
-// - macroParameter - Selects one a of set of predefined aspect ratios.
+// - macroParameter - Selects one of a set of predefined aspect ratios.
 // - backgroundSelect - Whether the background should be transparent or opaque.
 // - backgroundColor - The color number used for the background (VT240).
 // Return Value:
@@ -4184,7 +4285,7 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
         {
             // Although we don't yet support any operations with parameter
             // prefixes, it's important that we still parse the prefix and
-            // include it in the ID. Otherwise we'll mistakenly respond to
+            // include it in the ID. Otherwise, we'll mistakenly respond to
             // prefixed queries that we don't actually recognise.
             const auto isParameterPrefix = ch >= L'<' && ch <= L'?';
             const auto isParameter = ch >= L'0' && ch < L'9';
@@ -4313,7 +4414,7 @@ void AdaptDispatch::_ReportDECSLRMSetting()
 void AdaptDispatch::_ReportDECSCUSRSetting() const
 {
     const auto& cursor = _pages.ActivePage().Cursor();
-    const auto blinking = cursor.IsBlinkingAllowed();
+    const auto blinking = cursor.IsBlinking();
     // A valid response always starts with 1 $ r. This is followed by a
     // number from 1 to 6 representing the cursor style. The ' q' indicates
     // this is a DECSCUSR response.
@@ -4491,7 +4592,7 @@ void AdaptDispatch::_ReportCursorInformation()
     flags += (_modes.test(Mode::Origin) ? 1 : 0);
     flags += (_termOutput.IsSingleShiftPending(2) ? 2 : 0);
     flags += (_termOutput.IsSingleShiftPending(3) ? 4 : 0);
-    flags += (cursor.IsDelayedEOLWrap() ? 8 : 0);
+    flags += (cursor.GetDelayEOLWrap().has_value() ? 8 : 0);
 
     // Character set designations.
     const auto leftSetNumber = _termOutput.GetLeftSetNumber();
@@ -4789,4 +4890,9 @@ void AdaptDispatch::PlaySounds(const VTParameters parameters)
         // we set the velocity to 0 (i.e. no volume).
         _api.PlayMidiNote(noteNumber, noteNumber == 71 ? 0 : velocity, duration);
     });
+}
+
+void AdaptDispatch::SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept
+{
+    _optionalFeatures = features;
 }

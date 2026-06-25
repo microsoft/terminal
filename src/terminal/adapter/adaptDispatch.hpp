@@ -38,6 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         AdaptDispatch(ITerminalApi& api, Renderer* renderer, RenderSettings& renderSettings, TerminalInput& terminalInput) noexcept;
 
+        void UnknownSequence() noexcept override;
         void Print(const wchar_t wchPrintable) override;
         void PrintString(const std::wstring_view string) override;
 
@@ -97,6 +98,10 @@ namespace Microsoft::Console::VirtualTerminal
         void RequestMode(const DispatchTypes::ModeParams param) override; // DECRQM
         void SetKeypadMode(const bool applicationMode) noexcept override; // DECKPAM, DECKPNM
         void SetAnsiMode(const bool ansiMode) override; // DECANM
+        void SetKittyKeyboardProtocol(const VTParameter flags, const VTParameter mode) noexcept override; // KKP
+        void QueryKittyKeyboardProtocol() override; // KKP
+        void PushKittyKeyboardProtocol(const VTParameter flags) override; // KKP
+        void PopKittyKeyboardProtocol(const VTParameter count) override; // KKP
         void SetTopBottomScrollingMargins(const VTInt topMargin,
                                           const VTInt bottomMargin) override; // DECSTBM
         void SetLeftRightScrollingMargins(const VTInt leftMargin,
@@ -109,6 +114,7 @@ namespace Microsoft::Console::VirtualTerminal
         void BackIndex() override; // DECBI
         void ForwardIndex() override; // DECFI
         void SetWindowTitle(const std::wstring_view title) override; // DECSWT, OSCWindowTitle
+        void SetCurrentWorkingDirectory(std::wstring_view uri) override; // OSC 7
         void HorizontalTabSet() override; // HTS
         void ForwardTab(const VTInt numTabs) override; // CHT, HT
         void BackwardsTab(const VTInt numTabs) override; // CBT
@@ -124,7 +130,7 @@ namespace Microsoft::Console::VirtualTerminal
         void SendC1Controls(const bool enabled) override; // S8C1T, S7C1T
         void AnnounceCodeStructure(const VTInt ansiLevel) override; // ACS
         void SoftReset() override; // DECSTR
-        void HardReset() override; // RIS
+        void HardReset(bool erase) override; // RIS
         void ScreenAlignmentPattern() override; // DECALN
         void SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
 
@@ -157,6 +163,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         void DoWTAction(const std::wstring_view string) override;
 
+        void DoUrxvtAction(const std::wstring_view string) override;
+
         StringHandler DefineSixelImage(const VTInt macroParameter,
                                        const DispatchTypes::SixelBackground backgroundSelect,
                                        const VTParameter backgroundColor) override; // SIXEL
@@ -188,7 +196,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void PlaySounds(const VTParameters parameters) override; // DECPS
 
-        void SetVtChecksumReportSupport(const bool enabled) noexcept override;
+        void SetOptionalFeatures(const til::enumset<OptionalFeature> features) noexcept override;
 
     private:
         enum class Mode
@@ -241,7 +249,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::pair<int, int> _GetVerticalMargins(const Page& page, const bool absolute) noexcept;
         std::pair<int, int> _GetHorizontalMargins(const til::CoordType bufferWidth) noexcept;
         void _CursorMovePosition(const Offset rowOffset, const Offset colOffset, const bool clampInMargins);
-        void _ApplyCursorMovementFlags(Cursor& cursor) noexcept;
         void _FillRect(const Page& page, const til::rect& fillRect, const std::wstring_view& fillChar, const TextAttribute& fillAttrs) const;
         void _SelectiveEraseRect(const Page& page, const til::rect& eraseRect);
         void _ChangeRectAttributes(const Page& page, const til::rect& changeRect, const ChangeOps& changeOps);
@@ -313,7 +320,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;
-        bool _vtChecksumReportEnabled = false;
+        til::enumset<OptionalFeature> _optionalFeatures = { OptionalFeature::ClipboardWrite };
 
         // We have two instances of the saved cursor state, because we need
         // one for the main buffer (at index 0), and another for the alt buffer

@@ -42,7 +42,7 @@ namespace Microsoft::Console::VirtualTerminal
         // to retain the 16-bit size.
         static constexpr size_t MAX_COLORS = 256;
         using IndexType = uint8_t;
-        struct IndexedPixel
+        struct alignas(int16_t) IndexedPixel
         {
             uint8_t transparent = false;
             IndexType colorIndex = 0;
@@ -104,8 +104,8 @@ namespace Microsoft::Console::VirtualTerminal
         const size_t _maxColors;
         size_t _colorsUsed = 0;
         size_t _colorsAvailable = 0;
-        bool _colorTableChanged = false;
         IndexedPixel _foregroundPixel = {};
+        bool _colorTableChanged = false;
 
         void _initImageBuffer();
         void _resizeImageBuffer(const til::CoordType requiredHeight);

@@ -159,16 +159,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // Just like std::wstring_view::operator==().
     //
-    // At the time of writing wmemcmp() is not an intrinsic for MSVC,
-    // but the STL uses it to implement wide string comparisons.
-    // This produces 3x the assembly _per_ comparison and increases
-    // runtime by 2-3x for strings of medium length (16 characters)
-    // and 5x or more for long strings (128 characters or more).
+    // NOTE: If you pass a literal, ALWAYS pass it as the 2nd argument.
+    // This is because MSVC does not understand that `lhs.size() == rhs.size()` implies
+    // that a constant size on one side implies a constant size on the other side.
+    // As such the size argument to memcmp() must be the constant size, which is `rhs`.
+    //
+    // The STL uses wmemcmp() to implement wide string comparisons.
+    // Compared to memcmp() this results 3x the assembly per comparison,
+    // while running 2-3x slower for 16 chars and >5x slower for >128 chars.
     // See: https://github.com/microsoft/STL/issues/2289
     template<typename T, typename Traits>
-    bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
+    constexpr bool equals(const std::basic_string_view<T, Traits>& lhs, const std::basic_string_view<T, Traits>& rhs) noexcept
     {
-        return lhs.size() == rhs.size() && __builtin_memcmp(lhs.data(), rhs.data(), lhs.size() * sizeof(T)) == 0;
+        return lhs.size() == rhs.size() && __builtin_memcmp(lhs.data(), rhs.data(), rhs.size() * sizeof(T)) == 0;
+    }
+
+    constexpr bool equals(const std::string_view& lhs, const std::string_view& rhs) noexcept
+    {
+        return equals<>(lhs, rhs);
+    }
+
+    constexpr bool equals(const std::wstring_view& lhs, const std::wstring_view& rhs) noexcept
+    {
+        return equals<>(lhs, rhs);
     }
 
     // Just like _memicmp, but without annoying locales.
@@ -228,7 +241,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     constexpr bool ends_with_insensitive_ascii(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& suffix) noexcept
     {
 #pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-        return str.size() >= suffix.size() && equals_insensitive_ascii<>({ str.data() - suffix.size(), suffix.size() }, suffix);
+        return str.size() >= suffix.size() && equals_insensitive_ascii<>({ str.data() + str.size() - suffix.size(), suffix.size() }, suffix);
     }
 
     constexpr bool ends_with_insensitive_ascii(const std::string_view& str, const std::string_view& prefix) noexcept
@@ -238,7 +251,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     constexpr bool ends_with_insensitive_ascii(const std::wstring_view& str, const std::wstring_view& prefix) noexcept
     {
-        return ends_with<>(str, prefix);
+        return ends_with_insensitive_ascii<>(str, prefix);
     }
 
     template<typename T, typename Traits>
@@ -321,6 +334,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         sentinel end() noexcept
         {
             return sentinel{};
+        }
+
+        typename iterator::value_type next() noexcept
+        {
+            const auto part = value();
+            advance();
+            return part;
+        }
+
+        typename iterator::value_type remaining() noexcept
+        {
+            return { _it, _end };
         }
 
     private:

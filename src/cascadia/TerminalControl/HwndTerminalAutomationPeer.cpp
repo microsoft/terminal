@@ -45,7 +45,7 @@ static std::wstring Sanitize(std::wstring_view text)
 // Arguments:
 // - text: the string we're validating
 // Return Value:
-// - true, if the text is readable. false, otherwise.
+// - true, if the text is readable; otherwise, false.
 static constexpr bool IsReadable(std::wstring_view text)
 {
     for (const auto c : text)
@@ -140,7 +140,7 @@ void HwndTerminalAutomationPeer::NotifyNewOutput(std::wstring_view newOutput)
     }
 
     // Try to suppress any events (or event data)
-    // that is just the keypress the user made
+    // that is just the keypress that the user made
     auto sanitized{ Sanitize(newOutput) };
     while (!_keyEvents.empty() && IsReadable(sanitized))
     {

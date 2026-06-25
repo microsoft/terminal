@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="adapterTest.cpp" />
     <ClCompile Include="inputTest.cpp" />
+    <ClCompile Include="kittyKeyboardProtocol.cpp" />
     <ClCompile Include="MouseInputTest.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

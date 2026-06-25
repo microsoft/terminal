@@ -7,6 +7,7 @@
     <ProjectName>winconpty.DLL</ProjectName>
     <TargetName>conpty</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <VersionInfoFileDescription>ConPTY Interface Library</VersionInfoFileDescription>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <Import Project="$(SolutionDir)src\common.nugetversions.props" />

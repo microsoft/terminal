@@ -56,6 +56,8 @@ struct CodepointWidthDetector
     bool GraphemePrev(GraphemeState& s, const std::wstring_view& str) noexcept;
 
     TextMeasurementMode GetMode() const noexcept;
+    int GetAmbiguousWidth() const noexcept;
+    void SetAmbiguousWidth(int width) noexcept;
     void SetFallbackMethod(std::function<bool(const std::wstring_view&)> pfnFallback) noexcept;
     void Reset(TextMeasurementMode mode) noexcept;
 

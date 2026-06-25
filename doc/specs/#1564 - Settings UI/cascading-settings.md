@@ -9,7 +9,7 @@ issue id: 1564
 
 ## Abstract
 
-Windows Terminal's settings model adheres to a cascading settings architecture. This allows a settings object to be defined incrementally across multiple layers of declarations. The value for any global setting like `copyOnSelect`, for example, is set to your settings.json value if one is defined, otherwise defaults.json, and otherwise a system set value. Profiles in particular are more complicated in that they must also take into account the values in `profiles.defaults` and dynamic profile generators.
+Windows Terminal's settings model adheres to a cascading settings architecture. This allows a settings object to be defined incrementally across multiple layers of declarations. The value for any global setting like `copyOnSelect`, for example, is set to your settings.json value if one is defined; otherwise, defaults.json, and otherwise a system set value. Profiles in particular are more complicated in that they must also take into account the values in `profiles.defaults` and dynamic profile generators.
 
 This spec explores how to represent this feature in the Settings UI.
 
@@ -103,7 +103,7 @@ This option was not chosen because it added too much overhead for changing a set
 
 ### 2: Lock Button
 
-Every setting will have a lock button next to it. If the lock is locked, that means the setting is being inherited from Global, and the control is disabled. If the user wants to edit the setting, they can click the lock, which will changed it to the unlocked lock icon, and the control will become enabled.
+Every setting will have a lock button next to it. If the lock is locked, that means the setting is being inherited from Global, and the control is disabled. If the user wants to edit the setting, they can click the lock, which will change it to the unlocked lock icon, and the control will become enabled.
 
 ![Locks inheritance](./inheritance-locks.png)
 

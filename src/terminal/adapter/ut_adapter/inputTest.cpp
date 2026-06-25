@@ -78,7 +78,7 @@ public:
         irTest.Event.KeyEvent.bKeyDown = TRUE;
 
         // If we want to test a key with the Right Alt modifier, we must generate
-        // an event for the Alt key first, otherwise the modifier will be dropped.
+        // an event for the Alt key first; otherwise, the modifier will be dropped.
         if (WI_IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED))
         {
             irTest.Event.KeyEvent.wVirtualKeyCode = VK_MENU;

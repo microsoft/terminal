@@ -18,10 +18,17 @@ class SearchTests
 {
     TEST_CLASS(SearchTests);
 
-    CommonState* m_state;
+    CommonState* m_state{ nullptr };
 
     TEST_CLASS_SETUP(ClassSetup)
     {
+        wil::unique_hmodule icu{ LoadLibraryExW(L"icu.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+        if (!icu)
+        {
+            Log::Result(TestResults::Skipped, L"ICU is not present");
+            return true;
+        }
+
         m_state = new CommonState();
         m_state->PrepareGlobalScreenBuffer();
         return true;
@@ -29,8 +36,11 @@ class SearchTests
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
-        m_state->CleanupGlobalScreenBuffer();
-        delete m_state;
+        if (m_state)
+        {
+            m_state->CleanupGlobalScreenBuffer();
+            delete m_state;
+        }
         return true;
     }
 

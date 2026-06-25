@@ -27,7 +27,6 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view HiddenKey{ "hidden" };
-static constexpr std::string_view IconKey{ "icon" };
 
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view PaddingKey{ "padding" };
@@ -112,7 +111,6 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
-    profile->_Icon = _Icon;
 
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
@@ -123,16 +121,10 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
 
-    // BellSound is an IVector<hstring>, so we need to manually copy it over
     if (_BellSound)
     {
-        std::vector<hstring> sounds;
-        sounds.reserve(_BellSound->Size());
-        for (const auto& sound : *_BellSound)
-        {
-            sounds.emplace_back(sound);
-        }
-        profile->_BellSound = single_threaded_vector(std::move(sounds));
+        // BellSound is an IVector<>, so we need to make a new vector pointing at the same objects
+        profile->_BellSound = winrt::single_threaded_vector(wil::to_vector(*_BellSound));
     }
 
     if (_UnfocusedAppearance)
@@ -194,9 +186,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     _logSettingIfSet(HiddenKey, _Hidden.has_value());
-
-    JsonUtils::GetValueForKey(json, IconKey, _Icon);
-    _logSettingIfSet(IconKey, _Icon.has_value());
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
@@ -310,7 +299,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 }
 
 // Function Description:
-// - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
+// - Generates a unique guid for a profile, given the name. For a given name, will always return the same GUID.
 // Arguments:
 // - name: The name to generate a unique GUID from
 // Return Value:
@@ -351,11 +340,6 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
-    // Recall: Icon isn't actually a setting in the MTSM_PROFILE_SETTINGS. We
-    // defined it manually in Profile, so make sure we only serialize the Icon
-    // if the user actually changed it here.
-    JsonUtils::SetValueForKey(json, IconKey, _Icon);
-
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
 
@@ -378,102 +362,6 @@ Json::Value Profile::ToJson() const
     }
 
     return json;
-}
-
-// This is the implementation for and INHERITABLE_SETTING, but with one addition
-// in the setter. We want to make sure to clear out our cached icon, so that we
-// can re-evaluate it as it changes in the SUI.
-void Profile::Icon(const winrt::hstring& value)
-{
-    _evaluatedIcon = std::nullopt;
-    _Icon = value;
-}
-winrt::hstring Profile::Icon() const
-{
-    const auto val{ _getIconImpl() };
-    return val ? *val : hstring{ L"\uE756" };
-}
-
-winrt::hstring Profile::EvaluatedIcon()
-{
-    // We cache the result here, so we don't search the path for the exe every time.
-    if (!_evaluatedIcon.has_value())
-    {
-        _evaluatedIcon = _evaluateIcon();
-    }
-    return *_evaluatedIcon;
-}
-
-winrt::hstring Profile::_evaluateIcon() const
-{
-    // If the profile has an icon, return it.
-    if (!Icon().empty())
-    {
-        return Icon();
-    }
-
-    // Otherwise, use NormalizeCommandLine to find the actual exe name. This
-    // will actually search for the exe, including spaces, in the same way that
-    // CreateProcess does.
-    std::wstring cmdline{ NormalizeCommandLine(Commandline().c_str()) };
-    // NormalizeCommandLine will return a string with embedded nulls after each
-    // arg. We just want the first one.
-    return winrt::hstring{ cmdline.c_str() };
-}
-
-bool Profile::HasIcon() const
-{
-    return _Icon.has_value();
-}
-
-winrt::Microsoft::Terminal::Settings::Model::Profile Profile::IconOverrideSource()
-{
-    for (const auto& parent : _parents)
-    {
-        if (auto source{ parent->_getIconOverrideSourceImpl() })
-        {
-            return source;
-        }
-    }
-    return nullptr;
-}
-
-void Profile::ClearIcon()
-{
-    _Icon = std::nullopt;
-    _evaluatedIcon = std::nullopt;
-}
-
-std::optional<winrt::hstring> Profile::_getIconImpl() const
-{
-    if (_Icon)
-    {
-        return _Icon;
-    }
-    for (const auto& parent : _parents)
-    {
-        if (auto val{ parent->_getIconImpl() })
-        {
-            return val;
-        }
-    }
-    return std::nullopt;
-}
-
-winrt::Microsoft::Terminal::Settings::Model::Profile Profile::_getIconOverrideSourceImpl() const
-{
-    if (_Icon)
-    {
-        return *this;
-    }
-    for (const auto& parent : _parents)
-    {
-        if (auto source{ parent->_getIconOverrideSourceImpl() })
-        {
-            return source;
-        }
-    }
-    return nullptr;
 }
 
 // Given a commandLine like the following:
@@ -630,6 +518,51 @@ void Profile::_logSettingIfSet(const std::string_view& setting, const bool isSet
             // clang-format on
             _logSettingSet(setting);
         }
+    }
+}
+
+void Profile::ResolveMediaResources(const Model::MediaResourceResolver& resolver)
+{
+    if (const auto icon{ _getIconImpl() }; icon && *icon)
+    {
+        const auto iconSource{ _getIconOverrideSourceImpl() };
+        ResolveIconMediaResource(iconSource->_Origin, iconSource->SourceBasePath, *icon, resolver);
+
+        // If the icon was specified at any layer, but fails resolution *or* contains the empty string,
+        // fall back to the normalized command line at or above this layer.
+        if (!icon->Ok() || icon->Resolved().empty() && !iconSource->Commandline().empty())
+        {
+            // We want to resolve the icon to the commandline, but we risk that the icon was already
+            // resolved. We don't want to do that (as MediaResource asserts that it was only resolved
+            // one time). However, we can't just make a new empty resource and resolve it -- that
+            // might replace the value in the user's settings when we serialize it again...
+            // So instead, make a new one derived from the icon we started with, then resolve it
+            // ourselves.
+            auto newIcon{ MediaResource::FromString(icon->Path()) };
+            const std::wstring cmdline{ NormalizeCommandLine(iconSource->Commandline().c_str()) };
+            newIcon.Resolve(cmdline.c_str() /* c_str: give hstring a chance to find the null terminator */);
+            iconSource->_Icon = std::move(newIcon);
+        }
+    }
+
+    if (const auto container{ _DefaultAppearance.as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto container{ UnfocusedAppearance().try_as<IMediaResourceContainer>() })
+    {
+        container->ResolveMediaResources(resolver);
+    }
+
+    if (const auto [bellSoundSource, bellSounds]{ _getBellSoundOverrideSourceAndValueImpl() };
+        bellSoundSource && bellSounds && *bellSounds && bellSounds->Size() > 0)
+    {
+        for (const auto& bellSound : *bellSounds)
+        {
+            ResolveMediaResource(bellSoundSource->_Origin, bellSoundSource->SourceBasePath, bellSound, resolver);
+        }
+        // It's important that we keep the invalid bell sounds in the list, because we may want to write it back out to disk
     }
 }
 

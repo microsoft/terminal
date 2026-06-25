@@ -108,7 +108,7 @@ bool ShouldTakeOverKeyboardShortcuts()
 void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
 {
     auto& keyEvent = event.Event.KeyEvent;
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto ContinueProcessing = true;
 
     if (WI_IsAnyFlagSet(keyEvent.dwControlKeyState, CTRL_PRESSED) &&
@@ -166,6 +166,16 @@ void HandleGenericKeyEvent(INPUT_RECORD event, const bool generateBreak)
         {
             keyEvent.bKeyDown = false;
             gci.pInputBuffer->Write(event);
+        }
+
+        if (gci.HasActiveOutputBuffer())
+        {
+            auto& buffer = gci.GetActiveOutputBuffer();
+
+            if (WI_IsFlagSet(buffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+            {
+                buffer.SnapOnInput(keyEvent.wVirtualKeyCode);
+            }
         }
     }
 }
@@ -350,6 +360,6 @@ void ProcessCtrlEvents()
         // The bad news is that EndTask() returns STATUS_UNSUCCESSFUL no matter whether
         // the process was already dead, or if the request actually failed for some reason.
         // Hopefully there aren't any regressions, but we can't know without trying.
-        LOG_IF_NTSTATUS_FAILED(ctrl->EndTask(r.dwProcessID, EventType, CtrlFlags));
+        ctrl->EndTask(r.dwProcessID, EventType, CtrlFlags);
     }
 }

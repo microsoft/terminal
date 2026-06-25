@@ -11,6 +11,7 @@
 #include "../interactivity/base/ApiDetector.hpp"
 #include "../interactivity/base/RemoteConsoleControl.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../server/ConDrvDeviceComm.h"
 #include "../server/DeviceHandle.h"
 #include "../server/IoSorter.h"
 #include "../types/inc/CodepointWidthDetector.hpp"
@@ -71,17 +72,6 @@ try
     {
         Globals.delegationPair = DelegationConfig::TerminalDelegationPair;
         Globals.defaultTerminalMarkerCheckRequired = true;
-    }
-
-    // Create the accessibility notifier early in the startup process.
-    // Only create if we're not in PTY mode.
-    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
-    // for the terminal user interface, so we should set ourselves up to skip all
-    // those notifications and the mathematical calculations required to send those events
-    // for performance reasons.
-    if (!args->InConptyMode())
-    {
-        RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier());
     }
 
     // Removed allocation of scroll buffer here.
@@ -370,7 +360,10 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     // (If we didn't make one, it should be no problem to release the empty unique_ptr.)
     heapConnectMessage.release();
 
-    LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
+    if (const auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription))
+    {
+        LOG_IF_FAILED(func(hThread, L"Console Driver Message IO Thread"));
+    }
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     // See MSFT:19918626
@@ -402,7 +395,7 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
 //    all necessary callback information for all subsequent API calls.
 // Return Value:
 // - COM errors, registry errors, pipe errors, handle manipulation errors,
-//   errors from the creating the thread for the
+//   errors from creating the thread for the
 //   standard IO thread loop for the server to process messages
 //   from the driver... or an S_OK success.
 [[nodiscard]] HRESULT ConsoleEstablishHandoff([[maybe_unused]] _In_ HANDLE Server,
@@ -463,7 +456,7 @@ try
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_SET_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
@@ -866,14 +859,15 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         return Status;
     }
 
-    // Allow the renderer to paint once the rest of the console is hooked up.
-    if (g.pRender)
+    if (ConsoleConnectionDeservesVisibleWindow(p))
     {
-        g.pRender->EnablePainting();
-    }
+        // Allow the renderer to paint once the rest of the console is hooked up,
+        // but only if there's actually something to paint on.
+        if (g.pRender)
+        {
+            g.pRender->EnablePainting();
+        }
 
-    if (SUCCEEDED_NTSTATUS(Status) && ConsoleConnectionDeservesVisibleWindow(p))
-    {
         HANDLE Thread = nullptr;
 
         IConsoleInputThread* pNewThread = nullptr;

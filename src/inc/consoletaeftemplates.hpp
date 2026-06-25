@@ -19,6 +19,8 @@ Revision History:
 
 #include <til/bit.h>
 
+#include <IDataSource.h>
+
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
 #define INIT_TEST_PROPERTY(type, identifier, description) \
     type identifier;                                      \
@@ -45,6 +47,95 @@ Revision History:
 
 namespace WEX::TestExecution
 {
+    struct ArrayIndexTaefAdapterRow : Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataRow>
+    {
+        HRESULT RuntimeClassInitialize(const size_t index)
+        {
+            _index = index;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestData(BSTR /*pszName*/, SAFEARRAY** ppData) override
+        {
+            wchar_t buf[16];
+            swprintf_s(buf, L"%zu", _index);
+
+            LONG idx = 0;
+            const auto array = SafeArrayCreateVector(VT_BSTR, 0, 1);
+            SafeArrayPutElement(array, &idx, SysAllocString(buf));
+            *ppData = array;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetMetadataNames(SAFEARRAY** ppMetadataNames) override
+        {
+            *ppMetadataNames = nullptr;
+            return S_FALSE;
+        }
+
+        STDMETHODIMP GetMetadata(BSTR /*pszName*/, SAFEARRAY** ppData) override
+        {
+            *ppData = nullptr;
+            return S_FALSE;
+        }
+
+        STDMETHODIMP GetName(BSTR* ppszRowName) override
+        {
+            *ppszRowName = nullptr;
+            return S_FALSE;
+        }
+
+    private:
+        size_t _index = 0;
+    };
+
+    struct ArrayIndexTaefAdapterSource : Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataSource>
+    {
+        HRESULT RuntimeClassInitialize(const size_t count)
+        {
+            _count = count;
+            return S_OK;
+        }
+
+        STDMETHODIMP Advance(IDataRow** ppDataRow) override
+        {
+            if (_index < _count)
+            {
+                return Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataRow, _index++);
+            }
+            else
+            {
+                *ppDataRow = nullptr;
+                return S_OK;
+            }
+        }
+
+        STDMETHODIMP Reset() override
+        {
+            _index = 0;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestDataNames(SAFEARRAY** names) override
+        {
+            LONG idx = 0;
+            const auto array = SafeArrayCreateVector(VT_BSTR, 0, 1);
+            SafeArrayPutElement(array, &idx, SysAllocString(L"index"));
+            *names = array;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestDataType(BSTR /*name*/, BSTR* type) override
+        {
+            *type = nullptr;
+            return S_OK;
+        }
+
+    private:
+        size_t _count = 0;
+        size_t _index = 0;
+    };
+
     // Compare two floats using a ULP (unit last place) tolerance of up to 4.
     // Allows you to compare two floats that are almost equal.
     // Think of: 0.200000000000000 vs. 0.200000000000001.

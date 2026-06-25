@@ -51,30 +51,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
 #pragma region Input Methods
-        void PointerPressed(Control::MouseButtonState buttonState,
+        void PointerPressed(const uint32_t pointerId,
+                            Control::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const Core::Point pixelPosition);
-        void TouchPressed(const winrt::Windows::Foundation::Point contactPoint);
+        void TouchPressed(const Core::Point contactPoint);
 
-        bool PointerMoved(Control::MouseButtonState buttonState,
+        bool PointerMoved(const uint32_t pointerId,
+                          Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                          const bool focused,
-                          const Core::Point pixelPosition,
-                          const bool pointerPressedInBounds);
-        void TouchMoved(const winrt::Windows::Foundation::Point newTouchPoint,
-                        const bool focused);
+                          const Core::Point pixelPosition);
+        void TouchMoved(const Core::Point newTouchPoint);
 
-        void PointerReleased(Control::MouseButtonState buttonState,
+        void PointerReleased(const uint32_t pointerId,
+                             Control::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const Core::Point pixelPosition);
         void TouchReleased();
 
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
-                        const int32_t delta,
+                        const Core::Point delta,
                         const Core::Point pixelPosition,
                         const Control::MouseButtonState state);
 
@@ -84,12 +84,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool CopySelectionToClipboard(bool singleLine,
                                       bool withControlSequences,
-                                      const Windows::Foundation::IReference<CopyFormat>& formats);
+                                      const CopyFormat formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const Core::Point pixelPosition);
 
         uint64_t Id();
-        void AttachToNewControl(const Microsoft::Terminal::Control::IKeyBindings& keyBindings);
+        void AttachToNewControl();
 
         til::typed_event<IInspectable, Control::OpenHyperlinkEventArgs> OpenHyperlink;
         til::typed_event<IInspectable, Control::PasteFromClipboardEventArgs> PasteFromClipboard;
@@ -104,7 +104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //
         // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
         // We must ensure that we first destroy the ControlCore before the UiaEngine instance
-        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // in order to safely resolve this unsafe pointer dependency. Otherwise, a deallocated
         // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
         // (C++ class members are destroyed in reverse order.)
         std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
-        std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+        std::optional<Core::Point> _touchAnchor;
 
         using Timestamp = uint64_t;
 
@@ -142,6 +142,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t _id;
         static std::atomic<uint64_t> _nextId;
 
+        bool _focused{ false };
+        bool _pointerPressedInBounds{ false };
+
         unsigned int _numberOfClicks(Core::Point clickPos, Timestamp clickTime);
         void _updateSystemParameterSettings() noexcept;
 
@@ -153,7 +156,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _hyperlinkHandler(const std::wstring_view uri);
         bool _canSendVTMouseInput(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
-        bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const int32_t delta);
+        bool _shouldSendAlternateScroll(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const Core::Point delta);
 
         til::point _getTerminalPosition(const til::point pixelPosition, bool roundToNearestCell);
 

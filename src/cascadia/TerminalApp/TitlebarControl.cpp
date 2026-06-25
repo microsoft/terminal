@@ -7,8 +7,7 @@
 #include "pch.h"
 
 #include "TitlebarControl.h"
-
-#include "ColorHelper.h"
+#include "../../types/inc/ColorFix.hpp"
 
 #include "TitlebarControl.g.cpp"
 
@@ -52,6 +51,16 @@ namespace winrt::TerminalApp::implementation
         // Windows 12 comes along and adds another, we can update this /s
         const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
         return static_cast<float>(minMaxCloseWidth) / 3.0f;
+    }
+
+    bool TitlebarControl::Focused()
+    {
+        return MinMaxCloseControl().Focused();
+    }
+
+    void TitlebarControl::Focused(bool focused)
+    {
+        MinMaxCloseControl().Focused(focused);
     }
 
     IInspectable TitlebarControl::Content()
@@ -189,7 +198,8 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        const auto isBrightColor = ColorHelper::IsBrightColor(c);
+        constexpr auto lightnessThreshold = 0.6f;
+        const auto isBrightColor = ColorFix::GetLightness(c) >= lightnessThreshold;
         MinMaxCloseControl().RequestedTheme(isBrightColor ? winrt::Windows::UI::Xaml::ElementTheme::Light :
                                                             winrt::Windows::UI::Xaml::ElementTheme::Dark);
     }

@@ -673,7 +673,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
         auto state = (UINT)SHAppBarMessage(ABM_GETSTATE, &autohide);
         if (WI_IsFlagSet(state, ABS_AUTOHIDE))
         {
-            // This helper can be used to determine if there's a auto-hide
+            // This helper can be used to determine if there's an auto-hide
             // taskbar on the given edge of the monitor we're currently on.
             auto hasAutohideTaskbar = [&monInfo](const UINT edge) -> bool {
                 APPBARDATA data{ 0 };
@@ -692,7 +692,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
             // If there's a taskbar on any side of the monitor, reduce our size
             // a little bit on that edge.
             //
-            // Note to future code archeologists:
+            // Note to future code archaeologists:
             // This doesn't seem to work for fullscreen on the primary display.
             // However, testing a bunch of other apps with fullscreen modes
             // and an auto-hiding taskbar has shown that _none_ of them
@@ -958,6 +958,12 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     switch (message)
     {
+    case WM_NCACTIVATE:
+    {
+        const bool activated = LOWORD(wParam) != 0;
+        _titlebar.Focused(activated);
+        break;
+    }
     case WM_SETCURSOR:
         return _OnSetCursor(wParam, lParam);
     case WM_DISPLAYCHANGE:

@@ -17,7 +17,7 @@ I work remotely as a developer, so I have to spend a lot of hours in front of my
 
 Normally I like dark modes in all the programs and apps I use, but when there's too much sunlight, it becomes annoying, and sometimes even painful, to work in dark mode. So, I have all the programs and apps I use (at least, those that can) set to switch their color themes to what the system has.
 
-The company I work for sent me a Macbook Pro, and my personal phone is an Android, both with automatic dark mode at sunset and light mode at sunrise, and in those devices it's been working relatively well. In Windows, as it is known, there's no such feature, so I manually change between dark and light mode when it's needed, and most of the programs and apps I use go along with this change. Windows Terminal, is not one of them.
+The company I work for sent me a MacBook Pro, and my personal phone is an Android, both with automatic dark mode at sunset and light mode at sunrise, and in those devices it's been working relatively well. In Windows, as it is known, there's no such feature, so I manually change between dark and light mode when it's needed, and most of the programs and apps I use go along with this change. Windows Terminal, is not one of them.
 
 The theme changes just as expected, but in an app like this, this change only affects the top of the window, leaving almost all of the screen at the mercy of what the color scheme is, and it doesn't depend on the theme, which defeats any attempt to make a good use of the `system` theme feature.
 

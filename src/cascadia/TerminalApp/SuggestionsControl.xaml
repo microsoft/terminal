@@ -57,7 +57,8 @@
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
 
                 </Grid>
             </DataTemplate>
@@ -84,7 +85,8 @@
 
                     <local:HighlightedTextControl Grid.Column="1"
                                                   HorizontalAlignment="Left"
-                                                  Text="{x:Bind HighlightedName, Mode=OneWay}" />
+                                                  HighlightedRuns="{x:Bind NameHighlights, Mode=OneWay}"
+                                                  Text="{x:Bind Item.Name, Mode=OneWay}" />
 
                     <FontIcon Grid.Column="2"
                               HorizontalAlignment="Right"

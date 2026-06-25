@@ -29,8 +29,6 @@ public:
 
     Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept;
 
-    ~Cursor();
-
     // No Copy. It will copy the timer handle. Bad news.
     Cursor(const Cursor&) = delete;
     Cursor& operator=(const Cursor&) & = delete;
@@ -38,29 +36,17 @@ public:
     Cursor(Cursor&&) = default;
     Cursor& operator=(Cursor&&) & = delete;
 
-    bool HasMoved() const noexcept;
+    uint64_t GetLastMutationId() const noexcept;
     bool IsVisible() const noexcept;
-    bool IsOn() const noexcept;
-    bool IsBlinkingAllowed() const noexcept;
+    bool IsBlinking() const noexcept;
     bool IsDouble() const noexcept;
-    bool IsConversionArea() const noexcept;
-    bool GetDelay() const noexcept;
     ULONG GetSize() const noexcept;
     til::point GetPosition() const noexcept;
+    CursorType GetType() const noexcept;
 
-    const CursorType GetType() const noexcept;
-
-    void StartDeferDrawing() noexcept;
-    bool IsDeferDrawing() noexcept;
-    void EndDeferDrawing() noexcept;
-
-    void SetHasMoved(const bool fHasMoved) noexcept;
-    void SetIsVisible(const bool fIsVisible) noexcept;
-    void SetIsOn(const bool fIsOn) noexcept;
-    void SetBlinkingAllowed(const bool fIsOn) noexcept;
+    void SetIsVisible(bool enable) noexcept;
+    void SetIsBlinking(bool enable) noexcept;
     void SetIsDouble(const bool fIsDouble) noexcept;
-    void SetIsConversionArea(const bool fIsConversionArea) noexcept;
-    void SetDelay(const bool fDelay) noexcept;
     void SetSize(const ULONG ulSize) noexcept;
     void SetStyle(const ULONG ulSize, const CursorType type) noexcept;
 
@@ -72,42 +58,30 @@ public:
     void DecrementXPosition(const til::CoordType DeltaX) noexcept;
     void DecrementYPosition(const til::CoordType DeltaY) noexcept;
 
-    void CopyProperties(const Cursor& OtherCursor) noexcept;
+    void CopyProperties(const Cursor& other) noexcept;
 
     void DelayEOLWrap() noexcept;
     void ResetDelayEOLWrap() noexcept;
-    til::point GetDelayedAtPosition() const noexcept;
-    bool IsDelayedEOLWrap() const noexcept;
+    const std::optional<til::point>& GetDelayEOLWrap() const noexcept;
 
     void SetType(const CursorType type) noexcept;
 
 private:
+    void _redrawIfVisible() noexcept;
+    void _redraw() noexcept;
+
     TextBuffer& _parentBuffer;
 
     //TODO: separate the rendering and text placement
 
     // NOTE: If you are adding a property here, go add it to CopyProperties.
 
+    uint64_t _mutationId = 0;
     til::point _cPosition; // current position on screen (in screen buffer coords).
-
-    bool _fHasMoved;
-    bool _fIsVisible; // whether cursor is visible (set only through the API)
-    bool _fIsOn; // whether blinking cursor is on or not
-    bool _fIsDouble; // whether the cursor size should be doubled
-    bool _fBlinkingAllowed; //Whether or not the cursor is allowed to blink at all. only set through VT (^[[?12h/l)
-    bool _fDelay; // don't blink scursor on next timer message
-    bool _fIsConversionArea; // is attached to a conversion area so it doesn't actually need to display the cursor.
-
-    bool _fDelayedEolWrap; // don't wrap at EOL till the next char comes in.
-    til::point _coordDelayedAt; // coordinate the EOL wrap was delayed at.
-
-    bool _fDeferCursorRedraw; // whether we should defer redrawing the cursor or not
-    bool _fHaveDeferredCursorRedraw; // have we been asked to redraw the cursor while it was being deferred?
-
+    std::optional<til::point> _coordDelayedAt; // coordinate the EOL wrap was delayed at.
     ULONG _ulSize;
-
-    void _RedrawCursor() noexcept;
-    void _RedrawCursorAlways() noexcept;
-
-    CursorType _cursorType;
+    CursorType _cursorType = CursorType::Legacy;
+    bool _isVisible = true;
+    bool _isBlinking = true;
+    bool _fIsDouble = false; // whether the cursor size should be doubled
 };

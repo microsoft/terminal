@@ -40,6 +40,7 @@ namespace Microsoft::Console::VirtualTerminal
             void WriteSGR1006(bool enabled) const;
             void WriteDECAWM(bool enabled) const;
             void WriteASB(bool enabled) const;
+            bool WriteDSRCPR() const;
             void WriteWindowVisibility(bool visible) const;
             void WriteWindowTitle(std::wstring_view title) const;
             void WriteAttributes(const TextAttribute& attributes) const;
@@ -57,9 +58,9 @@ namespace Microsoft::Console::VirtualTerminal
         static wchar_t SanitizeUCS2(wchar_t ch);
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
-
         bool IsUsingVt() const;
         [[nodiscard]] HRESULT StartIfNeeded();
+        void Shutdown() noexcept;
 
         void SetDeviceAttributes(til::enumset<DeviceAttribute, uint64_t> attributes) noexcept;
         til::enumset<DeviceAttribute, uint64_t> GetDeviceAttributes() const noexcept;

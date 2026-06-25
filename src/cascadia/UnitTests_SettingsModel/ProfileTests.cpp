@@ -30,6 +30,11 @@ namespace SettingsModelUnitTests
         TEST_METHOD(DuplicateProfileTest);
         TEST_METHOD(TestGenGuidsForProfiles);
         TEST_METHOD(TestCorrectOldDefaultShellPaths);
+        TEST_METHOD(ProfileDefaultsProhibitedSettings);
+
+        TEST_METHOD(SettingInheritanceFallback);
+        TEST_METHOD(ClearSettingRestoresInheritance);
+        TEST_METHOD(HasSettingAtSpecificLayer);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -217,32 +222,32 @@ namespace SettingsModelUnitTests
         const auto profile3Json = VerifyParseSucceeded(profile3String);
 
         auto profile0 = implementation::Profile::FromJson(profile0Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"not-null.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"not-null.png", profile0->Icon().Path());
 
         Log::Comment(NoThrowString().Format(
-            L"Verify that layering an object the key set to null will clear the key"));
+            L"Verify that layering an object with the key set to null will clear the key"));
         profile0->LayerJson(profile1Json);
-        VERIFY_IS_TRUE(profile0->Icon().empty());
+        VERIFY_IS_TRUE(profile0->Icon().Path().empty());
 
         profile0->LayerJson(profile2Json);
-        VERIFY_IS_TRUE(profile0->Icon().empty());
+        VERIFY_IS_TRUE(profile0->Icon().Path().empty());
 
         profile0->LayerJson(profile3Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon().Path());
 
         Log::Comment(NoThrowString().Format(
             L"Verify that layering an object _without_ the key will not clear the key"));
         profile0->LayerJson(profile2Json);
-        VERIFY_IS_FALSE(profile0->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon());
+        VERIFY_IS_FALSE(profile0->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0->Icon().Path());
 
         auto profile1 = implementation::Profile::FromJson(profile1Json);
-        VERIFY_IS_TRUE(profile1->Icon().empty());
+        VERIFY_IS_TRUE(profile1->Icon().Path().empty());
         profile1->LayerJson(profile3Json);
-        VERIFY_IS_FALSE(profile1->Icon().empty());
-        VERIFY_ARE_EQUAL(L"another-real.png", profile1->Icon());
+        VERIFY_IS_FALSE(profile1->Icon().Path().empty());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile1->Icon().Path());
     }
 
     void ProfileTests::LayerProfilesOnArray()
@@ -469,5 +474,192 @@ namespace SettingsModelUnitTests
         VERIFY_ARE_EQUAL(L"powershell.exe", allProfiles.GetAt(1).Commandline());
         VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\cmd.exe", allProfiles.GetAt(2).Commandline());
         VERIFY_ARE_EQUAL(L"cmd.exe", allProfiles.GetAt(3).Commandline());
+    }
+
+    void ProfileTests::ProfileDefaultsProhibitedSettings()
+    {
+        static constexpr std::string_view userProfiles{ R"({
+            "profiles": {
+                "defaults":
+                {
+                    "guid": "{00000000-0000-0000-0000-000000000000}",
+                    "name": "Default Profile Name",
+                    "source": "Default Profile Source",
+                    "commandline": "foo.exe"
+                },
+                "list":
+                [
+                    {
+                        "name" : "PowerShell",
+                        "commandline": "powershell.exe",
+                        "guid" : "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+                    },
+                    {
+                        "name": "Profile with just a name"
+                    },
+                    {
+                        "guid": "{a0776706-1fa6-4439-b46c-287a65c084d5}",
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userProfiles);
+
+        // Profile Defaults should not have a GUID, name, source, or commandline.
+        const auto profileDefaults = settings->ProfileDefaults();
+        VERIFY_IS_FALSE(profileDefaults.HasGuid());
+        VERIFY_IS_FALSE(profileDefaults.HasName());
+        VERIFY_IS_FALSE(profileDefaults.HasSource());
+        VERIFY_IS_FALSE(profileDefaults.HasCommandline());
+
+        const auto allProfiles = settings->AllProfiles();
+        VERIFY_ARE_EQUAL(3u, allProfiles.Size());
+
+        // Profile settings should be set to the ones set at that layer
+        VERIFY_ARE_EQUAL(L"PowerShell", allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", allProfiles.GetAt(0).Commandline());
+        VERIFY_ARE_EQUAL(Utils::GuidFromString(L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"), static_cast<GUID>(allProfiles.GetAt(0).Guid()));
+        VERIFY_IS_FALSE(allProfiles.GetAt(0).HasSource());
+
+        // Profile should not inherit the values attempted to be set on the Profiles Defaults layer
+        // This profile only has a name set
+        VERIFY_ARE_EQUAL(L"Profile with just a name", allProfiles.GetAt(1).Name());
+        VERIFY_ARE_NOT_EQUAL(Utils::GuidFromString(L"{00000000-0000-0000-0000-000000000000}"), static_cast<GUID>(allProfiles.GetAt(1).Guid()));
+        VERIFY_ARE_NOT_EQUAL(L"Default Profile Source", allProfiles.GetAt(1).Source());
+        VERIFY_ARE_NOT_EQUAL(L"foo.exe", allProfiles.GetAt(1).Commandline());
+
+        // Profile should not inherit the values attempted to be set on the Profiles Defaults layer
+        // This profile only has a guid set
+        VERIFY_ARE_NOT_EQUAL(L"Default Profile Name", allProfiles.GetAt(2).Name());
+        VERIFY_ARE_NOT_EQUAL(Utils::GuidFromString(L"{00000000-0000-0000-0000-000000000000}"), static_cast<GUID>(allProfiles.GetAt(2).Guid()));
+        VERIFY_ARE_NOT_EQUAL(L"Default Profile Source", allProfiles.GetAt(2).Source());
+        VERIFY_ARE_NOT_EQUAL(L"foo.exe", allProfiles.GetAt(2).Commandline());
+    }
+
+    void ProfileTests::SettingInheritanceFallback()
+    {
+        // Verify that when no layer defines a setting, the default value is used.
+        // Also verify that when only user defaults defines it, profiles inherit from there.
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": {
+                "defaults": {
+                    "historySize": 5000
+                },
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                    },
+                    {
+                        "name": "profile1",
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                        "snapOnInput": false
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings);
+        const auto allProfiles = settings->AllProfiles();
+
+        VERIFY_ARE_EQUAL(2u, allProfiles.Size());
+
+        // profile0: historySize inherited from defaults
+        VERIFY_ARE_EQUAL(5000, allProfiles.GetAt(0).HistorySize());
+        // profile0: snapOnInput not set anywhere, falls back to default (true)
+        VERIFY_ARE_EQUAL(true, allProfiles.GetAt(0).SnapOnInput());
+
+        // profile1: historySize inherited from defaults
+        VERIFY_ARE_EQUAL(5000, allProfiles.GetAt(1).HistorySize());
+        // profile1: snapOnInput explicitly set to false
+        VERIFY_ARE_EQUAL(false, allProfiles.GetAt(1).SnapOnInput());
+    }
+
+    void ProfileTests::ClearSettingRestoresInheritance()
+    {
+        // Verify that clearing a setting at the profile layer causes it to
+        // fall back to the parent's value.
+        static constexpr std::string_view parentString{ R"({
+            "name": "parent",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "historySize": 1000,
+            "tabTitle": "ParentTitle"
+        })" };
+        static constexpr std::string_view childString{ R"({
+            "name": "child",
+            "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "historySize": 2000,
+            "tabTitle": "ChildTitle"
+        })" };
+
+        const auto parentJson = VerifyParseSucceeded(parentString);
+        const auto childJson = VerifyParseSucceeded(childString);
+
+        auto parent = implementation::Profile::FromJson(parentJson);
+        auto child = parent->CreateChild();
+        child->LayerJson(childJson);
+
+        // Verify child has its own values
+        VERIFY_ARE_EQUAL(2000, child->HistorySize());
+        VERIFY_ARE_EQUAL(L"ChildTitle", child->TabTitle());
+        VERIFY_IS_TRUE(child->HasHistorySize());
+        VERIFY_IS_TRUE(child->HasTabTitle());
+
+        // Clear historySize on child: should fall back to parent
+        child->ClearHistorySize();
+        VERIFY_IS_FALSE(child->HasHistorySize());
+        VERIFY_ARE_EQUAL(1000, child->HistorySize());
+
+        // Clear tabTitle on child: should fall back to parent
+        child->ClearTabTitle();
+        VERIFY_IS_FALSE(child->HasTabTitle());
+        VERIFY_ARE_EQUAL(L"ParentTitle", child->TabTitle());
+    }
+
+    void ProfileTests::HasSettingAtSpecificLayer()
+    {
+        // Verify that HasXxx() correctly reports whether a setting is defined
+        // at the current layer vs inherited from a parent.
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": {
+                "defaults": {
+                    "historySize": 5000,
+                    "tabTitle": "DefaultTitle"
+                },
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "historySize": 9001
+                    },
+                    {
+                        "name": "profile1",
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings);
+        const auto allProfiles = settings->AllProfiles();
+
+        VERIFY_ARE_EQUAL(2u, allProfiles.Size());
+
+        // profile0: historySize is explicitly set
+        VERIFY_IS_TRUE(allProfiles.GetAt(0).HasHistorySize());
+        VERIFY_ARE_EQUAL(9001, allProfiles.GetAt(0).HistorySize());
+
+        // profile0: tabTitle is NOT set at this layer (inherited from defaults)
+        VERIFY_IS_FALSE(allProfiles.GetAt(0).HasTabTitle());
+        VERIFY_ARE_EQUAL(L"DefaultTitle", allProfiles.GetAt(0).TabTitle());
+
+        // profile1: historySize is NOT set at this layer (inherited from defaults)
+        VERIFY_IS_FALSE(allProfiles.GetAt(1).HasHistorySize());
+        VERIFY_ARE_EQUAL(5000, allProfiles.GetAt(1).HistorySize());
+
+        // ProfileDefaults: historySize is set
+        VERIFY_IS_TRUE(settings->ProfileDefaults().HasHistorySize());
+        VERIFY_ARE_EQUAL(5000, settings->ProfileDefaults().HistorySize());
     }
 }

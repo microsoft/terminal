@@ -39,7 +39,8 @@ static Pipes createPipes()
     VERIFY_IS_TRUE(SetHandleInformation(p.our.out.get(), HANDLE_FLAG_INHERIT, 0));
 
     // ConPTY requests a DA1 report on startup. Emulate the response from the terminal.
-    WriteFile(p.our.in.get(), "\x1b[?61c", 6, nullptr, nullptr);
+    DWORD written{};
+    WriteFile(p.our.in.get(), "\x1b[?61c", 6, &written, nullptr);
 
     return p;
 }
@@ -125,6 +126,7 @@ static HRESULT AttachPseudoConsole(HPCON hPC, std::wstring command, PROCESS_INFO
 
     STARTUPINFOEXW siEx{};
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+    siEx.StartupInfo.dwFlags = STARTF_USESTDHANDLES; // we will leave the handles empty to ensure none are inherited.
     siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(buffer.get());
 
     RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));

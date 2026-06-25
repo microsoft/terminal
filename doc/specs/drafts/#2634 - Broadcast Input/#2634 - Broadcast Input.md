@@ -101,8 +101,8 @@ The scopes would work as follows:
   this tab.
   - **TODO!: FOR DISCUSSION**: Should this disable the tab's
       "broadcastToAllPanes" setting? Or should it leave that alone?
-* `"disableBroadcastInput"`: Set the global setting to false, the tab's setting
-  to false, and clear the set of panes being broadcasted to for this tab.
+* `"disableBroadcastInput"`: For this tab, set the global setting to false,
+  the tab's setting to false, and clear the set of panes being broadcasted.
   - **TODO!** This could also just be `"action": "toggleBroadcastInput",
     "scope": "none"`
 
@@ -161,7 +161,7 @@ As far as actions, we're looking at something like:
     from the broadcast set. Otherwise, add all the panes from this tab to the
     broadcast set.
 * **D** toggle sending input to the current pane
-  * If this pane is in the broadcast set, remove it. Otherwise add it.
+  * If this pane is in the broadcast set, remove it. Otherwise, add it.
 This seems to break down into the following actions:
 
 ```json

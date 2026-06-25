@@ -50,6 +50,7 @@ Author(s):
 
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
+#include "MediaResourceSupport.h"
 #include "AppearanceConfig.h"
 #include "FontConfig.h"
 
@@ -75,7 +76,7 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct Profile : ProfileT<Profile>, IInheritable<Profile>
+    struct Profile : ProfileT<Profile, IMediaResourceContainer>, IInheritable<Profile>
     {
     public:
         Profile() noexcept = default;
@@ -108,16 +109,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void LogSettingChanges(std::set<std::string>& changes, const std::string_view& context) const;
 
-        // EvaluatedIcon depends on Icon. It allows us to grab the
-        //   icon from an exe path.
-        // As a result, we can't use the INHERITABLE_SETTING macro for Icon,
-        //   as we manually have to set/unset _evaluatedIcon when Icon changes.
-        winrt::hstring EvaluatedIcon();
-        hstring Icon() const;
-        void Icon(const hstring& value);
-        bool HasIcon() const;
-        Model::Profile IconOverrideSource();
-        void ClearIcon();
+        void ResolveMediaResources(const Model::MediaResourceResolver& resolver);
+
+        void Icon(const winrt::hstring& path)
+        {
+            // Internal Helper (overload version)
+            Icon(MediaResource::FromString(path));
+        }
 
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(bool, Orphaned, false);
@@ -135,6 +133,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
+        winrt::hstring SourceBasePath;
+
     public:
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING_WITH_LOGGING(Model::Profile, type, name, jsonKey, ##__VA_ARGS__)
@@ -145,17 +145,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
 
-        std::optional<hstring> _Icon{ std::nullopt };
-        std::optional<winrt::hstring> _evaluatedIcon{ std::nullopt };
         std::set<std::string> _changeLog;
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
-        winrt::hstring _evaluateIcon() const;
-        std::optional<hstring> _getIconImpl() const;
-        Model::Profile _getIconOverrideSourceImpl() const;
         void _logSettingSet(const std::string_view& setting);
         void _logSettingIfSet(const std::string_view& setting, const bool isSet);
 
