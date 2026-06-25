@@ -97,5 +97,10 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.PathTranslationStyle, PathTranslationStyle);
         INHERITABLE_PROFILE_SETTING(String, DragDropDelimiter);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnActivity);
+        INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.OutputNotificationStyle, NotifyOnNextPrompt);
+        INHERITABLE_PROFILE_SETTING(Int32, NotifyOnActivityThreshold);
+        INHERITABLE_PROFILE_SETTING(Int32, NotifyOnNextPromptThreshold);
+        INHERITABLE_PROFILE_SETTING(Boolean, AutoDetectRunningCommand);
     }
 }
