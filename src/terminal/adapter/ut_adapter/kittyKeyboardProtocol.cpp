@@ -6,6 +6,7 @@
 #include <consoletaeftemplates.hpp>
 #include <WexTestClass.h>
 
+#include "TestHook.h"
 #include "../../input/terminalInput.hpp"
 
 using namespace WEX::TestExecution;
@@ -65,24 +66,24 @@ namespace
     constexpr TestCase testCases[] = {
         // Core behavior: DisambiguateEscapeCodes (D)
         { L"D Esc", L"\x1b[27u", D, true, VK_ESCAPE, 1, 0, 0 },
-        { L"D Ctrl+a", L"\x1b[97;5u", D, true, 'A', 0x1E, L'\x01', Ctrl },
-        { L"D Ctrl+Alt+a", L"\x1b[97;7u", D, true, 'A', 0x1E, L'\x01', Ctrl | Alt },
-        { L"D Shift+Alt+a", L"\x1b[97;4u", D, true, 'A', 0x1E, L'A', Shift | Alt },
-        { L"D Shift+a", L"A", D, true, 'A', 0x1E, L'A', Shift },
+        { L"D Ctrl+a", L"\x1b[97;5u", D, true, 'A', 0x10, 0, Ctrl },
+        { L"D Ctrl+Alt+a", L"æ", D, true, 'A', 0x10, L'æ', Ctrl | Alt },
+        { L"D Shift+Alt+a", L"\x1b[97;4u", D, true, 'A', 0x10, L'A', Shift | Alt },
+        { L"D Shift+a", L"A", D, true, 'A', 0x10, L'A', Shift },
 
         // Modifiers with AllKeys (K): all keys use CSI u
-        { L"K a", L"\x1b[97u", K, true, 'A', 0x1E, L'a', 0 },
-        { L"K Shift+a", L"\x1b[97;2u", K, true, 'A', 0x1E, L'A', Shift },
-        { L"K Alt+a", L"\x1b[97;3u", K, true, 'A', 0x1E, L'a', Alt },
-        { L"K Ctrl+a", L"\x1b[97;5u", K, true, 'A', 0x1E, L'\x01', Ctrl },
-        { L"K Shift+Alt+a", L"\x1b[97;4u", K, true, 'A', 0x1E, L'A', Shift | Alt },
-        { L"K Shift+Ctrl+a", L"\x1b[97;6u", K, true, 'A', 0x1E, L'\x01', Shift | Ctrl },
-        { L"K Alt+Ctrl+a", L"\x1b[97;7u", K, true, 'A', 0x1E, L'\x01', Alt | Ctrl },
-        { L"K Shift+Alt+Ctrl+a", L"\x1b[97;8u", K, true, 'A', 0x1E, L'\x01', Shift | Alt | Ctrl },
-        { L"K CapsLock+a", L"\x1b[97;65u", K, true, 'A', 0x1E, L'A', CAPSLOCK_ON },
-        { L"K NumLock+a", L"\x1b[97;129u", K, true, 'A', 0x1E, L'a', NUMLOCK_ON },
-        { L"K CapsLock+NumLock+a", L"\x1b[97;193u", K, true, 'A', 0x1E, L'A', CAPSLOCK_ON | NUMLOCK_ON },
-        { L"K all mods", L"\x1b[97;200u", K, true, 'A', 0x1E, L'\x01', Shift | Alt | Ctrl | CAPSLOCK_ON | NUMLOCK_ON },
+        { L"K a", L"\x1b[97u", K, true, 'A', 0x10, L'a', 0 },
+        { L"K Shift+a", L"\x1b[97;2u", K, true, 'A', 0x10, L'A', Shift },
+        { L"K Alt+a", L"\x1b[97;3u", K, true, 'A', 0x10, L'a', Alt },
+        { L"K Ctrl+a", L"\x1b[97;5u", K, true, 'A', 0x10, 0, Ctrl },
+        { L"K Shift+Alt+a", L"\x1b[97;4u", K, true, 'A', 0x10, L'A', Shift | Alt },
+        { L"K Shift+Ctrl+a", L"\x1b[97;6u", K, true, 'A', 0x10, 0, Shift | Ctrl },
+        { L"K Ctrl+Alt+a", L"\x1b[230u", K, true, 'A', 0x10, L'æ', Ctrl | Alt },
+        { L"K Shift+Ctrl+Alt+a", L"\x1b[230;2u", K, true, 'A', 0x10, L'Æ', Shift | Ctrl | Alt },
+        { L"K CapsLock+a", L"\x1b[97;65u", K, true, 'A', 0x10, L'A', CAPSLOCK_ON },
+        { L"K NumLock+a", L"\x1b[97;129u", K, true, 'A', 0x10, L'a', NUMLOCK_ON },
+        { L"K CapsLock+NumLock+a", L"\x1b[97;193u", K, true, 'A', 0x10, L'A', CAPSLOCK_ON | NUMLOCK_ON },
+        { L"K all mods", L"\x1b[230;194u", K, true, 'A', 0x10, L'Æ', Shift | Ctrl | Alt | CAPSLOCK_ON | NUMLOCK_ON },
 
         // Enter/Tab/Backspace: CSI u with K
         { L"K Enter", L"\x1b[13u", K, true, VK_RETURN, 0x1C, L'\r', 0 },
@@ -96,8 +97,8 @@ namespace
         // Event types (D|E, E|K): release sends ;1:3
         { L"D|E Esc press", L"\x1b[27u", D | E, true, VK_ESCAPE, 1, 0, 0 },
         { L"D|E Esc release", L"\x1b[27;1:3u", D | E, false, VK_ESCAPE, 1, 0, 0 },
-        { L"E|K a press", L"\x1b[97u", E | K, true, 'A', 0x1E, L'a', 0 },
-        { L"E|K a release", L"\x1b[97;1:3u", E | K, false, 'A', 0x1E, L'a', 0 },
+        { L"E|K a press", L"\x1b[97u", E | K, true, 'A', 0x10, L'a', 0 },
+        { L"E|K a release", L"\x1b[97;1:3u", E | K, false, 'A', 0x10, L'a', 0 },
         { L"E|K Enter release", L"\x1b[13;1:3u", E | K, false, VK_RETURN, 0x1C, L'\r', 0 },
         { L"E|K Tab release", L"\x1b[9;1:3u", E | K, false, VK_TAB, 0x0F, L'\t', 0 },
         { L"E|K Backspace release", L"\x1b[127;1:3u", E | K, false, VK_BACK, 0x0E, L'\b', 0 },
@@ -161,21 +162,21 @@ namespace
         { L"K Shift+F13", L"\x1b[57376;2u", K, true, VK_F13, 0x64, 0, Shift },
 
         // Alternate keys (A|K): shifted key and base layout key
-        { L"A|K Shift+a", L"\x1b[97:65;2u", A | K, true, 'A', 0x1E, L'A', Shift },
-        { L"A|K Shift+1", L"\x1b[49:33;2u", A | K, true, '1', 0x02, L'!', Shift },
-        { L"A|K a (no shift)", L"\x1b[97u", A | K, true, 'A', 0x1E, L'a', 0 },
+        { L"A|K Shift+a", L"\x1b[97:65:113;2u", A | K, true, 'A', 0x10, L'A', Shift },
+        { L"A|K Shift+1", L"\x1b[224:49:49;2u", A | K, true, '1', 0x02, L'!', Shift },
+        { L"A|K a (no shift)", L"\x1b[97::113u", A | K, true, 'A', 0x10, L'a', 0 },
 
         // Associated text (K|T): text codepoint in 3rd param
-        { L"K|T Shift+a", L"\x1b[97;2;65u", K | T, true, 'A', 0x1E, L'A', Shift },
-        { L"K|T Shift+1", L"\x1b[49;2;33u", K | T, true, '1', 0x02, L'!', Shift },
-        { L"K|T Ctrl+a", L"\x1b[97;5u", K | T, true, 'A', 0x1E, L'\x01', Ctrl }, // control char omitted
+        { L"K|T Shift+a", L"\x1b[97;2;65u", K | T, true, 'A', 0x10, L'A', Shift },
+        { L"K|T Shift+1", L"\x1b[224;2;33u", K | T, true, '1', 0x02, L'!', Shift },
+        { L"K|T Ctrl+a", L"\x1b[97;5u", K | T, true, 'A', 0x10, 0, Ctrl }, // control char omitted
 
         // Edge cases
         { L"K Keypad Enter", L"\x1b[57414u", K, true, VK_RETURN, 0x1C, L'\r', ENHANCED_KEY },
         { L"K Regular Enter", L"\x1b[13u", K, true, VK_RETURN, 0x1C, L'\r', 0 },
-        { L"K Shift+Alt+Ctrl+Esc", L"\x1b[27;8u", K, true, VK_ESCAPE, 1, 0, Shift | Alt | Ctrl },
-        { L"E|K CapsLock+a", L"\x1b[97;65u", E | K, true, 'A', 0x1E, L'A', CAPSLOCK_ON },
-        { L"E|K all mods release", L"\x1b[97;200:3u", E | K, false, 'A', 0x1E, L'\x01', Shift | Alt | Ctrl | CAPSLOCK_ON | NUMLOCK_ON },
+        { L"K Shift+Ctrl+Alt+Esc", L"\x1b[27;8u", K, true, VK_ESCAPE, 1, 0, Shift | Ctrl | Alt },
+        { L"E|K CapsLock+a", L"\x1b[97;65u", E | K, true, 'A', 0x10, L'A', CAPSLOCK_ON },
+        { L"E|K all mods release", L"\x1b[230;194:3u", E | K, false, 'A', 0x10, L'Æ', Shift | Ctrl | Alt | CAPSLOCK_ON | NUMLOCK_ON },
 
         // F1-F4 with kitty flags (CSI instead of SS3, F3 special case)
         { L"D F1", L"\x1b[P", D, true, VK_F1, 0x3B, 0, 0 },
@@ -210,20 +211,20 @@ namespace
         { L"E|K Up release", L"\x1b[1;1:3A", E | K, false, VK_UP, 0x48, 0, ENHANCED_KEY },
         { L"E|K Insert release", L"\x1b[2;1:3~", E | K, false, VK_INSERT, 0x52, 0, ENHANCED_KEY },
         // Alternate keys with modifiers
-        { L"A|K Shift+Ctrl+a", L"\x1b[97:65;6u", A | K, true, 'A', 0x1E, L'\x01', Shift | Ctrl },
+        { L"A|K Shift+Ctrl+a", L"\x1b[97:65:113;6u", A | K, true, 'A', 0x10, 0, Shift | Ctrl },
         // Associated text with plain key
-        { L"K|T a", L"\x1b[97;;97u", K | T, true, 'A', 0x1E, L'a', 0 },
+        { L"K|T a", L"\x1b[97;;97u", K | T, true, 'A', 0x10, L'a', 0 },
         // Text not reported on release
-        { L"E|K|T a release", L"\x1b[97;1:3u", E | K | T, false, 'A', 0x1E, L'a', 0 },
+        { L"E|K|T a release", L"\x1b[97;1:3u", E | K | T, false, 'A', 0x10, L'a', 0 },
         // Escape has no associated text
         { L"K|T Esc", L"\x1b[27u", K | T, true, VK_ESCAPE, 1, 0, 0 },
         // Combined flags: alternate keys with locks
-        { L"A|K CapsLock+Shift+a", L"\x1b[97:65;66u", A | K, true, 'A', 0x1E, L'a', CAPSLOCK_ON | Shift },
+        { L"A|K CapsLock+Shift+a", L"\x1b[97:65:113;66u", A | K, true, 'A', 0x10, L'a', CAPSLOCK_ON | Shift },
         // All flags combined
-        { L"A|K|T Shift+a", L"\x1b[97:65;2;65u", A | K | T, true, 'A', 0x1E, L'A', Shift },
+        { L"A|K|T Shift+a", L"\x1b[97:65:113;2;65u", A | K | T, true, 'A', 0x10, L'A', Shift },
 
         // Release without EventTypes flag: no output
-        { L"K a release (no EventTypes)", L"", K, false, 'A', 0x1E, L'a', 0 },
+        { L"K a release (no EventTypes)", L"", K, false, 'A', 0x10, L'a', 0 },
 
         // Enter/Tab/Backspace release without AllKeys: no output
         { L"D|E Enter press", L"\r", D | E, true, VK_RETURN, 0x1C, L'\r', 0 },
@@ -238,8 +239,8 @@ namespace
         { L"E|K CapsLock release (now on)", L"\x1b[57358;65:3u", E | K, false, VK_CAPITAL, 0x3A, 0, CAPSLOCK_ON },
 
         // Associated text filtering
-        { L"K|T Shift+a (text)", L"\x1b[97;2;65u", K | T, true, 'A', 0x1E, L'A', Shift },
-        { L"K|T Ctrl+a (control char filtered)", L"\x1b[97;5u", K | T, true, 'A', 0x1E, L'\x01', Ctrl },
+        { L"K|T Shift+a (text)", L"\x1b[97;2;65u", K | T, true, 'A', 0x10, L'A', Shift },
+        { L"K|T Ctrl+a (control char filtered)", L"\x1b[97;5u", K | T, true, 'A', 0x10, 0, Ctrl },
         { L"K|T Esc (no text)", L"\x1b[27u", K | T, true, VK_ESCAPE, 1, 0, 0 },
     };
 }
@@ -251,7 +252,25 @@ extern "C" HRESULT __declspec(dllexport) __cdecl KittyKeyTestDataSource(IDataSou
 
 class KittyKeyboardProtocolTests
 {
+    TestHook::LayoutGuard layout;
+
     TEST_CLASS(KittyKeyboardProtocolTests);
+
+    TEST_CLASS_SETUP(ClassSetup)
+    {
+        layout = TestHook::SetTerminalInputKeyboardLayout(L"0001040c"); // French (Standard, AZERTY)
+        if (!layout)
+        {
+            Log::Result(TestResults::Result::Skipped);
+        }
+        return true;
+    }
+
+    TEST_CLASS_CLEANUP(ClassCleanup)
+    {
+        layout = {};
+        return true;
+    }
 
     TEST_METHOD(KeyPressTests)
     {
@@ -278,25 +297,25 @@ class KittyKeyboardProtocolTests
     TEST_METHOD(KeyRepeatEvents)
     {
         auto input = createInput(E | K);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x1E, L'a', 0));
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;1:2u"), process(input, true, 'A', 0x1E, L'a', 0)); // repeat
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;1:2u"), process(input, true, 'A', 0x1E, L'a', 0)); // repeat
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;1:3u"), process(input, false, 'A', 0x1E, L'a', 0)); // release
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x1E, L'a', 0)); // new press
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x10, L'a', 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;1:2u"), process(input, true, 'A', 0x10, L'a', 0)); // repeat
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;1:2u"), process(input, true, 'A', 0x10, L'a', 0)); // repeat
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;1:3u"), process(input, false, 'A', 0x10, L'a', 0)); // release
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x10, L'a', 0)); // new press
     }
 
     TEST_METHOD(KeyRepeatWithModifiers)
     {
         auto input = createInput(E | K);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;2u"), process(input, true, 'A', 0x1E, L'A', SHIFT_PRESSED));
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;2:2u"), process(input, true, 'A', 0x1E, L'A', SHIFT_PRESSED));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;2u"), process(input, true, 'A', 0x10, L'A', SHIFT_PRESSED));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97;2:2u"), process(input, true, 'A', 0x10, L'A', SHIFT_PRESSED));
     }
 
     TEST_METHOD(KeyRepeatResetOnDifferentKey)
     {
         auto input = createInput(E | K);
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x1E, L'a', 0));
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x10, L'a', 0));
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[98u"), process(input, true, 'B', 0x30, L'b', 0)); // different key
-        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x1E, L'a', 0)); // not repeat
+        VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x10, L'a', 0)); // not repeat
     }
 };
