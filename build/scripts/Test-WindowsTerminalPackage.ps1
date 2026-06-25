@@ -6,7 +6,7 @@ Param(
     $Path,
 
     [Parameter(HelpMessage="Path to Windows Kit")]
-    [ValidateScript({Test-Path $_ -Type Leaf})]
+    [ValidateScript({Test-Path $_})]
     [string]
     $WindowsKitPath
 )
