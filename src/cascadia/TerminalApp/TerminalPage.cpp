@@ -1425,6 +1425,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         auto icon = UI::IconPathConverter::IconWUX(iconSource);
+        icon.Width(32);
+        icon.Height(32);
         Automation::AutomationProperties::SetAccessibilityView(icon, Automation::Peers::AccessibilityView::Raw);
 
         return icon;
@@ -5551,6 +5553,8 @@ namespace winrt::TerminalApp::implementation
             if (!icon.empty())
             {
                 auto iconElement = UI::IconPathConverter::IconWUX(icon);
+                iconElement.Width(16);
+                iconElement.Height(16);
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
                 button.Icon(iconElement);
             }
@@ -5569,6 +5573,8 @@ namespace winrt::TerminalApp::implementation
             if (!icon.empty())
             {
                 auto iconElement = UI::IconPathConverter::IconWUX(icon);
+                iconElement.Width(16);
+                iconElement.Height(16);
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
                 button.Icon(iconElement);
             }
@@ -5589,6 +5595,8 @@ namespace winrt::TerminalApp::implementation
             if (!icon.empty())
             {
                 auto iconElement = UI::IconPathConverter::IconWUX(icon);
+                iconElement.Width(16);
+                iconElement.Height(16);
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
                 button.Icon(iconElement);
             }
@@ -5759,6 +5767,8 @@ namespace winrt::TerminalApp::implementation
             MenuFlyoutItem item{};
 
             auto iconElement = UI::IconPathConverter::IconWUX(L"\ue74c");
+            iconElement.Width(16);
+            iconElement.Height(16);
             Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             item.Icon(iconElement);
 
