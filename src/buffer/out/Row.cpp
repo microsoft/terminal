@@ -876,6 +876,7 @@ catch (...)
     {
         // std::copy_n compiles to memmove. We can do better. It also gets rid of an extra branch,
         // because std::copy_n avoids calling memmove if the count is 0. It's never 0 for us.
+        THROW_HR_IF(E_BOUNDS, charsConsumed > row._chars.size() - chBeg);
         const auto itBeg = row._chars.begin() + chBeg;
         memcpy(&*itBeg, chars.data(), charsConsumed * sizeof(wchar_t));
 
