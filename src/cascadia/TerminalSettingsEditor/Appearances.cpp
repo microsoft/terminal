@@ -1251,7 +1251,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 self->_fontFaceBoxHasUserInput = false;
 
-                if (const auto box{ weakSender.get() };)
+                if (const auto box{ weakSender.get() })
                 {
                     box.Text(fontSpec);
                 }
