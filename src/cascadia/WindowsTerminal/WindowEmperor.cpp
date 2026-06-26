@@ -1098,7 +1098,7 @@ safe_void_coroutine WindowEmperor::_showMessageBox(winrt::hstring message, bool 
     const auto messageTitle = error ? IDS_ERROR_DIALOG_TITLE : IDS_HELP_DIALOG_TITLE;
     const auto messageIcon = error ? MB_ICONERROR : MB_ICONWARNING;
     // The dialog cannot have our _window as the parent, because that one is always hidden/invisible.
-    // TODO:GH#4134: polish this dialog more, to make the text more like msiexec /?
+    // Command-line help text is wrapped by the CLI formatter before it reaches this dialog.
     MessageBoxW(nullptr, message.c_str(), GetStringResource(messageTitle).c_str(), MB_OK | messageIcon);
 }
 

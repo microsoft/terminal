@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include <sstream>
 #include <WexTestClass.h>
 
 #include "../types/inc/utils.hpp"
@@ -115,6 +116,26 @@ namespace TerminalAppLocalTests
             }
             Log::Comment(NoThrowString().Format(L"%s", buffer.c_str()));
         }
+
+        void _verifyHelpTextFitsDialog(const std::string& message)
+        {
+            static constexpr size_t maxHelpLineLength = 72;
+
+            std::istringstream lines{ message };
+            std::string line;
+            size_t lineNumber = 0;
+            while (std::getline(lines, line))
+            {
+                ++lineNumber;
+                if (!line.empty() && line.back() == '\r')
+                {
+                    line.pop_back();
+                }
+
+                VERIFY_IS_TRUE(line.size() <= maxHelpLineLength,
+                               NoThrowString().Format(L"line %zu has %zu chars: %hs", lineNumber, line.size(), line.c_str()));
+            }
+        }
     };
 
     void CommandlineTest::ParseSimpleCommandline()
@@ -210,6 +231,7 @@ namespace TerminalAppLocalTests
                 appArgs._exitMessage.c_str()));
             VERIFY_ARE_EQUAL(0, result);
             VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
+            _verifyHelpTextFitsDialog(appArgs._exitMessage);
         }
     }
 
@@ -277,6 +299,7 @@ namespace TerminalAppLocalTests
                 appArgs._exitMessage.c_str()));
             VERIFY_ARE_EQUAL(0, result);
             VERIFY_ARE_NOT_EQUAL("", appArgs._exitMessage);
+            _verifyHelpTextFitsDialog(appArgs._exitMessage);
         }
     }
 
