@@ -620,7 +620,13 @@ try
         const auto cursorWidth = 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const auto top = options.coordCursor.y;
         const auto bottom = top + 1;
-        const auto shift = gsl::narrow_cast<u8>(_p.rows[top]->lineRendition != LineRendition::SingleWidth);
+        // coordCursor is relative to the renderer's viewport, which can momentarily
+        // disagree with our own viewport (the size of _p.rows) when the viewport
+        // dimensions change. Clamp the row index just like the other Paint*() methods
+        // before indexing into _p.rows; if the cursor really is outside the viewport,
+        // cursorRect collapses to empty below and nothing is drawn.
+        const auto row = gsl::narrow_cast<u16>(clamp<til::CoordType>(top, 0, _p.s->viewportCellCount.y - 1));
+        const auto shift = gsl::narrow_cast<u8>(_p.rows[row]->lineRendition != LineRendition::SingleWidth);
         auto left = options.coordCursor.x - (_api.viewportOffset.x >> shift);
         auto right = left + cursorWidth;
 
