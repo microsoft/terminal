@@ -39,6 +39,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::Profile SourceProfile();
 
+        void ClearAllSettings();
+
 #define FONT_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::FontConfig, type, name, ##__VA_ARGS__)
         MTSM_FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)

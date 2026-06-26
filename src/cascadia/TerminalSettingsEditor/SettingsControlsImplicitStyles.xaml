@@ -1,0 +1,58 @@
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+    
+    Implicit styles copied into every SettingsCard / SettingsExpander's own Resources
+    at runtime by StyleExtensions::EnsureImplicitStylesMergedInto (called from each
+    control's OnApplyTemplate). This is the WinUI 2 port of WCT's
+    local:StyleExtensions.Resources Setter pattern, which we can't use directly:
+    
+    - WCT's inline-ResourceDictionary-as-Setter.Value crashes WinUI 2 here with
+    "CommonResources.xaml is not a valid absolute URI" during XAML load.
+    - Appending this dictionary to MergedDictionaries directly throws "Element is
+    already the child of another element" the second time a control merges the
+    same shared instance. The C++ helper instead copies the entries (Styles, which
+    unlike UIElements can be shared) into each target's own Resources.
+    - No BasedOn: a Source=-loaded dictionary has no parent scope at parse time, so
+    a cross-file {StaticResource} wouldn't resolve. It doesn't need one anyway.
+    In WinUI 2 an implicit style that sets only setters (no Template, no BasedOn)
+    applies on top of the built-in template rather than replacing it, keeping the
+    control's default brushes/corner radius/popup intact.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Right-aligned, compact ToggleSwitch. Replaces the WCT
+        RightAlignedCompactToggleSwitchStyle the toolkit uses as BasedOn.
+        OffContent / OnContent are blanked so the default "Off" / "On" labels
+        don't steal horizontal space next to the switch.
+    -->
+    <Style TargetType="ToggleSwitch">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Right" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="OffContent" Value="" />
+        <Setter Property="OnContent" Value="" />
+    </Style>
+
+    <!--
+        ComboBox / Slider / TextBox: enforce a consistent MinWidth so the
+        right-aligned controls in adjacent cards line up in a column. Mirrors
+        WCT's implicit styles.
+    -->
+    <Style TargetType="ComboBox">
+        <Setter Property="MinWidth" Value="120" />
+    </Style>
+
+    <Style TargetType="Slider">
+        <Setter Property="MinWidth" Value="120" />
+    </Style>
+
+    <Style TargetType="TextBox">
+        <Setter Property="MinWidth" Value="120" />
+    </Style>
+
+</ResourceDictionary>
