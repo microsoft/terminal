@@ -347,6 +347,10 @@ namespace winrt::TerminalApp::implementation
                     // shell32 file picker manually.
                     std::wstring filename{ tab.Title() };
                     filename = til::clean_filename(filename);
+
+                    // GH#20188: yield before the dialog so that the Enter from the Command Palette doesn't leak into the terminal.
+                    // Low priority, so the Command Palette's close paints first.
+                    co_await wil::resume_foreground(Dispatcher(), CoreDispatcherPriority::Low);
                     path = co_await SaveFilePicker(*_hostingHwnd, [filename = std::move(filename)](auto&& dialog) {
                         THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
                         try
