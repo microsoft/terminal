@@ -117,21 +117,47 @@ void ConhostInternalGetSet::SetViewportPosition(const til::point position)
 // - enabled - True to enable the mode, false to disable it.
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetSystemMode(const Mode mode, const bool enabled)
+void ConhostInternalGetSet::SetSystemMode(const DispatchTypes::TaskbarState state, const size_t progress)
 {
-    switch (mode)
+    if (!_taskbar)
     {
-    case Mode::AutoWrap:
-        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT, enabled);
+        _taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList);
+        if (!_taskbar)
+        {
+            return;
+        }
+    }
+
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
+    const auto hwnd = window->GetWindowHandle();
+
+    switch (state)
+    {
+    case DispatchTypes::TaskbarState::Clear:
+        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
         break;
-    case Mode::LineFeed:
-        WI_UpdateFlag(_io.GetActiveOutputBuffer().OutputMode, DISABLE_NEWLINE_AUTO_RETURN, !enabled);
+    case DispatchTypes::TaskbarState::Set:
+        _taskbar->SetProgressState(hwnd, TBPF_NORMAL);
+        _taskbar->SetProgressValue(hwnd, progress, 100);
         break;
-    case Mode::BracketedPaste:
-        ServiceLocator::LocateGlobals().getConsoleInformation().SetBracketedPasteMode(enabled);
+    case DispatchTypes::TaskbarState::Error:
+        _taskbar->SetProgressState(hwnd, TBPF_ERROR);
+        _taskbar->SetProgressValue(hwnd, progress, 100);
+        break;
+    case DispatchTypes::TaskbarState::Indeterminate:
+        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
+        _taskbar->SetProgressState(hwnd, TBPF_INDETERMINATE);
+        break;
+    case DispatchTypes::TaskbarState::Paused:
+        _taskbar->SetProgressState(hwnd, TBPF_PAUSED);
+        _taskbar->SetProgressValue(hwnd, progress, 100);
         break;
     default:
-        THROW_HR(E_INVALIDARG);
+        break;
     }
 }
 
@@ -320,9 +346,48 @@ void ConhostInternalGetSet::CopyToClipboard(const wil::zwstring_view content)
 // - progress: indicates the progress value
 // Return Value:
 // - <none>
-void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState /*state*/, const size_t /*progress*/)
+void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState state, const size_t progress)
 {
-    // TODO
+    if (!_taskbar)
+    {
+        _taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList);
+        if (!_taskbar)
+        {
+            return;
+        }
+    }
+
+    const auto window = ServiceLocator::LocateConsoleWindow();
+    if (!window)
+    {
+        return;
+    }
+    const auto hwnd = window->GetWindowHandle();
+
+    switch (state)
+    {
+    case DispatchTypes::TaskbarState::Clear:
+        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
+        break;
+    case DispatchTypes::TaskbarState::Set:
+        _taskbar->SetProgressState(hwnd, TBPF_NORMAL);
+        _taskbar->SetProgressValue(hwnd, progress, 100);
+        break;
+    case DispatchTypes::TaskbarState::Error:
+        _taskbar->SetProgressState(hwnd, TBPF_ERROR);
+        _taskbar->SetProgressValue(hwnd, progress, 100);
+        break;
+    case DispatchTypes::TaskbarState::Indeterminate:
+        _taskbar->SetProgressState(hwnd, TBPF_NOPROGRESS);
+        _taskbar->SetProgressState(hwnd, TBPF_INDETERMINATE);
+        break;
+    case DispatchTypes::TaskbarState::Paused:
+        _taskbar->SetProgressState(hwnd, TBPF_PAUSED);
+        _taskbar->SetProgressValue(hwnd, progress, 100);
+        break;
+    default:
+        break;
+    }
 }
 
 // Routine Description:

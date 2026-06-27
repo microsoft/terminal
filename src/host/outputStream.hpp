@@ -78,4 +78,5 @@ public:
 
 private:
     Microsoft::Console::IIoProvider& _io;
+    wil::com_ptr<ITaskbarList3> _taskbar;
 };
