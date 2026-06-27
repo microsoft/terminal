@@ -5180,20 +5180,52 @@ namespace winrt::TerminalApp::implementation
                                                             theme.TabRow().UnfocusedBackground()) :
                                               ThemeColor{ nullptr } };
 
-        if (_settings.GlobalSettings().UseAcrylicInTabRow() && (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic()))
+        const auto terminalAcrylicBrush{ terminalBrush ? terminalBrush.try_as<Media::AcrylicBrush>() : nullptr };
+        const auto terminalUsesInAppAcrylic{ terminalAcrylicBrush != nullptr && terminalAcrylicBrush.BackgroundSource() == Media::AcrylicBackgroundSource::Backdrop };
+        // In tabs-in-titlebar mode, the XAML tab row is drawn over the original
+        // User32 titlebar. Don't layer HostBackdrop tab-row acrylic over
+        // in-app profile acrylic; that mixed-source stack flickers and cannot
+        // satisfy unfocused acrylic semantics.
+        const auto wantsTabRowAcrylic{ _settings.GlobalSettings().UseAcrylicInTabRow() &&
+                                       (_activated || _settings.GlobalSettings().EnableUnfocusedAcrylic()) };
+        const auto suppressTitlebarAcrylic{ wantsTabRowAcrylic &&
+                                            _settings.GlobalSettings().ShowTabsInTitlebar() &&
+                                            terminalUsesInAppAcrylic };
+        const auto useTabRowAcrylic{ wantsTabRowAcrylic && !suppressTitlebarAcrylic };
+
+        if (useTabRowAcrylic)
         {
             if (tabRowBg)
             {
                 bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
             }
 
-            const auto acrylicBrush = Media::AcrylicBrush();
+            Media::AcrylicBrush acrylicBrush{ nullptr };
+            if (const auto titlebarBrush{ TitlebarBrush() })
+            {
+                acrylicBrush = titlebarBrush.try_as<Media::AcrylicBrush>();
+            }
+            if (!acrylicBrush)
+            {
+                acrylicBrush = Media::AcrylicBrush();
+                TitlebarBrush(acrylicBrush);
+            }
+
             acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             acrylicBrush.FallbackColor(bgColor);
             acrylicBrush.TintColor(bgColor);
             acrylicBrush.TintOpacity(0.5);
+        }
+        else if (suppressTitlebarAcrylic)
+        {
+            if (tabRowBg)
+            {
+                bgColor = ThemeColor::ColorFromBrush(tabRowBg.Evaluate(res, terminalBrush, true));
+            }
 
-            TitlebarBrush(acrylicBrush);
+            Media::SolidColorBrush solidBrush{};
+            solidBrush.Color(bgColor);
+            TitlebarBrush(solidBrush);
         }
         else if (tabRowBg)
         {
