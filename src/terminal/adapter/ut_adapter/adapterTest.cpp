@@ -4207,16 +4207,18 @@ public:
         VERIFY_ARE_EQUAL(50, newBuffer->GetSize().Width());
     }
 
-    // A tall sixel spans multiple buffer rows (cf. alignment fix #17724).
+    // A tall sixel spans multiple buffer rows (cf. alignment fix #17724). Uses a
+    // transparent background so the height reflects the drawn content rather than
+    // the (vertically-filling) opaque background.
     TEST_METHOD(SixelTallImageSpansMultipleRows)
     {
         _testGetSet->PrepData();
 
-        // Four sixel bands (6px each = 24px) exceed the 20px cell height, so the
-        // image occupies two buffer rows.
-        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~-~-~-~\x1b\\");
+        // Six transparent sixel bands (6px each = 36px) clearly exceed one 20px
+        // cell row, so the image spans multiple rows.
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~-~-~-~-~-~\x1b\\");
 
-        VERIFY_IS_TRUE(CountImageRows(*_testGetSet->_textBuffer) >= 2, L"A 24px-tall image should span at least two rows.");
+        VERIFY_IS_TRUE(CountImageRows(*_testGetSet->_textBuffer) >= 2, L"A 36px-tall image should span multiple rows.");
     }
 
     // Transparent background (P2=1) does not fill the row, unlike the opaque default.
@@ -4247,6 +4249,67 @@ public:
         _stateMachine->ProcessString(L"\x1bPq\x1b\\");
 
         VERIFY_IS_FALSE(BufferContainsColor(*_testGetSet->_textBuffer, 255, 0, 0), L"An empty sixel must not produce colored content.");
+    }
+
+    // Multiple color registers within one image are each rendered.
+    TEST_METHOD(SixelMultipleColorsRendered)
+    {
+        _testGetSet->PrepData();
+
+        // Color 0 = red, color 1 = blue; draw one column with each.
+        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0~#1;2;0;0;100~\x1b\\");
+
+        const auto& buffer = *_testGetSet->_textBuffer;
+        VERIFY_IS_TRUE(BufferContainsColor(buffer, 255, 0, 0), L"Red (color 0) should be rendered.");
+        VERIFY_IS_TRUE(BufferContainsColor(buffer, 0, 0, 255), L"Blue (color 1) should be rendered.");
+    }
+
+    // Robustness: an image far wider than the buffer must not crash and must
+    // stay bounded by the row width.
+    TEST_METHOD(SixelOversizedWidthClamped)
+    {
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bPq#0;2;100;0;0!5000~\x1b\\");
+
+        const auto& buffer = *_testGetSet->_textBuffer;
+        til::CoordType imageRow = -1;
+        const auto slice = FindFirstImageSlice(buffer, imageRow);
+
+        VERIFY_IS_NOT_NULL(slice);
+        VERIFY_IS_TRUE(slice->PixelWidth() > 0);
+        VERIFY_IS_TRUE(slice->PixelWidth() <= buffer.GetSize().Width() * slice->CellSize().width, L"An oversized image should be bounded by the row width.");
+    }
+
+    // The image is placed at the cursor's column.
+    TEST_METHOD(SixelImageRendersAtCursorColumn)
+    {
+        _testGetSet->PrepData();
+
+        // Advance the cursor five cells with text, then draw a transparent image
+        // (so the slice starts at the drawn column rather than filling the row).
+        _stateMachine->ProcessString(L"     ");
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~\x1b\\");
+
+        til::CoordType imageRow = -1;
+        const auto slice = FindFirstImageSlice(*_testGetSet->_textBuffer, imageRow);
+
+        VERIFY_IS_NOT_NULL(slice);
+        VERIFY_ARE_EQUAL(5, slice->ColumnOffset(), L"The image should begin at the cursor column.");
+    }
+
+    // A taller image occupies more rows than a shorter one (monotonic, so it does
+    // not depend on the exact band-to-row rounding).
+    TEST_METHOD(SixelTallerImageOccupiesMoreRows)
+    {
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~\x1b\\");
+        const auto shortRows = CountImageRows(*_testGetSet->_textBuffer);
+
+        _testGetSet->PrepData();
+        _stateMachine->ProcessString(L"\x1bP0;1q#0;2;100;0;0~-~-~-~-~-~\x1b\\");
+        const auto tallRows = CountImageRows(*_testGetSet->_textBuffer);
+
+        VERIFY_IS_TRUE(tallRows > shortRows, L"A taller image should occupy more rows than a shorter one.");
     }
 
 private:
