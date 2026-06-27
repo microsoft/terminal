@@ -356,31 +356,40 @@ void ConhostInternalGetSet::SetTaskbarProgress(const DispatchTypes::TaskbarState
         }
     }
 
+  // See: https://github.com/check-spelling/check-spelling/wiki/Feature:-In-document-disable
+    // cspell:disable-next-line
     TBPFLAG flags = TBPF_NOPROGRESS;
     switch (state)
     {
     case DispatchTypes::TaskbarState::Clear:
+        // cspell:disable-next-line
         flags = TBPF_NOPROGRESS;
         break;
     case DispatchTypes::TaskbarState::Set:
+        // cspell:disable-next-line
         flags = TBPF_NORMAL;
         break;
     case DispatchTypes::TaskbarState::Error:
+        // cspell:disable-next-line
         flags = TBPF_ERROR;
         break;
     case DispatchTypes::TaskbarState::Indeterminate:
+        // cspell:disable-next-line
         flags = TBPF_INDETERMINATE;
         break;
     case DispatchTypes::TaskbarState::Paused:
+        // cspell:disable-next-line
         flags = TBPF_PAUSED;
         break;
     default:
+        // cspell:disable-next-line
         flags = TBPF_NOPROGRESS;
         break;
     }
 
     std::ignore = _taskbar->SetProgressState(hwnd, flags);
     
+    // cspell:disable-next-line
     if (flags == TBPF_NORMAL || flags == TBPF_ERROR || flags == TBPF_PAUSED)
     {
         std::ignore = _taskbar->SetProgressValue(hwnd, static_cast<ULONGLONG>(progress), 100ULL);
